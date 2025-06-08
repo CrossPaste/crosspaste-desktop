@@ -41,12 +41,15 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
             ),
         )
 
-    override suspend fun addDevice(syncInfo: SyncInfo) {
+    override fun addDevice(syncInfo: SyncInfo) {
     }
 
-    override suspend fun removeDevice(syncInfo: SyncInfo) {
+    override fun removeDevice(syncInfo: SyncInfo) {
     }
 
-    override suspend fun refresh() {
+    override fun refreshSyncManager() {
+    }
+
+    override fun updateSyncManager() {
     }
 }

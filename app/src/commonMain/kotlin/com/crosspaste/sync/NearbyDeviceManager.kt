@@ -9,9 +9,13 @@ interface NearbyDeviceManager {
 
     val syncInfos: StateFlow<List<SyncInfo>>
 
-    suspend fun addDevice(syncInfo: SyncInfo)
+    fun addDevice(syncInfo: SyncInfo)
 
-    suspend fun removeDevice(syncInfo: SyncInfo)
+    fun removeDevice(syncInfo: SyncInfo)
 
-    suspend fun refresh()
+    // update syncInfos and trigger SyncManager to refresh all sync handlers
+    fun refreshSyncManager()
+
+    // Only update syncInfos without triggering SyncManager to refresh
+    fun updateSyncManager()
 }

@@ -18,14 +18,13 @@ interface SyncManager : SyncRoutingApi {
 
     fun toVerify(appInstanceId: String)
 
-    suspend fun resolveSyncs()
-
-    suspend fun resolveSync(id: String)
-
     fun trustByToken(
         appInstanceId: String,
         token: Int,
     )
 
-    fun refresh(ids: List<String> = listOf())
+    fun refresh(
+        ids: List<String> = listOf(),
+        callback: () -> Unit = {},
+    )
 }

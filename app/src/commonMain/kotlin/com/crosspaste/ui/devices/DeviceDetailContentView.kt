@@ -24,7 +24,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +50,6 @@ import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny6X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -74,8 +72,6 @@ fun DeviceDetailContentView() {
     var versionRelation by remember {
         mutableStateOf(syncHandler?.versionRelation)
     }
-
-    val scope = rememberCoroutineScope()
 
     val settingsTextStyle = SettingsTextStyle()
 
@@ -164,13 +160,13 @@ fun DeviceDetailContentView() {
                             !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend
                         },
                     ) { allowSend ->
-                        scope.launch {
-                            if (appControl.isSyncControlEnabled()) {
-                                syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                    ?.updateAllowSend(allowSend)?.let {
+                        if (appControl.isSyncControlEnabled()) {
+                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                ?.updateAllowSend(allowSend) {
+                                    it?.let {
                                         syncRuntimeInfo = it
                                     }
-                            }
+                                }
                         }
                     }
 
@@ -183,13 +179,13 @@ fun DeviceDetailContentView() {
                             !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive
                         },
                     ) { allowReceive ->
-                        scope.launch {
-                            if (appControl.isSyncControlEnabled()) {
-                                syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                                    ?.updateAllowReceive(allowReceive)?.let {
+                        if (appControl.isSyncControlEnabled()) {
+                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                                ?.updateAllowReceive(allowReceive) {
+                                    it?.let {
                                         syncRuntimeInfo = it
                                     }
-                            }
+                                }
                         }
                     }
                 }

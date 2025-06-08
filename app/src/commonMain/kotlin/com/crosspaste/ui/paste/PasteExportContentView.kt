@@ -26,7 +26,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,13 +65,10 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.FileUtils
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.MB
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.mainDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
@@ -82,7 +78,6 @@ fun PasteExportContentView() {
     val pasteExportService = koinInject<PasteExportService>()
     val pasteExportParamFactory = koinInject<PasteExportParamFactory>()
     val fileUtils = getFileUtils()
-    val coroutineScope = rememberCoroutineScope()
 
     // State for type filters
     var allTypesSelected by remember { mutableStateOf(true) }
@@ -183,7 +178,6 @@ fun PasteExportContentView() {
                         fileUtils = fileUtils,
                         pasteExportService = pasteExportService,
                         pasteExportParamFactory = pasteExportParamFactory,
-                        coroutineScope = coroutineScope,
                         onProgressChange = {
                             progress = it
                             // 1f means export finished
@@ -408,7 +402,6 @@ private fun handleExportClick(
     fileUtils: FileUtils,
     pasteExportService: PasteExportService,
     pasteExportParamFactory: PasteExportParamFactory,
-    coroutineScope: CoroutineScope,
     onProgressChange: (Float) -> Unit,
     onExportStart: () -> Unit,
 ) {
@@ -426,14 +419,11 @@ private fun handleExportClick(
                 exportPath = path,
             )
 
-        coroutineScope.launch(ioDispatcher) {
-            withContext(mainDispatcher) {
-                onExportStart()
-            }
-            pasteExportService.export(pasteExportParam) { progress ->
-                coroutineScope.launch(mainDispatcher) {
-                    onProgressChange(progress)
-                }
+        onExportStart()
+
+        pasteExportService.export(pasteExportParam) { progress ->
+            mainCoroutineDispatcher.launch {
+                onProgressChange(progress)
             }
         }
     }

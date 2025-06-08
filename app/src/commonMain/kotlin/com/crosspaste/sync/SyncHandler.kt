@@ -15,11 +15,20 @@ interface SyncHandler {
 
     suspend fun forceResolve()
 
-    suspend fun updateAllowSend(allowSend: Boolean): SyncRuntimeInfo?
+    fun updateAllowSend(
+        allowSend: Boolean,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    )
 
-    suspend fun updateAllowReceive(allowReceive: Boolean): SyncRuntimeInfo?
+    fun updateAllowReceive(
+        allowReceive: Boolean,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    )
 
-    suspend fun updateNoteName(noteName: String): SyncRuntimeInfo?
+    fun updateNoteName(
+        noteName: String,
+        callback: (SyncRuntimeInfo?) -> Unit,
+    )
 
     suspend fun tryDirectUpdateConnected()
 

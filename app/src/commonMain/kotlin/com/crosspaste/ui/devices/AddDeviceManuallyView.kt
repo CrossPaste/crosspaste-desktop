@@ -208,7 +208,7 @@ fun AddDeviceManuallyForm() {
                         is SuccessResult -> {
                             // add device
                             val syncInfo = result.getResult<SyncInfo>()
-                            syncManager.updateSyncInfo(syncInfo)
+                            syncManager.updateSyncInfo(syncInfo, refresh = true)
                             ip = ""
                             port = ""
                         }

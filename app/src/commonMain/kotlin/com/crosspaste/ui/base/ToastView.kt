@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppSize
@@ -55,6 +56,7 @@ fun ToastView(
         modifier =
             Modifier
                 .wrapContentSize()
+                .clip(tinyRoundedCornerShape)
                 .background(Color.Transparent)
                 .shadow(small),
     ) {
@@ -72,7 +74,8 @@ fun ToastView(
             )
         Column(
             modifier =
-                Modifier.background(background, shape = tinyRoundedCornerShape)
+                Modifier
+                    .background(background, shape = tinyRoundedCornerShape)
                     .padding(tiny)
                     .width(appSize.toastViewWidth),
         ) {

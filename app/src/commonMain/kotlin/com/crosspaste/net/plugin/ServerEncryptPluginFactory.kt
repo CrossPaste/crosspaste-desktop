@@ -11,6 +11,7 @@ import io.ktor.server.response.*
 import io.ktor.util.pipeline.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.io.readByteArray
 
@@ -47,7 +48,7 @@ class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
 object EncryptResponse :
     Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
 
-    private val ioCoroutineDispatcher = CoroutineScope(ioDispatcher)
+    private val ioCoroutineDispatcher = CoroutineScope(SupervisorJob() + ioDispatcher)
 
     private const val ENCRYPT_CHUNK_SIZE = 1024 * 256
 

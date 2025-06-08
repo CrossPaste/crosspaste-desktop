@@ -13,7 +13,13 @@ import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getCompressUtils
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okio.BufferedSink
 import okio.Path
 
@@ -30,7 +36,22 @@ class PasteExportService(
 
     private val fileUtils = getFileUtils()
 
+    private val ioCoroutineDispatcher = CoroutineScope(SupervisorJob() + ioDispatcher)
+
+    private val mutex = Mutex()
+
     fun export(
+        pasteExportParam: PasteExportParam,
+        updateProgress: (Float) -> Unit,
+    ) {
+        ioCoroutineDispatcher.launch {
+            mutex.withLock {
+                doExport(pasteExportParam, updateProgress)
+            }
+        }
+    }
+
+    private fun doExport(
         pasteExportParam: PasteExportParam,
         updateProgress: (Float) -> Unit,
     ) {

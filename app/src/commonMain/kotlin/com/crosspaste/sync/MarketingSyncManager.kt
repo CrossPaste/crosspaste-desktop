@@ -79,26 +79,26 @@ class MarketingSyncManager : SyncManager {
     override fun toVerify(appInstanceId: String) {
     }
 
-    override suspend fun resolveSyncs() {
-    }
-
-    override suspend fun resolveSync(id: String) {
-    }
-
     override fun trustByToken(
         appInstanceId: String,
         token: Int,
     ) {
     }
 
-    override fun refresh(ids: List<String>) {
+    override fun refresh(
+        ids: List<String>,
+        callback: () -> Unit,
+    ) {
     }
 
     override fun getSyncHandlers(): Map<String, SyncHandler> {
         return internalSyncHandlers
     }
 
-    override fun updateSyncInfo(syncInfo: SyncInfo) {
+    override fun updateSyncInfo(
+        syncInfo: SyncInfo,
+        refresh: Boolean,
+    ) {
     }
 
     override fun removeSyncHandler(id: String) {

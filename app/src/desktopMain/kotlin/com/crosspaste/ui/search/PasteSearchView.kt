@@ -20,7 +20,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -52,7 +51,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.ui.theme.DesktopAppUIColors
-import com.crosspaste.utils.mainDispatcher
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -71,8 +70,6 @@ fun CrossPasteSearchWindowContent() {
         appWindowManager.searchFocusRequester.requestFocus()
     }
 
-    val scope = rememberCoroutineScope()
-
     val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
     Theme {
@@ -86,7 +83,7 @@ fun CrossPasteSearchWindowContent() {
                     .onKeyEvent {
                         when (it.key) {
                             Key.Enter -> {
-                                scope.launch(mainDispatcher) {
+                                mainCoroutineDispatcher.launch {
                                     appWindowManager.setSearchCursorWait()
                                     pasteSelectionViewModel.toPaste()
                                     appWindowManager.resetSearchCursor()
@@ -187,7 +184,7 @@ fun CrossPasteSearchWindowContent() {
                             Row(
                                 modifier =
                                     Modifier.clickable {
-                                        scope.launch(mainDispatcher) {
+                                        mainCoroutineDispatcher.launch {
                                             appWindowManager.setSearchCursorWait()
                                             pasteSelectionViewModel.toPaste()
                                             appWindowManager.resetSearchCursor()

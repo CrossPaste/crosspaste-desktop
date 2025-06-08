@@ -5,7 +5,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.application
@@ -52,16 +51,14 @@ import com.crosspaste.ui.WindowsTrayView
 import com.crosspaste.ui.base.PasteContextMenuRepresentation
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
+import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.getAppEnvUtils
-import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.painterResource
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
@@ -150,9 +147,8 @@ class CrossPaste {
 
         private suspend fun exitCrossPasteApplication(
             exitMode: ExitMode,
-            scope: CoroutineScope,
             exitApplication: () -> Unit,
-        ) = withContext(scope.coroutineContext) {
+        ) {
             val koin = koinApplication.koin
             val appExitService = koin.get<AppExitService>()
             appExitService.beforeExitList.forEach {
@@ -243,8 +239,6 @@ class CrossPaste {
             val isLinux = platform.isLinux()
 
             application {
-                val ioScope = rememberCoroutineScope { ioDispatcher }
-
                 var exiting by remember { mutableStateOf(false) }
 
                 val exitApplication: (ExitMode) -> Unit = { mode ->
@@ -253,8 +247,8 @@ class CrossPaste {
                     }
                     exiting = true
                     appWindowManager.setShowSearchWindow(false)
-                    ioScope.launch {
-                        exitCrossPasteApplication(mode, ioScope) { exitApplication() }
+                    ioCoroutineDispatcher.launch {
+                        exitCrossPasteApplication(mode) { exitApplication() }
                     }
                 }
 

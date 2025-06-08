@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -60,8 +59,6 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -77,8 +74,6 @@ fun DeviceConnectContentView(
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
     val syncManager = koinInject<SyncManager>()
-
-    val scope = rememberCoroutineScope()
 
     var refresh by remember { mutableStateOf(false) }
 
@@ -151,20 +146,18 @@ fun DeviceConnectContentView(
                             if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
                                 syncManager.toVerify(syncRuntimeInfo.appInstanceId)
                             } else {
-                                scope.launch {
-                                    runCatching {
-                                        refresh = true
-                                        syncManager.resolveSync(syncRuntimeInfo.appInstanceId)
-                                        delay(1000)
-                                    }.onFailure { e ->
-                                        notificationManager.sendNotification(
-                                            title = { it.getText("refresh_connection_failed") },
-                                            message = e.message?.let { message -> { message } },
-                                            messageType = MessageType.Error,
-                                        )
-                                    }.apply {
+                                runCatching {
+                                    refresh = true
+                                    syncManager.refresh(listOf(syncRuntimeInfo.appInstanceId)) {
                                         refresh = false
                                     }
+                                }.onFailure { e ->
+                                    refresh = false
+                                    notificationManager.sendNotification(
+                                        title = { it.getText("refresh_connection_failed") },
+                                        message = e.message?.let { message -> { message } },
+                                        messageType = MessageType.Error,
+                                    )
                                 }
                             }
                         },

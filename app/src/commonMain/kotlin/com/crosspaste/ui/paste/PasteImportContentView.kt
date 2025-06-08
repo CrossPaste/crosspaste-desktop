@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,10 +31,6 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.mainDispatcher
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
@@ -48,8 +43,6 @@ fun PasteImportContentView() {
 
     var progressing by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
-
-    val coroutine = rememberCoroutineScope()
 
     Box(
         modifier =
@@ -88,18 +81,14 @@ fun PasteImportContentView() {
                     onClick = {
                         appFileChooser.openFileChooserToImport { path ->
                             val importParam = pasteImportParamFactory.createPasteImportParam(path)
+                            progress = 0f
+                            progressing = true
 
-                            coroutine.launch(ioDispatcher) {
-                                withContext(mainDispatcher) {
+                            pasteImportService.import(importParam) {
+                                progress = it
+                                if (progress == 1f || progress < 0f) {
+                                    progressing = false
                                     progress = 0f
-                                    progressing = true
-                                }
-                                pasteImportService.import(importParam) {
-                                    progress = it
-                                    if (progress == 1f || progress < 0f) {
-                                        progressing = false
-                                        progress = 0f
-                                    }
                                 }
                             }
                         }

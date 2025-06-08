@@ -13,6 +13,7 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.devices.DeviceVerifyView
+import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -21,8 +22,9 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
@@ -49,6 +52,8 @@ class GeneralSyncManager(
 ) : SyncManager {
 
     private val logger = KotlinLogging.logger {}
+
+    private val controlUtils = getControlUtils()
 
     private val _realTimeSyncRuntimeInfos = MutableStateFlow<List<SyncRuntimeInfo>>(listOf())
 
@@ -80,13 +85,9 @@ class GeneralSyncManager(
                     syncRuntimeInfo.appInstanceId to createSyncHandler(syncRuntimeInfo)
                 },
             )
-            withContext(mainDispatcher) {
-                _realTimeSyncRuntimeInfos.value = syncRuntimeInfos
-                nearbyDeviceManager.refresh()
-            }
-            withContext(ioDispatcher) {
-                resolveSyncs()
-            }
+            _realTimeSyncRuntimeInfos.value = syncRuntimeInfos
+            nearbyDeviceManager.updateSyncManager()
+            this@GeneralSyncManager.refresh()
             startCollectingSyncRuntimeInfosFlow()
         }
         startCollectingPasteDialog()
@@ -103,6 +104,8 @@ class GeneralSyncManager(
 
         pasteDialogJob?.cancel()
         pasteDialogJob = null
+
+        realTimeSyncScope.cancel()
     }
 
     private fun startCollectingSyncRuntimeInfosFlow() {
@@ -130,7 +133,7 @@ class GeneralSyncManager(
                             }.toSet()
                         }
                         if (newSet.isNotEmpty() || deleteSet.isNotEmpty()) {
-                            nearbyDeviceManager.refresh()
+                            nearbyDeviceManager.refreshSyncManager()
                         }
                     }
 
@@ -188,22 +191,47 @@ class GeneralSyncManager(
         _ignoreVerifySet.update { it - appInstanceId }
     }
 
-    override suspend fun resolveSyncs() {
-        coroutineScope {
-            getSyncHandlers().values.forEach { syncHandler ->
-                launch {
-                    doResolveSync(syncHandler)
+    private fun resolveSyncs(callback: () -> Unit) {
+        realTimeSyncScope.launch {
+            controlUtils.ensureMinExecutionTime(delayTime = 1000L) {
+                supervisorScope {
+                    val jobs =
+                        getSyncHandlers().values
+                            .map {
+                                async {
+                                    doResolveSync(it)
+                                }
+                            }
+                    jobs.awaitAll()
                 }
+            }
+
+            withContext(mainDispatcher) {
+                callback()
             }
         }
     }
 
-    override suspend fun resolveSync(id: String) {
-        coroutineScope {
-            getSyncHandler(id)?.let { syncHandler ->
-                launch {
-                    doResolveSync(syncHandler)
+    private fun resolveSyncs(
+        ids: List<String>,
+        callback: () -> Unit,
+    ) {
+        realTimeSyncScope.launch {
+            controlUtils.ensureMinExecutionTime(delayTime = 1000L) {
+                supervisorScope {
+                    val jobs =
+                        ids.mapNotNull { getSyncHandler(it) }
+                            .map {
+                                async {
+                                    doResolveSync(it)
+                                }
+                            }
+                    jobs.awaitAll()
                 }
+            }
+
+            withContext(mainDispatcher) {
+                callback()
             }
         }
     }
@@ -238,7 +266,10 @@ class GeneralSyncManager(
         }
     }
 
-    override fun updateSyncInfo(syncInfo: SyncInfo) {
+    override fun updateSyncInfo(
+        syncInfo: SyncInfo,
+        refresh: Boolean,
+    ) {
         realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
             val (changeType, syncRuntimeInfo) = syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
 
@@ -249,33 +280,30 @@ class GeneralSyncManager(
                     ?.setCurrentSyncRuntimeInfo(syncRuntimeInfo)
             }
 
-            if (changeType == ChangeType.NO_CHANGE ||
-                changeType == ChangeType.INFO_CHANGE
-            ) {
-                getSyncHandler(syncInfo.appInfo.appInstanceId)?.tryDirectUpdateConnected()
-            } else if (changeType == ChangeType.NET_CHANGE) {
-                refresh(listOf(syncRuntimeInfo.appInstanceId))
+            if (refresh) {
+                if (changeType == ChangeType.NO_CHANGE ||
+                    changeType == ChangeType.INFO_CHANGE
+                ) {
+                    getSyncHandler(syncInfo.appInfo.appInstanceId)?.tryDirectUpdateConnected()
+                } else if (changeType == ChangeType.NET_CHANGE) {
+                    refresh(listOf(syncRuntimeInfo.appInstanceId))
+                }
             }
         }
     }
 
-    override fun refresh(ids: List<String>) {
-        realTimeSyncScope.launch(CoroutineName("SyncManagerRefresh")) {
-            logger.info { "start launch" }
-            runCatching {
-                if (ids.isEmpty()) {
-                    resolveSyncs()
-                } else {
-                    ids.forEach { id ->
-                        resolveSync(id)
-                    }
-                }
-            }.onFailure { e ->
-                logger.error(e) { "checkConnects error" }
-            }.apply {
-                delay(1000)
-                logger.info { "set refreshing false" }
+    override fun refresh(
+        ids: List<String>,
+        callback: () -> Unit,
+    ) {
+        runCatching {
+            if (ids.isEmpty()) {
+                resolveSyncs(callback)
+            } else {
+                resolveSyncs(ids, callback)
             }
+        }.onFailure { e ->
+            logger.error(e) { "checkConnects error" }
         }
     }
 }
