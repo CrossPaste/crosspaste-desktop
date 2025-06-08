@@ -20,24 +20,14 @@ interface AppWindowManager {
         success: () -> Unit = {},
         fail: (Throwable) -> Unit = {},
     ) {
-        setMainCursorWait()
         scope.launch {
             val result = task()
             withContext(mainDispatcher) {
-                resetMainCursor()
                 result.onSuccess { success() }
                     .onFailure { fail(it) }
             }
         }
     }
-
-    fun setMainCursorWait()
-
-    fun resetMainCursor()
-
-    fun resetSearchCursor()
-
-    fun setSearchCursorWait()
 
     suspend fun toPaste()
 
