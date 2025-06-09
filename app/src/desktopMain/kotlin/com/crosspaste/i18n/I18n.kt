@@ -29,6 +29,8 @@ class DesktopGlobalCopywriter(
 
     companion object {
 
+        const val DE = "de"
+
         const val EN = "en"
 
         const val ES = "es"
@@ -39,7 +41,7 @@ class DesktopGlobalCopywriter(
 
         const val ZH = "zh"
 
-        val LANGUAGE_LIST = listOf(EN, ES, FA, JA, ZH)
+        val LANGUAGE_LIST = listOf(DE, EN, ES, FA, JA, ZH)
 
         val LANGUAGE_MAP = ConcurrentHashMap<String, Copywriter>()
     }
