@@ -4,18 +4,12 @@
 
 ```mermaid
 graph LR
-    A[v1.0.11<br/>当前版本] --> AA[v1.0.12]
-    AA --> AB[v1.0.13]
-    AB --> B[v1.1.0]
-    B --> C[v1.2.0]
-    C --> D[v1.3.0]
+    B[v1.2.0<br/>当前版本] --> C[v1.3.0]
+    C --> D[v1.4.0]
     D --> E[v2.0.0]
     E --> F[v3.0.0]
     F --> G[v4.0.0]
 
-    AA -.- AA1[支持 RTF 格式粘贴板]
-    AB -.- AB1[支持颜色数据粘贴板]
-    B -.- B1[支持移动端，实现与移动端共享粘贴板]
     C -.- C1[支持原生粘贴板，改进粘贴板性能]
     D -.- D1[支持命令行模式]
     E -.- E1[支持插件系统]
@@ -25,8 +19,8 @@ graph LR
     classDef current fill:#f9d5e5,stroke:#333,stroke-width:2px
     classDef minor fill:#eeac99,stroke:#333,stroke-width:2px
     classDef major fill:#e06377,stroke:#333,stroke-width:2px
-    class A current
-    class AA,AB,B,C,D minor
+    class B current
+    class C,D minor
     class E,F,G major
 ```
 
