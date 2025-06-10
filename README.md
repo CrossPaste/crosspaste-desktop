@@ -22,7 +22,7 @@
    [![Sqlite](https://img.shields.io/badge/Database-Sqlite-39477F?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
    ![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-2cbe4e)
-   [![Download](https://img.shields.io/badge/Download-v1.1.2-2cbe4e?logo=download&link=https://crosspaste.com/en/download)](https://crosspaste.com/en/download)
+   [![Download](https://img.shields.io/badge/Download-v1.2.0-2cbe4e?logo=download&link=https://crosspaste.com/en/download)](https://crosspaste.com/en/download)
    [![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-2cbe4e.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
    [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/CrossPaste/crosspaste-desktop)
 
@@ -80,13 +80,8 @@ Additionally, a series of technical [blogs](https://crosspaste.com/en/blog/intro
 ## 🗺️ Roadmap
 CrossPaste is continuously evolving! We plan to add more useful features in future versions. Here's an overview of our near-term development plans:
 
-**As seen in the changelog, recent versions have included numerous PRs focused on refactoring and labeled with "multiplatform". Indeed, we are actively working towards launching a mobile version. These efforts are laying the groundwork for mobile support. Therefore, before the mobile version is released, we will only be focusing on bug fixes and a limited number of already-planned new features.**
-
-- [x] **v1.0.12**: Support for RTF format in pasteboard
-- [x] **v1.0.13**: Support for color data in pasteboard
-- [x] **v1.1.0**: Support for mobile devices and shared pasteboard with mobile
-- [ ] **v1.2.0**: Support for native pasteboard, improve pasteboard performance
-- [ ] **v1.3.0**: Introduction of command-line mode
+- [ ] **v1.3.0**: Support for native pasteboard, improve pasteboard performance
+- [ ] **v1.4.0**: Introduction of command-line mode
 
 This is just a small part of our plans. Want to learn more details and long-term plans? Check out our [full roadmap](doc/en/Roadmap.md).
 

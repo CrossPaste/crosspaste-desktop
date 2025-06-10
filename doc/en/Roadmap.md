@@ -4,18 +4,12 @@ Below is our current project roadmap, outlining the planned features and version
 
 ```mermaid
 graph LR
-    A[v1.0.11<br/>Current] --> AA[v1.0.12]
-    AA --> AB[v1.0.13]
-    AB --> B[v1.1.0]
-    B --> C[v1.2.0]
-    C --> D[v1.3.0]
+    B[v1.2.0<br/>current] --> C[v1.3.0]
+    C --> D[v1.4.0]
     D --> E[v2.0.0]
     E --> F[v3.0.0]
     F --> G[v4.0.0]
 
-    AA -.- AA1[Support RTF format in clipboard]
-    AB -.- AB1[Support color data in clipboard]
-    B -.- B1[Support for mobile devices and shared clipboard with mobile]
     C -.- C1[Support native pasteboard, improve pasteboard performance]
     D -.- D1[Support command-line mode]
     E -.- E1[Support plugin system]
@@ -25,8 +19,8 @@ graph LR
     classDef current fill:#f9d5e5,stroke:#333,stroke-width:2px
     classDef minor fill:#eeac99,stroke:#333,stroke-width:2px
     classDef major fill:#e06377,stroke:#333,stroke-width:2px
-    class A current
-    class AA,AB,B,C,D minor
+    class B current
+    class C,D minor
     class E,F,G major
 ```
 
