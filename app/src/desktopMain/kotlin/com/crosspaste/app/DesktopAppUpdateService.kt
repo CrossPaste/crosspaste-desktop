@@ -5,6 +5,7 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.cpuDispatcher
+import dev.hydraulic.conveyor.control.SoftwareUpdateController
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
@@ -34,6 +35,8 @@ class DesktopAppUpdateService(
 ) : AppUpdateService {
 
     private val logger = KotlinLogging.logger {}
+
+    private val controller: SoftwareUpdateController? = SoftwareUpdateController.getInstance()
 
     private val coroutineScope = CoroutineScope(cpuDispatcher)
 
@@ -79,13 +82,23 @@ class DesktopAppUpdateService(
         checkUpdate?.cancel()
     }
 
-    override fun jumpDownload() {
+    override fun tryTriggerUpdate() {
         val last = lastVersion.value
         val current = currentVersion.value
         val nowExistNewVersion = last?.let { it > current } == true
 
         if (nowExistNewVersion) {
-            uiSupport.openCrossPasteWebInBrowser(path = "download")
+            controller?.let {
+                if (it.canTriggerUpdateCheckUI() == SoftwareUpdateController.Availability.AVAILABLE) {
+                    it.triggerUpdateCheckUI()
+                } else {
+                    logger.warn { "SoftwareUpdateController is not available for update check UI" }
+                    uiSupport.openCrossPasteWebInBrowser(path = "download")
+                }
+            } ?: run {
+                logger.warn { "SoftwareUpdateController is null, cannot trigger update check UI" }
+                uiSupport.openCrossPasteWebInBrowser(path = "download")
+            }
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("no_new_version_available") },

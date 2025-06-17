@@ -118,7 +118,7 @@ fun HomeMenuView(
                         null
                     },
             ) {
-                appUpdateService.jumpDownload()
+                appUpdateService.tryTriggerUpdate()
                 close()
             }
             MenuItem(

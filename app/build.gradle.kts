@@ -84,6 +84,7 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.compose.shimmer)
+            implementation(libs.conveyor.control)
             implementation(libs.guava)
             implementation(libs.icu4j)
             implementation(libs.imageio.core)
