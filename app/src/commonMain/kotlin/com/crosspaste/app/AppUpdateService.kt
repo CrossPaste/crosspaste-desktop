@@ -12,7 +12,7 @@ interface AppUpdateService {
 
     fun checkForUpdate()
 
-    fun jumpDownload()
+    fun tryTriggerUpdate()
 
     fun existNewVersion(): Flow<Boolean>
 

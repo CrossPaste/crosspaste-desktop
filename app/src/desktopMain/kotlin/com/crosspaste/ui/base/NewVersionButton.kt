@@ -33,7 +33,7 @@ fun NewVersionButton(modifier: Modifier = Modifier) {
                 .clip(tiny3XRoundedCornerShape)
                 .background(Color.Red)
                 .clickable {
-                    appUpdateService.jumpDownload()
+                    appUpdateService.tryTriggerUpdate()
                 }
                 .padding(horizontal = tiny3X),
         horizontalArrangement = Arrangement.Center,
