@@ -83,27 +83,38 @@ class DesktopAppUpdateService(
     }
 
     override fun tryTriggerUpdate() {
-        val last = lastVersion.value
-        val current = currentVersion.value
-        val nowExistNewVersion = last?.let { it > current } == true
+        val hasNewVersion = lastVersion.value?.let { it > currentVersion.value } ?: false
 
-        if (nowExistNewVersion) {
-            controller?.let {
-                if (it.canTriggerUpdateCheckUI() == SoftwareUpdateController.Availability.AVAILABLE) {
-                    it.triggerUpdateCheckUI()
-                } else {
-                    logger.warn { "SoftwareUpdateController is not available for update check UI" }
-                    uiSupport.openCrossPasteWebInBrowser(path = "download")
-                }
-            } ?: run {
-                logger.warn { "SoftwareUpdateController is null, cannot trigger update check UI" }
-                uiSupport.openCrossPasteWebInBrowser(path = "download")
-            }
-        } else {
+        if (!hasNewVersion) {
             notificationManager.sendNotification(
                 title = { it.getText("no_new_version_available") },
                 messageType = MessageType.Info,
             )
+            return
+        }
+
+        val updateTriggered = controller?.tryTriggerUpdateUI() ?: false
+
+        if (!updateTriggered) {
+            uiSupport.openCrossPasteWebInBrowser(path = "download")
+        }
+    }
+
+    private fun SoftwareUpdateController.tryTriggerUpdateUI(): Boolean {
+        return try {
+            when (canTriggerUpdateCheckUI()) {
+                SoftwareUpdateController.Availability.AVAILABLE -> {
+                    triggerUpdateCheckUI()
+                    true
+                }
+                else -> {
+                    logger.warn { "SoftwareUpdateController is not available, cannot trigger update check UI" }
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to trigger update check UI" }
+            false
         }
     }
 
