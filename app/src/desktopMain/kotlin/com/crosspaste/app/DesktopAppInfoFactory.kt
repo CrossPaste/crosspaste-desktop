@@ -1,13 +1,13 @@
 package com.crosspaste.app
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Paths
 import java.util.Properties
 
-class DesktopAppInfoFactory(private val configManager: ConfigManager) : AppInfoFactory {
+class DesktopAppInfoFactory(private val configManager: CommonConfigManager) : AppInfoFactory {
 
     private val logger = KotlinLogging.logger {}
 

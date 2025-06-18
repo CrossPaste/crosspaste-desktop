@@ -1,5 +1,6 @@
 package com.crosspaste.i18n
 
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
@@ -26,12 +27,13 @@ class GlobalCopywriterTest {
 
         val platform = DesktopPlatformProvider().getPlatform()
 
+        @Suppress("UNCHECKED_CAST")
         val configManager =
             DesktopConfigManager(
                 OneFilePersist(configPath),
                 DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
-            )
+            ) as CommonConfigManager
 
         configManager.updateConfig("language", "")
 

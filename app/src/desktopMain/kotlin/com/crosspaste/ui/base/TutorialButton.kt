@@ -24,7 +24,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.TextUnit
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
@@ -33,7 +33,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun TutorialButton() {
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val infiniteTransition = rememberInfiniteTransition()

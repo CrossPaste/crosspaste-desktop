@@ -6,14 +6,14 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.utils.getSystemProperty
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class DesktopCrossPasteLogger(
     override val logPath: String,
-    private val configManager: ConfigManager,
+    private val configManager: DesktopConfigManager,
 ) : CrossPasteLogger {
 
     override lateinit var logLevel: String

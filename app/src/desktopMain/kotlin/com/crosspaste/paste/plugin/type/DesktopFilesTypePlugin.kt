@@ -2,7 +2,7 @@ package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
@@ -26,7 +26,7 @@ import java.io.File
 
 class DesktopFilesTypePlugin(
     private val appInfo: AppInfo,
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
     private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : FilesTypePlugin {

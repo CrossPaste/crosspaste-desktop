@@ -1,9 +1,9 @@
 package com.crosspaste.app
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.utils.getFileUtils
 
-class DesktopAppControl(private val configManager: ConfigManager) : AppControl {
+class DesktopAppControl(private val configManager: CommonConfigManager) : AppControl {
 
     private val fileUtils = getFileUtils()
 

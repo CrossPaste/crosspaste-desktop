@@ -1,6 +1,6 @@
 package com.crosspaste.clean
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.task.TaskExecutor
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 class CleanScheduler(
     private val taskDao: TaskDao,
     private val taskExecutor: TaskExecutor,
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
 ) {
 
     private val logger = KotlinLogging.logger {}

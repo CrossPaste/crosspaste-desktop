@@ -1,7 +1,7 @@
 package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.item.PasteFiles
@@ -14,7 +14,7 @@ import okio.Path
 import okio.Path.Companion.toPath
 
 class UserDataPathProvider(
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
     private val platformUserDataPathProvider: PlatformUserDataPathProvider,
 ) : PathProvider {
 

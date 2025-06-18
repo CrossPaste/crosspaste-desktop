@@ -1,6 +1,6 @@
 package com.crosspaste.sound
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.ioDispatcher
@@ -16,7 +16,7 @@ import javax.sound.sampled.Clip
 import javax.sound.sampled.DataLine
 import kotlin.time.Duration.Companion.milliseconds
 
-class DesktopSoundService(private val configManager: ConfigManager) : SoundService {
+class DesktopSoundService(private val configManager: CommonConfigManager) : SoundService {
 
     private val logger = KotlinLogging.logger {}
 

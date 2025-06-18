@@ -2,7 +2,7 @@ package com.crosspaste.sync
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.getJsonUtils
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 class GeneralNearbyDeviceManager(
     private val appInfo: AppInfo,
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
     private val ratingPromptManager: RatingPromptManager,
     private val syncManager: SyncManager,
 ) : NearbyDeviceManager {

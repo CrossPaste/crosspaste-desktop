@@ -1,6 +1,6 @@
 package com.crosspaste.paste
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.PasteItem
@@ -19,7 +19,7 @@ interface PasteboardService : PasteboardMonitor {
 
     val pasteDao: PasteDao
 
-    val configManager: ConfigManager
+    val configManager: CommonConfigManager
 
     val pasteboardChannel: Channel<suspend () -> Result<Unit?>>
 

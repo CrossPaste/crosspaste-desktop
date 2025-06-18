@@ -2,7 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.macos.api.MacosApi
@@ -23,7 +23,7 @@ import java.awt.datatransfer.Transferable
 
 class MacosPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
-    override val configManager: ConfigManager,
+    override val configManager: CommonConfigManager,
     override val currentPaste: CurrentPaste,
     override val notificationManager: NotificationManager,
     override val pasteConsumer: TransferableConsumer,
