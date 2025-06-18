@@ -30,7 +30,7 @@ import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.AppSize
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.FileSelectionMode
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -59,7 +59,7 @@ import org.koin.compose.koinInject
 fun SetStoragePathView() {
     val appFileChooser = koinInject<AppFileChooser>()
     val appSize = koinInject<AppSize>()
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
     val desktopMigration = koinInject<DesktopMigration>()

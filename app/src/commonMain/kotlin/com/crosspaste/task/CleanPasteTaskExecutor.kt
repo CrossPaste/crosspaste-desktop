@@ -1,7 +1,7 @@
 package com.crosspaste.task
 
 import com.crosspaste.clean.CleanTime
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.db.task.BaseExtraInfo
@@ -19,7 +19,7 @@ import kotlinx.coroutines.sync.withLock
 
 class CleanPasteTaskExecutor(
     private val pasteDao: PasteDao,
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
 ) : SingleTypeTaskExecutor {
 
     private val logger: KLogger = KotlinLogging.logger {}

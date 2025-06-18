@@ -15,7 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.file
@@ -29,7 +29,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<CommonConfigManager>()
 
     val config by configManager.config.collectAsState()
 

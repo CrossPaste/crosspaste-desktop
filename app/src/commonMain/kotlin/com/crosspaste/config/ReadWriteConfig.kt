@@ -7,7 +7,7 @@ interface ReadWriteConfig<T> {
     fun setValue(value: T)
 }
 
-class ReadWritePort(private val configManager: ConfigManager) : ReadWriteConfig<Int> {
+class ReadWritePort(private val configManager: CommonConfigManager) : ReadWriteConfig<Int> {
 
     override fun getValue(): Int {
         return configManager.getCurrentConfig().port

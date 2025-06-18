@@ -4,7 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.ui.theme.ColorContrast
 import com.crosspaste.ui.theme.CrossPasteTheme
 import com.crosspaste.ui.theme.ThemeColor
@@ -13,7 +13,7 @@ import com.jthemedetecor.OsThemeDetector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class DesktopThemeDetector(private val configManager: ConfigManager) : ThemeDetector {
+class DesktopThemeDetector(private val configManager: CommonConfigManager) : ThemeDetector {
 
     private val detector = OsThemeDetector.getDetector()
 

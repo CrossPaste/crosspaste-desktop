@@ -21,7 +21,7 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.clean.CleanScheduler
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.listener.GlobalListener
@@ -117,7 +117,7 @@ class CrossPaste {
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<AppLaunchState>()
                 if (appLaunchState.acquireLock) {
-                    val configManager = koin.get<ConfigManager>()
+                    val configManager = koin.get<CommonConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()
                     configManager.notificationManager = notificationManager
                     if (configManager.getCurrentConfig().enablePasteboardListening) {

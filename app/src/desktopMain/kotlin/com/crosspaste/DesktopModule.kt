@@ -34,7 +34,8 @@ import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.clean.CleanScheduler
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.config.DesktopSimpleConfigFactory
 import com.crosspaste.config.DevConfig
 import com.crosspaste.config.ReadWriteConfig
@@ -227,7 +228,7 @@ import java.awt.image.BufferedImage
 class DesktopModule(
     private val appEnv: AppEnv,
     private val appPathProvider: AppPathProvider,
-    private val configManager: ConfigManager,
+    private val configManager: DesktopConfigManager,
     private val crossPasteLogger: CrossPasteLogger,
     private val deviceUtils: DeviceUtils,
     private val klogger: KLogger,
@@ -238,7 +239,7 @@ class DesktopModule(
 
     override fun appModule() =
         module {
-            single<AppControl> { DesktopAppControl(configManager) }
+            single<AppControl> { DesktopAppControl(get()) }
             single<AppEnv> { appEnv }
             single<AppExitService> { DesktopAppExitService }
             single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
@@ -251,10 +252,12 @@ class DesktopModule(
             single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get()) }
             single<AppUrls> { DesktopAppUrls }
             single<CacheManager> { DesktopCacheManager(get(), get()) }
-            single<ConfigManager> { configManager }
+            @Suppress("UNCHECKED_CAST")
+            single<CommonConfigManager> { configManager as CommonConfigManager }
             single<CrossPasteLogger> { crossPasteLogger }
             single<DesktopAppLaunch> { DesktopAppLaunch(get(), get()) }
             single<DesktopAppLaunchState> { runBlocking { get<DesktopAppLaunch>().launch() } }
+            single<DesktopConfigManager> { configManager }
             single<DeviceUtils> { deviceUtils }
             single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
             single<FileExtImageLoader> { DesktopFileExtLoader(get(), get(), get()) }

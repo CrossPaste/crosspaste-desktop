@@ -27,7 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
@@ -48,7 +48,7 @@ import org.koin.compose.koinInject
 @Composable
 fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val appSize = koinInject<AppSize>()
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<CommonConfigManager>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val netUtils = getNetUtils()

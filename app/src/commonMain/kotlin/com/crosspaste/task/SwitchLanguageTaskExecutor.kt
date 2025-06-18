@@ -1,6 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SwitchLanguageInfo
 import com.crosspaste.db.task.TaskType
@@ -13,7 +13,7 @@ import com.crosspaste.utils.TaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SwitchLanguageTaskExecutor(
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
     private val guidePasteDataService: GuidePasteDataService,
 ) : SingleTypeTaskExecutor {
 

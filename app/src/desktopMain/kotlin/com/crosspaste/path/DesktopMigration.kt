@@ -1,7 +1,7 @@
 package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -13,7 +13,7 @@ import okio.Path
 import okio.Path.Companion.DIRECTORY_SEPARATOR
 
 class DesktopMigration(
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
     private val driverFactory: DriverFactory,
     private val notificationManager: NotificationManager,
     private val userDataPathProvider: UserDataPathProvider,

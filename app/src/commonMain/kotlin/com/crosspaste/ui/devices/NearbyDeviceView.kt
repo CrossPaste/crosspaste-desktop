@@ -13,7 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppControl
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.NearbyDeviceManager
@@ -39,7 +39,7 @@ fun NearbyDeviceView(syncInfo: SyncInfo) {
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val deviceViewProvider = koinInject<DeviceViewProvider>()
     val syncManager = koinInject<SyncManager>()
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<CommonConfigManager>()
     val jsonUtils = getJsonUtils()
 
     val config by configManager.config.collectAsState()

@@ -4,19 +4,21 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.utils.DeviceUtils
 import kotlinx.coroutines.flow.StateFlow
 
-interface ConfigManager {
+typealias CommonConfigManager = ConfigManager<AppConfig>
+
+interface ConfigManager<T : AppConfig> {
 
     val deviceUtils: DeviceUtils
 
-    val config: StateFlow<AppConfig>
+    val config: StateFlow<T>
 
     var notificationManager: NotificationManager?
 
-    fun getCurrentConfig(): AppConfig {
+    fun getCurrentConfig(): T {
         return config.value
     }
 
-    fun loadConfig(): AppConfig?
+    fun loadConfig(): T?
 
     fun updateConfig(
         key: String,
@@ -35,6 +37,6 @@ interface ConfigManager {
     fun saveConfig(
         key: String,
         value: Any,
-        config: AppConfig,
+        config: T,
     )
 }

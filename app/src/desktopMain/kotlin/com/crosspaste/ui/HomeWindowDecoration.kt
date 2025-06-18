@@ -34,7 +34,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.NewVersionButton
@@ -61,7 +61,7 @@ fun HomeWindowDecoration() {
     val appLaunchState = koinInject<AppLaunchState>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appUpdateService = koinInject<AppUpdateService>()
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     val scope = rememberCoroutineScope()

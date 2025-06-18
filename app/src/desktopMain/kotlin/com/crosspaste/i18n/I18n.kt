@@ -3,7 +3,7 @@ package com.crosspaste.i18n
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.task.SwitchLanguageInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
@@ -22,7 +22,7 @@ import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 
 class DesktopGlobalCopywriter(
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
     private val taskDao: TaskDao,
 ) : GlobalCopywriter {

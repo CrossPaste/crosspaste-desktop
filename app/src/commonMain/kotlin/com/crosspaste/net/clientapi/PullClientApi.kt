@@ -1,6 +1,6 @@
 package com.crosspaste.net.clientapi
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.PasteClient
@@ -14,7 +14,7 @@ import io.ktor.utils.io.*
 
 class PullClientApi(
     private val pasteClient: PasteClient,
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
 ) {
 
     private val logger = KotlinLogging.logger {}

@@ -38,7 +38,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppSize
 import com.crosspaste.clean.CleanTime
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CustomTextSwitch
@@ -79,7 +79,7 @@ import org.koin.compose.koinInject
 fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val density = LocalDensity.current
     val appSize = koinInject<AppSize>()
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<CommonConfigManager>()
     val pasteDao = koinInject<PasteDao>()
     val copywriter = koinInject<GlobalCopywriter>()
 

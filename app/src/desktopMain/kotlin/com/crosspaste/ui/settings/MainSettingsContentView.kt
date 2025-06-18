@@ -8,7 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppControl
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.base.HighlightedCard
@@ -28,7 +28,7 @@ import org.koin.compose.koinInject
 @Composable
 fun MainSettingsContentView() {
     val appControl = koinInject<AppControl>()
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<DesktopConfigManager>()
     val crossPasteLogger = koinInject<CrossPasteLogger>()
     val pasteboardService = koinInject<PasteboardService>()
     val settingsViewProvider = koinInject<SettingsViewProvider>()

@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import com.crosspaste.app.AppFileChooser
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteType.Companion.COLOR_TYPE
 import com.crosspaste.db.paste.PasteType.Companion.FILE_TYPE
 import com.crosspaste.db.paste.PasteType.Companion.HTML_TYPE
@@ -74,7 +74,7 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteExportContentView() {
     val appFileChooser = koinInject<AppFileChooser>()
-    val configManager = koinInject<ConfigManager>()
+    val configManager = koinInject<CommonConfigManager>()
     val pasteExportService = koinInject<PasteExportService>()
     val pasteExportParamFactory = koinInject<PasteExportParamFactory>()
     val fileUtils = getFileUtils()

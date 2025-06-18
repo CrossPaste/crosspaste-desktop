@@ -12,9 +12,9 @@ class DesktopConfigManager(
     private val configFilePersist: OneFilePersist,
     override val deviceUtils: DeviceUtils,
     private val localeUtils: LocaleUtils,
-) : ConfigManager {
+) : ConfigManager<DesktopAppConfig> {
 
-    private val _config: MutableStateFlow<AppConfig> =
+    private val _config: MutableStateFlow<DesktopAppConfig> =
         MutableStateFlow(
             runCatching {
                 loadConfig() ?: createDefaultAppConfig()
@@ -23,16 +23,16 @@ class DesktopConfigManager(
             },
         )
 
-    override val config: StateFlow<AppConfig> = _config
+    override val config: StateFlow<DesktopAppConfig> = _config
 
     override var notificationManager: NotificationManager? = null
 
-    override fun loadConfig(): AppConfig? {
-        return configFilePersist.read(AppConfig::class)
+    override fun loadConfig(): DesktopAppConfig? {
+        return configFilePersist.read(DesktopAppConfig::class)
     }
 
-    private fun createDefaultAppConfig(): AppConfig {
-        return AppConfig(
+    private fun createDefaultAppConfig(): DesktopAppConfig {
+        return DesktopAppConfig(
             appInstanceId = deviceUtils.createAppInstanceId(),
             language = localeUtils.getLanguage(),
         )
@@ -61,7 +61,7 @@ class DesktopConfigManager(
     override fun saveConfig(
         key: String,
         value: Any,
-        config: AppConfig,
+        config: DesktopAppConfig,
     ) {
         configFilePersist.save(config)
     }

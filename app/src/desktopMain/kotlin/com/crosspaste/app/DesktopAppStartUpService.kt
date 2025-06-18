@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
@@ -14,7 +14,7 @@ import java.io.InputStreamReader
 class DesktopAppStartUpService(
     appLaunchState: DesktopAppLaunchState,
     appPathProvider: AppPathProvider,
-    configManager: ConfigManager,
+    configManager: DesktopConfigManager,
     platform: Platform,
 ) : AppStartUpService {
 
@@ -61,7 +61,7 @@ class DesktopAppStartUpService(
 }
 
 class MacAppStartUpService(
-    private val configManager: ConfigManager,
+    private val configManager: DesktopConfigManager,
     private val appPathProvider: AppPathProvider,
 ) : AppStartUpService {
 
@@ -133,7 +133,7 @@ class MacAppStartUpService(
 class WindowsAppStartUpService(
     appLaunchState: DesktopAppLaunchState,
     appPathProvider: AppPathProvider,
-    private val configManager: ConfigManager,
+    private val configManager: DesktopConfigManager,
 ) : AppStartUpService {
 
     companion object {
@@ -270,7 +270,7 @@ class WindowsAppStartUpService(
 
 class LinuxAppStartUpService(
     private val appPathProvider: AppPathProvider,
-    private val configManager: ConfigManager,
+    private val configManager: DesktopConfigManager,
 ) : AppStartUpService {
 
     private val logger: KLogger = KotlinLogging.logger {}

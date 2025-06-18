@@ -2,7 +2,7 @@ package com.crosspaste.listen
 
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.config.ConfigManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.HIDE_WINDOW
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 class DesktopShortKeysAction(
     private val appFileChooser: AppFileChooser,
     private val appWindowManager: DesktopAppWindowManager,
-    private val configManager: ConfigManager,
+    private val configManager: CommonConfigManager,
     private val currentPaste: CurrentPaste,
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
