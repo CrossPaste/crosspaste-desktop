@@ -1,8 +1,11 @@
 package com.crosspaste.listen
 
+import androidx.compose.ui.window.WindowState
 import java.awt.GraphicsDevice
 
 interface ActiveGraphicsDevice {
 
-    fun getGraphicsDevice(): GraphicsDevice?
+    fun getGraphicsDevice(): GraphicsDevice
+
+    fun getSearchWindowState(): WindowState
 }

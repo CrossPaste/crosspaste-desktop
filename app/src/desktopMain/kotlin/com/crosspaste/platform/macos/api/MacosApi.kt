@@ -66,6 +66,8 @@ interface MacosApi : Library {
         count: Int,
     )
 
+    fun setWindowLevelScreenSaver(windowPtr: Pointer?)
+
     fun bringToFront(windowTitle: String): Pointer
 
     fun simulatePasteCommand(

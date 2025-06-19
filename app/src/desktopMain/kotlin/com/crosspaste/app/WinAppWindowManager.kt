@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -18,10 +18,11 @@ import kotlinx.coroutines.launch
 
 class WinAppWindowManager(
     appSize: DesktopAppSize,
+    configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager(appSize) {
+) : DesktopAppWindowManager(appSize, configManager) {
 
     private var prevWinAppInfo: MutableStateFlow<WinAppInfo?> = MutableStateFlow(null)
 
@@ -105,14 +106,7 @@ class WinAppWindowManager(
             prevWinAppInfo.value = it.first
         }
 
-        activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
-            setSearchWindowState(
-                WindowState(
-                    size = appSize.searchWindowSize,
-                    position = calPosition(graphicsDevice.defaultConfiguration.bounds),
-                ),
-            )
-        }
+        setSearchWindowState(appSize.getSearchWindowState())
         setShowSearchWindow(true)
 
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus

@@ -1,12 +1,11 @@
 package com.crosspaste.app
 
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
@@ -14,7 +13,6 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.PastePreview
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
-import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -24,11 +22,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.awt.Rectangle
 
 fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
     activeGraphicsDevice: ActiveGraphicsDevice,
+    configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     platform: Platform,
     userDataPathProvider: UserDataPathProvider,
@@ -36,6 +34,7 @@ fun getDesktopAppWindowManager(
     return if (platform.isMacos()) {
         MacAppWindowManager(
             appSize,
+            configManager,
             lazyShortcutKeys,
             activeGraphicsDevice,
             userDataPathProvider,
@@ -43,6 +42,7 @@ fun getDesktopAppWindowManager(
     } else if (platform.isWindows()) {
         WinAppWindowManager(
             appSize,
+            configManager,
             lazyShortcutKeys,
             activeGraphicsDevice,
             userDataPathProvider,
@@ -50,6 +50,7 @@ fun getDesktopAppWindowManager(
     } else if (platform.isLinux()) {
         LinuxAppWindowManager(
             appSize,
+            configManager,
             lazyShortcutKeys,
             activeGraphicsDevice,
             userDataPathProvider,
@@ -61,6 +62,7 @@ fun getDesktopAppWindowManager(
 
 abstract class DesktopAppWindowManager(
     val appSize: DesktopAppSize,
+    val configManager: DesktopConfigManager,
 ) : AppWindowManager {
 
     companion object {
@@ -104,26 +106,13 @@ abstract class DesktopAppWindowManager(
 
     private val _searchWindowState =
         MutableStateFlow(
-            WindowState(
-                placement = WindowPlacement.Floating,
-                position = WindowPosition.Aligned(Alignment.Center),
-                size = appSize.searchWindowSize,
-            ),
+            appSize.getSearchWindowState(),
         )
     val searchWindowState: StateFlow<WindowState> = _searchWindowState
 
     var searchComposeWindow: ComposeWindow? = null
 
     val searchFocusRequester = FocusRequester()
-
-    protected val calPosition: (Rectangle) -> WindowPosition =
-        Memoize.memoize { bounds ->
-            val windowSize = appSize.searchWindowSize
-            WindowPosition(
-                x = (bounds.x.dp + ((bounds.width.dp - windowSize.width) / 2)),
-                y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
-            )
-        }
 
     fun setShowMainWindow(showMainWindow: Boolean) {
         _showMainWindow.value = showMainWindow

@@ -20,7 +20,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
 @Composable
-fun CrossPasteMainWindow(
+fun MainWindow(
     exitApplication: (ExitMode) -> Unit,
     windowIcon: Painter?,
 ) {

@@ -1,4 +1,4 @@
-package com.crosspaste.ui.search
+package com.crosspaste.ui.search.center
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize

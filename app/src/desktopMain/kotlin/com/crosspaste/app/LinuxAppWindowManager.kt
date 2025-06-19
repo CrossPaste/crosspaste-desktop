@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -15,10 +15,11 @@ import kotlinx.coroutines.launch
 
 class LinuxAppWindowManager(
     appSize: DesktopAppSize,
+    configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager(appSize) {
+) : DesktopAppWindowManager(appSize, configManager) {
 
     private val prevLinuxAppInfo: MutableStateFlow<LinuxAppInfo?> = MutableStateFlow(null)
 
@@ -79,14 +80,7 @@ class LinuxAppWindowManager(
         logger.info { "active search window" }
         setShowSearchWindow(true)
 
-        activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
-            setSearchWindowState(
-                WindowState(
-                    size = appSize.searchWindowSize,
-                    position = calPosition(graphicsDevice.defaultConfiguration.bounds),
-                ),
-            )
-        }
+        setSearchWindowState(appSize.getSearchWindowState())
 
         prevLinuxAppInfo.value = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
 

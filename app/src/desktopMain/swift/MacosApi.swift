@@ -305,6 +305,18 @@ private func hideWindowAndActivateApp(hideTitle: String, appName: String) {
     }
 }
 
+@_cdecl("setWindowLevelScreenSaver")
+public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
+    guard let rawPtr = rawPtr else { return }
+
+    DispatchQueue.main.async {
+        let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+        let screenSaverLevel = CGWindowLevelForKey(.screenSaverWindow)
+        window.level = NSWindow.Level(rawValue: Int(screenSaverLevel))
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    }
+}
+
 @_cdecl("bringToFront")
 public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
 

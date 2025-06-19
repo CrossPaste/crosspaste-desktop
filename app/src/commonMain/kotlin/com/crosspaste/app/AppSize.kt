@@ -11,10 +11,6 @@ interface AppSize {
 
     val qrCodeSize: DpSize
 
-    val searchWindowSize: DpSize
-
-    val searchWindowDetailViewDpSize: DpSize
-
     val deviceHeight: Dp
 
     val settingsItemHeight: Dp

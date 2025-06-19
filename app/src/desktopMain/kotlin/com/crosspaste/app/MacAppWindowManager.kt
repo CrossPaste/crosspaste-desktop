@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
@@ -15,10 +15,11 @@ import kotlinx.coroutines.launch
 
 class MacAppWindowManager(
     appSize: DesktopAppSize,
+    configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager(appSize) {
+) : DesktopAppWindowManager(appSize, configManager) {
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 
@@ -107,14 +108,7 @@ class MacAppWindowManager(
         logger.info { "active search window" }
         setShowSearchWindow(true)
 
-        activeGraphicsDevice.getGraphicsDevice()?.let { graphicsDevice ->
-            setSearchWindowState(
-                WindowState(
-                    size = appSize.searchWindowSize,
-                    position = calPosition(graphicsDevice.defaultConfiguration.bounds),
-                ),
-            )
-        }
+        setSearchWindowState(appSize.getSearchWindowState())
 
         MacAppUtils.bringToFront(SEARCH_WINDOW_TITLE).let {
             createMacAppInfo(it)?.let { macAppInfo ->
