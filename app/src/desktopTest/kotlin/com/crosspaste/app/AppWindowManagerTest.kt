@@ -1,10 +1,13 @@
 package com.crosspaste.app
 
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
+import io.mockk.every
+import io.mockk.spyk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okio.Path.Companion.toOkioPath
@@ -31,6 +34,11 @@ class AppWindowManagerTest {
                 DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
             )
+
+        val mockDesktopAppSize = spyk(DesktopAppSize(desktopConfigManager))
+
+        every { mockDesktopAppSize.getSearchWindowState() } returns WindowState()
+
         val testAppWindowManager =
             TestWindowManager(
                 DesktopAppSize(desktopConfigManager),

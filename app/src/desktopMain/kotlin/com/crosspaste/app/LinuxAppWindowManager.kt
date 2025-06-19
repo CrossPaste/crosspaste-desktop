@@ -80,7 +80,7 @@ class LinuxAppWindowManager(
         logger.info { "active search window" }
         setShowSearchWindow(true)
 
-        setSearchWindowState(appSize.getSearchWindowState(activeGraphicsDevice.getGraphicsDevice()))
+        setSearchWindowState(appSize.getSearchWindowState())
 
         prevLinuxAppInfo.value = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
 

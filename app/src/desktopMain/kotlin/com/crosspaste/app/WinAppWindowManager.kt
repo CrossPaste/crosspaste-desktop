@@ -106,7 +106,7 @@ class WinAppWindowManager(
             prevWinAppInfo.value = it.first
         }
 
-        setSearchWindowState(appSize.getSearchWindowState(activeGraphicsDevice.getGraphicsDevice()))
+        setSearchWindowState(appSize.getSearchWindowState())
         setShowSearchWindow(true)
 
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus

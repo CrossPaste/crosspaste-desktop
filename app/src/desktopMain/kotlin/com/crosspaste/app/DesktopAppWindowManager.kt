@@ -106,7 +106,7 @@ abstract class DesktopAppWindowManager(
 
     private val _searchWindowState =
         MutableStateFlow(
-            appSize.getSearchWindowState(appSize.getGraphicsDevice()),
+            appSize.getSearchWindowState(),
         )
     val searchWindowState: StateFlow<WindowState> = _searchWindowState
 

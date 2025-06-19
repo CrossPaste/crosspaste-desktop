@@ -108,7 +108,7 @@ class MacAppWindowManager(
         logger.info { "active search window" }
         setShowSearchWindow(true)
 
-        setSearchWindowState(appSize.getSearchWindowState(activeGraphicsDevice.getGraphicsDevice()))
+        setSearchWindowState(appSize.getSearchWindowState())
 
         MacAppUtils.bringToFront(SEARCH_WINDOW_TITLE).let {
             createMacAppInfo(it)?.let { macAppInfo ->

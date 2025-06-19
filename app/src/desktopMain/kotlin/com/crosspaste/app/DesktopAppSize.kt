@@ -143,7 +143,8 @@ class DesktopAppSize(
         } ?: ge.defaultScreenDevice
     }
 
-    override fun getSearchWindowState(graphicsDevice: GraphicsDevice): WindowState {
+    override fun getSearchWindowState(): WindowState {
+        val graphicsDevice = getGraphicsDevice()
         val bounds = graphicsDevice.defaultConfiguration.bounds
         return if (configManager.config.value.searchWindowStyle ==
             DesktopSearchWindowStyle.CENTER_STYLE.style
