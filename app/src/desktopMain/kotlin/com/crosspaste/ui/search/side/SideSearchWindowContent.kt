@@ -1,4 +1,4 @@
-package com.crosspaste.ui.search.docker
+package com.crosspaste.ui.search.side
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,7 +18,7 @@ import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 @Composable
-fun DockerSearchWindowContent() {
+fun SideSearchWindowContent() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val logger = koinInject<KLogger>()

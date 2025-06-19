@@ -42,7 +42,7 @@ class DesktopAppSize(
 
     val centerSearchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
 
-    val dockerSearchWindowHeight: Dp = 330.dp
+    val sideSearchWindowHeight: Dp = 330.dp
 
     val searchListViewSize: DpSize = DpSize(width = 280.dp, height = 420.dp)
 
@@ -159,9 +159,9 @@ class DesktopAppSize(
                 position =
                     WindowPosition(
                         x = bounds.x.dp,
-                        y = bounds.y.dp + bounds.height.dp - dockerSearchWindowHeight,
+                        y = bounds.y.dp + bounds.height.dp - sideSearchWindowHeight,
                     ),
-                size = DpSize(width = bounds.width.dp, height = dockerSearchWindowHeight),
+                size = DpSize(width = bounds.width.dp, height = sideSearchWindowHeight),
             )
         }
     }

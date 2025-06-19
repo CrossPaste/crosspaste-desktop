@@ -20,7 +20,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.ui.search.center.CenterSearchWindowContent
-import com.crosspaste.ui.search.docker.DockerSearchWindowContent
+import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.sun.jna.Pointer
 import java.awt.event.WindowAdapter
@@ -31,10 +31,13 @@ fun ApplicationScope.SearchWindow(windowIcon: Painter?) {
     val configManager = koinApplication.koin.get<DesktopConfigManager>()
     val config by configManager.config.collectAsState()
 
-    if (config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style) {
-        SearchWindowCentreStyle(windowIcon)
-    } else {
-        SearchWindowDockerStyle(windowIcon)
+    when (config.searchWindowStyle) {
+        DesktopSearchWindowStyle.CENTER_STYLE.style -> {
+            SearchWindowCentreStyle(windowIcon)
+        }
+        else -> {
+            SearchWindowSideStyle(windowIcon)
+        }
     }
 }
 
@@ -80,7 +83,7 @@ private fun ApplicationScope.SearchWindowCentreStyle(windowIcon: Painter?) {
 }
 
 @Composable
-private fun ApplicationScope.SearchWindowDockerStyle(windowIcon: Painter?) {
+private fun ApplicationScope.SearchWindowSideStyle(windowIcon: Painter?) {
     val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
     val platform = koinApplication.koin.get<Platform>()
 
@@ -151,6 +154,6 @@ private fun ApplicationScope.SearchWindowDockerStyle(windowIcon: Painter?) {
             }
         }
 
-        DockerSearchWindowContent()
+        SideSearchWindowContent()
     }
 }
