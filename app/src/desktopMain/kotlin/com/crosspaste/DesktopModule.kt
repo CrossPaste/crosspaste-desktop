@@ -63,7 +63,6 @@ import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopGlobalListener
-import com.crosspaste.listen.DesktopMouseListener
 import com.crosspaste.listen.DesktopShortKeysAction
 import com.crosspaste.listen.DesktopShortcutKeys
 import com.crosspaste.listen.DesktopShortcutKeysListener
@@ -466,16 +465,15 @@ class DesktopModule(
     // UIModule.kt
     override fun uiModule() =
         module {
-            single<ActiveGraphicsDevice> { get<DesktopMouseListener>() }
+            single<ActiveGraphicsDevice> { get<DesktopAppSize>() }
             single<AppFileChooser> { DesktopAppFileChooser(get()) }
-            single<AppSize> { DesktopAppSize }
+            single<AppSize> { get<DesktopAppSize>() }
             single<AppTokenApi> { DesktopAppTokenService(get()) }
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
-            single<DesktopAppSize> { DesktopAppSize }
+            single<DesktopAppSize> { DesktopAppSize(get()) }
             single<DesktopAppWindowManager> {
-                getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
+                getDesktopAppWindowManager(get(), get(), get(), lazy { get() }, get(), get())
             }
-            single<DesktopMouseListener> { DesktopMouseListener }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
@@ -484,7 +482,7 @@ class DesktopModule(
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
             single<IconStyle> { DesktopIconStyle(get()) }
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
-            single<NativeMouseListener> { get<DesktopMouseListener>() }
+            single<NativeMouseListener> { get<DesktopAppSize>() }
             single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get(), get()) }
             single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PasteDialogFactory> { DesktopPasteDialogFactory() }

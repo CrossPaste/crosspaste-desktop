@@ -1,4 +1,4 @@
-package com.crosspaste.ui.search
+package com.crosspaste.ui.search.center
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -57,7 +57,7 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun CrossPasteSearchWindowContent() {
+fun CenterSearchWindowContent() {
     val appInfo = koinInject<AppInfo>()
     val appSize = koinInject<DesktopAppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -78,7 +78,7 @@ fun CrossPasteSearchWindowContent() {
                 Modifier
                     .background(Color.Transparent)
                     .clip(appSize.appRoundedCornerShape)
-                    .size(appSize.searchWindowSize)
+                    .size(appSize.centerSearchWindowSize)
                     .padding(small3X)
                     .onKeyEvent {
                         when (it.key) {
@@ -119,7 +119,7 @@ fun CrossPasteSearchWindowContent() {
                 modifier =
                     Modifier
                         .shadow(tiny2X, small3XRoundedCornerShape)
-                        .size(appSize.searchWindowContentSize)
+                        .size(appSize.centerSearchWindowContentSize)
                         .background(DesktopAppUIColors.searchBackground)
                         .border(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), small3XRoundedCornerShape),
                 contentAlignment = Alignment.Center,
@@ -127,7 +127,7 @@ fun CrossPasteSearchWindowContent() {
                 Column {
                     SearchInputView(requestFocus)
 
-                    Row(modifier = Modifier.size(appSize.searchCoreContentSize)) {
+                    Row(modifier = Modifier.size(appSize.centerSearchCoreContentSize)) {
                         SearchListView {
                             pasteSelectionViewModel.setSelectedIndex(it)
                             requestFocus()

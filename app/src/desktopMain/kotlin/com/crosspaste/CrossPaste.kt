@@ -41,12 +41,12 @@ import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
-import com.crosspaste.ui.CrossPasteMainWindow
-import com.crosspaste.ui.CrossPasteSearchWindow
 import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
 import com.crosspaste.ui.LinuxTrayView
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.MacTrayView
+import com.crosspaste.ui.MainWindow
+import com.crosspaste.ui.SearchWindow
 import com.crosspaste.ui.WindowsTrayView
 import com.crosspaste.ui.base.PasteContextMenuRepresentation
 import com.crosspaste.utils.DesktopDeviceUtils
@@ -278,9 +278,9 @@ class CrossPaste {
                             }
                         }
 
-                        CrossPasteMainWindow(exitApplication, windowIcon)
+                        MainWindow(exitApplication, windowIcon)
 
-                        CrossPasteSearchWindow(windowIcon)
+                        SearchWindow(windowIcon)
                     } else {
                         GrantAccessibilityPermissionsWindow(windowIcon)
                     }

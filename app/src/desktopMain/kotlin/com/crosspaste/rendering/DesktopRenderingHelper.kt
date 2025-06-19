@@ -1,12 +1,12 @@
 package com.crosspaste.rendering
 
 import androidx.compose.ui.unit.Density
-import com.crosspaste.app.AppSize
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.ui.theme.AppUISize.large2X
 import java.awt.GraphicsConfiguration
 import java.awt.GraphicsEnvironment
 
-class DesktopRenderingHelper(private val appSize: AppSize) : RenderingHelper {
+class DesktopRenderingHelper(private val appSize: DesktopAppSize) : RenderingHelper {
 
     private val globalDensity =
         GraphicsEnvironment.getLocalGraphicsEnvironment()
@@ -30,7 +30,7 @@ class DesktopRenderingHelper(private val appSize: AppSize) : RenderingHelper {
     }
 
     private fun readWindowDimension(): RenderingDimension {
-        val detailViewDpSize = appSize.searchWindowDetailViewDpSize
+        val detailViewDpSize = appSize.centerSearchWindowDetailViewDpSize
         val htmlWidthValue = detailViewDpSize.width - large2X
         val htmlHeightValue = detailViewDpSize.height - large2X
         val width: Int = htmlWidthValue.value.toInt()

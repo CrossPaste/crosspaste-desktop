@@ -1,6 +1,8 @@
 package com.crosspaste.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButtonColors
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
@@ -54,6 +56,16 @@ object AppUIColors {
     val pasteShimmerColor: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.secondaryContainer
+
+    val segmentedButtonColors: SegmentedButtonColors
+        @Composable
+        get() =
+            SegmentedButtonDefaults.colors(
+                activeContainerColor = MaterialTheme.colorScheme.primary,
+                activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+            )
 
     val selectedColor: Color
         @Composable @ReadOnlyComposable

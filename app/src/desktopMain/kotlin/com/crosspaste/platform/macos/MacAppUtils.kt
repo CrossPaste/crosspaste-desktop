@@ -43,6 +43,10 @@ object MacAppUtils {
         INSTANCE.searchToBackAndPaste(appName, array, count)
     }
 
+    fun setWindowLevelScreenSaver(windowPtr: Pointer?) {
+        INSTANCE.setWindowLevelScreenSaver(windowPtr)
+    }
+
     fun bringToFront(appName: String): String {
         return MacosApi.getString(INSTANCE.bringToFront(appName))!!
     }
