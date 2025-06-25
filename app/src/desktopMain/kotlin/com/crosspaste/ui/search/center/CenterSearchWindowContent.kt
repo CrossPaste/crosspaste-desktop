@@ -18,6 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,6 +32,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.app.AppInfo
@@ -52,6 +55,7 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -66,11 +70,28 @@ fun CenterSearchWindowContent() {
 
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
-    val requestFocus: () -> Unit = {
-        appWindowManager.searchFocusRequester.requestFocus()
+    val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
+
+    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(showSearchWindow) {
+        appWindowManager.searchComposeWindow?.let {
+            if (showSearchWindow) {
+                it.toFront()
+                it.requestFocus()
+                delay(160)
+                pasteSelectionViewModel.requestSearchInputFocus()
+            }
+        }
     }
 
-    val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
+    DisposableEffect(Unit) {
+        onDispose {
+            focusManager.clearFocus()
+        }
+    }
 
     Theme {
         Box(
@@ -89,22 +110,22 @@ fun CenterSearchWindowContent() {
                                 true
                             }
                             Key.DirectionUp -> {
-                                pasteSelectionViewModel.upSelectedIndex()
+                                pasteSelectionViewModel.selectPrev()
                                 true
                             }
                             Key.DirectionDown -> {
-                                pasteSelectionViewModel.downSelectedIndex()
+                                pasteSelectionViewModel.selectNext()
                                 true
                             }
                             Key.N -> {
                                 if (it.isCtrlPressed) {
-                                    pasteSelectionViewModel.downSelectedIndex()
+                                    pasteSelectionViewModel.selectNext()
                                 }
                                 true
                             }
                             Key.P -> {
                                 if (it.isCtrlPressed) {
-                                    pasteSelectionViewModel.upSelectedIndex()
+                                    pasteSelectionViewModel.selectPrev()
                                 }
                                 true
                             }
@@ -125,12 +146,11 @@ fun CenterSearchWindowContent() {
                 contentAlignment = Alignment.Center,
             ) {
                 Column {
-                    SearchInputView(requestFocus)
+                    SearchInputView()
 
                     Row(modifier = Modifier.size(appSize.centerSearchCoreContentSize)) {
                         SearchListView {
-                            pasteSelectionViewModel.setSelectedIndex(it)
-                            requestFocus()
+                            pasteSelectionViewModel.clickSelectedIndex(it)
                         }
                         VerticalDivider(thickness = tiny5X)
                         DetailPasteDataView()

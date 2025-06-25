@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
@@ -42,7 +43,13 @@ class DesktopAppSize(
 
     val centerSearchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
 
-    val sideSearchWindowHeight: Dp = 330.dp
+    val sideSearchWindowHeight: Dp = 332.dp
+
+    val sideSearchInputHeight: Dp = 48.dp
+
+    val sideSearchPaddingSize: Dp = 16.dp
+
+    val sidePasteSize: Dp = sideSearchWindowHeight - sideSearchInputHeight - (2 * sideSearchPaddingSize)
 
     val searchListViewSize: DpSize = DpSize(width = 280.dp, height = 420.dp)
 

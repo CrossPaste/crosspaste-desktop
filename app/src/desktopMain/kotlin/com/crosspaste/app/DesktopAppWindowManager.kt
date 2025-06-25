@@ -6,7 +6,6 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
@@ -25,7 +24,6 @@ import kotlinx.coroutines.flow.asStateFlow
 
 fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
-    activeGraphicsDevice: ActiveGraphicsDevice,
     configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     platform: Platform,
@@ -36,7 +34,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            activeGraphicsDevice,
             userDataPathProvider,
         )
     } else if (platform.isWindows()) {
@@ -44,7 +41,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            activeGraphicsDevice,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {
@@ -52,7 +48,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            activeGraphicsDevice,
             userDataPathProvider,
         )
     } else {
@@ -111,8 +106,6 @@ abstract class DesktopAppWindowManager(
     val searchWindowState: StateFlow<WindowState> = _searchWindowState
 
     var searchComposeWindow: ComposeWindow? = null
-
-    val searchFocusRequester = FocusRequester()
 
     fun setShowMainWindow(showMainWindow: Boolean) {
         _showMainWindow.value = showMainWindow

@@ -1,7 +1,6 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
@@ -20,7 +19,6 @@ class WinAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
-    private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
@@ -115,14 +113,12 @@ class WinAppWindowManager(
         pair?.let {
             User32.bringToFront(SEARCH_WINDOW_TITLE, pair.second, searchHWND)
         }
-        searchFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
         bringToBack(preparePaste(), searchHWND)
         setShowSearchWindow(false)
-        searchFocusRequester.freeFocus()
     }
 
     private fun bringToBack(

@@ -1,7 +1,6 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
@@ -17,7 +16,6 @@ class MacAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
-    private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
@@ -118,9 +116,6 @@ class MacAppWindowManager(
                 }
             }
         }
-
-        delay(500)
-        searchFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
@@ -138,7 +133,6 @@ class MacAppWindowManager(
             MacAppUtils.searchToBack(prevAppId)
         }
         setShowSearchWindow(false)
-        searchFocusRequester.freeFocus()
     }
 
     override suspend fun toPaste() {

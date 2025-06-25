@@ -8,12 +8,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.CrossPaste.Companion.koinApplication
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.config.DesktopConfigManager
@@ -60,6 +60,8 @@ private fun ApplicationScope.SearchWindowCentreStyle(windowIcon: Painter?) {
         resizable = false,
     ) {
         DisposableEffect(Unit) {
+            appWindowManager.searchComposeWindow = window
+
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
@@ -84,6 +86,7 @@ private fun ApplicationScope.SearchWindowCentreStyle(windowIcon: Painter?) {
 
 @Composable
 private fun ApplicationScope.SearchWindowSideStyle(windowIcon: Painter?) {
+    val appSize = koinApplication.koin.get<DesktopAppSize>()
     val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
     val platform = koinApplication.koin.get<Platform>()
 
@@ -91,7 +94,7 @@ private fun ApplicationScope.SearchWindowSideStyle(windowIcon: Painter?) {
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
     val animationProgress by animateFloatAsState(
-        targetValue = if (showSearchWindow) 1f else 0f,
+        targetValue = if (showSearchWindow) 0f else 1f,
         animationSpec =
             tween(
                 durationMillis = 150,
@@ -106,7 +109,9 @@ private fun ApplicationScope.SearchWindowSideStyle(windowIcon: Painter?) {
             val position =
                 WindowPosition(
                     x = currentSearchWindowState.position.x,
-                    y = currentSearchWindowState.position.y + 330.dp * (1 - animationProgress),
+                    y =
+                        currentSearchWindowState.position.y +
+                            appSize.sideSearchWindowHeight * animationProgress,
                 )
             WindowState(
                 placement = currentSearchWindowState.placement,

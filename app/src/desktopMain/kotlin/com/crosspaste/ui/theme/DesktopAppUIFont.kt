@@ -58,6 +58,10 @@ object DesktopAppUIFont {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.typography.labelMedium
 
+    val sidePasteTitleTextStyle
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.typography.titleMedium
+
     @Composable
     fun StorePathTextStyle(useDefaultStoragePath: Boolean): TextStyle {
         return TextStyle(

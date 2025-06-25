@@ -1,17 +1,17 @@
-package com.crosspaste.ui.search.center
+package com.crosspaste.ui.search.side
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,34 +19,37 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestSearchInputFocus
 import com.crosspaste.ui.search.SearchTrailingIcon
-import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun SearchInputView() {
+fun SideSearchInputView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
+
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
@@ -76,18 +79,21 @@ fun SearchInputView() {
     }
 
     Row(
-        modifier = Modifier.height(huge).fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start,
+        modifier =
+            Modifier.fillMaxWidth()
+                .height(xxxxLarge),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextField(
+        CustomTextField(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxHeight()
+                    .widthIn(min = 800.dp)
                     .focusRequester(searchFocusRequester)
                     .onPreviewKeyEvent { e ->
-                        if (e.type == KeyEventType.KeyDown && e.type == KeyEventType.KeyUp) {
+                        if (e.type == KeyEventType.KeyDown && e.key == Key.DirectionDown) {
                             pasteSelectionViewModel.requestPasteListFocus()
-                            pasteSelectionViewModel.selectNext()
                             true
                         } else {
                             false
@@ -118,6 +124,7 @@ fun SearchInputView() {
             },
             isError = false,
             singleLine = true,
+            contentPadding = PaddingValues(0.dp),
             colors =
                 TextFieldDefaults.colors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -139,7 +146,7 @@ fun SearchInputView() {
                     disabledPlaceholderColor = Color.Transparent,
                     errorPlaceholderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
                 ),
-            textStyle = MaterialTheme.typography.bodyLarge,
+            textStyle = MaterialTheme.typography.bodyMedium,
         )
     }
 }
