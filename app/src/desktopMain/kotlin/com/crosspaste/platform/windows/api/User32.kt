@@ -381,28 +381,29 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         }
 
         private fun getForegroundWindow(): HWND? {
-            var foregroundHwnd: HWND? = null
-            INSTANCE.EnumWindows(
-                object : WndEnumProc {
-                    override fun callback(
-                        hWnd: HWND,
-                        lParam: Pointer?,
-                    ): Boolean {
-                        if (INSTANCE.IsWindowVisible(hWnd)) {
-                            val buffer = ByteArray(1024)
-                            INSTANCE.GetWindowTextA(hWnd, buffer, 1024)
-                            val title = Native.toString(buffer).trim()
-                            if (title.isNotEmpty()) {
-                                foregroundHwnd = hWnd
-                                return false
-                            }
-                        }
-                        return true
-                    }
-                },
-                null,
-            )
-            return foregroundHwnd
+            return INSTANCE.GetForegroundWindow()
+//            var foregroundHwnd: HWND? = null
+//            INSTANCE.EnumWindows(
+//                object : WndEnumProc {
+//                    override fun callback(
+//                        hWnd: HWND,
+//                        lParam: Pointer?,
+//                    ): Boolean {
+//                        if (INSTANCE.IsWindowVisible(hWnd)) {
+//                            val buffer = ByteArray(1024)
+//                            INSTANCE.GetWindowTextA(hWnd, buffer, 1024)
+//                            val title = Native.toString(buffer).trim()
+//                            if (title.isNotEmpty()) {
+//                                foregroundHwnd = hWnd
+//                                return false
+//                            }
+//                        }
+//                        return true
+//                    }
+//                },
+//                null,
+//            )
+//            return foregroundHwnd
         }
 
         @Synchronized
@@ -413,10 +414,16 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         ) {
             if (windowTitle == SEARCH_WINDOW_TITLE) {
                 searchWindow?.let { searchHWND ->
-                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
+                    val targetProcessId = IntByReference()
+                    val targetThreadId =
+                        INSTANCE.GetWindowThreadProcessId(
+                            searchHWND,
+                            targetProcessId,
+                        )
+
                     INSTANCE.AttachThreadInput(
-                        DWORD(curThreadId.toLong()),
                         DWORD(prevPid.toLong()),
+                        DWORD(targetThreadId.toLong()),
                         true,
                     )
 
@@ -430,8 +437,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     }
 
                     INSTANCE.AttachThreadInput(
-                        DWORD(curThreadId.toLong()),
                         DWORD(prevPid.toLong()),
+                        DWORD(targetThreadId.toLong()),
                         false,
                     )
                     if (!result) {
