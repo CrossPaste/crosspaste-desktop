@@ -23,6 +23,23 @@ class LinuxAppWindowManager(
 
     private val classNameSet: MutableSet<String> = mutableSetOf()
 
+    val mainWindow: Window? by lazy {
+        X11Api.getWindow(mainWindowTitle)
+    }
+
+    private val searchWindowMap: MutableMap<String, Window> = mutableMapOf()
+
+    fun getSearchWindow(): Window? {
+        val searchWindowTitle = getSearchWindowTitle()
+        return searchWindowMap[searchWindowTitle] ?: run {
+            searchWindowMap.clear()
+            X11Api.getWindow(searchWindowTitle)?.let { window ->
+                searchWindowMap[searchWindowTitle] = window
+                window
+            }
+        }
+    }
+
     override fun getCurrentActiveAppName(): String? {
         return X11Api.getActiveWindow()?.let { linuxAppInfo ->
             getAppName(linuxAppInfo)
@@ -62,7 +79,7 @@ class LinuxAppWindowManager(
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         setShowMainWindow(true)
-        prevLinuxAppInfo.value = X11Api.bringToFront(MAIN_WINDOW_TITLE)
+        prevLinuxAppInfo.value = X11Api.bringToFront(mainWindow)
         delay(500)
         mainFocusRequester.requestFocus()
     }
@@ -80,7 +97,7 @@ class LinuxAppWindowManager(
 
         setSearchWindowState(appSize.getSearchWindowState())
 
-        prevLinuxAppInfo.value = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
+        prevLinuxAppInfo.value = X11Api.bringToFront(getSearchWindow())
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {

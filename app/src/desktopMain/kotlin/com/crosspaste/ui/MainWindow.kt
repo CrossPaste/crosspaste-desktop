@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
 import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.ui.base.DesktopUISupport
@@ -39,7 +38,7 @@ fun MainWindow(
         onCloseRequest = { exitApplication(ExitMode.EXIT) },
         visible = showMainWindow,
         state = mainWindowState,
-        title = MAIN_WINDOW_TITLE,
+        title = appWindowManager.mainWindowTitle,
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,

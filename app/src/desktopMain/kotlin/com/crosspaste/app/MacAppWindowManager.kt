@@ -71,7 +71,7 @@ class MacAppWindowManager(
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         setShowMainWindow(true)
-        MacAppUtils.bringToFront(MAIN_WINDOW_TITLE).let {
+        MacAppUtils.bringToFront(mainWindowTitle).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo.value = macAppInfo
@@ -108,7 +108,7 @@ class MacAppWindowManager(
 
         setSearchWindowState(appSize.getSearchWindowState())
 
-        MacAppUtils.bringToFront(SEARCH_WINDOW_TITLE).let {
+        MacAppUtils.bringToFront(getSearchWindowTitle()).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo.value = macAppInfo

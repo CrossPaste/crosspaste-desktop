@@ -15,7 +15,6 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.CrossPaste.Companion.koinApplication
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
@@ -52,7 +51,7 @@ private fun ApplicationScope.SearchWindowCentreStyle(windowIcon: Painter?) {
         onCloseRequest = ::exitApplication,
         visible = showSearchWindow,
         state = currentSearchWindowState,
-        title = SEARCH_WINDOW_TITLE,
+        title = appWindowManager.getSearchWindowTitle(),
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
@@ -124,7 +123,7 @@ private fun ApplicationScope.SearchWindowSideStyle(windowIcon: Painter?) {
         onCloseRequest = ::exitApplication,
         visible = showSearchWindow,
         state = windowState,
-        title = SEARCH_WINDOW_TITLE,
+        title = appWindowManager.getSearchWindowTitle(),
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
