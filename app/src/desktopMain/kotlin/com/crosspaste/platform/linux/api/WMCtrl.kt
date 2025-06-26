@@ -165,8 +165,21 @@ object WMCtrl {
         win: X11.Window,
     ): Boolean {
         INSTANCE.XMapRaised(display, win)
-        val ts = getCurrentServerTime(display)
-        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 1, ts.toLong(), 0, 0, 0)
+
+        INSTANCE.XFlush(display)
+
+        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 1, 0, 0, 0, 0)
+
+        INSTANCE.XFlush(display)
+
+        X11Ext.INSTANCE.XSetInputFocus(
+            display,
+            win,
+            X11.RevertToParent,
+            getCurrentServerTime(display),
+        )
+
+        INSTANCE.XFlush(display)
 
         return true
     }
