@@ -130,5 +130,12 @@ interface X11Api : X11 {
                 INSTANCE.XCloseDisplay(display)
             }
         }
+
+        fun getCurrentServerTime(display: Display): Int {
+            val img = XFixes.INSTANCE.XFixesGetCursorImage(display) ?: return 0 // fallback = 0
+            val ts = img.timestamp
+            INSTANCE.XFree(img.pointer)
+            return ts.toInt()
+        }
     }
 }

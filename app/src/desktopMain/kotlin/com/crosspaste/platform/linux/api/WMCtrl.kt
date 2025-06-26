@@ -1,6 +1,7 @@
 package com.crosspaste.platform.linux.api
 
 import com.crosspaste.platform.linux.api.X11Api.Companion.INSTANCE
+import com.crosspaste.platform.linux.api.X11Api.Companion.getCurrentServerTime
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
@@ -164,7 +165,8 @@ object WMCtrl {
         win: X11.Window,
     ): Boolean {
         INSTANCE.XMapRaised(display, win)
-        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
+        val ts = getCurrentServerTime(display)
+        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 1, ts.toLong(), 0, 0, 0)
 
         return true
     }

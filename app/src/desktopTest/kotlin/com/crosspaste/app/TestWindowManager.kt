@@ -29,23 +29,23 @@ class TestWindowManager(
 
     override suspend fun activeMainWindow() {
         setShowMainWindow(true)
-        bringToFront(MAIN_WINDOW_TITLE)
+        bringToFront(mainWindowTitle)
     }
 
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()
-        bringToBack(MAIN_WINDOW_TITLE, toPaste)
+        bringToBack(mainWindowTitle, toPaste)
         setShowMainWindow(false)
     }
 
     override suspend fun activeSearchWindow() {
         setShowSearchWindow(true)
-        bringToFront(SEARCH_WINDOW_TITLE)
+        bringToFront(getSearchWindowTitle())
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()
-        bringToBack(SEARCH_WINDOW_TITLE, toPaste)
+        bringToBack(getSearchWindowTitle(), toPaste)
         setShowSearchWindow(false)
     }
 
