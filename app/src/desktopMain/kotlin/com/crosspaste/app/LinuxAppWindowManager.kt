@@ -6,7 +6,6 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -80,15 +79,12 @@ class LinuxAppWindowManager(
         logger.info { "active main window" }
         setShowMainWindow(true)
         prevLinuxAppInfo.value = X11Api.bringToFront(mainWindow)
-        delay(500)
-        mainFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         bringToBack(preparePaste())
         setShowMainWindow(false)
-        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {

@@ -6,7 +6,6 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacPasteUtils
 import com.crosspaste.utils.getSystemProperty
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -79,8 +78,6 @@ class MacAppWindowManager(
                 }
             }
         }
-        delay(500)
-        mainFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
@@ -98,8 +95,6 @@ class MacAppWindowManager(
             MacAppUtils.mainToBack(prevAppId)
         }
         setShowMainWindow(false)
-        delay(500)
-        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {

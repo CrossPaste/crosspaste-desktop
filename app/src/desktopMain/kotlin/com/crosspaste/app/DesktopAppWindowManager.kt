@@ -1,7 +1,6 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
@@ -106,8 +105,6 @@ abstract class DesktopAppWindowManager(
     val mainWindowState: StateFlow<WindowState> = _mainWindowState
 
     var mainComposeWindow: ComposeWindow? = null
-
-    val mainFocusRequester = FocusRequester()
 
     private val _showMainDialog = MutableStateFlow(false)
     override val showMainDialog: StateFlow<Boolean> = _showMainDialog

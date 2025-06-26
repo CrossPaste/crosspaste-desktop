@@ -93,15 +93,12 @@ class WinAppWindowManager(
         }
 
         setShowMainWindow(true)
-        delay(500)
-        mainFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         bringToBack(preparePaste(), mainHWND)
         setShowMainWindow(false)
-        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {
