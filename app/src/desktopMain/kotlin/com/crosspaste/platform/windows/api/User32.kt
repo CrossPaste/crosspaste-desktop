@@ -105,6 +105,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         nMaxCount: Int,
     ): Int
 
+    fun GetLastError(): Int
+
     companion object {
         val INSTANCE =
             Native.load(
@@ -421,6 +423,12 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
 
                     val result = INSTANCE.SetForegroundWindow(searchHWND)
+
+                    val lastError = Native.getLastError()
+                    logger.info {
+                        "SetForegroundWindow -> $result, lastError=$lastError (0x${lastError.toString(16)})"
+                    }
+
                     INSTANCE.AttachThreadInput(
                         DWORD(curThreadId.toLong()),
                         DWORD(prevPid.toLong()),
