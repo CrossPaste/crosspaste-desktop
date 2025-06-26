@@ -112,7 +112,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             Native.load(
                 "user32",
                 User32::class.java,
-                DEFAULT_OPTIONS,
+                DEFAULT_OPTIONS + mapOf("allow-get-last-error" to true),
             ) as User32
         const val GWL_WNDPROC = -4
         const val WM_DESTROY = 0x0002
