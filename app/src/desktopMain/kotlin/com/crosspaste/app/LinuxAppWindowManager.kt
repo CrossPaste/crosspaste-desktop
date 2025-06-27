@@ -89,11 +89,14 @@ class LinuxAppWindowManager(
 
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
+
+        val searchWindow = getSearchWindow()
+
         setShowSearchWindow(true)
 
         setSearchWindowState(appSize.getSearchWindowState())
 
-        prevLinuxAppInfo.value = X11Api.bringToFront(getSearchWindow())
+        prevLinuxAppInfo.value = X11Api.bringToFront(searchWindow)
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {

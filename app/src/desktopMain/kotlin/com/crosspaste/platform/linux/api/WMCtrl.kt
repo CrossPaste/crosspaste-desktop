@@ -2,16 +2,12 @@ package com.crosspaste.platform.linux.api
 
 import com.crosspaste.platform.linux.api.X11Api.Companion.INSTANCE
 import com.sun.jna.Library
-import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Atom
 import com.sun.jna.platform.unix.X11.AtomByReference
-import com.sun.jna.platform.unix.X11.PropModeReplace
-import com.sun.jna.platform.unix.X11.XA_ATOM
-import com.sun.jna.platform.unix.X11.XA_CARDINAL
 import com.sun.jna.platform.unix.X11.XClientMessageEvent
 import com.sun.jna.platform.unix.X11.XEvent
 import com.sun.jna.ptr.IntByReference
@@ -90,98 +86,17 @@ object WMCtrl {
         display: X11.Display,
         window: X11.Window,
     ) {
-        try {
-            val x11 = X11.INSTANCE
+        val x11 = X11.INSTANCE
 
-            val typeAtom = x11.XInternAtom(display, "_NET_WM_WINDOW_TYPE", false)
-            val notificationTypeAtom = x11.XInternAtom(display, "_NET_WM_WINDOW_TYPE_NOTIFICATION", false)
+        val attrs = X11.XSetWindowAttributes()
+        attrs.override_redirect = true
 
-            val atomData = Memory(Native.POINTER_SIZE.toLong())
-            atomData.setInt(0, notificationTypeAtom.toInt())
-
-            x11.XChangeProperty(
-                display,
-                window,
-                typeAtom,
-                XA_ATOM,
-                32,
-                PropModeReplace,
-                atomData,
-                1,
-            )
-
-            val strutPartialAtom = x11.XInternAtom(display, "_NET_WM_STRUT_PARTIAL", false)
-            val strutData = Memory(12L * 4)
-            for (i in 0 until 12) {
-                strutData.setInt(i.toLong() * 4, 0)
-            }
-
-            x11.XChangeProperty(
-                display,
-                window,
-                strutPartialAtom,
-                XA_CARDINAL,
-                32,
-                PropModeReplace,
-                strutData,
-                12,
-            )
-
-            val stateAtom = x11.XInternAtom(display, "_NET_WM_STATE", false)
-            val aboveAtom = x11.XInternAtom(display, "_NET_WM_STATE_ABOVE", false)
-            val stickyAtom = x11.XInternAtom(display, "_NET_WM_STATE_STICKY", false)
-            val skipTaskbarAtom = x11.XInternAtom(display, "_NET_WM_STATE_SKIP_TASKBAR", false)
-            val skipPagerAtom = x11.XInternAtom(display, "_NET_WM_STATE_SKIP_PAGER", false)
-
-            val stateData = Memory(5L * 4)
-            stateData.setInt(0, aboveAtom.toInt())
-            stateData.setInt(4, stickyAtom.toInt())
-            stateData.setInt(8, skipTaskbarAtom.toInt())
-            stateData.setInt(12, skipPagerAtom.toInt())
-
-            x11.XChangeProperty(
-                display,
-                window,
-                stateAtom,
-                XA_ATOM,
-                32,
-                PropModeReplace,
-                stateData,
-                4,
-            )
-
-            clientMsg(
-                display,
-                window,
-                "_NET_WM_STATE",
-                1,
-                aboveAtom.toLong(),
-                stickyAtom.toLong(),
-                1,
-                0,
-            )
-
-            val winLayerAtom = x11.XInternAtom(display, "_WIN_LAYER", false)
-            val layerData = Memory(4)
-            layerData.setInt(0, 10)
-
-            x11.XChangeProperty(
-                display,
-                window,
-                winLayerAtom,
-                XA_CARDINAL,
-                32,
-                PropModeReplace,
-                layerData,
-                1,
-            )
-
-            x11.XFlush(display)
-
-            logger.info { "Window configuration completed for above-dock display" }
-        } catch (e: Exception) {
-            logger.error(e) { "Error setting window above dock" }
-        }
+        x11.XChangeWindowAttributes(
+            display,
+            window,
+            NativeLong(X11.CWOverrideRedirect.toLong()),
+            attrs,
+        )
     }
 
     fun switchDesktop(
