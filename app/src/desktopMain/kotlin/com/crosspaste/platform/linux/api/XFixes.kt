@@ -24,8 +24,6 @@ interface XFixes : Library {
         error_base_return: IntByReference,
     ): Int
 
-    fun XFixesGetCursorImage(dpy: X11.Display?): XFixesCursorImage?
-
     companion object {
 
         const val XFixesSelectionNotify = 0
@@ -66,41 +64,6 @@ class XFixesSelectionNotifyEvent(ptr: Pointer) : Structure(ptr) {
     @JvmField var timestamp: NativeLong? = null
 
     @JvmField var selectionTimestamp: NativeLong? = null
-
-    init {
-        read()
-    }
-}
-
-@Structure.FieldOrder(
-    "x",
-    "y",
-    "width",
-    "height",
-    "xhot",
-    "yhot",
-    "cursor_serial",
-    "timestamp",
-    "pixels",
-)
-class XFixesCursorImage(ptr: Pointer) : Structure(ptr) {
-    @JvmField var x: Int = 0
-
-    @JvmField var y: Int = 0
-
-    @JvmField var width: Int = 0
-
-    @JvmField var height: Int = 0
-
-    @JvmField var xhot: Int = 0
-
-    @JvmField var yhot: Int = 0
-
-    @JvmField var cursor_serial: Int = 0
-
-    @JvmField var timestamp: NativeLong = NativeLong(0)
-
-    @JvmField var pixels: Pointer? = null
 
     init {
         read()
