@@ -82,23 +82,6 @@ object WMCtrl {
         return null
     }
 
-    fun setWindowAboveTaskbar(
-        display: X11.Display,
-        window: X11.Window,
-    ) {
-        val x11 = X11.INSTANCE
-
-        val attrs = X11.XSetWindowAttributes()
-        attrs.override_redirect = true
-
-        x11.XChangeWindowAttributes(
-            display,
-            window,
-            NativeLong(X11.CWOverrideRedirect.toLong()),
-            attrs,
-        )
-    }
-
     fun switchDesktop(
         display: X11.Display,
         target: Long,

@@ -2,7 +2,6 @@ package com.crosspaste.platform.linux.api
 
 import com.crosspaste.app.LinuxAppInfo
 import com.crosspaste.platform.linux.api.WMCtrl.getActiveWindow
-import com.crosspaste.platform.linux.api.WMCtrl.setWindowAboveTaskbar
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
@@ -122,18 +121,11 @@ interface X11Api : X11 {
         }
 
         @Synchronized
-        fun getWindow(
-            windowTitle: String,
-            setDockType: Boolean = false,
-        ): Window? {
+        fun getWindow(windowTitle: String): Window? {
             val display = INSTANCE.XOpenDisplay(null) ?: return null
             return try {
                 val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                val window = WMCtrl.findWindowByTitle(display, rootWindow, windowTitle)
-                if (setDockType && window != null) {
-                    setWindowAboveTaskbar(display, window)
-                }
-                window
+                WMCtrl.run { findWindowByTitle(display, rootWindow, windowTitle) }
             } finally {
                 INSTANCE.XCloseDisplay(display)
             }

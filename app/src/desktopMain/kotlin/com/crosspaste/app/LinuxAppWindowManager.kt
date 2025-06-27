@@ -32,7 +32,7 @@ class LinuxAppWindowManager(
         val searchWindowTitle = getSearchWindowTitle()
         return searchWindowMap[searchWindowTitle] ?: run {
             searchWindowMap.clear()
-            X11Api.getWindow(searchWindowTitle, true)?.let { window ->
+            X11Api.getWindow(searchWindowTitle)?.let { window ->
                 searchWindowMap[searchWindowTitle] = window
                 window
             }
