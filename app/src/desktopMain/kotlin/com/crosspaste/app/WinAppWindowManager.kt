@@ -1,7 +1,6 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
@@ -20,18 +19,26 @@ class WinAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
-    private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
     private var prevWinAppInfo: MutableStateFlow<WinAppInfo?> = MutableStateFlow(null)
 
-    private val mainHWND: HWND? by lazy {
-        User32.findPasteWindow(MAIN_WINDOW_TITLE)
+    val mainHWND: HWND? by lazy {
+        User32.findPasteWindow(mainWindowTitle)
     }
 
-    private val searchHWND: HWND? by lazy {
-        User32.findPasteWindow(SEARCH_WINDOW_TITLE)
+    private val searchHWNDMap: MutableMap<String, HWND> = mutableMapOf()
+
+    fun getSearchHWND(): HWND? {
+        val searchWindowTitle = getSearchWindowTitle()
+        return searchHWNDMap[searchWindowTitle] ?: run {
+            searchHWNDMap.clear()
+            User32.findPasteWindow(searchWindowTitle)?.let { pasteWindow ->
+                searchHWNDMap[searchWindowTitle] = pasteWindow
+                pasteWindow
+            }
+        }
     }
 
     private val fileDescriptorCache: LoadingCache<String, String> =
@@ -79,28 +86,25 @@ class WinAppWindowManager(
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
 
-        val pair = User32.getForegroundWindowAppInfoAndPid(mainHWND, searchHWND)
+        val pair = User32.getForegroundWindowAppInfoAndThreadId()
 
         pair?.let {
             prevWinAppInfo.value = it.first
         }
 
         setShowMainWindow(true)
-        delay(500)
-        mainFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         bringToBack(preparePaste(), mainHWND)
         setShowMainWindow(false)
-        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
 
-        val pair = User32.getForegroundWindowAppInfoAndPid(mainHWND, searchHWND)
+        val pair = User32.getForegroundWindowAppInfoAndThreadId()
 
         pair?.let {
             prevWinAppInfo.value = it.first
@@ -113,16 +117,14 @@ class WinAppWindowManager(
         delay(500)
 
         pair?.let {
-            User32.bringToFront(SEARCH_WINDOW_TITLE, pair.second, searchHWND)
+            User32.bringToFront(pair.second, getSearchHWND())
         }
-        searchFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
-        bringToBack(preparePaste(), searchHWND)
+        bringToBack(preparePaste(), getSearchHWND())
         setShowSearchWindow(false)
-        searchFocusRequester.freeFocus()
     }
 
     private fun bringToBack(

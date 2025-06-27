@@ -16,7 +16,9 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.request.transformations
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.image.coil.CropTransformation
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -24,6 +26,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun AppSourceIcon(
+    modifier: Modifier = Modifier,
     pasteData: PasteData,
     source: String,
     iconColor: Color,
@@ -44,7 +47,7 @@ fun AppSourceIcon(
     }
 
     SubcomposeAsyncImage(
-        modifier = Modifier.size(imageSize),
+        modifier = modifier.size(imageSize),
         model =
             ImageRequest.Builder(platformContext)
                 .data(PasteDataItem(pasteData))
@@ -62,6 +65,46 @@ fun AppSourceIcon(
                         painter = htmlOrRtf(),
                         contentDescription = "Paste Icon",
                         modifier = Modifier.size(size),
+                        tint = iconColor,
+                    )
+                }
+                else -> {
+                    SubcomposeAsyncImageContent()
+                }
+            }
+        },
+    )
+}
+
+@Composable
+fun SideAppSourceIcon(
+    modifier: Modifier = Modifier,
+    pasteData: PasteData,
+    iconColor: Color,
+) {
+    val imageLoaders = koinInject<ImageLoaders>()
+    val platformContext = koinInject<PlatformContext>()
+
+    SubcomposeAsyncImage(
+        modifier = modifier,
+        model =
+            ImageRequest.Builder(platformContext)
+                .data(PasteDataItem(pasteData))
+                .transformations(CropTransformation())
+                .crossfade(false)
+                .build(),
+        imageLoader = imageLoaders.appSourceLoader,
+        contentDescription = "Paste Icon",
+        content = {
+            val state = this.painter.state.collectAsState().value
+            when (state) {
+                is AsyncImagePainter.State.Loading,
+                is AsyncImagePainter.State.Error,
+                -> {
+                    Icon(
+                        painter = htmlOrRtf(),
+                        contentDescription = "Paste Icon",
+                        modifier = modifier,
                         tint = iconColor,
                     )
                 }

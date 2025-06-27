@@ -53,6 +53,7 @@ import com.crosspaste.i18n.DesktopGlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.DesktopFileExtLoader
+import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.image.DesktopImageWriter
 import com.crosspaste.image.DesktopThumbnailLoader
 import com.crosspaste.image.FaviconLoader
@@ -472,8 +473,9 @@ class DesktopModule(
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
             single<DesktopAppSize> { DesktopAppSize(get()) }
             single<DesktopAppWindowManager> {
-                getDesktopAppWindowManager(get(), get(), get(), lazy { get() }, get(), get())
+                getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
+            single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }

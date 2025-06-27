@@ -1,13 +1,11 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacPasteUtils
 import com.crosspaste.utils.getSystemProperty
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -17,7 +15,6 @@ class MacAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
-    private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
@@ -73,7 +70,7 @@ class MacAppWindowManager(
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         setShowMainWindow(true)
-        MacAppUtils.bringToFront(MAIN_WINDOW_TITLE).let {
+        MacAppUtils.bringToFront(mainWindowTitle).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo.value = macAppInfo
@@ -81,8 +78,6 @@ class MacAppWindowManager(
                 }
             }
         }
-        delay(500)
-        mainFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
@@ -100,8 +95,6 @@ class MacAppWindowManager(
             MacAppUtils.mainToBack(prevAppId)
         }
         setShowMainWindow(false)
-        delay(500)
-        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {
@@ -110,7 +103,7 @@ class MacAppWindowManager(
 
         setSearchWindowState(appSize.getSearchWindowState())
 
-        MacAppUtils.bringToFront(SEARCH_WINDOW_TITLE).let {
+        MacAppUtils.bringToFront(getSearchWindowTitle()).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo.value = macAppInfo
@@ -118,9 +111,6 @@ class MacAppWindowManager(
                 }
             }
         }
-
-        delay(500)
-        searchFocusRequester.requestFocus()
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
@@ -138,7 +128,6 @@ class MacAppWindowManager(
             MacAppUtils.searchToBack(prevAppId)
         }
         setShowSearchWindow(false)
-        searchFocusRequester.freeFocus()
     }
 
     override suspend fun toPaste() {

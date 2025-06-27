@@ -1,18 +1,17 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.PastePreview
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
+import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -25,7 +24,6 @@ import kotlinx.coroutines.flow.asStateFlow
 
 fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
-    activeGraphicsDevice: ActiveGraphicsDevice,
     configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     platform: Platform,
@@ -36,7 +34,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            activeGraphicsDevice,
             userDataPathProvider,
         )
     } else if (platform.isWindows()) {
@@ -44,7 +41,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            activeGraphicsDevice,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {
@@ -52,7 +48,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            activeGraphicsDevice,
             userDataPathProvider,
         )
     } else {
@@ -66,15 +61,30 @@ abstract class DesktopAppWindowManager(
 ) : AppWindowManager {
 
     companion object {
-        const val MAIN_WINDOW_TITLE: String = "CrossPaste"
+        private const val MAIN_WINDOW_TITLE: String = "CrossPaste"
 
-        const val SEARCH_WINDOW_TITLE: String = "CrossPaste Search"
+        val CENTER_SEARCH_WINDOW_TITLE = "CrossPaste Center Search"
+
+        val SIDE_SEARCH_WINDOW_TITLE = "CrossPaste Side Search"
 
         // only use in Windows
         const val MENU_WINDOW_TITLE: String = "CrossPaste Menu"
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
+
+    val mainWindowTitle: String = MAIN_WINDOW_TITLE
+
+    fun getSearchWindowTitle(): String {
+        return if (DesktopSearchWindowStyle.isCenterStyle(
+                configManager.getCurrentConfig().searchWindowStyle,
+            )
+        ) {
+            CENTER_SEARCH_WINDOW_TITLE
+        } else {
+            SIDE_SEARCH_WINDOW_TITLE
+        }
+    }
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
@@ -96,8 +106,6 @@ abstract class DesktopAppWindowManager(
 
     var mainComposeWindow: ComposeWindow? = null
 
-    val mainFocusRequester = FocusRequester()
-
     private val _showMainDialog = MutableStateFlow(false)
     override val showMainDialog: StateFlow<Boolean> = _showMainDialog
 
@@ -111,8 +119,6 @@ abstract class DesktopAppWindowManager(
     val searchWindowState: StateFlow<WindowState> = _searchWindowState
 
     var searchComposeWindow: ComposeWindow? = null
-
-    val searchFocusRequester = FocusRequester()
 
     fun setShowMainWindow(showMainWindow: Boolean) {
         _showMainWindow.value = showMainWindow

@@ -164,7 +164,21 @@ object WMCtrl {
         win: X11.Window,
     ): Boolean {
         INSTANCE.XMapRaised(display, win)
-        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 0, 0, 0, 0, 0)
+
+        INSTANCE.XFlush(display)
+
+        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 1, 0, 0, 0, 0)
+
+        INSTANCE.XFlush(display)
+
+        X11Ext.INSTANCE.XSetInputFocus(
+            display,
+            win,
+            X11.RevertToParent,
+            X11.CurrentTime,
+        )
+
+        INSTANCE.XFlush(display)
 
         return true
     }

@@ -10,6 +10,7 @@ import com.crosspaste.db.paste.PasteData
 
 @Composable
 fun DefaultPasteTypeIcon(
+    modifier: Modifier = Modifier,
     pasteData: PasteData,
     iconColor: Color,
     size: Dp,
@@ -17,7 +18,7 @@ fun DefaultPasteTypeIcon(
     Icon(
         painter = pasteData.getType().IconPainter(),
         contentDescription = "Paste Icon",
-        modifier = Modifier.size(size),
+        modifier = modifier.size(size),
         tint = iconColor,
     )
 }

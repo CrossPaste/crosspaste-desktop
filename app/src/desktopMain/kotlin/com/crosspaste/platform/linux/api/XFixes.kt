@@ -44,7 +44,7 @@ interface XFixes : Library {
     "timestamp",
     "selectionTimestamp",
 )
-class XFixesSelectionNotifyEvent(p: Pointer) : Structure(p) {
+class XFixesSelectionNotifyEvent(ptr: Pointer) : Structure(ptr) {
     @JvmField var type: Int = 0
 
     @JvmField var serial: NativeLong? = null

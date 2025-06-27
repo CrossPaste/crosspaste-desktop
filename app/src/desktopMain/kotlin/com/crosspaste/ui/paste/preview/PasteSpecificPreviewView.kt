@@ -14,7 +14,7 @@ fun PasteSpecificPreviewView(pasteData: PasteData) {
             PasteType.TEXT_TYPE -> TextPreviewView(pasteData)
             PasteType.COLOR_TYPE -> ColorPreviewView(pasteData)
             PasteType.URL_TYPE -> UrlPreviewView(pasteData)
-            PasteType.HTML_TYPE -> HtmlToImagePreviewView(pasteData)
+            PasteType.HTML_TYPE -> HtmlPreviewView(pasteData)
             PasteType.RTF_TYPE -> RtfToImagePreviewView(pasteData)
             PasteType.IMAGE_TYPE -> ImagesPreviewView(pasteData)
             PasteType.FILE_TYPE -> FilesPreviewView(pasteData)

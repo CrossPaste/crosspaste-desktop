@@ -3,6 +3,7 @@ package com.crosspaste.ui.base
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.crosspaste.db.paste.PasteData
@@ -42,6 +43,30 @@ fun PasteTypeIconView(
             pasteData = pasteData,
             iconColor = iconColor,
             size = size,
+        )
+    }
+}
+
+@Composable
+fun SidePasteTypeIconView(
+    modifier: Modifier = Modifier,
+    pasteData: PasteData,
+    tint: Color? = null,
+    background: Color,
+) {
+    val iconColor = tint ?: MaterialTheme.colorScheme.contentColorFor(background)
+
+    pasteData.source?.let {
+        SideAppSourceIcon(
+            modifier = modifier,
+            pasteData = pasteData,
+            iconColor = iconColor,
+        )
+    } ?: run {
+        DefaultPasteTypeIcon(
+            pasteData = pasteData,
+            iconColor = iconColor,
+            size = large2X,
         )
     }
 }

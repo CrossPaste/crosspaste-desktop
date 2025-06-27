@@ -1,7 +1,5 @@
 package com.crosspaste.platform.linux.api
 
-import com.crosspaste.app.DesktopAppWindowManager.Companion.MAIN_WINDOW_TITLE
-import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.LinuxAppInfo
 import com.crosspaste.platform.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
@@ -21,10 +19,6 @@ interface X11Api : X11 {
         private val logger = KotlinLogging.logger {}
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
-
-        private var mainWindow: Window? = null
-
-        private var searchWindow: Window? = null
 
         fun getActiveWindow(): LinuxAppInfo? {
             val display = INSTANCE.XOpenDisplay(null) ?: return null
@@ -53,7 +47,7 @@ interface X11Api : X11 {
             }
         }
 
-        fun bringToFront(windowTitle: String): LinuxAppInfo? {
+        fun bringToFront(window: Window?): LinuxAppInfo? {
             val display = INSTANCE.XOpenDisplay(null) ?: return null
             return try {
                 val linuxAppInfo: LinuxAppInfo? =
@@ -63,7 +57,7 @@ interface X11Api : X11 {
                         }
                     }
 
-                getWindow(windowTitle)?.let { window ->
+                window?.let { window ->
                     WMCtrl.activeWindow(display, window)
                 }
                 linuxAppInfo
@@ -127,42 +121,14 @@ interface X11Api : X11 {
         }
 
         @Synchronized
-        private fun getWindow(windowTitle: String): Window? {
-            return if (windowTitle == MAIN_WINDOW_TITLE) {
-                findMainWindow()
-            } else {
-                findSearchWindow()
+        fun getWindow(windowTitle: String): Window? {
+            val display = INSTANCE.XOpenDisplay(null) ?: return null
+            return try {
+                val rootWindow = INSTANCE.XDefaultRootWindow(display)
+                WMCtrl.run { findWindowByTitle(display, rootWindow, windowTitle) }
+            } finally {
+                INSTANCE.XCloseDisplay(display)
             }
-        }
-
-        private fun findMainWindow(): Window? {
-            if (mainWindow == null) {
-                val display = INSTANCE.XOpenDisplay(null) ?: return null
-                try {
-                    val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                    WMCtrl.findWindowByTitle(display, rootWindow, MAIN_WINDOW_TITLE)?.let {
-                        mainWindow = it
-                    }
-                } finally {
-                    INSTANCE.XCloseDisplay(display)
-                }
-            }
-            return mainWindow
-        }
-
-        private fun findSearchWindow(): Window? {
-            if (searchWindow == null) {
-                val display = INSTANCE.XOpenDisplay(null) ?: return null
-                try {
-                    val rootWindow = INSTANCE.XDefaultRootWindow(display)
-                    WMCtrl.findWindowByTitle(display, rootWindow, SEARCH_WINDOW_TITLE)?.let {
-                        searchWindow = it
-                    }
-                } finally {
-                    INSTANCE.XCloseDisplay(display)
-                }
-            }
-            return searchWindow
         }
     }
 }

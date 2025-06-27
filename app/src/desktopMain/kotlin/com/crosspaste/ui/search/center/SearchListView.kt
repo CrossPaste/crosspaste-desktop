@@ -3,22 +3,22 @@ package com.crosspaste.ui.search.center
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,12 +31,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.base.PasteTitleView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -78,9 +81,13 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
+    val latestSearchResult = rememberUpdatedState(searchResult)
+
+    val pasteListFocusRequester = remember { FocusRequester() }
+
     LaunchedEffect(showSearchWindow, inputSearch, searchFavorite, searchSort, searchPasteType) {
         if (showSearchWindow) {
-            pasteSelectionViewModel.setSelectedIndex(0)
+            pasteSelectionViewModel.initSelectIndex()
             delay(32)
             searchListState.animateScrollToItem(0, 0)
         }
@@ -100,8 +107,6 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
             }
         }
     }
-
-    val latestSearchResult = rememberUpdatedState(searchResult)
 
     LaunchedEffect(searchListState) {
         snapshotFlow {
@@ -132,23 +137,26 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
         }
     }
 
-    Box(modifier = Modifier.size(appSize.searchListViewSize)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier.height(small3X))
-            LazyColumn(
-                state = searchListState,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                itemsIndexed(
-                    searchResult,
-                    key = { _, item -> item.id },
-                ) { index, pasteData ->
-                    PasteTitleView(pasteData, index == selectedIndex) {
-                        setSelectedIndex(index)
-                    }
+    Box(
+        modifier =
+            Modifier.size(appSize.searchListViewSize)
+                .focusRequester(pasteListFocusRequester)
+                .focusable(),
+    ) {
+        LazyColumn(
+            state = searchListState,
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(vertical = small3X),
+        ) {
+            itemsIndexed(
+                searchResult,
+                key = { _, item -> item.id },
+            ) { index, pasteData ->
+                PasteTitleView(pasteData, index == selectedIndex) {
+                    setSelectedIndex(index)
                 }
             }
-            Spacer(modifier = Modifier.height(small3X))
         }
 
         VerticalScrollbar(
@@ -174,11 +182,16 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (showScrollbar) {
-                            MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.48f)
+                            MaterialTheme.colorScheme.contentColorFor(
+                                AppUIColors.appBackground,
+                            ).copy(alpha = 0.48f)
                         } else {
                             Color.Transparent
                         },
-                    hoverColor = MaterialTheme.colorScheme.inverseSurface,
+                    hoverColor =
+                        MaterialTheme.colorScheme.contentColorFor(
+                            AppUIColors.appBackground,
+                        ),
                 ),
         )
     }

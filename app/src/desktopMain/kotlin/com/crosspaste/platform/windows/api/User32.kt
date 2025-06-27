@@ -1,6 +1,5 @@
 package com.crosspaste.platform.windows.api
 
-import com.crosspaste.app.DesktopAppWindowManager.Companion.SEARCH_WINDOW_TITLE
 import com.crosspaste.app.WinAppInfo
 import com.sun.jna.Memory
 import com.sun.jna.Native
@@ -105,12 +104,14 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         nMaxCount: Int,
     ): Int
 
+    fun GetLastError(): Int
+
     companion object {
         val INSTANCE =
             Native.load(
                 "user32",
                 User32::class.java,
-                DEFAULT_OPTIONS,
+                DEFAULT_OPTIONS + mapOf("allow-get-last-error" to true),
             ) as User32
         const val GWL_WNDPROC = -4
         const val WM_DESTROY = 0x0002
@@ -332,107 +333,83 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }.getOrNull()
         }
 
-        fun getForegroundWindowAppInfoAndPid(
-            mainWindow: HWND?,
-            searchWindow: HWND?,
-        ): Pair<WinAppInfo, Int>? {
-            getForegroundWindow()?.let { previousHwnd ->
+        fun getForegroundWindowAppInfoAndThreadId(): Pair<WinAppInfo, Int>? {
+            return getForegroundWindow()?.let { previousHwnd ->
+                val processIdRef = IntByReference()
+                val threadId =
+                    INSTANCE.GetWindowThreadProcessId(
+                        previousHwnd,
+                        processIdRef,
+                    )
 
-                if (previousHwnd.pointer != mainWindow?.pointer &&
-                    previousHwnd.pointer != searchWindow?.pointer
-                ) {
-                    val processIdRef = IntByReference()
-                    val pid =
-                        INSTANCE.GetWindowThreadProcessId(
-                            previousHwnd,
-                            processIdRef,
-                        )
+                val processHandle =
+                    Kernel32.INSTANCE.OpenProcess(
+                        WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
+                        false,
+                        processIdRef.value,
+                    )
 
-                    val processHandle =
-                        Kernel32.INSTANCE.OpenProcess(
-                            WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
-                            false,
-                            processIdRef.value,
-                        )
-
-                    return runCatching {
-                        val bufferSize = 1024
-                        val memory = Memory((bufferSize * 2).toLong())
-                        if (Psapi.INSTANCE.GetModuleFileNameEx(
-                                processHandle,
-                                null,
-                                memory,
-                                bufferSize,
-                            ) > 0
-                        ) {
-                            val filePath = memory.getWideString(0)
-                            Pair(WinAppInfo(previousHwnd, filePath), pid)
-                        } else {
-                            null
-                        }
-                    }.apply {
-                        Kernel32.INSTANCE.CloseHandle(processHandle)
-                    }.getOrNull()
-                }
+                runCatching {
+                    val bufferSize = 1024
+                    val memory = Memory((bufferSize * 2).toLong())
+                    if (Psapi.INSTANCE.GetModuleFileNameEx(
+                            processHandle,
+                            null,
+                            memory,
+                            bufferSize,
+                        ) > 0
+                    ) {
+                        val filePath = memory.getWideString(0)
+                        Pair(WinAppInfo(previousHwnd, filePath), threadId)
+                    } else {
+                        null
+                    }
+                }.apply {
+                    Kernel32.INSTANCE.CloseHandle(processHandle)
+                }.getOrNull()
             }
-            return null
         }
 
         private fun getForegroundWindow(): HWND? {
-            var foregroundHwnd: HWND? = null
-            INSTANCE.EnumWindows(
-                object : WndEnumProc {
-                    override fun callback(
-                        hWnd: HWND,
-                        lParam: Pointer?,
-                    ): Boolean {
-                        if (INSTANCE.IsWindowVisible(hWnd)) {
-                            val buffer = ByteArray(1024)
-                            INSTANCE.GetWindowTextA(hWnd, buffer, 1024)
-                            val title = Native.toString(buffer).trim()
-                            if (title.isNotEmpty()) {
-                                foregroundHwnd = hWnd
-                                return false
-                            }
-                        }
-                        return true
-                    }
-                },
-                null,
-            )
-            return foregroundHwnd
+            return INSTANCE.GetForegroundWindow()
         }
 
         @Synchronized
         fun bringToFront(
-            windowTitle: String,
-            prevPid: Int,
+            prevThreadId: Int,
             searchWindow: HWND?,
         ) {
-            if (windowTitle == SEARCH_WINDOW_TITLE) {
-                searchWindow?.let { searchHWND ->
-                    val curThreadId = Kernel32.INSTANCE.GetCurrentThreadId()
-                    INSTANCE.AttachThreadInput(
-                        DWORD(curThreadId.toLong()),
-                        DWORD(prevPid.toLong()),
-                        true,
+            searchWindow?.let { searchHWND ->
+                val targetProcessId = IntByReference()
+                val targetThreadId =
+                    INSTANCE.GetWindowThreadProcessId(
+                        searchHWND,
+                        targetProcessId,
                     )
 
+                if (INSTANCE.AttachThreadInput(
+                        DWORD(prevThreadId.toLong()),
+                        DWORD(targetThreadId.toLong()),
+                        true,
+                    )
+                ) {
                     INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
 
                     val result = INSTANCE.SetForegroundWindow(searchHWND)
+
                     INSTANCE.AttachThreadInput(
-                        DWORD(curThreadId.toLong()),
-                        DWORD(prevPid.toLong()),
+                        DWORD(prevThreadId.toLong()),
+                        DWORD(targetThreadId.toLong()),
                         false,
                     )
+
                     if (!result) {
                         logger.info { "Failed to set foreground window. Please switch manually" }
                     } else {
                         logger.info { "Foreground window set successfully" }
                     }
-                } ?: run {
-                    logger.info { "search Window not found" }
+                } else {
+                    logger.error { "AttachThreadInput failed: ${Kernel32.INSTANCE.GetLastError()}" }
                 }
             }
         }
@@ -497,11 +474,11 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             return INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
                 // Set the window icon not to be displayed on the taskbar
                 val style =
-                    com.sun.jna.platform.win32.User32.INSTANCE.GetWindowLong(
+                    INSTANCE.GetWindowLong(
                         hwnd,
                         WinUser.GWL_EXSTYLE,
                     )
-                com.sun.jna.platform.win32.User32.INSTANCE.SetWindowLong(
+                INSTANCE.SetWindowLong(
                     hwnd,
                     WinUser.GWL_EXSTYLE,
                     style or 0x00000080,

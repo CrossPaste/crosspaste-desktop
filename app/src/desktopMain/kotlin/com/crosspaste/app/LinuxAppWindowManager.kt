@@ -1,13 +1,11 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -17,13 +15,29 @@ class LinuxAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
-    private val activeGraphicsDevice: ActiveGraphicsDevice,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
     private val prevLinuxAppInfo: MutableStateFlow<LinuxAppInfo?> = MutableStateFlow(null)
 
     private val classNameSet: MutableSet<String> = mutableSetOf()
+
+    val mainWindow: Window? by lazy {
+        X11Api.getWindow(mainWindowTitle)
+    }
+
+    private val searchWindowMap: MutableMap<String, Window> = mutableMapOf()
+
+    fun getSearchWindow(): Window? {
+        val searchWindowTitle = getSearchWindowTitle()
+        return searchWindowMap[searchWindowTitle] ?: run {
+            searchWindowMap.clear()
+            X11Api.getWindow(searchWindowTitle)?.let { window ->
+                searchWindowMap[searchWindowTitle] = window
+                window
+            }
+        }
+    }
 
     override fun getCurrentActiveAppName(): String? {
         return X11Api.getActiveWindow()?.let { linuxAppInfo ->
@@ -64,35 +78,31 @@ class LinuxAppWindowManager(
     override suspend fun activeMainWindow() {
         logger.info { "active main window" }
         setShowMainWindow(true)
-        prevLinuxAppInfo.value = X11Api.bringToFront(MAIN_WINDOW_TITLE)
-        delay(500)
-        mainFocusRequester.requestFocus()
+        prevLinuxAppInfo.value = X11Api.bringToFront(mainWindow)
     }
 
     override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         bringToBack(preparePaste())
         setShowMainWindow(false)
-        mainFocusRequester.freeFocus()
     }
 
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
+
+        val searchWindow = getSearchWindow()
+
         setShowSearchWindow(true)
 
         setSearchWindowState(appSize.getSearchWindowState())
 
-        prevLinuxAppInfo.value = X11Api.bringToFront(SEARCH_WINDOW_TITLE)
-
-        delay(500)
-        searchFocusRequester.requestFocus()
+        prevLinuxAppInfo.value = X11Api.bringToFront(searchWindow)
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
         bringToBack(preparePaste())
         setShowSearchWindow(false)
-        searchFocusRequester.freeFocus()
     }
 
     private suspend fun bringToBack(toPaste: Boolean) {

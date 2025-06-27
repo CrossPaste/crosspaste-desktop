@@ -60,6 +60,7 @@ import com.crosspaste.info.createPasteInfoWithoutConverter
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.base.ImageShowMode
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.chevronLeft
@@ -205,7 +206,11 @@ fun PasteImagesDetailView(
                                             val intrinsicSize = painter.intrinsicSize
                                             val fileName = imagePath.name
                                             val isSvg = fileName.substringAfterLast(".") == "svg"
-                                            var imageShowMode = ImageShowMode(Modifier.wrapContentSize(), ContentScale.Fit)
+                                            var imageShowMode =
+                                                ImageShowMode(
+                                                    Modifier.wrapContentSize(),
+                                                    ContentScale.Fit,
+                                                )
                                             if (!isSvg && intrinsicSize.isSpecified) {
                                                 val builder = ImageInfoBuilder()
                                                 builder.add(
@@ -225,7 +230,8 @@ fun PasteImagesDetailView(
                                                     val scrollState = rememberScrollState()
                                                     imageShowMode =
                                                         ImageShowMode(
-                                                            Modifier.fillMaxSize().verticalScroll(scrollState),
+                                                            Modifier.fillMaxSize()
+                                                                .verticalScroll(scrollState),
                                                             ContentScale.FillWidth,
                                                         )
                                                 }
@@ -378,5 +384,3 @@ fun detailInfoItems(
 
     return details
 }
-
-private data class ImageShowMode(val modifier: Modifier, val contentScale: ContentScale)

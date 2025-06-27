@@ -15,7 +15,7 @@ import com.crosspaste.ui.paste.GenerateImageView
 import org.koin.compose.koinInject
 
 @Composable
-fun HtmlToImagePreviewView(pasteData: PasteData) {
+fun HtmlPreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 

@@ -2,6 +2,7 @@ package com.crosspaste.utils
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -179,5 +180,67 @@ object ColorUtils {
             }
 
         return hslToColor(targetHue, adjustedSaturation, adjustedLightness)
+    }
+
+    fun rgbToHsv(
+        r: Int,
+        g: Int,
+        b: Int,
+    ): FloatArray {
+        val rf = r / 255f
+        val gf = g / 255f
+        val bf = b / 255f
+
+        val max = maxOf(rf, gf, bf)
+        val min = minOf(rf, gf, bf)
+        val delta = max - min
+
+        val h =
+            when {
+                delta == 0f -> 0f
+                max == rf -> ((gf - bf) / delta) % 6
+                max == gf -> (bf - rf) / delta + 2
+                else -> (rf - gf) / delta + 4
+            } * 60
+
+        val s = if (max == 0f) 0f else delta / max
+        val v = max
+
+        return floatArrayOf(if (h < 0) h + 360 else h, s, v)
+    }
+
+    fun isNearWhiteOrBlack(
+        r: Int,
+        g: Int,
+        b: Int,
+    ): Boolean {
+        val brightness = (r + g + b) / 3
+        return brightness < 30 || brightness > 225
+    }
+
+    fun hsvToRgb(
+        h: Float,
+        s: Float,
+        v: Float,
+    ): IntArray {
+        val c = v * s
+        val x = c * (1 - abs((h / 60) % 2 - 1))
+        val m = v - c
+
+        val (r, g, b) =
+            when ((h / 60).toInt()) {
+                0 -> Triple(c, x, 0f)
+                1 -> Triple(x, c, 0f)
+                2 -> Triple(0f, c, x)
+                3 -> Triple(0f, x, c)
+                4 -> Triple(x, 0f, c)
+                else -> Triple(c, 0f, x)
+            }
+
+        return intArrayOf(
+            ((r + m) * 255).toInt(),
+            ((g + m) * 255).toInt(),
+            ((b + m) * 255).toInt(),
+        )
     }
 }

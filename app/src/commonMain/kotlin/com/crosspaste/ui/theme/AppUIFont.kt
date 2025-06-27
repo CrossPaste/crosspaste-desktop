@@ -62,6 +62,14 @@ object AppUIFont {
                     ),
             )
 
+    val mediumBodyTextStyle: TextStyle
+        @Composable
+        get() =
+            MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Light,
+                lineHeight = 1.25.em,
+            )
+
     val buttonTextStyle: TextStyle
         @Composable
         get() =
