@@ -2,7 +2,6 @@ package com.crosspaste.platform.linux.api
 
 import com.crosspaste.platform.linux.api.X11Api.Companion.INSTANCE
 import com.sun.jna.Library
-import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
@@ -88,82 +87,53 @@ object WMCtrl {
         window: X11.Window,
     ) {
         try {
-            setWindowType(display, window, "_NET_WM_WINDOW_TYPE_DOCK")
+            logger.info { "Setting window ${window.toLong()} above taskbar using clientMsg" }
 
-            setWindowState(
-                display,
-                window,
-                listOf(
-                    "_NET_WM_STATE_ABOVE",
-                    "_NET_WM_STATE_STICKY",
-                    "_NET_WM_STATE_SKIP_TASKBAR",
-                    "_NET_WM_STATE_SKIP_PAGER",
-                ),
-            )
+            val success1 =
+                clientMsg(
+                    display,
+                    window,
+                    "_NET_WM_STATE",
+                    1,
+                    INSTANCE.XInternAtom(display, "_NET_WM_STATE_ABOVE", false).toLong(),
+                    INSTANCE.XInternAtom(display, "_NET_WM_STATE_STICKY", false).toLong(),
+                    1,
+                    0,
+                )
 
-            setWindowLayer(display, window, 10)
+            val success2 =
+                clientMsg(
+                    display,
+                    window,
+                    "_NET_WM_STATE",
+                    1,
+                    INSTANCE.XInternAtom(display, "_NET_WM_STATE_SKIP_TASKBAR", false).toLong(),
+                    INSTANCE.XInternAtom(display, "_NET_WM_STATE_SKIP_PAGER", false).toLong(),
+                    1,
+                    0,
+                )
+
+            val success3 =
+                clientMsg(
+                    display,
+                    INSTANCE.XDefaultRootWindow(display),
+                    "_NET_WM_WINDOW_TYPE",
+                    INSTANCE.XInternAtom(display, "_NET_WM_WINDOW_TYPE_UTILITY", false).toLong(),
+                    0,
+                    0,
+                    0,
+                    0,
+                )
 
             INSTANCE.XFlush(display)
 
-            logger.info { "Successfully set window above taskbar" }
+            if (success1 || success2 || success3) {
+                logger.info { "Successfully sent window state messages" }
+            } else {
+                logger.warn { "All clientMsg calls failed" }
+            }
         } catch (e: Exception) {
-            logger.error(e) { "Failed to set window above taskbar" }
-            throw e
-        }
-    }
-
-    private fun setWindowType(
-        display: X11.Display,
-        window: X11.Window,
-        windowType: String,
-    ) {
-        val netWmWindowType = INSTANCE.XInternAtom(display, "_NET_WM_WINDOW_TYPE", false)
-        val typeAtom = INSTANCE.XInternAtom(display, windowType, false)
-
-        setAtomProperty(display, window, netWmWindowType, listOf(typeAtom))
-    }
-
-    private fun setWindowState(
-        display: X11.Display,
-        window: X11.Window,
-        states: List<String>,
-    ) {
-        val netWmState = INSTANCE.XInternAtom(display, "_NET_WM_STATE", false)
-        val stateAtoms = states.map { INSTANCE.XInternAtom(display, it, false) }
-
-        setAtomProperty(display, window, netWmState, stateAtoms)
-    }
-
-    private fun setWindowLayer(
-        display: X11.Display,
-        window: X11.Window,
-        layer: Int,
-    ) {
-        val netWmWindowLayer = INSTANCE.XInternAtom(display, "_NET_WM_WINDOW_LAYER", false)
-        setCardinalProperty(display, window, netWmWindowLayer, layer.toLong())
-    }
-
-    private fun setCardinalProperty(
-        display: X11.Display,
-        window: X11.Window,
-        property: Atom,
-        value: Long,
-    ) {
-        if (!setX11Property(display, window, property, X11.XA_CARDINAL, 32, longArrayOf(value))) {
-            logger.warn { "Failed to set cardinal property: $property" }
-        }
-    }
-
-    private fun setAtomProperty(
-        display: X11.Display,
-        window: X11.Window,
-        property: Atom,
-        values: List<Atom>,
-    ) {
-        val atomValues = values.map { it.toLong() }.toLongArray()
-
-        if (!setX11Property(display, window, property, X11.XA_ATOM, 32, atomValues)) {
-            logger.warn { "Failed to set atom property: $property" }
+            logger.error(e) { "Error in setWindowAboveTaskbarSimple" }
         }
     }
 
@@ -524,52 +494,6 @@ object WMCtrl {
         }
 
         return retProp.value
-    }
-
-    private fun setX11Property(
-        display: X11.Display,
-        window: X11.Window,
-        property: Atom,
-        type: Atom,
-        format: Int,
-        values: LongArray,
-    ): Boolean {
-        if (values.isEmpty()) return false
-
-        val elementSize =
-            when (format) {
-                8 -> 1
-                16 -> 2
-                32 -> NativeLong.SIZE
-                else -> throw IllegalArgumentException("Unsupported format: $format")
-            }
-
-        val memory = Memory((values.size * elementSize).toLong())
-
-        for (i in values.indices) {
-            val offset = (i * elementSize).toLong()
-            when (elementSize) {
-                1 -> memory.setByte(offset, values[i].toByte())
-                2 -> memory.setShort(offset, values[i].toShort())
-                4 -> memory.setInt(offset, values[i].toInt())
-                8 -> memory.setLong(offset, values[i])
-                else -> throw IllegalStateException("Unsupported element size: $elementSize")
-            }
-        }
-
-        val result =
-            INSTANCE.XChangeProperty(
-                display,
-                window,
-                property,
-                type,
-                format,
-                X11.PropModeReplace,
-                memory,
-                values.size,
-            )
-
-        return result == X11.Success
     }
 
     private fun clientMsg(
