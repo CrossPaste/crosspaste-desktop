@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteText
@@ -18,10 +19,14 @@ import org.koin.compose.koinInject
 fun HtmlSidePreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
         val text = pasteHtml.getText()
+        val backgroundColor = pasteHtml.getBackgroundColor()
         SidePasteLayoutView(
             pasteData = pasteData,
             pasteBottomContent = {
-                BottomGradient("${text.length}")
+                BottomGradient(
+                    text = "${text.length}",
+                    backgroundColor = backgroundColor ?: Color.White,
+                )
             },
         ) {
             val userDataPathProvider = koinInject<UserDataPathProvider>()

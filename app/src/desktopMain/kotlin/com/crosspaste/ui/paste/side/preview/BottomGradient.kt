@@ -17,8 +17,10 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 
 @Composable
-fun BottomGradient(text: String) {
-    val backgroundColor = AppUIColors.pasteBackground
+fun BottomGradient(
+    text: String,
+    backgroundColor: Color = AppUIColors.pasteBackground,
+) {
     Box(
         modifier =
             Modifier
