@@ -3,8 +3,7 @@ package com.crosspaste.paste.plugin.process
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.Ksoup
 
 class RemoveHtmlImagePlugin(
     private val userDataPathProvider: UserDataPathProvider,
@@ -27,7 +26,7 @@ class RemoveHtmlImagePlugin(
     }
 
     private fun isSingleImgInBody(html: String): Boolean {
-        val document: Document = Jsoup.parse(html)
+        val document = Ksoup.parse(html)
         val body = document.body()
         val children = body.children()
         return children.size == 1 && children.first()?.tagName() == "img"

@@ -1,8 +1,8 @@
 package com.crosspaste.plugin.office
 
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.TextNode
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.TextNode
 
 class OfficeHtmlPlugin {
 
@@ -25,7 +25,7 @@ class OfficeHtmlPlugin {
     }
 
     fun officeNormalizationHTML(html: String): String {
-        val doc: Document = Jsoup.parse(html)
+        val doc: Document = Ksoup.parse(html)
 
         // Remove unnecessary styles and attributes
         doc.select("[style]").forEach { it.removeAttr("style") }
