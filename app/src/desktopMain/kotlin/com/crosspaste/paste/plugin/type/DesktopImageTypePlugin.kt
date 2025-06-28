@@ -19,8 +19,8 @@ import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getFileUtils
+import com.fleeksoft.ksoup.Ksoup
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.jsoup.Jsoup
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.image.BufferedImage
@@ -163,7 +163,7 @@ class DesktopImageTypePlugin(
     }
 
     private fun getImageNameFromHtml(imageHtml: String): String? {
-        val doc = Jsoup.parse(imageHtml)
+        val doc = Ksoup.parse(imageHtml)
 
         val imgElement = doc.select("img").first() ?: return null
 
