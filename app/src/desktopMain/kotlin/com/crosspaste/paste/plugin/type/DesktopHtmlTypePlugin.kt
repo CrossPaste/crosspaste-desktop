@@ -6,6 +6,7 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.HtmlPasteItem.Companion.backgroundProperty
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.toPasteDataFlavor
@@ -15,6 +16,8 @@ import com.crosspaste.plugin.office.OfficeHtmlPlugin
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.awt.datatransfer.DataFlavor
 
 class DesktopHtmlTypePlugin(
@@ -83,6 +86,7 @@ class DesktopHtmlTypePlugin(
                         ),
                     fileName = "html2Image.png",
                 )
+            val background = htmlUtils.getBackgroundColor(html)
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 HtmlPasteItem(
                     identifiers = pasteItem.identifiers,
@@ -90,7 +94,12 @@ class DesktopHtmlTypePlugin(
                     size = size,
                     html = html,
                     relativePath = relativePath,
-                    extraInfo = pasteItem.extraInfo,
+                    extraInfo =
+                        background?.let {
+                            buildJsonObject {
+                                put(backgroundProperty, background.value.toLong() ushr 32)
+                            }.toString()
+                        },
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

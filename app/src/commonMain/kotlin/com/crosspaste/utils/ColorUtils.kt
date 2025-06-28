@@ -243,4 +243,105 @@ object ColorUtils {
             ((b + m) * 255).toInt(),
         )
     }
+
+    /**
+     * Determine whether the string represents a color value.
+     */
+    fun isColorValue(value: String): Boolean {
+        return value.matches(Regex("^#[0-9a-fA-F]{3,6}$")) ||
+            value.matches(Regex("^rgb\\s*\\(.*\\)$", RegexOption.IGNORE_CASE)) ||
+            value.matches(Regex("^rgba\\s*\\(.*\\)$", RegexOption.IGNORE_CASE)) ||
+            isNamedColor(value)
+    }
+
+    /**
+     * Determine whether the string is a named color.
+     */
+    private fun isNamedColor(value: String): Boolean {
+        val namedColors =
+            setOf(
+                "white", "black", "red", "green", "blue", "yellow", "cyan", "magenta",
+                "silver", "gray", "maroon", "olive", "lime", "aqua", "teal", "navy",
+                "fuchsia", "purple", "transparent",
+            )
+        return namedColors.contains(value.lowercase())
+    }
+
+    /**
+     * Parse any supported color format to Compose Color.
+     */
+    fun normalizeColor(color: String): Color {
+        val trimmedColor = color.trim()
+
+        // Handle #RGB format
+        if (trimmedColor.matches(Regex("^#[0-9a-fA-F]{3}$"))) {
+            val r = trimmedColor[1].toString().repeat(2).toInt(16)
+            val g = trimmedColor[2].toString().repeat(2).toInt(16)
+            val b = trimmedColor[3].toString().repeat(2).toInt(16)
+            return Color(r, g, b)
+        }
+
+        // Handle #RRGGBB format
+        if (trimmedColor.matches(Regex("^#[0-9a-fA-F]{6}$"))) {
+            val r = trimmedColor.substring(1, 3).toInt(16)
+            val g = trimmedColor.substring(3, 5).toInt(16)
+            val b = trimmedColor.substring(5, 7).toInt(16)
+            return Color(r, g, b)
+        }
+
+        // Handle rgb() format
+        if (trimmedColor.matches(
+                Regex(
+                    "^rgb\\s*\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*\\)$",
+                    RegexOption.IGNORE_CASE,
+                ),
+            )
+        ) {
+            val values = trimmedColor.substringAfter("(").substringBefore(")").split(",")
+            val r = values[0].trim().toInt()
+            val g = values[1].trim().toInt()
+            val b = values[2].trim().toInt()
+            return Color(r, g, b)
+        }
+
+        // Handle rgba() format
+        if (trimmedColor.matches(
+                Regex(
+                    "^rgba\\s*\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*[\\d.]+\\s*\\)$",
+                    RegexOption.IGNORE_CASE,
+                ),
+            )
+        ) {
+            val values = trimmedColor.substringAfter("(").substringBefore(")").split(",")
+            val r = values[0].trim().toInt()
+            val g = values[1].trim().toInt()
+            val b = values[2].trim().toInt()
+            val a = values[3].trim().toFloat()
+            return Color(r, g, b, (a * 255).toInt())
+        }
+
+        // Handle named colors
+        return when (trimmedColor.lowercase()) {
+            "white" -> Color.White
+            "black" -> Color.Black
+            "red" -> Color.Red
+            "green" -> Color(0xFF008000) // HTML green
+            "blue" -> Color.Blue
+            "yellow" -> Color.Yellow
+            "cyan" -> Color.Cyan
+            "magenta" -> Color.Magenta
+            "silver" -> Color(0xFFC0C0C0)
+            "gray", "grey" -> Color.Gray
+            "maroon" -> Color(0xFF800000)
+            "olive" -> Color(0xFF808000)
+            "lime" -> Color(0xFF00FF00)
+            "aqua" -> Color.Cyan
+            "teal" -> Color(0xFF008080)
+            "navy" -> Color(0xFF000080)
+            "fuchsia" -> Color.Magenta
+            "purple" -> Color(0xFF800080)
+            "transparent" -> Color.Transparent
+            else -> Color.White
+        }
+    }
 }

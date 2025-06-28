@@ -1,5 +1,6 @@
 package com.crosspaste.paste.item
 
+import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.path.UserDataPathProvider
@@ -11,6 +12,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
@@ -34,6 +36,8 @@ class HtmlPasteItem(
         val fileUtils = getFileUtils()
         val jsonUtils = getJsonUtils()
         val htmlUtils = getHtmlUtils()
+
+        const val backgroundProperty = "background"
     }
 
     private val htmlTextCache by lazy {
@@ -49,6 +53,15 @@ class HtmlPasteItem(
         html = jsonObject["html"]!!.jsonPrimitive.content,
         extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
     )
+
+    override fun getBackgroundColor(): Color? {
+        return extraInfo?.let { json ->
+            runCatching {
+                val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
+                jsonObject[backgroundProperty]?.jsonPrimitive?.long?.let { Color(it) }
+            }.getOrNull()
+        }
+    }
 
     override fun getHtmlImagePath(userDataPathProvider: UserDataPathProvider): Path {
         val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = AppFileType.HTML)

@@ -1,7 +1,10 @@
 package com.crosspaste.utils
 
+import androidx.compose.ui.graphics.Color
+import com.crosspaste.utils.ColorUtils.normalizeColor
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.safety.Safelist
 
 fun getHtmlUtils(): HtmlUtils {
@@ -11,6 +14,8 @@ fun getHtmlUtils(): HtmlUtils {
 object HtmlUtils {
 
     private val codecsUtils = getCodecsUtils()
+
+    private val colorUtils = getColorUtils()
 
     fun dataUrl(html: String): String {
         val encodedContent = codecsUtils.base64Encode(html.encodeToByteArray())
@@ -51,5 +56,96 @@ object HtmlUtils {
 
             doc.html()
         }.getOrElse { html }
+    }
+
+    fun getBackgroundColor(html: String): Color? {
+        val document = Ksoup.parse(html)
+        val body = document.body()
+
+        getColorFromElement(body)?.let { return it }
+
+        val directChildren =
+            body.children()
+                .filter { it.tagName() !in listOf("script", "style", "noscript") }
+
+        when {
+            directChildren.size == 1 -> {
+                getColorFromElement(directChildren.first())?.let { return it }
+            }
+
+            directChildren.size > 1 -> {
+                val mainContainer = findMainContainer(directChildren)
+                mainContainer?.let { element ->
+                    getColorFromElement(element)?.let { return it }
+                }
+            }
+        }
+
+        return body.parents()
+            .firstNotNullOfOrNull { getColorFromElement(it) }
+    }
+
+    private fun findMainContainer(elements: List<Element>): Element? {
+        return elements.firstOrNull { element ->
+            when {
+                element.tagName() in listOf("main", "article") -> true
+                element.id() in listOf("app", "root", "container", "wrapper", "main") -> true
+                element.classNames().any { className ->
+                    className in listOf("container", "wrapper", "main", "app", "root", "content")
+                } -> true
+                element.tagName() == "div" && hasFullWidthStyle(element) -> true
+                else -> false
+            }
+        } ?: elements.firstOrNull { it.tagName() == "div" }
+    }
+
+    private fun hasFullWidthStyle(element: Element): Boolean {
+        val style = element.attr("style")
+        return style.contains("width:\\s*100%".toRegex()) ||
+            style.contains("min-height:\\s*100vh".toRegex()) ||
+            style.contains("height:\\s*100vh".toRegex())
+    }
+
+    private fun getColorFromElement(element: Element): Color? {
+        element.attr("style").takeIf { it.isNotEmpty() }
+            ?.let { extractBackgroundColorFromStyle(it) }
+            ?.let { return it }
+
+        element.attr("bgcolor").takeIf { it.isNotEmpty() }
+            ?.let { return normalizeColor(it) }
+
+        return null
+    }
+
+    private fun extractBackgroundColorFromStyle(style: String): Color? {
+        val patterns =
+            listOf(
+                "background-color" to Regex("background-color\\s*:\\s*([^;]+)", RegexOption.IGNORE_CASE),
+                "background" to Regex("background\\s*:\\s*([^;]+)", RegexOption.IGNORE_CASE),
+            )
+
+        return patterns
+            .firstNotNullOfOrNull { (_, pattern) ->
+                pattern.find(style)?.groupValues?.get(1)?.trim()
+            }
+            ?.let { extractColorFromBackground(it) }
+            ?.let { normalizeColor(it) }
+    }
+
+    private fun extractColorFromBackground(backgroundValue: String): String? {
+        val parts = backgroundValue.split("\\s+".toRegex())
+        for (part in parts) {
+            if (!part.contains("url(") && !part.contains("repeat") &&
+                !part.contains("scroll") && !part.contains("fixed") &&
+                !part.contains("center") && !part.contains("top") &&
+                !part.contains("bottom") && !part.contains("left") &&
+                !part.contains("right") && part.isNotEmpty()
+            ) {
+                if (colorUtils.isColorValue(part)) {
+                    return part
+                }
+            }
+        }
+        return null
     }
 }
