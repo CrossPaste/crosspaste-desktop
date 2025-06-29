@@ -34,6 +34,8 @@ data class RtfPasteItem(
         val fileUtils = getFileUtils()
         val jsonUtils = getJsonUtils()
         val rtfUtils = getRtfUtils()
+
+        const val RTF2IMAGE = "rtf2Image.png"
     }
 
     private val rtfTextCache by lazy {
@@ -63,9 +65,9 @@ data class RtfPasteItem(
             basePath = basePath,
             rtf = rtf,
             relativePath =
-                HtmlPasteItem.fileUtils.createPasteRelativePath(
+                fileUtils.createPasteRelativePath(
                     pasteCoordinate = pasteCoordinate,
-                    fileName = "rtf2Image.png",
+                    fileName = RTF2IMAGE,
                 ),
         )
     }
