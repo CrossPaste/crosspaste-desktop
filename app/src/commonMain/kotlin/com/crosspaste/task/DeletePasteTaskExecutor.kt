@@ -21,8 +21,10 @@ class DeletePasteTaskExecutor(private val pasteDao: PasteDao) : SingleTypeTaskEx
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         return runCatching {
-            mutex.withLock {
-                pasteDao.deletePasteData(pasteTask.pasteDataId!!)
+            pasteTask.pasteDataId?.let { pasteDataId ->
+                mutex.withLock(pasteDataId) {
+                    pasteDao.deletePasteData(pasteDataId)
+                }
             }
             SuccessPasteTaskResult()
         }.getOrElse {

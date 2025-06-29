@@ -42,7 +42,12 @@ class SyncPasteTaskExecutor(
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
-        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let {
+
+        if (pasteTask.pasteDataId == null) {
+            return createEmptyResult(syncExtraInfo)
+        }
+
+        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let {
                 pasteData ->
             val syncResults = executeSyncTasks(pasteData, syncExtraInfo)
             processResults(syncResults, syncExtraInfo, pasteTask.modifyTime)

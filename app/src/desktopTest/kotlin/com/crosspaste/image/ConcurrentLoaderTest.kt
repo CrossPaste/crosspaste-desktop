@@ -1,5 +1,6 @@
 package com.crosspaste.image
 
+import com.crosspaste.utils.ConcurrentLoader
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

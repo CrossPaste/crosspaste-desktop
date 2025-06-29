@@ -34,27 +34,29 @@ class Rtf2ImageTaskExecutor(
     private val mutex = Mutex()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        return mutex.withLock(pasteTask.pasteDataId) {
-            runCatching {
-                pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
-                    pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
-                        val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
-                        if (!fileUtils.existFile(rtf2ImagePath)) {
-                            rtfRenderingService.saveRenderImage(pasteRtf.rtf, rtf2ImagePath)
-                            generateImageService.getGenerateState(rtf2ImagePath).emit(true)
+        return runCatching {
+            pasteTask.pasteDataId?.let { pasteDataId ->
+                mutex.withLock(pasteDataId) {
+                    pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
+                        pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
+                            val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
+                            if (!fileUtils.existFile(rtf2ImagePath)) {
+                                rtfRenderingService.saveRenderImage(pasteRtf.rtf, rtf2ImagePath)
+                                generateImageService.getGenerateState(rtf2ImagePath).emit(true)
+                            }
                         }
                     }
                 }
-                SuccessPasteTaskResult()
-            }.getOrElse {
-                TaskUtils.createFailurePasteTaskResult(
-                    logger = logger,
-                    retryHandler = { false },
-                    startTime = pasteTask.modifyTime,
-                    fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, it)),
-                    extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
-                )
             }
+            SuccessPasteTaskResult()
+        }.getOrElse {
+            TaskUtils.createFailurePasteTaskResult(
+                logger = logger,
+                retryHandler = { false },
+                startTime = pasteTask.modifyTime,
+                fails = listOf(createFailureResult(StandardErrorCode.HTML_2_IMAGE_TASK_FAIL, it)),
+                extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
+            )
         }
     }
 }

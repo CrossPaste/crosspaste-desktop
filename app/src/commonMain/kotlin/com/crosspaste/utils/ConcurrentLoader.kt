@@ -1,6 +1,5 @@
-package com.crosspaste.image
+package com.crosspaste.utils
 
-import com.crosspaste.utils.Loader
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 

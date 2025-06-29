@@ -43,39 +43,41 @@ class Html2ImageTaskExecutor(
         }
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        return mutex.withLock(pasteTask.pasteDataId) {
-            val htmlRenderingService = htmlRenderingServiceDeferred.await()
-            runCatching {
-                pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
-                    pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
-                        val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
-                        if (!fileUtils.existFile(html2ImagePath)) {
-                            val normalizeHtml =
-                                htmlTypePlugin.normalizeHtml(
-                                    pasteHtml.html,
-                                    pasteData.source,
-                                )
-                            htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
-                            generateImageService.getGenerateState(html2ImagePath).emit(true)
+        return runCatching {
+            pasteTask.pasteDataId?.let { pasteDataId ->
+                mutex.withLock(pasteDataId) {
+                    val htmlRenderingService = htmlRenderingServiceDeferred.await()
+                    pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
+                        pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
+                            val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
+                            if (!fileUtils.existFile(html2ImagePath)) {
+                                val normalizeHtml =
+                                    htmlTypePlugin.normalizeHtml(
+                                        pasteHtml.html,
+                                        pasteData.source,
+                                    )
+                                htmlRenderingService.saveRenderImage(normalizeHtml, html2ImagePath)
+                                generateImageService.getGenerateState(html2ImagePath).emit(true)
+                            }
                         }
                     }
                 }
-                SuccessPasteTaskResult()
-            }.getOrElse {
-                TaskUtils.createFailurePasteTaskResult(
-                    logger = logger,
-                    retryHandler = { false },
-                    startTime = pasteTask.modifyTime,
-                    fails =
-                        listOf(
-                            createFailureResult(
-                                StandardErrorCode.HTML_2_IMAGE_TASK_FAIL,
-                                it,
-                            ),
-                        ),
-                    extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
-                )
             }
+            SuccessPasteTaskResult()
+        }.getOrElse {
+            TaskUtils.createFailurePasteTaskResult(
+                logger = logger,
+                retryHandler = { false },
+                startTime = pasteTask.modifyTime,
+                fails =
+                    listOf(
+                        createFailureResult(
+                            StandardErrorCode.HTML_2_IMAGE_TASK_FAIL,
+                            it,
+                        ),
+                    ),
+                extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
+            )
         }
     }
 }
