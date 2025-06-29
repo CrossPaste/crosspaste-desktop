@@ -3,6 +3,7 @@ package com.crosspaste.image
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.ConcurrentLoader
 import com.crosspaste.utils.fileNameRemoveExtension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent

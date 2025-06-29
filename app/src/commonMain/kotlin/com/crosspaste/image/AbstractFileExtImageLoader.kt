@@ -2,6 +2,7 @@ package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.ConcurrentLoader
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
