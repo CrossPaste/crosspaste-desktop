@@ -1,13 +1,10 @@
 package com.crosspaste.rendering
 
-import okio.Path
+import com.crosspaste.db.paste.PasteData
 
 interface RenderingService<T> {
 
-    suspend fun saveRenderImage(
-        input: T,
-        savePath: Path,
-    )
+    suspend fun render(pasteData: PasteData)
 
     fun start()
 

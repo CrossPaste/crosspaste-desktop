@@ -1,6 +1,10 @@
 package com.crosspaste.rendering
 
+import com.crosspaste.db.paste.PasteData
+import com.crosspaste.image.GenerateImageService
 import com.crosspaste.module.ModuleLoaderConfig
+import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
@@ -10,7 +14,7 @@ import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.ChromeServiceServiceModule.Companion.CHROME_DRIVER_MODULE_ITEM_NAME
 import com.crosspaste.rendering.ChromeServiceServiceModule.Companion.CHROME_HEADLESS_SHELL_MODULE_ITEM_NAME
 import com.crosspaste.utils.DesktopResourceUtils
-import com.crosspaste.utils.Retry
+import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -19,7 +23,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
-import okio.Path
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
@@ -30,12 +33,16 @@ import kotlin.math.max
 class DesktopHtmlRenderingService(
     private val appPathProvider: AppPathProvider,
     private val filePersist: FilePersist,
+    private val generateImageService: GenerateImageService,
+    private val htmlTypePlugin: HtmlTypePlugin,
     private val renderingHelper: RenderingHelper,
     private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : RenderingService<String> {
 
     private val logger = KotlinLogging.logger {}
+
+    private val fileUtils = getFileUtils()
 
     private val htmlUtils = getHtmlUtils()
 
@@ -122,16 +129,30 @@ class DesktopHtmlRenderingService(
         return false
     }
 
-    override suspend fun saveRenderImage(
-        input: String,
-        savePath: Path,
-    ) {
-        return Retry.retry(1, {
-            html2Image(input)?.let { bytes ->
-                filePersist.createOneFilePersist(savePath).saveBytes(bytes)
+    override suspend fun render(pasteData: PasteData) {
+        pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
+            val normalizeHtml =
+                htmlTypePlugin.normalizeHtml(
+                    pasteHtml.html,
+                    pasteData.source,
+                )
+
+            val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
+
+            if (fileUtils.existFile(html2ImagePath)) {
+                logger.info { "HTML to image already exists at $html2ImagePath" }
+            } else {
+                runCatching {
+                    html2Image(normalizeHtml)?.let { bytes ->
+                        filePersist.createOneFilePersist(html2ImagePath).saveBytes(bytes)
+                    }
+                    generateImageService.getGenerateState(html2ImagePath).emit(true)
+                }.onFailure { e ->
+                    logger.error(e) { "Failed to convert HTML to image" }
+                    restart()
+                    throw e
+                }
             }
-        }) {
-            restart()
         }
     }
 

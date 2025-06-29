@@ -390,10 +390,10 @@ class DesktopModule(
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
             single<RenderingHelper> { DesktopRenderingHelper(get()) }
             single<RenderingService<String>>(named("htmlRendering")) {
-                DesktopHtmlRenderingService(get(), get(), get(), get(), get())
+                DesktopHtmlRenderingService(get(), get(), get(), get(), get(), get(), get())
             }
             single<RenderingService<String>>(named("rtfRendering")) {
-                DesktopRtfRenderingService(get(), get())
+                DesktopRtfRenderingService(get(), get(), get(), get())
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<GenerateImageService> { GenerateImageService() }
@@ -416,16 +416,11 @@ class DesktopModule(
                         Html2ImageTaskExecutor(
                             lazy { get<RenderingService<String>>(named("htmlRendering")) },
                             get(),
-                            get(),
-                            get(),
-                            get(),
                         ),
                         PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                         PullIconTaskExecutor(get(), get(), get(), get()),
                         Rtf2ImageTaskExecutor(
                             lazy { get<RenderingService<String>>(named("rtfRendering")) },
-                            get(),
-                            get(),
                             get(),
                         ),
                         SwitchLanguageTaskExecutor(get(), get()),
