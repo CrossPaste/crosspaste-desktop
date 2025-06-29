@@ -10,6 +10,7 @@ import java.net.Proxy
 import java.net.ProxySelector
 import java.net.Socket
 import java.net.URI
+import java.util.concurrent.locks.ReentrantLock
 
 object DesktopProxy {
 
@@ -17,7 +18,18 @@ object DesktopProxy {
 
     private val systemProperty = getSystemProperty()
 
+    private val lock = ReentrantLock()
+
     fun getProxy(uri: URI): Proxy {
+        lock.lock()
+        return try {
+            getProxyInternal(uri)
+        } finally {
+            lock.unlock()
+        }
+    }
+
+    private fun getProxyInternal(uri: URI): Proxy {
         systemProperty.set("java.net.useSystemProxies", "true")
         return runCatching {
             val proxyList = ProxySelector.getDefault().select(uri)
