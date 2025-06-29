@@ -8,6 +8,7 @@ import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.RtfPasteItem
+import com.crosspaste.paste.item.RtfPasteItem.Companion.RTF2IMAGE
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
@@ -78,7 +79,7 @@ class DesktopRtfTypePlugin(
                             id = pasteId,
                             appInstanceId = appInfo.appInstanceId,
                         ),
-                    fileName = "rtf2Image.png",
+                    fileName = RTF2IMAGE,
                 )
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 RtfPasteItem(

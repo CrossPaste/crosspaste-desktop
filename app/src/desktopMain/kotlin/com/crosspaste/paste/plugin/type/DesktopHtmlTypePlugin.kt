@@ -6,7 +6,8 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.HtmlPasteItem.Companion.backgroundProperty
+import com.crosspaste.paste.item.HtmlPasteItem.Companion.BACKGROUND_PROPERTY
+import com.crosspaste.paste.item.HtmlPasteItem.Companion.HTML2IMAGE
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.toPasteDataFlavor
@@ -84,7 +85,7 @@ class DesktopHtmlTypePlugin(
                             id = pasteId,
                             appInstanceId = appInfo.appInstanceId,
                         ),
-                    fileName = "html2Image.png",
+                    fileName = HTML2IMAGE,
                 )
             val background = htmlUtils.getBackgroundColor(html)
             val update: (PasteItem) -> PasteItem = { pasteItem ->
@@ -97,7 +98,7 @@ class DesktopHtmlTypePlugin(
                     extraInfo =
                         background?.let {
                             buildJsonObject {
-                                put(backgroundProperty, background.value.toLong() ushr 32)
+                                put(BACKGROUND_PROPERTY, background.value.toLong() ushr 32)
                             }.toString()
                         },
                 )

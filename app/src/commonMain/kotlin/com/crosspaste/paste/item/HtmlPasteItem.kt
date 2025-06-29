@@ -37,7 +37,9 @@ class HtmlPasteItem(
         val jsonUtils = getJsonUtils()
         val htmlUtils = getHtmlUtils()
 
-        const val backgroundProperty = "background"
+        const val BACKGROUND_PROPERTY = "background"
+
+        const val HTML2IMAGE = "html2Image.png"
     }
 
     private val htmlTextCache by lazy {
@@ -58,7 +60,7 @@ class HtmlPasteItem(
         return extraInfo?.let { json ->
             runCatching {
                 val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
-                jsonObject[backgroundProperty]?.jsonPrimitive?.long?.let { Color(it) }
+                jsonObject[BACKGROUND_PROPERTY]?.jsonPrimitive?.long?.let { Color(it) }
             }.getOrNull()
         }
     }
@@ -77,7 +79,7 @@ class HtmlPasteItem(
             relativePath =
                 fileUtils.createPasteRelativePath(
                     pasteCoordinate = pasteCoordinate,
-                    fileName = "html2Image.png",
+                    fileName = HTML2IMAGE,
                 ),
             html = html,
             extraInfo = extraInfo,
