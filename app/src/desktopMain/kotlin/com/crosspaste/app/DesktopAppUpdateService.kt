@@ -44,8 +44,6 @@ class DesktopAppUpdateService(
 
     override val lastVersion: StateFlow<Version?> = _lastVersion
 
-    private val desktopProxy = DesktopProxy
-
     private var checkUpdate: Job? = null
 
     private fun startPeriodicUpdateCheck(): Job {
