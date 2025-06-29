@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import com.crosspaste.net.DesktopProxy
+import com.crosspaste.net.DesktopClient
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
@@ -17,13 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
-import java.net.InetSocketAddress
-import java.net.ProxySelector
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
@@ -50,8 +43,6 @@ class DesktopAppUpdateService(
     private val _lastVersion: MutableStateFlow<Version?> = MutableStateFlow(null)
 
     override val lastVersion: StateFlow<Version?> = _lastVersion
-
-    private val desktopProxy = DesktopProxy
 
     private var checkUpdate: Job? = null
 
@@ -119,41 +110,16 @@ class DesktopAppUpdateService(
     }
 
     private fun readLastVersion(): Version? {
-        val uri = URI(appUrls.checkMetadataUrl)
-
-        val proxy = desktopProxy.getProxy(uri)
-
-        runCatching {
-            val builder =
-                HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.NORMAL) // Enable following redirects
-
-            (proxy.address() as InetSocketAddress?)?.let { address ->
-                builder.proxy(ProxySelector.of(address))
+        return DesktopClient.request(
+            url = appUrls.checkMetadataUrl,
+        ) { response ->
+            val bytes = response.body().readBytes()
+            val inputStream = ByteArrayInputStream(bytes)
+            val properties = Properties()
+            properties.load(inputStream)
+            properties.getProperty("app.version")?.let { versionString ->
+                Version.parse(versionString)
             }
-
-            val client = builder.build()
-
-            val request =
-                HttpRequest.newBuilder()
-                    .uri(uri)
-                    .timeout(Duration.ofSeconds(5))
-                    .build()
-
-            val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-
-            if (response.statusCode() in 200..299) {
-                val bytes = response.body().readBytes()
-                val inputStream = ByteArrayInputStream(bytes)
-                val properties = Properties()
-                properties.load(inputStream)
-                properties.getProperty("app.version")?.let { versionString ->
-                    return@readLastVersion Version.parse(versionString)
-                }
-            }
-        }.onFailure { e ->
-            logger.warn(e) { "Failed to get last version" }
         }
-        return null
     }
 }
