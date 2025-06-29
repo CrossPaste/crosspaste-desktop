@@ -38,10 +38,12 @@ class Rtf2ImageTaskExecutor(
             pasteTask.pasteDataId?.let { pasteDataId ->
                 mutex.withLock(pasteDataId) {
                     pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
-                        val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
-                        if (!fileUtils.existFile(rtf2ImagePath)) {
-                            rtfRenderingService.saveRenderImage(pasteRtf.rtf, rtf2ImagePath)
-                            generateImageService.getGenerateState(rtf2ImagePath).emit(true)
+                        pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
+                            val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
+                            if (!fileUtils.existFile(rtf2ImagePath)) {
+                                rtfRenderingService.saveRenderImage(pasteRtf.rtf, rtf2ImagePath)
+                                generateImageService.getGenerateState(rtf2ImagePath).emit(true)
+                            }
                         }
                     }
                 }
