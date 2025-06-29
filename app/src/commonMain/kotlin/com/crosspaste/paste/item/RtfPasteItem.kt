@@ -2,13 +2,13 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getRtfUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -19,15 +19,12 @@ import okio.Path.Companion.toPath
 
 @Serializable
 @SerialName("rtf")
-data class RtfPasteItem(
+class RtfPasteItem(
     override val identifiers: List<String>,
     override val hash: String,
     override val size: Long,
-    @Transient
-    override val basePath: String? = null,
-    override val relativePath: String,
     override val rtf: String,
-    override val extraInfo: String? = null,
+    override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteRtf {
 
     companion object {
@@ -46,29 +43,17 @@ data class RtfPasteItem(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
-        basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
-        relativePath = jsonObject["relativePath"]!!.jsonPrimitive.content,
         rtf = jsonObject["rtf"]!!.jsonPrimitive.content,
-        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
+        extraInfo = getExtraInfoFromJson(jsonObject),
     )
-
-    override fun getRtfImagePath(userDataPathProvider: UserDataPathProvider): Path {
-        val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = AppFileType.RTF)
-        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-    }
 
     override fun bind(pasteCoordinate: PasteCoordinate): RtfPasteItem {
         return RtfPasteItem(
             identifiers = identifiers,
             hash = hash,
             size = size,
-            basePath = basePath,
             rtf = rtf,
-            relativePath =
-                fileUtils.createPasteRelativePath(
-                    pasteCoordinate = pasteCoordinate,
-                    fileName = RTF2IMAGE,
-                ),
+            extraInfo = extraInfo,
         )
     }
 
@@ -95,27 +80,37 @@ data class RtfPasteItem(
                 hash = hash,
                 size = rtf.encodeToByteArray().size.toLong(),
                 rtf = rtf,
-                basePath = basePath,
-                relativePath = relativePath,
+                extraInfo = extraInfo,
             )
         } ?: this
     }
 
-    override fun clear(
+    override fun getRenderingFilePath(
+        pasteCoordinate: PasteCoordinate,
         userDataPathProvider: UserDataPathProvider,
+    ): Path {
+        return getMarketingPath()?.toPath() ?: run {
+            val basePath = userDataPathProvider.resolve(appFileType = AppFileType.RTF)
+            val relativePath =
+                fileUtils.createPasteRelativePath(
+                    pasteCoordinate = pasteCoordinate,
+                    fileName = RTF2IMAGE,
+                )
+            userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+        }
+    }
+
+    override fun clear(
         clearResource: Boolean,
+        pasteCoordinate: PasteCoordinate,
+        userDataPathProvider: UserDataPathProvider,
     ) {
         if (clearResource) {
-            if (basePath == null) {
-                val basePath = userDataPathProvider.resolve(appFileType = AppFileType.RTF)
-                val rtfFile =
-                    userDataPathProvider.resolve(
-                        basePath,
-                        relativePath,
-                        autoCreate = false,
-                        isFile = true,
-                    )
-                fileUtils.deleteFile(rtfFile)
+            getRenderingFilePath(
+                pasteCoordinate = pasteCoordinate,
+                userDataPathProvider = userDataPathProvider,
+            ).also { resourceFilePath ->
+                fileUtils.deleteFile(resourceFilePath)
             }
         }
     }
@@ -123,7 +118,6 @@ data class RtfPasteItem(
     override fun isValid(): Boolean {
         return hash.isNotEmpty() &&
             size > 0 &&
-            relativePath.isNotEmpty() &&
             rtf.isNotEmpty()
     }
 
@@ -133,8 +127,6 @@ data class RtfPasteItem(
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
             put("size", size)
-            basePath?.let { put("basePath", it) }
-            put("relativePath", relativePath)
             put("rtf", rtf)
             extraInfo?.let { put("extraInfo", it) }
         }.toString()

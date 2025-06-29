@@ -116,8 +116,15 @@ data class PasteData(
     }
 
     fun clear(userDataPathProvider: UserDataPathProvider) {
-        pasteAppearItem?.clear(userDataPathProvider)
-        pasteCollection.clear(userDataPathProvider)
+        val pasteCoordinate = PasteCoordinate(id, appInstanceId, createTime)
+        pasteAppearItem?.clear(
+            pasteCoordinate = pasteCoordinate,
+            userDataPathProvider = userDataPathProvider,
+        )
+        pasteCollection.clear(
+            pasteCoordinate = pasteCoordinate,
+            userDataPathProvider = userDataPathProvider,
+        )
     }
 
     fun <T : Any> getPasteItem(clazz: KClass<T>): T? {

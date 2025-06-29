@@ -1,28 +1,23 @@
 package com.crosspaste.paste.plugin.type
 
-import com.crosspaste.app.AppInfo
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.HtmlPasteItem.Companion.BACKGROUND_PROPERTY
-import com.crosspaste.paste.item.HtmlPasteItem.Companion.HTML2IMAGE
-import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
+import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.html.HTMLCodec
 import com.crosspaste.plugin.office.OfficeHtmlPlugin
 import com.crosspaste.utils.getCodecsUtils
-import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.awt.datatransfer.DataFlavor
 
 class DesktopHtmlTypePlugin(
-    private val appInfo: AppInfo,
     private val platform: Platform,
 ) : HtmlTypePlugin {
 
@@ -31,8 +26,6 @@ class DesktopHtmlTypePlugin(
         const val HTML_ID = "text/html"
 
         private val codecsUtils = getCodecsUtils()
-
-        private val fileUtils = getFileUtils()
 
         private val htmlUtils = getHtmlUtils()
 
@@ -58,7 +51,6 @@ class DesktopHtmlTypePlugin(
             hash = "",
             size = 0,
             html = "",
-            relativePath = "",
         ).let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
         }
@@ -78,15 +70,6 @@ class DesktopHtmlTypePlugin(
             val htmlBytes = html.encodeToByteArray()
             val hash = codecsUtils.hash(htmlBytes)
             val size = htmlBytes.size.toLong()
-            val relativePath =
-                fileUtils.createPasteRelativePath(
-                    pasteCoordinate =
-                        PasteCoordinate(
-                            id = pasteId,
-                            appInstanceId = appInfo.appInstanceId,
-                        ),
-                    fileName = HTML2IMAGE,
-                )
             val background = htmlUtils.getBackgroundColor(html)
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 HtmlPasteItem(
@@ -94,13 +77,15 @@ class DesktopHtmlTypePlugin(
                     hash = hash,
                     size = size,
                     html = html,
-                    relativePath = relativePath,
                     extraInfo =
-                        background?.let {
-                            buildJsonObject {
-                                put(BACKGROUND_PROPERTY, background.value.toLong() ushr 32)
-                            }.toString()
-                        },
+                        updateExtraInfo(
+                            pasteItem.extraInfo,
+                            update = {
+                                background?.let {
+                                    put(BACKGROUND, background.value.toLong() ushr 32)
+                                }
+                            },
+                        ),
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

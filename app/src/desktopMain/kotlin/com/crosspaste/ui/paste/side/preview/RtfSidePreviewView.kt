@@ -8,16 +8,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.db.paste.PasteData
-import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.paste.GenerateImageView
 import org.koin.compose.koinInject
 
 @Composable
 fun RtfSidePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
-        val text = pasteRtf.getText()
+    pasteData.getPasteItem(RtfPasteItem::class)?.let { rtfPasteItem ->
+        val text = rtfPasteItem.getText()
         SidePasteLayoutView(
             pasteData = pasteData,
             pasteBottomContent = {
@@ -28,7 +28,10 @@ fun RtfSidePreviewView(pasteData: PasteData) {
 
             val filePath by remember(pasteData.id) {
                 mutableStateOf(
-                    pasteRtf.getRtfImagePath(userDataPathProvider),
+                    rtfPasteItem.getRenderingFilePath(
+                        pasteData.getPasteCoordinate(),
+                        userDataPathProvider,
+                    ),
                 )
             }
 

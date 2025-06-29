@@ -17,7 +17,7 @@ data class PasteCollection(
 
     companion object {
 
-        private val jsonUtils = getJsonUtils();
+        private val jsonUtils = getJsonUtils()
 
         fun fromJson(json: String): PasteCollection {
             val jsonArray = jsonUtils.JSON.parseToJsonElement(json).jsonArray
@@ -30,11 +30,12 @@ data class PasteCollection(
     }
 
     fun clear(
-        userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean = true,
+        pasteCoordinate: PasteCoordinate,
+        userDataPathProvider: UserDataPathProvider,
     ) {
         pasteItems.forEach {
-            it.clear(userDataPathProvider, clearResource)
+            it.clear(clearResource, pasteCoordinate, userDataPathProvider)
         }
     }
 

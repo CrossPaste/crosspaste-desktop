@@ -2,6 +2,7 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.getFileUtils
@@ -32,7 +33,7 @@ data class ImagesPasteItem(
     override val basePath: String? = null,
     override val fileInfoTreeMap: Map<String, FileInfoTree>,
     override val relativePathList: List<String>,
-    override val extraInfo: String? = null,
+    override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteImages {
 
     companion object {
@@ -62,7 +63,7 @@ data class ImagesPasteItem(
                 it.jsonPrimitive.content
             },
         fileInfoTreeMap = fileInfoTreeMap,
-        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
+        extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
     override fun getAppFileType(): AppFileType {

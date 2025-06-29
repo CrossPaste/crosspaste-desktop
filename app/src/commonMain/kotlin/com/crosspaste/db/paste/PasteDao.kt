@@ -446,7 +446,11 @@ class PasteDao(
         getLoadingPasteData(id)?.let { pasteData ->
             var pasteAppearItems = pasteItems
             for (pastePlugin in pasteProcessPlugins) {
-                pasteAppearItems = pastePlugin.process(pasteAppearItems, pasteData.source)
+                pasteAppearItems = pastePlugin.process(
+                    pasteData.getPasteCoordinate(),
+                    pasteAppearItems,
+                    pasteData.source,
+                )
             }
 
             if (pasteAppearItems.isEmpty()) {
@@ -488,6 +492,8 @@ class PasteDao(
                     tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
                 } else if (pasteType.isRtf()) {
                     tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
+                } else if (pasteType.isUrl()) {
+                    tasks.add(taskDao.createTask(id, TaskType.OPEN_GRAPH_TASK))
                 }
                 if (appControl.isFileSizeSyncEnabled(maxFileSize)) {
                     tasks.add(

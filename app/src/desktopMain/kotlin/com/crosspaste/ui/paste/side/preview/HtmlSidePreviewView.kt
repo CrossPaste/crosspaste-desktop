@@ -9,7 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.db.paste.PasteData
-import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.paste.GenerateImageView
@@ -17,9 +17,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun HtmlSidePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
-        val text = pasteHtml.getText()
-        val backgroundColor = pasteHtml.getBackgroundColor()
+    pasteData.getPasteItem(HtmlPasteItem::class)?.let { htmlPasteItem ->
+        val text = htmlPasteItem.getText()
+        val backgroundColor = htmlPasteItem.getBackgroundColor()
         SidePasteLayoutView(
             pasteData = pasteData,
             pasteBottomContent = {
@@ -33,7 +33,10 @@ fun HtmlSidePreviewView(pasteData: PasteData) {
 
             val filePath by remember(pasteData.id) {
                 mutableStateOf(
-                    pasteHtml.getHtmlImagePath(userDataPathProvider),
+                    htmlPasteItem.getRenderingFilePath(
+                        pasteData.getPasteCoordinate(),
+                        userDataPathProvider,
+                    ),
                 )
             }
 

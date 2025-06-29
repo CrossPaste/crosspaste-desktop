@@ -12,10 +12,9 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.utils.getCodecsUtils
-import kotlinx.serialization.json.Json.Default.parseToJsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
@@ -45,14 +44,13 @@ abstract class GuidePasteDataService(
         }
     }
 
-    private fun buildJson(index: Int): String {
+    private fun buildJson(index: Int): JsonObject {
         return buildJsonObject {
             put("guideIndex", index)
-        }.toString()
+        }
     }
 
-    private fun getGuideIndexFromJson(json: String): Int? {
-        val jsonObject = parseToJsonElement(json).jsonObject
+    private fun getGuideIndexFromJson(jsonObject: JsonObject): Int? {
         return jsonObject["guideIndex"]?.jsonPrimitive?.int
     }
 

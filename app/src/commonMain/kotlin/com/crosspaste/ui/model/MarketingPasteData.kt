@@ -9,6 +9,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteItemProperties.MARKETING_PATH
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
@@ -16,6 +17,8 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 open class MarketingPasteData(
     copywriter: GlobalCopywriter,
@@ -158,7 +161,10 @@ open class MarketingPasteData(
 
     private val html =
         run {
-            val basePath = userDataPathProvider.resolve(appFileType = AppFileType.MARKETING).toString()
+            val imagePath =
+                userDataPathProvider.resolve(appFileType = AppFileType.MARKETING)
+                    .resolve("$language-html2Image.png")
+                    .toString()
 
             val htmlPath =
                 userDataPathProvider.resolve(
@@ -179,9 +185,11 @@ open class MarketingPasteData(
                         identifiers = listOf(),
                         hash = hash,
                         size = size,
-                        basePath = basePath,
                         html = byteArray.decodeToString(),
-                        relativePath = "$language-html2Image.png",
+                        extraInfo =
+                            buildJsonObject {
+                                put(MARKETING_PATH, imagePath)
+                            },
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.HTML_TYPE.type,

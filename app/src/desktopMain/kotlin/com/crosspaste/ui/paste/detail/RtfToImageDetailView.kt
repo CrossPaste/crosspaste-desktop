@@ -18,9 +18,8 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.GenerateImageView
@@ -31,19 +30,21 @@ import org.koin.compose.koinInject
 @Composable
 fun RtfToImageDetailView(
     pasteData: PasteData,
-    pasteRtf: PasteRtf,
+    rtfPasteItem: RtfPasteItem,
     onDoubleClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
-    val pasteItem = pasteRtf as PasteItem
 
     val fileUtils = getFileUtils()
 
     val filePath by remember(pasteData.id) {
         mutableStateOf(
-            pasteRtf.getRtfImagePath(userDataPathProvider),
+            rtfPasteItem.getRenderingFilePath(
+                pasteData.getPasteCoordinate(),
+                userDataPathProvider,
+            ),
         )
     }
 
@@ -67,7 +68,7 @@ fun RtfToImageDetailView(
                             )
                         },
                 imagePath = filePath,
-                text = pasteData.getPasteItem(PasteText::class)?.text ?: pasteRtf.getText(),
+                text = pasteData.getPasteItem(PasteText::class)?.text ?: rtfPasteItem.getText(),
                 preview = false,
                 alignment = Alignment.TopStart,
             )
@@ -78,7 +79,7 @@ fun RtfToImageDetailView(
                 items =
                     listOf(
                         PasteDetailInfoItem(TYPE, copywriter.getText("rtf")),
-                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
+                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(rtfPasteItem.size)),
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
                             DATE,

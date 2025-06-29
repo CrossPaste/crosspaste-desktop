@@ -1,6 +1,7 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.utils.getCodecsUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -17,7 +18,7 @@ class TextPasteItem(
     override val hash: String,
     override val size: Long,
     override val text: String,
-    override val extraInfo: String? = null,
+    override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteText {
 
     companion object {
@@ -26,7 +27,7 @@ class TextPasteItem(
         fun createTextPasteItem(
             identifiers: List<String> = listOf(),
             text: String,
-            extraInfo: String? = null,
+            extraInfo: JsonObject? = null,
         ): TextPasteItem {
             val textBytes = text.encodeToByteArray()
             val hash = codecsUtils.hash(textBytes)
@@ -46,7 +47,7 @@ class TextPasteItem(
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         text = jsonObject["text"]!!.jsonPrimitive.content,
-        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
+        extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
     override fun getPasteType(): PasteType {

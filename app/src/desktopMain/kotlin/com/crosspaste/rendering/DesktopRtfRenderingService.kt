@@ -2,7 +2,7 @@ package com.crosspaste.rendering
 
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.GenerateImageService
-import com.crosspaste.paste.item.PasteRtf
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.utils.getFileUtils
@@ -27,15 +27,19 @@ class DesktopRtfRenderingService(
     private val fileUtils = getFileUtils()
 
     override suspend fun render(pasteData: PasteData) {
-        pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
-            val rtf2ImagePath = pasteRtf.getRtfImagePath(userDataPathProvider)
+        pasteData.getPasteItem(RtfPasteItem::class)?.let { rtfPasteItem ->
+            val rtf2ImagePath =
+                rtfPasteItem.getRenderingFilePath(
+                    pasteData.getPasteCoordinate(),
+                    userDataPathProvider,
+                )
             if (fileUtils.existFile(rtf2ImagePath)) {
                 logger.info { "RTF file $rtf2ImagePath exists" }
             } else {
                 val editorPane = JEditorPane()
                 editorPane.editorKit = RTFEditorKit()
                 editorPane.contentType = "text/rtf"
-                editorPane.text = pasteRtf.rtf
+                editorPane.text = rtfPasteItem.rtf
 
                 val scale = renderingHelper.scale
                 val dimension = renderingHelper.dimension

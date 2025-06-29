@@ -18,8 +18,7 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.item.PasteHtml
-import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
@@ -31,19 +30,21 @@ import org.koin.compose.koinInject
 @Composable
 fun HtmlToImageDetailView(
     pasteData: PasteData,
-    pasteHtml: PasteHtml,
+    htmlPasteItem: HtmlPasteItem,
     onDoubleClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
-    val pasteItem = pasteHtml as PasteItem
 
     val fileUtils = getFileUtils()
 
     val filePath by remember(pasteData.id) {
         mutableStateOf(
-            pasteHtml.getHtmlImagePath(userDataPathProvider),
+            htmlPasteItem.getRenderingFilePath(
+                pasteData.getPasteCoordinate(),
+                userDataPathProvider,
+            ),
         )
     }
 
@@ -59,7 +60,7 @@ fun HtmlToImageDetailView(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
-                                    uiSupport.openHtml(pasteData.id, pasteHtml.html)
+                                    uiSupport.openHtml(pasteData.id, htmlPasteItem.html)
                                 },
                                 onDoubleTap = {
                                     onDoubleClick()
@@ -67,7 +68,7 @@ fun HtmlToImageDetailView(
                             )
                         },
                 imagePath = filePath,
-                text = pasteData.getPasteItem(PasteText::class)?.text ?: pasteHtml.getText(),
+                text = pasteData.getPasteItem(PasteText::class)?.text ?: htmlPasteItem.getText(),
                 preview = false,
                 alignment = Alignment.TopStart,
             )
@@ -78,7 +79,7 @@ fun HtmlToImageDetailView(
                 items =
                     listOf(
                         PasteDetailInfoItem(TYPE, copywriter.getText("html")),
-                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
+                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(htmlPasteItem.size)),
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
                             DATE,

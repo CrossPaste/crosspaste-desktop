@@ -8,26 +8,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.db.paste.PasteData
-import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.paste.GenerateImageView
 import org.koin.compose.koinInject
 
 @Composable
 fun RtfToImagePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteRtf::class)?.let { pasteRtf ->
+    pasteData.getPasteItem(RtfPasteItem::class)?.let { rtfPasteItem ->
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
         val filePath by remember(pasteData.id) {
             mutableStateOf(
-                pasteRtf.getRtfImagePath(userDataPathProvider),
+                rtfPasteItem.getRenderingFilePath(
+                    pasteData.getPasteCoordinate(),
+                    userDataPathProvider,
+                ),
             )
         }
 
         val previewText =
             pasteData.getPasteItem(PasteText::class)?.previewText()
-                ?: pasteRtf.getText()
+                ?: rtfPasteItem.getText()
 
         SimplePreviewContentView(pasteData) {
             GenerateImageView(
