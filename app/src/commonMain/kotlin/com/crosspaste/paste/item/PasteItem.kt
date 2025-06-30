@@ -1,11 +1,16 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.item.PasteItemProperties.MARKETING_PATH
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import okio.Path
 
 @Serializable
 sealed interface PasteItem {
@@ -29,9 +34,35 @@ sealed interface PasteItem {
                 }
             }
         }
+
+        // To be compatible with older versions
+        // the extraInfo field may be a JsonObject or a String
+        fun getExtraInfoFromJson(jsonObject: JsonObject): JsonObject? {
+            return runCatching {
+                jsonObject["extraInfo"]?.jsonObject
+            }.getOrElse {
+                jsonObject["extraInfo"]?.jsonPrimitive?.content?.let { jsonString ->
+                    jsonUtils.JSON.parseToJsonElement(jsonString).jsonObject
+                }
+            }
+        }
+
+        fun updateExtraInfo(
+            extraInfo: JsonObject?,
+            update: JsonObjectBuilder.() -> Unit,
+        ): JsonObject {
+            return buildJsonObject {
+                extraInfo?.let { extraInfo ->
+                    extraInfo.forEach { (key, value) ->
+                        put(key, value)
+                    }
+                }
+                update()
+            }
+        }
     }
 
-    val extraInfo: String?
+    val extraInfo: JsonObject?
 
     val identifiers: List<String>
 
@@ -45,8 +76,21 @@ sealed interface PasteItem {
 
     fun getTitle(): String
 
+    fun getMarketingPath(): String? {
+        return extraInfo?.let { extraInfo ->
+            extraInfo[MARKETING_PATH]?.jsonPrimitive?.content
+        }
+    }
+
     fun bind(pasteCoordinate: PasteCoordinate): PasteItem {
         return this
+    }
+
+    fun getRenderingFilePath(
+        pasteCoordinate: PasteCoordinate,
+        userDataPathProvider: UserDataPathProvider,
+    ): Path? {
+        return null
     }
 
     fun update(
@@ -55,8 +99,9 @@ sealed interface PasteItem {
     ): PasteItem
 
     fun clear(
-        userDataPathProvider: UserDataPathProvider,
         clearResource: Boolean = true,
+        pasteCoordinate: PasteCoordinate,
+        userDataPathProvider: UserDataPathProvider,
     ) {
         // default do nothing
     }

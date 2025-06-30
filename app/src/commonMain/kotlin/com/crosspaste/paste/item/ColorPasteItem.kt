@@ -1,6 +1,7 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -16,7 +17,7 @@ class ColorPasteItem(
     override val hash: String,
     override val size: Long,
     override val color: Long,
-    override val extraInfo: String? = null,
+    override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteColor {
 
     constructor(jsonObject: JsonObject) : this(
@@ -24,7 +25,7 @@ class ColorPasteItem(
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         color = jsonObject["color"]!!.jsonPrimitive.content.toLong(),
-        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
+        extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
     override fun getPasteType(): PasteType {

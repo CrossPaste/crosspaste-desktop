@@ -1,23 +1,17 @@
 package com.crosspaste.paste.plugin.type
 
-import com.crosspaste.app.AppInfo
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
-import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.RtfPasteItem
-import com.crosspaste.paste.item.RtfPasteItem.Companion.RTF2IMAGE
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.getCodecsUtils
-import com.crosspaste.utils.getFileUtils
 import java.awt.datatransfer.DataFlavor
 import java.io.InputStream
 
-class DesktopRtfTypePlugin(
-    private val appInfo: AppInfo,
-) : RtfTypePlugin {
+class DesktopRtfTypePlugin : RtfTypePlugin {
 
     companion object {
         const val RTF_ID = "text/rtf"
@@ -29,8 +23,6 @@ class DesktopRtfTypePlugin(
             )
 
         private val codecsUtils = getCodecsUtils()
-
-        private val fileUtils = getFileUtils()
     }
 
     override fun getPasteType(): PasteType {
@@ -52,7 +44,6 @@ class DesktopRtfTypePlugin(
             hash = "",
             size = 0,
             rtf = "",
-            relativePath = "",
         ).let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
         }
@@ -72,22 +63,12 @@ class DesktopRtfTypePlugin(
             val hash = codecsUtils.hash(rtfBytes)
             val size = rtfBytes.size.toLong()
             val rtf = rtfBytes.toString(Charsets.UTF_8)
-            val relativePath =
-                fileUtils.createPasteRelativePath(
-                    pasteCoordinate =
-                        PasteCoordinate(
-                            id = pasteId,
-                            appInstanceId = appInfo.appInstanceId,
-                        ),
-                    fileName = RTF2IMAGE,
-                )
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 RtfPasteItem(
                     identifiers = pasteItem.identifiers,
                     hash = hash,
                     size = size,
                     rtf = rtf,
-                    relativePath = relativePath,
                     extraInfo = pasteItem.extraInfo,
                 )
             }

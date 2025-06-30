@@ -376,9 +376,9 @@ class DesktopModule(
         module {
             single<ColorTypePlugin> { DesktopColorTypePlugin() }
             single<FilesTypePlugin> { DesktopFilesTypePlugin(get(), get(), get(), get()) }
-            single<HtmlTypePlugin> { DesktopHtmlTypePlugin(get(), get()) }
+            single<HtmlTypePlugin> { DesktopHtmlTypePlugin(get()) }
             single<ImageTypePlugin> { DesktopImageTypePlugin(get(), get(), get(), get()) }
-            single<RtfTypePlugin> { DesktopRtfTypePlugin(get()) }
+            single<RtfTypePlugin> { DesktopRtfTypePlugin() }
             single<TextTypePlugin> { DesktopTextTypePlugin() }
             single<UrlTypePlugin> { DesktopUrlTypePlugin(get()) }
         }

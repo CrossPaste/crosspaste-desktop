@@ -3,16 +3,16 @@ package com.crosspaste.paste.item
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
@@ -25,19 +25,14 @@ class HtmlPasteItem(
     override val identifiers: List<String>,
     override val hash: String,
     override val size: Long,
-    @Transient
-    override val basePath: String? = null,
-    override val relativePath: String,
     override val html: String,
-    override val extraInfo: String? = null,
+    override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteHtml {
 
     companion object {
         val fileUtils = getFileUtils()
         val jsonUtils = getJsonUtils()
         val htmlUtils = getHtmlUtils()
-
-        const val BACKGROUND_PROPERTY = "background"
 
         const val HTML2IMAGE = "html2Image.png"
     }
@@ -50,24 +45,16 @@ class HtmlPasteItem(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
-        basePath = jsonObject["basePath"]?.jsonPrimitive?.content,
-        relativePath = jsonObject["relativePath"]!!.jsonPrimitive.content,
         html = jsonObject["html"]!!.jsonPrimitive.content,
-        extraInfo = jsonObject["extraInfo"]?.jsonPrimitive?.content,
+        extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
     override fun getBackgroundColor(): Color? {
         return extraInfo?.let { json ->
             runCatching {
-                val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
-                jsonObject[BACKGROUND_PROPERTY]?.jsonPrimitive?.long?.let { Color(it) }
+                json[BACKGROUND]?.jsonPrimitive?.long?.let { Color(it) }
             }.getOrNull()
         }
-    }
-
-    override fun getHtmlImagePath(userDataPathProvider: UserDataPathProvider): Path {
-        val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = AppFileType.HTML)
-        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 
     override fun bind(pasteCoordinate: PasteCoordinate): HtmlPasteItem {
@@ -75,12 +62,6 @@ class HtmlPasteItem(
             identifiers = identifiers,
             hash = hash,
             size = size,
-            basePath = basePath,
-            relativePath =
-                fileUtils.createPasteRelativePath(
-                    pasteCoordinate = pasteCoordinate,
-                    fileName = HTML2IMAGE,
-                ),
             html = html,
             extraInfo = extraInfo,
         )
@@ -108,35 +89,44 @@ class HtmlPasteItem(
                 identifiers = identifiers,
                 hash = hash,
                 size = html.encodeToByteArray().size.toLong(),
-                basePath = basePath,
-                relativePath = relativePath,
                 html = html,
+                extraInfo = extraInfo,
             )
         } ?: this
     }
 
-    override fun clear(
+    override fun getRenderingFilePath(
+        pasteCoordinate: PasteCoordinate,
         userDataPathProvider: UserDataPathProvider,
+    ): Path {
+        return getMarketingPath()?.toPath() ?: run {
+            val basePath = userDataPathProvider.resolve(appFileType = AppFileType.HTML)
+            val relativePath =
+                fileUtils.createPasteRelativePath(
+                    pasteCoordinate = pasteCoordinate,
+                    fileName = HTML2IMAGE,
+                )
+            userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+        }
+    }
+
+    override fun clear(
         clearResource: Boolean,
+        pasteCoordinate: PasteCoordinate,
+        userDataPathProvider: UserDataPathProvider,
     ) {
         if (clearResource) {
-            if (basePath == null) {
-                val basePath = userDataPathProvider.resolve(appFileType = AppFileType.HTML)
-                val htmlFile =
-                    userDataPathProvider.resolve(
-                        basePath,
-                        relativePath,
-                        autoCreate = false,
-                        isFile = true,
-                    )
-                fileUtils.deleteFile(htmlFile)
+            getRenderingFilePath(
+                pasteCoordinate = pasteCoordinate,
+                userDataPathProvider = userDataPathProvider,
+            ).also { resourceFilePath ->
+                fileUtils.deleteFile(resourceFilePath)
             }
         }
     }
 
     override fun isValid(): Boolean {
         return hash.isNotEmpty() &&
-            relativePath.isNotEmpty() &&
             size > 0 &&
             html.isNotEmpty()
     }
@@ -147,8 +137,6 @@ class HtmlPasteItem(
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
             put("size", size)
-            basePath?.let { put("basePath", it) }
-            put("relativePath", relativePath)
             put("html", html)
             extraInfo?.let { put("extraInfo", it) }
         }.toString()

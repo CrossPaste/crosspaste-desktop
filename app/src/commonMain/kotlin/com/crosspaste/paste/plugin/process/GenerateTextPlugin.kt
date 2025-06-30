@@ -1,12 +1,14 @@
 package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 
 object GenerateTextPlugin : PasteProcessPlugin {
     override fun process(
+        pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
     ): List<PasteItem> {

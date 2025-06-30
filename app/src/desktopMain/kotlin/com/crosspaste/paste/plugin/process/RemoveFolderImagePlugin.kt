@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.process
 
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
@@ -9,6 +10,7 @@ class RemoveFolderImagePlugin(
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteProcessPlugin {
     override fun process(
+        pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
     ): List<PasteItem> {
@@ -20,7 +22,11 @@ class RemoveFolderImagePlugin(
                     if (it.getFilePaths(userDataPathProvider).size == 1 &&
                         pasteFiles.getFilePaths(userDataPathProvider)[0].isDirectory
                     ) {
-                        imageItem.clear(userDataPathProvider, clearResource = true)
+                        imageItem.clear(
+                            clearResource = true,
+                            pasteCoordinate = pasteCoordinate,
+                            userDataPathProvider = userDataPathProvider,
+                        )
                         return pasteItems.filter { item -> item != imageItem }
                     }
                 }

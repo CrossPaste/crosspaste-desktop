@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.process
 
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteHtml
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
@@ -9,6 +10,7 @@ class RemoveHtmlImagePlugin(
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteProcessPlugin {
     override fun process(
+        pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
     ): List<PasteItem> {
@@ -17,7 +19,11 @@ class RemoveHtmlImagePlugin(
                 val pasteHtml = htmlItem as PasteHtml
                 val html = pasteHtml.html
                 if (isSingleImgInBody(html)) {
-                    htmlItem.clear(userDataPathProvider, clearResource = true)
+                    htmlItem.clear(
+                        clearResource = true,
+                        pasteCoordinate = pasteCoordinate,
+                        userDataPathProvider = userDataPathProvider,
+                    )
                     return pasteItems.filter { item -> item != htmlItem }
                 }
             }

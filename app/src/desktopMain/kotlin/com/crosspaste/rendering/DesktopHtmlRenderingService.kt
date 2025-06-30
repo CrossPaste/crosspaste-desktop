@@ -3,7 +3,7 @@ package com.crosspaste.rendering
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.module.ModuleLoaderConfig
-import com.crosspaste.paste.item.PasteHtml
+import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.UserDataPathProvider
@@ -130,14 +130,18 @@ class DesktopHtmlRenderingService(
     }
 
     override suspend fun render(pasteData: PasteData) {
-        pasteData.getPasteItem(PasteHtml::class)?.let { pasteHtml ->
+        pasteData.getPasteItem(HtmlPasteItem::class)?.let { pasteHtml ->
             val normalizeHtml =
                 htmlTypePlugin.normalizeHtml(
                     pasteHtml.html,
                     pasteData.source,
                 )
 
-            val html2ImagePath = pasteHtml.getHtmlImagePath(userDataPathProvider)
+            val html2ImagePath =
+                pasteHtml.getRenderingFilePath(
+                    pasteData.getPasteCoordinate(),
+                    userDataPathProvider,
+                )
 
             if (fileUtils.existFile(html2ImagePath)) {
                 logger.info { "HTML to image already exists at $html2ImagePath" }

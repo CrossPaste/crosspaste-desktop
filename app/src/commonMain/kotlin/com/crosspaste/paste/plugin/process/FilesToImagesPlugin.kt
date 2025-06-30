@@ -3,6 +3,7 @@ package com.crosspaste.paste.plugin.process
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.extension
@@ -18,6 +19,7 @@ class FilesToImagesPlugin(
     private val imageBasePath = userDataPathProvider.resolve(appFileType = AppFileType.IMAGE)
 
     override fun process(
+        pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
     ): List<PasteItem> {
@@ -55,7 +57,11 @@ class FilesToImagesPlugin(
                     val count = pasteAppearItem.count
                     val size = pasteAppearItem.size
                     val hash = pasteAppearItem.hash
-                    pasteAppearItem.clear(userDataPathProvider, clearResource = false)
+                    pasteAppearItem.clear(
+                        clearResource = false,
+                        pasteCoordinate = pasteCoordinate,
+                        userDataPathProvider = userDataPathProvider,
+                    )
                     ImagesPasteItem(
                         identifiers = identifiers,
                         count = count,

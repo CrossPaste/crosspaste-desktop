@@ -1,6 +1,7 @@
 package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getCodecsUtils
@@ -10,6 +11,7 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
     private val codecsUtils = getCodecsUtils()
 
     override fun process(
+        pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
     ): List<PasteItem> {
@@ -29,7 +31,13 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
                     } as ImagesPasteItem
 
                 pasteItems.filter { it != maxSizeImagePasteItem }
-                    .forEach { it.clear(userDataPathProvider, clearResource = true) }
+                    .forEach {
+                        it.clear(
+                            clearResource = true,
+                            pasteCoordinate = pasteCoordinate,
+                            userDataPathProvider = userDataPathProvider,
+                        )
+                    }
 
                 listOf(maxSizeImagePasteItem)
             } else {
@@ -44,7 +52,13 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
                 val hash =
                     pasteItems.map { it as ImagesPasteItem }.map { it.hash }
                         .toTypedArray().let { codecsUtils.hashByArray(it) }
-                pasteItems.forEach { it.clear(userDataPathProvider, clearResource = false) }
+                pasteItems.forEach {
+                    it.clear(
+                        clearResource = false,
+                        pasteCoordinate = pasteCoordinate,
+                        userDataPathProvider = userDataPathProvider,
+                    )
+                }
                 ImagesPasteItem(
                     identifiers = pasteItems.flatMap { it.identifiers },
                     count = count,

@@ -446,7 +446,11 @@ class PasteDao(
         getLoadingPasteData(id)?.let { pasteData ->
             var pasteAppearItems = pasteItems
             for (pastePlugin in pasteProcessPlugins) {
-                pasteAppearItems = pastePlugin.process(pasteAppearItems, pasteData.source)
+                pasteAppearItems = pastePlugin.process(
+                    pasteData.getPasteCoordinate(),
+                    pasteAppearItems,
+                    pasteData.source,
+                )
             }
 
             if (pasteAppearItems.isEmpty()) {
