@@ -5,6 +5,7 @@ import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageWriter
 import com.crosspaste.net.DesktopClient
+import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
 import com.crosspaste.paste.item.PasteItemProperties.TITLE
 import com.crosspaste.paste.item.UrlPasteItem
@@ -20,6 +21,7 @@ class DesktopOpenGraphService(
     private val generateImageService: GenerateImageService,
     private val imageWriter: ImageWriter<BufferedImage>,
     private val pasteDao: PasteDao,
+    private val searchContentService: SearchContentService,
     private val userDataPathProvider: UserDataPathProvider,
 ) : RenderingService<String> {
 
@@ -48,21 +50,31 @@ class DesktopOpenGraphService(
                             ?: doc.select("meta[property=og:title]").firstOrNull()?.attr("content")
 
                     htmlTitle?.let { title ->
+                        val extraInfo =
+                            updateExtraInfo(
+                                urlPasteItem.extraInfo,
+                                update = {
+                                    put(TITLE, title)
+                                },
+                            )
                         val newUrlPasteItem =
                             UrlPasteItem(
                                 identifiers = urlPasteItem.identifiers,
                                 hash = urlPasteItem.hash,
-                                size = urlPasteItem.size,
+                                size = urlPasteItem.size + title.length,
                                 url = urlPasteItem.url,
-                                extraInfo =
-                                    updateExtraInfo(
-                                        urlPasteItem.extraInfo,
-                                        update = {
-                                            put(TITLE, title)
-                                        },
-                                    ),
+                                extraInfo = extraInfo,
                             )
-                        pasteDao.updatePasteAppearItem(pasteData.id, newUrlPasteItem)
+                        pasteDao.updatePasteAppearItem(
+                            id = pasteData.id,
+                            pasteItem = newUrlPasteItem,
+                            pasteSearchContent =
+                                searchContentService.createSearchContent(
+                                    pasteData.source,
+                                    newUrlPasteItem.getSearchContent(),
+                                ),
+                            addedSize = title.length.toLong(),
+                        )
                     }
 
                     val ogImage = doc.select("meta[property=og:image]").firstOrNull()?.attr("content")

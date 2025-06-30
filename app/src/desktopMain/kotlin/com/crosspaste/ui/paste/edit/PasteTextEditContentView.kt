@@ -22,7 +22,6 @@ import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.utils.getCodecsUtils
 import org.koin.compose.koinInject
 
 @Composable
@@ -34,7 +33,6 @@ fun PasteTextEditContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
     val textUpdater = koinInject<TextTypePlugin>()
-    val codecsUtils = getCodecsUtils()
 
     Box(
         modifier = Modifier.fillMaxSize().padding(medium),
@@ -63,9 +61,7 @@ fun PasteTextEditContentView() {
                     contentDescription = "save text",
                 ) {
                     if (text != pasteText.text && text.isNotEmpty()) {
-                        val textBytes = text.encodeToByteArray()
-                        val hash = codecsUtils.hash(textBytes)
-                        textUpdater.updateText(pasteData.id, text, textBytes.size.toLong(), hash, pasteText, pasteDao)
+                        textUpdater.updateText(pasteData, text, pasteText, pasteDao)
                     }
                 }
             }

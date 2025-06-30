@@ -23,6 +23,7 @@ abstract class GuidePasteDataService(
     private val appLaunchState: AppLaunchState,
     private val copywriter: GlobalCopywriter,
     private val pasteDao: PasteDao,
+    private val searchContentService: SearchContentService,
 ) {
 
     companion object {
@@ -59,11 +60,19 @@ abstract class GuidePasteDataService(
         if (pasteDataList.isNotEmpty()) {
             pasteDataList.forEach { pasteData ->
                 pasteData.pasteAppearItem?.let { pasteItem ->
+                    val oldSize = pasteItem.size
                     pasteItem.extraInfo?.let { extraInfo ->
                         getGuideIndexFromJson(extraInfo)?.let { index ->
+                            val newPasteItem = getGuidePasteItem(index)
                             pasteDao.updatePasteAppearItem(
                                 id = pasteData.id,
-                                pasteItem = getGuidePasteItem(index),
+                                pasteItem = pasteItem,
+                                pasteSearchContent =
+                                    searchContentService.createSearchContent(
+                                        pasteData.source,
+                                        pasteItem.getSearchContent(),
+                                    ),
+                                addedSize = newPasteItem.size - oldSize,
                             )
                         }
                     }

@@ -199,7 +199,10 @@ WHERE id = :id;
 
 updatePasteAppearItem:
 UPDATE PasteDataEntity
-SET pasteAppearItem = :pasteAppearItem
+SET pasteAppearItem = :pasteAppearItem,
+    pasteSearchContent = :pasteSearchContent,
+    size = size + :addedSize,
+    hash = :hash
 WHERE id = :id;
 
 updatePasteDataToLoaded:

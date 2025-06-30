@@ -164,7 +164,7 @@ class DesktopUISupport(
                     _showColorChooser.value = false
                     logger.info { "Selected color: $rgbColor" }
                     colorTypePlugin.updateColor(
-                        pasteData.id,
+                        pasteData,
                         newColor,
                         (pasteColor as ColorPasteItem),
                         pasteDao,

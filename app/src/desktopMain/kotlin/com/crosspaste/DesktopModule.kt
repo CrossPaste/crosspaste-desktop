@@ -376,12 +376,12 @@ class DesktopModule(
     // PasteTypePluginModule.kt
     override fun pasteTypePluginModule() =
         module {
-            single<ColorTypePlugin> { DesktopColorTypePlugin() }
+            single<ColorTypePlugin> { DesktopColorTypePlugin(get()) }
             single<FilesTypePlugin> { DesktopFilesTypePlugin(get(), get(), get(), get()) }
             single<HtmlTypePlugin> { DesktopHtmlTypePlugin(get()) }
             single<ImageTypePlugin> { DesktopImageTypePlugin(get(), get(), get(), get()) }
             single<RtfTypePlugin> { DesktopRtfTypePlugin() }
-            single<TextTypePlugin> { DesktopTextTypePlugin() }
+            single<TextTypePlugin> { DesktopTextTypePlugin(get()) }
             single<UrlTypePlugin> { DesktopUrlTypePlugin(get()) }
         }
 
@@ -398,11 +398,11 @@ class DesktopModule(
                 DesktopRtfRenderingService(get(), get(), get(), get())
             }
             single<RenderingService<String>>(named("urlRendering")) {
-                DesktopOpenGraphService(get(), get(), get(), get())
+                DesktopOpenGraphService(get(), get(), get(), get(), get())
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<GenerateImageService> { GenerateImageService() }
-            single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get()) }
+            single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
