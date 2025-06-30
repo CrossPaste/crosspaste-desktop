@@ -22,8 +22,8 @@ import okio.Path.Companion.toPath
 class RtfPasteItem(
     override val identifiers: List<String>,
     override val hash: String,
-    override val size: Long,
     override val rtf: String,
+    override val size: Long,
     override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteRtf {
 

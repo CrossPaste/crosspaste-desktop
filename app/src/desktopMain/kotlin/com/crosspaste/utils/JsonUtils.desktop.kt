@@ -16,6 +16,8 @@ import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.serializer.Base64ByteArraySerializer
+import com.crosspaste.serializer.HtmlPasteItemSerializer
+import com.crosspaste.serializer.RtfPasteItemSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -41,9 +43,9 @@ object DesktopJsonUtils : JsonUtils {
                     polymorphic(PasteItem::class) {
                         subclass(ColorPasteItem::class)
                         subclass(FilesPasteItem::class)
-                        subclass(HtmlPasteItem::class)
+                        subclass(HtmlPasteItem::class, HtmlPasteItemSerializer())
                         subclass(ImagesPasteItem::class)
-                        subclass(RtfPasteItem::class)
+                        subclass(RtfPasteItem::class, RtfPasteItemSerializer())
                         subclass(TextPasteItem::class)
                         subclass(UrlPasteItem::class)
                     }

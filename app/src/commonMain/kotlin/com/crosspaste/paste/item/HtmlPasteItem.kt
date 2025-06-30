@@ -6,10 +6,10 @@ import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.serializer.HtmlPasteItemSerializer
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.getJsonUtils
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -19,13 +19,12 @@ import kotlinx.serialization.json.put
 import okio.Path
 import okio.Path.Companion.toPath
 
-@Serializable
-@SerialName("html")
+@Serializable(with = HtmlPasteItemSerializer::class)
 class HtmlPasteItem(
     override val identifiers: List<String>,
     override val hash: String,
-    override val size: Long,
     override val html: String,
+    override val size: Long,
     override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteHtml {
 
