@@ -1,17 +1,21 @@
 package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteData
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.getCodecsUtils
 import java.awt.datatransfer.DataFlavor
 
-class DesktopTextTypePlugin : TextTypePlugin {
+class DesktopTextTypePlugin(
+    private val searchContentService: SearchContentService,
+) : TextTypePlugin {
 
     companion object {
 
@@ -81,15 +85,24 @@ class DesktopTextTypePlugin : TextTypePlugin {
     }
 
     override fun updateText(
-        id: Long,
+        pasteData: PasteData,
         newText: String,
-        size: Long,
-        hash: String,
         pasteItem: PasteItem,
         pasteDao: PasteDao,
     ): PasteItem {
-        val newPasteItem = buildNewPasteItem(newText, size, hash, pasteItem)
-        pasteDao.updatePasteAppearItem(id, newPasteItem)
+        val textBytes = newText.encodeToByteArray()
+        val hash = codecsUtils.hash(textBytes)
+        val newPasteItem = buildNewPasteItem(newText, textBytes.size.toLong(), hash, pasteItem)
+        pasteDao.updatePasteAppearItem(
+            id = pasteData.id,
+            pasteItem = newPasteItem,
+            pasteSearchContent =
+                searchContentService.createSearchContent(
+                    pasteData.source,
+                    newPasteItem.getSearchContent(),
+                ),
+            addedSize = newPasteItem.size - pasteItem.size,
+        )
         return newPasteItem
     }
 

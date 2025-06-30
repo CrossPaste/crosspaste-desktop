@@ -226,8 +226,19 @@ class PasteDao(
         pasteDatabaseQueries.updateCreateTime(id = id, time = DateUtils.nowEpochMilliseconds())
     }
 
-    fun updatePasteAppearItem(id: Long, pasteItem: PasteItem) {
-        pasteDatabaseQueries.updatePasteAppearItem(id = id, pasteAppearItem = pasteItem.toJson())
+    fun updatePasteAppearItem(
+        id: Long,
+        pasteItem: PasteItem,
+        pasteSearchContent: String,
+        addedSize: Long = 0L,
+    ) {
+        pasteDatabaseQueries.updatePasteAppearItem(
+            id = id,
+            pasteAppearItem = pasteItem.toJson(),
+            pasteSearchContent = pasteSearchContent,
+            addedSize = addedSize,
+            hash = pasteItem.hash,
+        )
     }
 
     fun updatePasteState(id: Long, pasteState: Int) {

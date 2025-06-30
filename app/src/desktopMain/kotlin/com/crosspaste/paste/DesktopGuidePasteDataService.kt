@@ -10,7 +10,8 @@ class DesktopGuidePasteDataService(
     appLaunchState: AppLaunchState,
     copywriter: GlobalCopywriter,
     pasteDao: PasteDao,
-) : GuidePasteDataService(appInfo, appLaunchState, copywriter, pasteDao) {
+    searchContentService: SearchContentService,
+) : GuidePasteDataService(appInfo, appLaunchState, copywriter, pasteDao, searchContentService) {
 
     override val guideKey: String = "desktop_guide_"
 }
