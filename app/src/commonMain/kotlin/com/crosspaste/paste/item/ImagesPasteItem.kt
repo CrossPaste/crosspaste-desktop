@@ -87,7 +87,7 @@ data class ImagesPasteItem(
         }
     }
 
-    override fun getTitle(): String {
+    override fun getSummary(): String {
         return relativePathList.joinToString(separator = ", ") {
             it.toPath().name
         }

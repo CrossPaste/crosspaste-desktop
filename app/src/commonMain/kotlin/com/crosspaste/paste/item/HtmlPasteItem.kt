@@ -74,7 +74,7 @@ class HtmlPasteItem(
         return htmlTextCache.lowercase()
     }
 
-    override fun getTitle(): String {
+    override fun getSummary(): String {
         return htmlTextCache
     }
 

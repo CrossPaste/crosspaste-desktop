@@ -135,6 +135,7 @@ class CrossPaste {
                     koin.get<AppUpdateService>().start()
                     koin.get<RenderingService<String>>(named("htmlRendering")).start()
                     koin.get<RenderingService<String>>(named("rtfRendering")).start()
+                    koin.get<RenderingService<String>>(named("urlRendering")).start()
                     koin.get<GuidePasteDataService>().initData()
                 } else {
                     exitProcess(0)
@@ -187,6 +188,12 @@ class CrossPaste {
                         async {
                             stopService<RenderingService<String>>(
                                 qualifier = named("rtfRendering"),
+                                serviceName = "RenderingService",
+                            ) { it.stop() }
+                        },
+                        async {
+                            stopService<RenderingService<String>>(
+                                qualifier = named("urlRendering"),
                                 serviceName = "RenderingService",
                             ) { it.stop() }
                         },

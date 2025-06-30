@@ -49,10 +49,44 @@ object DesktopClient {
         }.getOrNull()
     }
 
+    suspend fun <T> suspendRequest(
+        url: String,
+        success: suspend (HttpResponse<InputStream>) -> T,
+    ): T? {
+        return runCatching {
+            proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
+                suspendRequest(url, it.value, success)
+            } ?: suspendRequest(url, noProxyClient, success)
+        }.getOrNull()
+    }
+
     private fun <T> request(
         url: String,
         client: HttpClient,
         success: (HttpResponse<InputStream>) -> T,
+    ): T? {
+        val uri = URI(url)
+
+        val request =
+            HttpRequest.newBuilder()
+                .uri(uri)
+                .timeout(Duration.ofSeconds(5))
+                .build()
+
+        val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
+
+        return if (response.statusCode() in 200..299) {
+            success(response)
+        } else {
+            logger.warn { "Failed to fetch data from $url, status code: ${response.statusCode()}" }
+            null
+        }
+    }
+
+    private suspend fun <T> suspendRequest(
+        url: String,
+        client: HttpClient,
+        success: suspend (HttpResponse<InputStream>) -> T,
     ): T? {
         val uri = URI(url)
 

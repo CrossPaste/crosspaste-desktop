@@ -36,7 +36,7 @@ class ColorPasteItem(
         return toHexString()
     }
 
-    override fun getTitle(): String {
+    override fun getSummary(): String {
         return toHexString()
     }
 

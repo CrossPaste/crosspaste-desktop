@@ -58,7 +58,7 @@ class TextPasteItem(
         return text.lowercase()
     }
 
-    override fun getTitle(): String {
+    override fun getSummary(): String {
         return text
     }
 

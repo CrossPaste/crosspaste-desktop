@@ -34,7 +34,7 @@ import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteTitleView(
+fun PasteSummaryView(
     pasteData: PasteData,
     selected: Boolean,
     onClick: () -> Unit,
@@ -44,10 +44,10 @@ fun PasteTitleView(
     val loading = copywriter.getText("loading")
     val unknown = copywriter.getText("unknown")
 
-    var title by remember { mutableStateOf(loading) }
+    var summary by remember { mutableStateOf(loading) }
 
     LaunchedEffect(pasteData.pasteState) {
-        title = pasteData.getTitle(loading, unknown)
+        summary = pasteData.getSummary(loading, unknown)
     }
 
     val background =
@@ -87,7 +87,7 @@ fun PasteTitleView(
 
                 Text(
                     modifier = Modifier.padding(start = small3X),
-                    text = title,
+                    text = summary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.contentColorFor(background),

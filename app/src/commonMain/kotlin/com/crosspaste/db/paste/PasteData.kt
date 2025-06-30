@@ -180,7 +180,7 @@ data class PasteData(
         return PasteCoordinate(id ?: this.id, appInstanceId, createTime)
     }
 
-    fun getTitle(loading: String, unknown: String): String {
+    fun getSummary(loading: String, unknown: String): String {
         return if (this.pasteState == PasteState.LOADING) {
             loading
         } else {
@@ -192,7 +192,7 @@ data class PasteData(
                 PasteType.FILE_TYPE,
                 PasteType.IMAGE_TYPE,
                     -> {
-                    this.pasteAppearItem?.getTitle() ?: unknown
+                    this.pasteAppearItem?.getSummary() ?: unknown
                 }
                 PasteType.HTML_TYPE,
                 PasteType.RTF_TYPE,
@@ -201,7 +201,7 @@ data class PasteData(
                         val pasteText = it as PasteText
                         pasteText.text.trim()
                     } ?: run {
-                        pasteAppearItem?.getTitle() ?: unknown
+                        pasteAppearItem?.getSummary() ?: unknown
                     }
                 }
                 else -> {

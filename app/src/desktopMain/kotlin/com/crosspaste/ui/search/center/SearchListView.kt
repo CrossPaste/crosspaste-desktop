@@ -36,7 +36,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.ui.base.PasteTitleView
+import com.crosspaste.ui.base.PasteSummaryView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.theme.AppUIColors
@@ -153,7 +153,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 searchResult,
                 key = { _, item -> item.id },
             ) { index, pasteData ->
-                PasteTitleView(pasteData, index == selectedIndex) {
+                PasteSummaryView(pasteData, index == selectedIndex) {
                     setSelectedIndex(index)
                 }
             }

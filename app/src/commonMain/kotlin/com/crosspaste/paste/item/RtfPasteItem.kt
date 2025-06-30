@@ -65,7 +65,7 @@ class RtfPasteItem(
         return rtfTextCache.lowercase()
     }
 
-    override fun getTitle(): String {
+    override fun getSummary(): String {
         return rtfTextCache
     }
 

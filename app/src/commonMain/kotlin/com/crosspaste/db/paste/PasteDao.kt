@@ -380,10 +380,8 @@ class PasteDao(
 
             if (!existFile) {
                 tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
-                if (pasteData.getType().isHtml()) {
-                    tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
-                } else if (pasteData.getType().isRtf()) {
-                    tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
+                addRenderingTask(id, pasteData.getType()) {
+                    tasks.add(it)
                 }
             } else {
                 val pasteCoordinate = pasteData.getPasteCoordinate(id)
@@ -488,10 +486,8 @@ class PasteDao(
 
             if (change) {
                 val tasks = mutableListOf<Long>()
-                if (pasteType.isHtml()) {
-                    tasks.add(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
-                } else if (pasteType.isRtf()) {
-                    tasks.add(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
+                addRenderingTask(id, pasteType) {
+                    tasks.add(it)
                 }
                 if (appControl.isFileSizeSyncEnabled(maxFileSize)) {
                     tasks.add(
@@ -512,6 +508,16 @@ class PasteDao(
                 currentPaste.setPasteId(id)
                 taskExecutor.submitTasks(tasks)
             }
+        }
+    }
+
+    private fun addRenderingTask(id: Long, pasteType: PasteType, addTask: (Long) -> Unit) {
+        if (pasteType.isHtml()) {
+            addTask(taskDao.createTask(id, TaskType.HTML_TO_IMAGE_TASK))
+        } else if (pasteType.isRtf()) {
+            addTask(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
+        } else if (pasteType.isUrl()) {
+            addTask(taskDao.createTask(id, TaskType.OPEN_GRAPH_TASK))
         }
     }
 
