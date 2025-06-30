@@ -153,6 +153,7 @@ import com.crosspaste.presist.FilePersist
 import com.crosspaste.recommend.DesktopRecommendationService
 import com.crosspaste.recommend.RecommendationService
 import com.crosspaste.rendering.DesktopHtmlRenderingService
+import com.crosspaste.rendering.DesktopOpenGraphService
 import com.crosspaste.rendering.DesktopRenderingHelper
 import com.crosspaste.rendering.DesktopRtfRenderingService
 import com.crosspaste.rendering.RenderingHelper
@@ -176,6 +177,7 @@ import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.CleanTaskTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
 import com.crosspaste.task.Html2ImageTaskExecutor
+import com.crosspaste.task.OpenGraphTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
 import com.crosspaste.task.Rtf2ImageTaskExecutor
@@ -395,6 +397,9 @@ class DesktopModule(
             single<RenderingService<String>>(named("rtfRendering")) {
                 DesktopRtfRenderingService(get(), get(), get(), get())
             }
+            single<RenderingService<String>>(named("urlRendering")) {
+                DesktopOpenGraphService(get(), get(), get(), get())
+            }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get()) }
@@ -415,6 +420,10 @@ class DesktopModule(
                         DeletePasteTaskExecutor(get()),
                         Html2ImageTaskExecutor(
                             lazy { get<RenderingService<String>>(named("htmlRendering")) },
+                            get(),
+                        ),
+                        OpenGraphTaskExecutor(
+                            lazy { get<RenderingService<String>>(named("urlRendering")) },
                             get(),
                         ),
                         PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),

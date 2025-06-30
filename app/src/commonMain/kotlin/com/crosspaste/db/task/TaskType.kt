@@ -12,4 +12,5 @@ object TaskType {
     const val RTF_TO_IMAGE_TASK = 6
     const val CLEAN_TASK_TASK = 7
     const val SWITCH_LANGUAGE_TASK = 8
+    const val OPEN_GRAPH_TASK = 9
 }

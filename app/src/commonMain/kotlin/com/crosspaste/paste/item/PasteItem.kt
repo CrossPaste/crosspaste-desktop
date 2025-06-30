@@ -74,7 +74,7 @@ sealed interface PasteItem {
 
     fun getSearchContent(): String?
 
-    fun getTitle(): String
+    fun getSummary(): String
 
     fun getMarketingPath(): String? {
         return extraInfo?.let { extraInfo ->

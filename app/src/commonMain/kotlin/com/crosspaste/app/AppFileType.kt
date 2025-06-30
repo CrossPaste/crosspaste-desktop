@@ -15,6 +15,7 @@ enum class AppFileType {
     IMAGE,
     VIDEO,
     FILE,
+    OPEN_GRAPH,
     TEMP,
     MARKETING,
 }

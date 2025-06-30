@@ -41,6 +41,7 @@ class UserDataPathProvider(
                 AppFileType.IMAGE -> basePath.resolve("images")
                 AppFileType.DATA -> basePath.resolve("data")
                 AppFileType.HTML -> basePath.resolve("html")
+                AppFileType.OPEN_GRAPH -> basePath.resolve("opengraph")
                 AppFileType.RTF -> basePath.resolve("rtf")
                 AppFileType.ICON -> basePath.resolve("icons")
                 AppFileType.FAVICON -> basePath.resolve("favicon")

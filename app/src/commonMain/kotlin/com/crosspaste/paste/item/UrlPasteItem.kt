@@ -1,7 +1,11 @@
 package com.crosspaste.paste.item
 
+import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.item.HtmlPasteItem.Companion.fileUtils
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItemProperties.TITLE
+import com.crosspaste.path.UserDataPathProvider
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -9,6 +13,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
+import okio.Path
+import okio.Path.Companion.toPath
 
 @Serializable
 @SerialName("url")
@@ -19,6 +25,10 @@ class UrlPasteItem(
     override val url: String,
     override val extraInfo: JsonObject? = null,
 ) : PasteItem, PasteUrl {
+
+    companion object {
+        const val OPEN_GRAPH_IMAGE = "openGraphImage.png"
+    }
 
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
@@ -36,8 +46,29 @@ class UrlPasteItem(
         return url.lowercase()
     }
 
-    override fun getTitle(): String {
+    override fun getSummary(): String {
         return url
+    }
+
+    override fun getTitle(): String? {
+        return extraInfo?.let {
+            it[TITLE]?.jsonPrimitive?.content
+        }
+    }
+
+    override fun getRenderingFilePath(
+        pasteCoordinate: PasteCoordinate,
+        userDataPathProvider: UserDataPathProvider,
+    ): Path {
+        return getMarketingPath()?.toPath() ?: run {
+            val basePath = userDataPathProvider.resolve(appFileType = AppFileType.OPEN_GRAPH)
+            val relativePath =
+                fileUtils.createPasteRelativePath(
+                    pasteCoordinate = pasteCoordinate,
+                    fileName = OPEN_GRAPH_IMAGE,
+                )
+            userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+        }
     }
 
     override fun update(
