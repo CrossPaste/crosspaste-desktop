@@ -5,39 +5,39 @@ interface ScreenType {
 }
 
 object About : ScreenType {
-    override val name: String = "About"
+    override val name: String = "about"
 }
 
 object Export : ScreenType {
-    override val name: String = "Export"
+    override val name: String = "export"
 }
 
 object Debug : ScreenType {
-    override val name: String = "Debug"
+    override val name: String = "debug"
 }
 
 object Devices : ScreenType {
-    override val name: String = "Devices"
+    override val name: String = "devices"
 }
 
 object DeviceDetail : ScreenType {
-    override val name: String = "DeviceDetail"
+    override val name: String = "device_detail"
 }
 
 object Import : ScreenType {
-    override val name: String = "Import"
+    override val name: String = "import"
 }
 
-object PastePreview : ScreenType {
-    override val name: String = "PastePreview"
+object Pasteboard : ScreenType {
+    override val name: String = "pasteboard"
 }
 
 object PasteTextEdit : ScreenType {
-    override val name: String = "PasteTextEdit"
+    override val name: String = "text_edit"
 }
 
 object QrCode : ScreenType {
-    override val name: String = "QrCode"
+    override val name: String = "scan"
 }
 
 object Recommend : ScreenType {
@@ -45,9 +45,9 @@ object Recommend : ScreenType {
 }
 
 object Settings : ScreenType {
-    override val name: String = "Settings"
+    override val name: String = "settings"
 }
 
 object ShortcutKeys : ScreenType {
-    override val name: String = "ShortcutKeys"
+    override val name: String = "shortcut_keys"
 }

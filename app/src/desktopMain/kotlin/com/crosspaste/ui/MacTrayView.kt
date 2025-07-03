@@ -70,7 +70,7 @@ object MacTrayView {
         val frame by remember { mutableStateOf(TransparentFrame()) }
 
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
-        val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+        val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
         DisposableEffect(copywriter.language()) {
             frame.removeAll()
@@ -109,12 +109,12 @@ object MacTrayView {
                     val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
                     if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                            appWindowManager.switchMainWindow()
+                            appWindowManager.switchSearchWindow()
                         }
                     } else {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (showMainWindow) {
-                                appWindowManager.unActiveMainWindow()
+                            if (showSearchWindow) {
+                                appWindowManager.unActiveSearchWindow()
                             }
                         }
                         frame.setLocation(windowInfo.x.toInt(), (windowInfo.y + windowInfo.height + 6).toInt())
@@ -134,6 +134,15 @@ object MacTrayView {
         val popup = PopupMenu()
 
         popup.add(
+            createMenuItem(copywriter.getText("devices")) {
+                mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
+                    appWindowManager.activeMainWindow()
+                    appWindowManager.toScreen(Pasteboard)
+                }
+            },
+        )
+
+        popup.add(
             createMenuItem(copywriter.getText("settings")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
                     appWindowManager.activeMainWindow()
@@ -147,24 +156,6 @@ object MacTrayView {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
                     appWindowManager.activeMainWindow()
                     appWindowManager.toScreen(ShortcutKeys)
-                }
-            },
-        )
-
-        popup.add(
-            createMenuItem(copywriter.getText("export")) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open export")) {
-                    appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(Export)
-                }
-            },
-        )
-
-        popup.add(
-            createMenuItem(copywriter.getText("import")) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open import")) {
-                    appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(Import)
                 }
             },
         )

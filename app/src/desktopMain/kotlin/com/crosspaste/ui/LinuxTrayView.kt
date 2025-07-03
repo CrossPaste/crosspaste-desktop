@@ -63,7 +63,25 @@ object LinuxTrayView {
                 MenuItem("Open CrossPaste") {
                     mainCoroutineDispatcher.launch(CoroutineName("Open CrossPaste")) {
                         refreshWindowPosition(appWindowManager)
+                        appWindowManager.activeSearchWindow()
+                    }
+                },
+            )
+
+            tray?.menu?.add(
+                MenuItem("Settings") {
+                    mainCoroutineDispatcher.launch(CoroutineName("Open Settings")) {
                         appWindowManager.activeMainWindow()
+                        appWindowManager.toScreen(Settings)
+                    }
+                },
+            )
+
+            tray?.menu?.add(
+                MenuItem("Settings") {
+                    mainCoroutineDispatcher.launch(CoroutineName("Open Settings")) {
+                        appWindowManager.activeMainWindow()
+                        appWindowManager.toScreen(Settings)
                     }
                 },
             )

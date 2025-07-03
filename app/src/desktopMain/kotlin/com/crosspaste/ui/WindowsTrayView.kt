@@ -95,7 +95,7 @@ object WindowsTrayView {
                 WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
                     if (event.button == MouseEvent.BUTTON1) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                            appWindowManager.switchMainWindow()
+                            appWindowManager.switchSearchWindow()
                         }
                     } else {
                         showMenu = true
@@ -199,9 +199,9 @@ object WindowsTrayView {
                     contentAlignment = Alignment.Center,
                 ) {
                     HomeMenuView(
-                        openMainWindow = {
-                            mainCoroutineDispatcher.launch(CoroutineName("Open Menu")) {
-                                appWindowManager.activeMainWindow()
+                        openSearchWindow = {
+                            mainCoroutineDispatcher.launch(CoroutineName("Open Search Window")) {
+                                appWindowManager.activeSearchWindow()
                             }
                         },
                         close = { hideMenu() },

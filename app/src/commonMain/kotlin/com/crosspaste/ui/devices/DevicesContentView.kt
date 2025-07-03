@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -16,8 +15,7 @@ import androidx.compose.ui.draw.clip
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
@@ -33,8 +31,7 @@ fun DevicesContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(tiny)
-                .clip(tiny3XRoundedCornerShape),
+                .clip(tinyRoundedCornerShape),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {

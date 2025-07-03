@@ -2,7 +2,6 @@ package com.crosspaste.ui.paste.edit
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,7 +20,6 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
-import com.crosspaste.ui.theme.AppUISize.medium
 import org.koin.compose.koinInject
 
 @Composable
@@ -35,7 +33,7 @@ fun PasteTextEditContentView() {
     val textUpdater = koinInject<TextTypePlugin>()
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(medium),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopStart,
     ) {
         pasteData.getPasteItem(TextPasteItem::class)?.let { pasteText ->

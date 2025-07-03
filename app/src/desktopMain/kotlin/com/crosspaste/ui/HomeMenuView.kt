@@ -35,7 +35,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun HomeMenuView(
-    openMainWindow: () -> Unit = {},
+    openSearchWindow: () -> Unit = {},
     close: () -> Unit,
 ) {
     val applicationExit = LocalExitApplication.current
@@ -93,7 +93,7 @@ fun HomeMenuView(
                 text = copywriter.getText("settings"),
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
-                openMainWindow()
+                openSearchWindow()
                 appWindowManager.toScreen(Settings)
                 close()
             }
@@ -101,7 +101,7 @@ fun HomeMenuView(
                 text = copywriter.getText("shortcut_keys"),
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
-                openMainWindow()
+                openSearchWindow()
                 appWindowManager.toScreen(ShortcutKeys)
                 close()
             }
@@ -125,7 +125,7 @@ fun HomeMenuView(
                 text = copywriter.getText("export"),
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
-                openMainWindow()
+                openSearchWindow()
                 appWindowManager.toScreen(Export)
                 close()
             }
@@ -133,7 +133,7 @@ fun HomeMenuView(
                 text = copywriter.getText("import"),
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
-                openMainWindow()
+                openSearchWindow()
                 appWindowManager.toScreen(Import)
                 close()
             }
@@ -141,7 +141,7 @@ fun HomeMenuView(
                 text = copywriter.getText("about"),
                 background = MaterialTheme.colorScheme.surfaceBright,
             ) {
-                openMainWindow()
+                openSearchWindow()
                 appWindowManager.toScreen(About)
                 close()
             }

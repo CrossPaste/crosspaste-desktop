@@ -164,7 +164,7 @@ class CrossPaste {
             logger.info { "AppLock release completed" }
             if (exitMode == ExitMode.MIGRATION) {
                 val appWindowManager = koin.get<DesktopAppWindowManager>()
-                appWindowManager.setShowMainWindow(false)
+                appWindowManager.unActiveMainWindow()
             }
             exitApplication()
         }
@@ -285,7 +285,7 @@ class CrossPaste {
                             }
                         }
 
-                        MainWindow(exitApplication, windowIcon)
+                        MainWindow(windowIcon)
 
                         SearchWindow(windowIcon)
                     } else {

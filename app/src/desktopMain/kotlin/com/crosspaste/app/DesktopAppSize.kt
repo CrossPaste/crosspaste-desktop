@@ -33,9 +33,18 @@ import java.awt.Rectangle
 class DesktopAppSize(
     private val configManager: DesktopConfigManager,
 ) : AppSize, NativeMouseListener, ActiveGraphicsDevice {
-    override val mainWindowSize: DpSize = DpSize(width = 480.dp, height = 740.dp)
 
-    override val mainPasteSize: DpSize = DpSize(width = 424.dp, height = 100.dp)
+    val mainMenuSize: DpSize = DpSize(width = 160.dp, height = 700.dp)
+
+    val mainContentSize: DpSize = DpSize(width = 440.dp, height = 700.dp)
+
+    override val mainWindowSize: DpSize =
+        DpSize(
+            width = mainMenuSize.width + mainContentSize.width,
+            height = 700.dp,
+        )
+
+    override val mainPasteSize: DpSize = DpSize(width = 408.dp, height = 100.dp)
 
     override val qrCodeSize: DpSize = DpSize(width = 275.dp, height = 275.dp)
 
@@ -63,33 +72,21 @@ class DesktopAppSize(
 
     val searchPasteTitleHeight = 40.dp
 
-    val tabsViewHeight: Dp = 40.dp
-
     override val toastViewWidth: Dp = 280.dp
 
     override val tokenViewWidth: Dp = 320.dp
 
-    val windowDecorationHeight: Dp = huge
+    val windowDecorationHeight: Dp = 48.dp
 
     val appRoundedCornerShape = small3XRoundedCornerShape
 
     val appBorderSize = tiny5X
-
-    val mainShadowSize = small3X
 
     val mainHorizontalShadowPadding = large2X
 
     val mainTopShadowPadding = zero
 
     val mainBottomShadowPadding = xxLarge
-
-    val mainShadowPaddingValues =
-        PaddingValues(
-            start = mainHorizontalShadowPadding,
-            top = mainTopShadowPadding,
-            end = mainHorizontalShadowPadding,
-            bottom = mainBottomShadowPadding,
-        )
 
     // Windows OS start
     val menuWindowDpSize = DpSize(170.dp, 267.dp)

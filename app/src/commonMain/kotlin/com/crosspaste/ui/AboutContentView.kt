@@ -32,7 +32,6 @@ import com.crosspaste.ui.theme.AppUIFont.aboutAppNameTextStyle
 import com.crosspaste.ui.theme.AppUIFont.aboutInfoTextStyle
 import com.crosspaste.ui.theme.AppUIFont.aboutVersionTextStyle
 import com.crosspaste.ui.theme.AppUISize.giant
-import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
@@ -51,7 +50,6 @@ fun AboutContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(medium)
                 .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,

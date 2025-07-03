@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
@@ -52,7 +51,8 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
-import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.ColorUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
@@ -93,8 +93,7 @@ fun QRContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(tiny)
-                .clip(tiny3XRoundedCornerShape)
+                .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
     ) {
@@ -102,7 +101,7 @@ fun QRContentView() {
             modifier =
                 Modifier
                     .align(Alignment.Center)
-                    .offset(y = (-48).dp),
+                    .offset(y = -xxxxLarge),
         ) {
             Column(
                 modifier = Modifier.align(Alignment.Center),
