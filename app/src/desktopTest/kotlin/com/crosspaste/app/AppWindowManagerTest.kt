@@ -4,9 +4,11 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
+import com.crosspaste.ui.MenuHelper
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -35,8 +37,10 @@ class AppWindowManagerTest {
                 DesktopLocaleUtils,
             )
 
+        val mockMenuHelper = mockk<MenuHelper> {}
+
         val mockDesktopAppSize =
-            spyk(DesktopAppSize(desktopConfigManager)) {
+            spyk(DesktopAppSize(desktopConfigManager, lazy { mockMenuHelper })) {
                 every { getSearchWindowState() } returns WindowState()
             }
 
