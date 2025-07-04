@@ -84,7 +84,8 @@ fun DeviceDetailContentView() {
     Column(
         modifier =
             Modifier.fillMaxSize()
-                .background(AppUIColors.appBackground),
+                .background(AppUIColors.appBackground)
+                .clip(tinyRoundedCornerShape),
     ) {
         deviceViewProvider.DeviceConnectView(syncRuntimeInfo, false) { }
 
