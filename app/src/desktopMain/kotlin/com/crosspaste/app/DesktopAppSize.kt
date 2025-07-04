@@ -15,11 +15,9 @@ import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.contains
@@ -84,18 +82,12 @@ class DesktopAppSize(
 
     val mainHorizontalShadowPadding = large2X
 
-    val mainTopShadowPadding = zero
-
     val mainBottomShadowPadding = xxLarge
 
     // Windows OS start
-    val menuWindowDpSize = DpSize(170.dp, 267.dp)
+    val menuWindowDpSize = DpSize(150.dp, 258.dp)
 
     val menuRoundedCornerShape = tiny2XRoundedCornerShape
-
-    val menuShadowSize = tiny2X
-
-    val menuShadowPaddingValues = PaddingValues(small3X, zero, small3X, small3X)
 
     val edgePadding = small2X
 

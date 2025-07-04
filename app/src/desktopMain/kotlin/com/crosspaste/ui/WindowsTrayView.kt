@@ -1,11 +1,8 @@
 package com.crosspaste.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -18,9 +15,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -158,55 +152,23 @@ object WindowsTrayView {
             Box(
                 modifier =
                     Modifier
-                        .background(Color.Transparent)
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {
-                                    hideMenu()
-                                },
-                                onTap = {
-                                    hideMenu()
-                                },
-                                onLongPress = {
-                                    hideMenu()
-                                },
-                                onPress = {},
-                            )
-                        }
-                        .clip(appSize.menuRoundedCornerShape)
                         .fillMaxSize()
-                        .padding(appSize.menuShadowPaddingValues),
+                        .clip(appSize.menuRoundedCornerShape)
+                        .border(
+                            appSize.appBorderSize,
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            tiny2XRoundedCornerShape,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .shadow(appSize.menuShadowSize, appSize.menuRoundedCornerShape, false)
-                            .fillMaxSize()
-                            .border(
-                                appSize.appBorderSize,
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                tiny2XRoundedCornerShape,
-                            )
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = {},
-                                    onTap = {},
-                                    onLongPress = {},
-                                    onPress = {},
-                                )
-                            },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    HomeMenuView(
-                        openMainWindow = {
-                            mainCoroutineDispatcher.launch(CoroutineName("Open Search Window")) {
-                                appWindowManager.activeMainWindow()
-                            }
-                        },
-                        close = { hideMenu() },
-                    )
-                }
+                HomeMenuView(
+                    openMainWindow = {
+                        mainCoroutineDispatcher.launch(CoroutineName("Open Search Window")) {
+                            appWindowManager.activeMainWindow()
+                        }
+                    },
+                    close = { hideMenu() },
+                )
             }
         }
     }
