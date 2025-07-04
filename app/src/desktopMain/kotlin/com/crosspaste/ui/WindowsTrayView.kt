@@ -199,9 +199,9 @@ object WindowsTrayView {
                     contentAlignment = Alignment.Center,
                 ) {
                     HomeMenuView(
-                        openSearchWindow = {
+                        openMainWindow = {
                             mainCoroutineDispatcher.launch(CoroutineName("Open Search Window")) {
-                                appWindowManager.activeSearchWindow()
+                                appWindowManager.activeMainWindow()
                             }
                         },
                         close = { hideMenu() },

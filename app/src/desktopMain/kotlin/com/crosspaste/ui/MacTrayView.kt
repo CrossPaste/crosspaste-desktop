@@ -137,7 +137,7 @@ object MacTrayView {
             createMenuItem(copywriter.getText("devices")) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
                     appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(Pasteboard)
+                    appWindowManager.toScreen(Devices)
                 }
             },
         )
@@ -171,7 +171,7 @@ object MacTrayView {
 
         popup.add(
             createMenuItem(copywriter.getText("faq")) {
-                uiSupport.openUrlInBrowser("https://www.crosspaste.com/FAQ")
+                uiSupport.openCrossPasteWebInBrowser("FAQ")
             },
         )
 
