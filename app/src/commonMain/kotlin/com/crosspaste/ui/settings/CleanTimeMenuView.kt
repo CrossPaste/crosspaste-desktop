@@ -14,7 +14,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
@@ -37,7 +37,7 @@ fun CleanTimeMenuView(
         val cleanTimeMenuTexts =
             CleanTime.entries.map { cleanTime ->
                 "${cleanTime.quantity} ${copywriter.getText(cleanTime.unit)}"
-            }.toTypedArray()
+            }
 
         val maxWidth = getFontWidth(cleanTimeMenuTexts)
 
@@ -50,7 +50,7 @@ fun CleanTimeMenuView(
                     .background(MaterialTheme.colorScheme.surface),
         ) {
             cleanTimeMenuTexts.forEachIndexed { index, text ->
-                MenuItem(
+                MenuItemView(
                     text = text,
                     background =
                         if (index == selectIndex) {

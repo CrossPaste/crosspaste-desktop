@@ -47,7 +47,7 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.DeviceDetail
-import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.theme.AppUIColors
@@ -246,7 +246,7 @@ fun DeviceConnectContentView(
                                     .shadow(small),
                         ) {
                             val menuTexts =
-                                arrayOf(
+                                listOf(
                                     copywriter.getText("add_note"),
                                     copywriter.getText("remove_device"),
                                 )
@@ -261,11 +261,11 @@ fun DeviceConnectContentView(
                                         .clip(tiny2XRoundedCornerShape)
                                         .background(AppUIColors.menuBackground),
                             ) {
-                                MenuItem(copywriter.getText("add_note")) {
+                                MenuItemView(copywriter.getText("add_note")) {
                                     onEdit(syncRuntimeInfo)
                                     showPopup = false
                                 }
-                                MenuItem(copywriter.getText("remove_device")) {
+                                MenuItemView(copywriter.getText("remove_device")) {
                                     val id = syncRuntimeInfo.appInstanceId
                                     syncManager.removeSyncHandler(id)
                                     showPopup = false

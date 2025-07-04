@@ -95,7 +95,7 @@ class PasteContextMenuRepresentation : ContextMenuRepresentation {
                                 .background(MaterialTheme.colorScheme.surface),
                     ) {
                         items().forEach { item ->
-                            MenuItem(
+                            MenuItemView(
                                 text = item.label,
                             ) {
                                 state.status = ContextMenuState.Status.Closed

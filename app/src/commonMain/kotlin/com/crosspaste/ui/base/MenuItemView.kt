@@ -30,7 +30,7 @@ import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 
 @Composable
-fun MenuItem(
+fun MenuItemView(
     text: String,
     textStyle: TextStyle = menuItemTextStyle,
     background: Color = AppUIColors.menuBackground,

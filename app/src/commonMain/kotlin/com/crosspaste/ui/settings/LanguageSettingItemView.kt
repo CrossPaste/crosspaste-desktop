@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.window.Popup
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.arrowDown
 import com.crosspaste.ui.base.arrowLeft
 import com.crosspaste.ui.base.arrowRight
@@ -134,7 +134,7 @@ fun LanguageSettingItemView() {
                     val maxWidth =
                         max(
                             gigantic,
-                            getFontWidth(copywriter.getAllLanguages().map { it.name }.toTypedArray()),
+                            getFontWidth(copywriter.getAllLanguages().map { it.name }),
                         )
 
                     Column(
@@ -147,7 +147,7 @@ fun LanguageSettingItemView() {
                     ) {
                         val allLanguages = copywriter.getAllLanguages()
                         allLanguages.forEachIndexed { _, language ->
-                            MenuItem(language.name) {
+                            MenuItemView(language.name) {
                                 copywriter.switchLanguage(language.abridge)
                                 showMoreLanguage = false
                             }

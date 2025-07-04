@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -10,6 +11,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
+import com.crosspaste.ui.MenuHelper
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -30,6 +32,7 @@ import java.awt.Rectangle
 
 class DesktopAppSize(
     private val configManager: DesktopConfigManager,
+    private val lazyMenuHelper: Lazy<MenuHelper>,
 ) : AppSize, NativeMouseListener, ActiveGraphicsDevice {
 
     val mainMenuSize: DpSize = DpSize(width = 160.dp, height = 700.dp)
@@ -85,7 +88,6 @@ class DesktopAppSize(
     val mainBottomShadowPadding = xxLarge
 
     // Windows OS start
-    val menuWindowDpSize = DpSize(150.dp, 248.dp)
 
     val menuRoundedCornerShape = tiny2XRoundedCornerShape
 
@@ -122,6 +124,11 @@ class DesktopAppSize(
                 y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
             )
         }
+
+    fun getMenuWindowDpSize(): DpSize {
+        val menuItemNum = lazyMenuHelper.value.menuItems.size + 1
+        return DpSize(150.dp, menuItemNum * 30.dp + DividerDefaults.Thickness)
+    }
 
     override fun nativeMousePressed(nativeEvent: NativeMouseEvent) {
         point = nativeEvent.point

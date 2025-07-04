@@ -3,7 +3,6 @@ package com.crosspaste.ui
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +29,8 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -69,7 +70,7 @@ object WindowsTrayView {
         val menuWindowState =
             rememberWindowState(
                 placement = WindowPlacement.Floating,
-                size = appSize.menuWindowDpSize,
+                size = appSize.getMenuWindowDpSize(),
             )
 
         LaunchedEffect(Unit) {
@@ -98,7 +99,9 @@ object WindowsTrayView {
                         menuWindowState.position =
                             WindowPosition(
                                 x = ((event.x / density) - insets.left).dp - appSize.menuWindowXOffset,
-                                y = (bounds.height - insets.bottom).dp - appSize.menuWindowDpSize.height,
+                                y =
+                                    (bounds.height - insets.bottom).dp -
+                                        appSize.getMenuWindowDpSize().height - medium,
                             )
                     }
                 },
@@ -146,7 +149,9 @@ object WindowsTrayView {
     @Composable
     fun WindowTrayMenu(hideMenu: () -> Unit) {
         val appSize = koinInject<DesktopAppSize>()
-        val appWindowManager = koinInject<DesktopAppWindowManager>()
+        val menuHelper = koinInject<MenuHelper>()
+
+        val applicationExit = LocalExitApplication.current
 
         Theme {
             Box(
@@ -156,18 +161,14 @@ object WindowsTrayView {
                         .clip(appSize.menuRoundedCornerShape)
                         .border(
                             appSize.appBorderSize,
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                            AppUIColors.lightBorderColor,
                             tiny2XRoundedCornerShape,
                         ),
                 contentAlignment = Alignment.Center,
             ) {
-                HomeMenuView(
-                    openMainWindow = {
-                        mainCoroutineDispatcher.launch(CoroutineName("Open Search Window")) {
-                            appWindowManager.activeMainWindow()
-                        }
-                    },
-                    close = { hideMenu() },
+                menuHelper.createWindowsMenu(
+                    closeWindowMenu = hideMenu,
+                    applicationExit = applicationExit,
                 )
             }
         }

@@ -13,15 +13,11 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.ExitMode
 import com.crosspaste.app.generated.resources.Res
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
-import dorkbox.systemTray.MenuItem
+import com.crosspaste.i18n.GlobalCopywriter
 import dorkbox.systemTray.SystemTray
 import dorkbox.systemTray.SystemTray.TrayType
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.koin.compose.koinInject
 import java.awt.GraphicsEnvironment
@@ -39,6 +35,9 @@ object LinuxTrayView {
         val appLaunchState = koinInject<AppLaunchState>()
         val appLaunch = koinInject<DesktopAppLaunch>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
+        val copywriter = koinInject<GlobalCopywriter>()
+        val menuHelper = koinInject<MenuHelper>()
+
         val tray by remember {
             val trayType = getTrayType()
             if (trayType != TrayType.AutoDetect) {
@@ -56,53 +55,30 @@ object LinuxTrayView {
 
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
+        DisposableEffect(copywriter.language()) {
+            if (tray != null) {
+                if (tray.menu.entries.isNotEmpty()) {
+                    tray.menu.remove()
+                }
+                for (item in menuHelper.createLinuxTrayMenu(applicationExit)) {
+                    tray.menu.add(item)
+                }
+            }
+
+            onDispose {
+                tray?.remove()
+            }
+        }
+
         LaunchedEffect(Unit) {
             tray?.setImage(URI(Res.getUri("drawable/crosspaste.png")).toURL().openStream())
             tray?.setTooltip("CrossPaste")
-            tray?.menu?.add(
-                MenuItem("Open CrossPaste") {
-                    mainCoroutineDispatcher.launch(CoroutineName("Open CrossPaste")) {
-                        refreshWindowPosition(appWindowManager)
-                        appWindowManager.activeSearchWindow()
-                    }
-                },
-            )
-
-            tray?.menu?.add(
-                MenuItem("Settings") {
-                    mainCoroutineDispatcher.launch(CoroutineName("Open Settings")) {
-                        appWindowManager.activeMainWindow()
-                        appWindowManager.toScreen(Settings)
-                    }
-                },
-            )
-
-            tray?.menu?.add(
-                MenuItem("Settings") {
-                    mainCoroutineDispatcher.launch(CoroutineName("Open Settings")) {
-                        appWindowManager.activeMainWindow()
-                        appWindowManager.toScreen(Settings)
-                    }
-                },
-            )
-
-            tray?.menu?.add(
-                MenuItem("Quit CrossPaste") {
-                    applicationExit(ExitMode.EXIT)
-                },
-            )
 
             refreshWindowPosition(appWindowManager)
 
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                 appWindowManager.setShowMainWindow(true)
                 appLaunch.setFirstLaunchCompleted(true)
-            }
-        }
-
-        DisposableEffect(Unit) {
-            onDispose {
-                tray?.remove()
             }
         }
     }
