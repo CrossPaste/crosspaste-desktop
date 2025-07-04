@@ -14,7 +14,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import com.crosspaste.app.AppUpdateService
@@ -27,7 +26,6 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
@@ -50,8 +48,7 @@ fun HomeMenuView(
         modifier =
             Modifier
                 .wrapContentSize()
-                .background(Color.Transparent)
-                .shadow(small),
+                .background(Color.Transparent),
     ) {
         val menuTexts =
             arrayOf(

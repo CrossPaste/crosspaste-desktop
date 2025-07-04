@@ -85,7 +85,7 @@ class DesktopAppSize(
     val mainBottomShadowPadding = xxLarge
 
     // Windows OS start
-    val menuWindowDpSize = DpSize(150.dp, 258.dp)
+    val menuWindowDpSize = DpSize(150.dp, 248.dp)
 
     val menuRoundedCornerShape = tiny2XRoundedCornerShape
 
