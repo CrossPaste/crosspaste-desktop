@@ -8,7 +8,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.PastePreview
+import com.crosspaste.ui.Pasteboard
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
@@ -88,7 +88,7 @@ abstract class DesktopAppWindowManager(
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val _screenContext = MutableStateFlow(ScreenContext(PastePreview))
+    private val _screenContext = MutableStateFlow(ScreenContext(Pasteboard))
     override val screenContext: StateFlow<ScreenContext> = _screenContext.asStateFlow()
 
     private val _showMainWindow = MutableStateFlow(false)
@@ -150,11 +150,11 @@ abstract class DesktopAppWindowManager(
 
     abstract suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean = { false })
 
-    suspend fun switchMainWindow() {
-        if (showMainWindow.value) {
-            unActiveMainWindow()
+    suspend fun switchSearchWindow() {
+        if (showSearchWindow.value) {
+            unActiveSearchWindow()
         } else {
-            activeMainWindow()
+            activeSearchWindow()
         }
     }
 

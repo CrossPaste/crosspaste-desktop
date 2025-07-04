@@ -7,7 +7,7 @@ class ScreenContext(val screenType: ScreenType, val nextScreenContext: ScreenCon
     constructor(screenType: ScreenType, nextScreenContext: ScreenContext) : this(screenType, nextScreenContext, Unit)
 
     fun returnNext(): ScreenContext {
-        return nextScreenContext ?: ScreenContext(PastePreview)
+        return nextScreenContext ?: ScreenContext(Pasteboard)
     }
 
     override fun equals(other: Any?): Boolean {

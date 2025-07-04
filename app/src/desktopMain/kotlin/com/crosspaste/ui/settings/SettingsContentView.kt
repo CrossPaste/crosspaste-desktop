@@ -29,10 +29,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -69,9 +72,11 @@ fun SettingsContentView() {
         ) {
             Column(
                 modifier =
-                    Modifier.verticalScroll(scrollState)
+                    Modifier
                         .fillMaxSize()
-                        .padding(medium),
+                        .padding(end = medium)
+                        .clip(tinyRoundedCornerShape)
+                        .verticalScroll(scrollState),
             ) {
                 settingsViewProvider.SettingsCoreView()
             }
@@ -79,7 +84,9 @@ fun SettingsContentView() {
             VerticalScrollbar(
                 modifier =
                     Modifier.background(color = Color.Transparent)
-                        .fillMaxHeight().align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(end = tiny3X)
+                        .align(Alignment.CenterEnd)
                         .draggable(
                             orientation = Orientation.Vertical,
                             state =

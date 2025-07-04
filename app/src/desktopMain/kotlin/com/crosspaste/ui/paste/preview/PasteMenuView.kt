@@ -49,7 +49,7 @@ import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
 import com.crosspaste.ui.base.clipboard
@@ -513,7 +513,7 @@ fun MoreMenuItems(
                 .shadow(small),
     ) {
         val menuTexts =
-            arrayOf(
+            listOf(
                 copywriter.getText("open"),
                 copywriter.getText("delete"),
             )
@@ -528,11 +528,11 @@ fun MoreMenuItems(
                     .clip(tiny2XRoundedCornerShape)
                     .background(AppUIColors.menuBackground),
         ) {
-            MenuItem(copywriter.getText("open")) {
+            MenuItemView(copywriter.getText("open")) {
                 pasteMenuService.openPasteData(pasteData)
                 hideMore()
             }
-            MenuItem(copywriter.getText("delete")) {
+            MenuItemView(copywriter.getText("delete")) {
                 pasteMenuService.deletePasteData(pasteData)
                 hideMore()
             }

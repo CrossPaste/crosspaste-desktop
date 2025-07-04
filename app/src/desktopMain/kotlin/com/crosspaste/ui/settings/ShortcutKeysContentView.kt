@@ -74,13 +74,11 @@ fun ShortcutKeysContentView() {
         Column(
             modifier =
                 Modifier.verticalScroll(scrollState)
-                    .fillMaxSize()
-                    .padding(vertical = medium),
+                    .fillMaxSize(),
         ) {
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
@@ -92,7 +90,6 @@ fun ShortcutKeysContentView() {
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
@@ -116,7 +113,6 @@ fun ShortcutKeysContentView() {
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
@@ -132,7 +128,6 @@ fun ShortcutKeysContentView() {
             Column(
                 modifier =
                     Modifier.fillMaxSize()
-                        .padding(horizontal = medium)
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {

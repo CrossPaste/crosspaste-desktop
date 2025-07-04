@@ -267,13 +267,13 @@ object AppUIFont {
 
     @Composable
     fun getFontWidth(
-        array: Array<String>,
+        textList: List<String>,
         textStyle: TextStyle = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Light),
         paddingValues: PaddingValues = PaddingValues(horizontal = medium, vertical = zero),
         extendFunction: (Int) -> Dp = { zero },
     ): Dp {
         var maxWidth = zero
-        array.forEachIndexed { index, text ->
+        textList.forEachIndexed { index, text ->
             maxWidth = maxOf(maxWidth, measureTextWidth(text, textStyle) + extendFunction(index))
         }
         return maxWidth +

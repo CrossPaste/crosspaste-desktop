@@ -84,7 +84,8 @@ fun DeviceDetailContentView() {
     Column(
         modifier =
             Modifier.fillMaxSize()
-                .background(AppUIColors.appBackground),
+                .background(AppUIColors.appBackground)
+                .clip(tinyRoundedCornerShape),
     ) {
         deviceViewProvider.DeviceConnectView(syncRuntimeInfo, false) { }
 
@@ -96,7 +97,6 @@ fun DeviceDetailContentView() {
         Column(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(medium)
                     .clip(tinyRoundedCornerShape)
                     .background(AppUIColors.appBackground)
                     .verticalScroll(rememberScrollState()),

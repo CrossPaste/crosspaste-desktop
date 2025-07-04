@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -45,9 +44,9 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.tiny2X
-import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -127,15 +126,13 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
 
     Box(
         modifier =
-            Modifier.fillMaxWidth()
-                .padding(start = tiny)
-                .padding(vertical = tiny),
+            Modifier.fillMaxSize(),
     ) {
         Box(
             modifier =
                 Modifier.fillMaxSize()
-                    .padding(end = tiny)
-                    .clip(tiny2XRoundedCornerShape),
+                    .padding(end = medium)
+                    .clip(tinyRoundedCornerShape),
         ) {
             LazyColumn(
                 state = listState,
@@ -149,13 +146,21 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                         PasteSpecificPreviewView(this)
                     }
                     if (index < rememberPasteDataList.size - 1) {
-                        Spacer(modifier = Modifier.height(small3X / 2))
+                        Spacer(modifier = Modifier.height(small3X))
                     }
                 }
             }
 
             if (rememberPasteDataList.isEmpty()) {
                 PasteEmptyScreenView()
+            }
+
+            if (showToTop) {
+                PasteToTopView {
+                    coroutineScope.launch {
+                        listState.animateScrollToItem(0)
+                    }
+                }
             }
         }
 
@@ -164,6 +169,7 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                 Modifier
                     .background(color = Color.Transparent)
                     .fillMaxHeight()
+                    .padding(end = tiny3X)
                     .align(Alignment.CenterEnd)
                     .draggable(
                         orientation = Orientation.Vertical,
@@ -178,7 +184,7 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
             style =
                 ScrollbarStyle(
                     minimalHeight = medium,
-                    thickness = tiny2X,
+                    thickness = tiny,
                     shape = tiny3XRoundedCornerShape,
                     hoverDurationMillis = 300,
                     unhoverColor =
@@ -195,13 +201,5 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                         ),
                 ),
         )
-
-        if (showToTop) {
-            PasteToTopView {
-                coroutineScope.launch {
-                    listState.animateScrollToItem(0)
-                }
-            }
-        }
     }
 }

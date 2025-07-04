@@ -14,7 +14,6 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.ExitMode
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste_svg
 import com.crosspaste.i18n.GlobalCopywriter
@@ -23,7 +22,6 @@ import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacAppUtils.useAll
 import com.crosspaste.platform.macos.api.WindowInfo
 import com.crosspaste.ui.base.DesktopNotificationManager
-import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -33,8 +31,6 @@ import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import java.awt.Color
 import java.awt.GraphicsEnvironment
-import java.awt.MenuItem
-import java.awt.PopupMenu
 import java.awt.event.InputEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -51,30 +47,23 @@ object MacTrayView {
         val appLaunch = koinInject<DesktopAppLaunch>()
         val appLaunchState = koinInject<DesktopAppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
-        val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
         val copywriter = koinInject<GlobalCopywriter>()
-        val uiSupport = koinInject<UISupport>()
+        val menuHelper = koinInject<MenuHelper>()
+        val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
         val trayIcon = painterResource(Res.drawable.crosspaste_svg)
 
         var menu by remember {
-            mutableStateOf(
-                createPopupMenu(
-                    appWindowManager,
-                    copywriter,
-                    uiSupport,
-                    applicationExit,
-                ),
-            )
+            mutableStateOf(menuHelper.createMacPopupMenu(applicationExit))
         }
         val frame by remember { mutableStateOf(TransparentFrame()) }
 
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
-        val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+        val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
         DisposableEffect(copywriter.language()) {
             frame.removeAll()
-            menu = createPopupMenu(appWindowManager, copywriter, uiSupport, applicationExit)
+            menu = menuHelper.createMacPopupMenu(applicationExit)
             frame.add(menu)
             onDispose {
                 frame.dispose()
@@ -109,12 +98,13 @@ object MacTrayView {
                     val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
                     if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                            appWindowManager.switchMainWindow()
+                            appWindowManager.setShowMainWindow(false)
+                            appWindowManager.switchSearchWindow()
                         }
                     } else {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (showMainWindow) {
-                                appWindowManager.unActiveMainWindow()
+                            if (showSearchWindow) {
+                                appWindowManager.unActiveSearchWindow()
                             }
                         }
                         frame.setLocation(windowInfo.x.toInt(), (windowInfo.y + windowInfo.height + 6).toInt())
@@ -123,86 +113,6 @@ object MacTrayView {
                     }
                 },
         )
-    }
-
-    private fun createPopupMenu(
-        appWindowManager: DesktopAppWindowManager,
-        copywriter: GlobalCopywriter,
-        uiSupport: UISupport,
-        applicationExit: (ExitMode) -> Unit,
-    ): PopupMenu {
-        val popup = PopupMenu()
-
-        popup.add(
-            createMenuItem(copywriter.getText("settings")) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
-                    appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(Settings)
-                }
-            },
-        )
-
-        popup.add(
-            createMenuItem(copywriter.getText("shortcut_keys")) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
-                    appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(ShortcutKeys)
-                }
-            },
-        )
-
-        popup.add(
-            createMenuItem(copywriter.getText("export")) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open export")) {
-                    appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(Export)
-                }
-            },
-        )
-
-        popup.add(
-            createMenuItem(copywriter.getText("import")) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open import")) {
-                    appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(Import)
-                }
-            },
-        )
-
-        popup.add(
-            createMenuItem(copywriter.getText("about")) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
-                    appWindowManager.activeMainWindow()
-                    appWindowManager.toScreen(About)
-                }
-            },
-        )
-
-        popup.add(
-            createMenuItem(copywriter.getText("faq")) {
-                uiSupport.openUrlInBrowser("https://www.crosspaste.com/FAQ")
-            },
-        )
-
-        popup.addSeparator()
-
-        popup.add(
-            createMenuItem(copywriter.getText("quit")) {
-                applicationExit(ExitMode.EXIT)
-            },
-        )
-        return popup
-    }
-
-    private fun createMenuItem(
-        text: String,
-        action: () -> Unit,
-    ): MenuItem {
-        val menuItem = MenuItem(text)
-        menuItem.addActionListener {
-            action()
-        }
-        return menuItem
     }
 
     private fun refreshWindowPosition(

@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -10,16 +11,15 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
+import com.crosspaste.ui.MenuHelper
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.contains
@@ -32,10 +32,20 @@ import java.awt.Rectangle
 
 class DesktopAppSize(
     private val configManager: DesktopConfigManager,
+    private val lazyMenuHelper: Lazy<MenuHelper>,
 ) : AppSize, NativeMouseListener, ActiveGraphicsDevice {
-    override val mainWindowSize: DpSize = DpSize(width = 480.dp, height = 740.dp)
 
-    override val mainPasteSize: DpSize = DpSize(width = 424.dp, height = 100.dp)
+    val mainMenuSize: DpSize = DpSize(width = 160.dp, height = 700.dp)
+
+    val mainContentSize: DpSize = DpSize(width = 440.dp, height = 700.dp)
+
+    override val mainWindowSize: DpSize =
+        DpSize(
+            width = mainMenuSize.width + mainContentSize.width,
+            height = 700.dp,
+        )
+
+    override val mainPasteSize: DpSize = DpSize(width = 408.dp, height = 100.dp)
 
     override val qrCodeSize: DpSize = DpSize(width = 275.dp, height = 275.dp)
 
@@ -63,42 +73,23 @@ class DesktopAppSize(
 
     val searchPasteTitleHeight = 40.dp
 
-    val tabsViewHeight: Dp = 40.dp
-
     override val toastViewWidth: Dp = 280.dp
 
     override val tokenViewWidth: Dp = 320.dp
 
-    val windowDecorationHeight: Dp = huge
+    val windowDecorationHeight: Dp = 48.dp
 
     val appRoundedCornerShape = small3XRoundedCornerShape
 
     val appBorderSize = tiny5X
 
-    val mainShadowSize = small3X
-
     val mainHorizontalShadowPadding = large2X
-
-    val mainTopShadowPadding = zero
 
     val mainBottomShadowPadding = xxLarge
 
-    val mainShadowPaddingValues =
-        PaddingValues(
-            start = mainHorizontalShadowPadding,
-            top = mainTopShadowPadding,
-            end = mainHorizontalShadowPadding,
-            bottom = mainBottomShadowPadding,
-        )
-
     // Windows OS start
-    val menuWindowDpSize = DpSize(170.dp, 267.dp)
 
     val menuRoundedCornerShape = tiny2XRoundedCornerShape
-
-    val menuShadowSize = tiny2X
-
-    val menuShadowPaddingValues = PaddingValues(small3X, zero, small3X, small3X)
 
     val edgePadding = small2X
 
@@ -133,6 +124,11 @@ class DesktopAppSize(
                 y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
             )
         }
+
+    fun getMenuWindowDpSize(): DpSize {
+        val menuItemNum = lazyMenuHelper.value.menuItems.size + 1
+        return DpSize(150.dp, menuItemNum * 30.dp + DividerDefaults.Thickness)
+    }
 
     override fun nativeMousePressed(nativeEvent: NativeMouseEvent) {
         point = nativeEvent.point

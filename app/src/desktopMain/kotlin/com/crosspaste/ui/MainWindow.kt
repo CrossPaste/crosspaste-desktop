@@ -2,82 +2,110 @@ package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.window.Window
-import com.crosspaste.app.AppFileChooser
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.ExitMode
 import com.crosspaste.listener.GlobalListener
-import com.crosspaste.ui.base.DesktopUISupport
-import com.crosspaste.ui.base.UISupport
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
-import kotlinx.coroutines.launch
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.CrossPasteTheme.Theme
+import com.crosspaste.ui.theme.ThemeDetector
+import org.jetbrains.jewel.foundation.theme.JewelTheme
+import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
+import org.jetbrains.jewel.intui.standalone.theme.darkThemeDefinition
+import org.jetbrains.jewel.intui.standalone.theme.default
+import org.jetbrains.jewel.intui.standalone.theme.lightThemeDefinition
+import org.jetbrains.jewel.intui.window.decoratedWindow
+import org.jetbrains.jewel.intui.window.styling.dark
+import org.jetbrains.jewel.intui.window.styling.defaults
+import org.jetbrains.jewel.intui.window.styling.light
+import org.jetbrains.jewel.ui.ComponentStyling
+import org.jetbrains.jewel.window.DecoratedWindow
+import org.jetbrains.jewel.window.TitleBar
+import org.jetbrains.jewel.window.styling.TitleBarColors
+import org.jetbrains.jewel.window.styling.TitleBarMetrics
+import org.jetbrains.jewel.window.styling.TitleBarStyle
 import org.koin.compose.koinInject
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
 
 @Composable
-fun MainWindow(
-    exitApplication: (ExitMode) -> Unit,
-    windowIcon: Painter?,
-) {
-    val appFileChooser = koinInject<AppFileChooser>()
+fun MainWindow(windowIcon: Painter?) {
+    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val globalListener = koinInject<GlobalListener>()
-    val uiSupport = koinInject<UISupport>() as DesktopUISupport
+    val themeDetector = koinInject<ThemeDetector>()
 
     val mainWindowState by appWindowManager.mainWindowState.collectAsState()
-    val showFileDialog by appFileChooser.showFileDialog.collectAsState()
-    val showMainDialog by appWindowManager.showMainDialog.collectAsState()
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
-    val showColorChooser by uiSupport.showColorChooser.collectAsState()
 
-    Window(
-        onCloseRequest = { exitApplication(ExitMode.EXIT) },
-        visible = showMainWindow,
-        state = mainWindowState,
-        title = appWindowManager.mainWindowTitle,
-        icon = windowIcon,
-        alwaysOnTop = true,
-        undecorated = true,
-        transparent = true,
-        resizable = false,
-    ) {
-        DisposableEffect(Unit) {
-            appWindowManager.mainComposeWindow = window
+    // Initialize global listener only once
+    LaunchedEffect(Unit) {
+        globalListener.start()
+    }
 
-            globalListener.start()
+    Theme {
+        IntUiTheme(
+            theme =
+                if (themeDetector.isCurrentThemeDark()) {
+                    JewelTheme.darkThemeDefinition()
+                } else {
+                    JewelTheme.lightThemeDefinition()
+                },
+            styling =
+                ComponentStyling.default().decoratedWindow(
+                    titleBarStyle =
+                        if (themeDetector.isCurrentThemeDark()) {
+                            TitleBarStyle.dark(
+                                colors =
+                                    TitleBarColors.dark(
+                                        backgroundColor = AppUIColors.appBackground,
+                                        inactiveBackground = AppUIColors.appBackground,
+                                        borderColor = AppUIColors.appBackground,
+                                    ),
+                                metrics =
+                                    TitleBarMetrics.defaults(height = appSize.windowDecorationHeight),
+                            )
+                        } else {
+                            TitleBarStyle.light(
+                                colors =
+                                    TitleBarColors.light(
+                                        backgroundColor = AppUIColors.appBackground,
+                                        inactiveBackground = AppUIColors.appBackground,
+                                        borderColor = AppUIColors.appBackground,
+                                    ),
+                                metrics =
+                                    TitleBarMetrics.defaults(height = appSize.windowDecorationHeight),
+                            )
+                        },
+                ),
+            swingCompatMode = false,
+        ) {
+            DecoratedWindow(
+                onCloseRequest = {
+                    appWindowManager.setShowMainWindow(false)
+                },
+                visible = showMainWindow,
+                state = mainWindowState,
+                title = appWindowManager.mainWindowTitle,
+                icon = windowIcon,
+                alwaysOnTop = false,
+                resizable = false,
+            ) {
+                DisposableEffect(window) {
+                    // Set window reference for manager
+                    appWindowManager.mainComposeWindow = window
 
-            val windowListener =
-                object : WindowAdapter() {
-                    override fun windowGainedFocus(e: WindowEvent?) {
-                        mainCoroutineDispatcher.launch {
-                            appWindowManager.setShowMainWindow(true)
-                        }
-                    }
-
-                    override fun windowLostFocus(e: WindowEvent?) {
-                        mainCoroutineDispatcher.launch {
-                            if (showMainWindow &&
-                                !showMainDialog &&
-                                !showFileDialog &&
-                                !showColorChooser
-                            ) {
-                                appWindowManager.unActiveMainWindow()
-                            }
-                        }
+                    onDispose {
+                        // Clean up window reference and listener
+                        appWindowManager.mainComposeWindow = null
                     }
                 }
 
-            window.addWindowFocusListener(windowListener)
+                TitleBar {}
 
-            onDispose {
-                appWindowManager.mainComposeWindow = null
-                window.removeWindowFocusListener(windowListener)
+                CrossPasteMainWindowContent()
             }
         }
-        CrossPasteMainWindowContent()
     }
 }

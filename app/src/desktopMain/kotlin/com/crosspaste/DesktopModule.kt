@@ -186,6 +186,7 @@ import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.DesktopThemeDetector
+import com.crosspaste.ui.MenuHelper
 import com.crosspaste.ui.ScreenProvider
 import com.crosspaste.ui.base.DesktopExpandViewProvider
 import com.crosspaste.ui.base.DesktopIconStyle
@@ -475,7 +476,7 @@ class DesktopModule(
             single<AppSize> { get<DesktopAppSize>() }
             single<AppTokenApi> { DesktopAppTokenService(get()) }
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
-            single<DesktopAppSize> { DesktopAppSize(get()) }
+            single<DesktopAppSize> { DesktopAppSize(get(), lazy { get() }) }
             single<DesktopAppWindowManager> {
                 getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
@@ -487,6 +488,7 @@ class DesktopModule(
             single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
             single<IconStyle> { DesktopIconStyle(get()) }
+            single<MenuHelper> { MenuHelper(get(), get(), get(), get()) }
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
             single<NativeMouseListener> { get<DesktopAppSize>() }
             single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get(), get()) }

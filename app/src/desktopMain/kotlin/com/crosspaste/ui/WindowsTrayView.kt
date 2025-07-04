@@ -1,12 +1,8 @@
 package com.crosspaste.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -18,9 +14,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -36,6 +29,8 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -75,7 +70,7 @@ object WindowsTrayView {
         val menuWindowState =
             rememberWindowState(
                 placement = WindowPlacement.Floating,
-                size = appSize.menuWindowDpSize,
+                size = appSize.getMenuWindowDpSize(),
             )
 
         LaunchedEffect(Unit) {
@@ -95,7 +90,7 @@ object WindowsTrayView {
                 WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
                     if (event.button == MouseEvent.BUTTON1) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                            appWindowManager.switchMainWindow()
+                            appWindowManager.switchSearchWindow()
                         }
                     } else {
                         showMenu = true
@@ -104,7 +99,9 @@ object WindowsTrayView {
                         menuWindowState.position =
                             WindowPosition(
                                 x = ((event.x / density) - insets.left).dp - appSize.menuWindowXOffset,
-                                y = (bounds.height - insets.bottom).dp - appSize.menuWindowDpSize.height,
+                                y =
+                                    (bounds.height - insets.bottom).dp -
+                                        appSize.getMenuWindowDpSize().height - medium,
                             )
                     }
                 },
@@ -152,61 +149,27 @@ object WindowsTrayView {
     @Composable
     fun WindowTrayMenu(hideMenu: () -> Unit) {
         val appSize = koinInject<DesktopAppSize>()
-        val appWindowManager = koinInject<DesktopAppWindowManager>()
+        val menuHelper = koinInject<MenuHelper>()
+
+        val applicationExit = LocalExitApplication.current
 
         Theme {
             Box(
                 modifier =
                     Modifier
-                        .background(Color.Transparent)
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {
-                                    hideMenu()
-                                },
-                                onTap = {
-                                    hideMenu()
-                                },
-                                onLongPress = {
-                                    hideMenu()
-                                },
-                                onPress = {},
-                            )
-                        }
-                        .clip(appSize.menuRoundedCornerShape)
                         .fillMaxSize()
-                        .padding(appSize.menuShadowPaddingValues),
+                        .clip(appSize.menuRoundedCornerShape)
+                        .border(
+                            appSize.appBorderSize,
+                            AppUIColors.lightBorderColor,
+                            tiny2XRoundedCornerShape,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .shadow(appSize.menuShadowSize, appSize.menuRoundedCornerShape, false)
-                            .fillMaxSize()
-                            .border(
-                                appSize.appBorderSize,
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                tiny2XRoundedCornerShape,
-                            )
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = {},
-                                    onTap = {},
-                                    onLongPress = {},
-                                    onPress = {},
-                                )
-                            },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    HomeMenuView(
-                        openMainWindow = {
-                            mainCoroutineDispatcher.launch(CoroutineName("Open Menu")) {
-                                appWindowManager.activeMainWindow()
-                            }
-                        },
-                        close = { hideMenu() },
-                    )
-                }
+                menuHelper.createWindowsMenu(
+                    closeWindowMenu = hideMenu,
+                    applicationExit = applicationExit,
+                )
             }
         }
     }

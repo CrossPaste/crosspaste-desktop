@@ -37,7 +37,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.db.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.MenuItem
+import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.ascSort
 import com.crosspaste.ui.base.descSort
@@ -84,7 +84,6 @@ fun SearchTrailingIcon() {
         PasteType.TYPES
             .map { copywriter.getText(it.name) }
             .plus(copywriter.getText(ALL_TYPES))
-            .toTypedArray()
 
     val paddingValues = PaddingValues(horizontal = small3X, vertical = tiny3X)
 
@@ -178,7 +177,7 @@ fun SearchTrailingIcon() {
                                 .background(MaterialTheme.colorScheme.surfaceBright),
                     ) {
                         if (searchPasteType != null) {
-                            MenuItem(
+                            MenuItemView(
                                 text = copywriter.getText("all_types"),
                                 textStyle = textStyle,
                                 paddingValues = paddingValues,
@@ -192,7 +191,7 @@ fun SearchTrailingIcon() {
 
                         PasteType.TYPES.forEach { pasteType ->
                             if (currentType != pasteType) {
-                                MenuItem(
+                                MenuItemView(
                                     text = copywriter.getText(pasteType.name),
                                     textStyle = textStyle,
                                     paddingValues = paddingValues,

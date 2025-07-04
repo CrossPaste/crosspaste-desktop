@@ -49,7 +49,6 @@ fun RecommendContentView() {
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .padding(medium)
                 .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
     ) {

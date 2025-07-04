@@ -18,13 +18,6 @@ versionProperties.load(
 group = "com.crosspaste"
 version = versionProperties.getProperty("version")
 
-repositories {
-    mavenCentral()
-    google()
-    maven("https://jitpack.io")
-    maven("https://jogamp.org/deployment/maven")
-}
-
 plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.conveyor)
@@ -89,6 +82,11 @@ kotlin {
             implementation(libs.icu4j)
             implementation(libs.imageio.core)
             implementation(libs.imageio.jpeg)
+            implementation(libs.jewel.decorated.window)
+            implementation(libs.jewel.foundation)
+            implementation(libs.jewel.int.ui.decorated.window)
+            implementation(libs.jewel.int.ui.standalone)
+            implementation(libs.jewel.ui)
             implementation(libs.jmdns)
             implementation(libs.jna)
             implementation(libs.jna.platform)

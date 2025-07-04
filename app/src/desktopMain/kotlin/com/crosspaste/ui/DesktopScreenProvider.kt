@@ -1,8 +1,12 @@
 package com.crosspaste.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.ui.base.RecommendContentView
 import com.crosspaste.ui.devices.DeviceDetailContentView
@@ -14,6 +18,7 @@ import com.crosspaste.ui.paste.PasteboardContentView
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
+import com.crosspaste.ui.theme.AppUISize.medium
 
 class DesktopScreenProvider(
     private val appWindowManager: AppWindowManager,
@@ -21,62 +26,16 @@ class DesktopScreenProvider(
 
     @Composable
     override fun AboutScreen() {
-        WindowDecoration("about")
         AboutContentView()
     }
 
     @Composable
     override fun CrossPasteScreen() {
-        val screen by appWindowManager.screenContext.collectAsState()
-
-        when (screen.screenType) {
-            PastePreview,
-            Devices,
-            QrCode,
-            Debug,
-            -> {
-                HomeScreen()
-            }
-
-            Settings -> {
-                SettingsScreen()
-            }
-
-            ShortcutKeys -> {
-                ShortcutKeysScreen()
-            }
-
-            Export -> {
-                ExportScreen()
-            }
-
-            Import -> {
-                ImportScreen()
-            }
-
-            About -> {
-                AboutScreen()
-            }
-
-            DeviceDetail -> {
-                DeviceDetailScreen()
-            }
-
-            PasteTextEdit -> {
-                PasteTextEditScreen()
-            }
-
-            Recommend -> {
-                RecommendScreen()
-            }
-
-            else -> {}
-        }
+        HomeScreen()
     }
 
     @Composable
     override fun DeviceDetailScreen() {
-        WindowDecoration("device_detail")
         DeviceDetailContentView()
     }
 
@@ -87,19 +46,72 @@ class DesktopScreenProvider(
 
     @Composable
     override fun ExportScreen() {
-        WindowDecoration("export")
         PasteExportContentView()
     }
 
     @Composable
     override fun HomeScreen() {
-        HomeWindowDecoration()
-        TabsView()
+        val screen by appWindowManager.screenContext.collectAsState()
+
+        var modifier =
+            Modifier.fillMaxSize()
+                .padding(start = medium)
+                .padding(bottom = medium)
+
+        modifier =
+            when (screen.screenType) {
+                Pasteboard, Settings ->
+                    modifier
+                else ->
+                    modifier.padding(end = medium)
+            }
+
+        Box(modifier = modifier) {
+            WindowDecoration(screen.screenType.name)
+            when (screen.screenType) {
+                Pasteboard -> {
+                    PasteboardScreen {}
+                }
+                Devices -> {
+                    DevicesScreen()
+                }
+                QrCode -> {
+                    QRScreen()
+                }
+                Debug -> {
+                    DebugScreen()
+                }
+                Settings -> {
+                    SettingsScreen()
+                }
+                ShortcutKeys -> {
+                    ShortcutKeysScreen()
+                }
+                Export -> {
+                    ExportScreen()
+                }
+                Import -> {
+                    ImportScreen()
+                }
+                About -> {
+                    AboutScreen()
+                }
+                DeviceDetail -> {
+                    DeviceDetailScreen()
+                }
+                PasteTextEdit -> {
+                    PasteTextEditScreen()
+                }
+                Recommend -> {
+                    RecommendScreen()
+                }
+                else -> {}
+            }
+        }
     }
 
     @Composable
     override fun ImportScreen() {
-        WindowDecoration("import")
         PasteImportContentView()
     }
 
@@ -110,7 +122,6 @@ class DesktopScreenProvider(
 
     @Composable
     override fun PasteTextEditScreen() {
-        WindowDecoration("text_edit")
         PasteTextEditContentView()
     }
 
@@ -121,19 +132,16 @@ class DesktopScreenProvider(
 
     @Composable
     fun ShortcutKeysScreen() {
-        WindowDecoration("shortcut_keys")
         ShortcutKeysContentView()
     }
 
     @Composable
     override fun SettingsScreen() {
-        WindowDecoration("settings")
         SettingsContentView()
     }
 
     @Composable
     override fun RecommendScreen() {
-        WindowDecoration("recommend")
         RecommendContentView()
     }
 }
