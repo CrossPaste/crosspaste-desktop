@@ -7,6 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
@@ -18,6 +19,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import dorkbox.systemTray.SystemTray
 import dorkbox.systemTray.SystemTray.TrayType
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.koin.compose.koinInject
 import java.awt.GraphicsEnvironment
@@ -27,6 +29,19 @@ import java.net.URI
 object LinuxTrayView {
 
     val logger = KotlinLogging.logger {}
+
+    private fun createTray(): SystemTray? {
+        val trayType = getTrayType()
+        if (trayType != TrayType.AutoDetect) {
+            SystemTray.FORCE_TRAY_TYPE = trayType
+        }
+        logger.debug { "Tray type: $trayType" }
+        return SystemTray.get() ?: run {
+            SystemTray.FORCE_TRAY_TYPE = TrayType.AutoDetect
+            logger.debug { "Tray type fail back : ${TrayType.AutoDetect}" }
+            SystemTray.get()
+        }
+    }
 
     @OptIn(ExperimentalResourceApi::class)
     @Composable
@@ -38,42 +53,36 @@ object LinuxTrayView {
         val copywriter = koinInject<GlobalCopywriter>()
         val menuHelper = koinInject<MenuHelper>()
 
-        val tray by remember {
-            val trayType = getTrayType()
-            if (trayType != TrayType.AutoDetect) {
-                SystemTray.FORCE_TRAY_TYPE = trayType
-            }
-            logger.debug { "Tray type: $trayType" }
-            val innerTray =
-                SystemTray.get() ?: run {
-                    SystemTray.FORCE_TRAY_TYPE = TrayType.AutoDetect
-                    logger.debug { "Tray type fail back : ${TrayType.AutoDetect}" }
-                    SystemTray.get()
-                }
-            mutableStateOf(innerTray)
-        }
+        var tray by remember { mutableStateOf<SystemTray?>(null) }
 
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
-        DisposableEffect(copywriter.language()) {
-            if (tray != null) {
-                if (tray.menu.entries.isNotEmpty()) {
-                    tray.menu.remove()
-                }
-                for (item in menuHelper.createLinuxTrayMenu(applicationExit)) {
-                    tray.menu.add(item)
-                }
+        LaunchedEffect(copywriter.language()) {
+            if (tray == null) {
+                tray = createTray()
+            } else {
+                tray?.remove()
+                delay(500) // Wait for the tray to be removed
+                tray = createTray()
             }
 
+            tray?.setImage(URI(Res.getUri("drawable/crosspaste.png")).toURL().openStream())
+            tray?.setTooltip("CrossPaste")
+
+            tray?.let { linuxTray ->
+                for (item in menuHelper.createLinuxTrayMenu(applicationExit)) {
+                    linuxTray.menu.add(item)
+                }
+            }
+        }
+
+        DisposableEffect(Unit) {
             onDispose {
                 tray?.remove()
             }
         }
 
         LaunchedEffect(Unit) {
-            tray?.setImage(URI(Res.getUri("drawable/crosspaste.png")).toURL().openStream())
-            tray?.setTooltip("CrossPaste")
-
             refreshWindowPosition(appWindowManager)
 
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
