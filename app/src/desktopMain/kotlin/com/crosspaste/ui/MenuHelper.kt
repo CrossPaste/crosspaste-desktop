@@ -39,7 +39,7 @@ import java.awt.PopupMenu
 class MenuHelper(
     private val appUpdateService: AppUpdateService,
     private val copywriter: GlobalCopywriter,
-    appWindowManager: DesktopAppWindowManager,
+    private val appWindowManager: DesktopAppWindowManager,
     uiSupport: UISupport,
 ) {
 
@@ -140,13 +140,26 @@ class MenuHelper(
         )
 
     fun createLinuxTrayMenu(applicationExit: (ExitMode) -> Unit): List<dorkbox.systemTray.MenuItem> {
-        return menuItems.map { item ->
+        val openSearchWindow =
             dorkbox.systemTray.MenuItem(
-                item.title(copywriter),
+                copywriter.getText("open_search_window"),
             ) {
-                item.action()
+                mainCoroutineDispatcher.launch(CoroutineName("Open search window")) {
+                    appWindowManager.activeSearchWindow()
+                }
             }
-        } +
+
+        val items =
+            listOf(openSearchWindow) +
+                menuItems.map { item ->
+                    dorkbox.systemTray.MenuItem(
+                        item.title(copywriter),
+                    ) {
+                        item.action()
+                    }
+                }
+
+        return items +
             dorkbox.systemTray.MenuItem(
                 copywriter.getText("quit"),
             ) {
