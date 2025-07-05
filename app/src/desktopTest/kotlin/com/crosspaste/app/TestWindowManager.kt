@@ -40,12 +40,12 @@ class TestWindowManager(
 
     override suspend fun activeSearchWindow() {
         setShowSearchWindow(true)
-        bringToFront(getSearchWindowTitle())
+        bringToFront(searchWindowTitle)
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()
-        bringToBack(getSearchWindowTitle(), toPaste)
+        bringToBack(searchWindowTitle, toPaste)
         setShowSearchWindow(false)
     }
 
