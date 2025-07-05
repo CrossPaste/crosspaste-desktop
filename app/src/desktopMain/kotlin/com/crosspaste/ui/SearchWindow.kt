@@ -11,11 +11,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.CrossPaste.Companion.koinApplication
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
@@ -25,19 +23,23 @@ import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.sun.jna.Pointer
+import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
 @Composable
-fun ApplicationScope.SearchWindow(windowIcon: Painter?) {
-    val configManager = koinApplication.koin.get<DesktopConfigManager>()
-    val appSize = koinApplication.koin.get<DesktopAppSize>()
-    val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-    val platform = koinApplication.koin.get<Platform>()
+fun SearchWindow(windowIcon: Painter?) {
+    val appSize = koinInject<DesktopAppSize>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val configManager = koinInject<DesktopConfigManager>()
+    val platform = koinInject<Platform>()
 
     val config by configManager.config.collectAsState()
     val currentSearchWindowState by appWindowManager.searchWindowState.collectAsState()
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+
+    val isMac by remember { mutableStateOf(platform.isMacos()) }
+    val isLinux by remember { mutableStateOf(platform.isLinux()) }
 
     var currentStyle by remember { mutableStateOf(config.searchWindowStyle) }
     val isCenterStyle = config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style
@@ -74,14 +76,14 @@ fun ApplicationScope.SearchWindow(windowIcon: Painter?) {
         }
 
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = { },
         visible = showSearchWindow,
         state = windowState,
         title = appWindowManager.searchWindowTitle,
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
-        transparent = true,
+        transparent = !isLinux,
         resizable = false,
     ) {
         LaunchedEffect(config.searchWindowStyle) {
@@ -91,7 +93,7 @@ fun ApplicationScope.SearchWindow(windowIcon: Painter?) {
         }
 
         DisposableEffect(Unit) {
-            if (platform.isMacos()) {
+            if (isMac) {
                 runCatching {
                     val pointer = Pointer(window.windowHandle)
                     MacAppUtils.setWindowLevelScreenSaver(pointer)

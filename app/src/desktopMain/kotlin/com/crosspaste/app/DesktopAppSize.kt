@@ -16,10 +16,10 @@ import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.contains
@@ -49,9 +49,31 @@ class DesktopAppSize(
 
     override val qrCodeSize: DpSize = DpSize(width = 275.dp, height = 275.dp)
 
-    val centerSearchWindowSize: DpSize = DpSize(width = 800.dp, height = 540.dp)
+    val centerSearchInputHeight: Dp = huge
+
+    val centerSearchFooterHeight: Dp = 40.dp
+
+    val centerSearchPasteSummaryHeight = 40.dp
+
+    val showSearchPasteSummaryNum = 10
+
+    val showSearchPasteSummaryVertical = small3X
+
+    val centerSearchListViewSize: DpSize =
+        DpSize(
+            width = 280.dp,
+            height =
+                showSearchPasteSummaryNum * centerSearchPasteSummaryHeight +
+                    2 * showSearchPasteSummaryVertical,
+        )
 
     val centerSearchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
+
+    val centerSearchWindowSize: DpSize =
+        DpSize(
+            width = centerSearchListViewSize.width + centerSearchWindowDetailViewDpSize.width,
+            height = centerSearchInputHeight + centerSearchListViewSize.height + centerSearchFooterHeight,
+        )
 
     val sideSearchWindowHeight: Dp = 332.dp
 
@@ -61,25 +83,17 @@ class DesktopAppSize(
 
     val sidePasteSize: Dp = sideSearchWindowHeight - sideSearchInputHeight - (2 * sideSearchPaddingSize)
 
-    val searchListViewSize: DpSize = DpSize(width = 280.dp, height = 420.dp)
-
     val grantAccessibilityPermissionsWindowsSize: DpSize = DpSize(width = 360.dp, height = 280.dp)
 
     override val deviceHeight: Dp = huge
 
     override val settingsItemHeight: Dp = 40.dp
 
-    val searchFooterHeight: Dp = 40.dp
-
-    val searchPasteTitleHeight = 40.dp
-
     override val toastViewWidth: Dp = 280.dp
 
     override val tokenViewWidth: Dp = 320.dp
 
     val windowDecorationHeight: Dp = 48.dp
-
-    val appRoundedCornerShape = small3XRoundedCornerShape
 
     val appBorderSize = tiny5X
 
@@ -100,11 +114,7 @@ class DesktopAppSize(
     val mainWindowTopMargin = xxLarge
     // Mac OS end
 
-    private val searchPaddingDpSize = DpSize(large2X, large2X)
-
-    private val searchCorePaddingDpSize = DpSize(large2X, 120.dp)
-
-    val centerSearchWindowContentSize = centerSearchWindowSize.minus(searchPaddingDpSize)
+    private val searchCorePaddingDpSize = DpSize(zero, 100.dp)
 
     val centerSearchCoreContentSize = centerSearchWindowSize.minus(searchCorePaddingDpSize)
 

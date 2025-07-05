@@ -76,7 +76,9 @@ fun SearchInputView() {
     }
 
     Row(
-        modifier = Modifier.height(huge).fillMaxWidth(),
+        modifier =
+            Modifier.height(huge)
+                .fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
