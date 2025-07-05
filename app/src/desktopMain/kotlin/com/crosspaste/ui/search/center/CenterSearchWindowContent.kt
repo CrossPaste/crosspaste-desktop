@@ -155,7 +155,7 @@ fun CenterSearchWindowContent() {
 
                 Row(
                     modifier =
-                        Modifier.height(appSize.searchFooterHeight)
+                        Modifier.height(appSize.centerSearchFooterHeight)
                             .fillMaxWidth()
                             .background(AppUIColors.generalBackground)
                             .padding(horizontal = small3X),

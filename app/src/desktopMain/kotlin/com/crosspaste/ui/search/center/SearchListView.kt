@@ -139,7 +139,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     Box(
         modifier =
-            Modifier.size(appSize.searchListViewSize)
+            Modifier.size(appSize.centerSearchListViewSize)
                 .focusRequester(pasteListFocusRequester)
                 .focusable(),
     ) {
