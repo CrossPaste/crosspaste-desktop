@@ -39,6 +39,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
     val isMac by remember { mutableStateOf(platform.isMacos()) }
+    val isLinux by remember { mutableStateOf(platform.isLinux()) }
 
     var currentStyle by remember { mutableStateOf(config.searchWindowStyle) }
     val isCenterStyle = config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style
@@ -82,7 +83,7 @@ fun SearchWindow(windowIcon: Painter?) {
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
-        transparent = true,
+        transparent = !isLinux,
         resizable = false,
     ) {
         LaunchedEffect(config.searchWindowStyle) {
