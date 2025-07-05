@@ -28,17 +28,8 @@ class WinAppWindowManager(
         User32.findPasteWindow(mainWindowTitle)
     }
 
-    private val searchHWNDMap: MutableMap<String, HWND> = mutableMapOf()
-
-    fun getSearchHWND(): HWND? {
-        val searchWindowTitle = getSearchWindowTitle()
-        return searchHWNDMap[searchWindowTitle] ?: run {
-            searchHWNDMap.clear()
-            User32.findPasteWindow(searchWindowTitle)?.let { pasteWindow ->
-                searchHWNDMap[searchWindowTitle] = pasteWindow
-                pasteWindow
-            }
-        }
+    val searchHWND: HWND? by lazy {
+        User32.findPasteWindow(searchWindowTitle)
     }
 
     private val fileDescriptorCache: LoadingCache<String, String> =
@@ -117,13 +108,13 @@ class WinAppWindowManager(
         delay(500)
 
         pair?.let {
-            User32.bringToFront(pair.second, getSearchHWND())
+            User32.bringToFront(pair.second, searchHWND)
         }
     }
 
     override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
-        bringToBack(preparePaste(), getSearchHWND())
+        bringToBack(preparePaste(), searchHWND)
         setShowSearchWindow(false)
     }
 

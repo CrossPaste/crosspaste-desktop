@@ -11,7 +11,6 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.Pasteboard
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
-import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -63,9 +62,7 @@ abstract class DesktopAppWindowManager(
     companion object {
         private const val MAIN_WINDOW_TITLE: String = "CrossPaste"
 
-        val CENTER_SEARCH_WINDOW_TITLE = "CrossPaste Center Search"
-
-        val SIDE_SEARCH_WINDOW_TITLE = "CrossPaste Side Search"
+        private const val SEARCH_WINDOW_TITLE = "CrossPaste Search"
 
         // only use in Windows
         const val MENU_WINDOW_TITLE: String = "CrossPaste Menu"
@@ -75,16 +72,7 @@ abstract class DesktopAppWindowManager(
 
     val mainWindowTitle: String = MAIN_WINDOW_TITLE
 
-    fun getSearchWindowTitle(): String {
-        return if (DesktopSearchWindowStyle.isCenterStyle(
-                configManager.getCurrentConfig().searchWindowStyle,
-            )
-        ) {
-            CENTER_SEARCH_WINDOW_TITLE
-        } else {
-            SIDE_SEARCH_WINDOW_TITLE
-        }
-    }
+    val searchWindowTitle: String = SEARCH_WINDOW_TITLE
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 

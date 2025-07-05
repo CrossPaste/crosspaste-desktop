@@ -26,17 +26,8 @@ class LinuxAppWindowManager(
         X11Api.getWindow(mainWindowTitle)
     }
 
-    private val searchWindowMap: MutableMap<String, Window> = mutableMapOf()
-
-    fun getSearchWindow(): Window? {
-        val searchWindowTitle = getSearchWindowTitle()
-        return searchWindowMap[searchWindowTitle] ?: run {
-            searchWindowMap.clear()
-            X11Api.getWindow(searchWindowTitle)?.let { window ->
-                searchWindowMap[searchWindowTitle] = window
-                window
-            }
-        }
+    val searchWindow: Window? by lazy {
+        X11Api.getWindow(searchWindowTitle)
     }
 
     override fun getCurrentActiveAppName(): String? {
@@ -89,8 +80,6 @@ class LinuxAppWindowManager(
 
     override suspend fun activeSearchWindow() {
         logger.info { "active search window" }
-
-        val searchWindow = getSearchWindow()
 
         setShowSearchWindow(true)
 

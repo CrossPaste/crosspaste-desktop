@@ -103,7 +103,7 @@ class MacAppWindowManager(
 
         setSearchWindowState(appSize.getSearchWindowState())
 
-        MacAppUtils.bringToFront(getSearchWindowTitle()).let {
+        MacAppUtils.bringToFront(searchWindowTitle).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo.value = macAppInfo
