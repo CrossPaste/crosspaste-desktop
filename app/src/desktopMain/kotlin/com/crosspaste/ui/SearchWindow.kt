@@ -11,11 +11,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.window.ApplicationScope
+import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.CrossPaste.Companion.koinApplication
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
@@ -25,22 +24,85 @@ import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.sun.jna.Pointer
+import org.jetbrains.jewel.window.DecoratedWindow
+import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
 @Composable
-fun ApplicationScope.SearchWindow(windowIcon: Painter?) {
-    val configManager = koinApplication.koin.get<DesktopConfigManager>()
-    val appSize = koinApplication.koin.get<DesktopAppSize>()
-    val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-    val platform = koinApplication.koin.get<Platform>()
+fun SearchWindow(windowIcon: Painter?) {
+    val configManager = koinInject<DesktopConfigManager>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val platform = koinInject<Platform>()
+
+    val config by configManager.config.collectAsState()
+
+    val isMac by remember { mutableStateOf(platform.isMacos()) }
+
+    var currentStyle by remember { mutableStateOf(config.searchWindowStyle) }
+    val isCenterStyle = config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style
+
+    PlatformSearchWindow(windowIcon) {
+        LaunchedEffect(config.searchWindowStyle) {
+            if (currentStyle != config.searchWindowStyle) {
+                currentStyle = config.searchWindowStyle
+            }
+        }
+
+        DisposableEffect(Unit) {
+            if (isMac) {
+                runCatching {
+                    val pointer = Pointer(window.windowHandle)
+                    MacAppUtils.setWindowLevelScreenSaver(pointer)
+                }
+            }
+
+            appWindowManager.searchComposeWindow = window
+
+            val windowListener =
+                object : WindowAdapter() {
+                    override fun windowGainedFocus(e: WindowEvent?) {
+                        appWindowManager.setShowSearchWindow(true)
+                    }
+
+                    override fun windowLostFocus(e: WindowEvent?) {
+                        appWindowManager.setShowSearchWindow(false)
+                    }
+                }
+
+            window.addWindowFocusListener(windowListener)
+
+            onDispose {
+                window.removeWindowFocusListener(windowListener)
+            }
+        }
+
+        if (isCenterStyle) {
+            CenterSearchWindowContent()
+        } else {
+            SideSearchWindowContent()
+        }
+    }
+}
+
+@Composable
+private fun PlatformSearchWindow(
+    windowIcon: Painter?,
+    windowContent: @Composable FrameWindowScope.() -> Unit,
+) {
+    val appSize = koinInject<DesktopAppSize>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val configManager = koinInject<DesktopConfigManager>()
+    val platform = koinInject<Platform>()
 
     val config by configManager.config.collectAsState()
     val currentSearchWindowState by appWindowManager.searchWindowState.collectAsState()
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
-    var currentStyle by remember { mutableStateOf(config.searchWindowStyle) }
-    val isCenterStyle = config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style
+    val isCenterStyle by remember(config) {
+        mutableStateOf(config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style)
+    }
+    val isLinux by remember { mutableStateOf(platform.isLinux()) }
 
     val animationProgress by animateFloatAsState(
         targetValue = if (showSearchWindow && !isCenterStyle) 0f else 1f,
@@ -73,55 +135,31 @@ fun ApplicationScope.SearchWindow(windowIcon: Painter?) {
             }
         }
 
-    Window(
-        onCloseRequest = ::exitApplication,
-        visible = showSearchWindow,
-        state = windowState,
-        title = appWindowManager.searchWindowTitle,
-        icon = windowIcon,
-        alwaysOnTop = true,
-        undecorated = true,
-        transparent = true,
-        resizable = false,
-    ) {
-        LaunchedEffect(config.searchWindowStyle) {
-            if (currentStyle != config.searchWindowStyle) {
-                currentStyle = config.searchWindowStyle
-            }
+    if (isLinux) {
+        DecoratedWindow(
+            onCloseRequest = { },
+            visible = true,
+            state = WindowState(),
+            title = appWindowManager.searchWindowTitle,
+            icon = windowIcon,
+            alwaysOnTop = true,
+            resizable = false,
+        ) {
+            windowContent()
         }
-
-        DisposableEffect(Unit) {
-            if (platform.isMacos()) {
-                runCatching {
-                    val pointer = Pointer(window.windowHandle)
-                    MacAppUtils.setWindowLevelScreenSaver(pointer)
-                }
-            }
-
-            appWindowManager.searchComposeWindow = window
-
-            val windowListener =
-                object : WindowAdapter() {
-                    override fun windowGainedFocus(e: WindowEvent?) {
-                        appWindowManager.setShowSearchWindow(true)
-                    }
-
-                    override fun windowLostFocus(e: WindowEvent?) {
-                        appWindowManager.setShowSearchWindow(false)
-                    }
-                }
-
-            window.addWindowFocusListener(windowListener)
-
-            onDispose {
-                window.removeWindowFocusListener(windowListener)
-            }
-        }
-
-        if (isCenterStyle) {
-            CenterSearchWindowContent()
-        } else {
-            SideSearchWindowContent()
+    } else {
+        Window(
+            onCloseRequest = { },
+            visible = showSearchWindow,
+            state = windowState,
+            title = appWindowManager.searchWindowTitle,
+            icon = windowIcon,
+            alwaysOnTop = true,
+            undecorated = true,
+            transparent = true,
+            resizable = false,
+        ) {
+            windowContent()
         }
     }
 }

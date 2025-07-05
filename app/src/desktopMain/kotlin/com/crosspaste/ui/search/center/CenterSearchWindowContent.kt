@@ -52,7 +52,6 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
-import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.delay
@@ -93,122 +92,119 @@ fun CenterSearchWindowContent() {
         }
     }
 
-    Theme {
+    Box(
+        modifier =
+            Modifier
+                .background(Color.Transparent)
+                .clip(appSize.appRoundedCornerShape)
+                .size(appSize.centerSearchWindowSize)
+                .onKeyEvent {
+                    when (it.key) {
+                        Key.Enter -> {
+                            mainCoroutineDispatcher.launch {
+                                pasteSelectionViewModel.toPaste()
+                            }
+                            true
+                        }
+                        Key.DirectionUp -> {
+                            pasteSelectionViewModel.selectPrev()
+                            true
+                        }
+                        Key.DirectionDown -> {
+                            pasteSelectionViewModel.selectNext()
+                            true
+                        }
+                        Key.N -> {
+                            if (it.isCtrlPressed) {
+                                pasteSelectionViewModel.selectNext()
+                            }
+                            true
+                        }
+                        Key.P -> {
+                            if (it.isCtrlPressed) {
+                                pasteSelectionViewModel.selectPrev()
+                            }
+                            true
+                        }
+                        else -> {
+                            false
+                        }
+                    }
+                },
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             modifier =
                 Modifier
-                    .background(Color.Transparent)
-                    .clip(appSize.appRoundedCornerShape)
+                    .shadow(tiny2X, small3XRoundedCornerShape)
                     .size(appSize.centerSearchWindowSize)
-                    .padding(small3X)
-                    .onKeyEvent {
-                        when (it.key) {
-                            Key.Enter -> {
-                                mainCoroutineDispatcher.launch {
-                                    pasteSelectionViewModel.toPaste()
-                                }
-                                true
-                            }
-                            Key.DirectionUp -> {
-                                pasteSelectionViewModel.selectPrev()
-                                true
-                            }
-                            Key.DirectionDown -> {
-                                pasteSelectionViewModel.selectNext()
-                                true
-                            }
-                            Key.N -> {
-                                if (it.isCtrlPressed) {
-                                    pasteSelectionViewModel.selectNext()
-                                }
-                                true
-                            }
-                            Key.P -> {
-                                if (it.isCtrlPressed) {
-                                    pasteSelectionViewModel.selectPrev()
-                                }
-                                true
-                            }
-                            else -> {
-                                false
-                            }
-                        }
-                    },
+                    .background(DesktopAppUIColors.searchBackground)
+                    .border(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), small3XRoundedCornerShape),
             contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .shadow(tiny2X, small3XRoundedCornerShape)
-                        .size(appSize.centerSearchWindowContentSize)
-                        .background(DesktopAppUIColors.searchBackground)
-                        .border(tiny5X, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), small3XRoundedCornerShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column {
-                    SearchInputView()
+            Column {
+                SearchInputView()
 
-                    Row(modifier = Modifier.size(appSize.centerSearchCoreContentSize)) {
-                        SearchListView {
-                            pasteSelectionViewModel.clickSelectedIndex(it)
-                        }
-                        VerticalDivider(thickness = tiny5X)
-                        DetailPasteDataView()
+                Row(modifier = Modifier.size(appSize.centerSearchCoreContentSize)) {
+                    SearchListView {
+                        pasteSelectionViewModel.clickSelectedIndex(it)
+                    }
+                    VerticalDivider(thickness = tiny5X)
+                    DetailPasteDataView()
+                }
+
+                Row(
+                    modifier =
+                        Modifier.height(appSize.searchFooterHeight)
+                            .fillMaxWidth()
+                            .background(AppUIColors.generalBackground)
+                            .padding(horizontal = small3X),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CrossPasteLogoView(
+                        size = xLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+
+                    Spacer(modifier = Modifier.width(small3X))
+
+                    Text(
+                        text = "CrossPaste ${appInfo.appVersion}",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                lineHeight = TextUnit.Unspecified,
+                            ),
+                    )
+
+                    if (existNewVersion) {
+                        Spacer(modifier = Modifier.width(small3X))
+                        NewVersionButton()
                     }
 
-                    Row(
-                        modifier =
-                            Modifier.height(appSize.searchFooterHeight)
-                                .fillMaxWidth()
-                                .background(AppUIColors.generalBackground)
-                                .padding(horizontal = small3X),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        CrossPasteLogoView(
-                            size = xLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                    Spacer(modifier = Modifier.weight(1f))
 
-                        Spacer(modifier = Modifier.width(small3X))
+                    val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)
 
+                    prevAppName?.let {
                         Text(
-                            text = "CrossPaste ${appInfo.appVersion}",
+                            text = "${copywriter.getText("paste_to")} $it",
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold,
                                     lineHeight = TextUnit.Unspecified,
                                 ),
                         )
-
-                        if (existNewVersion) {
-                            Spacer(modifier = Modifier.width(small3X))
-                            NewVersionButton()
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)
-
-                        prevAppName?.let {
-                            Text(
-                                text = "${copywriter.getText("paste_to")} $it",
-                                style =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        lineHeight = TextUnit.Unspecified,
-                                    ),
-                            )
-                            Spacer(modifier = Modifier.width(tiny))
-                            Row(
-                                modifier =
-                                    Modifier.clickable {
-                                        mainCoroutineDispatcher.launch {
-                                            pasteSelectionViewModel.toPaste()
-                                        }
-                                    },
-                            ) {
-                                KeyboardView(keyboardValue = enter)
-                            }
+                        Spacer(modifier = Modifier.width(tiny))
+                        Row(
+                            modifier =
+                                Modifier.clickable {
+                                    mainCoroutineDispatcher.launch {
+                                        pasteSelectionViewModel.toPaste()
+                                    }
+                                },
+                        ) {
+                            KeyboardView(keyboardValue = enter)
                         }
                     }
                 }

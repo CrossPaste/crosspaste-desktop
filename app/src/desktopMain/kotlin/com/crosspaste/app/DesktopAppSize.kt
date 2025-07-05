@@ -49,7 +49,7 @@ class DesktopAppSize(
 
     override val qrCodeSize: DpSize = DpSize(width = 275.dp, height = 275.dp)
 
-    val centerSearchWindowSize: DpSize = DpSize(width = 800.dp, height = 540.dp)
+    val centerSearchWindowSize: DpSize = DpSize(width = 780.dp, height = 520.dp)
 
     val centerSearchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
 
@@ -100,11 +100,7 @@ class DesktopAppSize(
     val mainWindowTopMargin = xxLarge
     // Mac OS end
 
-    private val searchPaddingDpSize = DpSize(large2X, large2X)
-
     private val searchCorePaddingDpSize = DpSize(large2X, 120.dp)
-
-    val centerSearchWindowContentSize = centerSearchWindowSize.minus(searchPaddingDpSize)
 
     val centerSearchCoreContentSize = centerSearchWindowSize.minus(searchCorePaddingDpSize)
 
