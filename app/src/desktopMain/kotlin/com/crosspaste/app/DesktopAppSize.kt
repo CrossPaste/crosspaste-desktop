@@ -20,6 +20,7 @@ import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.contains
@@ -49,7 +50,7 @@ class DesktopAppSize(
 
     override val qrCodeSize: DpSize = DpSize(width = 275.dp, height = 275.dp)
 
-    val centerSearchWindowSize: DpSize = DpSize(width = 780.dp, height = 520.dp)
+    val centerSearchWindowSize: DpSize = DpSize(width = 780.dp, height = 500.dp)
 
     val centerSearchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
 
@@ -100,7 +101,7 @@ class DesktopAppSize(
     val mainWindowTopMargin = xxLarge
     // Mac OS end
 
-    private val searchCorePaddingDpSize = DpSize(large2X, 120.dp)
+    private val searchCorePaddingDpSize = DpSize(zero, 100.dp)
 
     val centerSearchCoreContentSize = centerSearchWindowSize.minus(searchCorePaddingDpSize)
 
