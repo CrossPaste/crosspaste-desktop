@@ -22,6 +22,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -40,6 +42,7 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.NewVersionButton
@@ -63,13 +66,15 @@ import org.koin.compose.koinInject
 fun CenterSearchWindowContent() {
     val appInfo = koinInject<AppInfo>()
     val appSize = koinInject<DesktopAppSize>()
-    val copywriter = koinInject<GlobalCopywriter>()
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appUpdateService = koinInject<AppUpdateService>()
-
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+    val platform = koinInject<Platform>()
 
     val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
+
+    val isLinux by remember { mutableStateOf(platform.isLinux()) }
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
@@ -92,45 +97,51 @@ fun CenterSearchWindowContent() {
         }
     }
 
+    val modifier =
+        Modifier
+            .background(Color.Transparent)
+            .size(appSize.centerSearchWindowSize)
+            .onKeyEvent {
+                when (it.key) {
+                    Key.Enter -> {
+                        mainCoroutineDispatcher.launch {
+                            pasteSelectionViewModel.toPaste()
+                        }
+                        true
+                    }
+                    Key.DirectionUp -> {
+                        pasteSelectionViewModel.selectPrev()
+                        true
+                    }
+                    Key.DirectionDown -> {
+                        pasteSelectionViewModel.selectNext()
+                        true
+                    }
+                    Key.N -> {
+                        if (it.isCtrlPressed) {
+                            pasteSelectionViewModel.selectNext()
+                        }
+                        true
+                    }
+                    Key.P -> {
+                        if (it.isCtrlPressed) {
+                            pasteSelectionViewModel.selectPrev()
+                        }
+                        true
+                    }
+                    else -> {
+                        false
+                    }
+                }
+            }
+
     Box(
         modifier =
-            Modifier
-                .background(Color.Transparent)
-                .clip(appSize.appRoundedCornerShape)
-                .size(appSize.centerSearchWindowSize)
-                .onKeyEvent {
-                    when (it.key) {
-                        Key.Enter -> {
-                            mainCoroutineDispatcher.launch {
-                                pasteSelectionViewModel.toPaste()
-                            }
-                            true
-                        }
-                        Key.DirectionUp -> {
-                            pasteSelectionViewModel.selectPrev()
-                            true
-                        }
-                        Key.DirectionDown -> {
-                            pasteSelectionViewModel.selectNext()
-                            true
-                        }
-                        Key.N -> {
-                            if (it.isCtrlPressed) {
-                                pasteSelectionViewModel.selectNext()
-                            }
-                            true
-                        }
-                        Key.P -> {
-                            if (it.isCtrlPressed) {
-                                pasteSelectionViewModel.selectPrev()
-                            }
-                            true
-                        }
-                        else -> {
-                            false
-                        }
-                    }
-                },
+            if (isLinux) {
+                modifier
+            } else {
+                modifier.clip(small3XRoundedCornerShape)
+            },
         contentAlignment = Alignment.Center,
     ) {
         Box(

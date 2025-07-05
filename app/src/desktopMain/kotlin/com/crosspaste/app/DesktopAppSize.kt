@@ -16,7 +16,6 @@ import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -95,8 +94,6 @@ class DesktopAppSize(
     override val tokenViewWidth: Dp = 320.dp
 
     val windowDecorationHeight: Dp = 48.dp
-
-    val appRoundedCornerShape = small3XRoundedCornerShape
 
     val appBorderSize = tiny5X
 
