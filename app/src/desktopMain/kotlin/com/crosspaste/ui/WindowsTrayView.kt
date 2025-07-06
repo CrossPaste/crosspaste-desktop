@@ -58,7 +58,7 @@ object WindowsTrayView {
         val appLaunch = koinInject<DesktopAppLaunch>()
         val appSize = koinInject<DesktopAppSize>()
         val appLaunchState = koinInject<AppLaunchState>()
-        val appWindowManager = koinInject<DesktopAppWindowManager>()
+        val appWindowManager = koinInject<DesktopAppWindowManager>() as WinAppWindowManager
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
         val trayIcon = painterResource(Res.drawable.crosspaste)
@@ -66,6 +66,7 @@ object WindowsTrayView {
         var showMenu by remember { mutableStateOf(false) }
 
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
+        val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
         val menuWindowState =
             rememberWindowState(
@@ -77,7 +78,7 @@ object WindowsTrayView {
             delay(1000)
             refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                appWindowManager.setShowMainWindow(true)
+                appWindowManager.showMainWindow()
                 appLaunch.setFirstLaunchCompleted(true)
             }
         }
@@ -90,7 +91,12 @@ object WindowsTrayView {
                 WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
                     if (event.button == MouseEvent.BUTTON1) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                            appWindowManager.switchSearchWindow()
+                            appWindowManager.hideMainWindow()
+                            if (showSearchWindow) {
+                                appWindowManager.hideSearchWindow()
+                            } else {
+                                appWindowManager.recordActiveInfoAndShowSearchWindow(false)
+                            }
                         }
                     } else {
                         showMenu = true
@@ -132,7 +138,7 @@ object WindowsTrayView {
 
                     window.addWindowFocusListener(windowListener)
 
-                    (appWindowManager as WinAppWindowManager).initMenuHWND()
+                    appWindowManager.initMenuHWND()
 
                     onDispose {
                         window.removeWindowFocusListener(windowListener)

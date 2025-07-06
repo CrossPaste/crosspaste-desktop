@@ -108,12 +108,20 @@ abstract class DesktopAppWindowManager(
 
     var searchComposeWindow: ComposeWindow? = null
 
-    fun setShowMainWindow(showMainWindow: Boolean) {
-        _showMainWindow.value = showMainWindow
+    fun hideMainWindow() {
+        _showMainWindow.value = false
     }
 
-    fun setShowSearchWindow(showSearchWindow: Boolean) {
-        _showSearchWindow.value = showSearchWindow
+    fun showMainWindow() {
+        _showMainWindow.value = true
+    }
+
+    fun hideSearchWindow() {
+        _showSearchWindow.value = false
+    }
+
+    fun showSearchWindow() {
+        _showSearchWindow.value = true
     }
 
     fun setMainWindowState(windowState: WindowState) {
@@ -134,21 +142,13 @@ abstract class DesktopAppWindowManager(
 
     abstract fun getCurrentActiveAppName(): String?
 
-    abstract suspend fun activeMainWindow()
+    abstract suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean)
 
-    abstract suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean = { false })
+    abstract suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 
-    suspend fun switchSearchWindow() {
-        if (showSearchWindow.value) {
-            unActiveSearchWindow()
-        } else {
-            activeSearchWindow()
-        }
-    }
+    abstract suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean)
 
-    abstract suspend fun activeSearchWindow()
-
-    abstract suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean = { false })
+    abstract suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 
     abstract fun getPrevAppName(): Flow<String?>
 

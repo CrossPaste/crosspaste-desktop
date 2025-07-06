@@ -83,7 +83,7 @@ fun MainWindow(windowIcon: Painter?) {
         ) {
             DecoratedWindow(
                 onCloseRequest = {
-                    appWindowManager.setShowMainWindow(false)
+                    appWindowManager.hideMainWindow()
                 },
                 visible = showMainWindow,
                 state = mainWindowState,

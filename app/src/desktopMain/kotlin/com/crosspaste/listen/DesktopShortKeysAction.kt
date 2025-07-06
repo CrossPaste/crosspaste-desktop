@@ -54,14 +54,14 @@ class DesktopShortKeysAction(
     private fun showMainWindow() {
         logger.info { "Open main window" }
         mainCoroutineDispatcher.launch(CoroutineName("OpenMainWindow")) {
-            appWindowManager.activeMainWindow()
+            appWindowManager.recordActiveInfoAndShowMainWindow(true)
         }
     }
 
     private fun showSearchWindow() {
         logger.info { "Open search window" }
         mainCoroutineDispatcher.launch(CoroutineName("OpenSearchWindow")) {
-            appWindowManager.activeSearchWindow()
+            appWindowManager.recordActiveInfoAndShowSearchWindow(true)
         }
     }
 
@@ -72,11 +72,11 @@ class DesktopShortKeysAction(
                 !appWindowManager.showMainDialog.value &&
                 !appFileChooser.showFileDialog.value
             ) {
-                appWindowManager.unActiveMainWindow()
+                appWindowManager.hideMainWindow()
             }
 
             if (appWindowManager.showSearchWindow.value) {
-                appWindowManager.unActiveSearchWindow()
+                appWindowManager.hideSearchWindow()
             }
         }
     }

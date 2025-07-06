@@ -67,9 +67,9 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun activeMainWindow() {
+    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
         logger.info { "active main window" }
-        setShowMainWindow(true)
+        showMainWindow()
         MacAppUtils.bringToFront(mainWindowTitle).let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
@@ -80,7 +80,7 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         val toPaste = preparePaste()
         val prevAppId = prevMacAppInfo.value?.bundleIdentifier ?: ""
@@ -94,12 +94,12 @@ class MacAppWindowManager(
         } else {
             MacAppUtils.mainToBack(prevAppId)
         }
-        setShowMainWindow(false)
+        hideMainWindow()
     }
 
-    override suspend fun activeSearchWindow() {
+    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
         logger.info { "active search window" }
-        setShowSearchWindow(true)
+        showSearchWindow()
 
         setSearchWindowState(appSize.getSearchWindowState())
 
@@ -113,7 +113,7 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
         val toPaste = preparePaste()
         val prevAppId = prevMacAppInfo.value?.bundleIdentifier ?: ""
@@ -127,7 +127,7 @@ class MacAppWindowManager(
         } else {
             MacAppUtils.searchToBack(prevAppId)
         }
-        setShowSearchWindow(false)
+        hideSearchWindow()
     }
 
     override suspend fun toPaste() {
