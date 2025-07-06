@@ -8,9 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
@@ -79,8 +76,6 @@ object MacTrayView {
                 val screenDevice = ge.defaultScreenDevice
 
                 (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
-                    logger.debug { "windowInfo: $it" }
-                    refreshWindowPosition(appWindowManager, it)
                     if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                         appWindowManager.showMainWindow()
                         appLaunch.setFirstLaunchCompleted(true)
@@ -94,7 +89,7 @@ object MacTrayView {
             state = remember { notificationManager.trayState },
             tooltip = "CrossPaste",
             mouseListener =
-                MacTrayMouseClicked(appWindowManager, appLaunchState) { event, windowInfo ->
+                MacTrayMouseClicked(appLaunchState) { event, windowInfo ->
                     val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
                     if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
@@ -121,27 +116,7 @@ object MacTrayView {
         )
     }
 
-    private fun refreshWindowPosition(
-        appWindowManager: DesktopAppWindowManager,
-        windowInfo: WindowInfo,
-    ) {
-        val appSize = appWindowManager.appSize
-        val windowPosition =
-            WindowPosition.Absolute(
-                x = windowInfo.x.dp + (windowInfo.width.dp / 2) - (appSize.mainWindowSize.width / 2),
-                y = windowInfo.y.dp + appSize.mainWindowTopMargin,
-            )
-        appWindowManager.setMainWindowState(
-            WindowState(
-                size = appWindowManager.appSize.mainWindowSize,
-                position = windowPosition,
-            ),
-        )
-        logger.debug { "main position: $windowPosition" }
-    }
-
     class MacTrayMouseClicked(
-        private val appWindowManager: DesktopAppWindowManager,
         private val appLaunchState: DesktopAppLaunchState,
         private val mouseClickedAction: (MouseEvent, WindowInfo) -> Unit,
     ) : MouseAdapter() {
@@ -151,7 +126,6 @@ object MacTrayView {
             windowInfos.useAll {
                 windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
                     mouseClickedAction(e, it)
-                    refreshWindowPosition(appWindowManager, it)
                 }
             }
         }

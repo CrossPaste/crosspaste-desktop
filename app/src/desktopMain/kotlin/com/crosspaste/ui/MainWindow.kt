@@ -5,7 +5,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.listener.GlobalListener
@@ -36,8 +39,13 @@ fun MainWindow(windowIcon: Painter?) {
     val globalListener = koinInject<GlobalListener>()
     val themeDetector = koinInject<ThemeDetector>()
 
-    val mainWindowState by appWindowManager.mainWindowState.collectAsState()
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+
+    val mainWindowState =
+        rememberWindowState(
+            size = appSize.mainWindowSize,
+            position = WindowPosition(Alignment.Center),
+        )
 
     // Initialize global listener only once
     LaunchedEffect(Unit) {

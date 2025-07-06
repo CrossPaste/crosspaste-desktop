@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppLaunch
@@ -76,7 +75,6 @@ object WindowsTrayView {
 
         LaunchedEffect(Unit) {
             delay(1000)
-            refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                 appWindowManager.showMainWindow()
                 appLaunch.setFirstLaunchCompleted(true)
@@ -88,7 +86,7 @@ object WindowsTrayView {
             state = remember { notificationManager.trayState },
             tooltip = "CrossPaste",
             mouseListener =
-                WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
+                WindowsTrayMouseClicked { event, gd, insets ->
                     if (event.button == MouseEvent.BUTTON1) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
                             appWindowManager.hideMainWindow()
@@ -180,50 +178,14 @@ object WindowsTrayView {
         }
     }
 
-    fun refreshWindowPosition(
-        appWindowManager: DesktopAppWindowManager,
-        event: MouseEvent?,
-        eventAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
-    ) {
-        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-        event?.let { eventAction(it, gd, insets) }
-
-        val bounds = gd.defaultConfiguration.bounds
-        val usableWidth = bounds.width - insets.right
-        val usableHeight = bounds.height - insets.bottom
-
-        val appSize = appWindowManager.appSize
-
-        val windowWidth = appSize.mainWindowSize.width
-        val windowHeight = appSize.mainWindowSize.height
-
-        val xOffset = appSize.mainHorizontalShadowPadding - appSize.edgePadding
-        val yOffset = appSize.mainBottomShadowPadding - appSize.edgePadding
-
-        val windowPosition =
-            WindowPosition.Absolute(
-                x = usableWidth.dp - windowWidth + xOffset,
-                y = usableHeight.dp - windowHeight + yOffset,
-            )
-
-        appWindowManager.setMainWindowState(
-            WindowState(
-                size = appWindowManager.appSize.mainWindowSize,
-                position = windowPosition,
-            ),
-        )
-
-        logger.debug { "main position: $windowPosition" }
-    }
-
     class WindowsTrayMouseClicked(
-        private val appWindowManager: DesktopAppWindowManager,
         private val mouseClickedAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
     ) : MouseAdapter() {
 
-        override fun mouseClicked(e: MouseEvent) {
-            refreshWindowPosition(appWindowManager, e, mouseClickedAction)
+        override fun mouseClicked(event: MouseEvent) {
+            val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+            val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+            mouseClickedAction(event, gd, insets)
         }
     }
 }

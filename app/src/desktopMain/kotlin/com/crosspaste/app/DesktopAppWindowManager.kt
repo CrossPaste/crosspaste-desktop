@@ -1,8 +1,6 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
@@ -82,16 +80,6 @@ abstract class DesktopAppWindowManager(
     private val _showMainWindow = MutableStateFlow(false)
     val showMainWindow: StateFlow<Boolean> = _showMainWindow
 
-    private val _mainWindowState =
-        MutableStateFlow(
-            WindowState(
-                placement = WindowPlacement.Floating,
-                position = WindowPosition.PlatformDefault,
-                size = appSize.mainWindowSize,
-            ),
-        )
-    val mainWindowState: StateFlow<WindowState> = _mainWindowState
-
     var mainComposeWindow: ComposeWindow? = null
 
     private val _showMainDialog = MutableStateFlow(false)
@@ -122,14 +110,6 @@ abstract class DesktopAppWindowManager(
 
     fun showSearchWindow() {
         _showSearchWindow.value = true
-    }
-
-    fun setMainWindowState(windowState: WindowState) {
-        _mainWindowState.value = windowState
-    }
-
-    fun getMainWindowState(): WindowState {
-        return mainWindowState.value
     }
 
     fun setSearchWindowState(windowState: WindowState) {
