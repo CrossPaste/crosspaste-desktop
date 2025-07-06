@@ -239,6 +239,14 @@ object AppUIFont {
                     ),
             )
 
+    val tipsTextStyle: TextStyle
+        @Composable
+        get() =
+            MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Bold,
+                lineHeight = 1.em,
+            )
+
     val toastTitleTextStyle: TextStyle
         @Composable
         get() =
