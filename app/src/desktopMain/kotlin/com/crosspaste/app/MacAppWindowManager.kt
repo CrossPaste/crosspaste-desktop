@@ -94,7 +94,7 @@ class MacAppWindowManager(
         } else {
             MacAppUtils.mainToBack(prevAppId)
         }
-        this@MacAppWindowManager.hideMainWindow()
+        hideMainWindow()
     }
 
     override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {

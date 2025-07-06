@@ -74,8 +74,8 @@ class LinuxAppWindowManager(
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        hideMainWindow()
         bringToBack(preparePaste())
+        hideMainWindow()
     }
 
     override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
