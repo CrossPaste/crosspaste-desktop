@@ -56,7 +56,7 @@ class AppWindowManagerTest {
         assertNull(testAppWindowManager.getCurrentActiveAppName())
         runBlocking { testAppWindowManager.recordActiveInfoAndShowMainWindow() }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
-        runBlocking { testAppWindowManager.hideMainWindow() }
+        runBlocking { testAppWindowManager.hideMainWindowAndPaste() }
         assertNull(testAppWindowManager.getCurrentActiveAppName())
         mockOS.currentApp = "Chrome"
         runBlocking { testAppWindowManager.recordActiveInfoAndShowSearchWindow() }
