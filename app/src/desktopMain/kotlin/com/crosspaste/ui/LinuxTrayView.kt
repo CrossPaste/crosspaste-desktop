@@ -8,9 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
@@ -22,8 +19,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.koin.compose.koinInject
-import java.awt.GraphicsEnvironment
-import java.awt.Toolkit
 import java.net.URI
 
 object LinuxTrayView {
@@ -83,38 +78,11 @@ object LinuxTrayView {
         }
 
         LaunchedEffect(Unit) {
-            refreshWindowPosition(appWindowManager)
-
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
                 appWindowManager.showMainWindow()
                 appLaunch.setFirstLaunchCompleted(true)
             }
         }
-    }
-
-    private fun refreshWindowPosition(appWindowManager: DesktopAppWindowManager) {
-        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-        val bounds = gd.defaultConfiguration.bounds
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-
-        val appSize = appWindowManager.appSize
-
-        val windowWidth = appSize.mainWindowSize.width
-
-        val windowPosition =
-            WindowPosition.Absolute(
-                x = (bounds.x + bounds.width).dp - windowWidth + appSize.mainHorizontalShadowPadding,
-                y = (bounds.y + insets.top).dp,
-            )
-
-        appWindowManager.setMainWindowState(
-            WindowState(
-                size = appWindowManager.appSize.mainWindowSize,
-                position = windowPosition,
-            ),
-        )
-
-        logger.debug { "main position: $windowPosition" }
     }
 
     private fun getTrayType(): TrayType {
