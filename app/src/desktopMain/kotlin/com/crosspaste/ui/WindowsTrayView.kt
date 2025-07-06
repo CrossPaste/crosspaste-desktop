@@ -178,21 +178,14 @@ object WindowsTrayView {
         }
     }
 
-    fun refreshWindowPosition(
-        event: MouseEvent?,
-        eventAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
-    ) {
-        val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
-        event?.let { eventAction(it, gd, insets) }
-    }
-
     class WindowsTrayMouseClicked(
         private val mouseClickedAction: (MouseEvent, GraphicsDevice, Insets) -> Unit,
     ) : MouseAdapter() {
 
-        override fun mouseClicked(e: MouseEvent) {
-            refreshWindowPosition(e, mouseClickedAction)
+        override fun mouseClicked(event: MouseEvent) {
+            val gd = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice
+            val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.defaultConfiguration)
+            mouseClickedAction(event, gd, insets)
         }
     }
 }
