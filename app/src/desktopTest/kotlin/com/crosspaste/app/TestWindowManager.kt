@@ -27,7 +27,7 @@ class TestWindowManager(
         return mockOS.currentApp
     }
 
-    override suspend fun recordActiveInfoAndShowMainWindow() {
+    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
         showMainWindow()
         bringToFront(mainWindowTitle)
     }
@@ -38,7 +38,7 @@ class TestWindowManager(
         this@TestWindowManager.hideMainWindow()
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow() {
+    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
         showSearchWindow()
         bringToFront(searchWindowTitle)
     }
