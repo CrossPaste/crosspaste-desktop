@@ -19,6 +19,7 @@ jobs:
       )
     
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     environment:
       name: claude-review-approval
