@@ -89,7 +89,7 @@ class DesktopPasteMenuService(
         uiSupport.openPasteData(pasteData, index)
         val pasteType = pasteData.getType()
         if (!pasteType.isText() && !pasteType.isColor()) {
-            desktopAppWindowManager.setShowMainWindow(false)
+            desktopAppWindowManager.hideMainWindow()
         }
     }
 
@@ -104,7 +104,7 @@ class DesktopPasteMenuService(
 
     override fun quickPaste(pasteData: PasteData) {
         menuScope.launch {
-            desktopAppWindowManager.unActiveMainWindow {
+            desktopAppWindowManager.hideMainWindowAndPaste {
                 withContext(ioDispatcher) {
                     pasteboardService.tryWritePasteboard(
                         pasteData = pasteData,

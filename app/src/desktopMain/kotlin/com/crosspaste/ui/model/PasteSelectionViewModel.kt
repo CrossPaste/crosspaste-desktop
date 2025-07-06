@@ -93,7 +93,7 @@ class PasteSelectionViewModel(
     }
 
     suspend fun toPaste() {
-        appWindowManager.unActiveSearchWindow {
+        appWindowManager.hideSearchWindowAndPaste {
             currentPasteData.first()?.let { pasteData ->
                 withContext(ioDispatcher) {
                     pasteboardService.tryWritePasteboard(

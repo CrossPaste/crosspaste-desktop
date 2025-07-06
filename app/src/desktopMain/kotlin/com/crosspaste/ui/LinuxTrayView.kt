@@ -86,7 +86,7 @@ object LinuxTrayView {
             refreshWindowPosition(appWindowManager)
 
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                appWindowManager.setShowMainWindow(true)
+                appWindowManager.showMainWindow()
                 appLaunch.setFirstLaunchCompleted(true)
             }
         }

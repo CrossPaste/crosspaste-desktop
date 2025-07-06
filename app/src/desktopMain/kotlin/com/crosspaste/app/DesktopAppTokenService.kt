@@ -5,6 +5,6 @@ class DesktopAppTokenService(
 ) : AppTokenService() {
 
     override fun preShowToken() {
-        appWindowManager.setShowMainWindow(true)
+        appWindowManager.showMainWindow()
     }
 }

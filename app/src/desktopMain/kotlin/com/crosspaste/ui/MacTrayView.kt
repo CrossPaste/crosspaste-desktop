@@ -82,7 +82,7 @@ object MacTrayView {
                     logger.debug { "windowInfo: $it" }
                     refreshWindowPosition(appWindowManager, it)
                     if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                        appWindowManager.setShowMainWindow(true)
+                        appWindowManager.showMainWindow()
                         appLaunch.setFirstLaunchCompleted(true)
                     }
                 }
@@ -98,13 +98,13 @@ object MacTrayView {
                     val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
                     if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                            appWindowManager.setShowMainWindow(false)
+                            appWindowManager.hideMainWindow()
                             appWindowManager.switchSearchWindow()
                         }
                     } else {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
                             if (showSearchWindow) {
-                                appWindowManager.unActiveSearchWindow()
+                                appWindowManager.hideSearchWindow()
                             }
                         }
                         frame.setLocation(windowInfo.x.toInt(), (windowInfo.y + windowInfo.height + 6).toInt())

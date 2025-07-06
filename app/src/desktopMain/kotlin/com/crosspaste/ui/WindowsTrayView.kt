@@ -77,7 +77,7 @@ object WindowsTrayView {
             delay(1000)
             refreshWindowPosition(appWindowManager, null) { _, _, _ -> }
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                appWindowManager.setShowMainWindow(true)
+                appWindowManager.showMainWindow()
                 appLaunch.setFirstLaunchCompleted(true)
             }
         }
@@ -90,6 +90,7 @@ object WindowsTrayView {
                 WindowsTrayMouseClicked(appWindowManager) { event, gd, insets ->
                     if (event.button == MouseEvent.BUTTON1) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
+                            appWindowManager.hideMainWindow()
                             appWindowManager.switchSearchWindow()
                         }
                     } else {

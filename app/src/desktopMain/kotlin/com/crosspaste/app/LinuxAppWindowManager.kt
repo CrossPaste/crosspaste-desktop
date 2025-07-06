@@ -66,32 +66,32 @@ class LinuxAppWindowManager(
         }
     }
 
-    override suspend fun activeMainWindow() {
+    override suspend fun recordActiveInfoAndShowMainWindow() {
         logger.info { "active main window" }
-        setShowMainWindow(true)
+        showMainWindow()
         prevLinuxAppInfo.value = X11Api.bringToFront(mainWindow)
     }
 
-    override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
+        hideMainWindow()
         bringToBack(preparePaste())
-        setShowMainWindow(false)
     }
 
-    override suspend fun activeSearchWindow() {
+    override suspend fun recordActiveInfoAndShowSearchWindow() {
         logger.info { "active search window" }
 
-        setShowSearchWindow(true)
+        showSearchWindow()
 
         setSearchWindowState(appSize.getSearchWindowState())
 
         prevLinuxAppInfo.value = X11Api.bringToFront(searchWindow)
     }
 
-    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive search window" }
         bringToBack(preparePaste())
-        setShowSearchWindow(false)
+        hideSearchWindow()
     }
 
     private suspend fun bringToBack(toPaste: Boolean) {

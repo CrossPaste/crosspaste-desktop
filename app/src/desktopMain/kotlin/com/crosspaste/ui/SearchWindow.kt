@@ -76,7 +76,9 @@ fun SearchWindow(windowIcon: Painter?) {
         }
 
     Window(
-        onCloseRequest = { },
+        onCloseRequest = {
+            appWindowManager.hideSearchWindow()
+        },
         visible = showSearchWindow,
         state = windowState,
         title = appWindowManager.searchWindowTitle,
@@ -105,11 +107,11 @@ fun SearchWindow(windowIcon: Painter?) {
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
-                        appWindowManager.setShowSearchWindow(true)
+                        appWindowManager.showSearchWindow()
                     }
 
                     override fun windowLostFocus(e: WindowEvent?) {
-                        appWindowManager.setShowSearchWindow(false)
+                        appWindowManager.hideSearchWindow()
                     }
                 }
 

@@ -48,8 +48,8 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("about") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
-                    appWindowManager.activeMainWindow()
                     appWindowManager.toScreen(About)
+                    appWindowManager.recordActiveInfoAndShowMainWindow()
                 }
             },
         )
@@ -69,8 +69,8 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("devices") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
-                    appWindowManager.activeMainWindow()
                     appWindowManager.toScreen(Devices)
+                    appWindowManager.recordActiveInfoAndShowMainWindow()
                 }
             },
         )
@@ -80,8 +80,8 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("export") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Export")) {
-                    appWindowManager.activeMainWindow()
                     appWindowManager.toScreen(Export)
+                    appWindowManager.recordActiveInfoAndShowMainWindow()
                 }
             },
         )
@@ -91,8 +91,8 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("import") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Import")) {
-                    appWindowManager.activeMainWindow()
                     appWindowManager.toScreen(Import)
+                    appWindowManager.recordActiveInfoAndShowMainWindow()
                 }
             },
         )
@@ -102,8 +102,8 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("settings") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
-                    appWindowManager.activeMainWindow()
                     appWindowManager.toScreen(Settings)
+                    appWindowManager.recordActiveInfoAndShowMainWindow()
                 }
             },
         )
@@ -113,8 +113,8 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("shortcut_keys") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
-                    appWindowManager.activeMainWindow()
                     appWindowManager.toScreen(ShortcutKeys)
+                    appWindowManager.recordActiveInfoAndShowMainWindow()
                 }
             },
         )
@@ -145,7 +145,7 @@ class MenuHelper(
                 copywriter.getText("open_search_window"),
             ) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open search window")) {
-                    appWindowManager.activeSearchWindow()
+                    appWindowManager.recordActiveInfoAndShowSearchWindow()
                 }
             }
 

@@ -54,22 +54,22 @@ class AppWindowManagerTest {
         runBlocking { testAppWindowManager.toPaste() }
         assertEquals(1, testAppWindowManager.pasterId)
         assertNull(testAppWindowManager.getCurrentActiveAppName())
-        runBlocking { testAppWindowManager.activeMainWindow() }
+        runBlocking { testAppWindowManager.recordActiveInfoAndShowMainWindow() }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
-        runBlocking { testAppWindowManager.unActiveMainWindow() }
+        runBlocking { testAppWindowManager.hideMainWindow() }
         assertNull(testAppWindowManager.getCurrentActiveAppName())
         mockOS.currentApp = "Chrome"
-        runBlocking { testAppWindowManager.activeSearchWindow() }
+        runBlocking { testAppWindowManager.recordActiveInfoAndShowSearchWindow() }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
         assertEquals("Chrome", runBlocking { testAppWindowManager.getPrevAppName().first() })
-        runBlocking { testAppWindowManager.unActiveSearchWindow(preparePaste = { true }) }
+        runBlocking { testAppWindowManager.hideSearchWindowAndPaste(preparePaste = { true }) }
         assertEquals(2, testAppWindowManager.pasterId)
         assertEquals("Chrome", testAppWindowManager.getCurrentActiveAppName())
-        runBlocking { testAppWindowManager.activeMainWindow() }
-        runBlocking { testAppWindowManager.activeSearchWindow() }
+        runBlocking { testAppWindowManager.recordActiveInfoAndShowMainWindow() }
+        runBlocking { testAppWindowManager.recordActiveInfoAndShowSearchWindow() }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
         assertEquals("Chrome", runBlocking { testAppWindowManager.getPrevAppName().first() })
-        runBlocking { testAppWindowManager.unActiveSearchWindow(preparePaste = { false }) }
+        runBlocking { testAppWindowManager.hideSearchWindowAndPaste(preparePaste = { false }) }
         assertEquals(2, testAppWindowManager.pasterId)
         runBlocking { testAppWindowManager.toPaste() }
         assertEquals(3, testAppWindowManager.pasterId)

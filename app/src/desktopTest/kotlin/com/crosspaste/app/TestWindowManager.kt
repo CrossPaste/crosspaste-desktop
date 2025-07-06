@@ -27,26 +27,26 @@ class TestWindowManager(
         return mockOS.currentApp
     }
 
-    override suspend fun activeMainWindow() {
-        setShowMainWindow(true)
+    override suspend fun recordActiveInfoAndShowMainWindow() {
+        showMainWindow()
         bringToFront(mainWindowTitle)
     }
 
-    override suspend fun unActiveMainWindow(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()
         bringToBack(mainWindowTitle, toPaste)
-        setShowMainWindow(false)
+        this@TestWindowManager.hideMainWindow()
     }
 
-    override suspend fun activeSearchWindow() {
-        setShowSearchWindow(true)
+    override suspend fun recordActiveInfoAndShowSearchWindow() {
+        showSearchWindow()
         bringToFront(searchWindowTitle)
     }
 
-    override suspend fun unActiveSearchWindow(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()
         bringToBack(searchWindowTitle, toPaste)
-        setShowSearchWindow(false)
+        hideSearchWindow()
     }
 
     private fun bringToFront(windowTitle: String) {
