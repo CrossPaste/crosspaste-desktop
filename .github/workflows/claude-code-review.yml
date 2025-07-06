@@ -19,6 +19,12 @@ jobs:
       )
     
     runs-on: ubuntu-latest
+    continue-on-error: true
+
+    environment:
+      name: claude-review-approval
+      url: ${{ github.event.pull_request.html_url }}
+
     permissions:
       contents: read
       pull-requests: read
