@@ -54,14 +54,14 @@ class DesktopShortKeysAction(
     private fun showMainWindow() {
         logger.info { "Open main window" }
         mainCoroutineDispatcher.launch(CoroutineName("OpenMainWindow")) {
-            appWindowManager.recordActiveInfoAndShowMainWindow()
+            appWindowManager.recordActiveInfoAndShowMainWindow(true)
         }
     }
 
     private fun showSearchWindow() {
         logger.info { "Open search window" }
         mainCoroutineDispatcher.launch(CoroutineName("OpenSearchWindow")) {
-            appWindowManager.recordActiveInfoAndShowSearchWindow()
+            appWindowManager.recordActiveInfoAndShowSearchWindow(true)
         }
     }
 

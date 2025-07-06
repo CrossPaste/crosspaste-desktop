@@ -50,7 +50,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
                     appWindowManager.toScreen(About)
-                    appWindowManager.recordActiveInfoAndShowMainWindow()
+                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
         )
@@ -71,7 +71,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
                     appWindowManager.toScreen(Devices)
-                    appWindowManager.recordActiveInfoAndShowMainWindow()
+                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
         )
@@ -82,7 +82,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Export")) {
                     appWindowManager.toScreen(Export)
-                    appWindowManager.recordActiveInfoAndShowMainWindow()
+                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
         )
@@ -93,7 +93,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Import")) {
                     appWindowManager.toScreen(Import)
-                    appWindowManager.recordActiveInfoAndShowMainWindow()
+                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
         )
@@ -104,7 +104,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
                     appWindowManager.toScreen(Settings)
-                    appWindowManager.recordActiveInfoAndShowMainWindow()
+                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
         )
@@ -115,7 +115,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
                     appWindowManager.toScreen(ShortcutKeys)
-                    appWindowManager.recordActiveInfoAndShowMainWindow()
+                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
         )
@@ -147,7 +147,9 @@ class MenuHelper(
             ) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open search window")) {
                     delay(200) // wait for force to prev window
-                    appWindowManager.recordActiveInfoAndShowSearchWindow()
+                    appWindowManager.recordActiveInfoAndShowSearchWindow(
+                        useShortcutKeys = false,
+                    )
                 }
             }
 

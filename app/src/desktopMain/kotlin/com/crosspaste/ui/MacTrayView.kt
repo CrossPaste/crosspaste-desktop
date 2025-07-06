@@ -102,7 +102,9 @@ object MacTrayView {
                             if (showSearchWindow) {
                                 appWindowManager.hideSearchWindow()
                             } else {
-                                appWindowManager.recordActiveInfoAndShowSearchWindow()
+                                appWindowManager.recordActiveInfoAndShowSearchWindow(
+                                    useShortcutKeys = false,
+                                )
                             }
                         }
                     } else {

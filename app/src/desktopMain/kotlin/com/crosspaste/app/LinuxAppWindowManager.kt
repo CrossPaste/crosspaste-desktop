@@ -66,7 +66,7 @@ class LinuxAppWindowManager(
         }
     }
 
-    override suspend fun recordActiveInfoAndShowMainWindow() {
+    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
         logger.info { "active main window" }
         showMainWindow()
         prevLinuxAppInfo.value = X11Api.bringToFront(mainWindow)
@@ -78,7 +78,7 @@ class LinuxAppWindowManager(
         bringToBack(preparePaste())
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow() {
+    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
         logger.info { "active search window" }
 
         showSearchWindow()

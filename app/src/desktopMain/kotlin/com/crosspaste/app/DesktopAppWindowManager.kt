@@ -142,19 +142,11 @@ abstract class DesktopAppWindowManager(
 
     abstract fun getCurrentActiveAppName(): String?
 
-    abstract suspend fun recordActiveInfoAndShowMainWindow()
+    abstract suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean)
 
     abstract suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 
-    suspend fun switchSearchWindow() {
-        if (showSearchWindow.value) {
-            hideSearchWindow()
-        } else {
-            recordActiveInfoAndShowSearchWindow()
-        }
-    }
-
-    abstract suspend fun recordActiveInfoAndShowSearchWindow()
+    abstract suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean)
 
     abstract suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 

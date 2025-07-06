@@ -67,7 +67,7 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun recordActiveInfoAndShowMainWindow() {
+    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
         logger.info { "active main window" }
         showMainWindow()
         MacAppUtils.bringToFront(mainWindowTitle).let {
@@ -97,7 +97,7 @@ class MacAppWindowManager(
         this@MacAppWindowManager.hideMainWindow()
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow() {
+    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
         logger.info { "active search window" }
         showSearchWindow()
 

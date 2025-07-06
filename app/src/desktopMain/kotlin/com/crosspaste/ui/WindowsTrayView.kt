@@ -95,7 +95,7 @@ object WindowsTrayView {
                             if (showSearchWindow) {
                                 appWindowManager.hideSearchWindow()
                             } else {
-                                appWindowManager.recordActiveInfoAndShowSearchWindowByTray()
+                                appWindowManager.recordActiveInfoAndShowSearchWindow(false)
                             }
                         }
                     } else {

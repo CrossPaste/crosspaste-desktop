@@ -337,12 +337,12 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }.getOrNull()
         }
 
-        fun getForegroundWindowAppInfoAndThreadId(byEnumWindows: Boolean = false): Pair<WinAppInfo, Int>? {
+        fun getForegroundWindowAppInfoAndThreadId(useShortcutKeys: Boolean): Pair<WinAppInfo, Int>? {
             val hwnd =
-                if (byEnumWindows) {
-                    getForegroundWindowByEnumWindows()
-                } else {
+                if (useShortcutKeys) {
                     getForegroundWindow()
+                } else {
+                    getForegroundWindowByEnumWindows()
                 }
 
             return hwnd?.let { previousHwnd ->
