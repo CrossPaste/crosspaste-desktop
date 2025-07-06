@@ -58,7 +58,7 @@ object WindowsTrayView {
         val appLaunch = koinInject<DesktopAppLaunch>()
         val appSize = koinInject<DesktopAppSize>()
         val appLaunchState = koinInject<AppLaunchState>()
-        val appWindowManager = koinInject<DesktopAppWindowManager>()
+        val appWindowManager = koinInject<DesktopAppWindowManager>() as WinAppWindowManager
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
         val trayIcon = painterResource(Res.drawable.crosspaste)
@@ -66,6 +66,7 @@ object WindowsTrayView {
         var showMenu by remember { mutableStateOf(false) }
 
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
+        val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
         val menuWindowState =
             rememberWindowState(
@@ -91,7 +92,11 @@ object WindowsTrayView {
                     if (event.button == MouseEvent.BUTTON1) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
                             appWindowManager.hideMainWindow()
-                            appWindowManager.switchSearchWindow()
+                            if (showSearchWindow) {
+                                appWindowManager.hideSearchWindow()
+                            } else {
+                                appWindowManager.recordActiveInfoAndShowSearchWindowByTray()
+                            }
                         }
                     } else {
                         showMenu = true
@@ -133,7 +138,7 @@ object WindowsTrayView {
 
                     window.addWindowFocusListener(windowListener)
 
-                    (appWindowManager as WinAppWindowManager).initMenuHWND()
+                    appWindowManager.initMenuHWND()
 
                     onDispose {
                         window.removeWindowFocusListener(windowListener)

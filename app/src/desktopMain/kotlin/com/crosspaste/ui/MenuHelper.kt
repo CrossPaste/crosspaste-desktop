@@ -33,6 +33,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.awt.PopupMenu
 
@@ -145,6 +146,7 @@ class MenuHelper(
                 copywriter.getText("open_search_window"),
             ) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open search window")) {
+                    delay(200) // wait for force to prev window
                     appWindowManager.recordActiveInfoAndShowSearchWindow()
                 }
             }

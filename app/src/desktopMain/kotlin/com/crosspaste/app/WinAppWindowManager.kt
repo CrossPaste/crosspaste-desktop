@@ -92,6 +92,26 @@ class WinAppWindowManager(
         this@WinAppWindowManager.hideMainWindow()
     }
 
+    suspend fun recordActiveInfoAndShowSearchWindowByTray() {
+        logger.info { "active search window" }
+
+        val pair = User32.getForegroundWindowAppInfoAndThreadId(byEnumWindows = true)
+
+        pair?.let {
+            prevWinAppInfo.value = it.first
+        }
+
+        setSearchWindowState(appSize.getSearchWindowState())
+        showSearchWindow()
+
+        // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
+        delay(500)
+
+        pair?.let {
+            User32.bringToFront(pair.second, searchHWND)
+        }
+    }
+
     override suspend fun recordActiveInfoAndShowSearchWindow() {
         logger.info { "active search window" }
 

@@ -99,7 +99,11 @@ object MacTrayView {
                     if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
                             appWindowManager.hideMainWindow()
-                            appWindowManager.switchSearchWindow()
+                            if (showSearchWindow) {
+                                appWindowManager.hideSearchWindow()
+                            } else {
+                                appWindowManager.recordActiveInfoAndShowSearchWindow()
+                            }
                         }
                     } else {
                         mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {

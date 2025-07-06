@@ -98,9 +98,13 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         lParam: Pointer?,
     ): Boolean
 
-    fun GetWindowTextA(
+    fun IsIconic(hWnd: HWND): Boolean
+
+    fun GetWindowTextLengthW(hWnd: HWND): Int
+
+    fun GetWindowTextW(
         hWnd: HWND,
-        lpString: ByteArray,
+        lpString: CharArray,
         nMaxCount: Int,
     ): Int
 
@@ -333,8 +337,15 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }.getOrNull()
         }
 
-        fun getForegroundWindowAppInfoAndThreadId(): Pair<WinAppInfo, Int>? {
-            return getForegroundWindow()?.let { previousHwnd ->
+        fun getForegroundWindowAppInfoAndThreadId(byEnumWindows: Boolean = false): Pair<WinAppInfo, Int>? {
+            val hwnd =
+                if (byEnumWindows) {
+                    getForegroundWindowByEnumWindows()
+                } else {
+                    getForegroundWindow()
+                }
+
+            return hwnd?.let { previousHwnd ->
                 val processIdRef = IntByReference()
                 val threadId =
                     INSTANCE.GetWindowThreadProcessId(
@@ -368,6 +379,87 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     Kernel32.INSTANCE.CloseHandle(processHandle)
                 }.getOrNull()
             }
+        }
+
+        private fun getForegroundWindowByEnumWindows(): HWND? {
+            var foregroundHwnd: HWND? = null
+            INSTANCE.EnumWindows(
+                object : WndEnumProc {
+                    override fun callback(
+                        hWnd: HWND,
+                        lParam: Pointer?,
+                    ): Boolean {
+                        // Check if the window is visible
+                        if (!INSTANCE.IsWindowVisible(hWnd)) {
+                            return true
+                        }
+
+                        // Check if the window is minimized (iconic)
+                        if (INSTANCE.IsIconic(hWnd)) {
+                            return true
+                        }
+
+                        // Check if it is a top-level window (no parent or parent is the desktop)
+                        val parent = INSTANCE.GetParent(hWnd)
+                        if (parent != null && parent != INSTANCE.GetDesktopWindow()) {
+                            return true
+                        }
+
+                        // Get the window title
+                        val titleLength = INSTANCE.GetWindowTextLengthW(hWnd)
+                        if (titleLength == 0) {
+                            return true
+                        }
+
+                        val buffer = CharArray(titleLength + 1)
+                        INSTANCE.GetWindowTextW(hWnd, buffer, titleLength + 1)
+                        val title = Native.toString(buffer).trim()
+
+                        if (title.isEmpty()) {
+                            return true
+                        }
+
+                        // Retrieve process information to filter out Explorer
+                        val processIdRef = IntByReference()
+                        INSTANCE.GetWindowThreadProcessId(hWnd, processIdRef)
+
+                        val processHandle =
+                            Kernel32.INSTANCE.OpenProcess(
+                                WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
+                                false,
+                                processIdRef.value,
+                            )
+
+                        if (processHandle != null) {
+                            try {
+                                val bufferSize = 1024
+                                val memory = Memory((bufferSize * 2).toLong())
+                                if (Psapi.INSTANCE.GetModuleFileNameEx(
+                                        processHandle,
+                                        null,
+                                        memory,
+                                        bufferSize,
+                                    ) > 0
+                                ) {
+                                    val filePath = memory.getWideString(0)
+                                    // Check if the process is Explorer.exe
+                                    if (filePath.lowercase().endsWith("explorer.exe")) {
+                                        return true
+                                    }
+                                }
+                            } finally {
+                                Kernel32.INSTANCE.CloseHandle(processHandle)
+                            }
+                        }
+
+                        // Found the first window that meets all conditions
+                        foregroundHwnd = hWnd
+                        return false
+                    }
+                },
+                null,
+            )
+            return foregroundHwnd
         }
 
         private fun getForegroundWindow(): HWND? {
