@@ -12,6 +12,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json.Default.parseToJsonElement
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
@@ -55,15 +56,24 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
                 2 -> rtf = dec.decodeStringElement(descriptor, 2)
                 3 -> size = dec.decodeLongElement(descriptor, 3)
                 4 -> {
-                    val jsonElement = dec.decodeNullableSerializableElement(deserializeDescriptor, 4, JsonElement.serializer())
-                    when (jsonElement) {
-                        is JsonObject -> {
-                            extraInfo = jsonElement
+                    dec.decodeNullableSerializableElement(
+                        deserializeDescriptor,
+                        4,
+                        JsonElement.serializer(),
+                    )?.let { jsonElement ->
+                        when (jsonElement) {
+                            is JsonObject -> {
+                                extraInfo = jsonElement
+                            }
+                            is JsonPrimitive -> {
+                                if (jsonElement != JsonNull) {
+                                    runCatching {
+                                        extraInfo = parseToJsonElement(jsonElement.content).jsonObject
+                                    }
+                                }
+                            }
+                            else -> {}
                         }
-                        is JsonPrimitive -> {
-                            extraInfo = parseToJsonElement(jsonElement.content).jsonObject
-                        }
-                        else -> {}
                     }
                 }
                 else -> {
