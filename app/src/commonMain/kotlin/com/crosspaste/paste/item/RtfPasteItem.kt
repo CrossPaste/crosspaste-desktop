@@ -4,6 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.serializer.RtfPasteItemSerializer
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getRtfUtils
@@ -17,7 +18,7 @@ import kotlinx.serialization.json.put
 import okio.Path
 import okio.Path.Companion.toPath
 
-@Serializable
+@Serializable(with = RtfPasteItemSerializer::class)
 @SerialName("rtf")
 class RtfPasteItem(
     override val identifiers: List<String>,
