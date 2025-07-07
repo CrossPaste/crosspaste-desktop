@@ -15,7 +15,7 @@ import kotlinx.serialization.json.JsonObject
 
 class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("RtfPasteItem") {
+        buildClassSerialDescriptor("rtf") {
             element<List<String>>("identifiers")
             element<String>("hash")
             element<String>("rtf")

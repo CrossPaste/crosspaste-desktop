@@ -15,7 +15,7 @@ import kotlinx.serialization.json.JsonObject
 
 class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
     override val descriptor: SerialDescriptor =
-        buildClassSerialDescriptor("HtmlPasteItem") {
+        buildClassSerialDescriptor("html") {
             element<List<String>>("identifiers")
             element<String>("hash")
             element<String>("html")

@@ -10,7 +10,6 @@ import com.crosspaste.serializer.HtmlPasteItemSerializer
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.getJsonUtils
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -21,7 +20,6 @@ import okio.Path
 import okio.Path.Companion.toPath
 
 @Serializable(with = HtmlPasteItemSerializer::class)
-@SerialName("html")
 class HtmlPasteItem(
     override val identifiers: List<String>,
     override val hash: String,

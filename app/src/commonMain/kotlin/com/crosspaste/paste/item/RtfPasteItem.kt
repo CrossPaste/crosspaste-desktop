@@ -8,7 +8,6 @@ import com.crosspaste.serializer.RtfPasteItemSerializer
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getRtfUtils
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -19,7 +18,6 @@ import okio.Path
 import okio.Path.Companion.toPath
 
 @Serializable(with = RtfPasteItemSerializer::class)
-@SerialName("rtf")
 class RtfPasteItem(
     override val identifiers: List<String>,
     override val hash: String,
