@@ -39,7 +39,8 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
         var extraInfo: JsonObject? = null
 
         loop@ while (true) {
-            when (dec.decodeElementIndex(descriptor)) {
+            val index = dec.decodeElementIndex(descriptor)
+            when (index) {
                 0 -> identifiers = dec.decodeSerializableElement(descriptor, 0, ListSerializer(String.serializer()))
                 1 -> hash = dec.decodeStringElement(descriptor, 1)
                 2 -> rtf = dec.decodeStringElement(descriptor, 2)
@@ -65,8 +66,13 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
                         }
                     }
                 }
-                CompositeDecoder.DECODE_DONE -> break
+                CompositeDecoder.DECODE_DONE -> break@loop
                 else -> {
+                    dec.decodeNullableSerializableElement(
+                        descriptor,
+                        index,
+                        JsonElement.serializer(),
+                    )
                 }
             }
         }

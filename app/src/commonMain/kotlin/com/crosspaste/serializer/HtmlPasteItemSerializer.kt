@@ -1,7 +1,6 @@
 package com.crosspaste.serializer
 
 import com.crosspaste.paste.item.HtmlPasteItem
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
@@ -19,8 +18,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 
 class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
-
-    private val logger = KotlinLogging.logger { }
 
     override val descriptor =
         buildClassSerialDescriptor("html") {
@@ -43,7 +40,6 @@ class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
 
         loop@ while (true) {
             val index = dec.decodeElementIndex(descriptor)
-            logger.info { "html index: $index" }
             when (index) {
                 0 -> identifiers = dec.decodeSerializableElement(descriptor, 0, ListSerializer(String.serializer()))
                 1 -> hash = dec.decodeStringElement(descriptor, 1)
@@ -70,8 +66,13 @@ class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
                         }
                     }
                 }
-                CompositeDecoder.DECODE_DONE -> break
+                CompositeDecoder.DECODE_DONE -> break@loop
                 else -> {
+                    dec.decodeNullableSerializableElement(
+                        descriptor,
+                        index,
+                        JsonElement.serializer(),
+                    )
                 }
             }
         }
