@@ -5,9 +5,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json.Default.parseToJsonElement
@@ -19,26 +19,15 @@ import kotlinx.serialization.json.jsonObject
 
 class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
 
-    private val deserializeDescriptor =
-        buildClassSerialDescriptor("rtf") {
-            element<List<String>>("identifiers")
-            element<String>("hash")
-            element<String>("rtf")
-            element<Long>("size")
-            element<JsonElement?>("extraInfo")
-        }
-
-    private val serializeDescriptor =
+    override val descriptor =
         buildClassSerialDescriptor("rtf") {
             element<List<String>>("identifiers")
             element<String>("hash")
             element<String>("rtf")
             element<Long>("size")
             element<String?>("extraInfo")
-            element<String>("relativePath")
+            element<String>("relativePath", isOptional = true)
         }
-
-    override val descriptor: SerialDescriptor = serializeDescriptor
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun deserialize(decoder: Decoder): RtfPasteItem {
@@ -57,7 +46,7 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
                 3 -> size = dec.decodeLongElement(descriptor, 3)
                 4 -> {
                     dec.decodeNullableSerializableElement(
-                        deserializeDescriptor,
+                        descriptor,
                         4,
                         JsonElement.serializer(),
                     )?.let { jsonElement ->
@@ -76,8 +65,8 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
                         }
                     }
                 }
+                CompositeDecoder.DECODE_DONE -> break
                 else -> {
-                    break@loop
                 }
             }
         }
@@ -98,14 +87,14 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
         encoder: Encoder,
         value: RtfPasteItem,
     ) {
-        val enc = encoder.beginStructure(serializeDescriptor)
-        enc.encodeSerializableElement(serializeDescriptor, 0, ListSerializer(String.serializer()), value.identifiers)
-        enc.encodeStringElement(serializeDescriptor, 1, value.hash)
-        enc.encodeStringElement(serializeDescriptor, 2, value.rtf)
-        enc.encodeLongElement(serializeDescriptor, 3, value.size)
-        enc.encodeNullableSerializableElement(serializeDescriptor, 4, String.serializer(), value.extraInfo.toString())
+        val enc = encoder.beginStructure(descriptor)
+        enc.encodeSerializableElement(descriptor, 0, ListSerializer(String.serializer()), value.identifiers)
+        enc.encodeStringElement(descriptor, 1, value.hash)
+        enc.encodeStringElement(descriptor, 2, value.rtf)
+        enc.encodeLongElement(descriptor, 3, value.size)
+        enc.encodeNullableSerializableElement(descriptor, 4, String.serializer(), value.extraInfo.toString())
         // To be compatible with older versions, we must set this field
-        enc.encodeStringElement(serializeDescriptor, 5, value.relativePath ?: "")
-        enc.endStructure(serializeDescriptor)
+        enc.encodeStringElement(descriptor, 5, value.relativePath ?: "")
+        enc.endStructure(descriptor)
     }
 }

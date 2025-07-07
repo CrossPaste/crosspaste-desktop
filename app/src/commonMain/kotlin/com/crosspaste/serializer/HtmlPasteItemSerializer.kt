@@ -1,13 +1,14 @@
 package com.crosspaste.serializer
 
 import com.crosspaste.paste.item.HtmlPasteItem
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json.Default.parseToJsonElement
@@ -19,30 +20,21 @@ import kotlinx.serialization.json.jsonObject
 
 class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
 
-    private val deserializeDescriptor =
-        buildClassSerialDescriptor("html") {
-            element<List<String>>("identifiers")
-            element<String>("hash")
-            element<String>("html")
-            element<Long>("size")
-            element<JsonElement?>("extraInfo")
-        }
+    private val logger = KotlinLogging.logger { }
 
-    private val serializeDescriptor =
+    override val descriptor =
         buildClassSerialDescriptor("html") {
             element<List<String>>("identifiers")
             element<String>("hash")
             element<String>("html")
             element<Long>("size")
             element<String?>("extraInfo")
-            element<String>("relativePath")
+            element<String>("relativePath", isOptional = true)
         }
-
-    override val descriptor: SerialDescriptor = serializeDescriptor
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun deserialize(decoder: Decoder): HtmlPasteItem {
-        val dec = decoder.beginStructure(deserializeDescriptor)
+        val dec = decoder.beginStructure(descriptor)
         var identifiers: List<String> = listOf()
         var hash = ""
         var html = ""
@@ -50,14 +42,16 @@ class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
         var extraInfo: JsonObject? = null
 
         loop@ while (true) {
-            when (dec.decodeElementIndex(deserializeDescriptor)) {
-                0 -> identifiers = dec.decodeSerializableElement(deserializeDescriptor, 0, ListSerializer(String.serializer()))
-                1 -> hash = dec.decodeStringElement(deserializeDescriptor, 1)
-                2 -> html = dec.decodeStringElement(deserializeDescriptor, 2)
-                3 -> size = dec.decodeLongElement(deserializeDescriptor, 3)
+            val index = dec.decodeElementIndex(descriptor)
+            logger.info { "html index: $index" }
+            when (index) {
+                0 -> identifiers = dec.decodeSerializableElement(descriptor, 0, ListSerializer(String.serializer()))
+                1 -> hash = dec.decodeStringElement(descriptor, 1)
+                2 -> html = dec.decodeStringElement(descriptor, 2)
+                3 -> size = dec.decodeLongElement(descriptor, 3)
                 4 -> {
                     dec.decodeNullableSerializableElement(
-                        deserializeDescriptor,
+                        descriptor,
                         4,
                         JsonElement.serializer(),
                     )?.let { jsonElement ->
@@ -76,8 +70,8 @@ class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
                         }
                     }
                 }
+                CompositeDecoder.DECODE_DONE -> break
                 else -> {
-                    break@loop
                 }
             }
         }
@@ -98,14 +92,14 @@ class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
         encoder: Encoder,
         value: HtmlPasteItem,
     ) {
-        val enc = encoder.beginStructure(serializeDescriptor)
-        enc.encodeSerializableElement(serializeDescriptor, 0, ListSerializer(String.serializer()), value.identifiers)
-        enc.encodeStringElement(serializeDescriptor, 1, value.hash)
-        enc.encodeStringElement(serializeDescriptor, 2, value.html)
-        enc.encodeLongElement(serializeDescriptor, 3, value.size)
-        enc.encodeNullableSerializableElement(serializeDescriptor, 4, String.serializer(), value.extraInfo.toString())
+        val enc = encoder.beginStructure(descriptor)
+        enc.encodeSerializableElement(descriptor, 0, ListSerializer(String.serializer()), value.identifiers)
+        enc.encodeStringElement(descriptor, 1, value.hash)
+        enc.encodeStringElement(descriptor, 2, value.html)
+        enc.encodeLongElement(descriptor, 3, value.size)
+        enc.encodeNullableSerializableElement(descriptor, 4, String.serializer(), value.extraInfo.toString())
         // To be compatible with older versions, we must set this field
-        enc.encodeStringElement(serializeDescriptor, 5, value.relativePath ?: "")
-        enc.endStructure(serializeDescriptor)
+        enc.encodeStringElement(descriptor, 5, value.relativePath ?: "")
+        enc.endStructure(descriptor)
     }
 }
