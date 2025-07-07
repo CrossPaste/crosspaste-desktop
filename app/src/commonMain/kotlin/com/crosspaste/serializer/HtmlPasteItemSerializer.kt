@@ -25,7 +25,7 @@ class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
             element<String>("hash")
             element<String>("html")
             element<Long>("size")
-            element<String?>("extraInfo")
+            element<JsonElement?>("extraInfo")
             element<String>("relativePath", isOptional = true)
         }
 
