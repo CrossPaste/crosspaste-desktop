@@ -106,7 +106,7 @@ kotlin {
             implementation(libs.selenium.devtools)
             implementation(libs.sqlite.driver)
             implementation(libs.system.tray)
-            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.8") {
+            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.9.1") {
                 exclude(group = "net.java.dev.jna")
             }
             implementation(libs.webp.imageio)
