@@ -3,8 +3,14 @@ package com.crosspaste.serializer
 import com.crosspaste.db.paste.PasteCollection
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.db.paste.PasteState
+import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.HtmlPasteItem.Companion.HTML2IMAGE
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.RtfPasteItem
+import com.crosspaste.paste.item.RtfPasteItem.Companion.RTF2IMAGE
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.getFileUtils
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.serializer
@@ -27,6 +33,8 @@ class PasteDataSerializer : KSerializer<PasteData> {
             element<Long>("size")
             element<String>("hash")
         }
+
+    private val fileUtils = getFileUtils()
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun deserialize(decoder: Decoder): PasteData {
@@ -82,14 +90,19 @@ class PasteDataSerializer : KSerializer<PasteData> {
         encoder: Encoder,
         value: PasteData,
     ) {
+        val pasteCoordinate = value.getPasteCoordinate()
         val compositeOutput = encoder.beginStructure(descriptor)
         compositeOutput.encodeLongElement(descriptor, 0, value.id)
         compositeOutput.encodeStringElement(descriptor, 1, value.appInstanceId)
         compositeOutput.encodeBooleanElement(descriptor, 2, value.favorite)
         value.pasteAppearItem?.let {
+            setRelativePath(it, pasteCoordinate)
             compositeOutput.encodeSerializableElement(descriptor, 3, PasteItem.serializer(), it)
         }
         value.pasteCollection.let {
+            for (item in it.pasteItems) {
+                setRelativePath(item, pasteCoordinate)
+            }
             compositeOutput.encodeSerializableElement(descriptor, 4, PasteCollection.serializer(), it)
         }
         compositeOutput.encodeIntElement(descriptor, 5, value.pasteType)
@@ -97,5 +110,29 @@ class PasteDataSerializer : KSerializer<PasteData> {
         compositeOutput.encodeLongElement(descriptor, 7, value.size)
         compositeOutput.encodeStringElement(descriptor, 8, value.hash)
         compositeOutput.endStructure(descriptor)
+    }
+
+    private fun setRelativePath(
+        pasteItem: PasteItem,
+        pasteCoordinate: PasteCoordinate,
+    ) {
+        when (pasteItem) {
+            is HtmlPasteItem -> {
+                pasteItem.relativePath =
+                    fileUtils.createPasteRelativePath(
+                        pasteCoordinate = pasteCoordinate,
+                        fileName = HTML2IMAGE,
+                    )
+            }
+            is RtfPasteItem -> {
+                pasteItem.relativePath =
+                    fileUtils.createPasteRelativePath(
+                        pasteCoordinate = pasteCoordinate,
+                        fileName = RTF2IMAGE,
+                    )
+            }
+            else -> {
+            }
+        }
     }
 }

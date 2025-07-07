@@ -24,6 +24,7 @@ class RtfPasteItem(
     override val rtf: String,
     override val size: Long,
     override val extraInfo: JsonObject? = null,
+    var relativePath: String? = null,
 ) : PasteItem, PasteRtf {
 
     companion object {
