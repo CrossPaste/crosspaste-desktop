@@ -10,6 +10,7 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.paste.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
 

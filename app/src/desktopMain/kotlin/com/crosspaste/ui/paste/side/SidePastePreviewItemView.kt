@@ -15,9 +15,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.paste.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import org.koin.compose.koinInject
@@ -30,6 +32,7 @@ fun SidePastePreviewItemView(
     pasteContent: @Composable PasteData.() -> Unit,
 ) {
     val appSize = koinInject<DesktopAppSize>()
+    val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
     Row(
@@ -63,7 +66,11 @@ fun SidePastePreviewItemView(
             shape = small3XRoundedCornerShape,
             containerColor = AppUIColors.pasteBackground,
         ) {
-            pasteData.pasteContent()
+            PasteContextMenuView(
+                items = pasteMenuService.pasteMenuItemsProvider(pasteData),
+            ) {
+                pasteData.pasteContent()
+            }
         }
     }
 }

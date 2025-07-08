@@ -13,6 +13,7 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.paste.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
