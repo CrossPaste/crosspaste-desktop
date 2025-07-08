@@ -26,6 +26,7 @@ class HtmlPasteItem(
     override val html: String,
     override val size: Long,
     override val extraInfo: JsonObject? = null,
+    var relativePath: String? = null,
 ) : PasteItem, PasteHtml {
 
     companion object {
