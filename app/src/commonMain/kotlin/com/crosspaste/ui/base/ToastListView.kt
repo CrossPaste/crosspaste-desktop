@@ -1,13 +1,9 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,21 +21,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.ToastManager
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.xxxxLarge
-import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun ToastListView() {
-    val density = LocalDensity.current
+fun ToastListView(
+    intOffset: IntOffset,
+    enter: EnterTransition,
+    exit: ExitTransition,
+) {
     val toastManager = koinInject<ToastManager>()
 
     val toastList by toastManager.toastList.collectAsState()
@@ -52,11 +48,7 @@ fun ToastListView() {
 
     Popup(
         alignment = Alignment.TopCenter,
-        offset =
-            IntOffset(
-                with(density) { zero.roundToPx() },
-                with(density) { xxxxLarge.roundToPx() },
-            ),
+        offset = intOffset,
         properties = PopupProperties(clippingEnabled = false),
     ) {
         Column(
@@ -81,26 +73,8 @@ fun ToastListView() {
 
                     AnimatedVisibility(
                         visibleState = visibleState,
-                        enter =
-                            slideInHorizontally(
-                                initialOffsetX = { -it },
-                                animationSpec = tween(300),
-                            ) +
-                                fadeIn(
-                                    initialAlpha = 0f,
-                                    animationSpec = tween(150),
-                                ),
-                        exit =
-                            slideOutHorizontally(
-                                targetOffsetX = { it },
-                                animationSpec = tween(300),
-                            ) +
-                                fadeOut(
-                                    animationSpec = tween(300),
-                                ) +
-                                shrinkVertically(
-                                    animationSpec = tween(300),
-                                ),
+                        enter = enter,
+                        exit = exit,
                     ) {
                         Box {
                             ToastView(

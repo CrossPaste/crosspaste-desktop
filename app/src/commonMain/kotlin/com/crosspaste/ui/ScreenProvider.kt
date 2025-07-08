@@ -41,4 +41,10 @@ interface ScreenProvider {
 
     @Composable
     fun RecommendScreen()
+
+    @Composable
+    fun TokenView()
+
+    @Composable
+    fun ToastView()
 }

@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -40,7 +39,6 @@ import com.crosspaste.ui.base.close
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.generalTitleTextStyle
 import com.crosspaste.ui.theme.AppUIFont.tokenTextStyle
-import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small
@@ -51,33 +49,15 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
-import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
-fun TokenView() {
-    val appTokenApi = koinInject<AppTokenApi>()
-
-    val showToken by appTokenApi.showToken.collectAsState()
-
-    if (showToken) {
-        RealTokenView()
-    }
-}
-
-@Composable
-private fun RealTokenView() {
+fun TokenView(intOffset: IntOffset) {
     val appSize = koinInject<AppSize>()
     val appTokenApi = koinInject<AppTokenApi>()
     val copywriter = koinInject<GlobalCopywriter>()
 
-    val density = LocalDensity.current
-
-    val offsetY =
-        IntOffset(
-            with(density) { (zero).roundToPx() },
-            with(density) { (huge).roundToPx() },
-        )
+    val showToken by appTokenApi.showToken.collectAsState()
 
     DisposableEffect(Unit) {
         appTokenApi.startRefreshToken()
@@ -87,81 +67,83 @@ private fun RealTokenView() {
         }
     }
 
-    Popup(
-        alignment = Alignment.TopCenter,
-        offset = offsetY,
-        properties = PopupProperties(clippingEnabled = false),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .width(appSize.tokenViewWidth)
-                    .wrapContentHeight()
-                    .background(Color.Transparent)
-                    .shadow(small),
+    if (showToken) {
+        Popup(
+            alignment = Alignment.TopCenter,
+            offset = intOffset,
+            properties = PopupProperties(clippingEnabled = false),
         ) {
-            Column(
+            Box(
                 modifier =
                     Modifier
-                        .wrapContentSize()
-                        .clip(tiny3XRoundedCornerShape)
-                        .align(Alignment.Center)
-                        .background(AppUIColors.topBackground),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                        .width(appSize.tokenViewWidth)
+                        .wrapContentHeight()
+                        .background(Color.Transparent)
+                        .shadow(small),
             ) {
-                Box(
-                    modifier =
-                        Modifier.align(Alignment.CenterHorizontally)
-                            .wrapContentHeight()
-                            .padding(horizontal = tiny)
-                            .padding(top = tiny),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = copywriter.getText("token"),
-                        color =
-                            MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.topBackground,
-                            ),
-                        style = generalTitleTextStyle,
-                    )
-
-                    Box(
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .wrapContentHeight()
-                                .padding(end = tiny3X),
-                        contentAlignment = Alignment.CenterEnd,
-                    ) {
-                        Box(
-                            modifier =
-                                Modifier.size(medium * 2)
-                                    .clip(mediumRoundedCornerShape)
-                                    .clickable {
-                                        appTokenApi.toHideToken()
-                                    },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painter = close(),
-                                contentDescription = "Close",
-                                modifier = Modifier.size(medium),
-                                tint =
-                                    MaterialTheme.colorScheme.contentColorFor(
-                                        AppUIColors.topBackground,
-                                    ),
-                            )
-                        }
-                    }
-                }
-                Row(
+                Column(
                     modifier =
                         Modifier
-                            .padding(horizontal = tiny3X, vertical = small2X)
-                            .wrapContentSize(),
-                    horizontalArrangement = Arrangement.Center,
+                            .wrapContentSize()
+                            .clip(tiny3XRoundedCornerShape)
+                            .align(Alignment.Center)
+                            .background(AppUIColors.topBackground),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    OTPCodeBox()
+                    Box(
+                        modifier =
+                            Modifier.align(Alignment.CenterHorizontally)
+                                .wrapContentHeight()
+                                .padding(horizontal = tiny)
+                                .padding(top = tiny),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = copywriter.getText("token"),
+                            color =
+                                MaterialTheme.colorScheme.contentColorFor(
+                                    AppUIColors.topBackground,
+                                ),
+                            style = generalTitleTextStyle,
+                        )
+
+                        Box(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .padding(end = tiny3X),
+                            contentAlignment = Alignment.CenterEnd,
+                        ) {
+                            Box(
+                                modifier =
+                                    Modifier.size(medium * 2)
+                                        .clip(mediumRoundedCornerShape)
+                                        .clickable {
+                                            appTokenApi.toHideToken()
+                                        },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    painter = close(),
+                                    contentDescription = "Close",
+                                    modifier = Modifier.size(medium),
+                                    tint =
+                                        MaterialTheme.colorScheme.contentColorFor(
+                                            AppUIColors.topBackground,
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        modifier =
+                            Modifier
+                                .padding(horizontal = tiny3X, vertical = small2X)
+                                .wrapContentSize(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        OTPCodeBox()
+                    }
                 }
             }
         }
