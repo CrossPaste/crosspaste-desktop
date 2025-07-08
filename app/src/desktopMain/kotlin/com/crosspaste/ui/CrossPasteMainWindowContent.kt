@@ -102,9 +102,9 @@ fun CrossPasteMainWindowContent() {
                     screenProvider.CrossPasteScreen()
                 }
             }
-
-            DialogView()
         }
+
+        DialogView()
 
         screenProvider.ToastView()
 
