@@ -496,7 +496,7 @@ class DesktopModule(
             single<PasteDialogFactory> { DesktopPasteDialogFactory() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
-            single<ScreenProvider> { DesktopScreenProvider(get()) }
+            single<ScreenProvider> { DesktopScreenProvider(get(), get()) }
             single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get(), get(), get()) }
             single<ShortcutKeysAction> {

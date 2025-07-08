@@ -24,8 +24,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.base.DialogView
-import com.crosspaste.ui.base.ToastListView
-import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.theme.AppUIColors
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -60,51 +58,56 @@ fun CrossPasteMainWindowContent() {
     }
 
     Box(
-        modifier =
-            Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter,
     ) {
-        Row(
+        Box(
             modifier =
-                Modifier.fillMaxSize()
-                    .focusable()
-                    .focusRequester(focusRequester),
+                Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
         ) {
             Row(
                 modifier =
-                    Modifier.width(appSize.mainMenuSize.width)
-                        .fillMaxHeight()
-                        .background(AppUIColors.generalBackground),
+                    Modifier.fillMaxSize()
+                        .focusable()
+                        .focusRequester(focusRequester),
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.TopCenter,
+                Row(
+                    modifier =
+                        Modifier.width(appSize.mainMenuSize.width)
+                            .fillMaxHeight()
+                            .background(AppUIColors.generalBackground),
                 ) {
-                    Row(
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .height(appSize.windowDecorationHeight)
-                                .offset(y = -appSize.windowDecorationHeight)
-                                .background(AppUIColors.generalBackground),
-                    ) {}
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopCenter,
+                    ) {
+                        Row(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .height(appSize.windowDecorationHeight)
+                                    .offset(y = -appSize.windowDecorationHeight)
+                                    .background(AppUIColors.generalBackground),
+                        ) {}
 
-                    MainMenuView()
+                        MainMenuView()
+                    }
+                }
+                Box(
+                    modifier =
+                        Modifier.width(appSize.mainContentSize.width)
+                            .fillMaxHeight()
+                            .background(AppUIColors.appBackground),
+                ) {
+                    screenProvider.CrossPasteScreen()
                 }
             }
-            Box(
-                modifier =
-                    Modifier.width(appSize.mainContentSize.width)
-                        .fillMaxHeight()
-                        .background(AppUIColors.appBackground),
-            ) {
-                screenProvider.CrossPasteScreen()
-            }
+
+            DialogView()
         }
 
-        ToastListView()
+        screenProvider.ToastView()
 
-        DialogView()
-
-        TokenView()
+        screenProvider.TokenView()
     }
 }
