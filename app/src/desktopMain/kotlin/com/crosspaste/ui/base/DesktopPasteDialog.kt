@@ -14,9 +14,9 @@ import androidx.compose.ui.window.Dialog
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
+import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xxLarge
 import org.koin.compose.koinInject
 
 class DesktopPasteDialog(
@@ -34,7 +34,7 @@ class DesktopPasteDialog(
             Card(
                 modifier =
                     Modifier.fillMaxWidth()
-                        .padding(xxLarge)
+                        .padding(massive)
                         .clip(small3XRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
