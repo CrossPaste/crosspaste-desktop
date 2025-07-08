@@ -1,11 +1,14 @@
 package com.crosspaste.ui.search.side
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,13 +36,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
+import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.search
+import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestSearchInputFocus
 import com.crosspaste.ui.search.SearchTrailingIcon
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
@@ -78,13 +85,30 @@ fun SideSearchInputView() {
         }
     }
 
-    Row(
+    Box(
         modifier =
             Modifier.fillMaxWidth()
                 .height(xxxxLarge),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
+        Row(
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(end = xxLarge),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PasteTooltipIconView(
+                painter = settings(),
+                tint = MaterialTheme.colorScheme.primary,
+                text = copywriter.getText("settings"),
+            ) {
+                appWindowManager.toScreen(Settings)
+                appWindowManager.showMainWindow()
+                appWindowManager.hideSearchWindow()
+            }
+        }
+
         CustomTextField(
             modifier =
                 Modifier
@@ -148,5 +172,8 @@ fun SideSearchInputView() {
                 ),
             textStyle = MaterialTheme.typography.bodyMedium,
         )
+
+        Row(modifier = Modifier) {
+        }
     }
 }
