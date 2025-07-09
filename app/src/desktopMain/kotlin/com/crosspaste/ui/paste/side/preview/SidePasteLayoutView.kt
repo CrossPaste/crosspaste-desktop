@@ -28,7 +28,6 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUIColors.sidePasteTitle
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.DesktopAppUIFont
@@ -63,7 +62,7 @@ fun SidePasteLayoutView(
 fun SidePasteTitleView(pasteData: PasteData) {
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
-    val color = sidePasteTitle
+    val color = pasteData.getType().IconBackgroundColor().copy(alpha = 0.6f)
 
     var background by remember { mutableStateOf(color) }
 
@@ -102,11 +101,6 @@ fun SidePasteTitleView(pasteData: PasteData) {
         SidePasteTypeIconView(
             modifier = Modifier.fillMaxHeight().wrapContentWidth(),
             pasteData = pasteData,
-            tint =
-                MaterialTheme.colorScheme.contentColorFor(
-                    AppUIColors.importantColor,
-                ),
-            background = AppUIColors.importantColor,
         )
     }
 }

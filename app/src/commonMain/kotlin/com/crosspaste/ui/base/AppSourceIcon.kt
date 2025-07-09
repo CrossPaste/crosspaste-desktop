@@ -1,14 +1,12 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
@@ -29,8 +27,8 @@ fun AppSourceIcon(
     modifier: Modifier = Modifier,
     pasteData: PasteData,
     source: String,
-    iconColor: Color,
     size: Dp = large2X,
+    defaultIcon: @Composable () -> Unit = {},
 ) {
     val iconStyle = koinInject<IconStyle>()
     val imageLoaders = koinInject<ImageLoaders>()
@@ -61,12 +59,7 @@ fun AppSourceIcon(
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,
                 -> {
-                    Icon(
-                        painter = htmlOrRtf(),
-                        contentDescription = "Paste Icon",
-                        modifier = Modifier.size(size),
-                        tint = iconColor,
-                    )
+                    defaultIcon()
                 }
                 else -> {
                     SubcomposeAsyncImageContent()
@@ -80,7 +73,7 @@ fun AppSourceIcon(
 fun SideAppSourceIcon(
     modifier: Modifier = Modifier,
     pasteData: PasteData,
-    iconColor: Color,
+    defaultIcon: @Composable () -> Unit = {},
 ) {
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
@@ -101,12 +94,7 @@ fun SideAppSourceIcon(
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,
                 -> {
-                    Icon(
-                        painter = htmlOrRtf(),
-                        contentDescription = "Paste Icon",
-                        modifier = modifier,
-                        tint = iconColor,
-                    )
+                    defaultIcon()
                 }
                 else -> {
                     SubcomposeAsyncImageContent()

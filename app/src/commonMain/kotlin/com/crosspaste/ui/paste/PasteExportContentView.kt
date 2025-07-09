@@ -48,7 +48,7 @@ import com.crosspaste.paste.PasteExportService
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.htmlOrRtf
+import com.crosspaste.ui.base.html
 import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.text
@@ -242,7 +242,7 @@ private fun TypeFiltersSection(
 
         PasteTypeWithIconCheckbox(
             type = "html",
-            icon = htmlOrRtf(),
+            icon = html(),
             selected = htmlTypeSelected,
             onSelectedChange = onHtmlTypeSelectedChange,
         )
@@ -263,7 +263,7 @@ private fun TypeFiltersSection(
 
         PasteTypeWithIconCheckbox(
             type = "rtf",
-            icon = htmlOrRtf(),
+            icon = html(),
             selected = rtfTypeSelected,
             onSelectedChange = onRtfTypeSelectedChange,
         )

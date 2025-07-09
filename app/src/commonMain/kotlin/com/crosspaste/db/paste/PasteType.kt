@@ -1,13 +1,15 @@
 package com.crosspaste.db.paste
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.htmlOrRtf
+import com.crosspaste.ui.base.html
 import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.question
+import com.crosspaste.ui.base.rtf
 import com.crosspaste.ui.base.text
 
 data class PasteType(
@@ -112,10 +114,11 @@ data class PasteType(
             URL_TYPE -> {
                 link()
             }
-            HTML_TYPE,
-            RTF_TYPE,
-            -> {
-                htmlOrRtf()
+            HTML_TYPE -> {
+                html()
+            }
+            RTF_TYPE -> {
+                rtf()
             }
             IMAGE_TYPE -> {
                 image()
@@ -129,6 +132,20 @@ data class PasteType(
             else -> {
                 question()
             }
+        }
+    }
+
+    @Composable
+    fun IconBackgroundColor(): Color {
+        return when (this) {
+            TEXT_TYPE -> Color(0xFF91C3E7)
+            URL_TYPE -> Color(0xFF5DBFBC)
+            HTML_TYPE -> Color(0xFFA9A5DB)
+            RTF_TYPE -> Color(0xFFFEAF94)
+            IMAGE_TYPE -> Color(0xFF76C196)
+            FILE_TYPE -> Color(0xFFFDDB72)
+            COLOR_TYPE -> Color(0xFFFFABAE)
+            else -> Color(0xFFCFD8DC)
         }
     }
 }

@@ -10,7 +10,7 @@ import com.crosspaste.db.paste.PasteData
 import com.crosspaste.ui.theme.AppUISize.large2X
 
 @Composable
-fun PasteHtmlOrRtfIcon(
+fun PasteHtmlIcon(
     pasteData: PasteData,
     iconColor: Color,
     size: Dp = large2X,
@@ -19,15 +19,31 @@ fun PasteHtmlOrRtfIcon(
         AppSourceIcon(
             pasteData = pasteData,
             source = it,
+            size = size,
+        ) {
+            DefaultHtmlIcon(
+                iconColor = iconColor,
+                size = size,
+            )
+        }
+    } ?: run {
+        DefaultHtmlIcon(
             iconColor = iconColor,
             size = size,
         )
-    } ?: run {
-        Icon(
-            painter = htmlOrRtf(),
-            contentDescription = "Paste Icon",
-            modifier = Modifier.size(size),
-            tint = iconColor,
-        )
     }
+}
+
+@Composable
+fun DefaultHtmlIcon(
+    contentDescription: String? = null,
+    iconColor: Color,
+    size: Dp = large2X,
+) {
+    Icon(
+        painter = html(),
+        contentDescription = contentDescription,
+        modifier = Modifier.size(size),
+        tint = iconColor,
+    )
 }
