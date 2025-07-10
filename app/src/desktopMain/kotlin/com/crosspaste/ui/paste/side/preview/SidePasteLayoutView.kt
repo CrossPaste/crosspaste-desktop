@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
-import com.crosspaste.ui.base.RelativeTimeKey
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
 import com.crosspaste.ui.base.lightSideBarColors
@@ -96,18 +95,11 @@ fun SidePasteTitleView(pasteData: PasteData) {
     }
 
     LaunchedEffect(Unit) {
-        while (RelativeTimeKey.withInHourUnit(relativeTime.unit)) {
-            when (relativeTime.unit) {
-                RelativeTimeKey.NOW -> {
-                    delay(1000)
-                }
-                RelativeTimeKey.SECONDS -> {
-                    delay(5000)
-                }
-                RelativeTimeKey.MINUTES -> {
-                    delay(60 * 1000)
-                }
-                else -> break
+        while (relativeTime.withInHourUnit()) {
+            relativeTime.getUpdateDelay()?.let {
+                delay(it)
+            } ?: run {
+                break
             }
             relativeTime = DateUtils.getRelativeTime(pasteData.createTime)
         }
