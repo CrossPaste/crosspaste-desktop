@@ -25,6 +25,8 @@ import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.ui.base.SidePasteTypeIconView
+import com.crosspaste.ui.base.darkSideBarColors
+import com.crosspaste.ui.base.lightSideBarColors
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -67,7 +69,13 @@ fun SidePasteTitleView(pasteData: PasteData) {
     val isCurrentThemeDark = themeDetector.isCurrentThemeDark()
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
     var background by remember(type, isCurrentThemeDark) {
-        mutableStateOf(type.getTitleBackgroundColor(isCurrentThemeDark))
+        mutableStateOf(
+            if (isCurrentThemeDark) {
+                darkSideBarColors.getColor(type)
+            } else {
+                lightSideBarColors.getColor(type)
+            },
+        )
     }
 
     val onBackground by remember(background) {

@@ -50,7 +50,7 @@ fun SideDefaultPasteTypeIcon(
             modifier.fillMaxHeight()
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(topStart = tiny2X, bottomStart = tiny2X))
-                .background(type.getIconBackgroundColor()),
+                .background(sideIconColors.getColor(type)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
