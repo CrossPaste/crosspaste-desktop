@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,7 +28,9 @@ import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.ui.theme.DesktopAppUIFont
+import com.crosspaste.ui.theme.ThemeDetector
 import org.koin.compose.koinInject
 
 @Composable
@@ -62,11 +62,19 @@ fun SidePasteLayoutView(
 fun SidePasteTitleView(pasteData: PasteData) {
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
-    val color = pasteData.getType().IconBackgroundColor().copy(alpha = 0.6f)
+    val themeDetector = koinInject<ThemeDetector>()
 
-    var background by remember { mutableStateOf(color) }
+    val isCurrentThemeDark = themeDetector.isCurrentThemeDark()
+    val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
+    var background by remember(type, isCurrentThemeDark) {
+        mutableStateOf(type.getTitleBackgroundColor(isCurrentThemeDark))
+    }
 
-    LaunchedEffect(Unit) {
+    val onBackground by remember(background) {
+        mutableStateOf(DesktopAppUIColors.getSideTitleColor(background))
+    }
+
+    LaunchedEffect(isCurrentThemeDark) {
         pasteData.source?.let {
             desktopIconColorExtractor.getBackgroundColor(it)?.let { color -> background = color }
         }
@@ -90,10 +98,7 @@ fun SidePasteTitleView(pasteData: PasteData) {
                 text = copywriter.getText(pasteData.getTypeText()),
                 style =
                     DesktopAppUIFont.sidePasteTitleTextStyle.copy(
-                        color =
-                            MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.importantColor,
-                            ),
+                        color = onBackground,
                     ),
             )
         }
@@ -101,6 +106,7 @@ fun SidePasteTitleView(pasteData: PasteData) {
         SidePasteTypeIconView(
             modifier = Modifier.fillMaxHeight().wrapContentWidth(),
             pasteData = pasteData,
+            tint = onBackground,
         )
     }
 }

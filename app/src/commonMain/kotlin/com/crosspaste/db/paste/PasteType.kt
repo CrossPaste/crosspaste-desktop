@@ -135,17 +135,30 @@ data class PasteType(
         }
     }
 
-    @Composable
-    fun IconBackgroundColor(): Color {
+    fun getIconBackgroundColor(): Color {
         return when (this) {
-            TEXT_TYPE -> Color(0xFF91C3E7)
-            URL_TYPE -> Color(0xFF5DBFBC)
-            HTML_TYPE -> Color(0xFFA9A5DB)
-            RTF_TYPE -> Color(0xFFFEAF94)
-            IMAGE_TYPE -> Color(0xFF76C196)
+            TEXT_TYPE -> Color(0xFF578FCA)
+            URL_TYPE -> Color(0xFF67AE6E)
+            HTML_TYPE -> Color(0xFFC68EFD)
+            RTF_TYPE -> Color(0xFFFF9B9B)
+            IMAGE_TYPE -> Color(0xFF40A578)
             FILE_TYPE -> Color(0xFFFDDB72)
             COLOR_TYPE -> Color(0xFFFFABAE)
             else -> Color(0xFFCFD8DC)
         }
     }
+
+    fun getTitleBackgroundColor(isDarkTheme: Boolean): Color {
+        return when (this) {
+            TEXT_TYPE  -> if (isDarkTheme) Color(0xFF2C5F9A) else Color(0xFFB6DCF4)
+            URL_TYPE   -> if (isDarkTheme) Color(0xFF236952) else Color(0xFFB2DAA8)
+            HTML_TYPE  -> if (isDarkTheme) Color(0xFF7158C4) else Color(0xFFEFD6FF)
+            RTF_TYPE   -> if (isDarkTheme) Color(0xFFE36A6A) else Color(0xFFFFD6C9)
+            IMAGE_TYPE -> if (isDarkTheme) Color(0xFF005F53) else Color(0xFF9FDB91)
+            FILE_TYPE  -> if (isDarkTheme) Color(0xFFE3B220) else Color(0xFFFFFBDB)
+            COLOR_TYPE -> if (isDarkTheme) Color(0xFFF9656B) else Color(0xFFFFE1E3)
+            else       -> if (isDarkTheme) Color(0xFF3C4448) else Color(0xFFFFFFFF)
+        }
+    }
+
 }

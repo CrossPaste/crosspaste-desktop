@@ -42,6 +42,7 @@ fun DefaultPasteTypeIcon(
 fun SideDefaultPasteTypeIcon(
     modifier: Modifier = Modifier,
     pasteData: PasteData,
+    tint: Color,
 ) {
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
     Box(
@@ -49,7 +50,7 @@ fun SideDefaultPasteTypeIcon(
             modifier.fillMaxHeight()
                 .wrapContentWidth()
                 .clip(RoundedCornerShape(topStart = tiny2X, bottomStart = tiny2X))
-                .background(type.IconBackgroundColor()),
+                .background(type.getIconBackgroundColor()),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -58,7 +59,7 @@ fun SideDefaultPasteTypeIcon(
             modifier =
                 modifier.padding(start = tiny, end = tiny)
                     .size(xxxxLarge),
-            tint = Color(0xFFF7F8F8),
+            tint = tint,
         )
     }
 }

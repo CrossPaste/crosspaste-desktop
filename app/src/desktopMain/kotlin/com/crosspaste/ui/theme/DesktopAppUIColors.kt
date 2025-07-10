@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import com.crosspaste.utils.ColorUtils
 
 object DesktopAppUIColors {
 
@@ -11,15 +12,15 @@ object DesktopAppUIColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surface
 
-    val tabsBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.primaryContainer
+    val sideOnDarkColor: Color = Color(0xFFF7F8F8)
 
-    val tabSelectedTextColor: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.onPrimaryContainer
+    val sideOnLightColor: Color = Color(0xFF1C1C1E)
 
-    val tabUnselectedTextColor: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f)
+    fun getSideTitleColor(background: Color): Color {
+        return if (ColorUtils.isDarkColor(background)) {
+            sideOnDarkColor
+        } else {
+            sideOnLightColor
+        }
+    }
 }

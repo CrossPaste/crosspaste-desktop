@@ -57,6 +57,7 @@ fun PasteTypeIconView(
 fun SidePasteTypeIconView(
     modifier: Modifier = Modifier,
     pasteData: PasteData,
+    tint: Color,
 ) {
     pasteData.source?.let {
         SideAppSourceIcon(
@@ -65,11 +66,13 @@ fun SidePasteTypeIconView(
         ) {
             SideDefaultPasteTypeIcon(
                 pasteData = pasteData,
+                tint = tint,
             )
         }
     } ?: run {
         SideDefaultPasteTypeIcon(
             pasteData = pasteData,
+            tint = tint,
         )
     }
 }
