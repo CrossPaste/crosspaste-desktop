@@ -33,6 +33,8 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.ui.theme.ThemeDetector
+import com.crosspaste.utils.DateUtils
+import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 @Composable
@@ -82,9 +84,24 @@ fun SidePasteTitleView(pasteData: PasteData) {
         mutableStateOf(DesktopAppUIColors.getSideTitleColor(background))
     }
 
+    var relativeTime by remember(pasteData.id) {
+        mutableStateOf(DateUtils.getRelativeTime(pasteData.createTime))
+    }
+
     LaunchedEffect(isCurrentThemeDark) {
         pasteData.source?.let {
             desktopIconColorExtractor.getBackgroundColor(it)?.let { color -> background = color }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (relativeTime.withInHourUnit()) {
+            relativeTime.getUpdateDelay()?.let {
+                delay(it)
+            } ?: run {
+                break
+            }
+            relativeTime = DateUtils.getRelativeTime(pasteData.createTime)
         }
     }
 
@@ -106,6 +123,13 @@ fun SidePasteTitleView(pasteData: PasteData) {
                 text = copywriter.getText(pasteData.getTypeText()),
                 style =
                     DesktopAppUIFont.sidePasteTitleTextStyle.copy(
+                        color = onBackground,
+                    ),
+            )
+            Text(
+                text = copywriter.getText(relativeTime.unit, relativeTime.value?.toString() ?: ""),
+                style =
+                    DesktopAppUIFont.sidePasteTimeTextStyle.copy(
                         color = onBackground,
                     ),
             )

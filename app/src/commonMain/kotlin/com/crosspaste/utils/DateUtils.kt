@@ -1,5 +1,6 @@
 package com.crosspaste.utils
 
+import com.crosspaste.ui.base.RelativeTime
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
@@ -8,6 +9,10 @@ import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 fun getDateUtils(): DateUtils {
     return DateUtils
@@ -20,9 +25,6 @@ object DateUtils {
     @OptIn(FormatStringsInDatetimeFormats::class)
     val YMD_FORMAT = LocalDateTime.Format { byUnicodePattern("yyyy-MM-dd") }
 
-    @OptIn(FormatStringsInDatetimeFormats::class)
-    val YMDHMS_FORMAT = LocalDateTime.Format { byUnicodePattern("yyyy-MM-dd HH:mm:ss") }
-
     fun getOffsetDay(
         currentTime: Instant = nowInstant(),
         days: Int,
@@ -31,38 +33,8 @@ object DateUtils {
         return offsetDay.toEpochMilliseconds()
     }
 
-    fun getDateDesc(date: LocalDateTime): String? {
-        val now = now()
-
-        if (date.date == now.date) {
-            val hoursDiff = now.hour - date.hour
-            val minutesDiff = now.minute - date.minute
-            val secondsDiff = now.second - date.second
-
-            if (hoursDiff < 1 && minutesDiff < 1 && secondsDiff < 60) {
-                return "just_now"
-            }
-            return "today"
-        }
-
-        val yesterday =
-            nowInstant()
-                .minus(1.days)
-                .toLocalDateTime(TimeZone.currentSystemDefault())
-
-        if (date.date == yesterday.date) {
-            return "yesterday"
-        }
-
-        return null
-    }
-
     fun getYMD(date: LocalDateTime = now()): String {
         return YMD_FORMAT.format(date)
-    }
-
-    fun getYMDHMS(date: LocalDateTime = now()): String {
-        return YMDHMS_FORMAT.format(date)
     }
 
     @OptIn(FormatStringsInDatetimeFormats::class)
@@ -96,5 +68,51 @@ object DateUtils {
     fun epochMillisecondsToLocalDateTime(epochMilliseconds: Long): LocalDateTime {
         val instant = Instant.fromEpochMilliseconds(epochMilliseconds)
         return instant.toLocalDateTime(TIME_ZONE)
+    }
+
+    fun getRelativeTime(
+        timestamp: Long,
+        now: Long = nowEpochMilliseconds(),
+    ): RelativeTime {
+        val duration = (now - timestamp).milliseconds
+
+        return when {
+            duration < 10.seconds -> RelativeTime(null, "relative_now")
+
+            duration < 1.minutes -> {
+                val seconds = duration.inWholeSeconds.toInt()
+                RelativeTime(seconds, "relative_seconds_ago")
+            }
+
+            duration < 1.hours -> {
+                val minutes = duration.inWholeMinutes.toInt()
+                RelativeTime(minutes, "relative_minutes_ago")
+            }
+
+            duration < 1.days -> {
+                val hours = duration.inWholeHours.toInt()
+                RelativeTime(hours, "relative_hours_ago")
+            }
+
+            duration < 7.days -> {
+                val days = duration.inWholeDays.toInt()
+                RelativeTime(days, "relative_days_ago")
+            }
+
+            duration < 31.days -> {
+                val weeks = (duration.inWholeDays / 7).toInt()
+                RelativeTime(weeks, "relative_weeks_ago")
+            }
+
+            duration < 365.days -> {
+                val months = (duration.inWholeDays / 30).toInt()
+                RelativeTime(months, "relative_months_ago")
+            }
+
+            else -> {
+                val years = (duration.inWholeDays / 365).toInt()
+                RelativeTime(years, "relative_years_ago")
+            }
+        }
     }
 }
