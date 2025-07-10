@@ -344,4 +344,21 @@ object ColorUtils {
             else -> Color.White
         }
     }
+
+    fun isDarkColor(color: Color): Boolean {
+        // Use luminance to determine if the color is dark
+        return color.luminance() < 0.5f
+    }
+
+    fun Color.toHexString(): String {
+        val alpha = (alpha * 255).toInt()
+        val red = (red * 255).toInt()
+        val green = (green * 255).toInt()
+        val blue = (blue * 255).toInt()
+
+        return "0x${alpha.toString(16).padStart(2, '0').uppercase()}" +
+            red.toString(16).padStart(2, '0').uppercase() +
+            green.toString(16).padStart(2, '0').uppercase() +
+            blue.toString(16).padStart(2, '0').uppercase()
+    }
 }

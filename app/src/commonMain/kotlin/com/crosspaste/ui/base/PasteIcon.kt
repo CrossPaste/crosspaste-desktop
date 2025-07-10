@@ -16,7 +16,7 @@ expect fun fileSlash(): Painter
 expect fun folder(): Painter
 
 @Composable
-expect fun htmlOrRtf(): Painter
+expect fun html(): Painter
 
 @Composable
 expect fun image(): Painter
@@ -26,6 +26,9 @@ expect fun imageSlash(): Painter
 
 @Composable
 expect fun link(): Painter
+
+@Composable
+expect fun rtf(): Painter
 
 @Composable
 expect fun text(): Painter

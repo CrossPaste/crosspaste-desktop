@@ -43,6 +43,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.AppSourceIcon
+import com.crosspaste.ui.base.DefaultPasteTypeIcon
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.noFavorite
@@ -108,9 +109,14 @@ fun PasteDetailInfoView(
             AppSourceIcon(
                 pasteData = pasteData,
                 source = source,
-                iconColor = MaterialTheme.colorScheme.primary,
                 size = xxLarge,
-            )
+            ) {
+                DefaultPasteTypeIcon(
+                    pasteData = pasteData,
+                    iconColor = MaterialTheme.colorScheme.primary,
+                    size = xxLarge,
+                )
+            }
 
             Spacer(modifier = Modifier.width(tiny2X))
 

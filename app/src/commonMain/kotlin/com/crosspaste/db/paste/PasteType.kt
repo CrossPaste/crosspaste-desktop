@@ -4,10 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.htmlOrRtf
+import com.crosspaste.ui.base.html
 import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.question
+import com.crosspaste.ui.base.rtf
 import com.crosspaste.ui.base.text
 
 data class PasteType(
@@ -112,10 +113,11 @@ data class PasteType(
             URL_TYPE -> {
                 link()
             }
-            HTML_TYPE,
-            RTF_TYPE,
-            -> {
-                htmlOrRtf()
+            HTML_TYPE -> {
+                html()
+            }
+            RTF_TYPE -> {
+                rtf()
             }
             IMAGE_TYPE -> {
                 image()

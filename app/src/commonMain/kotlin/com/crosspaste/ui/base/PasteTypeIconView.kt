@@ -32,8 +32,14 @@ fun PasteTypeIconView(
             iconColor = iconColor,
             size = size,
         )
-    } else if (pasteType.isHtml() || pasteType.isRtf()) {
-        PasteHtmlOrRtfIcon(
+    } else if (pasteType.isHtml()) {
+        PasteHtmlIcon(
+            pasteData = pasteData,
+            iconColor = iconColor,
+            size = size,
+        )
+    } else if (pasteType.isRtf()) {
+        PasteRtfIcon(
             pasteData = pasteData,
             iconColor = iconColor,
             size = size,
@@ -51,22 +57,22 @@ fun PasteTypeIconView(
 fun SidePasteTypeIconView(
     modifier: Modifier = Modifier,
     pasteData: PasteData,
-    tint: Color? = null,
-    background: Color,
+    tint: Color,
 ) {
-    val iconColor = tint ?: MaterialTheme.colorScheme.contentColorFor(background)
-
     pasteData.source?.let {
         SideAppSourceIcon(
             modifier = modifier,
             pasteData = pasteData,
-            iconColor = iconColor,
-        )
+        ) {
+            SideDefaultPasteTypeIcon(
+                pasteData = pasteData,
+                tint = tint,
+            )
+        }
     } ?: run {
-        DefaultPasteTypeIcon(
+        SideDefaultPasteTypeIcon(
             pasteData = pasteData,
-            iconColor = iconColor,
-            size = large2X,
+            tint = tint,
         )
     }
 }
