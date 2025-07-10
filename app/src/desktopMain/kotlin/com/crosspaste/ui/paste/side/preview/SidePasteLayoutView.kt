@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.ui.base.RelativeTimeKey
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
 import com.crosspaste.ui.base.lightSideBarColors
@@ -33,6 +34,8 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.ui.theme.ThemeDetector
+import com.crosspaste.utils.DateUtils
+import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 @Composable
@@ -82,9 +85,31 @@ fun SidePasteTitleView(pasteData: PasteData) {
         mutableStateOf(DesktopAppUIColors.getSideTitleColor(background))
     }
 
+    var relativeTime by remember(pasteData.id) {
+        mutableStateOf(DateUtils.getRelativeTime(pasteData.createTime))
+    }
+
     LaunchedEffect(isCurrentThemeDark) {
         pasteData.source?.let {
             desktopIconColorExtractor.getBackgroundColor(it)?.let { color -> background = color }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (RelativeTimeKey.withInHourUnit(relativeTime.unit)) {
+            when (relativeTime.unit) {
+                RelativeTimeKey.NOW -> {
+                    delay(1000)
+                }
+                RelativeTimeKey.SECONDS -> {
+                    delay(5000)
+                }
+                RelativeTimeKey.MINUTES -> {
+                    delay(60 * 1000)
+                }
+                else -> break
+            }
+            relativeTime = DateUtils.getRelativeTime(pasteData.createTime)
         }
     }
 
@@ -106,6 +131,13 @@ fun SidePasteTitleView(pasteData: PasteData) {
                 text = copywriter.getText(pasteData.getTypeText()),
                 style =
                     DesktopAppUIFont.sidePasteTitleTextStyle.copy(
+                        color = onBackground,
+                    ),
+            )
+            Text(
+                text = copywriter.getText(relativeTime.unit, relativeTime.value?.toString() ?: ""),
+                style =
+                    DesktopAppUIFont.sidePasteTimeTextStyle.copy(
                         color = onBackground,
                     ),
             )

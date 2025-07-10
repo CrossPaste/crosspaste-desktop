@@ -62,6 +62,14 @@ object DesktopAppUIFont {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.typography.titleMedium
 
+    val sidePasteTimeTextStyle
+        @Composable @ReadOnlyComposable
+        get() =
+            MaterialTheme.typography.bodySmall.copy(
+                fontWeight = FontWeight.Light,
+                fontSize = 12.sp,
+            )
+
     val sideUrlTitleTextStyle
         @Composable @ReadOnlyComposable
         get() =
