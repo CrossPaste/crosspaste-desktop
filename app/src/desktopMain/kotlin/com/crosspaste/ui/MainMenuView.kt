@@ -23,11 +23,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize
@@ -72,13 +74,15 @@ fun MainMenuView() {
         )
     }
 
+    val exitApplication = LocalExitApplication.current
+
     Column(
         modifier =
             Modifier.fillMaxSize()
                 .padding(vertical = medium),
     ) {
         prevMenuList.forEachIndexed { index, item ->
-            MainMenuItemView(item, index == selectedIndex) {
+            MainMenuItemView(item.title, background(index == selectedIndex)) {
                 appWindowManager.setScreen(ScreenContext(item.screenType))
             }
         }
@@ -86,26 +90,33 @@ fun MainMenuView() {
         Spacer(Modifier.weight(1f))
 
         nextMenuList.forEachIndexed { index, item ->
-            MainMenuItemView(item, index == selectedIndex - prevMenuList.size) {
+            MainMenuItemView(item.title, background(index == selectedIndex - prevMenuList.size)) {
                 appWindowManager.setScreen(ScreenContext(item.screenType))
             }
+        }
+
+        MainMenuItemView("quit", AppUIColors.generalBackground) {
+            exitApplication(ExitMode.EXIT)
         }
     }
 }
 
 @Composable
+private fun background(selected: Boolean): Color {
+    return if (selected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        AppUIColors.generalBackground
+    }
+}
+
+@Composable
 fun MainMenuItemView(
-    mainMenuItem: MainMenuItem,
-    selected: Boolean,
+    title: String,
+    background: Color,
     onClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val background =
-        if (selected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            AppUIColors.generalBackground
-        }
 
     Box(
         modifier =
@@ -131,7 +142,7 @@ fun MainMenuItemView(
             ) {
                 Text(
                     modifier = Modifier.padding(start = small3X),
-                    text = copywriter.getText(mainMenuItem.title),
+                    text = copywriter.getText(title),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.contentColorFor(background),
