@@ -12,6 +12,7 @@ import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppLock
+import com.crosspaste.app.AppName
 import com.crosspaste.app.AppStartUpService
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunchState
@@ -54,6 +55,7 @@ import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
@@ -136,6 +138,7 @@ class CrossPaste {
                     koin.get<RenderingService<String>>(named("rtfRendering")).start()
                     koin.get<RenderingService<String>>(named("urlRendering")).start()
                     koin.get<GuidePasteDataService>().initData()
+                    FileKit.init(appId = AppName)
                 } else {
                     exitProcess(0)
                 }

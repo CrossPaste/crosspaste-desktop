@@ -31,5 +31,4 @@ interface AppFileChooser {
 enum class FileSelectionMode {
     FILE_ONLY,
     DIRECTORY_ONLY,
-    FILES_AND_DIRECTORIES,
 }
