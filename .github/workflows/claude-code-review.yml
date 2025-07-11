@@ -2,7 +2,7 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, closed]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
@@ -10,16 +10,37 @@ on:
     #   - "src/**/*.js"
     #   - "src/**/*.jsx"
 
+concurrency:
+  group: claude-review-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
+  check-pr-status:
+    runs-on: ubuntu-latest
+    outputs:
+      should-review: ${{ steps.check.outputs.should-review }}
+    steps:
+      - id: check
+        run: |
+          if [[ "${{ github.event.action }}" == "closed" ]]; then
+            echo "should-review=false" >> $GITHUB_OUTPUT
+          else
+            echo "should-review=true" >> $GITHUB_OUTPUT
+          fi
+
   claude-review:
     # Only allow repository owner to trigger Claude code review to prevent token abuse
-    if: contains(
+    needs: check-pr-status
+    if: |
+      needs.check-pr-status.outputs.should-review == 'true' &&
+      contains(
         fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
         github.event.pull_request.author_association
       )
     
     runs-on: ubuntu-latest
     continue-on-error: true
+    timeout-minutes: 30
 
     environment:
       name: claude-review-approval
@@ -80,3 +101,10 @@ jobs:
           #   !contains(github.event.pull_request.title, '[skip-review]') &&
           #   !contains(github.event.pull_request.title, '[WIP]')
 
+  cleanup-on-close:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark as skipped
+        run: |
+          echo "PR is closed, skipping Claude review"
