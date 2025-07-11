@@ -45,7 +45,9 @@ class DesktopGlobalCopywriter(
 
         const val ZH = "zh"
 
-        val LANGUAGE_LIST = listOf(DE, EN, ES, FA, FR, KO, JA, ZH)
+        const val ZH_HANT = "zh-hant"
+
+        val LANGUAGE_LIST = listOf(DE, EN, ES, FA, FR, KO, JA, ZH, ZH_HANT)
 
         val LANGUAGE_MAP = ConcurrentHashMap<String, Copywriter>()
     }
