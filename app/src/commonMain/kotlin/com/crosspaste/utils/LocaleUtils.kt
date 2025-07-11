@@ -6,5 +6,7 @@ interface LocaleUtils {
 
     fun getLanguage(): String
 
+    fun getLanguageTag(): String
+
     fun getDisplayName(): String
 }
