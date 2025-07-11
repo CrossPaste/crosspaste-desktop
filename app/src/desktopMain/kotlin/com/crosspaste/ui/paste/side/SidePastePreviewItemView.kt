@@ -29,6 +29,7 @@ fun SidePastePreviewItemView(
     pasteData: PasteData,
     selected: Boolean,
     onPress: () -> Unit,
+    onDoubleTap: () -> Unit,
     pasteContent: @Composable PasteData.() -> Unit,
 ) {
     val appSize = koinInject<DesktopAppSize>()
@@ -43,6 +44,9 @@ fun SidePastePreviewItemView(
                     detectTapGestures(
                         onPress = {
                             onPress()
+                        },
+                        onDoubleTap = {
+                            onDoubleTap()
                         },
                     )
                 }
