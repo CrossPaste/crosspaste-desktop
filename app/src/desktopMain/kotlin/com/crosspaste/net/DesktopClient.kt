@@ -57,7 +57,10 @@ object DesktopClient {
             proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
                 suspendRequest(url, it.value, success)
             } ?: suspendRequest(url, noProxyClient, success)
-        }.getOrNull()
+        }.getOrElse {
+            logger.warn { "Failed to fetch data from $url: ${it.message}" }
+            null
+        }
     }
 
     private fun <T> request(
@@ -67,11 +70,7 @@ object DesktopClient {
     ): T? {
         val uri = URI(url)
 
-        val request =
-            HttpRequest.newBuilder()
-                .uri(uri)
-                .timeout(Duration.ofSeconds(5))
-                .build()
+        val request = buildRequest(uri)
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
@@ -90,11 +89,7 @@ object DesktopClient {
     ): T? {
         val uri = URI(url)
 
-        val request =
-            HttpRequest.newBuilder()
-                .uri(uri)
-                .timeout(Duration.ofSeconds(5))
-                .build()
+        val request = buildRequest(uri)
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
@@ -104,5 +99,19 @@ object DesktopClient {
             logger.warn { "Failed to fetch data from $url, status code: ${response.statusCode()}" }
             null
         }
+    }
+
+    private fun buildRequest(uri: URI): HttpRequest {
+        return HttpRequest.newBuilder()
+            .uri(uri)
+            .header(
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            )
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header("DNT", "1")
+            .timeout(Duration.ofSeconds(5))
+            .build()
     }
 }
