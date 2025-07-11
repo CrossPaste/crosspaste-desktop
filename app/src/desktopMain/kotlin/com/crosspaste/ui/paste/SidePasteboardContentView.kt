@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -66,6 +67,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SidePasteboardContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
@@ -234,6 +236,9 @@ fun SidePasteboardContentView() {
                         selected = index == selectedIndex,
                         onPress = {
                             pasteSelectionViewModel.clickSelectedIndex(index)
+                        },
+                        onDoubleTap = {
+                            pasteMenuService.quickPaste(pasteData)
                         },
                     ) {
                         SidePreviewView(this)
