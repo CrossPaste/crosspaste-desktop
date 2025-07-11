@@ -124,6 +124,7 @@ kotlin {
             implementation(libs.coil.svg)
             implementation(libs.cryptography.core)
             implementation(libs.cryptography.provider)
+            implementation(libs.filekit)
             implementation(libs.koin.compose)
             implementation(libs.koin.core)
             implementation(libs.koin.viewmodel)
@@ -381,6 +382,8 @@ compose.desktop {
                 jvmArgs("-Dlinux.force.trayType=AppIndicator")
                 linux {
                     targetFormats(TargetFormat.Deb)
+
+                    modules("jdk.security.auth")
 
                     getJbrReleases(
                         "linux-x64",

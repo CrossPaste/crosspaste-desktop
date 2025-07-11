@@ -8,6 +8,7 @@ conveyor = "1.12"
 conveyor-control = "1.1"
 cryptography = "0.5.0"
 download = "5.6.0"
+filekit = "0.10.0-beta04"
 guava = "33.4.8-jre"
 icu4j = "77.1"
 imageio = "3.12.0"
@@ -51,6 +52,7 @@ compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.
 conveyor-control = { module = "dev.hydraulic.conveyor:conveyor-control", version.ref = "conveyor-control" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-provider = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
+filekit = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "imageio" }

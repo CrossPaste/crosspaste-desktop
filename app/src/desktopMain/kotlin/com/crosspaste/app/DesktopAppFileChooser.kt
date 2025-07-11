@@ -1,14 +1,23 @@
 package com.crosspaste.app
 
+import com.crosspaste.utils.ioDispatcher
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
+import io.github.vinceglb.filekit.dialogs.openFilePicker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import okio.Path
 import okio.Path.Companion.toOkioPath
-import javax.swing.JFileChooser
 
 class DesktopAppFileChooser(
     private val desktopAppWindowManager: DesktopAppWindowManager,
 ) : AppFileChooser {
+
+    private val ioCoroutineDispatcher = CoroutineScope(SupervisorJob() + ioDispatcher)
 
     private val _showFileDialog: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
@@ -23,27 +32,32 @@ class DesktopAppFileChooser(
     ) {
         desktopAppWindowManager.mainComposeWindow?.let {
             _showFileDialog.value = true
-            JFileChooser().apply {
-                this.fileSelectionMode =
-                    when (fileSelectionMode) {
-                        FileSelectionMode.FILE_ONLY -> JFileChooser.FILES_ONLY
-                        FileSelectionMode.DIRECTORY_ONLY -> JFileChooser.DIRECTORIES_ONLY
-                        FileSelectionMode.FILES_AND_DIRECTORIES -> JFileChooser.FILES_AND_DIRECTORIES
+            ioCoroutineDispatcher.launch {
+                when (fileSelectionMode) {
+                    FileSelectionMode.FILE_ONLY -> {
+                        FileKit.openFilePicker(
+                            title = title,
+                            directory = initPath?.let { path -> PlatformFile(path.toFile()) },
+                        )?.let { platformFile ->
+                            action(platformFile.file.toOkioPath(true))
+                        } ?: run {
+                            cancel?.let { cancelAction -> cancelAction() }
+                        }
                     }
-                title?.let {
-                    dialogTitle = it
+                    FileSelectionMode.DIRECTORY_ONLY -> {
+                        FileKit.openDirectoryPicker(
+                            title = title,
+                            directory = initPath?.let { path -> PlatformFile(path.toFile()) },
+                        )?.let { platformFile ->
+                            action(platformFile.file.toOkioPath(true))
+                        } ?: run {
+                            cancel?.let { cancelAction -> cancelAction() }
+                        }
+                    }
                 }
-                initPath?.let {
-                    currentDirectory = it.toFile()
-                }
-                showOpenDialog(it)
-                selectedFile?.let { file ->
-                    action(file.toOkioPath(true))
-                } ?: run {
-                    cancel?.let { it() }
-                }
+            }.apply {
+                _showFileDialog.value = false
             }
-            _showFileDialog.value = false
         }
     }
 
