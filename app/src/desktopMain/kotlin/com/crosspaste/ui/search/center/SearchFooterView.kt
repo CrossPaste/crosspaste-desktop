@@ -104,6 +104,10 @@ fun SearchFooterView() {
                     },
             ) {
                 KeyboardView(keyboardValue = enter)
+                Spacer(modifier = Modifier.width(tiny))
+                Text("/")
+                Spacer(modifier = Modifier.width(tiny))
+                KeyboardView(keyboardValue = copywriter.getText("double_click"))
             }
         }
     }

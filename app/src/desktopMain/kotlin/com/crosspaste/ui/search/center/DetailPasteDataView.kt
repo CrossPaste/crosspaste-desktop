@@ -5,13 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteType
-import com.crosspaste.notification.MessageType
-import com.crosspaste.notification.NotificationManager
-import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
@@ -36,34 +32,9 @@ fun DetailPasteDataView() {
 
     currentPasteData?.let { pasteData ->
         pasteData.pasteAppearItem?.let {
-            val appWindowManager = koinInject<AppWindowManager>()
-            val pasteboardService = koinInject<PasteboardService>()
-            val notificationManager = koinInject<NotificationManager>()
-            val scope = rememberCoroutineScope()
+            val pasteMenuService = koinInject<DesktopPasteMenuService>()
             val onDoubleClick: () -> Unit = {
-                appWindowManager.doLongTaskInMain(
-                    scope = scope,
-                    task = {
-                        pasteboardService.tryWritePasteboard(
-                            pasteData,
-                            localOnly = true,
-                            filterFile = false,
-                        )
-                    },
-                    success = {
-                        notificationManager.sendNotification(
-                            title = { it.getText("copy_successful") },
-                            messageType = MessageType.Success,
-                        )
-                    },
-                    fail = {
-                        notificationManager.sendNotification(
-                            title = { it.getText("copy_failed") },
-                            message = it.message?.let { message -> { it -> message } },
-                            messageType = MessageType.Error,
-                        )
-                    },
-                )
+                pasteMenuService.quickPasteFromSearchWindow(pasteData)
             }
 
             when (pasteData.getType()) {

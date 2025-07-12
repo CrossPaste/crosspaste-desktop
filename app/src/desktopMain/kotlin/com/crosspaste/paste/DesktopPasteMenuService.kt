@@ -102,9 +102,23 @@ class DesktopPasteMenuService(
         )
     }
 
-    override fun quickPaste(pasteData: PasteData) {
+    override fun quickPasteFromMainWindow(pasteData: PasteData) {
         menuScope.launch {
             desktopAppWindowManager.hideMainWindowAndPaste {
+                withContext(ioDispatcher) {
+                    pasteboardService.tryWritePasteboard(
+                        pasteData = pasteData,
+                        localOnly = true,
+                        updateCreateTime = true,
+                    ).isSuccess
+                }
+            }
+        }
+    }
+
+    override fun quickPasteFromSearchWindow(pasteData: PasteData) {
+        menuScope.launch {
+            desktopAppWindowManager.hideSearchWindowAndPaste {
                 withContext(ioDispatcher) {
                     pasteboardService.tryWritePasteboard(
                         pasteData = pasteData,

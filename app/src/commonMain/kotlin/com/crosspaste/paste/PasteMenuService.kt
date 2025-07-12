@@ -13,5 +13,7 @@ interface PasteMenuService {
 
     fun deletePasteData(pasteData: PasteData)
 
-    fun quickPaste(pasteData: PasteData)
+    fun quickPasteFromMainWindow(pasteData: PasteData)
+
+    fun quickPasteFromSearchWindow(pasteData: PasteData)
 }

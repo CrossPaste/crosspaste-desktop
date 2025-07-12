@@ -238,7 +238,7 @@ fun SidePasteboardContentView() {
                             pasteSelectionViewModel.clickSelectedIndex(index)
                         },
                         onDoubleTap = {
-                            pasteMenuService.quickPaste(pasteData)
+                            pasteMenuService.quickPasteFromSearchWindow(pasteData)
                         },
                     ) {
                         SidePreviewView(this)

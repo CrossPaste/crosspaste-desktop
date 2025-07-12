@@ -29,7 +29,7 @@ fun ComplexPreviewContentView(
                                     pasteMenuService.copyPasteData(pasteData)
                                 },
                                 onDoubleTap = {
-                                    pasteMenuService.quickPaste(pasteData)
+                                    pasteMenuService.quickPasteFromMainWindow(pasteData)
                                 },
                             )
                         },
