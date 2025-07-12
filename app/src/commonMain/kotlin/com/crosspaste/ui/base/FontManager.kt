@@ -5,18 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.platform.FileFont
-import androidx.compose.ui.text.platform.ResourceFont
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.ui.base.FontSources.FILE_PROTOCOL
-import com.crosspaste.ui.base.FontSources.RESOURCE_PROTOCOL
-import com.crosspaste.ui.base.FontSources.SYSTEM_PROTOCOL
 import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
-import java.net.URI
-import kotlin.io.path.toPath
 
 object FontSources {
     const val FILE_PROTOCOL = "file"
@@ -36,34 +28,6 @@ abstract class FontManager(
                 name = "Default",
                 fontFamily = FontFamily.Default,
             )
-
-        @OptIn(ExperimentalTextApi::class)
-        private fun fromUri(uri: URI): FontFamily {
-            return when (uri.scheme) {
-                FILE_PROTOCOL -> {
-                    return FontFamily(
-                        FileFont(uri.toPath().toFile()),
-                    )
-                }
-
-                RESOURCE_PROTOCOL -> {
-                    val path = uri.schemeSpecificPart
-                    require(path.isNotEmpty())
-                    FontFamily(
-                        ResourceFont(uri.schemeSpecificPart),
-                    )
-                }
-
-                SYSTEM_PROTOCOL -> {
-                    // This is a system font, we can use it directly
-                    val name = uri.schemeSpecificPart
-                    require(name.isNotEmpty())
-                    FontFamily(name)
-                }
-
-                else -> throw IllegalArgumentException("Unsupported font URI scheme: ${uri.scheme}")
-            }
-        }
     }
 
     val availableFonts by lazy {
@@ -73,12 +37,7 @@ abstract class FontManager(
         }
     }
 
-    fun getFontByUri(uri: String): FontFamily? =
-        runCatching {
-            fromUri(URI.create(uri))
-        }.onFailure {
-            it.printStackTrace()
-        }.getOrNull()
+    abstract fun getFontByUri(uri: String): FontFamily?
 
     val selectableFonts =
         buildList {
@@ -98,18 +57,16 @@ abstract class FontManager(
             ?: defaultFontInfo
 
     fun setFont(fontId: String?) {
-        synchronized(this) {
-            val fontId = fontId ?: DEFAULT_FONT_ID
-            val font =
-                availableFonts
-                    .find { it.id == fontId }
-                    ?: defaultFontInfo
+        val fontId = fontId ?: DEFAULT_FONT_ID
+        val font =
+            availableFonts
+                .find { it.id == fontId }
+                ?: defaultFontInfo
 
-            configManager.updateConfig(
-                "font",
-                font.uri,
-            )
-        }
+        configManager.updateConfig(
+            "font",
+            font.uri,
+        )
     }
 
     /**
