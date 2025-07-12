@@ -25,6 +25,9 @@ expect fun bolt(): Painter
 expect fun clock(): Painter
 
 @Composable
+expect fun font(): Painter
+
+@Composable
 expect fun hashtag(): Painter
 
 @Composable

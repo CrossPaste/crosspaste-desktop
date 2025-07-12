@@ -6,6 +6,7 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.angles_up_down
 import com.crosspaste.app.generated.resources.bolt
 import com.crosspaste.app.generated.resources.clock
+import com.crosspaste.app.generated.resources.font
 import com.crosspaste.app.generated.resources.hashtag
 import com.crosspaste.app.generated.resources.language
 import com.crosspaste.app.generated.resources.network
@@ -48,6 +49,11 @@ actual fun bolt(): Painter {
 @Composable
 actual fun clock(): Painter {
     return painterResource(Res.drawable.clock)
+}
+
+@Composable
+actual fun font(): Painter {
+    return painterResource(Res.drawable.font)
 }
 
 @Composable
