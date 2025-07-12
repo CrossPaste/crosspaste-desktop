@@ -29,7 +29,7 @@ fun SimplePreviewContentView(
                                     pasteMenuService.copyPasteData(pasteData)
                                 },
                                 onDoubleTap = {
-                                    pasteMenuService.quickPaste(pasteData)
+                                    pasteMenuService.quickPasteFromMainWindow(pasteData)
                                 },
                             )
                         },

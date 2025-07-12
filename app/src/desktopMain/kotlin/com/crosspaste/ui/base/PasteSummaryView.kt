@@ -1,7 +1,7 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,7 +38,8 @@ import org.koin.compose.koinInject
 fun PasteSummaryView(
     pasteData: PasteData,
     selected: Boolean,
-    onClick: () -> Unit,
+    onPress: () -> Unit,
+    onDoubleTap: () -> Unit,
 ) {
     val appSize = koinInject<DesktopAppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -70,7 +72,16 @@ fun PasteSummaryView(
                     .padding(horizontal = small3X)
                     .clip(tinyRoundedCornerShape)
                     .background(background)
-                    .clickable(onClick = onClick),
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                onPress()
+                            },
+                            onDoubleTap = {
+                                onDoubleTap()
+                            },
+                        )
+                    },
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {

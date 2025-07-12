@@ -1,14 +1,17 @@
 package com.crosspaste.ui.search.side
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,7 +42,9 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
+import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.PasteTooltipIconView
+import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.model.FocusedElement
@@ -46,8 +52,13 @@ import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestSearchInputFocus
 import com.crosspaste.ui.search.SearchTrailingIcon
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont
+import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -60,6 +71,8 @@ fun SideSearchInputView() {
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
+
+    val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
@@ -91,6 +104,43 @@ fun SideSearchInputView() {
                 .height(xxxxLarge),
         contentAlignment = Alignment.Center,
     ) {
+        Row(
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(start = xxLarge),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            prevAppName?.let {
+                Text(
+                    text = "${copywriter.getText("paste_to")} $it",
+                    style =
+                        AppUIFont.tipsTextStyle.copy(
+                            color =
+                                MaterialTheme.colorScheme.contentColorFor(
+                                    AppUIColors.generalBackground,
+                                ),
+                        ),
+                )
+                Spacer(modifier = Modifier.width(tiny))
+                Row(
+                    modifier =
+                        Modifier.clickable {
+                            mainCoroutineDispatcher.launch {
+                                pasteSelectionViewModel.toPaste()
+                            }
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    KeyboardView(keyboardValue = enter)
+                    Spacer(modifier = Modifier.width(tiny))
+                    Text("/")
+                    Spacer(modifier = Modifier.width(tiny))
+                    KeyboardView(keyboardValue = copywriter.getText("double_click"))
+                }
+            }
+        }
+
         Row(
             modifier =
                 Modifier.fillMaxSize()

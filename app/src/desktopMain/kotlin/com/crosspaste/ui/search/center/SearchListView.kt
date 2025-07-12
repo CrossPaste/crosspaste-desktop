@@ -36,6 +36,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.base.PasteSummaryView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -58,6 +59,7 @@ import org.koin.compose.koinInject
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val searchListState = rememberLazyListState()
@@ -153,9 +155,16 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 searchResult,
                 key = { _, item -> item.id },
             ) { index, pasteData ->
-                PasteSummaryView(pasteData, index == selectedIndex) {
-                    setSelectedIndex(index)
-                }
+                PasteSummaryView(
+                    pasteData = pasteData,
+                    selected = (index == selectedIndex),
+                    onPress = {
+                        setSelectedIndex(index)
+                    },
+                    onDoubleTap = {
+                        pasteMenuService.quickPasteFromSearchWindow(pasteData)
+                    },
+                )
             }
         }
 
