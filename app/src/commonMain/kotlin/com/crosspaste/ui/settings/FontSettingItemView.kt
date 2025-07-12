@@ -46,6 +46,7 @@ import com.crosspaste.ui.base.arrowDown
 import com.crosspaste.ui.base.arrowLeft
 import com.crosspaste.ui.base.arrowRight
 import com.crosspaste.ui.base.arrowUp
+import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUIFont.menuItemTextStyle
@@ -98,6 +99,7 @@ fun FontSettingItemView() {
         text = "font",
     ) {
         val allPossibleFonts = fontManager.selectableFonts
+        val currentFont by rememberUserSelectedFont()
         Row(
             modifier =
                 Modifier
@@ -115,7 +117,7 @@ fun FontSettingItemView() {
                     ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SettingsText(text = fontManager.getCurrentFontInfo().name)
+            SettingsText(text = currentFont.name)
 
             Icon(
                 modifier =
