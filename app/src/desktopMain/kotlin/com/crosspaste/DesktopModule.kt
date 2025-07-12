@@ -184,6 +184,7 @@ import com.crosspaste.task.Rtf2ImageTaskExecutor
 import com.crosspaste.task.SwitchLanguageTaskExecutor
 import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
+import com.crosspaste.ui.DesktopFontManager
 import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.DesktopThemeDetector
 import com.crosspaste.ui.MenuHelper
@@ -195,6 +196,7 @@ import com.crosspaste.ui.base.DesktopPasteDialogFactory
 import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandViewProvider
+import com.crosspaste.ui.base.FontManager
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.UISupport
@@ -278,6 +280,7 @@ class DesktopModule(
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
             single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
             single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider(get())) }
+            single<FontManager> { DesktopFontManager(get()) }
         }
 
     // SqlDelight

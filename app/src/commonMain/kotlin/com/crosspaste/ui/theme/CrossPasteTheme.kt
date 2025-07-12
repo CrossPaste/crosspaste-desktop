@@ -6,6 +6,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.ui.base.BaseColor
+import com.crosspaste.ui.base.rememberUserSelectedFont
+import com.crosspaste.ui.base.withCustomFonts
 import com.crosspaste.utils.ColorUtils.getAdaptiveColor
 import org.koin.compose.koinInject
 
@@ -16,10 +18,11 @@ object CrossPasteTheme {
         val themeDetector = koinInject<ThemeDetector>()
 
         val colorScheme by themeDetector.getCurrentColorScheme().collectAsState()
-
+        val userSelectedFont by rememberUserSelectedFont()
         MaterialTheme(
             colorScheme = colorScheme,
             content = content,
+            typography = MaterialTheme.typography.withCustomFonts(userSelectedFont),
         )
     }
 

@@ -3,6 +3,7 @@ package com.crosspaste.config
 interface AppConfig {
     val appInstanceId: String
     val language: String
+    val font: String
     val isFollowSystemTheme: Boolean
     val isDarkTheme: Boolean
     val themeColor: String
