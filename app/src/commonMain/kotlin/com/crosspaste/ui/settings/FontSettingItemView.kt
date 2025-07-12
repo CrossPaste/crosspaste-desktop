@@ -46,6 +46,7 @@ import com.crosspaste.ui.base.arrowDown
 import com.crosspaste.ui.base.arrowLeft
 import com.crosspaste.ui.base.arrowRight
 import com.crosspaste.ui.base.arrowUp
+import com.crosspaste.ui.base.font
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
@@ -95,7 +96,7 @@ fun FontSettingItemView() {
     }
 
     SettingItemView(
-        // painter = font(),
+        painter = font(),
         text = "font",
     ) {
         val allPossibleFonts = fontManager.selectableFonts
