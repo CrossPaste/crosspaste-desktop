@@ -47,6 +47,10 @@ fun MainSettingsContentView() {
 
         HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
+        FontSettingItemView()
+
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
+
         SettingItemView(
             painter = palette(),
             height = xxLarge * 3 + tiny2X * 4,

@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 data class DesktopAppConfig(
     override val appInstanceId: String,
     override val language: String,
+    override val font: String = "",
     val enableAutoStartUp: Boolean = true,
     val enableDebugMode: Boolean = false,
     override val isFollowSystemTheme: Boolean = true,
@@ -50,6 +51,7 @@ data class DesktopAppConfig(
         return this.copy(
             appInstanceId = appInstanceId,
             language = if (key == "language") toString(value) else language,
+            font = if (key == "font") toString(value) else font,
             enableAutoStartUp = if (key == "enableAutoStartUp") toBoolean(value) else enableAutoStartUp,
             enableDebugMode = if (key == "enableDebugMode") toBoolean(value) else enableDebugMode,
             isFollowSystemTheme = if (key == "isFollowSystemTheme") toBoolean(value) else isFollowSystemTheme,
