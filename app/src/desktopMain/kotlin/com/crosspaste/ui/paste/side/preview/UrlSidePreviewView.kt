@@ -11,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ScaleFactor
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -69,7 +71,7 @@ fun UrlSidePreviewView(pasteData: PasteData) {
                             .build(),
                     imageLoader = imageLoaders.generateImageLoader,
                     contentDescription = "url preview",
-                    contentScale = ContentScale.FillBounds,
+                    contentScale = urlContentScale,
                     content = {
                         val state = painter.state.collectAsState().value
                         when (state) {
@@ -101,3 +103,23 @@ fun UrlSidePreviewView(pasteData: PasteData) {
         }
     }
 }
+
+val urlContentScale =
+    object : ContentScale {
+        override fun computeScaleFactor(
+            srcSize: Size,
+            dstSize: Size,
+        ): ScaleFactor {
+            val scaleX = dstSize.width / srcSize.width
+            val scaleY = dstSize.height / srcSize.height
+
+            val ratioDifference = kotlin.math.abs(scaleX - scaleY) / kotlin.math.max(scaleX, scaleY)
+
+            return if (ratioDifference < 0.3f) {
+                ScaleFactor(scaleX, scaleY)
+            } else {
+                val scale = kotlin.math.min(scaleX, scaleY)
+                ScaleFactor(scale, scale)
+            }
+        }
+    }

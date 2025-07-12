@@ -12,6 +12,7 @@ import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.put
 import java.awt.image.BufferedImage
@@ -42,12 +43,21 @@ class DesktopOpenGraphService(
             } else {
                 DesktopClient.suspendRequest(urlPasteItem.url) { response ->
                     val bytes = response.body().readBytes()
+                    response.headers()
                     val html = String(bytes)
                     val doc = Ksoup.parse(html)
 
                     val htmlTitle =
-                        doc.select("title").firstOrNull()?.text()
-                            ?: doc.select("meta[property=og:title]").firstOrNull()?.attr("content")
+                        sequenceOf(
+                            { doc.select("meta[property=og:title]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[name=og:title]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[name=twitter:title]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[property=twitter:title]").firstOrNull()?.attr("content") },
+                            { doc.select("title").firstOrNull()?.text() },
+                            { doc.select("meta[name=title]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[itemprop=name]").firstOrNull()?.attr("content") },
+                            { doc.select("h1").firstOrNull()?.text() },
+                        ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
 
                     htmlTitle?.let { title ->
                         val extraInfo =
@@ -77,7 +87,43 @@ class DesktopOpenGraphService(
                         )
                     }
 
-                    val ogImage = doc.select("meta[property=og:image]").firstOrNull()?.attr("content")
+                    val ogImage =
+                        sequenceOf(
+                            // 1. Open Graph Protocol (most common)
+                            { doc.select("meta[property=og:image]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[property=og:image:url]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[property=og:image:secure_url]").firstOrNull()?.attr("content") },
+                            // 2. Twitter Card
+                            { doc.select("meta[name=twitter:image]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[property=twitter:image]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[name=twitter:image:src]").firstOrNull()?.attr("content") },
+                            // 3. Schema.org / JSON-LD
+                            { extractFromJsonLd(doc) },
+                            // 4. Standard HTML <meta> tags
+                            { doc.select("meta[name=image]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[itemprop=image]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[name=thumbnail]").firstOrNull()?.attr("content") },
+                            { doc.select("meta[name=thumbnailUrl]").firstOrNull()?.attr("content") },
+                            // 5. <link> tags
+                            { doc.select("link[rel=image_src]").firstOrNull()?.attr("href") },
+                            { doc.select("link[rel=apple-touch-icon]").firstOrNull()?.attr("href") },
+                            {
+                                doc.select("link[rel=icon]").firstOrNull {
+                                    it.attr("sizes").contains("192") || it.attr("sizes").contains("512")
+                                }?.attr("href")
+                            },
+                            // 6. Article-specific selectors
+                            { doc.select("article img").firstOrNull()?.attr("src") },
+                            { doc.select("main img").firstOrNull()?.attr("src") },
+                            { doc.select(".post img").firstOrNull()?.attr("src") },
+                            { doc.select(".content img").firstOrNull()?.attr("src") },
+                            // 7. Common hero/banner images
+                            { doc.select(".hero img").firstOrNull()?.attr("src") },
+                            { doc.select(".banner img").firstOrNull()?.attr("src") },
+                            { doc.select("header img").firstOrNull()?.attr("src") },
+                            // 8. The largest image on the page (final fallback)
+                            { findLargestImage(doc) },
+                        ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
 
                     ogImage?.let { imageUrl ->
                         DesktopClient.suspendRequest(imageUrl) { imageResponse ->
@@ -92,6 +138,39 @@ class DesktopOpenGraphService(
                 }
             }
         }
+    }
+
+    private fun extractFromJsonLd(doc: Document): String? {
+        val jsonLdScripts = doc.select("script[type=application/ld+json]")
+
+        for (script in jsonLdScripts) {
+            runCatching {
+                val json = script.data()
+                val imagePattern = """"image"\s*:\s*"([^"]+)"""".toRegex()
+                val match = imagePattern.find(json)
+                if (match != null) {
+                    return match.groupValues[1]
+                }
+            }
+        }
+        return null
+    }
+
+    private fun findLargestImage(doc: Document): String? {
+        return doc.select("img[src]")
+            .filter { img ->
+                val src = img.attr("src")
+                !src.contains("pixel") &&
+                    !src.contains("tracking") &&
+                    !src.contains("1x1") &&
+                    !src.endsWith(".gif")
+            }
+            .maxByOrNull { img ->
+                val width = img.attr("width").toIntOrNull() ?: 0
+                val height = img.attr("height").toIntOrNull() ?: 0
+                width * height
+            }
+            ?.attr("src")
     }
 
     override fun start() {
