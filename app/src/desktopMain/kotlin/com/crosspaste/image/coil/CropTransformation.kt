@@ -38,7 +38,7 @@ class CropTransformation(
         // If the dimensions haven't changed, return the original bitmap
         if (width == input.width && height == input.height) return input
 
-        val subsetRect = IRect.makeXYWH(left, top, width, height)
+        val subsetRect = IRect.Companion.makeXYWH(left, top, width, height)
 
         // 3) Try extractSubset first (zero-copy when possible)
         val result = coil3.Bitmap()

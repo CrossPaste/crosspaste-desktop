@@ -1,52 +1,36 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.request.transformations
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.image.coil.CropTransformation
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
-import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 
 @Composable
-fun AppSourceIcon(
+fun SideAppSourceIcon(
     modifier: Modifier = Modifier,
     pasteData: PasteData,
-    source: String,
-    size: Dp = large2X,
     defaultIcon: @Composable () -> Unit = {},
 ) {
-    val iconStyle = koinInject<IconStyle>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
 
-    val paddingRatio = 0.075f
-    val contentRatio = 1f - (paddingRatio * 2)
-
-    val isMacStyleIcon by remember(source) { mutableStateOf(iconStyle.isMacStyleIcon(source)) }
-    val imageSize by remember(source, size, isMacStyleIcon) {
-        mutableStateOf(
-            if (isMacStyleIcon) size / contentRatio else size,
-        )
-    }
-
     SubcomposeAsyncImage(
-        modifier = modifier.size(imageSize),
+        modifier = modifier,
         model =
             ImageRequest.Builder(platformContext)
                 .data(PasteDataItem(pasteData))
+                .transformations(CropTransformation())
                 .crossfade(false)
                 .build(),
         imageLoader = imageLoaders.appSourceLoader,
