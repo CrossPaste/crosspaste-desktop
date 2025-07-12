@@ -153,8 +153,8 @@ fun FontSettingItemView() {
                             .heightIn(max = 300.dp)
                             .wrapContentWidth()
                             .background(Color.Transparent)
-                            .clip(tiny2XRoundedCornerShape)
-                            .shadow(small),
+                            .shadow(small)
+                            .clip(tiny2XRoundedCornerShape),
                 ) {
                     val maxWidth =
                         max(
