@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -158,19 +159,22 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     verticalArrangement = Arrangement.Top,
                 ) {
                     itemsIndexed(blacklist) { index, syncInfo ->
-                        BlackListDeviceView(syncInfo) {
+                        val currentIndex by rememberUpdatedState(index)
+                        val currentSyncInfo by rememberUpdatedState(syncInfo)
+
+                        BlackListDeviceView(currentSyncInfo) {
                             val blackSyncInfos: List<SyncInfo> =
                                 jsonUtils.JSON.decodeFromString<List<SyncInfo>>(
                                     config.blacklist,
-                                ).filter { it.appInfo.appInstanceId != syncInfo.appInfo.appInstanceId }
+                                ).filter { it.appInfo.appInstanceId != currentSyncInfo.appInfo.appInstanceId }
 
                             val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                             configManager.updateConfig("blacklist", newBlackList)
-                            blacklist.remove(syncInfo)
+                            blacklist.remove(currentSyncInfo)
                             nearbyDeviceManager.refreshSyncManager()
                         }
 
-                        if (index != blacklist.size - 1) {
+                        if (currentIndex != blacklist.size - 1) {
                             HorizontalDivider(modifier = Modifier.fillMaxWidth())
                         }
                     }

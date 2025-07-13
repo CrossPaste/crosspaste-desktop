@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -162,13 +163,17 @@ fun PasteDetailInfoView(
                 items = items,
                 key = { _, item -> item.key },
             ) { index, item ->
+
+                val currentIndex by rememberUpdatedState(index)
+                val currentItem by rememberUpdatedState(item)
+
                 Row(
                     modifier = Modifier.fillMaxWidth().height(xLarge),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = copywriter.getText(item.key),
+                        text = copywriter.getText(currentItem.key),
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
@@ -178,7 +183,7 @@ fun PasteDetailInfoView(
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = item.value,
+                        text = currentItem.value,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
@@ -188,7 +193,7 @@ fun PasteDetailInfoView(
                             ),
                     )
                 }
-                if (index != items.size - 1) {
+                if (currentIndex != items.size - 1) {
                     HorizontalDivider(thickness = tiny5X)
                 }
             }
