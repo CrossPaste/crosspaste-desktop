@@ -155,14 +155,18 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 searchResult,
                 key = { _, item -> item.id },
             ) { index, pasteData ->
+
+                val currentIndex by rememberUpdatedState(index)
+                val currentPasteData by rememberUpdatedState(pasteData)
+
                 PasteSummaryView(
-                    pasteData = pasteData,
-                    selected = (index == selectedIndex),
+                    pasteData = currentPasteData,
+                    selected = (currentIndex == selectedIndex),
                     onPress = {
-                        setSelectedIndex(index)
+                        setSelectedIndex(currentIndex)
                     },
                     onDoubleTap = {
-                        pasteMenuService.quickPasteFromSearchWindow(pasteData)
+                        pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
                     },
                 )
             }

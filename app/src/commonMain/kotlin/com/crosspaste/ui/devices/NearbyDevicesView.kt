@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -54,9 +55,12 @@ fun NearbyDevicesView() {
                         },
             ) {
                 itemsIndexed(nearbyDevicesList) { index, syncInfo ->
-                    NearbyDeviceView(syncInfo)
+                    val currentIndex by rememberUpdatedState(index)
+                    val currentSyncInfo by rememberUpdatedState(syncInfo)
 
-                    if (index != nearbyDevicesList.size - 1 || !isScrollable) {
+                    NearbyDeviceView(currentSyncInfo)
+
+                    if (currentIndex != nearbyDevicesList.size - 1 || !isScrollable) {
                         HorizontalDivider()
                     }
                 }

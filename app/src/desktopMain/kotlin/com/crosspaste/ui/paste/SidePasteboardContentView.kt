@@ -230,15 +230,18 @@ fun SidePasteboardContentView() {
                     key = { _, item -> item.id },
                 ) { index, pasteData ->
 
+                    val currentIndex by rememberUpdatedState(index)
+                    val currentPasteData by rememberUpdatedState(pasteData)
+
                     Spacer(modifier = Modifier.width(medium))
                     SidePastePreviewItemView(
-                        pasteData = pasteData,
+                        pasteData = currentPasteData,
                         selected = index == selectedIndex,
                         onPress = {
-                            pasteSelectionViewModel.clickSelectedIndex(index)
+                            pasteSelectionViewModel.clickSelectedIndex(currentIndex)
                         },
                         onDoubleTap = {
-                            pasteMenuService.quickPasteFromSearchWindow(pasteData)
+                            pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
                         },
                     ) {
                         SidePreviewView(this)

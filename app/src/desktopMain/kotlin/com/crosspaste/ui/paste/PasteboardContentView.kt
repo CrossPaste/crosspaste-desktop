@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -142,10 +143,13 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                     rememberPasteDataList,
                     key = { _, item -> item.id },
                 ) { index, pasteData ->
-                    PastePreviewItemView(pasteData) {
+                    val currentIndex by rememberUpdatedState(index)
+                    val currentPasteData by rememberUpdatedState(pasteData)
+
+                    PastePreviewItemView(currentPasteData) {
                         PasteSpecificPreviewView(this)
                     }
-                    if (index < rememberPasteDataList.size - 1) {
+                    if (currentIndex < rememberPasteDataList.size - 1) {
                         Spacer(modifier = Modifier.height(small3X))
                     }
                 }
