@@ -51,6 +51,7 @@ import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.html
 import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
+import com.crosspaste.ui.base.rtf
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.settings.SettingsText
 import com.crosspaste.ui.theme.AppUIColors
@@ -263,7 +264,7 @@ private fun TypeFiltersSection(
 
         PasteTypeWithIconCheckbox(
             type = "rtf",
-            icon = html(),
+            icon = rtf(),
             selected = rtfTypeSelected,
             onSelectedChange = onRtfTypeSelectedChange,
         )

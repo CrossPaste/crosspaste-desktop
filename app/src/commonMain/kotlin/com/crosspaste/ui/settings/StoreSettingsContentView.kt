@@ -53,6 +53,7 @@ import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.percent
+import com.crosspaste.ui.base.rtf
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.base.trash
 import com.crosspaste.ui.theme.AppUIColors
@@ -158,7 +159,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             Quadruple("color", color(), colorCount, colorFormatSize),
             Quadruple("link", link(), urlCount, urlFormatSize),
             Quadruple("html", html(), htmlCount, htmlFormatSize),
-            Quadruple("rtf", html(), rtfCount, rtfFormatSize),
+            Quadruple("rtf", rtf(), rtfCount, rtfFormatSize),
             Quadruple("image", image(), imageCount, imageFormatSize),
             Quadruple("file", file(), fileCount, fileFormatSize),
         )
