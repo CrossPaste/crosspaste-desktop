@@ -75,7 +75,11 @@ class DesktopGlobalCopywriter(
             },
     )
 
-    private val enCopywriter = DesktopCopywriter(EN)
+    private val enCopywriter by lazy {
+        LANGUAGE_MAP.computeIfAbsent(EN) {
+            DesktopCopywriter(EN)
+        }
+    }
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -109,7 +113,7 @@ class DesktopGlobalCopywriter(
         vararg args: Any?,
     ): String {
         val text = copywriter.getText(id, *args)
-        return if (text == EMPTY_STRING) {
+        return if (text == EMPTY_STRING && copywriter.language() != EN) {
             logger.debug { "Missing text for id: $id in language: ${copywriter.language()}" }
             val enText = enCopywriter.getText(id, *args) // Fallback to English if not found
             if (enText == EMPTY_STRING) {
