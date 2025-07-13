@@ -5,6 +5,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.task.TaskDao
+import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
 import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
@@ -53,14 +54,24 @@ class GlobalCopywriterTest {
                 DesktopCopywriter(language)
             }
 
-        // Verify that all keys are the same
-        val keys = copywriterMap.values.first().getKeys()
-        copywriterMap.values.forEach { copywriter ->
-            var diff = keys - copywriter.getKeys()
-            assertTrue(diff.isEmpty(), diff.joinToString(","))
+        val enCopywriter = copywriterMap[EN]
 
-            diff = copywriter.getKeys() - keys
-            assertTrue(diff.isEmpty(), diff.joinToString(","))
+        assertTrue(enCopywriter != null, "English copywriter should not be null")
+
+        val enKeys = enCopywriter.getKeys()
+
+        copywriterMap.filter { (key, _) -> key != EN }.forEach {
+                (key, copywriter) ->
+            val keys = copywriter.getKeys()
+
+            assertTrue(
+                enKeys.containsAll(keys),
+                "All keys in $key should be a subset of English keys. Missing keys: ${keys - enKeys.joinToString(",")}",
+            )
+
+            keys.forEach {
+                assertTrue { copywriter.getText(it, "") != EMPTY_STRING }
+            }
         }
     }
 }

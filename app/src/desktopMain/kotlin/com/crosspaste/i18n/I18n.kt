@@ -7,6 +7,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.task.SwitchLanguageInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
+import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DateTimeFormatOptions
@@ -50,6 +51,8 @@ class DesktopGlobalCopywriter(
         val LANGUAGE_LIST = listOf(DE, EN, ES, FA, FR, KO, JA, ZH, ZH_HANT)
 
         val LANGUAGE_MAP = ConcurrentHashMap<String, Copywriter>()
+
+        const val EMPTY_STRING = ""
     }
 
     private val logger = KotlinLogging.logger {}
@@ -71,6 +74,12 @@ class DesktopGlobalCopywriter(
                 DesktopCopywriter(language)
             },
     )
+
+    private val enCopywriter by lazy {
+        LANGUAGE_MAP.computeIfAbsent(EN) {
+            DesktopCopywriter(EN)
+        }
+    }
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -103,7 +112,19 @@ class DesktopGlobalCopywriter(
         id: String,
         vararg args: Any?,
     ): String {
-        return copywriter.getText(id, *args)
+        val text = copywriter.getText(id, *args)
+        return if (text == EMPTY_STRING && copywriter.language() != EN) {
+            logger.debug { "Missing text for id: $id in language: ${copywriter.language()}" }
+            val enText = enCopywriter.getText(id, *args) // Fallback to English if not found
+            if (enText == EMPTY_STRING) {
+                logger.warn { "Missing text for id: $id in English" }
+                "[$id]"
+            } else {
+                enText
+            }
+        } else {
+            text
+        }
     }
 
     override fun getKeys(): Set<String> {
@@ -170,12 +191,7 @@ class DesktopCopywriter(private val language: String) : Copywriter {
         vararg args: Any?,
     ): String {
         val value: String? = properties.getProperty(id)
-        return if (value == null) {
-            logger.error { "No value for $id" }
-            "null"
-        } else {
-            value.format(*args)
-        }
+        return value?.format(*args) ?: EMPTY_STRING
     }
 
     override fun getKeys(): Set<String> {
