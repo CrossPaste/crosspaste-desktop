@@ -7,6 +7,7 @@ import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -38,12 +39,21 @@ sealed interface PasteItem {
         // To be compatible with older versions
         // the extraInfo field may be a JsonObject or a String
         fun getExtraInfoFromJson(jsonObject: JsonObject): JsonObject? {
-            return runCatching {
-                jsonObject["extraInfo"]?.jsonObject
-            }.getOrElse {
-                jsonObject["extraInfo"]?.jsonPrimitive?.content?.let { jsonString ->
-                    jsonUtils.JSON.parseToJsonElement(jsonString).jsonObject
+            val extraInfo = jsonObject["extraInfo"] ?: return null
+
+            return when (extraInfo) {
+                is JsonObject -> extraInfo
+                is JsonPrimitive -> {
+                    if (extraInfo.isString) {
+                        runCatching {
+                            jsonUtils.JSON.parseToJsonElement(extraInfo.content) as? JsonObject
+                        }.getOrNull()
+                    } else {
+                        null
+                    }
                 }
+
+                else -> null
             }
         }
 
