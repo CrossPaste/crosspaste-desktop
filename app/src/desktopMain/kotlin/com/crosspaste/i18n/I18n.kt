@@ -46,7 +46,7 @@ class DesktopGlobalCopywriter(
 
         const val ZH = "zh"
 
-        const val ZH_HANT = "zh-hant"
+        const val ZH_HANT = "zh_hant"
 
         val LANGUAGE_LIST = listOf(DE, EN, ES, FA, FR, KO, JA, ZH, ZH_HANT)
 
