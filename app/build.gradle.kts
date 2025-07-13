@@ -399,6 +399,7 @@ compose.desktop {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("appEnv", "TEST")
+    systemProperty("project.root", rootProject.rootDir.absolutePath)
     testLogging {
         events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
