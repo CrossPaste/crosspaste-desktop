@@ -5,6 +5,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.task.TaskDao
+import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
 import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
@@ -67,6 +68,10 @@ class GlobalCopywriterTest {
                 enKeys.containsAll(keys),
                 "All keys in $key should be a subset of English keys. Missing keys: ${keys - enKeys.joinToString(",")}",
             )
+
+            keys.forEach {
+                assertTrue { copywriter.getText(it, "") != EMPTY_STRING }
+            }
         }
     }
 }
