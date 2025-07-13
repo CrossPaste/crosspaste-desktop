@@ -41,9 +41,12 @@ sealed interface PasteItem {
             return runCatching {
                 jsonObject["extraInfo"]?.jsonObject
             }.getOrElse {
-                jsonObject["extraInfo"]?.jsonPrimitive?.content?.let { jsonString ->
-                    jsonUtils.JSON.parseToJsonElement(jsonString).jsonObject
-                }
+                runCatching {
+                    jsonObject["extraInfo"]?.jsonPrimitive?.content?.let { jsonString ->
+                        val jsonElement = jsonUtils.JSON.parseToJsonElement(jsonString)
+                        jsonElement as? JsonObject
+                    }
+                }.getOrNull()
             }
         }
 
