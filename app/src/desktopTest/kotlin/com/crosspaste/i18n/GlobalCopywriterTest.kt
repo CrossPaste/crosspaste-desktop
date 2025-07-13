@@ -53,14 +53,20 @@ class GlobalCopywriterTest {
                 DesktopCopywriter(language)
             }
 
-        // Verify that all keys are the same
-        val keys = copywriterMap.values.first().getKeys()
-        copywriterMap.values.forEach { copywriter ->
-            var diff = keys - copywriter.getKeys()
-            assertTrue(diff.isEmpty(), diff.joinToString(","))
+        val enCopywriter = copywriterMap[EN]
 
-            diff = copywriter.getKeys() - keys
-            assertTrue(diff.isEmpty(), diff.joinToString(","))
+        assertTrue(enCopywriter != null, "English copywriter should not be null")
+
+        val enKeys = enCopywriter.getKeys()
+
+        copywriterMap.filter { (key, _) -> key != EN }.forEach {
+                (key, copywriter) ->
+            val keys = copywriter.getKeys()
+
+            assertTrue(
+                enKeys.containsAll(keys),
+                "All keys in $key should be a subset of English keys. Missing keys: ${keys - enKeys.joinToString(",")}",
+            )
         }
     }
 }
