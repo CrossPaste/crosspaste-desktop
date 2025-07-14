@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
@@ -18,13 +19,14 @@ import org.koin.compose.koinInject
 @Composable
 fun HtmlSidePreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(HtmlPasteItem::class)?.let { htmlPasteItem ->
+        val copywriter = koinInject<GlobalCopywriter>()
         val text = htmlPasteItem.getText()
         val backgroundColor = htmlPasteItem.getBackgroundColor()
         SidePasteLayoutView(
             pasteData = pasteData,
             pasteBottomContent = {
                 BottomGradient(
-                    text = "${text.length}",
+                    text = copywriter.getText("character_count", "${text.length}"),
                     backgroundColor = backgroundColor ?: Color.White,
                 )
             },
