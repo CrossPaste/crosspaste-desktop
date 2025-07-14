@@ -77,14 +77,16 @@ fun SearchInputView() {
 
     Row(
         modifier =
-            Modifier.height(huge)
+            Modifier
+                .height(huge)
                 .fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TextField(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .focusRequester(searchFocusRequester)
                     .onPreviewKeyEvent { e ->
                         if (e.type == KeyEventType.KeyDown && e.type == KeyEventType.KeyUp) {

@@ -22,7 +22,8 @@ fun SettingItemsTitleView(title: String) {
 
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .wrapContentHeight()
                 .background(AppUIColors.topBackground)
                 .padding(start = medium, top = small2X, bottom = tiny2X),

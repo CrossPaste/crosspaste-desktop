@@ -26,33 +26,22 @@ object CrossPasteTheme {
         )
     }
 
-    fun getThemeColor(name: String): ThemeColor {
-        return when (name) {
+    fun getThemeColor(name: String): ThemeColor =
+        when (name) {
             CoralColor.name -> CoralColor
             GrassColor.name -> GrassColor
             HoneyColor.name -> HoneyColor
             SeaColor.name -> SeaColor
             else -> GrassColor
         }
-    }
 
-    fun connectedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, BaseColor.Green.targetHue)
-    }
+    fun connectedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Green.targetHue)
 
-    fun connectingColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, BaseColor.Yellow.targetHue)
-    }
+    fun connectingColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Yellow.targetHue)
 
-    fun disconnectedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, BaseColor.Red.targetHue)
-    }
+    fun disconnectedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Red.targetHue)
 
-    fun unmatchedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, BaseColor.Purple.targetHue)
-    }
+    fun unmatchedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Purple.targetHue)
 
-    fun unverifiedColor(backgroundColor: Color): Color {
-        return getAdaptiveColor(backgroundColor, BaseColor.Blue.targetHue)
-    }
+    fun unverifiedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Blue.targetHue)
 }

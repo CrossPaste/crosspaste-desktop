@@ -75,12 +75,13 @@ class DesktopPasteBonjourService(
     override fun unregisterService(): PasteBonjourService {
         val deferred =
             scope.async {
-                jmdnsMap.values.map { jmDNS ->
-                    async {
-                        jmDNS.unregisterAllServices()
-                        jmDNS.close()
-                    }
-                }.awaitAll()
+                jmdnsMap.values
+                    .map { jmDNS ->
+                        async {
+                            jmDNS.unregisterAllServices()
+                            jmDNS.close()
+                        }
+                    }.awaitAll()
             }
         runBlocking { deferred.await() }
         jmdnsMap.clear()

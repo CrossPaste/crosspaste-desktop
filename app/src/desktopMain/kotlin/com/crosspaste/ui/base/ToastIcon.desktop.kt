@@ -10,21 +10,13 @@ import com.crosspaste.app.generated.resources.warning
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun error(): Painter {
-    return painterResource(Res.drawable.error)
-}
+actual fun error(): Painter = painterResource(Res.drawable.error)
 
 @Composable
-actual fun info(): Painter {
-    return painterResource(Res.drawable.info)
-}
+actual fun info(): Painter = painterResource(Res.drawable.info)
 
 @Composable
-actual fun success(): Painter {
-    return painterResource(Res.drawable.success)
-}
+actual fun success(): Painter = painterResource(Res.drawable.success)
 
 @Composable
-actual fun warning(): Painter {
-    return painterResource(Res.drawable.warning)
-}
+actual fun warning(): Painter = painterResource(Res.drawable.warning)

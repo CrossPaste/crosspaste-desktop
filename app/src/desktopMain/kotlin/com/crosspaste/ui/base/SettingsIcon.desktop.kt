@@ -17,76 +17,46 @@ import com.crosspaste.app.generated.resources.wifi
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun anglesUpDown(): Painter {
-    return painterResource(Res.drawable.angles_up_down)
-}
+actual fun anglesUpDown(): Painter = painterResource(Res.drawable.angles_up_down)
 
 @Composable
-actual fun arrowDown(): Painter {
-    return expandMore()
-}
+actual fun arrowDown(): Painter = expandMore()
 
 @Composable
-actual fun arrowLeft(): Painter {
-    return chevronLeft()
-}
+actual fun arrowLeft(): Painter = chevronLeft()
 
 @Composable
-actual fun arrowRight(): Painter {
-    return chevronRight()
-}
+actual fun arrowRight(): Painter = chevronRight()
 
 @Composable
-actual fun arrowUp(): Painter {
-    return expandLess()
-}
+actual fun arrowUp(): Painter = expandLess()
 
 @Composable
-actual fun bolt(): Painter {
-    return painterResource(Res.drawable.bolt)
-}
+actual fun bolt(): Painter = painterResource(Res.drawable.bolt)
 
 @Composable
-actual fun clock(): Painter {
-    return painterResource(Res.drawable.clock)
-}
+actual fun clock(): Painter = painterResource(Res.drawable.clock)
 
 @Composable
-actual fun font(): Painter {
-    return painterResource(Res.drawable.font)
-}
+actual fun font(): Painter = painterResource(Res.drawable.font)
 
 @Composable
-actual fun hashtag(): Painter {
-    return painterResource(Res.drawable.hashtag)
-}
+actual fun hashtag(): Painter = painterResource(Res.drawable.hashtag)
 
 @Composable
-actual fun language(): Painter {
-    return painterResource(Res.drawable.language)
-}
+actual fun language(): Painter = painterResource(Res.drawable.language)
 
 @Composable
-actual fun network(): Painter {
-    return painterResource(Res.drawable.network)
-}
+actual fun network(): Painter = painterResource(Res.drawable.network)
 
 @Composable
-actual fun palette(): Painter {
-    return painterResource(Res.drawable.palette)
-}
+actual fun palette(): Painter = painterResource(Res.drawable.palette)
 
 @Composable
-actual fun shield(): Painter {
-    return painterResource(Res.drawable.shield)
-}
+actual fun shield(): Painter = painterResource(Res.drawable.shield)
 
 @Composable
-actual fun trash(): Painter {
-    return painterResource(Res.drawable.trash)
-}
+actual fun trash(): Painter = painterResource(Res.drawable.trash)
 
 @Composable
-actual fun wifi(): Painter {
-    return painterResource(Res.drawable.wifi)
-}
+actual fun wifi(): Painter = painterResource(Res.drawable.wifi)

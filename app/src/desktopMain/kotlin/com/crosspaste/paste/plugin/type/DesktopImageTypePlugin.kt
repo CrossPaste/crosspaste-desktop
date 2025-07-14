@@ -48,13 +48,9 @@ class DesktopImageTypePlugin(
 
     private val fileUtils = getFileUtils()
 
-    override fun getPasteType(): PasteType {
-        return PasteType.IMAGE_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.IMAGE_TYPE
 
-    override fun getIdentifiers(): List<String> {
-        return listOf(X_JAVA_IMAGE, IMAGE_PNG, IMAGE_JPEG, IMAGE)
-    }
+    override fun getIdentifiers(): List<String> = listOf(X_JAVA_IMAGE, IMAGE_PNG, IMAGE_JPEG, IMAGE)
 
     override fun createPrePasteItem(
         itemIndex: Int,
@@ -225,9 +221,10 @@ class DesktopImageTypePlugin(
         if (!singleType) {
             map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
                 ByteArrayInputStream(
-                    fileList.joinToString(separator = "\n") {
-                        it.absolutePath
-                    }.encodeToByteArray(),
+                    fileList
+                        .joinToString(separator = "\n") {
+                            it.absolutePath
+                        }.encodeToByteArray(),
                 )
             map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
                 fileList.joinToString(separator = "\n") {

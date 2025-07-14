@@ -32,13 +32,9 @@ class DesktopColorTypePlugin(
         )
     }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.COLOR_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.COLOR_TYPE
 
-    override fun getIdentifiers(): List<String> {
-        return listOf()
-    }
+    override fun getIdentifiers(): List<String> = listOf()
 
     override fun createPrePasteItem(
         itemIndex: Int,

@@ -35,7 +35,8 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("paste_control")
@@ -46,7 +47,8 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
         ) {
             CustomSwitch(
                 modifier =
-                    Modifier.width(medium * 2)
+                    Modifier
+                        .width(medium * 2)
                         .height(large2X),
                 checked = config.enableSkipPreLaunchPasteboardContent,
                 onCheckedChange = { newEnableSkipPreLaunchPasteboardContent ->
@@ -85,7 +87,8 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
         ) {
             CustomSwitch(
                 modifier =
-                    Modifier.width(medium * 2)
+                    Modifier
+                        .width(medium * 2)
                         .height(large2X),
                 checked = config.enabledSyncFileSizeLimit,
                 onCheckedChange = { newEnabledSyncFileSizeLimit ->

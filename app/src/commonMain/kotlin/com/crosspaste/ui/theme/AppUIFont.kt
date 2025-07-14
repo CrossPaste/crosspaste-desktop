@@ -290,8 +290,8 @@ object AppUIFont {
     }
 
     @Composable
-    fun NumberTextStyle(textAlign: TextAlign = TextAlign.Start): TextStyle {
-        return TextStyle(
+    fun NumberTextStyle(textAlign: TextAlign = TextAlign.Start): TextStyle =
+        TextStyle(
             color = MaterialTheme.colorScheme.primary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
@@ -299,7 +299,6 @@ object AppUIFont {
             lineHeight = 1.em,
             textAlign = textAlign,
         )
-    }
 
     @Composable
     fun SettingsTextStyle(
@@ -307,13 +306,12 @@ object AppUIFont {
             MaterialTheme.colorScheme.contentColorFor(
                 AppUIColors.generalBackground,
             ),
-    ): TextStyle {
-        return MaterialTheme.typography.labelMedium.copy(
+    ): TextStyle =
+        MaterialTheme.typography.labelMedium.copy(
             fontWeight = FontWeight.Light,
             fontSize = 14.sp,
             textAlign = TextAlign.Start,
             color = color,
             lineHeight = 1.em,
         )
-    }
 }

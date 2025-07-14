@@ -33,7 +33,8 @@ class WinAppWindowManager(
     }
 
     private val fileDescriptorCache: LoadingCache<String, String> =
-        CacheBuilder.newBuilder()
+        CacheBuilder
+            .newBuilder()
             .maximumSize(20)
             .build(
                 object : CacheLoader<String, String>() {
@@ -60,19 +61,17 @@ class WinAppWindowManager(
         }
     }
 
-    override fun getPrevAppName(): Flow<String?> {
-        return prevWinAppInfo.map { appInfo ->
+    override fun getPrevAppName(): Flow<String?> =
+        prevWinAppInfo.map { appInfo ->
             appInfo?.filePath?.let {
                 fileDescriptorCache[it].ifEmpty { null }
             }
         }
-    }
 
-    override fun getCurrentActiveAppName(): String? {
-        return User32.getActiveWindowProcessFilePath()?.let {
+    override fun getCurrentActiveAppName(): String? =
+        User32.getActiveWindowProcessFilePath()?.let {
             fileDescriptorCache[it].ifEmpty { null }
         }
-    }
 
     override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
         logger.info { "active main window" }
@@ -146,14 +145,13 @@ class WinAppWindowManager(
         User32.paste(keyCodes)
     }
 
-    fun initMenuHWND(): HWND? {
-        return User32.findPasteWindow(MENU_WINDOW_TITLE)
-    }
+    fun initMenuHWND(): HWND? = User32.findPasteWindow(MENU_WINDOW_TITLE)
 }
 
-data class WinAppInfo(val hwnd: HWND, val filePath: String) {
+data class WinAppInfo(
+    val hwnd: HWND,
+    val filePath: String,
+) {
 
-    override fun toString(): String {
-        return "WinAppInfo(hwnd=$hwnd, filePath='$filePath')"
-    }
+    override fun toString(): String = "WinAppInfo(hwnd=$hwnd, filePath='$filePath')"
 }

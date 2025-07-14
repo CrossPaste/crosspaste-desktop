@@ -61,7 +61,8 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
 
         Column(
             modifier =
-                Modifier.height(appSize.mainPasteSize.height)
+                Modifier
+                    .height(appSize.mainPasteSize.height)
                     .width(width)
                     .background(Color.Transparent)
                     .padding(vertical = small3X)
@@ -78,7 +79,8 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
             )
             Row(
                 modifier =
-                    Modifier.padding(vertical = tiny4X)
+                    Modifier
+                        .padding(vertical = tiny4X)
                         .height(xLarge)
                         .width(width),
                 verticalAlignment = Alignment.CenterVertically,

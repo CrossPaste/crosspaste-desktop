@@ -6,10 +6,13 @@ import com.crosspaste.ui.theme.AppUISize.large2X
 import java.awt.GraphicsConfiguration
 import java.awt.GraphicsEnvironment
 
-class DesktopRenderingHelper(private val appSize: DesktopAppSize) : RenderingHelper {
+class DesktopRenderingHelper(
+    private val appSize: DesktopAppSize,
+) : RenderingHelper {
 
     private val globalDensity =
-        GraphicsEnvironment.getLocalGraphicsEnvironment()
+        GraphicsEnvironment
+            .getLocalGraphicsEnvironment()
             .defaultScreenDevice
             .defaultConfiguration
             .density
@@ -25,9 +28,7 @@ class DesktopRenderingHelper(private val appSize: DesktopAppSize) : RenderingHel
 
     override var dimension: RenderingDimension = readWindowDimension()
 
-    private fun readScale(): Double {
-        return globalDensity.density.toDouble()
-    }
+    private fun readScale(): Double = globalDensity.density.toDouble()
 
     private fun readWindowDimension(): RenderingDimension {
         val detailViewDpSize = appSize.centerSearchWindowDetailViewDpSize

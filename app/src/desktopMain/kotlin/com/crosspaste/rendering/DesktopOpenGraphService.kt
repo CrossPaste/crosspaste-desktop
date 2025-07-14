@@ -108,9 +108,11 @@ class DesktopOpenGraphService(
                             { doc.select("link[rel=image_src]").firstOrNull()?.attr("href") },
                             { doc.select("link[rel=apple-touch-icon]").firstOrNull()?.attr("href") },
                             {
-                                doc.select("link[rel=icon]").firstOrNull {
-                                    it.attr("sizes").contains("192") || it.attr("sizes").contains("512")
-                                }?.attr("href")
+                                doc
+                                    .select("link[rel=icon]")
+                                    .firstOrNull {
+                                        it.attr("sizes").contains("192") || it.attr("sizes").contains("512")
+                                    }?.attr("href")
                             },
                             // 6. Article-specific selectors
                             { doc.select("article img").firstOrNull()?.attr("src") },
@@ -156,22 +158,20 @@ class DesktopOpenGraphService(
         return null
     }
 
-    private fun findLargestImage(doc: Document): String? {
-        return doc.select("img[src]")
+    private fun findLargestImage(doc: Document): String? =
+        doc
+            .select("img[src]")
             .filter { img ->
                 val src = img.attr("src")
                 !src.contains("pixel") &&
                     !src.contains("tracking") &&
                     !src.contains("1x1") &&
                     !src.endsWith(".gif")
-            }
-            .maxByOrNull { img ->
+            }.maxByOrNull { img ->
                 val width = img.attr("width").toIntOrNull() ?: 0
                 val height = img.attr("height").toIntOrNull() ?: 0
                 width * height
-            }
-            ?.attr("src")
-    }
+            }?.attr("src")
 
     override fun start() {
     }

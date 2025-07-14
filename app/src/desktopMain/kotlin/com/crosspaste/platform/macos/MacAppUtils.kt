@@ -8,9 +8,7 @@ import com.sun.jna.Pointer
 
 object MacAppUtils {
 
-    fun getCurrentActiveApp(): String? {
-        return MacosApi.getString(INSTANCE.getCurrentActiveApp())
-    }
+    fun getCurrentActiveApp(): String? = MacosApi.getString(INSTANCE.getCurrentActiveApp())
 
     fun saveAppIcon(
         bundleIdentifier: String,
@@ -47,13 +45,9 @@ object MacAppUtils {
         INSTANCE.setWindowLevelScreenSaver(windowPtr)
     }
 
-    fun bringToFront(appName: String): String {
-        return MacosApi.getString(INSTANCE.bringToFront(appName))!!
-    }
+    fun bringToFront(appName: String): String = MacosApi.getString(INSTANCE.bringToFront(appName))!!
 
-    fun checkAccessibilityPermissions(): Boolean {
-        return INSTANCE.checkAccessibilityPermissions()
-    }
+    fun checkAccessibilityPermissions(): Boolean = INSTANCE.checkAccessibilityPermissions()
 
     fun saveIconByExt(
         ext: String,
@@ -66,12 +60,10 @@ object MacAppUtils {
         originalImagePath: String,
         thumbnailImagePath: String,
         metadataPath: String,
-    ): Boolean {
-        return INSTANCE.createThumbnail(originalImagePath, thumbnailImagePath, metadataPath)
-    }
+    ): Boolean = INSTANCE.createThumbnail(originalImagePath, thumbnailImagePath, metadataPath)
 
-    fun getTrayWindowInfos(pid: Long): List<WindowInfo> {
-        return INSTANCE.getTrayWindowInfos(pid)?.let {
+    fun getTrayWindowInfos(pid: Long): List<WindowInfo> =
+        INSTANCE.getTrayWindowInfos(pid)?.let {
             val windowInfoArray = WindowInfoArray(it)
             windowInfoArray.read()
 
@@ -84,7 +76,6 @@ object MacAppUtils {
                 windowInfo
             }
         } ?: emptyList()
-    }
 
     fun List<WindowInfo>.useAll(block: (List<WindowInfo>) -> Unit) {
         runCatching {

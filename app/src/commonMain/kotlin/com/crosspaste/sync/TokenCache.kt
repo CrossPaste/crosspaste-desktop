@@ -12,7 +12,5 @@ object TokenCache {
         tokenCache[appInstanceId] = token
     }
 
-    fun getToken(appInstanceId: String): Int? {
-        return tokenCache.remove(appInstanceId)
-    }
+    fun getToken(appInstanceId: String): Int? = tokenCache.remove(appInstanceId)
 }

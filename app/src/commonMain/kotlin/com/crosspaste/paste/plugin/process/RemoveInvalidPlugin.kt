@@ -8,7 +8,5 @@ object RemoveInvalidPlugin : PasteProcessPlugin {
         pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
-    ): List<PasteItem> {
-        return pasteItems.filter { it.isValid() }
-    }
+    ): List<PasteItem> = pasteItems.filter { it.isValid() }
 }

@@ -26,17 +26,11 @@ interface HostInfoFilter {
 
 object NoFilter : HostInfoFilter {
 
-    override fun filter(hostInfo: HostInfo): Boolean {
-        return true
-    }
+    override fun filter(hostInfo: HostInfo): Boolean = true
 
-    override fun equals(other: Any?): Boolean {
-        return other == NoFilter
-    }
+    override fun equals(other: Any?): Boolean = other == NoFilter
 
-    override fun hashCode(): Int {
-        return 0
-    }
+    override fun hashCode(): Int = 0
 }
 
 class HostInfoFilterImpl(
@@ -46,10 +40,9 @@ class HostInfoFilterImpl(
 
     private val netUtils = getNetUtils()
 
-    override fun filter(hostInfo: HostInfo): Boolean {
-        return networkPrefixLength == hostInfo.networkPrefixLength &&
+    override fun filter(hostInfo: HostInfo): Boolean =
+        networkPrefixLength == hostInfo.networkPrefixLength &&
             netUtils.hostPreFixMatch(hostAddress, hostInfo.hostAddress, networkPrefixLength)
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -134,8 +134,8 @@ class NetworkUtilsTest {
         name: String,
         ip: String,
         prefixLength: Short,
-    ): NetworkInterface {
-        return mockk<NetworkInterface>().apply {
+    ): NetworkInterface =
+        mockk<NetworkInterface>().apply {
             every { isUp } returns true
             every { isLoopback } returns false
             every { isVirtual } returns false
@@ -151,5 +151,4 @@ class NetworkUtilsTest {
                     },
                 )
         }
-    }
 }

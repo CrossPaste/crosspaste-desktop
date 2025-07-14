@@ -8,7 +8,5 @@ class DesktopPasteExportParamFactory : PasteExportParamFactory {
         onlyFavorite: Boolean,
         maxFileSize: Long?,
         exportPath: Any,
-    ): PasteExportParam {
-        return DesktopPasteExportParam(types, onlyFavorite, maxFileSize, exportPath as Path)
-    }
+    ): PasteExportParam = DesktopPasteExportParam(types, onlyFavorite, maxFileSize, exportPath as Path)
 }

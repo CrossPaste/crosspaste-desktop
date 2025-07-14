@@ -25,8 +25,8 @@ fun getDesktopAppWindowManager(
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     platform: Platform,
     userDataPathProvider: UserDataPathProvider,
-): DesktopAppWindowManager {
-    return if (platform.isMacos()) {
+): DesktopAppWindowManager =
+    if (platform.isMacos()) {
         MacAppWindowManager(
             appSize,
             configManager,
@@ -50,7 +50,6 @@ fun getDesktopAppWindowManager(
     } else {
         throw IllegalStateException("Unsupported platform: $platform")
     }
-}
 
 abstract class DesktopAppWindowManager(
     val appSize: DesktopAppSize,
@@ -116,9 +115,7 @@ abstract class DesktopAppWindowManager(
         _searchWindowState.value = windowState
     }
 
-    fun getSearchWindowState(): WindowState {
-        return searchWindowState.value
-    }
+    fun getSearchWindowState(): WindowState = searchWindowState.value
 
     abstract fun getCurrentActiveAppName(): String?
 

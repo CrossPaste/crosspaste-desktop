@@ -12,31 +12,19 @@ import com.crosspaste.app.generated.resources.unverified
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun allowReceive(): Painter {
-    return painterResource(Res.drawable.allow_receive)
-}
+actual fun allowReceive(): Painter = painterResource(Res.drawable.allow_receive)
 
 @Composable
-actual fun allowSend(): Painter {
-    return painterResource(Res.drawable.allow_send)
-}
+actual fun allowSend(): Painter = painterResource(Res.drawable.allow_send)
 
 @Composable
-actual fun block(): Painter {
-    return painterResource(Res.drawable.block)
-}
+actual fun block(): Painter = painterResource(Res.drawable.block)
 
 @Composable
-actual fun devices(): Painter {
-    return painterResource(Res.drawable.devices)
-}
+actual fun devices(): Painter = painterResource(Res.drawable.devices)
 
 @Composable
-actual fun sync(): Painter {
-    return painterResource(Res.drawable.sync)
-}
+actual fun sync(): Painter = painterResource(Res.drawable.sync)
 
 @Composable
-actual fun unverified(): Painter {
-    return painterResource(Res.drawable.unverified)
-}
+actual fun unverified(): Painter = painterResource(Res.drawable.unverified)

@@ -53,8 +53,12 @@ class SeleniumManager private constructor() {
     private val fileName = "selenium-manager"
 
     private var binary =
-        CrossPaste.koinApplication.koin.get<AppPathProvider>()
-            .pasteAppJarPath.resolve(fileName).normalized().toNioPath()
+        CrossPaste.koinApplication.koin
+            .get<AppPathProvider>()
+            .pasteAppJarPath
+            .resolve(fileName)
+            .normalized()
+            .toNioPath()
 
     private val seleniumManagerVersion: String
     private var binaryInTemporalFolder = false
@@ -73,9 +77,7 @@ class SeleniumManager private constructor() {
      * @return the path to the Selenium Manager binary.
      */
     @Synchronized
-    private fun getBinary(): Path {
-        return binary
-    }
+    private fun getBinary(): Path = binary
 
     /**
      * Executes Selenium Manager to get the locations of the requested assets

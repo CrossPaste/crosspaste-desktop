@@ -23,9 +23,7 @@ class DesktopGlobalListener(
 
     private val systemProperty = getSystemProperty()
 
-    override fun isRegistered(): Boolean {
-        return GlobalScreen.isNativeHookRegistered()
-    }
+    override fun isRegistered(): Boolean = GlobalScreen.isNativeHookRegistered()
 
     override fun start() {
         if (systemProperty.get("globalListener", false.toString()).toBoolean()) {

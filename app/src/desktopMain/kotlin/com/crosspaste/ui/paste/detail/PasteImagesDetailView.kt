@@ -138,21 +138,20 @@ fun PasteImagesDetailView(
             detailView = {
                 Row(
                     modifier =
-                        Modifier.fillMaxSize()
+                        Modifier
+                            .fillMaxSize()
                             .onPointerEvent(
                                 eventType = PointerEventType.Enter,
                                 onEvent = {
                                     hover = true
                                     autoRoll = false
                                 },
-                            )
-                            .onPointerEvent(
+                            ).onPointerEvent(
                                 eventType = PointerEventType.Exit,
                                 onEvent = {
                                     hover = false
                                 },
-                            )
-                            .pointerInput(Unit) {
+                            ).pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = {
                                         onDoubleClick()
@@ -170,7 +169,8 @@ fun PasteImagesDetailView(
                             SubcomposeAsyncImage(
                                 modifier = Modifier.wrapContentSize(),
                                 model =
-                                    ImageRequest.Builder(platformContext)
+                                    ImageRequest
+                                        .Builder(platformContext)
                                         .data(ImageItem(pasteFileCoordinate, false))
                                         .crossfade(true)
                                         .build(),
@@ -230,7 +230,8 @@ fun PasteImagesDetailView(
                                                     val scrollState = rememberScrollState()
                                                     imageShowMode =
                                                         ImageShowMode(
-                                                            Modifier.fillMaxSize()
+                                                            Modifier
+                                                                .fillMaxSize()
                                                                 .verticalScroll(scrollState),
                                                             ContentScale.FillWidth,
                                                         )

@@ -103,7 +103,9 @@ interface MacosApi : Library {
 }
 
 @Structure.FieldOrder("x", "y", "width", "height", "displayID")
-class WindowInfo : Structure, AutoCloseable {
+class WindowInfo :
+    Structure,
+    AutoCloseable {
     @JvmField var x: Float = 0f
 
     @JvmField var y: Float = 0f
@@ -123,9 +125,7 @@ class WindowInfo : Structure, AutoCloseable {
     fun contains(
         x: Int,
         y: Int,
-    ): Boolean {
-        return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height
-    }
+    ): Boolean = x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height
 
     fun contained(graphicsDevice: GraphicsDevice): Boolean {
         val displayWidth = graphicsDevice.displayMode.width
@@ -137,9 +137,7 @@ class WindowInfo : Structure, AutoCloseable {
             bound.y + displayHeight >= this.y + this.height
     }
 
-    override fun toString(): String {
-        return "WindowInfo(x=$x, y=$y, width=$width, height=$height, displayID=$displayID)"
-    }
+    override fun toString(): String = "WindowInfo(x=$x, y=$y, width=$width, height=$height, displayID=$displayID)"
 
     override fun close() {
         clear()
@@ -147,7 +145,9 @@ class WindowInfo : Structure, AutoCloseable {
 }
 
 @Structure.FieldOrder("count", "windowInfos")
-class WindowInfoArray(p: Pointer) : Structure(p) {
+class WindowInfoArray(
+    p: Pointer,
+) : Structure(p) {
     @JvmField var count: Int = 0
 
     @JvmField var windowInfos: Pointer? = null

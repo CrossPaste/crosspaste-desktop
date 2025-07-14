@@ -5,11 +5,7 @@ import com.crosspaste.platform.macos.api.MacosApi.Companion.getString
 
 object MacDeviceUtils {
 
-    fun getComputerName(): String? {
-        return getString(MacosApi.INSTANCE.getComputerName())
-    }
+    fun getComputerName(): String? = getString(MacosApi.INSTANCE.getComputerName())
 
-    fun getHardwareUUID(): String? {
-        return getString(MacosApi.INSTANCE.getHardwareUUID())
-    }
+    fun getHardwareUUID(): String? = getString(MacosApi.INSTANCE.getHardwareUUID())
 }

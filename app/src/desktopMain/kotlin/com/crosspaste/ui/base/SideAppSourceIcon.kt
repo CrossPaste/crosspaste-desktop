@@ -28,7 +28,8 @@ fun SideAppSourceIcon(
     SubcomposeAsyncImage(
         modifier = modifier,
         model =
-            ImageRequest.Builder(platformContext)
+            ImageRequest
+                .Builder(platformContext)
                 .data(PasteDataItem(pasteData))
                 .transformations(CropTransformation())
                 .crossfade(false)
@@ -36,7 +37,10 @@ fun SideAppSourceIcon(
         imageLoader = imageLoaders.appSourceLoader,
         contentDescription = "Paste Icon",
         content = {
-            val state = this.painter.state.collectAsState().value
+            val state =
+                this.painter.state
+                    .collectAsState()
+                    .value
             when (state) {
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,

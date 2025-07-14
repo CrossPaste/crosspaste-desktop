@@ -5,7 +5,9 @@ import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 
-class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessPlugin {
+class DistinctPlugin(
+    userDataPathProvider: UserDataPathProvider,
+) : PasteProcessPlugin {
 
     private val firstPlugin = FirstPlugin(userDataPathProvider)
 
@@ -30,21 +32,24 @@ class DistinctPlugin(userDataPathProvider: UserDataPathProvider) : PasteProcessP
         pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
-    ): List<PasteItem> {
-        return pasteItems.groupBy { it.getPasteType() }.map { (pasteType, items) ->
-            val plugin = childPlugins[pasteType]
-            plugin?.process(pasteCoordinate, items, source) ?: items
-        }.flatten()
-    }
+    ): List<PasteItem> =
+        pasteItems
+            .groupBy { it.getPasteType() }
+            .map { (pasteType, items) ->
+                val plugin = childPlugins[pasteType]
+                plugin?.process(pasteCoordinate, items, source) ?: items
+            }.flatten()
 }
 
-class FirstPlugin(private val userDataPathProvider: UserDataPathProvider) : PasteProcessPlugin {
+class FirstPlugin(
+    private val userDataPathProvider: UserDataPathProvider,
+) : PasteProcessPlugin {
     override fun process(
         pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
-    ): List<PasteItem> {
-        return if (pasteItems.isEmpty()) {
+    ): List<PasteItem> =
+        if (pasteItems.isEmpty()) {
             listOf()
         } else {
             for (pasteAppearItem in pasteItems.drop(1)) {
@@ -55,5 +60,4 @@ class FirstPlugin(private val userDataPathProvider: UserDataPathProvider) : Past
             }
             listOf(pasteItems.first())
         }
-    }
 }

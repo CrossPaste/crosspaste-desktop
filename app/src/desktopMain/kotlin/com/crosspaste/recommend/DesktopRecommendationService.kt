@@ -26,19 +26,12 @@ class DesktopRecommendationService(
 
     override val recommendTitleKey: String = "recommend_title"
 
-    override fun getRecommendText(): String {
-        return "${copywriter.getText(recommendContentKey)}\n${uiSupport.getCrossPasteWebUrl("download")}"
-    }
+    override fun getRecommendText(): String =
+        "${copywriter.getText(recommendContentKey)}\n${uiSupport.getCrossPasteWebUrl("download")}"
 
-    override fun getRecommendTitle(): String {
-        return copywriter.getText(recommendTitleKey)
-    }
+    override fun getRecommendTitle(): String = copywriter.getText(recommendTitleKey)
 
-    override fun getRecommendContent(): String {
-        return copywriter.getText(recommendContentKey)
-    }
+    override fun getRecommendContent(): String = copywriter.getText(recommendContentKey)
 
-    override fun getRecommendUrl(): String {
-        return uiSupport.getCrossPasteWebUrl("download")
-    }
+    override fun getRecommendUrl(): String = uiSupport.getCrossPasteWebUrl("download")
 }

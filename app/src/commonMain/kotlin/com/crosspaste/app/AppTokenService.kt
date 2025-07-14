@@ -36,9 +36,11 @@ open class AppTokenService : AppTokenApi {
     open fun preShowToken() {
     }
 
-    override fun sameToken(token: Int): Boolean {
-        return token == this.token.value.concatToString().toInt()
-    }
+    override fun sameToken(token: Int): Boolean =
+        token ==
+            this.token.value
+                .concatToString()
+                .toInt()
 
     override fun toShowToken() {
         preShowToken()

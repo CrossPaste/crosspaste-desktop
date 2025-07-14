@@ -29,16 +29,15 @@ abstract class ExceptionHandler {
 
     abstract fun isConnectionRefused(e: Throwable): Boolean
 
-    fun isEncryptFail(e: Throwable): Boolean {
-        return if (e is PasteException) {
+    fun isEncryptFail(e: Throwable): Boolean =
+        if (e is PasteException) {
             e.getErrorCode() == StandardErrorCode.ENCRYPT_FAIL.toErrorCode()
         } else {
             false
         }
-    }
 
-    fun isDecryptFail(e: Throwable): Boolean {
-        return when (e) {
+    fun isDecryptFail(e: Throwable): Boolean =
+        when (e) {
             is PasteException -> {
                 e.getErrorCode() == StandardErrorCode.DECRYPT_FAIL.toErrorCode()
             }
@@ -51,5 +50,4 @@ abstract class ExceptionHandler {
                 false
             }
         }
-    }
 }

@@ -34,7 +34,8 @@ data class ImagesPasteItem(
     override val fileInfoTreeMap: Map<String, FileInfoTree>,
     override val relativePathList: List<String>,
     override val extraInfo: JsonObject? = null,
-) : PasteItem, PasteImages {
+) : PasteItem,
+    PasteImages {
 
     companion object {
         val fileUtils = getFileUtils()
@@ -66,9 +67,7 @@ data class ImagesPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getAppFileType(): AppFileType {
-        return AppFileType.IMAGE
-    }
+    override fun getAppFileType(): AppFileType = AppFileType.IMAGE
 
     override fun getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path> {
         val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = getAppFileType())
@@ -77,21 +76,17 @@ data class ImagesPasteItem(
         }
     }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.IMAGE_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.IMAGE_TYPE
 
-    override fun getSearchContent(): String {
-        return fileInfoTreeMap.keys.joinToString(separator = " ") {
+    override fun getSearchContent(): String =
+        fileInfoTreeMap.keys.joinToString(separator = " ") {
             it.lowercase()
         }
-    }
 
-    override fun getSummary(): String {
-        return relativePathList.joinToString(separator = ", ") {
+    override fun getSummary(): String =
+        relativePathList.joinToString(separator = ", ") {
             it.toPath().name
         }
-    }
 
     // use to adapt relative paths when relative is no storage in crossPaste
     override fun bind(pasteCoordinate: PasteCoordinate): PasteItem {
@@ -124,26 +119,32 @@ data class ImagesPasteItem(
         return this
     }
 
-    override fun isValid(): Boolean {
-        return count > 0 &&
+    override fun isValid(): Boolean =
+        count > 0 &&
             hash.isNotEmpty() &&
             size > 0 &&
             fileInfoTreeMap.isNotEmpty() &&
             relativePathList.isNotEmpty() &&
             relativePathList.size == fileInfoTreeMap.size
-    }
 
-    override fun toJson(): String {
-        return buildJsonObject {
+    override fun toJson(): String =
+        buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))
             put("count", count)
             put("hash", hash)
             put("size", size)
             basePath?.let { put("basePath", it) }
-            put("relativePathList", FilesPasteItem.Companion.jsonUtils.JSON.encodeToJsonElement(relativePathList))
-            put("fileInfoTreeMap", FilesPasteItem.Companion.jsonUtils.JSON.encodeToJsonElement(fileInfoTreeMap))
+            put(
+                "relativePathList",
+                FilesPasteItem.Companion.jsonUtils.JSON
+                    .encodeToJsonElement(relativePathList),
+            )
+            put(
+                "fileInfoTreeMap",
+                FilesPasteItem.Companion.jsonUtils.JSON
+                    .encodeToJsonElement(fileInfoTreeMap),
+            )
             extraInfo?.let { put("extraInfo", it) }
         }.toString()
-    }
 }

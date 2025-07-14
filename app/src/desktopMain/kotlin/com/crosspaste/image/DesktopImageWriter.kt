@@ -19,8 +19,8 @@ object DesktopImageWriter : ImageWriter<BufferedImage> {
         image: BufferedImage,
         formatName: String,
         imagePath: Path,
-    ): Boolean {
-        return specialFormatWriteMap[formatName]?.writeImage(image, formatName, imagePath) ?: run {
+    ): Boolean =
+        specialFormatWriteMap[formatName]?.writeImage(image, formatName, imagePath) ?: run {
             fileUtils.createDir(imagePath.noOptionParent)
             if (!ImageIO.write(image, formatName, imagePath.toFile())) {
                 val convertedImage =
@@ -35,5 +35,4 @@ object DesktopImageWriter : ImageWriter<BufferedImage> {
                 true
             }
         }
-    }
 }

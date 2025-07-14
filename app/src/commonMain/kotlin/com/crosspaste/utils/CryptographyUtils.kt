@@ -31,25 +31,25 @@ object CryptographyUtils {
     fun signData(
         privateKey: ECDSA.PrivateKey,
         createSignData: () -> ByteArray,
-    ): ByteArray {
-        return privateKey.signatureGenerator(sha256.id, ECDSA.SignatureFormat.DER)
+    ): ByteArray =
+        privateKey
+            .signatureGenerator(sha256.id, ECDSA.SignatureFormat.DER)
             .generateSignatureBlocking(createSignData())
-    }
 
     fun verifyData(
         publicKey: ECDSA.PublicKey,
         signature: ByteArray,
         createVerifyData: () -> ByteArray,
-    ): Boolean {
-        return publicKey.signatureVerifier(sha256.id, ECDSA.SignatureFormat.DER)
+    ): Boolean =
+        publicKey
+            .signatureVerifier(sha256.id, ECDSA.SignatureFormat.DER)
             .tryVerifySignatureBlocking(createVerifyData(), signature)
-    }
 
     fun signPairingRequest(
         privateKey: ECDSA.PrivateKey,
         pairingRequest: PairingRequest,
-    ): ByteArray {
-        return signData(privateKey) {
+    ): ByteArray =
+        signData(privateKey) {
             buildString {
                 append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
                 append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
@@ -57,14 +57,13 @@ object CryptographyUtils {
                 append(pairingRequest.timestamp)
             }.encodeToByteArray()
         }
-    }
 
     fun verifyPairingRequest(
         publicKey: ECDSA.PublicKey,
         pairingRequest: PairingRequest,
         signature: ByteArray,
-    ): Boolean {
-        return verifyData(publicKey, signature) {
+    ): Boolean =
+        verifyData(publicKey, signature) {
             buildString {
                 append(codecsUtils.base64Encode(pairingRequest.signPublicKey))
                 append(codecsUtils.base64Encode(pairingRequest.cryptPublicKey))
@@ -72,32 +71,29 @@ object CryptographyUtils {
                 append(pairingRequest.timestamp)
             }.encodeToByteArray()
         }
-    }
 
     fun signPairingResponse(
         privateKey: ECDSA.PrivateKey,
         pairingResponse: PairingResponse,
-    ): ByteArray {
-        return signData(privateKey) {
+    ): ByteArray =
+        signData(privateKey) {
             buildString {
                 append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
                 append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
                 append(pairingResponse.timestamp)
             }.encodeToByteArray()
         }
-    }
 
     fun verifyPairingResponse(
         publicKey: ECDSA.PublicKey,
         pairingResponse: PairingResponse,
         signature: ByteArray,
-    ): Boolean {
-        return verifyData(publicKey, signature) {
+    ): Boolean =
+        verifyData(publicKey, signature) {
             buildString {
                 append(codecsUtils.base64Encode(pairingResponse.signPublicKey))
                 append(codecsUtils.base64Encode(pairingResponse.cryptPublicKey))
                 append(pairingResponse.timestamp)
             }.encodeToByteArray()
         }
-    }
 }

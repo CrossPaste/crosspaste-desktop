@@ -85,17 +85,15 @@ object LinuxTrayView {
         }
     }
 
-    private fun getTrayType(): TrayType {
-        return System.getProperty("linux.force.trayType")?.let {
+    private fun getTrayType(): TrayType =
+        System.getProperty("linux.force.trayType")?.let {
             safeFromString(it)
         } ?: TrayType.AutoDetect
-    }
 
-    private fun safeFromString(trayName: String): TrayType {
-        return runCatching {
+    private fun safeFromString(trayName: String): TrayType =
+        runCatching {
             TrayType.valueOf(trayName)
         }.getOrElse {
             TrayType.AutoDetect
         }
-    }
 }

@@ -203,12 +203,14 @@ fun SidePasteboardContentView() {
 
     Column(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .padding(vertical = medium),
     ) {
         Box(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .focusRequester(pasteListFocusRequester)
                     .focusable(),
             contentAlignment = Alignment.CenterStart,
@@ -216,7 +218,8 @@ fun SidePasteboardContentView() {
             LazyRow(
                 state = searchListState,
                 modifier =
-                    Modifier.wrapContentWidth()
+                    Modifier
+                        .wrapContentWidth()
                         .onPointerEvent(PointerEventType.Scroll) { event ->
                             val change = event.changes.first()
                             val scrollDelta = change.scrollDelta
@@ -282,9 +285,10 @@ fun SidePasteboardContentView() {
                         hoverDurationMillis = 300,
                         unhoverColor =
                             if (showScrollbar) {
-                                MaterialTheme.colorScheme.contentColorFor(
-                                    AppUIColors.appBackground,
-                                ).copy(alpha = 0.48f)
+                                MaterialTheme.colorScheme
+                                    .contentColorFor(
+                                        AppUIColors.appBackground,
+                                    ).copy(alpha = 0.48f)
                             } else {
                                 Color.Transparent
                             },

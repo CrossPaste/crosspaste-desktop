@@ -43,6 +43,7 @@ abstract class QRCodeGenerator(
         return codecsUtils.base64Encode(saltedBytes)
     }
 
+    @Suppress("unused")
     protected fun decodeSyncInfo(encodedString: String): Pair<SyncInfo, Int> {
         val decodedBytes = codecsUtils.base64Decode(encodedString)
 
@@ -81,12 +82,11 @@ abstract class QRCodeGenerator(
         }
     }
 
-    private fun Int.toByteArray(): ByteArray {
-        return byteArrayOf(
+    private fun Int.toByteArray(): ByteArray =
+        byteArrayOf(
             (this shr 24).toByte(),
             (this shr 16).toByte(),
             (this shr 8).toByte(),
             this.toByte(),
         )
-    }
 }

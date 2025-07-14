@@ -16,11 +16,10 @@ object DesktopAppUIColors {
 
     val sideOnLightColor: Color = Color(0xFF1C1C1E)
 
-    fun getSideTitleColor(background: Color): Color {
-        return if (ColorUtils.isDarkColor(background)) {
+    fun getSideTitleColor(background: Color): Color =
+        if (ColorUtils.isDarkColor(background)) {
             sideOnDarkColor
         } else {
             sideOnLightColor
         }
-    }
 }

@@ -30,19 +30,17 @@ class LinuxAppWindowManager(
         X11Api.getWindow(searchWindowTitle)
     }
 
-    override fun getCurrentActiveAppName(): String? {
-        return X11Api.getActiveWindow()?.let { linuxAppInfo ->
+    override fun getCurrentActiveAppName(): String? =
+        X11Api.getActiveWindow()?.let { linuxAppInfo ->
             getAppName(linuxAppInfo)
         }
-    }
 
-    override fun getPrevAppName(): Flow<String?> {
-        return prevLinuxAppInfo.map { appInfo ->
+    override fun getPrevAppName(): Flow<String?> =
+        prevLinuxAppInfo.map { appInfo ->
             appInfo?.let {
                 getAppName(appInfo)
             }
         }
-    }
 
     private fun getAppName(linuxAppInfo: LinuxAppInfo): String {
         val className = linuxAppInfo.className
@@ -115,9 +113,10 @@ class LinuxAppWindowManager(
     }
 }
 
-data class LinuxAppInfo(val window: Window, val className: String) {
+data class LinuxAppInfo(
+    val window: Window,
+    val className: String,
+) {
 
-    override fun toString(): String {
-        return "LinuxAppInfo(window=$window, className='$className')"
-    }
+    override fun toString(): String = "LinuxAppInfo(window=$window, className='$className')"
 }

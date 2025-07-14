@@ -57,7 +57,8 @@ fun SideSearchWindowContent() {
     Theme {
         Box(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .background(AppUIColors.generalBackground)
                     .onKeyEvent { keyEvent ->
                         if (keyEvent.type == KeyEventType.KeyDown) {

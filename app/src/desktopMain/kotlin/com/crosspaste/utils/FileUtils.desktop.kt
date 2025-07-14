@@ -11,9 +11,7 @@ import java.text.DecimalFormat
 import java.util.UUID
 import kotlin.io.path.pathString
 
-actual fun getFileUtils(): FileUtils {
-    return DesktopFileUtils
-}
+actual fun getFileUtils(): FileUtils = DesktopFileUtils
 
 object DesktopFileUtils : FileUtils {
 
@@ -28,7 +26,16 @@ object DesktopFileUtils : FileUtils {
 
     private val canPreviewImageMap =
         setOf(
-            "png", "jpg", "jpeg", "gif", "bmp", "webp", "heic", "heif", "tiff", "svg",
+            "png",
+            "jpg",
+            "jpeg",
+            "gif",
+            "bmp",
+            "webp",
+            "heic",
+            "heif",
+            "tiff",
+            "svg",
         )
 
     override fun formatBytes(bytesSize: Long): String {
@@ -61,17 +68,16 @@ object DesktopFileUtils : FileUtils {
             dateUtils.getYMD(
                 dateUtils.epochMillisecondsToLocalDateTime(pasteCoordinate.createTime),
             )
-        return Paths.get(
-            pasteCoordinate.appInstanceId,
-            dateYYYYMMDD,
-            pasteCoordinate.id.toString(),
-            fileName,
-        ).pathString
+        return Paths
+            .get(
+                pasteCoordinate.appInstanceId,
+                dateYYYYMMDD,
+                pasteCoordinate.id.toString(),
+                fileName,
+            ).pathString
     }
 
-    override fun getFileSize(path: Path): Long {
-        return path.toFile().length()
-    }
+    override fun getFileSize(path: Path): Long = path.toFile().length()
 
     override fun createEmptyPasteFile(
         path: Path,

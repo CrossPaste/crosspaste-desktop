@@ -122,15 +122,17 @@ class GeneralSyncManager(
                     }
 
                     newSet.forEach { appInstanceId ->
-                        internalSyncHandlers[appInstanceId] = createSyncHandler(list.first { it.appInstanceId == appInstanceId })
+                        internalSyncHandlers[appInstanceId] =
+                            createSyncHandler(list.first { it.appInstanceId == appInstanceId })
                     }
 
                     withContext(mainDispatcher) {
                         _realTimeSyncRuntimeInfos.value = list
                         _ignoreVerifySet.update { set ->
-                            set.filter {
-                                it in currentAppInstanceIdSet
-                            }.toSet()
+                            set
+                                .filter {
+                                    it in currentAppInstanceIdSet
+                                }.toSet()
                         }
                         if (newSet.isNotEmpty() || deleteSet.isNotEmpty()) {
                             nearbyDeviceManager.refreshSyncManager()
@@ -149,13 +151,11 @@ class GeneralSyncManager(
                 ignoreVerifySet,
             ) { syncInfos, ignoreSet ->
                 syncInfos to ignoreSet
-            }
-                .map { (syncInfos, ignoreSet) ->
-                    syncInfos
-                        .filter { !ignoreSet.contains(it.appInstanceId) }
-                        .firstOrNull { it.connectState == SyncState.UNVERIFIED }
-                }
-                .filterNotNull()
+            }.map { (syncInfos, ignoreSet) ->
+                syncInfos
+                    .filter { !ignoreSet.contains(it.appInstanceId) }
+                    .firstOrNull { it.connectState == SyncState.UNVERIFIED }
+            }.filterNotNull()
                 .onEach { info ->
                     val dialog =
                         pasteDialogFactory.createDialog(
@@ -166,12 +166,11 @@ class GeneralSyncManager(
                             DeviceVerifyView(syncRuntimeInfo = info)
                         }
                     dialogService.pushDialog(dialog)
-                }
-                .launchIn(realTimeSyncScope)
+                }.launchIn(realTimeSyncScope)
     }
 
-    override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
-        return GeneralSyncHandler(
+    override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler =
+        GeneralSyncHandler(
             syncRuntimeInfo,
             ratingPromptManager,
             secureStore,
@@ -181,7 +180,6 @@ class GeneralSyncManager(
             telnetHelper,
             tokenCache,
         )
-    }
 
     override fun ignoreVerify(appInstanceId: String) {
         _ignoreVerifySet.update { it + appInstanceId }
@@ -196,7 +194,8 @@ class GeneralSyncManager(
             controlUtils.ensureMinExecutionTime(delayTime = 1000L) {
                 supervisorScope {
                     val jobs =
-                        getSyncHandlers().values
+                        getSyncHandlers()
+                            .values
                             .map {
                                 async {
                                     doResolveSync(it)
@@ -220,7 +219,8 @@ class GeneralSyncManager(
             controlUtils.ensureMinExecutionTime(delayTime = 1000L) {
                 supervisorScope {
                     val jobs =
-                        ids.mapNotNull { getSyncHandler(it) }
+                        ids
+                            .mapNotNull { getSyncHandler(it) }
                             .map {
                                 async {
                                     doResolveSync(it)
@@ -244,9 +244,7 @@ class GeneralSyncManager(
         }
     }
 
-    override fun getSyncHandlers(): Map<String, SyncHandler> {
-        return internalSyncHandlers
-    }
+    override fun getSyncHandlers(): Map<String, SyncHandler> = internalSyncHandlers
 
     override fun removeSyncHandler(id: String) {
         realTimeSyncScope.launch(CoroutineName("RemoveSyncHandler")) {

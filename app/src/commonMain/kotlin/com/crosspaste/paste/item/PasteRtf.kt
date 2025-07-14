@@ -6,7 +6,5 @@ interface PasteRtf : PasteCoordinateBinder {
 
     val rtf: String
 
-    fun getText(): String {
-        return getRtfUtils().getRtfText(rtf)
-    }
+    fun getText(): String = getRtfUtils().getRtfText(rtf)
 }

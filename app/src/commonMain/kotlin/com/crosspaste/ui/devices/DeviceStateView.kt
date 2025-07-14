@@ -18,8 +18,8 @@ import com.crosspaste.ui.theme.CrossPasteTheme.unmatchedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.unverifiedColor
 
 @Composable
-fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {
-    return if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter =
+    if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
         unverified()
     } else if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
         sync()
@@ -30,15 +30,14 @@ fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter {
     } else {
         block()
     }
-}
 
 fun getConnectStateColorAndText(
     syncRuntimeInfo: SyncRuntimeInfo,
     versionRelation: VersionRelation?,
     refresh: Boolean,
     background: Color,
-): Pair<Color, String> {
-    return if (refresh) {
+): Pair<Color, String> =
+    if (refresh) {
         Pair(connectingColor(background), "connecting")
     } else {
         if (versionRelation != VersionRelation.EQUAL_TO) {
@@ -66,4 +65,3 @@ fun getConnectStateColorAndText(
             Pair(disconnectedColor(background), "off_connected")
         }
     }
-}

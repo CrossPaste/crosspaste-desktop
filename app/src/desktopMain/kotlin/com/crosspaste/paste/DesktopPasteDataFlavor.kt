@@ -2,7 +2,9 @@ package com.crosspaste.paste
 
 import java.awt.datatransfer.DataFlavor
 
-data class DesktopPasteDataFlavor(val dataFlavor: DataFlavor) : PasteDataFlavor {
+data class DesktopPasteDataFlavor(
+    val dataFlavor: DataFlavor,
+) : PasteDataFlavor {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -13,11 +15,7 @@ data class DesktopPasteDataFlavor(val dataFlavor: DataFlavor) : PasteDataFlavor 
         return true
     }
 
-    override fun hashCode(): Int {
-        return dataFlavor.hashCode()
-    }
+    override fun hashCode(): Int = dataFlavor.hashCode()
 }
 
-fun DataFlavor.toPasteDataFlavor(): PasteDataFlavor {
-    return DesktopPasteDataFlavor(this)
-}
+fun DataFlavor.toPasteDataFlavor(): PasteDataFlavor = DesktopPasteDataFlavor(this)

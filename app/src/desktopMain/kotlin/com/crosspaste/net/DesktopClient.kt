@@ -18,7 +18,8 @@ object DesktopClient {
     private val GOOGLE_URI = URI("https://www.google.com")
 
     private val noProxyClient =
-        HttpClient.newBuilder()
+        HttpClient
+            .newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build()
 
@@ -30,7 +31,8 @@ object DesktopClient {
         if (proxy != Proxy.NO_PROXY) {
             (proxy.address() as java.net.InetSocketAddress?)?.let { address ->
                 proxyClientMap[proxy] =
-                    HttpClient.newBuilder()
+                    HttpClient
+                        .newBuilder()
                         .proxy(ProxySelector.of(address))
                         .followRedirects(HttpClient.Redirect.NORMAL)
                         .build()
@@ -41,19 +43,18 @@ object DesktopClient {
     fun <T> request(
         url: String,
         success: (HttpResponse<InputStream>) -> T,
-    ): T? {
-        return runCatching {
+    ): T? =
+        runCatching {
             proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
                 request(url, it.value, success)
             } ?: request(url, noProxyClient, success)
         }.getOrNull()
-    }
 
     suspend fun <T> suspendRequest(
         url: String,
         success: suspend (HttpResponse<InputStream>) -> T,
-    ): T? {
-        return runCatching {
+    ): T? =
+        runCatching {
             proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
                 suspendRequest(url, it.value, success)
             } ?: suspendRequest(url, noProxyClient, success)
@@ -61,7 +62,6 @@ object DesktopClient {
             logger.warn { "Failed to fetch data from $url: ${it.message}" }
             null
         }
-    }
 
     private fun <T> request(
         url: String,
@@ -101,17 +101,16 @@ object DesktopClient {
         }
     }
 
-    private fun buildRequest(uri: URI): HttpRequest {
-        return HttpRequest.newBuilder()
+    private fun buildRequest(uri: URI): HttpRequest =
+        HttpRequest
+            .newBuilder()
             .uri(uri)
             .header(
                 "User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            )
-            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+            ).header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
             .header("Accept-Language", "en-US,en;q=0.9")
             .header("DNT", "1")
             .timeout(Duration.ofSeconds(5))
             .build()
-    }
 }

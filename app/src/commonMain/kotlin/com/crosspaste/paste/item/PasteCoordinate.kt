@@ -42,9 +42,7 @@ open class PasteFileCoordinate(
         filePath,
     )
 
-    fun toPasteCoordinate(): PasteCoordinate {
-        return PasteCoordinate(id, appInstanceId, createTime)
-    }
+    fun toPasteCoordinate(): PasteCoordinate = PasteCoordinate(id, appInstanceId, createTime)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -85,9 +83,7 @@ class PasteFileInfoTreeCoordinate(
         fileInfoTree,
     )
 
-    fun toPasteFileCoordinate(): PasteFileCoordinate {
-        return PasteFileCoordinate(id, appInstanceId, createTime, filePath)
-    }
+    fun toPasteFileCoordinate(): PasteFileCoordinate = PasteFileCoordinate(id, appInstanceId, createTime, filePath)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

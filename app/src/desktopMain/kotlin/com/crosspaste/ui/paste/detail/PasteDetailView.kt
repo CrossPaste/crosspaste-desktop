@@ -23,7 +23,8 @@ fun PasteDetailView(
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier =
-                Modifier.size(appSize.centerSearchWindowDetailViewDpSize)
+                Modifier
+                    .size(appSize.centerSearchWindowDetailViewDpSize)
                     .padding(appSize.searchDetailPaddingValues)
                     .clip(appSize.searchDetailRoundedCornerShape),
         ) {
@@ -34,7 +35,8 @@ fun PasteDetailView(
 
         Column(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .padding(appSize.searchInfoPaddingValues),
         ) {
             detailInfoView()

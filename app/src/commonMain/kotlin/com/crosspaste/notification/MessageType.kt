@@ -15,17 +15,18 @@ enum class MessageType {
     Warning,
     ;
 
-    fun getMessageStyle(): MessageStyle {
-        return when (this) {
+    fun getMessageStyle(): MessageStyle =
+        when (this) {
             Error -> MessageStyle.Error
             Info -> MessageStyle.Info
             Success -> MessageStyle.Success
             Warning -> MessageStyle.Warning
         }
-    }
 }
 
-enum class MessageStyle(val baseColor: BaseColor) {
+enum class MessageStyle(
+    val baseColor: BaseColor,
+) {
     Error(BaseColor.Red),
     Info(BaseColor.Blue),
     Success(BaseColor.Green),
@@ -33,11 +34,10 @@ enum class MessageStyle(val baseColor: BaseColor) {
 }
 
 @Composable
-fun getMessagePainter(messageStyle: MessageStyle): Painter {
-    return when (messageStyle) {
+fun getMessagePainter(messageStyle: MessageStyle): Painter =
+    when (messageStyle) {
         MessageStyle.Error -> error()
         MessageStyle.Info -> info()
         MessageStyle.Success -> success()
         MessageStyle.Warning -> warning()
     }
-}

@@ -31,37 +31,40 @@ class DesktopAppFileChooser(
     ) {
         desktopAppWindowManager.mainComposeWindow?.let {
             _showFileDialog.value = true
-            ioCoroutineDispatcher.launch {
-                runCatching {
-                    when (fileSelectionMode) {
-                        FileSelectionMode.FILE_ONLY -> {
-                            FileKit.openFilePicker(
-                                title = title,
-                                directory = initPath?.let { path -> PlatformFile(path.toFile()) },
-                            )?.let { platformFile ->
-                                action(platformFile.file.toOkioPath(true))
-                            } ?: run {
-                                cancel?.let { cancelAction -> cancelAction() }
+            ioCoroutineDispatcher
+                .launch {
+                    runCatching {
+                        when (fileSelectionMode) {
+                            FileSelectionMode.FILE_ONLY -> {
+                                FileKit
+                                    .openFilePicker(
+                                        title = title,
+                                        directory = initPath?.let { path -> PlatformFile(path.toFile()) },
+                                    )?.let { platformFile ->
+                                        action(platformFile.file.toOkioPath(true))
+                                    } ?: run {
+                                    cancel?.let { cancelAction -> cancelAction() }
+                                }
+                            }
+                            FileSelectionMode.DIRECTORY_ONLY -> {
+                                FileKit
+                                    .openDirectoryPicker(
+                                        title = title,
+                                        directory = initPath?.let { path -> PlatformFile(path.toFile()) },
+                                    )?.let { platformFile ->
+                                        action(platformFile.file.toOkioPath(true))
+                                    } ?: run {
+                                    cancel?.let { cancelAction -> cancelAction() }
+                                }
                             }
                         }
-                        FileSelectionMode.DIRECTORY_ONLY -> {
-                            FileKit.openDirectoryPicker(
-                                title = title,
-                                directory = initPath?.let { path -> PlatformFile(path.toFile()) },
-                            )?.let { platformFile ->
-                                action(platformFile.file.toOkioPath(true))
-                            } ?: run {
-                                cancel?.let { cancelAction -> cancelAction() }
-                            }
-                        }
+                    }.onFailure {
+                        logger.error(it) { "Failed to open file chooser dialog" }
+                        cancel?.let { cancelAction -> cancelAction() }
                     }
-                }.onFailure {
-                    logger.error(it) { "Failed to open file chooser dialog" }
-                    cancel?.let { cancelAction -> cancelAction() }
+                }.apply {
+                    _showFileDialog.value = false
                 }
-            }.apply {
-                _showFileDialog.value = false
-            }
         }
     }
 

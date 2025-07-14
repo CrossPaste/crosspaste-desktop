@@ -156,16 +156,15 @@ interface KeyboardKeys {
     val groupModifierKeys: Map<Boolean, Map<Int, KeyboardKeyDefine>>
         get() = initGroupModifierKeys()
 
-    fun getComparator(): Comparator<KeyboardKeyDefine> {
-        return Comparator { o1, o2 ->
+    fun getComparator(): Comparator<KeyboardKeyDefine> =
+        Comparator { o1, o2 ->
             val v1 = getSortValue(o1.code)
             val v2 = getSortValue(o2.code)
             v1 - v2
         }
-    }
 
-    fun getSortValue(code: Int): Int {
-        return when (code) {
+    fun getSortValue(code: Int): Int =
+        when (code) {
             CTRL.code -> {
                 -6
             }
@@ -188,19 +187,24 @@ interface KeyboardKeys {
                 code
             }
         }
-    }
 
-    fun initAllMap(): Map<Int, KeyboardKeyDefine> {
-        return this::class.memberProperties
+    fun initAllMap(): Map<Int, KeyboardKeyDefine> =
+        this::class
+            .memberProperties
             .filter { it.returnType.toString() == "com.crosspaste.listen.KeyboardKeyDefine" }
             .map { it.getter.call(this) as KeyboardKeyDefine }
             .associateBy { it.code }
-    }
 
     fun initGroupModifierKeys(): Map<Boolean, Map<Int, KeyboardKeyDefine>> {
         val map: Map<Int, KeyboardKeyDefine> = initAllMap()
-        val combinationKeys: (Int) -> Boolean = { it == SHIFT.code || it == CTRL.code || it == ALT.code || it == COMMAND.code }
-        return map.values.groupBy { combinationKeys(it.code) }
+        val combinationKeys: (Int) -> Boolean = {
+            it == SHIFT.code ||
+                it == CTRL.code ||
+                it == ALT.code ||
+                it == COMMAND.code
+        }
+        return map.values
+            .groupBy { combinationKeys(it.code) }
             .map { it.key to it.value.associateBy { info -> info.code } }
             .toMap()
     }

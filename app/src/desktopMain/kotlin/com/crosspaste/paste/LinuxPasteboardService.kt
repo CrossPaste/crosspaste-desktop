@@ -57,8 +57,8 @@ class LinuxPasteboardService(
         startRemotePasteboardListener()
     }
 
-    private fun run(): Job {
-        return serviceScope.launch(CoroutineName("LinuxPasteboardService")) {
+    private fun run(): Job =
+        serviceScope.launch(CoroutineName("LinuxPasteboardService")) {
             val firstChange = changeCount == configManager.getCurrentConfig().lastPasteboardChangeCount
 
             if (firstChange && !configManager.getCurrentConfig().enableSkipPreLaunchPasteboardContent) {
@@ -74,7 +74,9 @@ class LinuxPasteboardService(
                     val eventBaseReturnBuffer = IntByReference()
                     val errorBaseReturnBuffer = IntByReference()
 
-                    if (XFixes.INSTANCE.XFixesQueryExtension(display, eventBaseReturnBuffer, errorBaseReturnBuffer) == 0) {
+                    if (XFixes.INSTANCE.XFixesQueryExtension(display, eventBaseReturnBuffer, errorBaseReturnBuffer) ==
+                        0
+                    ) {
                         throw RuntimeException("XFixes extension missing")
                     }
 
@@ -118,7 +120,6 @@ class LinuxPasteboardService(
                 }
             }
         }
-    }
 
     private suspend fun onChange(
         scope: CoroutineScope,

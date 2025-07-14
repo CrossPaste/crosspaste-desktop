@@ -4,9 +4,7 @@ import java.io.ByteArrayInputStream
 import javax.swing.text.Document
 import javax.swing.text.rtf.RTFEditorKit
 
-actual fun getRtfUtils(): RtfUtils {
-    return DesktopRtfUtils
-}
+actual fun getRtfUtils(): RtfUtils = DesktopRtfUtils
 
 object DesktopRtfUtils : RtfUtils {
 

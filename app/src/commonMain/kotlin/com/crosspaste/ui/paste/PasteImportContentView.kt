@@ -46,21 +46,24 @@ fun PasteImportContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .padding(medium),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             if (progressing) {
                 LinearProgressIndicator(
                     modifier =
-                        Modifier.fillMaxWidth()
+                        Modifier
+                            .fillMaxWidth()
                             .height(tiny3X)
                             .clip(tiny4XRoundedCornerShape),
                     progress = { progress },

@@ -11,7 +11,8 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 class DesktopShortcutKeysListener(
     platform: Platform,
     private val shortcutKeys: ShortcutKeys,
-) : ShortcutKeysListener, NativeKeyListener {
+) : ShortcutKeysListener,
+    NativeKeyListener {
 
     private val keyboardKeys = getDesktopKeyboardKeys(platform)
 
@@ -26,7 +27,8 @@ class DesktopShortcutKeysListener(
 
     override fun nativeKeyPressed(nativeEvent: NativeKeyEvent) {
         if (!editShortcutKeysMode) {
-            shortcutKeys.shortcutKeysCore.value.eventConsumer.accept(nativeEvent)
+            shortcutKeys.shortcutKeysCore.value.eventConsumer
+                .accept(nativeEvent)
         } else {
             val list: MutableList<KeyboardKeyDefine> = mutableListOf()
             val combineKeys = groupKeys[true]!!

@@ -42,7 +42,5 @@ abstract class PasteServer<TEngine : ApplicationEngine, TConfiguration : Applica
         )
     }
 
-    override fun port(): Int {
-        return port
-    }
+    override fun port(): Int = port
 }

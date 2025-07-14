@@ -71,7 +71,8 @@ fun SetStoragePathView() {
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest),
     ) {
         SettingItemsTitleView("storage_directory")
@@ -91,7 +92,8 @@ fun SetStoragePathView() {
             ) {
                 CustomSwitch(
                     modifier =
-                        Modifier.width(medium * 2)
+                        Modifier
+                            .width(medium * 2)
                             .height(large2X),
                     checked = useDefaultStoragePath,
                     onCheckedChange = {
@@ -103,14 +105,17 @@ fun SetStoragePathView() {
 
         Row(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .height(appSize.settingsItemHeight)
                     .padding(horizontal = small2X, vertical = tiny2X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CustomTextField(
                 modifier =
-                    Modifier.fillMaxWidth().wrapContentHeight()
+                    Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
                         .clickable {
                             val action: (Path) -> Unit = { path ->
                                 dialogService.pushDialog(
@@ -212,7 +217,8 @@ fun SetStoragePathDialogView(path: Path) {
     Column {
         Row(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .height(appSize.settingsItemHeight),
         ) {
             CustomTextField(

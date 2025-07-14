@@ -27,16 +27,13 @@ class DesktopConfigManager(
 
     override var notificationManager: NotificationManager? = null
 
-    override fun loadConfig(): DesktopAppConfig? {
-        return configFilePersist.read(DesktopAppConfig::class)
-    }
+    override fun loadConfig(): DesktopAppConfig? = configFilePersist.read(DesktopAppConfig::class)
 
-    private fun createDefaultAppConfig(): DesktopAppConfig {
-        return DesktopAppConfig(
+    private fun createDefaultAppConfig(): DesktopAppConfig =
+        DesktopAppConfig(
             appInstanceId = deviceUtils.createAppInstanceId(),
             language = localeUtils.getLanguage(),
         )
-    }
 
     @Synchronized
     override fun updateConfig(

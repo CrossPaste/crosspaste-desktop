@@ -112,7 +112,8 @@ class PullFileTaskExecutor(
                     pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
                 } ?: run {
                     doFailure(
-                        pasteData, pullExtraInfo,
+                        pasteData,
+                        pullExtraInfo,
                         listOf(
                             createFailureResult(
                                 StandardErrorCode.CANT_GET_SYNC_ADDRESS,
@@ -124,7 +125,8 @@ class PullFileTaskExecutor(
                 }
             } ?: run {
                 doFailure(
-                    pasteData, pullExtraInfo,
+                    pasteData,
+                    pullExtraInfo,
                     listOf(
                         createFailureResult(
                             StandardErrorCode.PULL_FILE_TASK_FAIL,

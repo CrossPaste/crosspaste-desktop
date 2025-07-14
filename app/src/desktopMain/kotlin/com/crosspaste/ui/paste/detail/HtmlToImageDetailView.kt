@@ -54,7 +54,8 @@ fun HtmlToImageDetailView(
             val verticalScrollState = rememberScrollState()
             GenerateImageView(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .horizontalScroll(horizontalScrollState)
                         .verticalScroll(verticalScrollState)
                         .pointerInput(Unit) {

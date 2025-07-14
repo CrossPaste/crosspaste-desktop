@@ -12,7 +12,10 @@ import java.util.Properties
 val versionProperties = Properties()
 versionProperties.load(
     FileReader(
-        project.projectDir.toPath().resolve("src/desktopMain/resources/crosspaste-version.properties").toFile(),
+        project.projectDir
+            .toPath()
+            .resolve("src/desktopMain/resources/crosspaste-version.properties")
+            .toFile(),
     ),
 )
 group = "com.crosspaste"
@@ -54,11 +57,16 @@ ktlint {
     filter {
         exclude { element ->
             val path = element.path
-            path.contains("\\generated\\") || path.contains("/generated/") ||
-                path.contains("\\desktopTest\\") || path.contains("/desktopTest/") ||
-                path.contains("\\commonMain\\kotlin\\androidx\\") || path.contains("/commonMain/kotlin/androidx/") ||
-                path.contains("\\db\\") || path.contains("/db/") ||
-                path.endsWith("Database.kt") || path.endsWith("DatabaseImpl.kt")
+            path.contains("\\generated\\") ||
+                path.contains("/generated/") ||
+                path.contains("\\desktopTest\\") ||
+                path.contains("/desktopTest/") ||
+                path.contains("\\commonMain\\kotlin\\androidx\\") ||
+                path.contains("/commonMain/kotlin/androidx/") ||
+                path.contains("\\db\\") ||
+                path.contains("/db/") ||
+                path.endsWith("Database.kt") ||
+                path.endsWith("DatabaseImpl.kt")
         }
     }
 }
@@ -145,27 +153,25 @@ kotlin {
             implementation(libs.sqldelight.coroutines.extensions)
         }
 
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.koin.test)
-                implementation(libs.kotlin.test)
-                implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.io.mockk)
-                implementation(libs.turbine)
-            }
+        val commonTest by getting
+
+        commonTest.dependencies {
+            implementation(libs.koin.test)
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.io.mockk)
+            implementation(libs.turbine)
         }
 
-        configurations {
-            all {
-                exclude(group = "io.opentelemetry")
-                exclude(group = "io.opentelemetry.semconv")
-                exclude(group = "net.java.dev.jna", module = "jna-jpms")
-                exclude(group = "net.java.dev.jna", module = "jna-platform-jpms")
-                exclude(group = "org.seleniumhq.selenium", module = "selenium-firefox-driver")
-                exclude(group = "org.seleniumhq.selenium", module = "selenium-edge-driver")
-                exclude(group = "org.seleniumhq.selenium", module = "selenium-ie-driver")
-                exclude(group = "org.seleniumhq.selenium", module = "selenium-manager")
-            }
+        configurations.configureEach {
+            exclude(group = "io.opentelemetry")
+            exclude(group = "io.opentelemetry.semconv")
+            exclude(group = "net.java.dev.jna", module = "jna-jpms")
+            exclude(group = "net.java.dev.jna", module = "jna-platform-jpms")
+            exclude(group = "org.seleniumhq.selenium", module = "selenium-firefox-driver")
+            exclude(group = "org.seleniumhq.selenium", module = "selenium-edge-driver")
+            exclude(group = "org.seleniumhq.selenium", module = "selenium-ie-driver")
+            exclude(group = "org.seleniumhq.selenium", module = "selenium-manager")
         }
     }
 }
@@ -228,8 +234,10 @@ compose.desktop {
                         layout.projectDirectory.file("src/desktopMain/swift/MacosApi.swift").asFile
 
                     val outputFile =
-                        layout.buildDirectory.file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib")
-                            .get().asFile
+                        layout.buildDirectory
+                            .file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib")
+                            .get()
+                            .asFile
 
                     commandLine(
                         "swiftc",
@@ -300,7 +308,9 @@ compose.desktop {
             jvmArgs("-Djava.net.preferIPv6Addresses=false")
             jvmArgs("-DglobalListener=$globalListener")
             jvmArgs("-Dio.netty.maxDirectMemory=268435456")
-            jvmArgs("-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin")
+            jvmArgs(
+                "-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin",
+            )
 
             if (appEnv != "DEVELOPMENT") {
                 tasks.withType<Jar> {
@@ -309,7 +319,11 @@ compose.desktop {
             }
 
             // Add download info of jbr on all platforms
-            val jbrYamlFile = project.projectDir.toPath().resolve("jbr.yaml").toFile()
+            val jbrYamlFile =
+                project.projectDir
+                    .toPath()
+                    .resolve("jbr.yaml")
+                    .toFile()
             val jbrReleases = loadJbrReleases(jbrYamlFile)
             val jbrDir = project.projectDir.resolve("jbr")
             if (!jbrDir.exists()) {
@@ -339,8 +353,12 @@ compose.desktop {
                     jvmArgs("-Dapple.awt.enableTemplateImages=true")
                     jvmArgs("-Dmac.bundleID=$bundleID")
 
-                    val process = Runtime.getRuntime().exec("uname -m")
-                    val result = process.inputStream.bufferedReader().use { it.readText() }.trim()
+                    val process = Runtime.getRuntime().exec(arrayOf("uname", "-m"))
+                    val result =
+                        process.inputStream
+                            .bufferedReader()
+                            .use { it.readText() }
+                            .trim()
 
                     if (result == "x86_64" || buildFullPlatform) {
                         getJbrReleases(

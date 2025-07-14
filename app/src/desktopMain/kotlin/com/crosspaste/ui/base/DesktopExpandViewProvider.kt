@@ -147,16 +147,14 @@ class DesktopExpandViewProvider(
                             interactionSource = MutableInteractionSource(),
                             indication = null,
                             onClick = { expand = !expand },
-                        )
-                        .onPointerEvent(PointerEventType.Enter) { hover = true }
+                        ).onPointerEvent(PointerEventType.Enter) { hover = true }
                         .onPointerEvent(PointerEventType.Exit) { hover = false }
                         .graphicsLayer(
                             shadowElevation = elevation.value,
                             shape = animatedShape,
                             ambientShadowColor = onBarBackground,
                             spotShadowColor = onBarBackground,
-                        )
-                        .background(barBackground, animatedShape)
+                        ).background(barBackground, animatedShape)
                         .padding(horizontal = medium, vertical = small2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

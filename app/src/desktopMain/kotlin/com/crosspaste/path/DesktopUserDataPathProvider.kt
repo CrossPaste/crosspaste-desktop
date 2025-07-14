@@ -36,8 +36,8 @@ class DevelopmentPlatformUserDataPathProvider : PlatformUserDataPathProvider {
 
     private val composeAppDir = systemProperty.get("user.dir")
 
-    override fun getUserDefaultStoragePath(): Path {
-        return DevConfig.pasteUserPath?.let {
+    override fun getUserDefaultStoragePath(): Path =
+        DevConfig.pasteUserPath?.let {
             val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 path
@@ -45,16 +45,13 @@ class DevelopmentPlatformUserDataPathProvider : PlatformUserDataPathProvider {
                 composeAppDir.toPath().resolve(it)
             }
         } ?: composeAppDir.toPath()
-    }
 }
 
 class TestPlatformUserDataPathProvider : PlatformUserDataPathProvider {
 
     private val tempDir = createTempDirectory(".crosspaste")
 
-    override fun getUserDefaultStoragePath(): Path {
-        return tempDir.toOkioPath(normalize = true)
-    }
+    override fun getUserDefaultStoragePath(): Path = tempDir.toOkioPath(normalize = true)
 }
 
 class WindowsPlatformUserDataPathProvider : PlatformUserDataPathProvider {
@@ -63,9 +60,7 @@ class WindowsPlatformUserDataPathProvider : PlatformUserDataPathProvider {
 
     private val userHome: Path = systemProperty.get("user.home").toPath(normalize = true)
 
-    override fun getUserDefaultStoragePath(): Path {
-        return userHome.resolve(".crosspaste")
-    }
+    override fun getUserDefaultStoragePath(): Path = userHome.resolve(".crosspaste")
 }
 
 class MacosPlatformUserDataPathProvider : PlatformUserDataPathProvider {
@@ -78,7 +73,8 @@ class MacosPlatformUserDataPathProvider : PlatformUserDataPathProvider {
 
     override fun getUserDefaultStoragePath(): Path {
         val appSupportPath =
-            userHome.resolve("Library")
+            userHome
+                .resolve("Library")
                 .resolve("Application Support")
                 .resolve("CrossPaste")
         if (!fileUtils.existFile(appSupportPath)) {
@@ -94,7 +90,5 @@ class LinuxPlatformUserDataPathProvider : PlatformUserDataPathProvider {
 
     private val userHome: Path = systemProperty.get("user.home").toPath(normalize = true)
 
-    override fun getUserDefaultStoragePath(): Path {
-        return userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
-    }
+    override fun getUserDefaultStoragePath(): Path = userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
 }

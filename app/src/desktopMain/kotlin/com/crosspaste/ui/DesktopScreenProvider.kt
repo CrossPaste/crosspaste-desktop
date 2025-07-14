@@ -70,7 +70,8 @@ class DesktopScreenProvider(
         val screen by appWindowManager.screenContext.collectAsState()
 
         var modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .padding(start = medium)
                 .padding(bottom = medium)
 

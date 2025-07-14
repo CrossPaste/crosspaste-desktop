@@ -12,31 +12,19 @@ import com.crosspaste.app.generated.resources.windows
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun android(): Painter {
-    return painterResource(Res.drawable.android)
-}
+actual fun android(): Painter = painterResource(Res.drawable.android)
 
 @Composable
-actual fun ipad(): Painter {
-    return painterResource(Res.drawable.ipad)
-}
+actual fun ipad(): Painter = painterResource(Res.drawable.ipad)
 
 @Composable
-actual fun iphone(): Painter {
-    return painterResource(Res.drawable.iphone)
-}
+actual fun iphone(): Painter = painterResource(Res.drawable.iphone)
 
 @Composable
-actual fun linux(): Painter {
-    return painterResource(Res.drawable.linux)
-}
+actual fun linux(): Painter = painterResource(Res.drawable.linux)
 
 @Composable
-actual fun macos(): Painter {
-    return painterResource(Res.drawable.macos)
-}
+actual fun macos(): Painter = painterResource(Res.drawable.macos)
 
 @Composable
-actual fun windows(): Painter {
-    return painterResource(Res.drawable.windows)
-}
+actual fun windows(): Painter = painterResource(Res.drawable.windows)

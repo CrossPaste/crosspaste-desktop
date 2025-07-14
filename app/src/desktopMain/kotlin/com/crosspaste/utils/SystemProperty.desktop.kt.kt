@@ -1,8 +1,6 @@
 package com.crosspaste.utils
 
-actual fun getSystemProperty(): SystemProperty {
-    return DesktopSystemProperty
-}
+actual fun getSystemProperty(): SystemProperty = DesktopSystemProperty
 
 // Delegate all System.getProperty methods to DesktopSystemProperty,
 // for convenient mocking in unit tests.

@@ -13,13 +13,12 @@ class GeneralSecureStore(
 ) : SecureStore {
     private val sessions = ConcurrentMap<String, SecureSession>()
 
-    private fun getSecureSession(appInstanceId: String): SecureSession {
-        return sessions.computeIfAbsent(appInstanceId) { SecureSession() }
-    }
+    private fun getSecureSession(appInstanceId: String): SecureSession =
+        sessions.computeIfAbsent(appInstanceId) {
+            SecureSession()
+        }
 
-    private fun removeSecureSession(appInstanceId: String): SecureSession? {
-        return sessions.remove(appInstanceId)
-    }
+    private fun removeSecureSession(appInstanceId: String): SecureSession? = sessions.remove(appInstanceId)
 
     override suspend fun saveCryptPublicKey(
         appInstanceId: String,

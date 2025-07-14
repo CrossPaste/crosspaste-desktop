@@ -48,8 +48,8 @@ class SwitchLanguageTaskExecutor(
         switchLanguageInfo: SwitchLanguageInfo,
         errorCodeSupplier: ErrorCodeSupplier = StandardErrorCode.SWITCH_LANGUAGE_TASK_FAIL,
         errorMessage: String,
-    ): PasteTaskResult {
-        return TaskUtils.createFailurePasteTaskResult(
+    ): PasteTaskResult =
+        TaskUtils.createFailurePasteTaskResult(
             logger = logger,
             retryHandler = { false },
             startTime = nowEpochMilliseconds(),
@@ -62,5 +62,4 @@ class SwitchLanguageTaskExecutor(
                 ),
             extraInfo = switchLanguageInfo,
         )
-    }
 }

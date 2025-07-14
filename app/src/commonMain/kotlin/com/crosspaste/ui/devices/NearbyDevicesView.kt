@@ -50,7 +50,11 @@ fun NearbyDevicesView() {
                         .onGloballyPositioned { coordinates ->
                             val contentHeight =
                                 lazyListState.layoutInfo.totalItemsCount *
-                                    (lazyListState.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0)
+                                    (
+                                        lazyListState.layoutInfo.visibleItemsInfo
+                                            .firstOrNull()
+                                            ?.size ?: 0
+                                    )
                             isScrollable = contentHeight > coordinates.size.height
                         },
             ) {

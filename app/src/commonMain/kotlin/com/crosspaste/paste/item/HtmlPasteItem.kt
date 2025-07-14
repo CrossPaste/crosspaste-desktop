@@ -27,7 +27,8 @@ class HtmlPasteItem(
     override val size: Long,
     override val extraInfo: JsonObject? = null,
     var relativePath: String? = null,
-) : PasteItem, PasteHtml {
+) : PasteItem,
+    PasteHtml {
 
     companion object {
         val fileUtils = getFileUtils()
@@ -49,41 +50,33 @@ class HtmlPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getBackgroundColor(): Color? {
-        return extraInfo?.let { json ->
+    override fun getBackgroundColor(): Color? =
+        extraInfo?.let { json ->
             runCatching {
                 json[BACKGROUND]?.jsonPrimitive?.long?.let { Color(it) }
             }.getOrNull()
         }
-    }
 
-    override fun bind(pasteCoordinate: PasteCoordinate): HtmlPasteItem {
-        return HtmlPasteItem(
+    override fun bind(pasteCoordinate: PasteCoordinate): HtmlPasteItem =
+        HtmlPasteItem(
             identifiers = identifiers,
             hash = hash,
             size = size,
             html = html,
             extraInfo = extraInfo,
         )
-    }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.HTML_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.HTML_TYPE
 
-    override fun getSearchContent(): String {
-        return htmlTextCache.lowercase()
-    }
+    override fun getSearchContent(): String = htmlTextCache.lowercase()
 
-    override fun getSummary(): String {
-        return htmlTextCache
-    }
+    override fun getSummary(): String = htmlTextCache
 
     override fun update(
         data: Any,
         hash: String,
-    ): PasteItem {
-        return (data as? String)?.let { html ->
+    ): PasteItem =
+        (data as? String)?.let { html ->
             // todo update html image
             HtmlPasteItem(
                 identifiers = identifiers,
@@ -93,13 +86,12 @@ class HtmlPasteItem(
                 extraInfo = extraInfo,
             )
         } ?: this
-    }
 
     override fun getRenderingFilePath(
         pasteCoordinate: PasteCoordinate,
         userDataPathProvider: UserDataPathProvider,
-    ): Path {
-        return getMarketingPath()?.toPath() ?: run {
+    ): Path =
+        getMarketingPath()?.toPath() ?: run {
             val basePath = userDataPathProvider.resolve(appFileType = AppFileType.HTML)
             val relativePath =
                 fileUtils.createPasteRelativePath(
@@ -108,7 +100,6 @@ class HtmlPasteItem(
                 )
             userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
-    }
 
     override fun clear(
         clearResource: Boolean,
@@ -125,14 +116,13 @@ class HtmlPasteItem(
         }
     }
 
-    override fun isValid(): Boolean {
-        return hash.isNotEmpty() &&
+    override fun isValid(): Boolean =
+        hash.isNotEmpty() &&
             size > 0 &&
             html.isNotEmpty()
-    }
 
-    override fun toJson(): String {
-        return buildJsonObject {
+    override fun toJson(): String =
+        buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
@@ -140,5 +130,4 @@ class HtmlPasteItem(
             put("html", html)
             extraInfo?.let { put("extraInfo", it) }
         }.toString()
-    }
 }

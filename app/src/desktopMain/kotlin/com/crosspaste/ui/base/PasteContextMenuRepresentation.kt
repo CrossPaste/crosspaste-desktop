@@ -83,7 +83,8 @@ class PasteContextMenuRepresentation : ContextMenuRepresentation {
                 inputModeManager = LocalInputModeManager.current
                 Box(
                     modifier =
-                        Modifier.wrapContentSize()
+                        Modifier
+                            .wrapContentSize()
                             .background(Color.Transparent)
                             .shadow(small),
                 ) {

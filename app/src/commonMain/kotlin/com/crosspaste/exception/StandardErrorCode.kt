@@ -3,7 +3,10 @@ package com.crosspaste.exception
 val standardErrorCodeMap: Map<Int, ErrorCodeSupplier> =
     StandardErrorCode.entries.associateBy { it.getCode() }
 
-enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplier {
+enum class StandardErrorCode(
+    code: Int,
+    errorType: ErrorType,
+) : ErrorCodeSupplier {
     UNKNOWN_ERROR(0, ErrorType.INTERNAL_ERROR),
     BOOTSTRAP_ERROR(1, ErrorType.INTERNAL_ERROR),
     INVALID_PARAMETER(2, ErrorType.USER_ERROR),
@@ -54,11 +57,7 @@ enum class StandardErrorCode(code: Int, errorType: ErrorType) : ErrorCodeSupplie
 
     private val errorCode: ErrorCode = ErrorCode(code, name, errorType)
 
-    override fun toErrorCode(): ErrorCode {
-        return errorCode
-    }
+    override fun toErrorCode(): ErrorCode = errorCode
 
-    fun getCode(): Int {
-        return errorCode.code
-    }
+    fun getCode(): Int = errorCode.code
 }

@@ -29,28 +29,33 @@ object LinuxPlatform {
         }
     }
 
-    private fun commandExists(): Boolean {
-        return runCatching {
+    private fun commandExists(): Boolean =
+        runCatching {
             ProcessBuilder("which", "lsb_release").start().waitFor() == 0
         }.getOrElse { false }
-    }
 
     private fun getLsbReleaseInfo(): String {
         val process = ProcessBuilder("lsb_release", "-ds").start()
-        val output = process.inputStream.bufferedReader().readText().trim()
+        val output =
+            process.inputStream
+                .bufferedReader()
+                .readText()
+                .trim()
         return parseOsInfo(output)
     }
 
     private fun getOsReleaseInfo(): String {
         val content = File("/etc/os-release").readText()
         val name =
-            content.lineSequence()
+            content
+                .lineSequence()
                 .find { it.startsWith("NAME=") }
                 ?.substringAfter("NAME=")
                 ?.trim('"')
                 ?: "Unknown"
         val version =
-            content.lineSequence()
+            content
+                .lineSequence()
                 .find { it.startsWith("VERSION_ID=") }
                 ?.substringAfter("VERSION_ID=")
                 ?.trim('"')
@@ -63,9 +68,7 @@ object LinuxPlatform {
         return "Debian $version"
     }
 
-    private fun getRedHatVersion(): String {
-        return parseOsInfo(File("/etc/redhat-release").readText().trim())
-    }
+    private fun getRedHatVersion(): String = parseOsInfo(File("/etc/redhat-release").readText().trim())
 
     private fun getGenericLinuxInfo(): String {
         val kernelVersion = System.getProperty("os.version")

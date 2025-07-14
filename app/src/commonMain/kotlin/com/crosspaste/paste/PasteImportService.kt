@@ -66,9 +66,13 @@ class PasteImportService(
             userDataPathProvider.autoCreateDir(basePath)
             decompress(pasteImportParam, basePath)
             val importCount =
-                fileUtils.listFiles(basePath) {
-                    it.name.endsWith(".count")
-                }.first().name.removeSuffix(".count").toLong()
+                fileUtils
+                    .listFiles(basePath) {
+                        it.name.endsWith(".count")
+                    }.first()
+                    .name
+                    .removeSuffix(".count")
+                    .toLong()
             val pasteDataFile = basePath.resolve("paste.data")
             if (!fileUtils.existFile(pasteDataFile)) {
                 throw PasteException(
@@ -120,8 +124,8 @@ class PasteImportService(
         basePath: Path,
         index: Long,
         pasteData: PasteData,
-    ): Boolean {
-        return runCatching {
+    ): Boolean =
+        runCatching {
             val id = pasteDao.createPasteData(pasteData)
 
             val pasteCoordinate = pasteData.getPasteCoordinate(id = index)
@@ -156,7 +160,6 @@ class PasteImportService(
         }.onFailure { e ->
             logger.error(e) { "Error importing paste data, index = $index" }
         }.isSuccess
-    }
 
     private fun moveResource(
         basePath: Path,
@@ -165,7 +168,8 @@ class PasteImportService(
         pasteFiles: PasteFiles,
     ) {
         val path =
-            basePath.resolve(importPasteData.appInstanceId)
+            basePath
+                .resolve(importPasteData.appInstanceId)
                 .resolve(index.toString())
 
         for (filePath in pasteFiles.getFilePaths(userDataPathProvider)) {
@@ -185,13 +189,13 @@ class PasteImportService(
         decompressPath: Path,
     ) {
         pasteImportParam.importBufferedSource()?.let { bufferSource ->
-            compressUtils.unzip(bufferSource, decompressPath)
+            compressUtils
+                .unzip(bufferSource, decompressPath)
                 .onSuccess {
                     runCatching {
                         bufferSource.close()
                     }
-                }
-                .onFailure {
+                }.onFailure {
                     logger.error(it) { "Failed to decompress the file" }
                     throw PasteException(
                         errorCode = StandardErrorCode.IMPORT_FAIL.toErrorCode(),

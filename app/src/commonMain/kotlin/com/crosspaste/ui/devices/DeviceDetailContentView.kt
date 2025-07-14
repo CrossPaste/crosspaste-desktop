@@ -83,7 +83,8 @@ fun DeviceDetailContentView() {
 
     Column(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .background(AppUIColors.appBackground)
                 .clip(tinyRoundedCornerShape),
     ) {
@@ -96,7 +97,8 @@ fun DeviceDetailContentView() {
 
         Column(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .clip(tinyRoundedCornerShape)
                     .background(AppUIColors.appBackground)
                     .verticalScroll(rememberScrollState()),
@@ -104,13 +106,15 @@ fun DeviceDetailContentView() {
             if (versionRelation != null && versionRelation != VersionRelation.EQUAL_TO) {
                 Column(
                     modifier =
-                        Modifier.wrapContentSize()
+                        Modifier
+                            .wrapContentSize()
                             .clip(tinyRoundedCornerShape)
                             .background(AppUIColors.errorContainerColor),
                 ) {
                     Row(
                         modifier =
-                            Modifier.wrapContentSize()
+                            Modifier
+                                .wrapContentSize()
                                 .padding(small2X),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -127,7 +131,9 @@ fun DeviceDetailContentView() {
                         Text(
                             text =
                                 "${copywriter.getText("current_software_version")}: ${appInfo.appVersion}\n" +
-                                    "${copywriter.getText("connected_software_version")}: ${syncRuntimeInfo.appVersion}\n" +
+                                    "${copywriter.getText(
+                                        "connected_software_version",
+                                    )}: ${syncRuntimeInfo.appVersion}\n" +
                                     copywriter.getText("incompatible_info"),
                             color =
                                 MaterialTheme.colorScheme.contentColorFor(
@@ -161,7 +167,8 @@ fun DeviceDetailContentView() {
                         },
                     ) { allowSend ->
                         if (appControl.isSyncControlEnabled()) {
-                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                            syncManager
+                                .getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                                 ?.updateAllowSend(allowSend) {
                                     it?.let {
                                         syncRuntimeInfo = it
@@ -180,7 +187,8 @@ fun DeviceDetailContentView() {
                         },
                     ) { allowReceive ->
                         if (appControl.isSyncControlEnabled()) {
-                            syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+                            syncManager
+                                .getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                                 ?.updateAllowReceive(allowReceive) {
                                     it?.let {
                                         syncRuntimeInfo = it
@@ -226,7 +234,8 @@ fun DeviceDetailContentView() {
                     properties.forEachIndexed { index, pair ->
                         Row(
                             modifier =
-                                Modifier.fillMaxWidth()
+                                Modifier
+                                    .fillMaxWidth()
                                     .padding(small2X),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {

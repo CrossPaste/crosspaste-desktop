@@ -59,12 +59,10 @@ class DesktopShortcutKeys(
         }
     }
 
-    private fun defaultKeysCore(): ShortcutKeysCore {
-        return shortcutKeysLoader.load(platform.name)
-    }
+    private fun defaultKeysCore(): ShortcutKeysCore = shortcutKeysLoader.load(platform.name)
 
-    private fun loadKeysCore(): ShortcutKeysCore? {
-        return runCatching {
+    private fun loadKeysCore(): ShortcutKeysCore? =
+        runCatching {
             val shortcutKeysPropertiesPath =
                 appPathProvider
                     .resolve("shortcut-keys.properties", AppFileType.USER)
@@ -94,7 +92,6 @@ class DesktopShortcutKeys(
         }.onFailure { e ->
             logger.error(e) { "Failed to load shortcut keys" }
         }.getOrNull()
-    }
 
     private fun writeProperties(
         properties: Properties,

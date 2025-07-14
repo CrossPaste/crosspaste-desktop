@@ -78,7 +78,8 @@ fun SingleImagePreviewView(
 
     Row(
         modifier =
-            Modifier.width(width)
+            Modifier
+                .width(width)
                 .wrapContentHeight()
                 .clip(tiny2XRoundedCornerShape)
                 .pointerInput(Unit) {
@@ -92,7 +93,8 @@ fun SingleImagePreviewView(
         SubcomposeAsyncImage(
             modifier = Modifier.fillMaxSize(),
             model =
-                ImageRequest.Builder(platformContext)
+                ImageRequest
+                    .Builder(platformContext)
                     .data(ImageItem(pasteFileCoordinate, true))
                     .crossfade(true)
                     .build(),
@@ -100,11 +102,15 @@ fun SingleImagePreviewView(
             contentDescription = "imageType",
             content = {
                 val context = this
-                val state = context.painter.state.collectAsState().value
+                val state =
+                    context.painter.state
+                        .collectAsState()
+                        .value
                 Row {
                     Box(
                         modifier =
-                            Modifier.size(appSize.mainPasteSize.height)
+                            Modifier
+                                .size(appSize.mainPasteSize.height)
                                 .clip(tiny2XRoundedCornerShape),
                     ) {
                         TransparentBackground(
@@ -142,7 +148,8 @@ fun SingleImagePreviewView(
                     }
                     Column(
                         modifier =
-                            Modifier.fillMaxHeight()
+                            Modifier
+                                .fillMaxHeight()
                                 .padding(horizontal = tiny)
                                 .padding(bottom = tiny),
                         verticalArrangement = Arrangement.Bottom,

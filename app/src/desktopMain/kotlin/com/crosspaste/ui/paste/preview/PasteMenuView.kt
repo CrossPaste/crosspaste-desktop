@@ -121,22 +121,20 @@ fun PasteMenuView(
 
     Column(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .onGloballyPositioned { parentBounds = it.boundsInWindow() }
                 .onPointerEvent(PointerEventType.Enter) {
                     if (!showMenu && !it.buttons.areAnyPressed) {
                         startShowing()
                     }
-                }
-                .onPointerEvent(PointerEventType.Move) {
+                }.onPointerEvent(PointerEventType.Move) {
                     if (!showMenu && !it.buttons.areAnyPressed) {
                         startShowing()
                     }
-                }
-                .onPointerEvent(PointerEventType.Exit) {
+                }.onPointerEvent(PointerEventType.Exit) {
                     hideIfNotHovered(parentBounds.topLeft + it.position)
-                }
-                .clip(tiny2XRoundedCornerShape)
+                }.clip(tiny2XRoundedCornerShape)
                 .background(if (showMenu) AppUIColors.generalBackground else Color.Transparent),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -245,7 +243,8 @@ fun MoreMenuItem(
     val menuText = copywriter.getText("menu")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth()
+        Modifier
+            .fillMaxWidth()
             .height(appSize.mainPasteSize.height / 4),
         text = menuText,
         computeTooltipPlacement = {
@@ -259,14 +258,14 @@ fun MoreMenuItem(
     ) {
         Box(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .onPointerEvent(
                         eventType = PointerEventType.Enter,
                         onEvent = {
                             hoverMenu(true)
                         },
-                    )
-                    .onPointerEvent(
+                    ).onPointerEvent(
                         eventType = PointerEventType.Exit,
                         onEvent = {
                             hoverMenu(false)
@@ -276,7 +275,8 @@ fun MoreMenuItem(
         ) {
             Box(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
@@ -285,7 +285,8 @@ fun MoreMenuItem(
                     painter = moreVertical(),
                     contentDescription = "info",
                     modifier =
-                        Modifier.size(large)
+                        Modifier
+                            .size(large)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -313,7 +314,8 @@ fun CopyMenuItem(
     val copyText = copywriter.getText("copy")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth()
+        Modifier
+            .fillMaxWidth()
             .height(appSize.mainPasteSize.height / 4),
         text = copyText,
         computeTooltipPlacement = {
@@ -327,14 +329,14 @@ fun CopyMenuItem(
     ) {
         Box(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .onPointerEvent(
                         eventType = PointerEventType.Enter,
                         onEvent = {
                             hoverCopy(true)
                         },
-                    )
-                    .onPointerEvent(
+                    ).onPointerEvent(
                         eventType = PointerEventType.Exit,
                         onEvent = {
                             hoverCopy(false)
@@ -344,14 +346,16 @@ fun CopyMenuItem(
         ) {
             Box(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     modifier =
-                        Modifier.size(medium)
+                        Modifier
+                            .size(medium)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -382,7 +386,8 @@ fun FavoriteMenuItem(
     val favoriteText = copywriter.getText(if (currentFavorite) "remove_from_favorites" else "favorite")
 
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth()
+        Modifier
+            .fillMaxWidth()
             .height(appSize.mainPasteSize.height / 4),
         text = favoriteText,
         computeTooltipPlacement = {
@@ -396,14 +401,14 @@ fun FavoriteMenuItem(
     ) {
         Box(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .onPointerEvent(
                         eventType = PointerEventType.Enter,
                         onEvent = {
                             hoverFavorite(true)
                         },
-                    )
-                    .onPointerEvent(
+                    ).onPointerEvent(
                         eventType = PointerEventType.Exit,
                         onEvent = {
                             hoverFavorite(false)
@@ -413,14 +418,16 @@ fun FavoriteMenuItem(
         ) {
             Box(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     modifier =
-                        Modifier.size(medium)
+                        Modifier
+                            .size(medium)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onTap = {
@@ -449,7 +456,8 @@ fun DetailMenuItem(
     val copywriter = koinInject<GlobalCopywriter>()
     val detailInfo = getDetailInfo(copywriter, pasteData)
     PasteTooltipAreaView(
-        Modifier.fillMaxWidth()
+        Modifier
+            .fillMaxWidth()
             .height(appSize.mainPasteSize.height / 4),
         text = detailInfo,
         computeTooltipPlacement = {
@@ -463,14 +471,14 @@ fun DetailMenuItem(
     ) {
         Box(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .onPointerEvent(
                         eventType = PointerEventType.Enter,
                         onEvent = {
                             hoverSource(true)
                         },
-                    )
-                    .onPointerEvent(
+                    ).onPointerEvent(
                         eventType = PointerEventType.Exit,
                         onEvent = {
                             hoverSource(false)
@@ -480,7 +488,8 @@ fun DetailMenuItem(
         ) {
             Box(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tiny2XRoundedCornerShape)
                         .background(background),
                 contentAlignment = Alignment.Center,

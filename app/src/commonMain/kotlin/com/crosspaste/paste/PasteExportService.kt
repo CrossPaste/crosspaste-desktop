@@ -125,10 +125,12 @@ class PasteExportService(
         index: Long,
         pasteData: PasteData,
         sink: BufferedSink,
-    ): Long {
-        return runCatching {
+    ): Long =
+        runCatching {
             val pasteFilesList =
-                pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>()
+                pasteData
+                    .getPasteAppearItems()
+                    .filterIsInstance<PasteFiles>()
                     .filter { pasteData ->
                         pasteExportParam.maxFileSize?.let {
                             pasteData.size <= pasteExportParam.maxFileSize
@@ -148,7 +150,6 @@ class PasteExportService(
             logger.error(e) { "export pasteData fail, id = ${pasteData.id}" }
             0L
         }
-    }
 
     private fun copyResource(
         basePath: Path,
@@ -157,7 +158,8 @@ class PasteExportService(
         pasteFiles: PasteFiles,
     ) {
         val path =
-            basePath.resolve(pasteData.appInstanceId)
+            basePath
+                .resolve(pasteData.appInstanceId)
                 .resolve(index.toString())
 
         userDataPathProvider.autoCreateDir(path)
@@ -173,14 +175,14 @@ class PasteExportService(
         exportFileName: String,
     ) {
         pasteExportParam.exportBufferedSink(exportFileName)?.let { bufferedSink ->
-            compressUtils.zipDir(basePath, bufferedSink)
+            compressUtils
+                .zipDir(basePath, bufferedSink)
                 .onSuccess {
                     runCatching {
                         bufferedSink.flush()
                         bufferedSink.close()
                     }
-                }
-                .onFailure {
+                }.onFailure {
                     logger.error { "compress export file fail" }
                     throw PasteException(
                         StandardErrorCode.EXPORT_FAIL.toErrorCode(),

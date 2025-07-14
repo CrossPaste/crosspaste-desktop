@@ -92,7 +92,8 @@ fun TokenView(intOffset: IntOffset) {
                 ) {
                     Box(
                         modifier =
-                            Modifier.align(Alignment.CenterHorizontally)
+                            Modifier
+                                .align(Alignment.CenterHorizontally)
                                 .wrapContentHeight()
                                 .padding(horizontal = tiny)
                                 .padding(top = tiny),
@@ -109,14 +110,16 @@ fun TokenView(intOffset: IntOffset) {
 
                         Box(
                             modifier =
-                                Modifier.fillMaxWidth()
+                                Modifier
+                                    .fillMaxWidth()
                                     .wrapContentHeight()
                                     .padding(end = tiny3X),
                             contentAlignment = Alignment.CenterEnd,
                         ) {
                             Box(
                                 modifier =
-                                    Modifier.size(medium * 2)
+                                    Modifier
+                                        .size(medium * 2)
                                         .clip(mediumRoundedCornerShape)
                                         .clickable {
                                             appTokenApi.toHideToken()
@@ -157,7 +160,8 @@ private fun OTPCodeBox() {
 
     Column(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .wrapContentHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -182,14 +186,16 @@ private fun OTPCodeBox() {
         Spacer(modifier = Modifier.height(small3X))
         Row(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .wrapContentHeight()
                     .padding(horizontal = small3X),
         ) {
             val progress by appTokenApi.showTokenProgression.collectAsState()
             LinearProgressIndicator(
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .height(tiny3X)
                         .clip(tiny4XRoundedCornerShape),
                 progress = { progress },

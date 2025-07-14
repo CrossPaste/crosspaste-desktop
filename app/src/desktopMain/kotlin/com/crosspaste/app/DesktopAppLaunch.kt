@@ -16,7 +16,8 @@ import java.nio.file.StandardOpenOption
 class DesktopAppLaunch(
     private val platform: Platform,
     private val appPathProvider: AppPathProvider,
-) : AppLaunch, AppLock {
+) : AppLaunch,
+    AppLock {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
@@ -74,7 +75,10 @@ class DesktopAppLaunch(
             lock?.release()
             channel?.close()
             if (resetLock) {
-                appPathProvider.pasteUserPath.resolve("app.lock").toFile().delete()
+                appPathProvider.pasteUserPath
+                    .resolve("app.lock")
+                    .toFile()
+                    .delete()
                 logger.info { "Application lock released and reset." }
             } else {
                 logger.info { "Application lock released." }

@@ -16,7 +16,9 @@ import javax.sound.sampled.Clip
 import javax.sound.sampled.DataLine
 import kotlin.time.Duration.Companion.milliseconds
 
-class DesktopSoundService(private val configManager: CommonConfigManager) : SoundService {
+class DesktopSoundService(
+    private val configManager: CommonConfigManager,
+) : SoundService {
 
     private val logger = KotlinLogging.logger {}
 

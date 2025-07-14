@@ -32,8 +32,8 @@ class Html2ImageTaskExecutor(
             lazyHtmlRenderingService.value
         }
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        return runCatching {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult =
+        runCatching {
             pasteTask.pasteDataId?.let { pasteDataId ->
                 mutex.withLock(pasteDataId) {
                     val htmlRenderingService = htmlRenderingServiceDeferred.await()
@@ -58,5 +58,4 @@ class Html2ImageTaskExecutor(
                 extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
             )
         }
-    }
 }

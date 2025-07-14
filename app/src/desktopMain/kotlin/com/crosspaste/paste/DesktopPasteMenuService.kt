@@ -106,11 +106,12 @@ class DesktopPasteMenuService(
         menuScope.launch {
             desktopAppWindowManager.hideMainWindowAndPaste {
                 withContext(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(
-                        pasteData = pasteData,
-                        localOnly = true,
-                        updateCreateTime = true,
-                    ).isSuccess
+                    pasteboardService
+                        .tryWritePasteboard(
+                            pasteData = pasteData,
+                            localOnly = true,
+                            updateCreateTime = true,
+                        ).isSuccess
                 }
             }
         }
@@ -120,11 +121,12 @@ class DesktopPasteMenuService(
         menuScope.launch {
             desktopAppWindowManager.hideSearchWindowAndPaste {
                 withContext(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(
-                        pasteData = pasteData,
-                        localOnly = true,
-                        updateCreateTime = true,
-                    ).isSuccess
+                    pasteboardService
+                        .tryWritePasteboard(
+                            pasteData = pasteData,
+                            localOnly = true,
+                            updateCreateTime = true,
+                        ).isSuccess
                 }
             }
         }
@@ -134,8 +136,8 @@ class DesktopPasteMenuService(
         pasteData: PasteData,
         pasteItem: PasteItem,
         index: Int = 0,
-    ): () -> List<ContextMenuItem> {
-        return {
+    ): () -> List<ContextMenuItem> =
+        {
             listOf(
                 ContextMenuItem(copywriter.getText("copy")) {
                     copySingleFile(
@@ -148,10 +150,9 @@ class DesktopPasteMenuService(
                 },
             )
         }
-    }
 
-    fun pasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> {
-        return {
+    fun pasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
+        {
             listOf(
                 ContextMenuItem(copywriter.getText("copy")) {
                     copyPasteData(pasteData)
@@ -164,5 +165,4 @@ class DesktopPasteMenuService(
                 },
             )
         }
-    }
 }

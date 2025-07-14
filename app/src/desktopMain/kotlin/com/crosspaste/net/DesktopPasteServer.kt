@@ -14,11 +14,10 @@ class DesktopPasteServer(
     private val exceptionHandler: ExceptionHandler,
     serverFactory: ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>,
     serverModule: ServerModule,
-) :
-    PasteServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>(
-            serverFactory,
-            serverModule,
-        ) {
+) : PasteServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>(
+        serverFactory,
+        serverModule,
+    ) {
 
     private val logger = KotlinLogging.logger {}
 

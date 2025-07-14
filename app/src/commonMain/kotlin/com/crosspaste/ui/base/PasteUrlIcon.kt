@@ -31,14 +31,19 @@ fun PasteUrlIcon(
     SubcomposeAsyncImage(
         modifier = Modifier.size(size),
         model =
-            ImageRequest.Builder(platformContext)
+            ImageRequest
+                .Builder(platformContext)
                 .data(PasteDataItem(pasteData))
                 .crossfade(false)
                 .build(),
         imageLoader = imageLoaders.faviconImageLoader,
         contentDescription = "Paste Icon",
         content = {
-            when (this.painter.state.collectAsState().value) {
+            when (
+                this.painter.state
+                    .collectAsState()
+                    .value
+            ) {
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,
                 -> {

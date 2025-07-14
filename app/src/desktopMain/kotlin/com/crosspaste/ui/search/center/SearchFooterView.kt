@@ -51,7 +51,8 @@ fun SearchFooterView() {
 
     Row(
         modifier =
-            Modifier.height(appSize.centerSearchFooterHeight)
+            Modifier
+                .height(appSize.centerSearchFooterHeight)
                 .fillMaxWidth()
                 .background(AppUIColors.generalBackground)
                 .padding(horizontal = small3X),

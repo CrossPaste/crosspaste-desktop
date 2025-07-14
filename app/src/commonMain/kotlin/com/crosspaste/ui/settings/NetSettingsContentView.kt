@@ -68,7 +68,8 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("network_info")
@@ -100,7 +101,8 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("service_discovery")
@@ -111,7 +113,8 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         ) {
             CustomSwitch(
                 modifier =
-                    Modifier.width(medium * 2)
+                    Modifier
+                        .width(medium * 2)
                         .height(large2X),
                 checked = config.enableDiscovery,
                 onCheckedChange = { newIsAllowDiscovery ->
@@ -123,14 +126,16 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("blacklist")
 
         Row(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .wrapContentHeight(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -143,7 +148,8 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             if (blacklist.isEmpty()) {
                 Column(
                     modifier =
-                        Modifier.fillMaxWidth()
+                        Modifier
+                            .fillMaxWidth()
                             .height(appSize.deviceHeight)
                             .padding(start = small2X),
                     verticalArrangement = Arrangement.Center,
@@ -164,9 +170,10 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
                         BlackListDeviceView(currentSyncInfo) {
                             val blackSyncInfos: List<SyncInfo> =
-                                jsonUtils.JSON.decodeFromString<List<SyncInfo>>(
-                                    config.blacklist,
-                                ).filter { it.appInfo.appInstanceId != currentSyncInfo.appInfo.appInstanceId }
+                                jsonUtils.JSON
+                                    .decodeFromString<List<SyncInfo>>(
+                                        config.blacklist,
+                                    ).filter { it.appInfo.appInstanceId != currentSyncInfo.appInfo.appInstanceId }
 
                             val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                             configManager.updateConfig("blacklist", newBlackList)

@@ -10,21 +10,13 @@ import com.crosspaste.app.generated.resources.expand_more
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun chevronLeft(): Painter {
-    return painterResource(Res.drawable.chevron_left)
-}
+actual fun chevronLeft(): Painter = painterResource(Res.drawable.chevron_left)
 
 @Composable
-actual fun chevronRight(): Painter {
-    return painterResource(Res.drawable.chevron_right)
-}
+actual fun chevronRight(): Painter = painterResource(Res.drawable.chevron_right)
 
 @Composable
-actual fun expandLess(): Painter {
-    return painterResource(Res.drawable.expand_less)
-}
+actual fun expandLess(): Painter = painterResource(Res.drawable.expand_less)
 
 @Composable
-actual fun expandMore(): Painter {
-    return painterResource(Res.drawable.expand_more)
-}
+actual fun expandMore(): Painter = painterResource(Res.drawable.expand_more)

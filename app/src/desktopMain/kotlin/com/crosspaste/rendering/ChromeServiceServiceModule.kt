@@ -24,13 +24,14 @@ class ChromeServiceServiceModule(
     }
 
     val chromeServiceDir =
-        appPathProvider.resolve(appFileType = AppFileType.MODULE)
+        appPathProvider
+            .resolve(appFileType = AppFileType.MODULE)
             .resolve(CHROME_SERVICE_MODULE_NAME)
 
     private val hosts = listOf(DEFAULT_HOST, MIRROR_HOST)
 
-    override fun getModuleLoaderConfig(): ModuleLoaderConfig? {
-        return if (platform.isWindows() && platform.is64bit()) {
+    override fun getModuleLoaderConfig(): ModuleLoaderConfig? =
+        if (platform.isWindows() && platform.is64bit()) {
             ModuleLoaderConfig(
                 installPath = chromeServiceDir,
                 moduleName = CHROME_SERVICE_MODULE_NAME,
@@ -123,5 +124,4 @@ class ChromeServiceServiceModule(
         } else {
             null
         }
-    }
 }

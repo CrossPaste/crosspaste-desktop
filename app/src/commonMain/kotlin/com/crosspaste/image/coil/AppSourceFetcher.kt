@@ -24,8 +24,8 @@ class AppSourceFetcher(
     private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
-    override suspend fun fetch(): FetchResult? {
-        return withContext(ioDispatcher) {
+    override suspend fun fetch(): FetchResult? =
+        withContext(ioDispatcher) {
             val pasteData = data.pasteData
             pasteData.source?.let {
                 runCatching {
@@ -44,7 +44,6 @@ class AppSourceFetcher(
                 }.getOrNull()
             }
         }
-    }
 }
 
 class AppSourceFactory(
@@ -54,7 +53,5 @@ class AppSourceFactory(
         data: PasteDataItem,
         options: Options,
         imageLoader: ImageLoader,
-    ): Fetcher {
-        return AppSourceFetcher(data, userDataPathProvider)
-    }
+    ): Fetcher = AppSourceFetcher(data, userDataPathProvider)
 }

@@ -5,9 +5,8 @@ import io.ktor.server.netty.*
 import io.netty.channel.ChannelOption
 
 class DesktopServerFactory : ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration> {
-    override fun getFactory(): ApplicationEngineFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration> {
-        return Netty
-    }
+    override fun getFactory(): ApplicationEngineFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration> =
+        Netty
 
     override fun getConfigure(): NettyApplicationEngine.Configuration.() -> Unit =
         {

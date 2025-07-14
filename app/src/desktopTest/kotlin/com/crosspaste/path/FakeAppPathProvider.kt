@@ -31,7 +31,5 @@ class FakeAppPathProvider : AppPathProvider {
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
-    ): Path {
-        return desktopPathProvider.resolve(fileName, appFileType)
-    }
+    ): Path = desktopPathProvider.resolve(fileName, appFileType)
 }

@@ -32,7 +32,8 @@ import java.util.Locale
 private val iconSize = Size(512f, 512f)
 
 internal val GlobalDensity get() =
-    GraphicsEnvironment.getLocalGraphicsEnvironment()
+    GraphicsEnvironment
+        .getLocalGraphicsEnvironment()
         .defaultScreenDevice
         .defaultConfiguration
         .density

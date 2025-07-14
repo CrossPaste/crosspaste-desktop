@@ -96,13 +96,15 @@ fun ToastView(
                 Spacer(Modifier.width(small2X))
                 Column(
                     modifier =
-                        Modifier.width(appSize.toastViewWidth - (small2X * 4 + large2X * 2))
+                        Modifier
+                            .width(appSize.toastViewWidth - (small2X * 4 + large2X * 2))
                             .wrapContentHeight(),
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Row(
                         modifier =
-                            Modifier.fillMaxWidth()
+                            Modifier
+                                .fillMaxWidth()
                                 .wrapContentHeight(),
                         horizontalArrangement = Arrangement.Center,
                     ) {
@@ -131,7 +133,8 @@ fun ToastView(
                 Spacer(Modifier.width(small2X))
                 Icon(
                     modifier =
-                        Modifier.size(large2X)
+                        Modifier
+                            .size(large2X)
                             .clickable(onClick = onCancelTapped),
                     painter = close(),
                     contentDescription = "Cancel",

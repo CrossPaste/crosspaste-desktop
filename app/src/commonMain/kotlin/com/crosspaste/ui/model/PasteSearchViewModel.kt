@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 
-abstract class PasteSearchViewModel() : ViewModel() {
+abstract class PasteSearchViewModel : ViewModel() {
 
     companion object {
         const val QUERY_BATCH_SIZE = 50

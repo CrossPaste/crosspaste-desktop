@@ -22,14 +22,10 @@ interface CodecsUtils {
     val sha256: Hasher
 
     @OptIn(ExperimentalEncodingApi::class)
-    fun base64Encode(bytes: ByteArray): String {
-        return Base64.encode(bytes)
-    }
+    fun base64Encode(bytes: ByteArray): String = Base64.encode(bytes)
 
     @OptIn(ExperimentalEncodingApi::class)
-    fun base64Decode(string: String): ByteArray {
-        return Base64.decode(string)
-    }
+    fun base64Decode(string: String): ByteArray = Base64.decode(string)
 
     fun hash(bytes: ByteArray): String {
         val (hash1, hash2) = CROSSPASTE_HASH.hash128x64(bytes)
@@ -39,13 +35,9 @@ interface CodecsUtils {
         }
     }
 
-    fun hash(path: Path): String {
-        return fileUtils.getFileHash(path)
-    }
+    fun hash(path: Path): String = fileUtils.getFileHash(path)
 
-    fun hashByString(string: String): String {
-        return hash(string.encodeToByteArray())
-    }
+    fun hashByString(string: String): String = hash(string.encodeToByteArray())
 
     fun hashByArray(array: Array<String>): String
 

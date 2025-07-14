@@ -19,13 +19,9 @@ class TestWindowManager(
 
     private var currentTitle: String? by mutableStateOf(null)
 
-    override fun getPrevAppName(): Flow<String?> {
-        return prevApp
-    }
+    override fun getPrevAppName(): Flow<String?> = prevApp
 
-    override fun getCurrentActiveAppName(): String? {
-        return mockOS.currentApp
-    }
+    override fun getCurrentActiveAppName(): String? = mockOS.currentApp
 
     override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
         showMainWindow()
@@ -73,4 +69,6 @@ class TestWindowManager(
     }
 }
 
-class MockOS(var currentApp: String? = null)
+class MockOS(
+    var currentApp: String? = null,
+)

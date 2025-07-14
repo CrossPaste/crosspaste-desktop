@@ -21,7 +21,8 @@ fun NotFoundNearByDevices() {
     Box(
         contentAlignment = Alignment.Center,
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .background(AppUIColors.generalBackground),
     ) {
         Box(

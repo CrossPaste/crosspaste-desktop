@@ -9,17 +9,13 @@ class MarketingSyncHandler(
 
     override var versionRelation: VersionRelation = VersionRelation.EQUAL_TO
 
-    override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo {
-        return syncRuntimeInfo
-    }
+    override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo = syncRuntimeInfo
 
     override suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
         this.syncRuntimeInfo = syncRuntimeInfo
     }
 
-    override suspend fun getConnectHostAddress(): String? {
-        return syncRuntimeInfo.connectHostAddress
-    }
+    override suspend fun getConnectHostAddress(): String? = syncRuntimeInfo.connectHostAddress
 
     override suspend fun forceResolve() {
     }

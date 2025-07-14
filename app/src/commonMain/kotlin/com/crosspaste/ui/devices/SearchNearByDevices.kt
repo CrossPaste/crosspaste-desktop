@@ -69,7 +69,8 @@ fun SearchNearByDevices() {
     Box(
         contentAlignment = Alignment.Center,
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .background(AppUIColors.generalBackground),
     ) {
         Box(
@@ -93,7 +94,8 @@ fun SearchNearByDevices() {
             Spacer(modifier = Modifier.height(giant))
             Text(
                 modifier =
-                    Modifier.align(Alignment.CenterHorizontally)
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
                         .fillMaxWidth(0.8f),
                 text = copywriter.getText("searching_for_nearby_devices"),
                 maxLines = 3,

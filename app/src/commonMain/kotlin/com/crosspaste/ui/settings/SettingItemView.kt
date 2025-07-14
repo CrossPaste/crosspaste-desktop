@@ -58,7 +58,8 @@ fun SettingItemView(
 
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(height ?: appSize.settingsItemHeight)
                 .padding(horizontal = small2X),
         verticalAlignment = Alignment.CenterVertically,
@@ -83,8 +84,7 @@ fun SettingItemView(
         LaunchedEffect(scrollState) {
             snapshotFlow {
                 Triple(scrollState.value, scrollState.maxValue, scrollState.viewportSize)
-            }
-                .distinctUntilChanged()
+            }.distinctUntilChanged()
                 .collect { (value, maxValue, _) ->
                     // If scroll is possible, the content overflows the container
                     val canScroll = maxValue > 0

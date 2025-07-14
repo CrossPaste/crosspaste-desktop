@@ -60,8 +60,7 @@ class GlobalCopywriterTest {
 
         val enKeys = enCopywriter.getKeys()
 
-        copywriterMap.filter { (key, _) -> key != EN }.forEach {
-                (key, copywriter) ->
+        copywriterMap.filter { (key, _) -> key != EN }.forEach { (key, copywriter) ->
             val keys = copywriter.getKeys()
 
             assertTrue(

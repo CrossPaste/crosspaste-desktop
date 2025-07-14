@@ -48,7 +48,8 @@ class GeneralNearbyDeviceManager(
             jsonUtils.JSON.decodeFromString(
                 configManager.getCurrentConfig().blacklist,
             )
-        blackSyncInfos.map { it.appInfo.appInstanceId }
+        blackSyncInfos
+            .map { it.appInfo.appInstanceId }
             .contains(appInstanceId)
     }
 

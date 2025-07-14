@@ -63,7 +63,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
-data class PasteDetailInfoItem(val key: String, val value: String)
+data class PasteDetailInfoItem(
+    val key: String,
+    val value: String,
+)
 
 @Composable
 fun PasteDetailInfoView(
@@ -201,8 +204,11 @@ fun PasteDetailInfoView(
 
         VerticalScrollbar(
             modifier =
-                Modifier.offset(x = small3X).background(color = Color.Transparent)
-                    .fillMaxHeight().align(Alignment.CenterEnd)
+                Modifier
+                    .offset(x = small3X)
+                    .background(color = Color.Transparent)
+                    .fillMaxHeight()
+                    .align(Alignment.CenterEnd)
                     .draggable(
                         orientation = Orientation.Vertical,
                         state =

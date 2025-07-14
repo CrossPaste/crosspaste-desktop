@@ -19,7 +19,8 @@ class DesktopIconStyle(
     private val fileUtils = getFileUtils()
 
     private val iconStyleCache: LoadingCache<String, Boolean> =
-        CacheBuilder.newBuilder()
+        CacheBuilder
+            .newBuilder()
             .maximumSize(1000)
             .build(
                 object : CacheLoader<String, Boolean>() {
@@ -27,7 +28,8 @@ class DesktopIconStyle(
                         val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
                         if (fileUtils.existFile(iconPath)) {
                             val imageBitmap =
-                                coilUtils.createBitmap(iconPath)
+                                coilUtils
+                                    .createBitmap(iconPath)
                                     .asComposeImageBitmap()
                             return checkMacStyleIcon(imageBitmap)
                         } else {
@@ -37,9 +39,7 @@ class DesktopIconStyle(
                 },
             )
 
-    override fun isMacStyleIcon(source: String): Boolean {
-        return iconStyleCache.get(source)
-    }
+    override fun isMacStyleIcon(source: String): Boolean = iconStyleCache.get(source)
 
     override fun refreshStyle(source: String) {
         iconStyleCache.refresh(source)
@@ -48,8 +48,10 @@ class DesktopIconStyle(
     private fun checkMacStyleIcon(imageBitmap: ImageBitmap): Boolean {
         val width = imageBitmap.width
         val height = imageBitmap.height
-        val edgeWidth = width / 12 // Width of the border is 1/12th of the image width
-        val sampleRate = maxOf(1, edgeWidth / 5) // Define sampling rate, at least 1, meaning check at least every 5 pixels
+        // Width of the border is 1/12th of the image width
+        val edgeWidth = width / 12
+        // Define sampling rate, at least 1, meaning check at least every 5 pixels
+        val sampleRate = maxOf(1, edgeWidth / 5)
 
         val pixelMap = imageBitmap.toPixelMap() // Convert once to avoid multiple conversions
 

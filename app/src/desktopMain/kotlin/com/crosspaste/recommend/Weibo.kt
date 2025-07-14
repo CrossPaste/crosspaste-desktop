@@ -9,7 +9,9 @@ import com.crosspaste.ui.base.weibo
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import java.net.URLEncoder
 
-class Weibo(private val uiSupport: UISupport) : RecommendationPlatform {
+class Weibo(
+    private val uiSupport: UISupport,
+) : RecommendationPlatform {
     override val platformName: String = "Weibo"
 
     @Composable

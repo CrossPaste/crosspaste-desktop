@@ -41,7 +41,8 @@ fun PasteColorDetailView(
         detailView = {
             Box(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = {
@@ -67,8 +68,7 @@ fun PasteColorDetailView(
                                     elevation = tiny5X,
                                     shape = tiny2XRoundedCornerShape,
                                     spotColor = Color.Black.copy(alpha = 0.1f),
-                                )
-                                .clip(tiny2XRoundedCornerShape)
+                                ).clip(tiny2XRoundedCornerShape)
                                 .background(Color(pasteColor.color)),
                     )
                 }

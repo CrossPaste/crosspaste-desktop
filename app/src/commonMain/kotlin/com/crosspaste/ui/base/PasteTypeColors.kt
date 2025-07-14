@@ -12,8 +12,8 @@ data class PasteTypeColors(
     val textTypeColor: Color,
     val urlTypeColor: Color,
 ) {
-    fun getColor(type: PasteType): Color {
-        return when (type) {
+    fun getColor(type: PasteType): Color =
+        when (type) {
             PasteType.COLOR_TYPE -> colorTypeColor
             PasteType.FILE_TYPE -> fileTypeColor
             PasteType.HTML_TYPE -> htmlTypeColor
@@ -23,7 +23,6 @@ data class PasteTypeColors(
             PasteType.URL_TYPE -> urlTypeColor
             else -> Color.Unspecified
         }
-    }
 }
 
 val lightSideBarColors =

@@ -19,7 +19,8 @@ fun PasteProgressbar(process: Float) {
             if (process > 0) {
                 Row(
                     modifier =
-                        Modifier.weight(process)
+                        Modifier
+                            .weight(process)
                             .fillMaxHeight()
                             .background(Color(0xFFC3FF93)),
                 ) {
@@ -29,7 +30,8 @@ fun PasteProgressbar(process: Float) {
             if (process < 1) {
                 Row(
                     modifier =
-                        Modifier.weight(1 - process)
+                        Modifier
+                            .weight(1 - process)
                             .fillMaxHeight()
                             .background(MaterialTheme.colorScheme.background),
                 ) {

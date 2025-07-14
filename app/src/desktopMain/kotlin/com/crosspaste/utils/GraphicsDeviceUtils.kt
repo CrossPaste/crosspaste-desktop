@@ -17,6 +17,8 @@ fun GraphicsDevice.contains(
     val topX = bounds.x - defaultX
     val topY = bounds.y - defaultY
 
-    return point.x >= topX && point.x <= topX + width &&
-        point.y >= topY && point.y <= topY + height
+    return point.x >= topX &&
+        point.x <= topX + width &&
+        point.y >= topY &&
+        point.y <= topY + height
 }

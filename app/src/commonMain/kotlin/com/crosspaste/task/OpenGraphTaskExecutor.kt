@@ -25,8 +25,8 @@ class OpenGraphTaskExecutor(
 
     private val mutex = Mutex()
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        return runCatching {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult =
+        runCatching {
             pasteTask.pasteDataId?.let { pasteDataId ->
                 mutex.withLock(pasteDataId) {
                     pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
@@ -50,5 +50,4 @@ class OpenGraphTaskExecutor(
                 extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
             )
         }
-    }
 }

@@ -489,7 +489,8 @@ fun PasteTypeCheckbox(
         }
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(height)
                 .padding(start = startPadding),
         verticalAlignment = Alignment.CenterVertically,

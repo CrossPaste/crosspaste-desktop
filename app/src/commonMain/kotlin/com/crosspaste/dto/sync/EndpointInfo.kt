@@ -13,7 +13,5 @@ data class EndpointInfo(
     val hostInfoList: List<HostInfo>,
     val port: Int,
 ) {
-    override fun toString(): String {
-        return Json.encodeToString(this)
-    }
+    override fun toString(): String = Json.encodeToString(this)
 }

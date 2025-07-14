@@ -2,9 +2,9 @@ package com.crosspaste.image
 
 import com.crosspaste.info.PasteInfo
 
-val EMPTY_IMAGE_INFO = ImageInfo(mapOf())
-
-data class ImageInfo(val map: Map<String, PasteInfo>)
+data class ImageInfo(
+    val map: Map<String, PasteInfo>,
+)
 
 class ImageInfoBuilder {
     private val map = mutableMapOf<String, PasteInfo>()
@@ -14,7 +14,5 @@ class ImageInfoBuilder {
         return this
     }
 
-    fun build(): ImageInfo {
-        return ImageInfo(map)
-    }
+    fun build(): ImageInfo = ImageInfo(map)
 }

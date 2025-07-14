@@ -13,16 +13,15 @@ import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import kotlinx.io.readByteArray
 
-class ClientDecryptPlugin(private val secureStore: SecureStore) :
-    HttpClientPlugin<PluginConfig, ClientDecryptPlugin> {
+class ClientDecryptPlugin(
+    private val secureStore: SecureStore,
+) : HttpClientPlugin<PluginConfig, ClientDecryptPlugin> {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     override val key = AttributeKey<ClientDecryptPlugin>("ClientDecryptPlugin")
 
-    override fun prepare(block: PluginConfig.() -> Unit): ClientDecryptPlugin {
-        return this
-    }
+    override fun prepare(block: PluginConfig.() -> Unit): ClientDecryptPlugin = this
 
     @OptIn(InternalAPI::class)
     override fun install(
@@ -33,7 +32,9 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
             val headers = it.call.request.headers
             headers["targetAppInstanceId"]?.let { appInstanceId ->
                 headers["secure"]?.let { _ ->
-                    if (!it.call.response.status.isSuccess()) {
+                    if (!it.call.response.status
+                            .isSuccess()
+                    ) {
                         return@intercept
                     }
                     logger.debug { "client decrypt $appInstanceId" }
@@ -97,11 +98,10 @@ class ClientDecryptPlugin(private val secureStore: SecureStore) :
     private fun updateContentLength(
         headers: Headers,
         newLength: String,
-    ): Headers {
-        return Headers.build {
+    ): Headers =
+        Headers.build {
             appendAll(headers)
             remove(HttpHeaders.ContentLength)
             append(HttpHeaders.ContentLength, newLength)
         }
-    }
 }

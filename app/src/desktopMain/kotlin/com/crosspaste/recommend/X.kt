@@ -9,7 +9,9 @@ import com.crosspaste.ui.base.x
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import java.net.URLEncoder
 
-class X(private val uiSupport: UISupport) : RecommendationPlatform {
+class X(
+    private val uiSupport: UISupport,
+) : RecommendationPlatform {
     override val platformName: String = "X"
 
     @Composable

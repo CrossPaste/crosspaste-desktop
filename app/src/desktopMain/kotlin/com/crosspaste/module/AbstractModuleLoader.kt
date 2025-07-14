@@ -28,9 +28,11 @@ abstract class AbstractModuleLoader : ModuleLoader {
 
         return DesktopClient.request(url) { response ->
             val contentLength =
-                response.headers()
+                response
+                    .headers()
                     .firstValue("Content-Length")
-                    .orElse("-1").toLong()
+                    .orElse("-1")
+                    .toLong()
             var bytesRead = 0L
             var lastLogTime = Instant.EPOCH
             var lastLoggedProgress = -1L

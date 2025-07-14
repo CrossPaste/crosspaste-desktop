@@ -35,7 +35,8 @@ fun PasteToTopView(toTopAction: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     Row(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .padding(end = xxLarge, bottom = xxLarge),
         verticalAlignment = Alignment.Bottom,
     ) {
@@ -59,8 +60,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
                             onEvent = {
                                 transparency = 1.0f
                             },
-                        )
-                        .onPointerEvent(
+                        ).onPointerEvent(
                             eventType = PointerEventType.Exit,
                             onEvent = {
                                 transparency = 0.5f

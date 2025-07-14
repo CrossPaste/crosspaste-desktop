@@ -16,51 +16,31 @@ import com.crosspaste.app.generated.resources.text
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun color(): Painter {
-    return painterResource(Res.drawable.color)
-}
+actual fun color(): Painter = painterResource(Res.drawable.color)
 
 @Composable
-actual fun file(): Painter {
-    return painterResource(Res.drawable.file)
-}
+actual fun file(): Painter = painterResource(Res.drawable.file)
 
 @Composable
-actual fun fileSlash(): Painter {
-    return painterResource(Res.drawable.file_slash)
-}
+actual fun fileSlash(): Painter = painterResource(Res.drawable.file_slash)
 
 @Composable
-actual fun folder(): Painter {
-    return painterResource(Res.drawable.folder)
-}
+actual fun folder(): Painter = painterResource(Res.drawable.folder)
 
 @Composable
-actual fun html(): Painter {
-    return painterResource(Res.drawable.html)
-}
+actual fun html(): Painter = painterResource(Res.drawable.html)
 
 @Composable
-actual fun image(): Painter {
-    return painterResource(Res.drawable.image)
-}
+actual fun image(): Painter = painterResource(Res.drawable.image)
 
 @Composable
-actual fun imageSlash(): Painter {
-    return painterResource(Res.drawable.image_slash)
-}
+actual fun imageSlash(): Painter = painterResource(Res.drawable.image_slash)
 
 @Composable
-actual fun link(): Painter {
-    return painterResource(Res.drawable.link)
-}
+actual fun link(): Painter = painterResource(Res.drawable.link)
 
 @Composable
-actual fun rtf(): Painter {
-    return painterResource(Res.drawable.rtf)
-}
+actual fun rtf(): Painter = painterResource(Res.drawable.rtf)
 
 @Composable
-actual fun text(): Painter {
-    return painterResource(Res.drawable.text)
-}
+actual fun text(): Painter = painterResource(Res.drawable.text)

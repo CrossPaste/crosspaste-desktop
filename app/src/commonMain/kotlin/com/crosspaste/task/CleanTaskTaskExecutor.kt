@@ -20,11 +20,12 @@ class CleanTaskTaskExecutor(
 
     override val taskType: Int = CLEAN_TASK_TASK
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        return runCatching {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult =
+        runCatching {
             val twelveHours = 12.hours
             val prev12Hours =
-                DateUtils.nowInstant()
+                DateUtils
+                    .nowInstant()
                     .minus(twelveHours)
                     .toEpochMilliseconds()
 
@@ -33,7 +34,8 @@ class CleanTaskTaskExecutor(
             val threeDays = 3.days
 
             val prev3Days =
-                DateUtils.nowInstant()
+                DateUtils
+                    .nowInstant()
                     .minus(threeDays)
                     .toEpochMilliseconds()
 
@@ -52,5 +54,4 @@ class CleanTaskTaskExecutor(
                 extraInfo = baseExtraInfo,
             )
         }
-    }
 }

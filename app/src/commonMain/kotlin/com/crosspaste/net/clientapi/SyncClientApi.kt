@@ -28,8 +28,8 @@ class SyncClientApi(
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun syncInfo(toUrl: URLBuilder.() -> Unit): ClientApiResult {
-        return request(logger, exceptionHandler, request = {
+    suspend fun syncInfo(toUrl: URLBuilder.() -> Unit): ClientApiResult =
+        request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
                 toUrl()
                 buildUrl("sync", "syncInfo")
@@ -37,14 +37,13 @@ class SyncClientApi(
         }) { response ->
             response.body<SyncInfo>()
         }
-    }
 
     suspend fun heartbeat(
         syncInfo: SyncInfo? = null,
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        return request(logger, exceptionHandler, request = {
+    ): ClientApiResult =
+        request(logger, exceptionHandler, request = {
             syncInfo?.let {
                 pasteClient.post(
                     syncInfo,
@@ -69,14 +68,13 @@ class SyncClientApi(
             val result = it.bodyAsText()
             syncApi.compareVersion(result.toIntOrNull() ?: -1)
         })
-    }
 
     suspend fun trust(
         targetAppInstanceId: String,
         token: Int,
         toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        return request(logger, exceptionHandler, request = {
+    ): ClientApiResult =
+        request(logger, exceptionHandler, request = {
             val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
             val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
             val pairingRequest =
@@ -126,16 +124,14 @@ class SyncClientApi(
                 false
             }
         })
-    }
 
-    suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult {
-        return request(logger, exceptionHandler, request = {
+    suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult =
+        request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
                 toUrl()
                 buildUrl("sync", "showToken")
             })
         }, transformData = { true })
-    }
 
     suspend fun notifyExit(toUrl: URLBuilder.() -> Unit) {
         request(logger, exceptionHandler, request = {

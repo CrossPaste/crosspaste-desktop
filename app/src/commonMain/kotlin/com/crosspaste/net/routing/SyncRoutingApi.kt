@@ -28,9 +28,7 @@ interface SyncRoutingApi {
 
     fun getSyncHandlers(): Map<String, SyncHandler>
 
-    fun getSyncHandler(appInstanceId: String): SyncHandler? {
-        return getSyncHandlers()[appInstanceId]
-    }
+    fun getSyncHandler(appInstanceId: String): SyncHandler? = getSyncHandlers()[appInstanceId]
 
     fun updateSyncInfo(
         syncInfo: SyncInfo,

@@ -141,14 +141,16 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     Box(
         modifier =
-            Modifier.size(appSize.centerSearchListViewSize)
+            Modifier
+                .size(appSize.centerSearchListViewSize)
                 .focusRequester(pasteListFocusRequester)
                 .focusable(),
     ) {
         LazyColumn(
             state = searchListState,
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .padding(vertical = small3X),
         ) {
             itemsIndexed(
@@ -174,7 +176,8 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
         VerticalScrollbar(
             modifier =
-                Modifier.background(color = Color.Transparent)
+                Modifier
+                    .background(color = Color.Transparent)
                     .fillMaxHeight()
                     .align(Alignment.CenterEnd)
                     .draggable(
@@ -195,9 +198,10 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (showScrollbar) {
-                            MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.appBackground,
-                            ).copy(alpha = 0.48f)
+                            MaterialTheme.colorScheme
+                                .contentColorFor(
+                                    AppUIColors.appBackground,
+                                ).copy(alpha = 0.48f)
                         } else {
                             Color.Transparent
                         },

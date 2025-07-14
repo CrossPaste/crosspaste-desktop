@@ -9,7 +9,5 @@ class DesktopRatingPromptManager : RatingPromptManager {
         // do nothing
     }
 
-    override fun checkAndShowRatingPrompt(): Boolean {
-        return false
-    }
+    override fun checkAndShowRatingPrompt(): Boolean = false
 }

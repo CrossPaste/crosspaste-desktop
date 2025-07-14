@@ -61,13 +61,15 @@ fun PasteSummaryView(
 
     Box(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(appSize.centerSearchPasteSummaryHeight),
         contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .fillMaxHeight()
                     .padding(horizontal = small3X)
                     .clip(tinyRoundedCornerShape)

@@ -100,13 +100,15 @@ fun SideSearchInputView() {
 
     Box(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(xxxxLarge),
         contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .padding(start = xxLarge),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -143,7 +145,8 @@ fun SideSearchInputView() {
 
         Row(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .padding(end = xxLarge),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,

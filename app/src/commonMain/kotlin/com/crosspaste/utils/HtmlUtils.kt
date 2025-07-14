@@ -7,9 +7,7 @@ import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.safety.Safelist
 
-fun getHtmlUtils(): HtmlUtils {
-    return HtmlUtils
-}
+fun getHtmlUtils(): HtmlUtils = HtmlUtils
 
 object HtmlUtils {
 
@@ -33,8 +31,8 @@ object HtmlUtils {
         return Ksoup.clean(str, Safelist.none(), "", outputSettings)
     }
 
-    fun ensureHtmlCharsetUtf8(html: String): String {
-        return runCatching {
+    fun ensureHtmlCharsetUtf8(html: String): String =
+        runCatching {
             val doc = Ksoup.parse(html)
             val head = doc.head()
 
@@ -45,7 +43,8 @@ object HtmlUtils {
             val metaTags =
                 listOf(
                     doc.createElement("meta").attr("charset", "UTF-8"),
-                    doc.createElement("meta")
+                    doc
+                        .createElement("meta")
                         .attr("http-equiv", "Content-Type")
                         .attr("content", "text/html; charset=UTF-8"),
                 )
@@ -56,7 +55,6 @@ object HtmlUtils {
 
             doc.html()
         }.getOrElse { html }
-    }
 
     fun getBackgroundColor(html: String): Color? {
         val document = Ksoup.parse(html)
@@ -65,7 +63,8 @@ object HtmlUtils {
         getColorFromElement(body)?.let { return it }
 
         val directChildren =
-            body.children()
+            body
+                .children()
                 .filter { it.tagName() !in listOf("script", "style", "noscript") }
 
         when {
@@ -81,12 +80,13 @@ object HtmlUtils {
             }
         }
 
-        return body.parents()
+        return body
+            .parents()
             .firstNotNullOfOrNull { getColorFromElement(it) }
     }
 
-    private fun findMainContainer(elements: List<Element>): Element? {
-        return elements.firstOrNull { element ->
+    private fun findMainContainer(elements: List<Element>): Element? =
+        elements.firstOrNull { element ->
             when {
                 element.tagName() in listOf("main", "article") -> true
                 element.id() in listOf("app", "root", "container", "wrapper", "main") -> true
@@ -97,7 +97,6 @@ object HtmlUtils {
                 else -> false
             }
         } ?: elements.firstOrNull { it.tagName() == "div" }
-    }
 
     private fun hasFullWidthStyle(element: Element): Boolean {
         val style = element.attr("style")
@@ -107,11 +106,15 @@ object HtmlUtils {
     }
 
     private fun getColorFromElement(element: Element): Color? {
-        element.attr("style").takeIf { it.isNotEmpty() }
+        element
+            .attr("style")
+            .takeIf { it.isNotEmpty() }
             ?.let { extractBackgroundColorFromStyle(it) }
             ?.let { return it }
 
-        element.attr("bgcolor").takeIf { it.isNotEmpty() }
+        element
+            .attr("bgcolor")
+            .takeIf { it.isNotEmpty() }
             ?.let { return normalizeColor(it) }
 
         return null
@@ -126,20 +129,28 @@ object HtmlUtils {
 
         return patterns
             .firstNotNullOfOrNull { (_, pattern) ->
-                pattern.find(style)?.groupValues?.get(1)?.trim()
-            }
-            ?.let { extractColorFromBackground(it) }
+                pattern
+                    .find(style)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.trim()
+            }?.let { extractColorFromBackground(it) }
             ?.let { normalizeColor(it) }
     }
 
     private fun extractColorFromBackground(backgroundValue: String): String? {
         val parts = backgroundValue.split("\\s+".toRegex())
         for (part in parts) {
-            if (!part.contains("url(") && !part.contains("repeat") &&
-                !part.contains("scroll") && !part.contains("fixed") &&
-                !part.contains("center") && !part.contains("top") &&
-                !part.contains("bottom") && !part.contains("left") &&
-                !part.contains("right") && part.isNotEmpty()
+            if (!part.contains("url(") &&
+                !part.contains("repeat") &&
+                !part.contains("scroll") &&
+                !part.contains("fixed") &&
+                !part.contains("center") &&
+                !part.contains("top") &&
+                !part.contains("bottom") &&
+                !part.contains("left") &&
+                !part.contains("right") &&
+                part.isNotEmpty()
             ) {
                 if (colorUtils.isColorValue(part)) {
                     return part

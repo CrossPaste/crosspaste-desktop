@@ -48,13 +48,15 @@ fun RecommendContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
     ) {
         Column(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .padding(xxxxLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -77,8 +79,7 @@ fun RecommendContentView() {
                             width = tiny5X,
                             color = AppUIColors.darkBorderColor,
                             shape = mediumRoundedCornerShape,
-                        )
-                        .background(AppUIColors.topBackground)
+                        ).background(AppUIColors.topBackground)
                         .padding(medium),
                 style = recommendTextTextStyle,
                 maxLines = Int.MAX_VALUE,

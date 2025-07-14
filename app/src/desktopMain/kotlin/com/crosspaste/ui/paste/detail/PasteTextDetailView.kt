@@ -40,20 +40,21 @@ fun PasteTextDetailView(
         detailView = {
             Row(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = {
                                     onDoubleClick()
                                 },
                             )
-                        }
-                        .padding(small3X),
+                        }.padding(small3X),
             ) {
                 Text(
                     text = text,
                     modifier =
-                        Modifier.fillMaxSize()
+                        Modifier
+                            .fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                     overflow = TextOverflow.Ellipsis,
                     style = detailPasteTextStyle,

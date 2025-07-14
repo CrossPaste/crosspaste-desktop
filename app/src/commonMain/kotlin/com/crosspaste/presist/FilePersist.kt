@@ -4,7 +4,5 @@ import okio.Path
 
 object FilePersist {
 
-    fun createOneFilePersist(path: Path): OneFilePersist {
-        return OneFilePersist(path)
-    }
+    fun createOneFilePersist(path: Path): OneFilePersist = OneFilePersist(path)
 }

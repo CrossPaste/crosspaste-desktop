@@ -34,16 +34,12 @@ class PasteCollector(
     fun needPreCollectionItem(
         itemIndex: Int,
         kclass: KClass<out PasteTypePlugin>,
-    ): Boolean {
-        return !preCollectors[itemIndex].contains(kclass)
-    }
+    ): Boolean = !preCollectors[itemIndex].contains(kclass)
 
     fun needUpdateCollectItem(
         itemIndex: Int,
         kclass: KClass<out PasteTypePlugin>,
-    ): Boolean {
-        return !updateCollectors[itemIndex].contains(kclass)
-    }
+    ): Boolean = !updateCollectors[itemIndex].contains(kclass)
 
     fun preCollectItem(
         itemIndex: Int,
@@ -77,8 +73,8 @@ class PasteCollector(
     suspend fun createPrePasteData(
         source: String?,
         remote: Boolean,
-    ): Long? {
-        return logSuspendExecutionTime(logger, "createPrePasteData") {
+    ): Long? =
+        logSuspendExecutionTime(logger, "createPrePasteData") {
             val collector = preCollectors.filter { it.isNotEmpty() }
             if (collector.isEmpty()) {
                 null
@@ -102,7 +98,6 @@ class PasteCollector(
                 pasteDao.createPasteData(pasteData)
             }
         }
-    }
 
     suspend fun completeCollect(id: Long) {
         logSuspendExecutionTime(logger, "completeCollect") {

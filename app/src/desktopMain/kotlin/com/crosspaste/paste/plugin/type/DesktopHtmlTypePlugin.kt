@@ -32,13 +32,9 @@ class DesktopHtmlTypePlugin(
         private val officeHtmlPlugin = OfficeHtmlPlugin()
     }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.HTML_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.HTML_TYPE
 
-    override fun getIdentifiers(): List<String> {
-        return listOf(HTML_ID)
-    }
+    override fun getIdentifiers(): List<String> = listOf(HTML_ID)
 
     override fun createPrePasteItem(
         itemIndex: Int,
@@ -131,13 +127,12 @@ class DesktopHtmlTypePlugin(
     override fun normalizeHtml(
         html: String,
         source: String?,
-    ): String {
-        return source?.let {
+    ): String =
+        source?.let {
             if (officeHtmlPlugin.match(source)) {
                 officeHtmlPlugin.officeNormalizationHTML(html)
             } else {
                 html
             }
         } ?: html
-    }
 }

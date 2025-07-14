@@ -40,13 +40,9 @@ class DesktopFilesTypePlugin(
 
     private val fileUtils = getFileUtils()
 
-    override fun getPasteType(): PasteType {
-        return PasteType.FILE_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.FILE_TYPE
 
-    override fun getIdentifiers(): List<String> {
-        return listOf(FILE_LIST_ID)
-    }
+    override fun getIdentifiers(): List<String> = listOf(FILE_LIST_ID)
 
     override fun createPrePasteItem(
         itemIndex: Int,
@@ -170,7 +166,8 @@ class DesktopFilesTypePlugin(
         if (!singleType) {
             map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
                 ByteArrayInputStream(
-                    fileList.joinToString(separator = "\n") { it.absolutePath }
+                    fileList
+                        .joinToString(separator = "\n") { it.absolutePath }
                         .toByteArray(),
                 )
             map[DataFlavor.stringFlavor.toPasteDataFlavor()] =

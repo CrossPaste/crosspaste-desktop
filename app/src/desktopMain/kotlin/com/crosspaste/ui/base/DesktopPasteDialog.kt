@@ -33,7 +33,8 @@ class DesktopPasteDialog(
         ) {
             Card(
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .padding(massive)
                         .clip(small3XRoundedCornerShape)
                         .background(AppUIColors.generalBackground),

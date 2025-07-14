@@ -21,22 +21,20 @@ class DesktopCacheManager(
     override val dateUtils: DateUtils = getDateUtils()
 
     private val filesIndexCache: LoadingCache<Long, FilesIndex> =
-        CacheBuilder.newBuilder()
+        CacheBuilder
+            .newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build(
                 object : CacheLoader<Long, FilesIndex>() {
-                    override fun load(key: Long): FilesIndex {
-                        return loadKey(key)
-                    }
+                    override fun load(key: Long): FilesIndex = loadKey(key)
                 },
             )
 
-    override suspend fun getFilesIndex(id: Long): FilesIndex? {
-        return runCatching {
+    override suspend fun getFilesIndex(id: Long): FilesIndex? =
+        runCatching {
             filesIndexCache.get(id)
         }.onFailure { e ->
             logger.warn(e) { "getFilesIndex failed: $id" }
         }.getOrNull()
-    }
 }

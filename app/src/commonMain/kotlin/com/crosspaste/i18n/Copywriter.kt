@@ -29,4 +29,7 @@ interface GlobalCopywriter : Copywriter {
     fun getAllLanguages(): List<Language>
 }
 
-data class Language(val abridge: String, val name: String)
+data class Language(
+    val abridge: String,
+    val name: String,
+)

@@ -68,13 +68,15 @@ fun CrossPasteMainWindowContent() {
         ) {
             Row(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .focusable()
                         .focusRequester(focusRequester),
             ) {
                 Row(
                     modifier =
-                        Modifier.width(appSize.mainMenuSize.width)
+                        Modifier
+                            .width(appSize.mainMenuSize.width)
                             .fillMaxHeight()
                             .background(AppUIColors.generalBackground),
                 ) {
@@ -84,7 +86,8 @@ fun CrossPasteMainWindowContent() {
                     ) {
                         Row(
                             modifier =
-                                Modifier.fillMaxWidth()
+                                Modifier
+                                    .fillMaxWidth()
                                     .height(appSize.windowDecorationHeight)
                                     .offset(y = -appSize.windowDecorationHeight)
                                     .background(AppUIColors.generalBackground),
@@ -95,7 +98,8 @@ fun CrossPasteMainWindowContent() {
                 }
                 Box(
                     modifier =
-                        Modifier.width(appSize.mainContentSize.width)
+                        Modifier
+                            .width(appSize.mainContentSize.width)
                             .fillMaxHeight()
                             .background(AppUIColors.appBackground),
                 ) {

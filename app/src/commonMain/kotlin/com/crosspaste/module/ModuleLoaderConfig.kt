@@ -8,9 +8,7 @@ data class ModuleLoaderConfig(
     val moduleItems: List<ModuleItem>,
     val retryNumber: Int = 2,
 ) {
-    fun getModuleItem(moduleItemName: String): ModuleItem? {
-        return moduleItems.find { it.moduleItemName == moduleItemName }
-    }
+    fun getModuleItem(moduleItemName: String): ModuleItem? = moduleItems.find { it.moduleItemName == moduleItemName }
 }
 
 data class ModuleItem(
@@ -30,7 +28,5 @@ data class ModuleItem(
         return path
     }
 
-    fun getUrls(): List<String> {
-        return hosts.map { host -> "$host$path" }
-    }
+    fun getUrls(): List<String> = hosts.map { host -> "$host$path" }
 }

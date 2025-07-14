@@ -8,9 +8,8 @@ data class Message(
     val duration: Long? = 3000,
 ) {
 
-    fun equalContent(other: Message): Boolean {
-        return messageType == other.messageType &&
+    fun equalContent(other: Message): Boolean =
+        messageType == other.messageType &&
             message == other.message &&
             title == other.title
-    }
 }

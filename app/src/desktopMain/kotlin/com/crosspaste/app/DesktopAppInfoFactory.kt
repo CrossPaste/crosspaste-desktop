@@ -7,7 +7,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Paths
 import java.util.Properties
 
-class DesktopAppInfoFactory(private val configManager: CommonConfigManager) : AppInfoFactory {
+class DesktopAppInfoFactory(
+    private val configManager: CommonConfigManager,
+) : AppInfoFactory {
 
     private val logger = KotlinLogging.logger {}
 
@@ -17,7 +19,9 @@ class DesktopAppInfoFactory(private val configManager: CommonConfigManager) : Ap
         runCatching {
             val properties = Properties()
             properties.load(
-                Thread.currentThread().contextClassLoader
+                Thread
+                    .currentThread()
+                    .contextClassLoader
                     .getResourceAsStream("crosspaste-version.properties"),
             )
             properties
@@ -35,13 +39,9 @@ class DesktopAppInfoFactory(private val configManager: CommonConfigManager) : Ap
         )
     }
 
-    override fun getVersion(): String {
-        return getVersion(appEnvUtils.getCurrentAppEnv(), properties)
-    }
+    override fun getVersion(): String = getVersion(appEnvUtils.getCurrentAppEnv(), properties)
 
-    override fun getRevision(): String {
-        return properties?.getProperty("revision", "Unknown") ?: "Unknown"
-    }
+    override fun getRevision(): String = properties?.getProperty("revision", "Unknown") ?: "Unknown"
 
     override fun getUserName(): String {
         val userHome = systemProperty.get("user.home")

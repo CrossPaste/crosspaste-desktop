@@ -9,9 +9,7 @@ import java.net.NetworkInterface
 import java.nio.ByteBuffer
 import java.util.Collections
 
-actual fun getNetUtils(): NetUtils {
-    return DesktopNetUtils
-}
+actual fun getNetUtils(): NetUtils = DesktopNetUtils
 
 object DesktopNetUtils : NetUtils {
 
@@ -32,8 +30,9 @@ object DesktopNetUtils : NetUtils {
             !hostAddress.endsWith(INVALID_END_OCTET_255)
 
     // Get all potential local IP addresses
-    fun getAllLocalAddresses(): Sequence<Pair<HostInfo, String>> {
-        return Collections.list(NetworkInterface.getNetworkInterfaces())
+    fun getAllLocalAddresses(): Sequence<Pair<HostInfo, String>> =
+        Collections
+            .list(NetworkInterface.getNetworkInterfaces())
             .asSequence()
             .mapNotNull { nic ->
                 runCatching {
@@ -45,18 +44,15 @@ object DesktopNetUtils : NetUtils {
                 }.onFailure { e ->
                     logger.warn(e) { "Failed to check network interface status: ${nic.name}" }
                 }.getOrNull()
-            }
-            .flatMap { nic ->
+            }.flatMap { nic ->
                 nic.interfaceAddresses.asSequence().map { Pair(it, nic.name) }
-            }
-            .mapNotNull { (addr, nicName) ->
+            }.mapNotNull { (addr, nicName) ->
                 runCatching {
                     processAddress(addr, nicName)
                 }.onFailure { e ->
                     logger.warn(e) { "Failed to process address for interface: $nicName" }
                 }.getOrNull()
             }
-    }
 
     private fun processAddress(
         addr: InterfaceAddress,
@@ -87,14 +83,17 @@ object DesktopNetUtils : NetUtils {
     }
 
     // Sort the addresses based on preference
-    private fun sortAddresses(addresses: Sequence<Pair<HostInfo, String>>): Sequence<Pair<HostInfo, String>> {
-        return addresses.sortedWith(
+    private fun sortAddresses(addresses: Sequence<Pair<HostInfo, String>>): Sequence<Pair<HostInfo, String>> =
+        addresses.sortedWith(
             compareByDescending<Pair<HostInfo, String>> { (hostInfo, _) ->
                 // Prefer smaller networks (larger networkPrefixLength)
                 hostInfo.networkPrefixLength
             }.thenByDescending { (hostInfo, _) ->
                 // Then sort by the last octet of the IP address
-                hostInfo.hostAddress.split(".").lastOrNull()?.toIntOrNull() ?: Int.MIN_VALUE
+                hostInfo.hostAddress
+                    .split(".")
+                    .lastOrNull()
+                    ?.toIntOrNull() ?: Int.MIN_VALUE
             }.thenBy { (_, nicName) ->
                 // Prefer network interfaces named eth* or en*
                 when {
@@ -104,7 +103,6 @@ object DesktopNetUtils : NetUtils {
                 }
             },
         )
-    }
 
     override fun getHostInfoList(hostInfoFilter: HostInfoFilter): List<HostInfo> {
         val list =
@@ -144,15 +142,14 @@ object DesktopNetUtils : NetUtils {
     }
 
     // Get the preferred local IP address
-    override fun getPreferredLocalIPAddress(): String? {
-        return preferredLocalIPAddress.getValue {
+    override fun getPreferredLocalIPAddress(): String? =
+        preferredLocalIPAddress.getValue {
             runCatching {
                 sortAddresses(getAllLocalAddresses())
                     .map { (hostInfo, _) -> hostInfo.hostAddress }
                     .firstOrNull()
             }.getOrNull()
         }
-    }
 
     override fun clearProviderCache() {
         hostListProvider.clear()

@@ -28,17 +28,17 @@ class GeneralPasteSearchViewModel(
             .distinctUntilChanged()
             .flatMapLatest { params ->
                 logger.info { "to searchPasteDataFlow" }
-                pasteDao.searchPasteDataFlow(
-                    searchTerms = params.searchTerms,
-                    favorite = if (params.favorite) true else null,
-                    sort = params.sort,
-                    pasteType = params.pasteType,
-                    limit = params.limit,
-                ).map { pasteDataList ->
-                    pasteDataList.filter { it.isValid() }
-                }
-            }
-            .stateIn(
+                pasteDao
+                    .searchPasteDataFlow(
+                        searchTerms = params.searchTerms,
+                        favorite = if (params.favorite) true else null,
+                        sort = params.sort,
+                        pasteType = params.pasteType,
+                        limit = params.limit,
+                    ).map { pasteDataList ->
+                        pasteDataList.filter { it.isValid() }
+                    }
+            }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = listOf(),

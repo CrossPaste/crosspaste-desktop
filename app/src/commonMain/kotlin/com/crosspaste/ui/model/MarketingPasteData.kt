@@ -162,7 +162,8 @@ open class MarketingPasteData(
     private val html =
         run {
             val imagePath =
-                userDataPathProvider.resolve(appFileType = AppFileType.MARKETING)
+                userDataPathProvider
+                    .resolve(appFileType = AppFileType.MARKETING)
                     .resolve("$language-html2Image.png")
                     .toString()
 
@@ -200,13 +201,12 @@ open class MarketingPasteData(
             )
         }
 
-    open fun getPasteDataList(): List<PasteData> {
-        return listOf(
+    open fun getPasteDataList(): List<PasteData> =
+        listOf(
             html,
             text,
             imageFile,
             zipData,
             crossPasteDownloadUrl,
         )
-    }
 }

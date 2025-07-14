@@ -96,11 +96,12 @@ class PasteSelectionViewModel(
         appWindowManager.hideSearchWindowAndPaste {
             currentPasteData.first()?.let { pasteData ->
                 withContext(ioDispatcher) {
-                    pasteboardService.tryWritePasteboard(
-                        pasteData = pasteData,
-                        localOnly = true,
-                        updateCreateTime = true,
-                    ).isSuccess
+                    pasteboardService
+                        .tryWritePasteboard(
+                            pasteData = pasteData,
+                            localOnly = true,
+                            updateCreateTime = true,
+                        ).isSuccess
                 }
             } == true
         }

@@ -17,8 +17,8 @@ fun getDesktopPasteboardService(
     pasteDao: PasteDao,
     platform: Platform,
     soundService: SoundService,
-): AbstractPasteboardService {
-    return if (platform.isMacos()) {
+): AbstractPasteboardService =
+    if (platform.isMacos()) {
         MacosPasteboardService(
             appWindowManager,
             configManager,
@@ -55,4 +55,3 @@ fun getDesktopPasteboardService(
     } else {
         throw IllegalStateException("Unsupported platform: ${platform.name}")
     }
-}

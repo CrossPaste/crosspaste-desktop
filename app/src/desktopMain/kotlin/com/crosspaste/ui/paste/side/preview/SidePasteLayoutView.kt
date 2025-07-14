@@ -47,7 +47,8 @@ fun SidePasteLayoutView(
         SidePasteTitleView(pasteData)
         Box(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .background(AppUIColors.pasteBackground),
             contentAlignment = Alignment.Center,
         ) {
@@ -107,7 +108,8 @@ fun SidePasteTitleView(pasteData: PasteData) {
 
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(huge)
                 .background(background)
                 .padding(start = medium),
@@ -115,7 +117,8 @@ fun SidePasteTitleView(pasteData: PasteData) {
     ) {
         Column(
             modifier =
-                Modifier.fillMaxHeight()
+                Modifier
+                    .fillMaxHeight()
                     .wrapContentWidth(),
             verticalArrangement = Arrangement.Center,
         ) {

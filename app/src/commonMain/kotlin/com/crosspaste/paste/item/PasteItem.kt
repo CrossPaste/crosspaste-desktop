@@ -60,8 +60,8 @@ sealed interface PasteItem {
         fun updateExtraInfo(
             extraInfo: JsonObject?,
             update: JsonObjectBuilder.() -> Unit,
-        ): JsonObject {
-            return buildJsonObject {
+        ): JsonObject =
+            buildJsonObject {
                 extraInfo?.let { extraInfo ->
                     extraInfo.forEach { (key, value) ->
                         put(key, value)
@@ -69,7 +69,6 @@ sealed interface PasteItem {
                 }
                 update()
             }
-        }
     }
 
     val extraInfo: JsonObject?
@@ -86,22 +85,17 @@ sealed interface PasteItem {
 
     fun getSummary(): String
 
-    fun getMarketingPath(): String? {
-        return extraInfo?.let { extraInfo ->
+    fun getMarketingPath(): String? =
+        extraInfo?.let { extraInfo ->
             extraInfo[MARKETING_PATH]?.jsonPrimitive?.content
         }
-    }
 
-    fun bind(pasteCoordinate: PasteCoordinate): PasteItem {
-        return this
-    }
+    fun bind(pasteCoordinate: PasteCoordinate): PasteItem = this
 
     fun getRenderingFilePath(
         pasteCoordinate: PasteCoordinate,
         userDataPathProvider: UserDataPathProvider,
-    ): Path? {
-        return null
-    }
+    ): Path? = null
 
     fun update(
         data: Any,

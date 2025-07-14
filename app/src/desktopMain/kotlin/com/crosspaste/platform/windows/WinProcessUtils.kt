@@ -4,7 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 object WinProcessUtils {
 
-    private val GET_CHILD_PROCESS_IDS = arrayOf("wmic", "process", "where", "(ParentProcessId=%d)", "get", "Name,", "ProcessId")
+    private val GET_CHILD_PROCESS_IDS =
+        arrayOf("wmic", "process", "where", "(ParentProcessId=%d)", "get", "Name,", "ProcessId")
 
     private val logger = KotlinLogging.logger {}
 

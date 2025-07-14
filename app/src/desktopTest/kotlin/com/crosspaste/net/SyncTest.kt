@@ -167,7 +167,9 @@ class SyncTest : KoinTest {
             runBlocking {
                 syncClientApi.trust(
                     serverAppInfo.appInstanceId,
-                    appTokenApi.token.value.concatToString().toInt(),
+                    appTokenApi.token.value
+                        .concatToString()
+                        .toInt(),
                 ) {
                     buildUrl("localhost", readWritePort.getValue())
                 }

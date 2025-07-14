@@ -46,25 +46,26 @@ class HtmlPasteItemSerializer : KSerializer<HtmlPasteItem> {
                 2 -> html = dec.decodeStringElement(descriptor, 2)
                 3 -> size = dec.decodeLongElement(descriptor, 3)
                 4 -> {
-                    dec.decodeNullableSerializableElement(
-                        descriptor,
-                        4,
-                        JsonElement.serializer(),
-                    )?.let { jsonElement ->
-                        when (jsonElement) {
-                            is JsonObject -> {
-                                extraInfo = jsonElement
-                            }
-                            is JsonPrimitive -> {
-                                if (jsonElement != JsonNull) {
-                                    runCatching {
-                                        extraInfo = parseToJsonElement(jsonElement.content).jsonObject
+                    dec
+                        .decodeNullableSerializableElement(
+                            descriptor,
+                            4,
+                            JsonElement.serializer(),
+                        )?.let { jsonElement ->
+                            when (jsonElement) {
+                                is JsonObject -> {
+                                    extraInfo = jsonElement
+                                }
+                                is JsonPrimitive -> {
+                                    if (jsonElement != JsonNull) {
+                                        runCatching {
+                                            extraInfo = parseToJsonElement(jsonElement.content).jsonObject
+                                        }
                                     }
                                 }
+                                else -> {}
                             }
-                            else -> {}
                         }
-                    }
                 }
                 CompositeDecoder.DECODE_DONE -> break@loop
                 else -> {

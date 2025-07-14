@@ -7,9 +7,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-fun getColorUtils(): ColorUtils {
-    return ColorUtils
-}
+fun getColorUtils(): ColorUtils = ColorUtils
 
 object ColorUtils {
 
@@ -20,7 +18,9 @@ object ColorUtils {
     private val HEX_6_PATTERN = """^(?:#|0[xX])?(${HEX_PATTERN}{6})$""".toRegex()
     private val HEX_8_PATTERN = """^(?:#|0[xX])?(${HEX_PATTERN}{8})$""".toRegex()
     private val RGB_PATTERN = """^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$""".toRegex()
-    private val RGBA_PATTERN = """^rgba\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(1|0|0?\.\d+|1\.0)\s*\)$""".toRegex()
+    private val RGBA_PATTERN =
+        """^rgba\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(1|0|0?\.\d+|1\.0)\s*\)$"""
+            .toRegex()
 
     fun tryCovertToColor(text: String): Long? {
         // Quick check for common patterns to fail fast
@@ -247,12 +247,11 @@ object ColorUtils {
     /**
      * Determine whether the string represents a color value.
      */
-    fun isColorValue(value: String): Boolean {
-        return value.matches(Regex("^#[0-9a-fA-F]{3,6}$")) ||
+    fun isColorValue(value: String): Boolean =
+        value.matches(Regex("^#[0-9a-fA-F]{3,6}$")) ||
             value.matches(Regex("^rgb\\s*\\(.*\\)$", RegexOption.IGNORE_CASE)) ||
             value.matches(Regex("^rgba\\s*\\(.*\\)$", RegexOption.IGNORE_CASE)) ||
             isNamedColor(value)
-    }
 
     /**
      * Determine whether the string is a named color.
@@ -260,9 +259,25 @@ object ColorUtils {
     private fun isNamedColor(value: String): Boolean {
         val namedColors =
             setOf(
-                "white", "black", "red", "green", "blue", "yellow", "cyan", "magenta",
-                "silver", "gray", "maroon", "olive", "lime", "aqua", "teal", "navy",
-                "fuchsia", "purple", "transparent",
+                "white",
+                "black",
+                "red",
+                "green",
+                "blue",
+                "yellow",
+                "cyan",
+                "magenta",
+                "silver",
+                "gray",
+                "maroon",
+                "olive",
+                "lime",
+                "aqua",
+                "teal",
+                "navy",
+                "fuchsia",
+                "purple",
+                "transparent",
             )
         return namedColors.contains(value.lowercase())
     }

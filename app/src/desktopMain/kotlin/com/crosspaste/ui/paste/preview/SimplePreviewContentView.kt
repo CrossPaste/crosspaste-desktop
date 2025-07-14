@@ -22,7 +22,8 @@ fun SimplePreviewContentView(
         pasteMainContent = {
             Row(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {

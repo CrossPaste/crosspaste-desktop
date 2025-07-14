@@ -83,7 +83,8 @@ fun SettingsContentView() {
 
             VerticalScrollbar(
                 modifier =
-                    Modifier.background(color = Color.Transparent)
+                    Modifier
+                        .background(color = Color.Transparent)
                         .fillMaxHeight()
                         .padding(end = tiny3X)
                         .align(Alignment.CenterEnd)

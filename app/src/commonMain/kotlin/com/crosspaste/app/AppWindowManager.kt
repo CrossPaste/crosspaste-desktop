@@ -23,7 +23,8 @@ interface AppWindowManager {
         scope.launch {
             val result = task()
             withContext(mainDispatcher) {
-                result.onSuccess { success() }
+                result
+                    .onSuccess { success() }
                     .onFailure { fail(it) }
             }
         }

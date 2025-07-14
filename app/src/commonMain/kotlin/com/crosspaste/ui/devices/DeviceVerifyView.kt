@@ -87,7 +87,8 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
     }
 
     Box(
-        Modifier.fillMaxWidth()
+        Modifier
+            .fillMaxWidth()
             .wrapContentHeight()
             .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
@@ -120,7 +121,8 @@ fun VerificationContent(
 ) {
     Column(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .wrapContentHeight(),
     ) {
         DeviceInfoHeader(syncRuntimeInfo)
@@ -157,7 +159,8 @@ fun TokenInputRow(
 ) {
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .wrapContentHeight()
                 .padding(horizontal = small2X),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -222,7 +225,8 @@ fun TokenInputBox(
                     imeAction = if (index == focusRequesters.size - 1) ImeAction.Done else ImeAction.Next,
                 ),
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .focusRequester(focusRequesters[index])
                     .onKeyEvent { handleKeyEvent(it, token, index, focusRequesters, confirmAction, cancelAction) },
             colors = textFieldColors(),
@@ -245,8 +249,8 @@ fun handleKeyEvent(
     focusRequesters: List<FocusRequester>,
     confirmAction: () -> Unit,
     cancelAction: () -> Unit,
-): Boolean {
-    return when (event.key) {
+): Boolean =
+    when (event.key) {
         Key.Enter -> {
             confirmAction()
             true
@@ -265,7 +269,6 @@ fun handleKeyEvent(
         }
         else -> false
     }
-}
 
 @Composable
 fun textFieldColors() =

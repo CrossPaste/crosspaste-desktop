@@ -148,15 +148,16 @@ class DesktopShortKeysAction(
     }
 
     private suspend fun handleCopyResult(result: Result<Unit?>) {
-        result.onSuccess {
-            appWindowManager.toPaste()
-        }.onFailure {
-            notificationManager.sendNotification(
-                title = { it.getText("copy_failed") },
-                message = it.message?.let { message -> { it -> message } },
-                messageType = MessageType.Error,
-            )
-        }
+        result
+            .onSuccess {
+                appWindowManager.toPaste()
+            }.onFailure {
+                notificationManager.sendNotification(
+                    title = { it.getText("copy_failed") },
+                    message = it.message?.let { message -> { it -> message } },
+                    messageType = MessageType.Error,
+                )
+            }
     }
 
     private fun togglePasteboardMonitoring() {
