@@ -355,7 +355,7 @@ object ColorUtils {
             "navy" -> Color(0xFF000080)
             "fuchsia" -> Color.Magenta
             "purple" -> Color(0xFF800080)
-            "transparent" -> Color.Transparent
+            "transparent" -> Color.White
             else -> Color.White
         }
     }
