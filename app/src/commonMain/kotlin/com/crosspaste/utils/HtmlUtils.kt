@@ -138,25 +138,10 @@ object HtmlUtils {
             ?.let { normalizeColor(it) }
     }
 
-    private fun extractColorFromBackground(backgroundValue: String): String? {
-        val parts = backgroundValue.split("\\s+".toRegex())
-        for (part in parts) {
-            if (!part.contains("url(") &&
-                !part.contains("repeat") &&
-                !part.contains("scroll") &&
-                !part.contains("fixed") &&
-                !part.contains("center") &&
-                !part.contains("top") &&
-                !part.contains("bottom") &&
-                !part.contains("left") &&
-                !part.contains("right") &&
-                part.isNotEmpty()
-            ) {
-                if (colorUtils.isColorValue(part)) {
-                    return part
-                }
-            }
+    private fun extractColorFromBackground(backgroundValue: String): String? =
+        if (colorUtils.isColorValue(backgroundValue)) {
+            backgroundValue
+        } else {
+            null
         }
-        return null
-    }
 }
