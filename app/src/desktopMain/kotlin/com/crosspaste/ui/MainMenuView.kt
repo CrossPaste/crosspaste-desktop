@@ -29,19 +29,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.ExitMode
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
 fun MainMenuView() {
+    val appLaunch = koinInject<DesktopAppLaunch>()
     val appWindowManager = koinInject<AppWindowManager>()
+    val configManager = koinInject<DesktopConfigManager>()
 
     val prevMenuList by remember {
         mutableStateOf(
@@ -66,6 +72,10 @@ fun MainMenuView() {
         )
     }
 
+    val config by configManager.config.collectAsState()
+
+    val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
+
     val screen by appWindowManager.screenContext.collectAsState()
 
     val selectedIndex by remember(screen.screenType) {
@@ -89,6 +99,17 @@ fun MainMenuView() {
         }
 
         Spacer(Modifier.weight(1f))
+
+        if (firstLaunchCompleted && config.showTutorial) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = small3X, bottom = tiny),
+            ) {
+                TutorialButton()
+            }
+        }
 
         nextMenuList.forEachIndexed { index, item ->
             MainMenuItemView(item.title, background(index == selectedIndex - prevMenuList.size)) {
@@ -138,12 +159,11 @@ fun MainMenuItemView(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = tiny3X),
+                modifier = Modifier.padding(start = small3X, end = tiny3X),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    modifier = Modifier.padding(start = small3X),
                     text = copywriter.getText(title),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

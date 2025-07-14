@@ -38,12 +38,15 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.PasteTooltipIconView
+import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
@@ -63,7 +66,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun SideSearchInputView() {
+    val appLaunch = koinInject<DesktopAppLaunch>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
@@ -73,6 +78,10 @@ fun SideSearchInputView() {
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
     val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)
+
+    val config by configManager.config.collectAsState()
+
+    val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
@@ -151,6 +160,11 @@ fun SideSearchInputView() {
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (firstLaunchCompleted && config.showTutorial) {
+                TutorialButton()
+                Spacer(modifier = Modifier.width(tiny))
+            }
+
             PasteTooltipIconView(
                 painter = settings(),
                 tint = MaterialTheme.colorScheme.primary,
