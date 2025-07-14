@@ -10,35 +10,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import com.crosspaste.ui.base.robotoFontFamily
 
 object DesktopAppUIFont {
-
-    val appNameTextStyle: TextStyle
-        @Composable
-        get() =
-            TextStyle(
-                color =
-                    MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.appBackground,
-                    ),
-                fontFamily = robotoFontFamily(),
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-            )
-
-    val companyTextStyle: TextStyle
-        @Composable
-        get() =
-            TextStyle(
-                color =
-                    MaterialTheme.colorScheme.contentColorFor(
-                        AppUIColors.appBackground,
-                    ),
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.Light,
-                fontSize = 10.sp,
-            )
 
     val detailPasteTextStyle
         @Composable @ReadOnlyComposable
@@ -79,8 +52,8 @@ object DesktopAppUIFont {
             )
 
     @Composable
-    fun StorePathTextStyle(useDefaultStoragePath: Boolean): TextStyle {
-        return TextStyle(
+    fun StorePathTextStyle(useDefaultStoragePath: Boolean): TextStyle =
+        TextStyle(
             textAlign = TextAlign.Start,
             color =
                 if (!useDefaultStoragePath) {
@@ -93,7 +66,6 @@ object DesktopAppUIFont {
             fontFamily = FontFamily.Monospace,
             lineHeight = 14.sp,
         )
-    }
 
     val tipsTextStyle: TextStyle
         @Composable

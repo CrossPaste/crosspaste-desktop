@@ -13,7 +13,8 @@ import okio.Path
 
 abstract class AbstractThumbnailLoader(
     private val userDataPathProvider: UserDataPathProvider,
-) : ConcurrentLoader<PasteFileCoordinate, Path>, ThumbnailLoader {
+) : ConcurrentLoader<PasteFileCoordinate, Path>,
+    ThumbnailLoader {
 
     abstract val logger: KLogger
 
@@ -28,9 +29,7 @@ abstract class AbstractThumbnailLoader(
     override fun resolve(
         key: String,
         value: PasteFileCoordinate,
-    ): Path {
-        return getThumbnailPath(value)
-    }
+    ): Path = getThumbnailPath(value)
 
     override fun getThumbnailPath(pasteFileCoordinate: PasteFileCoordinate): Path {
         val relativePath =
@@ -41,7 +40,8 @@ abstract class AbstractThumbnailLoader(
 
         val thumbnailName = "thumbnail_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.png"
 
-        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = true, isFile = true)
+        return userDataPathProvider
+            .resolve(basePath, relativePath, autoCreate = true, isFile = true)
             .noOptionParent
             .resolve(thumbnailName)
     }
@@ -55,18 +55,15 @@ abstract class AbstractThumbnailLoader(
 
         val metaProperties = "meta_${pasteFileCoordinate.filePath.fileNameRemoveExtension}.properties"
 
-        return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+        return userDataPathProvider
+            .resolve(basePath, relativePath, autoCreate = false, isFile = true)
             .noOptionParent
             .resolve(metaProperties)
     }
 
-    override fun convertToKey(value: PasteFileCoordinate): String {
-        return value.toString()
-    }
+    override fun convertToKey(value: PasteFileCoordinate): String = value.toString()
 
-    override fun exist(result: Path): Boolean {
-        return fileUtils.existFile(result)
-    }
+    override fun exist(result: Path): Boolean = fileUtils.existFile(result)
 
     override fun loggerWarning(
         value: PasteFileCoordinate,

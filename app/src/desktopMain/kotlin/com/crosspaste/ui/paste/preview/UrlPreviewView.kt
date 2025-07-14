@@ -19,7 +19,8 @@ fun UrlPreviewView(pasteData: PasteData) {
         SimplePreviewContentView(pasteData) {
             Row(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .padding(small3X),
             ) {
                 BasicText(

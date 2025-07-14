@@ -31,26 +31,21 @@ class DirFileInfoTree(
 ) : FileInfoTree {
     @Transient
     private val sortTree: List<Pair<String, FileInfoTree>> =
-        tree.entries.map { Pair(it.key, it.value) }
+        tree.entries
+            .map { Pair(it.key, it.value) }
             .sortedBy { it.first }
 
-    fun iterator(): Iterator<Pair<String, FileInfoTree>> {
-        return sortTree.iterator()
-    }
+    fun iterator(): Iterator<Pair<String, FileInfoTree>> = sortTree.iterator()
 
-    override fun isFile(): Boolean {
-        return false
-    }
+    override fun isFile(): Boolean = false
 
-    override fun getPasteFileList(path: Path): List<PasteFile> {
-        return tree.map { (name, fileTree) ->
-            fileTree.getPasteFileList(path.resolve(name))
-        }.flatten()
-    }
+    override fun getPasteFileList(path: Path): List<PasteFile> =
+        tree
+            .map { (name, fileTree) ->
+                fileTree.getPasteFileList(path.resolve(name))
+            }.flatten()
 
-    override fun getCount(): Long {
-        return tree.values.sumOf { it.getCount() }
-    }
+    override fun getCount(): Long = tree.values.sumOf { it.getCount() }
 }
 
 @Serializable
@@ -60,17 +55,11 @@ class SingleFileInfoTree(
     override val hash: String,
 ) : FileInfoTree {
 
-    override fun isFile(): Boolean {
-        return true
-    }
+    override fun isFile(): Boolean = true
 
-    override fun getPasteFileList(path: Path): List<PasteFile> {
-        return listOf(PasteFileImpl(path, hash))
-    }
+    override fun getPasteFileList(path: Path): List<PasteFile> = listOf(PasteFileImpl(path, hash))
 
-    override fun getCount(): Long {
-        return 1L
-    }
+    override fun getCount(): Long = 1L
 }
 
 class FileInfoTreeBuilder {

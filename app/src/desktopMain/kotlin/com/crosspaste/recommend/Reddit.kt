@@ -9,7 +9,9 @@ import com.crosspaste.ui.base.reddit
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import java.net.URLEncoder
 
-class Reddit(private val uiSupport: UISupport) : RecommendationPlatform {
+class Reddit(
+    private val uiSupport: UISupport,
+) : RecommendationPlatform {
     override val platformName: String = "Reddit"
 
     @Composable

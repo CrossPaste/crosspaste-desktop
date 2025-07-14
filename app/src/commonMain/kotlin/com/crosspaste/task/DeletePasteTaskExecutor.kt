@@ -11,7 +11,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class DeletePasteTaskExecutor(private val pasteDao: PasteDao) : SingleTypeTaskExecutor {
+class DeletePasteTaskExecutor(
+    private val pasteDao: PasteDao,
+) : SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}
 
@@ -19,8 +21,8 @@ class DeletePasteTaskExecutor(private val pasteDao: PasteDao) : SingleTypeTaskEx
 
     private val mutex = Mutex()
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        return runCatching {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult =
+        runCatching {
             pasteTask.pasteDataId?.let { pasteDataId ->
                 mutex.withLock(pasteDataId) {
                     pasteDao.deletePasteData(pasteDataId)
@@ -36,5 +38,4 @@ class DeletePasteTaskExecutor(private val pasteDao: PasteDao) : SingleTypeTaskEx
                 extraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class),
             )
         }
-    }
 }

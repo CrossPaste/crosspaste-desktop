@@ -19,7 +19,8 @@ class TextPasteItem(
     override val size: Long,
     override val text: String,
     override val extraInfo: JsonObject? = null,
-) : PasteItem, PasteText {
+) : PasteItem,
+    PasteText {
 
     companion object {
         private val codecsUtils = getCodecsUtils()
@@ -50,23 +51,17 @@ class TextPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getPasteType(): PasteType {
-        return PasteType.TEXT_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.TEXT_TYPE
 
-    override fun getSearchContent(): String {
-        return text.lowercase()
-    }
+    override fun getSearchContent(): String = text.lowercase()
 
-    override fun getSummary(): String {
-        return text
-    }
+    override fun getSummary(): String = text
 
     override fun update(
         data: Any,
         hash: String,
-    ): PasteItem {
-        return (data as? String)?.let { text ->
+    ): PasteItem =
+        (data as? String)?.let { text ->
             TextPasteItem(
                 identifiers = identifiers,
                 hash = hash,
@@ -74,16 +69,14 @@ class TextPasteItem(
                 text = text,
             )
         } ?: this
-    }
 
-    override fun isValid(): Boolean {
-        return hash.isNotEmpty() &&
+    override fun isValid(): Boolean =
+        hash.isNotEmpty() &&
             size > 0 &&
             text.isNotEmpty()
-    }
 
-    override fun toJson(): String {
-        return buildJsonObject {
+    override fun toJson(): String =
+        buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
@@ -91,5 +84,4 @@ class TextPasteItem(
             put("text", text)
             extraInfo?.let { put("extraInfo", it) }
         }.toString()
-    }
 }

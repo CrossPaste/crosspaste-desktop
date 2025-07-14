@@ -60,31 +60,35 @@ class DesktopShortcutKeysLoader(
 
         return EventConsumer { event ->
             for (entry in keys) {
-                entry.value.toList().fastAll { info ->
-                    val eventCheck = matchMap[info.code] ?: { false }
-                    eventCheck(event)
-                }.let { match ->
-                    if (match) {
-                        shortcutKeysAction.action(entry.key)
-                        return@EventConsumer
+                entry.value
+                    .toList()
+                    .fastAll { info ->
+                        val eventCheck = matchMap[info.code] ?: { false }
+                        eventCheck(event)
+                    }.let { match ->
+                        if (match) {
+                            shortcutKeysAction.action(entry.key)
+                            return@EventConsumer
+                        }
                     }
-                }
             }
         }
     }
 
-    private fun loadKeys(properties: Properties): TreeMap<String, List<KeyboardKey>> {
-        return properties.map { it.key.toString() to parseKeys(it.value.toString()) }
+    private fun loadKeys(properties: Properties): TreeMap<String, List<KeyboardKey>> =
+        properties
+            .map { it.key.toString() to parseKeys(it.value.toString()) }
             .filter { it.second.isNotEmpty() }
             .toMap(TreeMap())
-    }
 
-    private fun parseKeys(define: String): List<KeyboardKey> {
-        return define.split("+").filter { it != "" }.mapNotNull {
-            runCatching {
-                val code = it.toInt()
-                map[code]
-            }.getOrNull()
-        }.sortedWith(comparator)
-    }
+    private fun parseKeys(define: String): List<KeyboardKey> =
+        define
+            .split("+")
+            .filter { it != "" }
+            .mapNotNull {
+                runCatching {
+                    val code = it.toInt()
+                    map[code]
+                }.getOrNull()
+            }.sortedWith(comparator)
 }

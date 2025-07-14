@@ -131,7 +131,8 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
     ) {
         Box(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .padding(end = medium)
                     .clip(tinyRoundedCornerShape),
         ) {
@@ -193,9 +194,10 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                     hoverDurationMillis = 300,
                     unhoverColor =
                         if (isScrolling) {
-                            MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.appBackground,
-                            ).copy(alpha = 0.48f)
+                            MaterialTheme.colorScheme
+                                .contentColorFor(
+                                    AppUIColors.appBackground,
+                                ).copy(alpha = 0.48f)
                         } else {
                             Color.Transparent
                         },

@@ -8,7 +8,9 @@ import io.ktor.server.application.hooks.*
 import io.ktor.utils.io.*
 import kotlinx.io.readByteArray
 
-class ServerDecryptionPluginFactory(private val secureStore: SecureStore) {
+class ServerDecryptionPluginFactory(
+    private val secureStore: SecureStore,
+) {
 
     fun createPlugin(): ApplicationPlugin<PluginConfig> {
         return createApplicationPlugin(
@@ -24,12 +26,13 @@ class ServerDecryptionPluginFactory(private val secureStore: SecureStore) {
                 headers["appInstanceId"]?.let { appInstanceId ->
                     headers["secure"]?.let {
                         logger.debug { "server decrypt $appInstanceId" }
-                        return@on application.writer {
-                            val processor = secureStore.getMessageProcessor(appInstanceId)
-                            val encryptedContent = body.readRemaining().readByteArray()
-                            val decrypted = processor.decrypt(encryptedContent)
-                            channel.writeFully(decrypted, 0, decrypted.size)
-                        }.channel
+                        return@on application
+                            .writer {
+                                val processor = secureStore.getMessageProcessor(appInstanceId)
+                                val encryptedContent = body.readRemaining().readByteArray()
+                                val decrypted = processor.decrypt(encryptedContent)
+                                channel.writeFully(decrypted, 0, decrypted.size)
+                            }.channel
                     }
                 }
                 return@on body

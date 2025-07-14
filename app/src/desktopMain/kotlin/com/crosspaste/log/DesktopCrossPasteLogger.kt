@@ -98,8 +98,8 @@ class DesktopCrossPasteLogger(
         rootLogger?.level = getLevel(logLevel)
     }
 
-    private fun getLevel(logLevel: String): Level {
-        return when (logLevel) {
+    private fun getLevel(logLevel: String): Level =
+        when (logLevel) {
             "trace" -> Level.TRACE
             "debug" -> Level.DEBUG
             "info" -> Level.INFO
@@ -107,5 +107,4 @@ class DesktopCrossPasteLogger(
             "error" -> Level.ERROR
             else -> Level.INFO
         }
-    }
 }

@@ -26,8 +26,6 @@ import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
 import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import okio.Path
 import java.awt.Color
 import java.awt.Desktop
@@ -52,9 +50,6 @@ class DesktopUISupport(
     private val fileUtils = getFileUtils()
 
     private val htmlUtils = getHtmlUtils()
-
-    private val _showColorChooser = MutableStateFlow(false)
-    val showColorChooser: StateFlow<Boolean> = _showColorChooser
 
     override fun openUrlInBrowser(url: String) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
@@ -141,7 +136,6 @@ class DesktopUISupport(
     override fun openColorPicker(pasteData: PasteData) {
         pasteData.getPasteItem(PasteColor::class)?.let { pasteColor ->
             val initialColor = Color(pasteColor.color.toInt())
-            _showColorChooser.value = true
             EventQueue.invokeLater {
                 JColorChooser(initialColor)
                 val result =
@@ -161,7 +155,6 @@ class DesktopUISupport(
                             ((result.green.toLong() and 0xFF) shl 8) or
                             (result.blue.toLong() and 0xFF)
 
-                    _showColorChooser.value = false
                     logger.info { "Selected color: $rgbColor" }
                     colorTypePlugin.updateColor(
                         pasteData,
@@ -174,8 +167,8 @@ class DesktopUISupport(
         }
     }
 
-    private fun openFileInExplorer(file: File): Boolean {
-        return runCatching {
+    private fun openFileInExplorer(file: File): Boolean =
+        runCatching {
             val filePath = file.absolutePath
             val command = listOf("explorer.exe", "/select,\"$filePath\"")
             ProcessBuilder(command).start()
@@ -183,7 +176,6 @@ class DesktopUISupport(
         }.onFailure { e ->
             logger.error(e) { "Failed to open file in explorer" }
         }.getOrElse { false }
-    }
 
     override fun openImage(imagePath: Path) {
         if (fileUtils.existFile(imagePath)) {
@@ -267,7 +259,8 @@ class DesktopUISupport(
 
     override fun jumpPrivacyAccessibility() {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            Desktop.getDesktop()
+            Desktop
+                .getDesktop()
                 .browse(URI("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"))
         }
     }

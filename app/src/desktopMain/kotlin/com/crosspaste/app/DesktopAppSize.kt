@@ -13,12 +13,9 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.ui.MenuHelper
 import com.crosspaste.ui.theme.AppUISize.huge
-import com.crosspaste.ui.theme.AppUISize.large2X
-import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
-import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.Memoize
@@ -33,7 +30,9 @@ import java.awt.Rectangle
 class DesktopAppSize(
     private val configManager: DesktopConfigManager,
     private val lazyMenuHelper: Lazy<MenuHelper>,
-) : AppSize, NativeMouseListener, ActiveGraphicsDevice {
+) : AppSize,
+    NativeMouseListener,
+    ActiveGraphicsDevice {
 
     val mainMenuSize: DpSize = DpSize(width = 160.dp, height = 700.dp)
 
@@ -97,22 +96,12 @@ class DesktopAppSize(
 
     val appBorderSize = tiny5X
 
-    val mainHorizontalShadowPadding = large2X
-
-    val mainBottomShadowPadding = xxLarge
-
     // Windows OS start
 
     val menuRoundedCornerShape = tiny2XRoundedCornerShape
 
-    val edgePadding = small2X
-
     val menuWindowXOffset = 32.dp
     // Windows OS end
-
-    // Mac OS start
-    val mainWindowTopMargin = xxLarge
-    // Mac OS end
 
     private val searchCorePaddingDpSize = DpSize(zero, 100.dp)
 

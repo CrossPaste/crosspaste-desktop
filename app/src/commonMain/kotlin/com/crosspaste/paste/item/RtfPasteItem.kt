@@ -25,7 +25,8 @@ class RtfPasteItem(
     override val size: Long,
     override val extraInfo: JsonObject? = null,
     var relativePath: String? = null,
-) : PasteItem, PasteRtf {
+) : PasteItem,
+    PasteRtf {
 
     companion object {
         val fileUtils = getFileUtils()
@@ -47,33 +48,26 @@ class RtfPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun bind(pasteCoordinate: PasteCoordinate): RtfPasteItem {
-        return RtfPasteItem(
+    override fun bind(pasteCoordinate: PasteCoordinate): RtfPasteItem =
+        RtfPasteItem(
             identifiers = identifiers,
             hash = hash,
             size = size,
             rtf = rtf,
             extraInfo = extraInfo,
         )
-    }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.RTF_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.RTF_TYPE
 
-    override fun getSearchContent(): String {
-        return rtfTextCache.lowercase()
-    }
+    override fun getSearchContent(): String = rtfTextCache.lowercase()
 
-    override fun getSummary(): String {
-        return rtfTextCache
-    }
+    override fun getSummary(): String = rtfTextCache
 
     override fun update(
         data: Any,
         hash: String,
-    ): PasteItem {
-        return (data as? String)?.let { rtf ->
+    ): PasteItem =
+        (data as? String)?.let { rtf ->
             // todo update rtf image
             RtfPasteItem(
                 identifiers = identifiers,
@@ -83,13 +77,12 @@ class RtfPasteItem(
                 extraInfo = extraInfo,
             )
         } ?: this
-    }
 
     override fun getRenderingFilePath(
         pasteCoordinate: PasteCoordinate,
         userDataPathProvider: UserDataPathProvider,
-    ): Path {
-        return getMarketingPath()?.toPath() ?: run {
+    ): Path =
+        getMarketingPath()?.toPath() ?: run {
             val basePath = userDataPathProvider.resolve(appFileType = AppFileType.RTF)
             val relativePath =
                 fileUtils.createPasteRelativePath(
@@ -98,7 +91,6 @@ class RtfPasteItem(
                 )
             userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
-    }
 
     override fun clear(
         clearResource: Boolean,
@@ -115,14 +107,13 @@ class RtfPasteItem(
         }
     }
 
-    override fun isValid(): Boolean {
-        return hash.isNotEmpty() &&
+    override fun isValid(): Boolean =
+        hash.isNotEmpty() &&
             size > 0 &&
             rtf.isNotEmpty()
-    }
 
-    override fun toJson(): String {
-        return buildJsonObject {
+    override fun toJson(): String =
+        buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
@@ -130,5 +121,4 @@ class RtfPasteItem(
             put("rtf", rtf)
             extraInfo?.let { put("extraInfo", it) }
         }.toString()
-    }
 }

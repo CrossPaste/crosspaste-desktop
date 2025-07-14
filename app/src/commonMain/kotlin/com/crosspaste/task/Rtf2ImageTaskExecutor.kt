@@ -25,8 +25,8 @@ class Rtf2ImageTaskExecutor(
 
     private val mutex = Mutex()
 
-    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
-        return mutex.withLock(pasteTask.pasteDataId) {
+    override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult =
+        mutex.withLock(pasteTask.pasteDataId) {
             runCatching {
                 pasteDao.getNoDeletePasteData(pasteTask.pasteDataId!!)?.let { pasteData ->
                     rtfRenderingService.render(pasteData)
@@ -42,5 +42,4 @@ class Rtf2ImageTaskExecutor(
                 )
             }
         }
-    }
 }

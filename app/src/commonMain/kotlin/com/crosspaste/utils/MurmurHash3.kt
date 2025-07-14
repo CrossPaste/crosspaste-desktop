@@ -7,7 +7,10 @@ expect class ByteOrder
 @OptIn(ExperimentalUnsignedTypes::class)
 expect fun ByteArray.asULongArray(): ULongArray
 
-class MurmurHash3(private val seed: UInt = 0u) {
+class MurmurHash3(
+    private val seed: UInt = 0u,
+) {
+    @Suppress("unused")
     fun hash32x86(key: ByteArray): UInt {
         var h = seed
         val len = key.size
@@ -42,6 +45,7 @@ class MurmurHash3(private val seed: UInt = 0u) {
         return h
     }
 
+    @Suppress("unused")
     fun hash128x86(key: ByteArray): Array<UInt> {
         var h1 = seed
         var h2 = seed
@@ -248,15 +252,14 @@ class MurmurHash3(private val seed: UInt = 0u) {
         return arrayOf(h1, h2)
     }
 
-    private fun ByteArray.getLittleEndianUInt(index: Int): UInt {
-        return this.getUInt(index) or
+    private fun ByteArray.getLittleEndianUInt(index: Int): UInt =
+        this.getUInt(index) or
             (this.getUInt(index + 1) shl 8) or
             (this.getUInt(index + 2) shl 16) or
             (this.getUInt(index + 3) shl 24)
-    }
 
-    private fun ByteArray.getLittleEndianLong(index: Int): ULong {
-        return this.getULong(index) or
+    private fun ByteArray.getLittleEndianLong(index: Int): ULong =
+        this.getULong(index) or
             (this.getULong(index + 1) shl 8) or
             (this.getULong(index + 2) shl 16) or
             (this.getULong(index + 3) shl 24) or
@@ -264,7 +267,6 @@ class MurmurHash3(private val seed: UInt = 0u) {
             (this.getULong(index + 5) shl 40) or
             (this.getULong(index + 6) shl 48) or
             (this.getULong(index + 7) shl 56)
-    }
 
     private fun UInt.mix(
         r: Int,
@@ -355,7 +357,9 @@ class MurmurHash3(private val seed: UInt = 0u) {
     }
 }
 
-class StreamingMurmurHash3(seed: UInt = 0u) {
+class StreamingMurmurHash3(
+    seed: UInt = 0u,
+) {
     private var h1 = seed.toULong()
     private var h2 = seed.toULong()
     private var totalLen = 0UL
@@ -409,29 +413,28 @@ class StreamingMurmurHash3(seed: UInt = 0u) {
             var k1 = 0uL
             var k2 = 0uL
 
-            when (bufferSize) {
-                15 -> k2 = k2 xor (buffer[14].toULong() shl 48)
-                14 -> k2 = k2 xor (buffer[13].toULong() shl 40)
-                13 -> k2 = k2 xor (buffer[12].toULong() shl 32)
-                12 -> k2 = k2 xor (buffer[11].toULong() shl 24)
-                11 -> k2 = k2 xor (buffer[10].toULong() shl 16)
-                10 -> k2 = k2 xor (buffer[9].toULong() shl 8)
-                9 -> {
-                    k2 = k2 xor buffer[8].toULong()
-                    k2 = k2.mix(R3_128x64, C2_128x64, C1_128x64)
-                    h2 = h2 xor k2
-                }
+            if (bufferSize >= 15) k2 = k2 xor (buffer[14].toULong() shl 48)
+            if (bufferSize >= 14) k2 = k2 xor (buffer[13].toULong() shl 40)
+            if (bufferSize >= 13) k2 = k2 xor (buffer[12].toULong() shl 32)
+            if (bufferSize >= 12) k2 = k2 xor (buffer[11].toULong() shl 24)
+            if (bufferSize >= 11) k2 = k2 xor (buffer[10].toULong() shl 16)
+            if (bufferSize >= 10) k2 = k2 xor (buffer[9].toULong() shl 8)
+            if (bufferSize >= 9) {
+                k2 = k2 xor buffer[8].toULong()
+                h2 = h2 xor k2.mix(R3_128x64, C2_128x64, C1_128x64)
             }
 
-            if (bufferSize > 8) {
-                k1 = buffer.sliceArray(0 until 8).asULongArray()[0]
-            } else if (bufferSize > 0) {
-                for (i in 0 until bufferSize) {
-                    k1 = k1 xor (buffer[i].toULong() shl (i * 8))
-                }
+            if (bufferSize >= 8) k1 = k1 xor (buffer[7].toULong() shl 56)
+            if (bufferSize >= 7) k1 = k1 xor (buffer[6].toULong() shl 48)
+            if (bufferSize >= 6) k1 = k1 xor (buffer[5].toULong() shl 40)
+            if (bufferSize >= 5) k1 = k1 xor (buffer[4].toULong() shl 32)
+            if (bufferSize >= 4) k1 = k1 xor (buffer[3].toULong() shl 24)
+            if (bufferSize >= 3) k1 = k1 xor (buffer[2].toULong() shl 16)
+            if (bufferSize >= 2) k1 = k1 xor (buffer[1].toULong() shl 8)
+            if (bufferSize >= 1) {
+                k1 = k1 xor buffer[0].toULong()
+                h1 = h1 xor k1.mix(R1_128x64, C1_128x64, C2_128x64)
             }
-
-            h1 = h1 xor k1.mix(R1_128x64, C1_128x64, C2_128x64)
         }
 
         h1 = h1 xor totalLen

@@ -47,12 +47,14 @@ class DesktopMigration(
             runCatching {
                 logger.info { "Migrating Data" }
                 val originDataPath =
-                    userDataPathProvider.resolve(appFileType = AppFileType.DATA)
+                    userDataPathProvider
+                        .resolve(appFileType = AppFileType.DATA)
                         .resolve(driverFactory.dbName)
                 val migrationDataPath =
-                    userDataPathProvider.resolve(fileName = null, appFileType = AppFileType.DATA) {
-                        migrationPath
-                    }.resolve(driverFactory.dbName)
+                    userDataPathProvider
+                        .resolve(fileName = null, appFileType = AppFileType.DATA) {
+                            migrationPath
+                        }.resolve(driverFactory.dbName)
 
                 fileUtils.copyPath(originDataPath, migrationDataPath)
                 logger.info { "Migrated Data to $migrationPath" }
@@ -126,9 +128,10 @@ class DesktopMigration(
                 .startsWith(currentStoragePathString)
         ) {
             "cant_select_parent_directory"
-        } else if (fileUtils.listFiles(migrationPath) { it ->
-                !it.name.startsWith(".")
-            }.isNotEmpty()
+        } else if (fileUtils
+                .listFiles(migrationPath) { it ->
+                    !it.name.startsWith(".")
+                }.isNotEmpty()
         ) {
             "directory_not_empty"
         } else {

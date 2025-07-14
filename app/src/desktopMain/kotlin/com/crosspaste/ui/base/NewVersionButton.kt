@@ -34,8 +34,7 @@ fun NewVersionButton(modifier: Modifier = Modifier) {
                 .background(Color.Red)
                 .clickable {
                     appUpdateService.tryTriggerUpdate()
-                }
-                .padding(horizontal = tiny3X),
+                }.padding(horizontal = tiny3X),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

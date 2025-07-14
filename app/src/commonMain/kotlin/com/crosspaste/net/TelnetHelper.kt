@@ -60,8 +60,8 @@ class TelnetHelper(
         hostAddress: String,
         port: Int,
         timeout: Long = 500L,
-    ): VersionRelation? {
-        return runCatching {
+    ): VersionRelation? =
+        runCatching {
             val httpResponse =
                 pasteClient.get(timeout = timeout) {
                     buildUrl(hostAddress, port)
@@ -78,5 +78,4 @@ class TelnetHelper(
         }.onFailure {
             logger.debug(it) { "telnet $hostAddress fail" }
         }.getOrNull()
-    }
 }

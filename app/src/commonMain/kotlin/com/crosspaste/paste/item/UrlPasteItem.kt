@@ -24,7 +24,8 @@ class UrlPasteItem(
     override val size: Long,
     override val url: String,
     override val extraInfo: JsonObject? = null,
-) : PasteItem, PasteUrl {
+) : PasteItem,
+    PasteUrl {
 
     companion object {
         const val OPEN_GRAPH_IMAGE = "openGraphImage.png"
@@ -38,29 +39,22 @@ class UrlPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getPasteType(): PasteType {
-        return PasteType.URL_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.URL_TYPE
 
-    override fun getSearchContent(): String {
-        return url.lowercase()
-    }
+    override fun getSearchContent(): String = url.lowercase()
 
-    override fun getSummary(): String {
-        return url
-    }
+    override fun getSummary(): String = url
 
-    override fun getTitle(): String? {
-        return extraInfo?.let {
+    override fun getTitle(): String? =
+        extraInfo?.let {
             it[TITLE]?.jsonPrimitive?.content
         }
-    }
 
     override fun getRenderingFilePath(
         pasteCoordinate: PasteCoordinate,
         userDataPathProvider: UserDataPathProvider,
-    ): Path {
-        return getMarketingPath()?.toPath() ?: run {
+    ): Path =
+        getMarketingPath()?.toPath() ?: run {
             val basePath = userDataPathProvider.resolve(appFileType = AppFileType.OPEN_GRAPH)
             val relativePath =
                 fileUtils.createPasteRelativePath(
@@ -69,13 +63,12 @@ class UrlPasteItem(
                 )
             userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
-    }
 
     override fun update(
         data: Any,
         hash: String,
-    ): PasteItem {
-        return (data as? String)?.let { url ->
+    ): PasteItem =
+        (data as? String)?.let { url ->
             UrlPasteItem(
                 identifiers = identifiers,
                 hash = hash,
@@ -83,16 +76,14 @@ class UrlPasteItem(
                 url = url,
             )
         } ?: this
-    }
 
-    override fun isValid(): Boolean {
-        return hash.isNotEmpty() &&
+    override fun isValid(): Boolean =
+        hash.isNotEmpty() &&
             size > 0 &&
             url.isNotEmpty()
-    }
 
-    override fun toJson(): String {
-        return buildJsonObject {
+    override fun toJson(): String =
+        buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
@@ -100,5 +91,4 @@ class UrlPasteItem(
             put("url", url)
             extraInfo?.let { put("extraInfo", it) }
         }.toString()
-    }
 }

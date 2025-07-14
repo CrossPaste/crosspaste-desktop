@@ -24,9 +24,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
     fun verifyInstall(
         path: Path,
         sha256: String,
-    ): Boolean {
-        return codecsUtils.sha256(path) == sha256
-    }
+    ): Boolean = codecsUtils.sha256(path) == sha256
 
     /**
      * Install module from path to path
@@ -49,9 +47,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
         fileUtils.createFile(installPath.resolve(".success"))
     }
 
-    fun installed(installPath: Path): Boolean {
-        return fileUtils.existFile(installPath.resolve(".success"))
-    }
+    fun installed(installPath: Path): Boolean = fileUtils.existFile(installPath.resolve(".success"))
 
     override suspend fun load(value: ModuleLoaderConfig): Boolean {
         val installPath = value.installPath

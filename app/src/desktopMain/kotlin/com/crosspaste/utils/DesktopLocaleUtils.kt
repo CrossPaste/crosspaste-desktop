@@ -8,9 +8,7 @@ object DesktopLocaleUtils : LocaleUtils {
 
     private val locale = Locale.getDefault()
 
-    override fun getCountry(): String {
-        return locale.country
-    }
+    override fun getCountry(): String = locale.country
 
     override fun getLanguage(): String {
         val language = locale.language
@@ -54,11 +52,7 @@ object DesktopLocaleUtils : LocaleUtils {
         return ZH
     }
 
-    override fun getLanguageTag(): String {
-        return locale.toLanguageTag()
-    }
+    override fun getLanguageTag(): String = locale.toLanguageTag()
 
-    override fun getDisplayName(): String {
-        return locale.displayName
-    }
+    override fun getDisplayName(): String = locale.displayName
 }

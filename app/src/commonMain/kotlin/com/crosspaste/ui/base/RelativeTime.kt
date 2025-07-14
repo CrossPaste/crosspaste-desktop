@@ -17,9 +17,7 @@ data class RelativeTime(
             else -> null // No updates
         }
 
-    fun withInHourUnit(): Boolean {
-        return unit == HOURS || unit == MINUTES || unit == SECONDS || unit == NOW
-    }
+    fun withInHourUnit(): Boolean = unit == HOURS || unit == MINUTES || unit == SECONDS || unit == NOW
 }
 
 object RelativeTimeKey {

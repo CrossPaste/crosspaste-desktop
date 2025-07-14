@@ -11,7 +11,8 @@ import okio.Path
 
 abstract class AbstractFaviconLoader(
     private val userDataPathProvider: UserDataPathProvider,
-) : ConcurrentLoader<String, Path>, FaviconLoader {
+) : ConcurrentLoader<String, Path>,
+    FaviconLoader {
 
     protected abstract val logger: KLogger
 
@@ -19,13 +20,10 @@ abstract class AbstractFaviconLoader(
 
     override val mutex = Mutex()
 
-    private fun getGoogleIconUrl(host: String): String {
-        return "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=256"
-    }
+    private fun getGoogleIconUrl(host: String): String =
+        "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=256"
 
-    private fun getDefaultIcoUrl(host: String): String {
-        return "https://$host/favicon.ico"
-    }
+    private fun getDefaultIcoUrl(host: String): String = "https://$host/favicon.ico"
 
     abstract fun saveIco(
         url: String,
@@ -35,13 +33,9 @@ abstract class AbstractFaviconLoader(
     override fun resolve(
         key: String,
         value: String,
-    ): Path {
-        return userDataPathProvider.resolve("$key.ico", AppFileType.FAVICON)
-    }
+    ): Path = userDataPathProvider.resolve("$key.ico", AppFileType.FAVICON)
 
-    override fun exist(result: Path): Boolean {
-        return fileUtils.existFile(result)
-    }
+    override fun exist(result: Path): Boolean = fileUtils.existFile(result)
 
     override fun loggerWarning(
         value: String,
@@ -59,7 +53,5 @@ abstract class AbstractFaviconLoader(
             ?: saveIco(getGoogleIconUrl(key), result)
     }
 
-    override fun convertToKey(value: String): String {
-        return Url(value).host
-    }
+    override fun convertToKey(value: String): String = Url(value).host
 }

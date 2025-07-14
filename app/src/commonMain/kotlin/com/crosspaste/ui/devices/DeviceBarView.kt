@@ -84,7 +84,8 @@ fun DeviceBarView(
 
             Column(
                 modifier =
-                    Modifier.height(xxxLarge)
+                    Modifier
+                        .height(xxxLarge)
                         .align(Alignment.CenterVertically)
                         .padding(bottom = tiny4X),
                 verticalArrangement = Arrangement.SpaceBetween,

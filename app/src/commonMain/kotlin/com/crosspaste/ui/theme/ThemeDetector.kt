@@ -19,9 +19,7 @@ interface ThemeDetector {
 
     fun isUserInDark(): Boolean
 
-    fun isCurrentThemeDark(): Boolean {
-        return isFollowSystem() && isSystemInDark() || !isFollowSystem() && isUserInDark()
-    }
+    fun isCurrentThemeDark(): Boolean = isFollowSystem() && isSystemInDark() || !isFollowSystem() && isUserInDark()
 
     fun setThemeConfig(
         isFollowSystem: Boolean,
@@ -32,8 +30,8 @@ interface ThemeDetector {
 
     fun setColorContrast(colorContrast: ColorContrast)
 
-    fun getCurrentColorScheme(): StateFlow<ColorScheme> {
-        return if (isFollowSystem()) {
+    fun getCurrentColorScheme(): StateFlow<ColorScheme> =
+        if (isFollowSystem()) {
             if (isSystemInDark()) {
                 darkColorScheme
             } else {
@@ -46,5 +44,4 @@ interface ThemeDetector {
                 lightColorScheme
             }
         }
-    }
 }

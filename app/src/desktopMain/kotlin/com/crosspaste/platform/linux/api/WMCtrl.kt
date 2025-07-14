@@ -110,9 +110,7 @@ object WMCtrl {
     fun windowToDesktop(
         display: X11.Display,
         win: X11.Window,
-    ): Boolean {
-        return windowToDesktop(display, win, -1)
-    }
+    ): Boolean = windowToDesktop(display, win, -1)
 
     private fun windowToDesktop(
         display: X11.Display,
@@ -138,14 +136,16 @@ object WMCtrl {
         var curDesktop: Int?
         if ((
                 getPropertyAsInt(
-                    display, root,
+                    display,
+                    root,
                     "_NET_CURRENT_DESKTOP",
                 ).also { curDesktop = it }
             ) == null
         ) {
             if ((
                     getPropertyAsInt(
-                        display, root,
+                        display,
+                        root,
                         "_WIN_WORKSPACE",
                     ).also { curDesktop = it }
                 ) == null
@@ -186,16 +186,12 @@ object WMCtrl {
     fun iconifyWindow(
         display: X11.Display?,
         win: X11.Window?,
-    ): Boolean {
-        return X11Ext.INSTANCE.XIconifyWindow(display, win, INSTANCE.XDefaultScreen(display)) == TRUE
-    }
+    ): Boolean = X11Ext.INSTANCE.XIconifyWindow(display, win, INSTANCE.XDefaultScreen(display)) == TRUE
 
     fun closeWindow(
         display: X11.Display?,
         win: X11.Window?,
-    ): Boolean {
-        return clientMsg(display, win, "_NET_CLOSE_WINDOW", 0, 0, 0, 0, 0)
-    }
+    ): Boolean = clientMsg(display, win, "_NET_CLOSE_WINDOW", 0, 0, 0, 0, 0)
 
     fun getWindowIconName(
         display: X11.Display,
@@ -242,53 +238,46 @@ object WMCtrl {
         }
     }
 
-    fun getActiveWindowId(display: X11.Display): Long {
-        return getActiveWindow(display)?.let {
+    fun getActiveWindowId(display: X11.Display): Long =
+        getActiveWindow(display)?.let {
             getWindowId(it)
         } ?: -1
-    }
 
-    private fun getWindowId(win: X11.Window): Long {
-        return win.toLong()
-    }
+    private fun getWindowId(win: X11.Window): Long = win.toLong()
 
-    fun getActiveWindowPid(display: X11.Display): Int {
-        return getActiveWindow(display)?.let {
+    fun getActiveWindowPid(display: X11.Display): Int =
+        getActiveWindow(display)?.let {
             getWindowPid(display, it)
         } ?: -1
-    }
 
     private fun getWindowPid(
         display: X11.Display,
         win: X11.Window,
-    ): Int {
-        return getPropertyAsInt(
-            display, win,
+    ): Int =
+        getPropertyAsInt(
+            display,
+            win,
             "_NET_WM_PID",
         ) ?: -1
-    }
 
     fun getProperty(
         display: X11.Display,
         win: X11.Window,
         xaPropType: Atom,
         propName: String?,
-    ): Pointer? {
-        return getProperty(display, win, xaPropType, propName, null)
-    }
+    ): Pointer? = getProperty(display, win, xaPropType, propName, null)
 
-    fun getActiveWindow(display: X11.Display): X11.Window? {
-        return getPropertyAsWindow(
+    fun getActiveWindow(display: X11.Display): X11.Window? =
+        getPropertyAsWindow(
             display,
             INSTANCE.XDefaultRootWindow(display),
         )
-    }
 
     fun getPropertyAsIcon(
         display: X11.Display,
         window: X11.Window,
-    ): BufferedImage? {
-        return getProperty(
+    ): BufferedImage? =
+        getProperty(
             display,
             window,
             X11.XA_CARDINAL,
@@ -322,13 +311,12 @@ object WMCtrl {
             }
             buffer
         }
-    }
 
     private fun getPropertyAsWindow(
         display: X11.Display,
         window: X11.Window,
-    ): X11.Window? {
-        return getPropertyAs(
+    ): X11.Window? =
+        getPropertyAs(
             display,
             window,
             X11.XA_WINDOW,
@@ -336,14 +324,13 @@ object WMCtrl {
         ) { pointer ->
             X11.Window(pointer.getLong(0))
         }
-    }
 
     private fun getPropertyAsInt(
         display: X11.Display,
         window: X11.Window,
         propName: String,
-    ): Int? {
-        return getPropertyAs(
+    ): Int? =
+        getPropertyAs(
             display,
             window,
             X11.XA_CARDINAL,
@@ -351,7 +338,6 @@ object WMCtrl {
         ) { pointer ->
             pointer.getInt(0)
         }
-    }
 
     private fun <T> getPropertyAs(
         display: X11.Display,
@@ -359,8 +345,8 @@ object WMCtrl {
         xaPropType: Atom,
         propName: String,
         convertTo: (Pointer) -> T,
-    ): T? {
-        return getProperty(
+    ): T? =
+        getProperty(
             display,
             window,
             xaPropType,
@@ -371,7 +357,6 @@ object WMCtrl {
             free(pointer)
             result
         }
-    }
 
     fun getProperty(
         display: X11.Display,
@@ -404,10 +389,18 @@ object WMCtrl {
          * when long was changed to 64 bit.
          */
         if (INSTANCE.XGetWindowProperty(
-                display, window, xaPropName, NativeLong(0),
-                NativeLong(MAX_PROPERTY_VALUE_LEN / 4), false,
-                xaPropType, xaRetType, retFormat, retNitems,
-                retBytesAfter, retProp,
+                display,
+                window,
+                xaPropName,
+                NativeLong(0),
+                NativeLong(MAX_PROPERTY_VALUE_LEN / 4),
+                false,
+                xaPropType,
+                xaRetType,
+                retFormat,
+                retNitems,
+                retBytesAfter,
+                retProp,
             ) != X11.Success
         ) {
             logger.error { "Cannot get $propName property." }
@@ -477,7 +470,10 @@ object WMCtrl {
         event.setTypedValue(xclient)
 
         return if (INSTANCE.XSendEvent(
-                display, INSTANCE.XDefaultRootWindow(display), FALSE, mask,
+                display,
+                INSTANCE.XDefaultRootWindow(display),
+                FALSE,
+                mask,
                 event,
             ) != FALSE
         ) {
@@ -488,9 +484,7 @@ object WMCtrl {
         }
     }
 
-    private fun getString(pointer: Pointer): String {
-        return pointer.getString(0)
-    }
+    private fun getString(pointer: Pointer): String = pointer.getString(0)
 
     private fun free(pointer: Pointer?) {
         if (pointer != null) {

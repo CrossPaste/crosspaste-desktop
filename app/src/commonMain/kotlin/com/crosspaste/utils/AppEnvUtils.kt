@@ -18,15 +18,9 @@ interface AppEnvUtils {
     }
 
     // use in mobile app
-    fun isBeta(): Boolean {
-        return getCurrentAppEnv() == BETA
-    }
+    fun isBeta(): Boolean = getCurrentAppEnv() == BETA
 
-    fun isDevelopment(): Boolean {
-        return getCurrentAppEnv() == DEVELOPMENT
-    }
+    fun isDevelopment(): Boolean = getCurrentAppEnv() == DEVELOPMENT
 
-    fun isTest(): Boolean {
-        return getCurrentAppEnv() == TEST
-    }
+    fun isTest(): Boolean = getCurrentAppEnv() == TEST
 }

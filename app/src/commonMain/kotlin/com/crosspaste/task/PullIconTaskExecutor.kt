@@ -122,8 +122,8 @@ class PullIconTaskExecutor(
         baseExtraInfo: BaseExtraInfo,
         errorCodeSupplier: ErrorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
         errorMessage: String,
-    ): FailurePasteTaskResult {
-        return TaskUtils.createFailurePasteTaskResult(
+    ): FailurePasteTaskResult =
+        TaskUtils.createFailurePasteTaskResult(
             logger = logger,
             retryHandler = { baseExtraInfo.executionHistories.size < 2 },
             startTime = nowEpochMilliseconds(),
@@ -136,5 +136,4 @@ class PullIconTaskExecutor(
                 ),
             extraInfo = baseExtraInfo,
         )
-    }
 }

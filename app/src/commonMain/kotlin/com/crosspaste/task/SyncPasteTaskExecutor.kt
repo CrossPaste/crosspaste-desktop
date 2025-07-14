@@ -47,8 +47,7 @@ class SyncPasteTaskExecutor(
             return createEmptyResult(syncExtraInfo)
         }
 
-        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let {
-                pasteData ->
+        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
             val syncResults = executeSyncTasks(pasteData, syncExtraInfo)
             processResults(syncResults, syncExtraInfo, pasteTask.modifyTime)
         } ?: run {
@@ -75,20 +74,19 @@ class SyncPasteTaskExecutor(
         return deferredResults.associate { it.await() }
     }
 
-    private fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> {
-        return syncManager.getSyncHandlers().filter { (key, handler) ->
+    private fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> =
+        syncManager.getSyncHandlers().filter { (key, handler) ->
             handler.getCurrentSyncRuntimeInfo().allowSend &&
                 handler.versionRelation == VersionRelation.EQUAL_TO &&
                 (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
         }
-    }
 
     private fun createSyncTask(
         handlerKey: String,
         handler: SyncHandler,
         pasteData: PasteData,
-    ): Deferred<Pair<String, ClientApiResult>> {
-        return ioScope.async {
+    ): Deferred<Pair<String, ClientApiResult>> =
+        ioScope.async {
             runCatching {
                 handler.getConnectHostAddress()?.let {
                     val hostAddress = it
@@ -106,27 +104,24 @@ class SyncPasteTaskExecutor(
                 createExceptionResult(handlerKey)
             }
         }
-    }
 
-    private fun createNoHostAddressResult(handlerKey: String): Pair<String, ClientApiResult> {
-        return Pair(
+    private fun createNoHostAddressResult(handlerKey: String): Pair<String, ClientApiResult> =
+        Pair(
             handlerKey,
             createFailureResult(
                 StandardErrorCode.CANT_GET_SYNC_ADDRESS,
                 "Failed to get connect host address by $handlerKey",
             ),
         )
-    }
 
-    private fun createExceptionResult(handlerKey: String): Pair<String, ClientApiResult> {
-        return Pair(
+    private fun createExceptionResult(handlerKey: String): Pair<String, ClientApiResult> =
+        Pair(
             handlerKey,
             createFailureResult(
                 StandardErrorCode.SYNC_PASTE_ERROR,
                 "Failed to sync paste to $handlerKey",
             ),
         )
-    }
 
     private suspend fun syncPasteToTarget(
         handlerKey: String,

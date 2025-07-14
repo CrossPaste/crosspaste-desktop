@@ -8,9 +8,7 @@ import com.crosspaste.platform.linux.LinuxPlatform
 import com.crosspaste.utils.getSystemProperty
 
 class DesktopPlatformProvider : PlatformProvider {
-    override fun getPlatform(): Platform {
-        return getCurrentPlatform()
-    }
+    override fun getPlatform(): Platform = getCurrentPlatform()
 
     private fun getCurrentPlatform(): Platform {
         val systemProperty = getSystemProperty()

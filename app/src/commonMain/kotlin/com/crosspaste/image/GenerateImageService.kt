@@ -65,11 +65,10 @@ class GenerateImageService {
         }
     }
 
-    suspend fun getGenerateState(path: Path): MutableStateFlow<Boolean> {
-        return mutex.withLock(path) {
+    suspend fun getGenerateState(path: Path): MutableStateFlow<Boolean> =
+        mutex.withLock(path) {
             generateMap.getOrPut(path) {
                 MutableStateFlow(false)
             }
         }
-    }
 }

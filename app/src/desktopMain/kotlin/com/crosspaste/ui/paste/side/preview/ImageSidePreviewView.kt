@@ -101,7 +101,8 @@ fun ImageSidePreviewView(pasteData: PasteData) {
                         SubcomposeAsyncImage(
                             modifier = Modifier.wrapContentSize(),
                             model =
-                                ImageRequest.Builder(platformContext)
+                                ImageRequest
+                                    .Builder(platformContext)
                                     .data(ImageItem(pasteFileCoordinate, false))
                                     .crossfade(true)
                                     .build(),
@@ -160,7 +161,8 @@ fun ImageSidePreviewView(pasteData: PasteData) {
                                                 val scrollState = rememberScrollState()
                                                 imageShowMode =
                                                     ImageShowMode(
-                                                        Modifier.fillMaxSize()
+                                                        Modifier
+                                                            .fillMaxSize()
                                                             .verticalScroll(scrollState),
                                                         ContentScale.FillWidth,
                                                     )

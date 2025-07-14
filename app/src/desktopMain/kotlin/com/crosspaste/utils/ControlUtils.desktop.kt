@@ -2,9 +2,7 @@ package com.crosspaste.utils
 
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 
-actual fun getControlUtils(): ControlUtils {
-    return DesktopControlUtils
-}
+actual fun getControlUtils(): ControlUtils = DesktopControlUtils
 
 object DesktopControlUtils : ControlUtils {
 

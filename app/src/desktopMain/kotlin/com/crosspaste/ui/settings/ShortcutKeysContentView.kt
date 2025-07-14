@@ -73,12 +73,14 @@ fun ShortcutKeysContentView() {
     ) {
         Column(
             modifier =
-                Modifier.verticalScroll(scrollState)
+                Modifier
+                    .verticalScroll(scrollState)
                     .fillMaxSize(),
         ) {
             Column(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
@@ -89,7 +91,8 @@ fun ShortcutKeysContentView() {
 
             Column(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
@@ -112,7 +115,8 @@ fun ShortcutKeysContentView() {
 
             Column(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
@@ -127,7 +131,8 @@ fun ShortcutKeysContentView() {
 
             Column(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tinyRoundedCornerShape)
                         .background(AppUIColors.generalBackground),
             ) {
@@ -154,7 +159,8 @@ fun ShortcutKeyRow(name: String) {
 
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(appSize.settingsItemHeight)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
@@ -166,8 +172,7 @@ fun ShortcutKeyRow(name: String) {
                     onEvent = {
                         hover = false
                     },
-                )
-                .padding(horizontal = small2X, vertical = tiny2X),
+                ).padding(horizontal = small2X, vertical = tiny2X),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingsText(text = copywriter.getText(name))
@@ -177,7 +182,8 @@ fun ShortcutKeyRow(name: String) {
 
         Icon(
             modifier =
-                Modifier.size(medium)
+                Modifier
+                    .size(medium)
                     .clickable {
                         dialogService.pushDialog(
                             pasteDialogFactory.createDialog(
@@ -194,19 +200,26 @@ fun ShortcutKeyRow(name: String) {
 
                                 Column(
                                     modifier =
-                                        Modifier.fillMaxWidth()
+                                        Modifier
+                                            .fillMaxWidth()
                                             .wrapContentHeight(),
                                 ) {
                                     Row(
                                         modifier =
-                                            Modifier.fillMaxWidth()
+                                            Modifier
+                                                .fillMaxWidth()
                                                 .height(appSize.settingsItemHeight)
-                                                .border(tiny5X, MaterialTheme.colorScheme.onSurface, tinyRoundedCornerShape),
+                                                .border(
+                                                    tiny5X,
+                                                    MaterialTheme.colorScheme.onSurface,
+                                                    tinyRoundedCornerShape,
+                                                ),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Row(
                                             modifier =
-                                                Modifier.fillMaxWidth()
+                                                Modifier
+                                                    .fillMaxWidth()
                                                     .padding(horizontal = medium),
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {

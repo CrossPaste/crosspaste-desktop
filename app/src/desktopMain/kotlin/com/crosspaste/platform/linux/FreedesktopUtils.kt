@@ -11,7 +11,8 @@ object FreedesktopUtils {
     private val themeName = getCurrentTheme()
 
     private val extMap: Map<String, String> =
-        DesktopResourceUtils.loadProperties("file-ext/linux-ext-map.properties")
+        DesktopResourceUtils
+            .loadProperties("file-ext/linux-ext-map.properties")
             .map { it.key.toString() to it.value.toString() }
             .toMap()
 
@@ -48,7 +49,8 @@ object FreedesktopUtils {
                         .start()
 
                 val result =
-                    process.inputStream.bufferedReader()
+                    process.inputStream
+                        .bufferedReader()
                         .readText()
                         .trim()
                         .removeSurrounding("'")

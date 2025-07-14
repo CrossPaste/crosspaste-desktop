@@ -89,8 +89,8 @@ class DesktopHtmlRenderingService(
         }
     }
 
-    private fun buildOptions(): ChromeOptions {
-        return if (platform.isWindows()) {
+    private fun buildOptions(): ChromeOptions =
+        if (platform.isWindows()) {
             val scale = renderingHelper.scale
             baseOptions
                 .addArguments("--force-device-scale-factor=$scale")
@@ -98,7 +98,6 @@ class DesktopHtmlRenderingService(
         } else {
             baseOptions
         }
-    }
 
     private fun startByLoaderModule(moduleLoaderConfig: ModuleLoaderConfig): Boolean {
         val installPath = moduleLoaderConfig.installPath
@@ -199,8 +198,10 @@ class DesktopHtmlRenderingService(
         val chromeHeadlessSHellProcessIds = mutableSetOf<Long>()
 
         val chromeDriverPid =
-            WinProcessUtils.getChildProcessIds(pid)
-                .firstOrNull { it.first == "chromedriver.exe" }?.second
+            WinProcessUtils
+                .getChildProcessIds(pid)
+                .firstOrNull { it.first == "chromedriver.exe" }
+                ?.second
 
         if (chromeDriverPid == null) {
             return chromeHeadlessSHellProcessIds
@@ -212,11 +213,14 @@ class DesktopHtmlRenderingService(
 
         while (currentPids.isNotEmpty()) {
             val shellPids =
-                currentPids.map { parentPid ->
-                    WinProcessUtils.getChildProcessIds(parentPid)
-                        .filter { it.first == "chrome-headless-shell.exe" }
-                        .map { it.second }
-                }.flatten().toSet()
+                currentPids
+                    .map { parentPid ->
+                        WinProcessUtils
+                            .getChildProcessIds(parentPid)
+                            .filter { it.first == "chrome-headless-shell.exe" }
+                            .map { it.second }
+                    }.flatten()
+                    .toSet()
 
             chromeHeadlessSHellProcessIds.addAll(shellPids)
             currentPids.clear()
@@ -227,8 +231,8 @@ class DesktopHtmlRenderingService(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun html2Image(html: String): ByteArray? {
-        return chromeDriver?.let { driver ->
+    private fun html2Image(html: String): ByteArray? =
+        chromeDriver?.let { driver ->
             driver.get(htmlUtils.dataUrl(html))
             val windowDimension =
                 renderingHelper.dimension.let {
@@ -241,7 +245,6 @@ class DesktopHtmlRenderingService(
             driver.manage().window().size = Dimension(pageWidth, pageHeight)
             driver.getScreenshotAs(OutputType.BYTES)
         }
-    }
 }
 
 object JsCode {

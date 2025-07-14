@@ -11,16 +11,15 @@ import io.ktor.http.content.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 
-class ClientEncryptPlugin(private val secureStore: SecureStore) :
-    HttpClientPlugin<PluginConfig, ClientEncryptPlugin> {
+class ClientEncryptPlugin(
+    private val secureStore: SecureStore,
+) : HttpClientPlugin<PluginConfig, ClientEncryptPlugin> {
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     override val key = AttributeKey<ClientEncryptPlugin>("ClientEncryptPlugin")
 
-    override fun prepare(block: PluginConfig.() -> Unit): ClientEncryptPlugin {
-        return this
-    }
+    override fun prepare(block: PluginConfig.() -> Unit): ClientEncryptPlugin = this
 
     @OptIn(InternalAPI::class)
     override fun install(
@@ -38,7 +37,8 @@ class ClientEncryptPlugin(private val secureStore: SecureStore) :
                             val originalContent = context.body as OutgoingContent.ByteArrayContent
                             val bytes = originalContent.bytes()
                             val ciphertextMessageBytes = processor.encrypt(bytes)
-                            context.body = ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json)
+                            context.body =
+                                ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json)
                         }
                     }
                 }

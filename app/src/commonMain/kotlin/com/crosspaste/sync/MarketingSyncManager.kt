@@ -69,9 +69,8 @@ class MarketingSyncManager : SyncManager {
 
     override val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler {
-        return MarketingSyncHandler(syncRuntimeInfo)
-    }
+    override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler =
+        MarketingSyncHandler(syncRuntimeInfo)
 
     override fun ignoreVerify(appInstanceId: String) {
     }
@@ -91,9 +90,7 @@ class MarketingSyncManager : SyncManager {
     ) {
     }
 
-    override fun getSyncHandlers(): Map<String, SyncHandler> {
-        return internalSyncHandlers
-    }
+    override fun getSyncHandlers(): Map<String, SyncHandler> = internalSyncHandlers
 
     override fun updateSyncInfo(
         syncInfo: SyncInfo,

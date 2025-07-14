@@ -78,7 +78,8 @@ fun QRContentView() {
         // maybe slow (get host), we use ioDispatcher to avoid blocking the UI
         qrImage =
             withContext(ioDispatcher) {
-                qrCodeGenerator.generateQRCode(token)
+                qrCodeGenerator
+                    .generateQRCode(token)
                     .toImage(width, height) as ImageBitmap
             }
     }
@@ -92,7 +93,8 @@ fun QRContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
@@ -109,7 +111,8 @@ fun QRContentView() {
             ) {
                 Row(
                     modifier =
-                        Modifier.align(Alignment.CenterHorizontally)
+                        Modifier
+                            .align(Alignment.CenterHorizontally)
                             .width(appSize.qrCodeSize.width)
                             .clip(small3XRoundedCornerShape)
                             .background(Color.White)
@@ -119,7 +122,8 @@ fun QRContentView() {
                 ) {
                     Text(
                         modifier =
-                            Modifier.weight(1f, fill = false)
+                            Modifier
+                                .weight(1f, fill = false)
                                 .padding(vertical = tiny),
                         text = copywriter.getText("please_scan_the_binding_device"),
                         maxLines = 3,
@@ -139,7 +143,8 @@ fun QRContentView() {
                 qrImage?.let {
                     Image(
                         modifier =
-                            Modifier.size(appSize.qrCodeSize)
+                            Modifier
+                                .size(appSize.qrCodeSize)
                                 .clip(small3XRoundedCornerShape),
                         bitmap = it,
                         contentDescription = "QR Code",
@@ -162,7 +167,8 @@ fun QRContentView() {
                     ) {
                         Icon(
                             modifier =
-                                Modifier.size(appSize.qrCodeSize / 2)
+                                Modifier
+                                    .size(appSize.qrCodeSize / 2)
                                     .graphicsLayer(rotationZ = rotation),
                             painter = autoRenew(),
                             contentDescription = "QR Code",

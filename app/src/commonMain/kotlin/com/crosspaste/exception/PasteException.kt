@@ -20,11 +20,7 @@ class PasteException : RuntimeException {
         this.errorCode = errorCode
     }
 
-    fun getErrorCode(): ErrorCode {
-        return errorCode
-    }
+    fun getErrorCode(): ErrorCode = errorCode
 
-    fun match(errorCode: StandardErrorCode): Boolean {
-        return this.errorCode == errorCode.toErrorCode()
-    }
+    fun match(errorCode: StandardErrorCode): Boolean = this.errorCode == errorCode.toErrorCode()
 }

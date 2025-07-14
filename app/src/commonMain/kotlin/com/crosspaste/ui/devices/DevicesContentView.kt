@@ -30,7 +30,8 @@ fun DevicesContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .clip(tinyRoundedCornerShape),
         contentAlignment = Alignment.TopCenter,
     ) {

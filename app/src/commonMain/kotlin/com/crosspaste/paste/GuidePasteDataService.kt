@@ -34,9 +34,7 @@ abstract class GuidePasteDataService(
 
     abstract val guideKey: String
 
-    fun isFirstLaunch(): Boolean {
-        return appLaunchState.firstLaunch
-    }
+    fun isFirstLaunch(): Boolean = appLaunchState.firstLaunch
 
     fun saveData() {
         for (i in 5 downTo 0) {
@@ -45,15 +43,12 @@ abstract class GuidePasteDataService(
         }
     }
 
-    private fun buildJson(index: Int): JsonObject {
-        return buildJsonObject {
+    private fun buildJson(index: Int): JsonObject =
+        buildJsonObject {
             put("guideIndex", index)
         }
-    }
 
-    private fun getGuideIndexFromJson(jsonObject: JsonObject): Int? {
-        return jsonObject["guideIndex"]?.jsonPrimitive?.int
-    }
+    private fun getGuideIndexFromJson(jsonObject: JsonObject): Int? = jsonObject["guideIndex"]?.jsonPrimitive?.int
 
     fun updateData() {
         val pasteDataList = pasteDao.searchBySource(CROSSPASTE_GUIDE)
@@ -111,8 +106,8 @@ abstract class GuidePasteDataService(
         }
     }
 
-    private fun getGuidePasteData(index: Int): PasteData {
-        return if (index == 5) {
+    private fun getGuidePasteData(index: Int): PasteData =
+        if (index == 5) {
             val githubUrl = "https://github.com/CrossPaste/crosspaste-desktop"
             val githubUrlBytes = githubUrl.encodeToByteArray()
             val githubUrlHash = codecsUtils.hash(githubUrlBytes)
@@ -146,7 +141,6 @@ abstract class GuidePasteDataService(
                 pasteState = PasteState.LOADED,
             )
         }
-    }
 
     fun initData() {
         if (isFirstLaunch()) {

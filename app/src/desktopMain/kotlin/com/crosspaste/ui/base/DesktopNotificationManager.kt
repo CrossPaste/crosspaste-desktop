@@ -23,9 +23,7 @@ class DesktopNotificationManager(
 
     val trayState = CrossPasteTrayState()
 
-    override fun getMessageId(): Int {
-        return idGenerator.incrementAndGet()
-    }
+    override fun getMessageId(): Int = idGenerator.incrementAndGet()
 
     override fun doSendNotification(message: Message) {
         if (appWindowManager.showMainWindow.value) {

@@ -32,8 +32,8 @@ class DesktopIconColorExtractor(
     /**
      * Get background color from icon path (with cache)
      */
-    suspend fun getBackgroundColor(source: String): Color? {
-        return mutex.withLock(source) {
+    suspend fun getBackgroundColor(source: String): Color? =
+        mutex.withLock(source) {
             if (colorCache.containsKey(source)) {
                 colorCache[source]
             } else {
@@ -52,17 +52,15 @@ class DesktopIconColorExtractor(
                 }
             }
         }
-    }
 
     /**
      * Extract dominant color from image byte array
      */
-    private fun extractColorFromBytes(bytes: ByteArray): Color? {
-        return runCatching {
+    private fun extractColorFromBytes(bytes: ByteArray): Color? =
+        runCatching {
             val image = Image.makeFromEncoded(bytes)
             extractDominantColor(image)
         }.getOrNull()
-    }
 
     /**
      * Extract dominant color from Skia Image
@@ -126,17 +124,18 @@ class DesktopIconColorExtractor(
         val finalClusters = performStableKMeans(pixels, clusters)
 
         // Post-processing: Apply modern color preference weights
-        return finalClusters.map { cluster ->
-            val hsv = rgbToHsv(cluster.r, cluster.g, cluster.b)
-            val modernWeight = getModernColorWeight(hsv[0])
+        return finalClusters
+            .map { cluster ->
+                val hsv = rgbToHsv(cluster.r, cluster.g, cluster.b)
+                val modernWeight = getModernColorWeight(hsv[0])
 
-            ColorCluster(
-                cluster.r,
-                cluster.g,
-                cluster.b,
-                (cluster.count * modernWeight).toInt(),
-            )
-        }.sortedByDescending { it.count }
+                ColorCluster(
+                    cluster.r,
+                    cluster.g,
+                    cluster.b,
+                    (cluster.count * modernWeight).toInt(),
+                )
+            }.sortedByDescending { it.count }
     }
 
     /**
@@ -277,8 +276,8 @@ class DesktopIconColorExtractor(
         return clusters.sortedByDescending { it.count }
     }
 
-    private fun getModernColorWeight(hue: Float): Float {
-        return when (hue) {
+    private fun getModernColorWeight(hue: Float): Float =
+        when (hue) {
             in 220f..260f -> 1.3f // Deep blue/indigo
             in 180f..220f -> 1.25f // Cyan/teal
             in 260f..300f -> 1.25f // Lavender purple
@@ -291,7 +290,6 @@ class DesktopIconColorExtractor(
             in 40f..80f -> 0.9f // Yellow slightly downweighted
             else -> 1.0f
         }
-    }
 
     /**
      * Calculate hue priority (stable version)
@@ -299,15 +297,14 @@ class DesktopIconColorExtractor(
      * Blue > Green > Red > Yellow > Others
      * Lower numbers have higher priority
      */
-    private fun huePreferRank(h: Float): Int {
-        return when {
+    private fun huePreferRank(h: Float): Int =
+        when {
             h in 200f..260f -> 1 // Blue
             h in 80f..160f -> 2 // Green
             h in 0f..40f || h >= 320f -> 3 // Red
             h in 40f..80f -> 4 // Yellow
             else -> 5 // Others
         }
-    }
 
     /**
      * Calculate saturation (0-1) of a cluster
@@ -329,19 +326,21 @@ class DesktopIconColorExtractor(
     private fun selectBestBackgroundColor(clusters: List<ColorCluster>): Color {
         // Filter out too dark/bright; use all if filter result is empty
         val candidates =
-            clusters.filter { (r, g, b, _) ->
-                val brightness = (r + g + b) / 3
-                brightness in 60..200
-            }.ifEmpty { clusters }
+            clusters
+                .filter { (r, g, b, _) ->
+                    val brightness = (r + g + b) / 3
+                    brightness in 60..200
+                }.ifEmpty { clusters }
 
         // Stable sorting: add unique identifier as final sort criterion
         val best =
-            candidates.sortedWith(
-                compareBy<ColorCluster> { huePreferRank(rgbToHsv(it.r, it.g, it.b)[0]) }
-                    .thenByDescending { it.count }
-                    .thenByDescending { saturation(it) }
-                    .thenBy { it.r * 1000000 + it.g * 1000 + it.b },
-            ).first()
+            candidates
+                .sortedWith(
+                    compareBy<ColorCluster> { huePreferRank(rgbToHsv(it.r, it.g, it.b)[0]) }
+                        .thenByDescending { it.count }
+                        .thenByDescending { saturation(it) }
+                        .thenBy { it.r * 1000000 + it.g * 1000 + it.b },
+                ).first()
 
         // Convert to Compose Color (float 0-1) and apply final enhancement
         val baseColor = Color(best.r / 255f, best.g / 255f, best.b / 255f)
@@ -380,7 +379,11 @@ class DesktopIconColorExtractor(
     }
 
     // Helper data classes
-    private data class PixelColor(val r: Int, val g: Int, val b: Int)
+    private data class PixelColor(
+        val r: Int,
+        val g: Int,
+        val b: Int,
+    )
 
     private data class ColorCluster(
         var r: Int,

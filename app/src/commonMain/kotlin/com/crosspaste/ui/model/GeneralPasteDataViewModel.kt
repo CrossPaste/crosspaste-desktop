@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class GeneralPasteDataViewModel(private val pasteDao: PasteDao) : PasteDataViewModel() {
+class GeneralPasteDataViewModel(
+    private val pasteDao: PasteDao,
+) : PasteDataViewModel() {
 
     private val _limit = MutableStateFlow(50L)
     val limit: StateFlow<Long> = _limit.asStateFlow()
@@ -23,22 +25,24 @@ class GeneralPasteDataViewModel(private val pasteDao: PasteDao) : PasteDataViewM
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val pasteDataList: StateFlow<List<PasteData>> =
-        _isActive.flatMapLatest { active ->
-            if (active) {
-                limit.flatMapLatest { currentLimit ->
-                    pasteDao.getPasteDataFlow(limit = currentLimit)
-                        .map { pasteDataList ->
-                            pasteDataList.filter { it.isValid() }
-                        }
+        _isActive
+            .flatMapLatest { active ->
+                if (active) {
+                    limit.flatMapLatest { currentLimit ->
+                        pasteDao
+                            .getPasteDataFlow(limit = currentLimit)
+                            .map { pasteDataList ->
+                                pasteDataList.filter { it.isValid() }
+                            }
+                    }
+                } else {
+                    flow { emit(listOf()) }
                 }
-            } else {
-                flow { emit(listOf()) }
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = listOf(),
-        )
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = listOf(),
+            )
 
     override fun loadMore() {
         viewModelScope.launch {

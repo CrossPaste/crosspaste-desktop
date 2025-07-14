@@ -37,90 +37,83 @@ class ImageLoaders(
         )
 
     private val memoryCache =
-        MemoryCache.Builder()
+        MemoryCache
+            .Builder()
             .strongReferencesEnabled(false)
             .maxSizeBytes(48L * 1024L * 1024L)
             .build()
 
     private val htmlDiskCache =
-        DiskCache.Builder()
+        DiskCache
+            .Builder()
             .directory(html2ImageTempPath)
             .maxSizeBytes(64L * 1024L * 1024L)
             .build()
 
     private val baseDiskCache =
-        DiskCache.Builder()
+        DiskCache
+            .Builder()
             .directory(baseTempPath)
             .maxSizeBytes(64L * 1024L * 1024L)
             .build()
 
     val generateImageLoader =
-        ImageLoader.Builder(platformContext)
+        ImageLoader
+            .Builder(platformContext)
             .components {
                 add(GenerateImageFactory(appSize, generateImageService))
                     .add(GenerateImageKeyer())
-            }
-            .memoryCache {
+            }.memoryCache {
                 memoryCache
-            }
-            .diskCache {
+            }.diskCache {
                 htmlDiskCache
-            }
-            .build()
+            }.build()
 
     val faviconImageLoader =
-        ImageLoader.Builder(platformContext)
+        ImageLoader
+            .Builder(platformContext)
             .components {
                 add(FaviconFactory(faviconLoader))
                     .add(PasteDataKeyer())
-            }
-            .memoryCache {
+            }.memoryCache {
                 memoryCache
-            }
-            .diskCache {
+            }.diskCache {
                 baseDiskCache
-            }
-            .build()
+            }.build()
 
     val fileExtImageLoader =
-        ImageLoader.Builder(platformContext)
+        ImageLoader
+            .Builder(platformContext)
             .components {
                 add(FileExtFactory(fileExtLoader))
                     .add(FileExtKeyer())
-            }
-            .memoryCache {
+            }.memoryCache {
                 memoryCache
-            }
-            .diskCache {
+            }.diskCache {
                 baseDiskCache
-            }
-            .build()
+            }.build()
 
     val appSourceLoader =
-        ImageLoader.Builder(platformContext)
+        ImageLoader
+            .Builder(platformContext)
             .components {
                 add(AppSourceFactory(userDataPathProvider))
                     .add(PasteDataSourceKeyer())
-            }
-            .memoryCache {
+            }.memoryCache {
                 memoryCache
-            }
-            .diskCache {
+            }.diskCache {
                 baseDiskCache
-            }
-            .build()
+            }.build()
 
     val userImageLoader =
-        ImageLoader.Builder(platformContext)
+        ImageLoader
+            .Builder(platformContext)
             .components {
                 add(UserImageFactory(thumbnailLoader))
                     .add(ImageKeyer())
-            }
-            .memoryCache {
+            }.memoryCache {
                 memoryCache
-            }
-            .diskCache {
+            }.diskCache {
                 baseDiskCache
-            }
-            .build()
+            }.build()
 }

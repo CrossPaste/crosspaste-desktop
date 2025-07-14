@@ -22,7 +22,8 @@ fun ComplexPreviewContentView(
         pasteMainContent = {
             LazyRow(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {

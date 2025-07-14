@@ -83,9 +83,7 @@ class DesktopGlobalCopywriter(
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
-    override fun language(): String {
-        return copywriter.language()
-    }
+    override fun language(): String = copywriter.language()
 
     override fun switchLanguage(language: String) {
         logger.info { "Switching language $language" }
@@ -98,15 +96,14 @@ class DesktopGlobalCopywriter(
         }
     }
 
-    override fun getAllLanguages(): List<Language> {
-        return LANGUAGE_LIST
+    override fun getAllLanguages(): List<Language> =
+        LANGUAGE_LIST
             .map { it ->
                 val copywriter = LANGUAGE_MAP.computeIfAbsent(it) { DesktopCopywriter(it) }
                 val abridge = copywriter.getAbridge()
                 val name = copywriter.getText("current_language")
                 Language(abridge, name)
             }
-    }
 
     override fun getText(
         id: String,
@@ -127,23 +124,19 @@ class DesktopGlobalCopywriter(
         }
     }
 
-    override fun getKeys(): Set<String> {
-        return copywriter.getKeys()
-    }
+    override fun getKeys(): Set<String> = copywriter.getKeys()
 
     override fun getDate(
         date: LocalDateTime,
         options: DateTimeFormatOptions,
-    ): String {
-        return copywriter.getDate(date, options)
-    }
+    ): String = copywriter.getDate(date, options)
 
-    override fun getAbridge(): String {
-        return copywriter.getAbridge()
-    }
+    override fun getAbridge(): String = copywriter.getAbridge()
 }
 
-class DesktopCopywriter(private val language: String) : Copywriter {
+class DesktopCopywriter(
+    private val language: String,
+) : Copywriter {
 
     val logger = KotlinLogging.logger {}
 
@@ -158,7 +151,8 @@ class DesktopCopywriter(private val language: String) : Copywriter {
         language: String,
     ) {
         properties.load(
-            DesktopCopywriter::class.java.getResourceAsStream("/i18n/$language.properties")
+            DesktopCopywriter::class.java
+                .getResourceAsStream("/i18n/$language.properties")
                 ?.let {
                     InputStreamReader(
                         it,
@@ -182,9 +176,7 @@ class DesktopCopywriter(private val language: String) : Copywriter {
         return properties
     }
 
-    override fun language(): String {
-        return language
-    }
+    override fun language(): String = language
 
     override fun getText(
         id: String,
@@ -194,18 +186,12 @@ class DesktopCopywriter(private val language: String) : Copywriter {
         return value?.format(*args) ?: EMPTY_STRING
     }
 
-    override fun getKeys(): Set<String> {
-        return properties.keys.map { it.toString() }.toSet()
-    }
+    override fun getKeys(): Set<String> = properties.keys.map { it.toString() }.toSet()
 
     override fun getDate(
         date: LocalDateTime,
         options: DateTimeFormatOptions,
-    ): String {
-        return dateUtils.getDateDesc(date, options, language)
-    }
+    ): String = dateUtils.getDateDesc(date, options, language)
 
-    override fun getAbridge(): String {
-        return language
-    }
+    override fun getAbridge(): String = language
 }

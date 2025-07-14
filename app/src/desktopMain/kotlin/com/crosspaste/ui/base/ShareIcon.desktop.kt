@@ -13,36 +13,22 @@ import com.crosspaste.app.generated.resources.x
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-actual fun facebook(): Painter {
-    return painterResource(Res.drawable.facebook)
-}
+actual fun facebook(): Painter = painterResource(Res.drawable.facebook)
 
 @Composable
-actual fun linkedin(): Painter {
-    return painterResource(Res.drawable.linkedin)
-}
+actual fun linkedin(): Painter = painterResource(Res.drawable.linkedin)
 
 @Composable
-actual fun mail(): Painter {
-    return painterResource(Res.drawable.mail)
-}
+actual fun mail(): Painter = painterResource(Res.drawable.mail)
 
 @Composable
-actual fun reddit(): Painter {
-    return painterResource(Res.drawable.reddit)
-}
+actual fun reddit(): Painter = painterResource(Res.drawable.reddit)
 
 @Composable
-actual fun telegram(): Painter {
-    return painterResource(Res.drawable.telegram)
-}
+actual fun telegram(): Painter = painterResource(Res.drawable.telegram)
 
 @Composable
-actual fun weibo(): Painter {
-    return painterResource(Res.drawable.weibo)
-}
+actual fun weibo(): Painter = painterResource(Res.drawable.weibo)
 
 @Composable
-actual fun x(): Painter {
-    return painterResource(Res.drawable.x)
-}
+actual fun x(): Painter = painterResource(Res.drawable.x)

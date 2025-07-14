@@ -33,7 +33,8 @@ actual fun CrossPasteLogoView(
 
     Box(
         modifier =
-            Modifier.clip(RoundedCornerShape(size / 4))
+            Modifier
+                .clip(RoundedCornerShape(size / 4))
                 .background(color)
                 .size(size)
                 .onSizeChanged { boxSize = it },

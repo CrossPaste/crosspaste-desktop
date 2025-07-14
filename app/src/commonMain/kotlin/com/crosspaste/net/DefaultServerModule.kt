@@ -61,7 +61,9 @@ open class DefaultServerModule(
             install(serverEncryptPluginFactory.createPlugin())
             install(serverDecryptionPluginFactory.createPlugin())
             intercept(ApplicationCallPipeline.Setup) {
-                logger.info { "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}" }
+                logger.info {
+                    "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}"
+                }
             }
             routing {
                 syncRouting(

@@ -30,7 +30,6 @@ data class SearchParams(
         return result
     }
 
-    override fun toString(): String {
-        return "SearchParams(searchTerms=$searchTerms, favorite=$favorite, sort=$sort, pasteType=$pasteType, limit=$limit)"
-    }
+    override fun toString(): String =
+        "SearchParams(searchTerms=$searchTerms, favorite=$favorite, sort=$sort, pasteType=$pasteType, limit=$limit)"
 }

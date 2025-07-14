@@ -32,7 +32,8 @@ fun ColorSidePreviewView(pasteData: PasteData) {
         ) {
             Column(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .padding(medium)
                         .padding(bottom = xxxLarge),
                 horizontalAlignment = Alignment.CenterHorizontally,

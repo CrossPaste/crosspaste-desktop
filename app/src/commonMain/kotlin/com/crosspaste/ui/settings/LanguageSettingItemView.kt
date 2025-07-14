@@ -83,7 +83,8 @@ fun LanguageSettingItemView() {
     ) {
         Row(
             modifier =
-                Modifier.wrapContentSize()
+                Modifier
+                    .wrapContentSize()
                     .combinedClickable(
                         interactionSource = MutableInteractionSource(),
                         indication = null,

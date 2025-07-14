@@ -108,8 +108,6 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         nMaxCount: Int,
     ): Int
 
-    fun GetLastError(): Int
-
     companion object {
         val INSTANCE =
             Native.load(
@@ -150,8 +148,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
         private val logger = KotlinLogging.logger {}
 
-        fun getActiveWindowProcessFilePath(): String? {
-            return INSTANCE.GetForegroundWindow()?.let { hwnd ->
+        fun getActiveWindowProcessFilePath(): String? =
+            INSTANCE.GetForegroundWindow()?.let { hwnd ->
                 val processIdRef = IntByReference()
                 INSTANCE.GetWindowThreadProcessId(hwnd, processIdRef)
                 val processHandle =
@@ -179,7 +177,6 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     Kernel32.INSTANCE.CloseHandle(processHandle)
                 }.getOrNull()
             }
-        }
 
         fun getFileDescription(filePath: String): String? {
             val intByReference = IntByReference()
@@ -298,7 +295,12 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         bitmapInfo.bmiHeader.biSize = bitmapInfo.bmiHeader.size()
                         require(
                             gdi32.GetDIBits(
-                                deviceContext, bitmapHandle, 0, 0, Pointer.NULL, bitmapInfo,
+                                deviceContext,
+                                bitmapHandle,
+                                0,
+                                0,
+                                Pointer.NULL,
+                                bitmapInfo,
                                 WinGDI.DIB_RGB_COLORS,
                             ) != 0,
                         ) { "GetDIBits should not return 0" }
@@ -332,7 +334,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 }
             }.apply {
                 gdi32.DeleteObject(hicon)
-                Optional.ofNullable(bitmapHandle)
+                Optional
+                    .ofNullable(bitmapHandle)
                     .ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
             }.getOrNull()
         }
@@ -462,9 +465,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             return foregroundHwnd
         }
 
-        private fun getForegroundWindow(): HWND? {
-            return INSTANCE.GetForegroundWindow()
-        }
+        private fun getForegroundWindow(): HWND? = INSTANCE.GetForegroundWindow()
 
         @Synchronized
         fun bringToFront(
@@ -562,8 +563,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             INSTANCE.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
         }
 
-        fun findPasteWindow(windowTitle: String): HWND? {
-            return INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
+        fun findPasteWindow(windowTitle: String): HWND? =
+            INSTANCE.FindWindow(null, windowTitle)?.also { hwnd ->
                 // Set the window icon not to be displayed on the taskbar
                 val style =
                     INSTANCE.GetWindowLong(
@@ -576,7 +577,6 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     style or 0x00000080,
                 )
             }
-        }
 
         fun isInstalledFromMicrosoftStore(path: Path): Boolean {
             val windowsAppsPath: Path = Paths.get("C:\\Program Files\\WindowsApps").toAbsolutePath()

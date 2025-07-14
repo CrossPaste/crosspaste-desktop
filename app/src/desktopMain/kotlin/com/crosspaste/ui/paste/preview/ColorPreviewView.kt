@@ -68,7 +68,8 @@ fun ColorPreviewView(pasteData: PasteData) {
 
                 Column(
                     modifier =
-                        Modifier.fillMaxHeight()
+                        Modifier
+                            .fillMaxHeight()
                             .wrapContentWidth()
                             .padding(horizontal = tiny)
                             .padding(bottom = tiny),

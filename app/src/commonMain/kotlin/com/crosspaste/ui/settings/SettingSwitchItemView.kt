@@ -33,7 +33,8 @@ fun SettingSwitchItemView(
     ) {
         CustomSwitch(
             modifier =
-                Modifier.width(medium * 2)
+                Modifier
+                    .width(medium * 2)
                     .height(large2X),
             checked = getCurrentSwitchValue(),
             onCheckedChange = {

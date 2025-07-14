@@ -9,7 +9,9 @@ import com.crosspaste.ui.base.telegram
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import java.net.URLEncoder
 
-class Telegram(private val uiSupport: UISupport) : RecommendationPlatform {
+class Telegram(
+    private val uiSupport: UISupport,
+) : RecommendationPlatform {
     override val platformName: String = "Telegram"
 
     @Composable

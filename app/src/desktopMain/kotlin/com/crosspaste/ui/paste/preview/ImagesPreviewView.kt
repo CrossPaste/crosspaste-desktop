@@ -25,7 +25,14 @@ fun ImagesPreviewView(pasteData: PasteData) {
 
         ComplexPreviewContentView(pasteData) {
             items(imagePaths.size) { index ->
-                val itemWidthSize = if (imagePaths.size > 1) appSize.mainPasteSize.width / 2 else appSize.mainPasteSize.width
+                val itemWidthSize =
+                    if (imagePaths.size >
+                        1
+                    ) {
+                        appSize.mainPasteSize.width / 2
+                    } else {
+                        appSize.mainPasteSize.width
+                    }
                 val pasteFileCoordinate = PasteFileCoordinate(pasteCoordinate, imagePaths[index])
                 PasteContextMenuView(
                     items =

@@ -25,8 +25,8 @@ class GenerateImageFetcher(
     private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
-    override suspend fun fetch(): FetchResult? {
-        return withContext(ioDispatcher) {
+    override suspend fun fetch(): FetchResult? =
+        withContext(ioDispatcher) {
             val path = item.path
             val preview = item.preview
             val density = item.density
@@ -56,7 +56,6 @@ class GenerateImageFetcher(
                 logger.error(e) { "Failed to generate image $path" }
             }.getOrNull()
         }
-    }
 }
 
 class GenerateImageFactory(
@@ -67,7 +66,5 @@ class GenerateImageFactory(
         data: GenerateImageItem,
         options: Options,
         imageLoader: ImageLoader,
-    ): Fetcher {
-        return GenerateImageFetcher(appSize, generateImageService, data)
-    }
+    ): Fetcher = GenerateImageFetcher(appSize, generateImageService, data)
 }

@@ -8,12 +8,11 @@ class DesktopPasteDialogFactory : PasteDialogFactory {
         title: String,
         onDismissRequest: () -> Unit,
         content: @Composable (() -> Unit),
-    ): PasteDialog {
-        return DesktopPasteDialog(
+    ): PasteDialog =
+        DesktopPasteDialog(
             key = key,
             title = title,
             onDismissRequest = onDismissRequest,
             content = content,
         )
-    }
 }

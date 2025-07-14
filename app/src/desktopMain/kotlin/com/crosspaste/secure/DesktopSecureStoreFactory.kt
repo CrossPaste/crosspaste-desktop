@@ -13,12 +13,10 @@ class DesktopSecureStoreFactory(
     private val secureIO: SecureIO,
 ) : SecureStoreFactory {
 
-    override fun createSecureStore(): SecureStore {
-        return getSecureStoreFactory().createSecureStore()
-    }
+    override fun createSecureStore(): SecureStore = getSecureStoreFactory().createSecureStore()
 
-    private fun getSecureStoreFactory(): SecureStoreFactory {
-        return if (platform.isMacos()) {
+    private fun getSecureStoreFactory(): SecureStoreFactory =
+        if (platform.isMacos()) {
             MacosSecureStoreFactory(
                 appInfo,
                 appPathProvider,
@@ -40,5 +38,4 @@ class DesktopSecureStoreFactory(
         } else {
             throw IllegalStateException("Unsupported platform: ${platform.name}")
         }
-    }
 }

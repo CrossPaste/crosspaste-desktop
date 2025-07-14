@@ -6,7 +6,9 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getCodecsUtils
 
-class MultiFilesPlugin(private val userDataPathProvider: UserDataPathProvider) : PasteProcessPlugin {
+class MultiFilesPlugin(
+    private val userDataPathProvider: UserDataPathProvider,
+) : PasteProcessPlugin {
 
     private val codecsUtils = getCodecsUtils()
 
@@ -14,19 +16,23 @@ class MultiFilesPlugin(private val userDataPathProvider: UserDataPathProvider) :
         pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
-    ): List<PasteItem> {
-        return if (pasteItems.size <= 1) {
+    ): List<PasteItem> =
+        if (pasteItems.size <= 1) {
             pasteItems
         } else {
             val relativePathList =
                 pasteItems.map { it as FilesPasteItem }.flatMap { it.relativePathList }
             val fileInfoMap =
-                pasteItems.map { it as FilesPasteItem }
+                pasteItems
+                    .map { it as FilesPasteItem }
                     .flatMap { it.fileInfoTreeMap.entries }
                     .associate { it.key to it.value }
             val hash =
-                pasteItems.map { it as FilesPasteItem }.map { it.hash }
-                    .toTypedArray().let { codecsUtils.hashByArray(it) }
+                pasteItems
+                    .map { it as FilesPasteItem }
+                    .map { it.hash }
+                    .toTypedArray()
+                    .let { codecsUtils.hashByArray(it) }
             pasteItems.forEach {
                 it.clear(
                     clearResource = false,
@@ -44,5 +50,4 @@ class MultiFilesPlugin(private val userDataPathProvider: UserDataPathProvider) :
                 fileInfoTreeMap = fileInfoMap,
             ).let { listOf(it) }
         }
-    }
 }

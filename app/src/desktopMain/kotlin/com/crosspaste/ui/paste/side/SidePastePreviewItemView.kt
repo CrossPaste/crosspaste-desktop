@@ -38,7 +38,8 @@ fun SidePastePreviewItemView(
     val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
     Row(
         modifier =
-            Modifier.size(appSize.sidePasteSize)
+            Modifier
+                .size(appSize.sidePasteSize)
                 .clip(small3XRoundedCornerShape)
                 .pointerInput(Unit) {
                     detectTapGestures(
@@ -49,8 +50,7 @@ fun SidePastePreviewItemView(
                             onDoubleTap()
                         },
                     )
-                }
-                .border(
+                }.border(
                     3.dp,
                     if (selected) {
                         if (focusedElement == FocusedElement.PASTE_LIST) {

@@ -22,8 +22,8 @@ class FileExtFetcher(
 
     private val coilUtils = getCoilUtils()
 
-    override suspend fun fetch(): FetchResult? {
-        return withContext(ioDispatcher) {
+    override suspend fun fetch(): FetchResult? =
+        withContext(ioDispatcher) {
             val path = data.path
             runCatching {
                 if (!path.isDirectory) {
@@ -41,7 +41,6 @@ class FileExtFetcher(
                 logger.error(e) { "Error while fetching file ext" }
             }.getOrNull()
         }
-    }
 }
 
 class FileExtFactory(
@@ -51,7 +50,5 @@ class FileExtFactory(
         data: FileExtItem,
         options: Options,
         imageLoader: ImageLoader,
-    ): Fetcher {
-        return FileExtFetcher(data, fileExtLoader)
-    }
+    ): Fetcher = FileExtFetcher(data, fileExtLoader)
 }

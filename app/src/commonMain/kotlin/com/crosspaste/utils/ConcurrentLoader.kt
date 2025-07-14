@@ -27,8 +27,8 @@ interface ConcurrentLoader<T, R> : Loader<T, R> {
 
     fun convertToKey(value: T): String
 
-    override suspend fun load(value: T): R? {
-        return runCatching {
+    override suspend fun load(value: T): R? =
+        runCatching {
             val key = convertToKey(value)
             val result = resolve(key, value)
             if (exist(result)) {
@@ -50,5 +50,4 @@ interface ConcurrentLoader<T, R> : Loader<T, R> {
         }.onFailure {
             loggerWarning(value, it)
         }.getOrNull()
-    }
 }

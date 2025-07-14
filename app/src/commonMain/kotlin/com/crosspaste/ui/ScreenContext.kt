@@ -1,14 +1,16 @@
 package com.crosspaste.ui
 
-class ScreenContext(val screenType: ScreenType, val nextScreenContext: ScreenContext?, val context: Any) {
+class ScreenContext(
+    val screenType: ScreenType,
+    val nextScreenContext: ScreenContext?,
+    val context: Any,
+) {
 
     constructor(screenType: ScreenType) : this(screenType, null, Unit)
 
     constructor(screenType: ScreenType, nextScreenContext: ScreenContext) : this(screenType, nextScreenContext, Unit)
 
-    fun returnNext(): ScreenContext {
-        return nextScreenContext ?: ScreenContext(Pasteboard)
-    }
+    fun returnNext(): ScreenContext = nextScreenContext ?: ScreenContext(Pasteboard)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

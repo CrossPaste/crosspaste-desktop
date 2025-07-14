@@ -45,9 +45,8 @@ class TaskExecutor(
         }
     }
 
-    private fun getExecutorImpl(taskType: Int): SingleTypeTaskExecutor {
-        return singleTypeTaskExecutorMap[taskType] ?: throw IllegalArgumentException("Unknown task type: $taskType")
-    }
+    private fun getExecutorImpl(taskType: Int): SingleTypeTaskExecutor =
+        singleTypeTaskExecutorMap[taskType] ?: throw IllegalArgumentException("Unknown task type: $taskType")
 
     private suspend fun executeTask(taskId: Long) {
         var currentTask: PasteTask? = null

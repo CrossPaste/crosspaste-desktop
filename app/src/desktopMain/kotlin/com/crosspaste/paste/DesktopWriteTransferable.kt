@@ -10,9 +10,7 @@ class DesktopWriteTransferableBuilder {
 
     private val map: MutableMap<PasteDataFlavor, Any> = LinkedHashMap()
 
-    fun isEmpty(): Boolean {
-        return map.isEmpty()
-    }
+    fun isEmpty(): Boolean = map.isEmpty()
 
     fun add(
         pasteTypePlugin: PasteTypePlugin,
@@ -31,32 +29,27 @@ class DesktopWriteTransferableBuilder {
         return this
     }
 
-    fun build(): DesktopWriteTransferable {
-        return DesktopWriteTransferable(
-            map.mapKeys {
-                (it.key as DesktopPasteDataFlavor).dataFlavor
-            }.toMap(LinkedHashMap()),
+    fun build(): DesktopWriteTransferable =
+        DesktopWriteTransferable(
+            map
+                .mapKeys {
+                    (it.key as DesktopPasteDataFlavor).dataFlavor
+                }.toMap(LinkedHashMap()),
         )
-    }
 }
 
 class DesktopWriteTransferable(
     private val map: LinkedHashMap<DataFlavor, Any>,
-) : PasteTransferable, Transferable {
+) : PasteTransferable,
+    Transferable {
 
     private val dataFlavors = map.keys.toTypedArray()
 
-    override fun getTransferDataFlavors(): Array<DataFlavor> {
-        return dataFlavors
-    }
+    override fun getTransferDataFlavors(): Array<DataFlavor> = dataFlavors
 
-    override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean {
-        return map.containsKey(flavor)
-    }
+    override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean = map.containsKey(flavor)
 
-    override fun getTransferData(flavor: DataFlavor?): Any {
-        return map[flavor] ?: throw UnsupportedFlavorException(flavor)
-    }
+    override fun getTransferData(flavor: DataFlavor?): Any = map[flavor] ?: throw UnsupportedFlavorException(flavor)
 
     override fun getTransferData(pasteDataFlavor: PasteDataFlavor): Any {
         pasteDataFlavor as DesktopPasteDataFlavor

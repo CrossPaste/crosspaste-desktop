@@ -32,6 +32,11 @@ interface SingleTypeTaskExecutor {
 
 interface PasteTaskResult
 
-data class SuccessPasteTaskResult(val newExtraInfo: String? = null) : PasteTaskResult
+data class SuccessPasteTaskResult(
+    val newExtraInfo: String? = null,
+) : PasteTaskResult
 
-data class FailurePasteTaskResult(val newExtraInfo: String, val needRetry: Boolean = false) : PasteTaskResult
+data class FailurePasteTaskResult(
+    val newExtraInfo: String,
+    val needRetry: Boolean = false,
+) : PasteTaskResult

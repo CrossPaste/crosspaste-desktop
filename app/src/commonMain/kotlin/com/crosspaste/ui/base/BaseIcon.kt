@@ -13,9 +13,6 @@ expect fun alertCircle(): Painter
 expect fun archive(): Painter
 
 @Composable
-expect fun arrowBack(): Painter
-
-@Composable
 expect fun ascSort(): Painter
 
 @Composable
@@ -95,9 +92,6 @@ expect fun search(): Painter
 
 @Composable
 expect fun settings(): Painter
-
-@Composable
-expect fun share(): Painter
 
 @Composable
 expect fun skipForward(): Painter

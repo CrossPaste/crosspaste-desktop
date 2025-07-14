@@ -24,14 +24,13 @@ class MacAppWindowManager(
 
     private val macPasteUtils: MacPasteUtils by lazy { MacPasteUtils(lazyShortcutKeys.value) }
 
-    override fun getPrevAppName(): Flow<String?> {
-        return prevMacAppInfo.map { appInfo ->
+    override fun getPrevAppName(): Flow<String?> =
+        prevMacAppInfo.map { appInfo ->
             appInfo?.localizedName
         }
-    }
 
-    override fun getCurrentActiveAppName(): String? {
-        return runCatching {
+    override fun getCurrentActiveAppName(): String? =
+        runCatching {
             MacAppUtils.getCurrentActiveApp()?.let {
                 createMacAppInfo(info = it)?.let { macAppInfo ->
                     ioScope.launch {
@@ -44,7 +43,6 @@ class MacAppWindowManager(
             logger.error(e) { "Failed to get current active app name" }
             null
         }
-    }
 
     private fun createMacAppInfo(info: String): MacAppInfo? {
         val result = info.split("\n", limit = 2)
@@ -135,9 +133,10 @@ class MacAppWindowManager(
     }
 }
 
-private data class MacAppInfo(val bundleIdentifier: String, val localizedName: String) {
+private data class MacAppInfo(
+    val bundleIdentifier: String,
+    val localizedName: String,
+) {
 
-    override fun toString(): String {
-        return "MacAppInfo(bundleIdentifier='$bundleIdentifier', localizedName='$localizedName')"
-    }
+    override fun toString(): String = "MacAppInfo(bundleIdentifier='$bundleIdentifier', localizedName='$localizedName')"
 }

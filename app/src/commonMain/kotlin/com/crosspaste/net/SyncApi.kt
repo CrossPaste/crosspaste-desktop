@@ -58,13 +58,12 @@ object SyncApi {
         ]
         """.trimIndent()
 
-    fun compareVersion(connectedVersion: Int): VersionRelation {
-        return when {
+    fun compareVersion(connectedVersion: Int): VersionRelation =
+        when {
             VERSION < connectedVersion -> VersionRelation.LOWER_THAN
             VERSION == connectedVersion -> VersionRelation.EQUAL_TO
             else -> VersionRelation.HIGHER_THAN
         }
-    }
 }
 
 enum class VersionRelation {

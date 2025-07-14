@@ -23,8 +23,8 @@ class FaviconFetcher(
 
     private val coilUtils = getCoilUtils()
 
-    override suspend fun fetch(): FetchResult? {
-        return withContext(ioDispatcher) {
+    override suspend fun fetch(): FetchResult? =
+        withContext(ioDispatcher) {
             val pasteData = data.pasteData
             runCatching {
                 pasteData.getPasteItem(PasteUrl::class)?.let {
@@ -42,7 +42,6 @@ class FaviconFetcher(
                 logger.error(e) { "Error while fetching favicon" }
             }.getOrNull()
         }
-    }
 }
 
 class FaviconFactory(
@@ -52,7 +51,5 @@ class FaviconFactory(
         data: PasteDataItem,
         options: Options,
         imageLoader: ImageLoader,
-    ): Fetcher {
-        return FaviconFetcher(data, faviconLoader)
-    }
+    ): Fetcher = FaviconFetcher(data, faviconLoader)
 }

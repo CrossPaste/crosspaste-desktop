@@ -3,7 +3,9 @@ package com.crosspaste.paste
 import com.crosspaste.db.paste.PasteDao
 import java.util.concurrent.atomic.AtomicReference
 
-class DesktopCurrentPaste(private val lazyPasteDao: Lazy<PasteDao>) : CurrentPaste() {
+class DesktopCurrentPaste(
+    private val lazyPasteDao: Lazy<PasteDao>,
+) : CurrentPaste() {
 
     private val currentId: AtomicReference<Long?> = AtomicReference<Long?>()
 
@@ -20,7 +22,5 @@ class DesktopCurrentPaste(private val lazyPasteDao: Lazy<PasteDao>) : CurrentPas
         }
     }
 
-    override fun getPasteId(): Long? {
-        return currentId.get()
-    }
+    override fun getPasteId(): Long? = currentId.get()
 }

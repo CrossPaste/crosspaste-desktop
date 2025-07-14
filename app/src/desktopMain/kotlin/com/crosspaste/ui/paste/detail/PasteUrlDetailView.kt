@@ -40,7 +40,8 @@ fun PasteUrlDetailView(
         detailView = {
             Row(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
@@ -50,8 +51,7 @@ fun PasteUrlDetailView(
                                     onDoubleClick()
                                 },
                             )
-                        }
-                        .padding(small3X),
+                        }.padding(small3X),
             ) {
                 Text(
                     text = url,

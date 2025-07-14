@@ -345,8 +345,20 @@ class DesktopModule(
             }
             single<ServerModule> {
                 DesktopServerModule(
-                    get(), get(), get(), get(), get(), get(), get(), get(),
-                    get(), get(), get(), get(), get(), get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
                 )
             }
             single<SyncApi> { SyncApi }
@@ -356,8 +368,16 @@ class DesktopModule(
                     MarketingSyncManager()
                 } else {
                     GeneralSyncManager(
-                        get(), get(), get(), get(), get(), get(), get(),
-                        get(), get(), lazy { get() },
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        lazy { get() },
                     )
                 }
             }
@@ -536,8 +556,8 @@ class DesktopModule(
         }
 
     // Application.kt
-    fun initKoinApplication(): KoinApplication {
-        return GlobalContext.startKoin {
+    fun initKoinApplication(): KoinApplication =
+        GlobalContext.startKoin {
             modules(
                 appModule(),
                 sqlDelightModule(),
@@ -549,5 +569,4 @@ class DesktopModule(
                 viewModelModule(),
             )
         }
-    }
 }

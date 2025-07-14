@@ -43,7 +43,8 @@ fun GenerateImageView(
     SubcomposeAsyncImage(
         modifier = modifier,
         model =
-            ImageRequest.Builder(platformContext)
+            ImageRequest
+                .Builder(platformContext)
                 .data(GenerateImageItem(imagePath, preview, renderingHelper.scale))
                 .crossfade(true)
                 .build(),
@@ -52,13 +53,18 @@ fun GenerateImageView(
         contentScale = FixedScale(density.density / renderingHelper.scale.toFloat()),
         contentDescription = "generate Image to preview",
         content = {
-            when (this.painter.state.collectAsState().value) {
+            when (
+                this.painter.state
+                    .collectAsState()
+                    .value
+            ) {
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,
                 -> {
                     Row(
                         modifier =
-                            Modifier.fillMaxSize()
+                            Modifier
+                                .fillMaxSize()
                                 .padding(small3X),
                     ) {
                         Text(

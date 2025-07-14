@@ -122,21 +122,20 @@ fun PasteFilesDetailView(
             detailView = {
                 Row(
                     modifier =
-                        Modifier.fillMaxSize()
+                        Modifier
+                            .fillMaxSize()
                             .onPointerEvent(
                                 eventType = PointerEventType.Enter,
                                 onEvent = {
                                     hover = true
                                     autoRoll = false
                                 },
-                            )
-                            .onPointerEvent(
+                            ).onPointerEvent(
                                 eventType = PointerEventType.Exit,
                                 onEvent = {
                                     hover = false
                                 },
-                            )
-                            .pointerInput(Unit) {
+                            ).pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = {
                                         onDoubleClick()
@@ -153,14 +152,19 @@ fun PasteFilesDetailView(
                         SubcomposeAsyncImage(
                             modifier = Modifier.size(gigantic),
                             model =
-                                ImageRequest.Builder(platformContext)
+                                ImageRequest
+                                    .Builder(platformContext)
                                     .data(FileExtItem(filePath))
                                     .crossfade(true)
                                     .build(),
                             imageLoader = imageLoaders.fileExtImageLoader,
                             contentDescription = "fileType",
                             content = {
-                                when (this.painter.state.collectAsState().value) {
+                                when (
+                                    this.painter.state
+                                        .collectAsState()
+                                        .value
+                                ) {
                                     is AsyncImagePainter.State.Loading,
                                     is AsyncImagePainter.State.Error,
                                     -> {

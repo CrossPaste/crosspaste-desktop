@@ -166,6 +166,5 @@ fun TextFieldColors.textColor(
 }
 
 @Composable
-fun TextFieldColors.cursorColor(isError: Boolean): State<Color> {
-    return rememberUpdatedState(if (isError) errorCursorColor else cursorColor)
-}
+fun TextFieldColors.cursorColor(isError: Boolean): State<Color> =
+    rememberUpdatedState(if (isError) errorCursorColor else cursorColor)

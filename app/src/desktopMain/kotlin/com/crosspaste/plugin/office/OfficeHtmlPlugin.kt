@@ -13,16 +13,13 @@ class OfficeHtmlPlugin {
 
         const val POWERPOINT = "Microsoft PowerPoint"
 
-        fun isOfficeApp(source: String?): Boolean {
-            return source?.let {
+        fun isOfficeApp(source: String?): Boolean =
+            source?.let {
                 it == WORD || it == EXCEL || it == POWERPOINT
             } ?: false
-        }
     }
 
-    fun match(source: String): Boolean {
-        return isOfficeApp(source)
-    }
+    fun match(source: String): Boolean = isOfficeApp(source)
 
     fun officeNormalizationHTML(html: String): String {
         val doc: Document = Ksoup.parse(html)

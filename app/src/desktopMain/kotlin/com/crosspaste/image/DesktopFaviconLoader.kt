@@ -15,8 +15,8 @@ class DesktopFaviconLoader(
     override fun saveIco(
         url: String,
         path: Path,
-    ): Path? {
-        return DesktopClient.request(url) { response ->
+    ): Path? =
+        DesktopClient.request(url) { response ->
             FileOutputStream(path.toFile()).use { output ->
                 response.body().use { input ->
                     input.copyTo(output)
@@ -24,5 +24,4 @@ class DesktopFaviconLoader(
             }
             path
         }
-    }
 }

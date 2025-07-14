@@ -82,14 +82,16 @@ fun CrossPasteGrantAccessibilityPermissions(
     Theme {
         Column(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(horizontal = medium, vertical = tiny),
         ) {
             Spacer(modifier = Modifier.height(xLarge))
             Row(
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .wrapContentHeight(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
@@ -108,7 +110,8 @@ fun CrossPasteGrantAccessibilityPermissions(
             Spacer(modifier = Modifier.height(tiny))
             Row(
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .wrapContentHeight(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
@@ -127,7 +130,8 @@ fun CrossPasteGrantAccessibilityPermissions(
             Spacer(modifier = Modifier.height(tiny3X))
             Row(
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .wrapContentHeight()
                         .padding(horizontal = small2X),
                 horizontalArrangement = Arrangement.Center,
@@ -135,7 +139,8 @@ fun CrossPasteGrantAccessibilityPermissions(
             ) {
                 Column(
                     modifier =
-                        Modifier.fillMaxWidth()
+                        Modifier
+                            .fillMaxWidth()
                             .wrapContentHeight()
                             .clip(tiny3XRoundedCornerShape)
                             .background(MaterialTheme.colorScheme.surface),
@@ -171,7 +176,10 @@ fun CrossPasteGrantAccessibilityPermissions(
                             shape = tiny3XRoundedCornerShape,
                             border = BorderStroke(tiny5X, MaterialTheme.colorScheme.tertiaryContainer),
                             contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                ),
                             elevation = zeroButtonElevation,
                         ) {
                             Text(
@@ -199,7 +207,10 @@ fun CrossPasteGrantAccessibilityPermissions(
                                 shape = tiny3XRoundedCornerShape,
                                 border = BorderStroke(tiny5X, MaterialTheme.colorScheme.primary),
                                 contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                    ),
                                 elevation =
                                     ButtonDefaults.elevatedButtonElevation(
                                         defaultElevation = zero,

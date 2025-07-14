@@ -37,7 +37,8 @@ class WindowsPasteboardService(
     override val pasteDao: PasteDao,
     private val platform: Platform,
     override val soundService: SoundService,
-) : AbstractPasteboardService(), User32.WNDPROC {
+) : AbstractPasteboardService(),
+    User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
 
     private val controlUtils = getControlUtils() as DesktopControlUtils
@@ -75,8 +76,18 @@ class WindowsPasteboardService(
     private fun run() {
         viewer =
             User32.INSTANCE.CreateWindowEx(
-                0, "STATIC", "", 0, 0, 0, 0, 0,
-                null, 0, 0, null,
+                0,
+                "STATIC",
+                "",
+                0,
+                0,
+                0,
+                0,
+                0,
+                null,
+                0,
+                0,
+                null,
             )
         nextViewer = User32.INSTANCE.SetClipboardViewer(viewer)
         if (platform.is64bit()) {

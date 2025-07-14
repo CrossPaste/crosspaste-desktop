@@ -52,7 +52,8 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
 
                     Column(
                         modifier =
-                            Modifier.fillMaxWidth()
+                            Modifier
+                                .fillMaxWidth()
                                 .wrapContentHeight(),
                     ) {
                         Row(modifier = Modifier.fillMaxWidth()) {
@@ -68,7 +69,8 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
 
                         Row(
                             modifier =
-                                Modifier.fillMaxWidth()
+                                Modifier
+                                    .fillMaxWidth()
                                     .wrapContentHeight(),
                         ) {
                             DialogButtonsView(

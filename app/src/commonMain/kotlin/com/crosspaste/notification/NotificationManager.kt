@@ -21,8 +21,7 @@ abstract class NotificationManager(
                 .equalDebounce(
                     durationMillis = 300,
                     isEqual = { a, b -> a.equalContent(b) },
-                )
-                .collect { params ->
+                ).collect { params ->
                     doSendNotification(params)
                 }
         }

@@ -39,13 +39,12 @@ class DesktopAppStartUpService(
         }
     }
 
-    override fun isAutoStartUp(): Boolean {
-        return if (isProduction) {
+    override fun isAutoStartUp(): Boolean =
+        if (isProduction) {
             appStartUpService.isAutoStartUp()
         } else {
             false
         }
-    }
 
     override fun makeAutoStartUp() {
         if (isProduction) {
@@ -81,16 +80,19 @@ class MacAppStartUpService(
         }
     }
 
-    override fun isAutoStartUp(): Boolean {
-        return appPathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().exists()
-    }
+    override fun isAutoStartUp(): Boolean =
+        appPathProvider.userHome
+            .resolve("Library/LaunchAgents/$plist")
+            .toFile()
+            .exists()
 
     override fun makeAutoStartUp() {
         runCatching {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
                 val plistPath = appPathProvider.userHome.resolve("Library/LaunchAgents/$plist")
-                filePersist.createOneFilePersist(plistPath)
+                filePersist
+                    .createOneFilePersist(plistPath)
                     .saveBytes(
                         """
                         <?xml version="1.0" encoding="UTF-8"?>
@@ -122,7 +124,10 @@ class MacAppStartUpService(
         runCatching {
             if (isAutoStartUp()) {
                 logger.info { "Remove auto startup" }
-                appPathProvider.userHome.resolve("Library/LaunchAgents/$plist").toFile().delete()
+                appPathProvider.userHome
+                    .resolve("Library/LaunchAgents/$plist")
+                    .toFile()
+                    .delete()
             }
         }.onFailure { e ->
             logger.error(e) { "Failed to remove auto startup" }
@@ -151,13 +156,12 @@ class WindowsAppStartUpService(
 
     private val microsoftStartup = "explorer.exe shell:appsFolder\\$PFN!$AppName"
 
-    private fun getRegValue(): String {
-        return if (isMicrosoftStore) {
+    private fun getRegValue(): String =
+        if (isMicrosoftStore) {
             microsoftStartup
         } else {
             appExePath.toString()
         }
-    }
 
     override fun followConfig() {
         if (configManager.getCurrentConfig().enableAutoStartUp) {
@@ -292,16 +296,19 @@ class LinuxAppStartUpService(
         }
     }
 
-    override fun isAutoStartUp(): Boolean {
-        return appPathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().exists()
-    }
+    override fun isAutoStartUp(): Boolean =
+        appPathProvider.userHome
+            .resolve(".config/autostart/$desktopFile")
+            .toFile()
+            .exists()
 
     override fun makeAutoStartUp() {
         runCatching {
             if (!isAutoStartUp()) {
                 logger.info { "Make auto startup" }
                 val desktopFilePath = appPathProvider.userHome.resolve(".config/autostart/$desktopFile")
-                filePersist.createOneFilePersist(desktopFilePath)
+                filePersist
+                    .createOneFilePersist(desktopFilePath)
                     .saveBytes(
                         """
                         [Desktop Entry]
@@ -326,7 +333,10 @@ class LinuxAppStartUpService(
         try {
             if (isAutoStartUp()) {
                 logger.info { "Remove auto startup" }
-                appPathProvider.userHome.resolve(".config/autostart/$desktopFile").toFile().delete()
+                appPathProvider.userHome
+                    .resolve(".config/autostart/$desktopFile")
+                    .toFile()
+                    .delete()
             }
         } catch (e: Exception) {
             logger.error(e) { "Failed to remove auto startup" }

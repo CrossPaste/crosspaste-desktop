@@ -14,7 +14,9 @@ import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.Transferable
 
-abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
+abstract class AbstractPasteboardService :
+    PasteboardService,
+    ClipboardOwner {
 
     abstract var ownerTransferable: Transferable?
 
@@ -36,17 +38,15 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
 
     override val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    fun isValidContents(contents: Transferable?): Boolean {
-        return contents != null && contents.transferDataFlavors.isNotEmpty()
-    }
+    fun isValidContents(contents: Transferable?): Boolean =
+        contents != null && contents.transferDataFlavors.isNotEmpty()
 
-    fun getPasteboardContentsBySafe(): Transferable? {
-        return runCatching {
+    fun getPasteboardContentsBySafe(): Transferable? =
+        runCatching {
             systemClipboard.getContents(null)
         }.onFailure { e ->
             logger.error(e) { "getContentsBySafe error" }
         }.getOrNull()
-    }
 
     override fun tryWritePasteboard(
         id: Long?,
@@ -54,8 +54,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         localOnly: Boolean,
         filterFile: Boolean,
         updateCreateTime: Boolean,
-    ): Result<Unit?> {
-        return runCatching {
+    ): Result<Unit?> =
+        runCatching {
             pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
                 it as DesktopWriteTransferable
                 systemClipboard.setContents(it, this)
@@ -68,7 +68,6 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         }.onFailure { e ->
             logger.error(e) { "tryWritePasteboard error" }
         }
-    }
 
     override fun tryWritePasteboard(
         pasteData: PasteData,
@@ -76,8 +75,8 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         filterFile: Boolean,
         primary: Boolean,
         updateCreateTime: Boolean,
-    ): Result<Unit?> {
-        return runCatching {
+    ): Result<Unit?> =
+        runCatching {
             pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
                 it as DesktopWriteTransferable
                 systemClipboard.setContents(it, this)
@@ -88,10 +87,9 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
         }.onFailure { e ->
             logger.error(e) { "tryWritePasteboard error" }
         }
-    }
 
-    override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> {
-        return pasteDao.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->
+    override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
+        pasteDao.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->
             pasteboardChannel.trySend {
                 tryWritePasteboard(storePasteData, localOnly = true, filterFile = filterFile)
                     .onFailure {
@@ -103,10 +101,9 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                     }
             }
         }
-    }
 
-    override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?> {
-        return pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
+    override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?> =
+        pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
             pasteboardChannel.trySend {
                 tryWritePasteboard(storePasteData, localOnly = true, filterFile = false)
                     .onFailure {
@@ -118,11 +115,9 @@ abstract class AbstractPasteboardService : PasteboardService, ClipboardOwner {
                     }
             }
         }
-    }
 
-    override suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit?> {
-        return pasteDao.markDeletePasteData(pasteData.id)
-    }
+    override suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit?> =
+        pasteDao.markDeletePasteData(pasteData.id)
 
     @Synchronized
     override fun toggle() {

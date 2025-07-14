@@ -7,9 +7,7 @@ interface PasteHtml {
 
     val html: String
 
-    fun getText(): String {
-        return getHtmlUtils().getHtmlText(html)
-    }
+    fun getText(): String = getHtmlUtils().getHtmlText(html)
 
     fun getBackgroundColor(): Color?
 }

@@ -47,8 +47,8 @@ data class DesktopAppConfig(
     override fun copy(
         key: String,
         value: Any,
-    ): DesktopAppConfig {
-        return this.copy(
+    ): DesktopAppConfig =
+        this.copy(
             appInstanceId = appInstanceId,
             language = if (key == "language") toString(value) else language,
             font = if (key == "font") toString(value) else font,
@@ -120,5 +120,4 @@ data class DesktopAppConfig(
             enableSoundEffect = if (key == "enableSoundEffect") toBoolean(value) else enableSoundEffect,
             searchWindowStyle = if (key == "searchWindowStyle") toString(value) else searchWindowStyle,
         )
-    }
 }

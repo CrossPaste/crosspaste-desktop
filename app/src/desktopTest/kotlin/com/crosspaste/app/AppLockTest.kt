@@ -61,7 +61,10 @@ class AppLockTest : KoinTest {
                         appLockState.acquiredLock,
                         "Second instance should not be able to acquire the lock while the first one holds it",
                     )
-                    assertFalse(appLockState.firstLaunch, "Second instance should not be considered as the first launch")
+                    assertFalse(
+                        appLockState.firstLaunch,
+                        "Second instance should not be considered as the first launch",
+                    )
                 }
 
             job1.join()

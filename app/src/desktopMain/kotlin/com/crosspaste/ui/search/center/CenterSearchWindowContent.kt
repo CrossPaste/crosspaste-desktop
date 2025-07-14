@@ -78,8 +78,7 @@ fun CenterSearchWindowContent() {
                 } else {
                     Color.Transparent
                 },
-            )
-            .size(appSize.centerSearchWindowSize)
+            ).size(appSize.centerSearchWindowSize)
             .onKeyEvent {
                 when (it.key) {
                     Key.Enter -> {
@@ -120,14 +119,16 @@ fun CenterSearchWindowContent() {
                 modifier
                     .border(tiny5X, AppUIColors.lightBorderColor)
             } else {
-                modifier.clip(small3XRoundedCornerShape)
+                modifier
+                    .clip(small3XRoundedCornerShape)
                     .border(tiny5X, AppUIColors.lightBorderColor, small3XRoundedCornerShape)
             },
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier =
-                Modifier.fillMaxSize()
+                Modifier
+                    .fillMaxSize()
                     .background(DesktopAppUIColors.searchBackground),
             contentAlignment = Alignment.Center,
         ) {

@@ -9,4 +9,7 @@ interface RenderingHelper {
     fun refresh()
 }
 
-data class RenderingDimension(val width: Int, val height: Int)
+data class RenderingDimension(
+    val width: Int,
+    val height: Int,
+)

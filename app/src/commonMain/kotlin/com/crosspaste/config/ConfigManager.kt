@@ -14,9 +14,7 @@ interface ConfigManager<T : AppConfig> {
 
     var notificationManager: NotificationManager?
 
-    fun getCurrentConfig(): T {
-        return config.value
-    }
+    fun getCurrentConfig(): T = config.value
 
     fun loadConfig(): T?
 

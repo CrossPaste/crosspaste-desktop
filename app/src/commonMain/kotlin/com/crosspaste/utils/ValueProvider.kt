@@ -10,8 +10,8 @@ class ValueProvider<T> {
 
     private var lastSuccessfulValue: T? = null
 
-    fun getValue(provider: () -> T): T? {
-        return runCatching {
+    fun getValue(provider: () -> T): T? =
+        runCatching {
             val newValue = provider()
             lock.withLock {
                 if (newValue != null) {
@@ -23,7 +23,6 @@ class ValueProvider<T> {
             logger.warn(e) { "Error occurred while getting new value" }
             lastSuccessfulValue
         }
-    }
 
     fun clear() {
         lock.withLock {

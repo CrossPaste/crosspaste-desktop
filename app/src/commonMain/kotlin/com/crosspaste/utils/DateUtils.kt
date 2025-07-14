@@ -14,9 +14,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-fun getDateUtils(): DateUtils {
-    return DateUtils
-}
+fun getDateUtils(): DateUtils = DateUtils
 
 object DateUtils {
 
@@ -33,9 +31,7 @@ object DateUtils {
         return offsetDay.toEpochMilliseconds()
     }
 
-    fun getYMD(date: LocalDateTime = now()): String {
-        return YMD_FORMAT.format(date)
-    }
+    fun getYMD(date: LocalDateTime = now()): String = YMD_FORMAT.format(date)
 
     @OptIn(FormatStringsInDatetimeFormats::class)
     fun getDateDesc(
@@ -57,13 +53,9 @@ object DateUtils {
         return currentInstant.toLocalDateTime(TIME_ZONE)
     }
 
-    fun nowEpochMilliseconds(): Long {
-        return nowInstant().toEpochMilliseconds()
-    }
+    fun nowEpochMilliseconds(): Long = nowInstant().toEpochMilliseconds()
 
-    fun nowInstant(): Instant {
-        return Clock.System.now()
-    }
+    fun nowInstant(): Instant = Clock.System.now()
 
     fun epochMillisecondsToLocalDateTime(epochMilliseconds: Long): LocalDateTime {
         val instant = Instant.fromEpochMilliseconds(epochMilliseconds)

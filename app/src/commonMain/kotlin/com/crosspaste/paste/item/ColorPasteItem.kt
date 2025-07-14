@@ -18,7 +18,8 @@ class ColorPasteItem(
     override val size: Long,
     override val color: Long,
     override val extraInfo: JsonObject? = null,
-) : PasteItem, PasteColor {
+) : PasteItem,
+    PasteColor {
 
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
@@ -28,23 +29,17 @@ class ColorPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getPasteType(): PasteType {
-        return PasteType.COLOR_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.COLOR_TYPE
 
-    override fun getSearchContent(): String {
-        return toHexString()
-    }
+    override fun getSearchContent(): String = toHexString()
 
-    override fun getSummary(): String {
-        return toHexString()
-    }
+    override fun getSummary(): String = toHexString()
 
     override fun update(
         data: Any,
         hash: String,
-    ): PasteItem {
-        return (data as? Long)?.let { color ->
+    ): PasteItem =
+        (data as? Long)?.let { color ->
             ColorPasteItem(
                 identifiers = identifiers,
                 hash = hash,
@@ -52,14 +47,11 @@ class ColorPasteItem(
                 color = color,
             )
         } ?: this
-    }
 
-    override fun isValid(): Boolean {
-        return size == 8L && hash.isNotEmpty() && hash == color.toString()
-    }
+    override fun isValid(): Boolean = size == 8L && hash.isNotEmpty() && hash == color.toString()
 
-    override fun toJson(): String {
-        return buildJsonObject {
+    override fun toJson(): String =
+        buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))
             put("hash", hash)
@@ -67,5 +59,4 @@ class ColorPasteItem(
             put("color", color)
             extraInfo?.let { put("extraInfo", it) }
         }.toString()
-    }
 }

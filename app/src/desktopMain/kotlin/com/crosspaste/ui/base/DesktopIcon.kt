@@ -7,6 +7,4 @@ import com.crosspaste.app.generated.resources.layout
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun layout(): Painter {
-    return painterResource(Res.drawable.layout)
-}
+fun layout(): Painter = painterResource(Res.drawable.layout)

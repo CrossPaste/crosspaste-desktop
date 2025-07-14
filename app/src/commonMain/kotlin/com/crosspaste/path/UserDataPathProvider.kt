@@ -23,11 +23,10 @@ class UserDataPathProvider(
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
-    ): Path {
-        return resolve(fileName, appFileType) {
+    ): Path =
+        resolve(fileName, appFileType) {
             getUserDataPath()
         }
-    }
 
     fun resolve(
         fileName: String?,
@@ -125,11 +124,10 @@ class UserDataPathProvider(
         }
     }
 
-    fun getUserDataPath(): Path {
-        return if (configManager.getCurrentConfig().useDefaultStoragePath) {
+    fun getUserDataPath(): Path =
+        if (configManager.getCurrentConfig().useDefaultStoragePath) {
             platformUserDataPathProvider.getUserDefaultStoragePath()
         } else {
             configManager.getCurrentConfig().storagePath.toPath(normalize = true)
         }
-    }
 }

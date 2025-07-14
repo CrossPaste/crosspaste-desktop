@@ -10,9 +10,8 @@ class DesktopQRCodeGenerator(
     endpointInfoFactory: EndpointInfoFactory,
 ) : QRCodeGenerator(appInfo, endpointInfoFactory) {
 
-    override fun generateQRCode(token: CharArray): PlatformImage {
-        return DesktopQRCodeImage(
+    override fun generateQRCode(token: CharArray): PlatformImage =
+        DesktopQRCodeImage(
             data = buildQRCode(token).encodeToByteArray(),
         )
-    }
 }

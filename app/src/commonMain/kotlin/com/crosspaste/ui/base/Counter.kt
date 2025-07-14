@@ -75,7 +75,8 @@ fun Counter(
 
         DefaultTextField(
             modifier =
-                Modifier.width(width + medium)
+                Modifier
+                    .width(width + medium)
                     .height(xxLarge),
             value = "$count",
             contentPadding = PaddingValues(horizontal = tiny),

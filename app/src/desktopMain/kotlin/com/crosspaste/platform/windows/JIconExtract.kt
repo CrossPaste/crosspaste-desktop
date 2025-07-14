@@ -19,23 +19,8 @@ import com.sun.jna.platform.win32.WinNT.HRESULT
 import com.sun.jna.ptr.PointerByReference
 import java.awt.image.BufferedImage
 import java.io.File
-import java.nio.file.Path
 
 object JIconExtract {
-    /**
-     *
-     * @param width width of the returned BufferedImage
-     * @param height height of the returned BufferedImage
-     * @param file Path to the requested file
-     * @return BufferedImage for the given File
-     */
-    fun getIconForFile(
-        width: Int,
-        height: Int,
-        file: Path,
-    ): BufferedImage? {
-        return getIconForFile(width, height, file.toString())
-    }
 
     /**
      *
@@ -48,9 +33,7 @@ object JIconExtract {
         width: Int,
         height: Int,
         file: File,
-    ): BufferedImage? {
-        return getIconForFile(width, height, file.absolutePath)
-    }
+    ): BufferedImage? = getIconForFile(width, height, file.absolutePath)
 
     /**
      *

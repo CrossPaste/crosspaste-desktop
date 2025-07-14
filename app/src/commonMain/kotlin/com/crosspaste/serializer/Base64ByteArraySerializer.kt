@@ -13,9 +13,7 @@ class Base64ByteArraySerializer : KSerializer<ByteArray> {
 
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ByteArray") {}
 
-    override fun deserialize(decoder: Decoder): ByteArray {
-        return codecsUtils.base64Decode(decoder.decodeString())
-    }
+    override fun deserialize(decoder: Decoder): ByteArray = codecsUtils.base64Decode(decoder.decodeString())
 
     override fun serialize(
         encoder: Encoder,

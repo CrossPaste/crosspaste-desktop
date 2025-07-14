@@ -25,13 +25,9 @@ class DesktopRtfTypePlugin : RtfTypePlugin {
         private val codecsUtils = getCodecsUtils()
     }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.RTF_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.RTF_TYPE
 
-    override fun getIdentifiers(): List<String> {
-        return listOf(RTF_ID)
-    }
+    override fun getIdentifiers(): List<String> = listOf(RTF_ID)
 
     override fun createPrePasteItem(
         itemIndex: Int,

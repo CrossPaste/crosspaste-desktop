@@ -13,13 +13,15 @@ import kotlinx.serialization.Serializable
 interface ClientApiResult
 
 @Suppress("UNCHECKED_CAST")
-class SuccessResult(private val result: Any? = null) : ClientApiResult {
-    fun <T> getResult(): T {
-        return result as T
-    }
+class SuccessResult(
+    private val result: Any? = null,
+) : ClientApiResult {
+    fun <T> getResult(): T = result as T
 }
 
-class FailureResult(val exception: PasteException) : ClientApiResult
+class FailureResult(
+    val exception: PasteException,
+) : ClientApiResult
 
 object ConnectionRefused : ClientApiResult
 
@@ -42,24 +44,20 @@ fun createFailureResult(failResponse: FailResponse): FailureResult {
 fun createFailureResult(
     errorCodeSupplier: ErrorCodeSupplier,
     message: String,
-): FailureResult {
-    return FailureResult(PasteException(errorCodeSupplier.toErrorCode(), message))
-}
+): FailureResult = FailureResult(PasteException(errorCodeSupplier.toErrorCode(), message))
 
 fun createFailureResult(
     errorCodeSupplier: ErrorCodeSupplier,
     throwable: Throwable,
-): FailureResult {
-    return FailureResult(PasteException(errorCodeSupplier.toErrorCode(), throwable))
-}
+): FailureResult = FailureResult(PasteException(errorCodeSupplier.toErrorCode(), throwable))
 
 suspend inline fun <T> request(
     logger: KLogger,
     exceptionHandler: ExceptionHandler,
     request: () -> HttpResponse,
     transformData: (HttpResponse) -> T,
-): ClientApiResult {
-    return try {
+): ClientApiResult =
+    try {
         val response = request()
         logger.info { "response status: ${response.call.request.url} ${response.status}" }
         if (response.status.value == 404) {
@@ -83,7 +81,6 @@ suspend inline fun <T> request(
             UnknownError
         }
     }
-}
 
 @Serializable
 data class FailResponse(
@@ -91,7 +88,5 @@ data class FailResponse(
     val message: String = "",
 ) {
 
-    override fun toString(): String {
-        return "FailResponse(errorCode=$errorCode, message='$message')"
-    }
+    override fun toString(): String = "FailResponse(errorCode=$errorCode, message='$message')"
 }

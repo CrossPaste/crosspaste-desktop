@@ -112,8 +112,10 @@ class DesktopThumbnailLoader(
         // Draw the thumbnail image
         canvas.drawImageRect(
             originalImage,
-            org.jetbrains.skia.Rect.makeWH(originalImage.width.toFloat(), originalImage.height.toFloat()),
-            org.jetbrains.skia.Rect.makeXYWH(dx, dy, originalImage.width * scale, originalImage.height * scale),
+            org.jetbrains.skia.Rect
+                .makeWH(originalImage.width.toFloat(), originalImage.height.toFloat()),
+            org.jetbrains.skia.Rect
+                .makeXYWH(dx, dy, originalImage.width * scale, originalImage.height * scale),
             null,
         )
 

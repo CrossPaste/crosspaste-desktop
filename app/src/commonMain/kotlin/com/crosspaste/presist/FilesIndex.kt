@@ -2,7 +2,9 @@ package com.crosspaste.presist
 
 import okio.Path
 
-class FilesIndexBuilder(private val chunkSize: Long) {
+class FilesIndexBuilder(
+    private val chunkSize: Long,
+) {
 
     private val filesChunks = mutableListOf<FilesChunk>()
 
@@ -30,18 +32,18 @@ class FilesIndexBuilder(private val chunkSize: Long) {
     }
 }
 
-class FilesIndex(private val filesChunks: List<FilesChunk>) {
+class FilesIndex(
+    private val filesChunks: List<FilesChunk>,
+) {
 
-    fun getChunk(chunkIndex: Int): FilesChunk? {
-        return filesChunks.getOrNull(chunkIndex)
-    }
+    fun getChunk(chunkIndex: Int): FilesChunk? = filesChunks.getOrNull(chunkIndex)
 
-    fun getChunkCount(): Int {
-        return filesChunks.size
-    }
+    fun getChunkCount(): Int = filesChunks.size
 }
 
-class FilesChunkBuilder(chunkSize: Long) {
+class FilesChunkBuilder(
+    chunkSize: Long,
+) {
 
     private val fileChunks = mutableListOf<FileChunk>()
 
@@ -58,28 +60,24 @@ class FilesChunkBuilder(chunkSize: Long) {
         return remainingSize - addNewChunkSize
     }
 
-    fun isNotEmpty(): Boolean {
-        return fileChunks.isNotEmpty()
-    }
+    fun isNotEmpty(): Boolean = fileChunks.isNotEmpty()
 
-    fun build(): FilesChunk {
-        return FilesChunk(fileChunks.toList())
-    }
+    fun build(): FilesChunk = FilesChunk(fileChunks.toList())
 }
 
-data class FilesChunk(val fileChunks: List<FileChunk>) {
+data class FilesChunk(
+    val fileChunks: List<FileChunk>,
+) {
     override fun toString(): String {
         val fileChunksToString = fileChunks.joinToString(", ") { it.toString() }
         return "FilesChunk(chunks: [$fileChunksToString])"
     }
 }
 
-data class FileChunk(val offset: Long, val size: Long, val path: Path) {
-    fun getEndOffset(): Long {
-        return offset + size
-    }
-
-    override fun toString(): String {
-        return "FileChunk(path: ${path.name}, offset: $offset, size: $size)"
-    }
+data class FileChunk(
+    val offset: Long,
+    val size: Long,
+    val path: Path,
+) {
+    override fun toString(): String = "FileChunk(path: ${path.name}, offset: $offset, size: $size)"
 }

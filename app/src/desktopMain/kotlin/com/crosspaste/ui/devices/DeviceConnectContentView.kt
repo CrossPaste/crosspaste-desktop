@@ -107,23 +107,24 @@ fun DeviceConnectContentView(
 
     if (deviceInteractionEnabled) {
         modifier =
-            modifier.onPointerEvent(
-                eventType = PointerEventType.Enter,
-                onEvent = {
-                    hover = true
-                },
-            ).onPointerEvent(
-                eventType = PointerEventType.Exit,
-                onEvent = {
-                    hover = false
-                },
-            ).clickable {
-                if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
-                    syncManager.toVerify(syncRuntimeInfo.appInstanceId)
-                } else {
-                    appWindowManager.toScreen(DeviceDetail, syncRuntimeInfo)
+            modifier
+                .onPointerEvent(
+                    eventType = PointerEventType.Enter,
+                    onEvent = {
+                        hover = true
+                    },
+                ).onPointerEvent(
+                    eventType = PointerEventType.Exit,
+                    onEvent = {
+                        hover = false
+                    },
+                ).clickable {
+                    if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+                        syncManager.toVerify(syncRuntimeInfo.appInstanceId)
+                    } else {
+                        appWindowManager.toScreen(DeviceDetail, syncRuntimeInfo)
+                    }
                 }
-            }
     }
 
     DeviceBarView(
@@ -167,7 +168,9 @@ fun DeviceConnectContentView(
                                 .padding(end = tiny),
                     ) {
                         Icon(
-                            painter = com.crosspaste.ui.base.refresh(),
+                            painter =
+                                com.crosspaste.ui.base
+                                    .refresh(),
                             contentDescription = "refresh",
                             modifier = Modifier.size(large),
                             tint = connectColor,

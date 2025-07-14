@@ -8,9 +8,7 @@ class PasteInfo(
     val converter: (String, copywriter: GlobalCopywriter) -> String,
 ) {
 
-    fun getTextByCopyWriter(copywriter: GlobalCopywriter): String {
-        return converter(value, copywriter)
-    }
+    fun getTextByCopyWriter(copywriter: GlobalCopywriter): String = converter(value, copywriter)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -32,6 +30,4 @@ class PasteInfo(
 fun createPasteInfoWithoutConverter(
     key: String,
     value: String,
-): PasteInfo {
-    return PasteInfo(key, value) { it, _ -> it }
-}
+): PasteInfo = PasteInfo(key, value) { it, _ -> it }

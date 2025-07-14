@@ -174,21 +174,24 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("store_info")
 
         Row(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .height(appSize.settingsItemHeight)
                     .padding(horizontal = small2X, vertical = tiny2X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 modifier =
-                    Modifier.widthIn(min = nameMaxWidth + tiny + medium)
+                    Modifier
+                        .widthIn(min = nameMaxWidth + tiny + medium)
                         .wrapContentHeight(),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
@@ -224,7 +227,8 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         pasteTypes.forEachIndexed { index, quadruple ->
             Row(
                 modifier =
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .height(appSize.settingsItemHeight)
                         .padding(horizontal = small2X, vertical = tiny2X),
                 verticalAlignment = Alignment.CenterVertically,
@@ -280,7 +284,8 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("auto_cleanup_settings")
@@ -316,8 +321,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                         .wrapContentWidth()
                         .clickable {
                             showImageCleanTimeMenu = !showImageCleanTimeMenu
-                        }
-                        .padding(tiny2X),
+                        }.padding(tiny2X),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -391,8 +395,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                         .wrapContentWidth()
                         .clickable {
                             showFileCleanTimeMenu = !showFileCleanTimeMenu
-                        }
-                        .padding(tiny2X),
+                        }.padding(tiny2X),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -446,14 +449,16 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     Spacer(
         modifier =
-            Modifier.height(small3X)
+            Modifier
+                .height(small3X)
                 .fillMaxWidth()
                 .background(AppUIColors.topBackground),
     )
 
     Column(
         modifier =
-            Modifier.wrapContentSize()
+            Modifier
+                .wrapContentSize()
                 .background(AppUIColors.generalBackground),
     ) {
         SettingSwitchItemView(

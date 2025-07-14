@@ -59,7 +59,10 @@ class DesktopRtfRenderingService(
                 graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
                 graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
                 graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
-                graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
+                graphics.setRenderingHint(
+                    RenderingHints.KEY_FRACTIONALMETRICS,
+                    RenderingHints.VALUE_FRACTIONALMETRICS_ON,
+                )
 
                 graphics.scale(1.0, 1.0)
                 graphics.color = Color.WHITE
@@ -68,7 +71,8 @@ class DesktopRtfRenderingService(
 
                 graphics.dispose()
 
-                filePersist.createOneFilePersist(rtf2ImagePath)
+                filePersist
+                    .createOneFilePersist(rtf2ImagePath)
                     .createEmptyFile()
                 ImageIO.write(image, "png", rtf2ImagePath.toFile())
                 generateImageService.getGenerateState(rtf2ImagePath).emit(true)

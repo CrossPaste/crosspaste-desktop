@@ -73,12 +73,10 @@ class DesktopAppPathProvider(
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
-    ): Path {
-        return appPathProvider.resolve(fileName, appFileType)
-    }
+    ): Path = appPathProvider.resolve(fileName, appFileType)
 
-    private fun getAppPathProvider(): AppPathProvider {
-        return if (appEnvUtils.isDevelopment()) {
+    private fun getAppPathProvider(): AppPathProvider =
+        if (appEnvUtils.isDevelopment()) {
             DevelopmentAppPathProvider(platform)
         } else if (appEnvUtils.isTest()) {
             // In the test environment, DesktopAppPathProvider will be mocked
@@ -94,7 +92,6 @@ class DesktopAppPathProvider(
                 throw IllegalStateException("Unknown platform: ${platform.name}")
             }
         }
-    }
 }
 
 class DevelopmentAppPathProvider(
@@ -117,8 +114,8 @@ class DevelopmentAppPathProvider(
 
     private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
 
-    private fun getAppPath(): Path {
-        return DevConfig.pasteAppPath?.let {
+    private fun getAppPath(): Path =
+        DevConfig.pasteAppPath?.let {
             val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 path
@@ -126,10 +123,9 @@ class DevelopmentAppPathProvider(
                 composeAppDir.toPath().resolve(it)
             }
         } ?: composeAppDir.toPath()
-    }
 
-    private fun getUserPath(): Path {
-        return DevConfig.pasteUserPath?.let {
+    private fun getUserPath(): Path =
+        DevConfig.pasteUserPath?.let {
             val path = it.toPath(normalize = true)
             if (path.isAbsolute) {
                 path
@@ -137,7 +133,6 @@ class DevelopmentAppPathProvider(
                 composeAppDir.toPath().resolve(it)
             }
         } ?: composeAppDir.toPath()
-    }
 
     private fun getResources(): Path {
         val resources = composeAppDir.toPath().resolve("resources")
@@ -161,9 +156,7 @@ class DevelopmentAppPathProvider(
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
-    ): Path {
-        return pathProvider.resolve(fileName, appFileType)
-    }
+    ): Path = pathProvider.resolve(fileName, appFileType)
 }
 
 class WindowsAppPathProvider : AppPathProvider {
@@ -192,20 +185,14 @@ class WindowsAppPathProvider : AppPathProvider {
         throw IllegalStateException("Could not find app path")
     }
 
-    private fun getAppExePath(): Path {
-        return getAppJarPath().noOptionParent.resolve("bin").normalized()
-    }
+    private fun getAppExePath(): Path = getAppJarPath().noOptionParent.resolve("bin").normalized()
 
-    private fun getUserPath(): Path {
-        return userHome.resolve(".crosspaste")
-    }
+    private fun getUserPath(): Path = userHome.resolve(".crosspaste")
 
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
-    ): Path {
-        return pathProvider.resolve(fileName, appFileType)
-    }
+    ): Path = pathProvider.resolve(fileName, appFileType)
 }
 
 class MacosAppPathProvider : AppPathProvider {
@@ -244,18 +231,19 @@ class MacosAppPathProvider : AppPathProvider {
         throw IllegalStateException("Could not find app path")
     }
 
-    private fun getAppExePath(): Path {
-        return getAppJarPath().noOptionParent
+    private fun getAppExePath(): Path =
+        getAppJarPath()
+            .noOptionParent
             .resolve("runtime")
             .resolve("Contents")
             .resolve("Home")
             .resolve("lib")
             .normalized()
-    }
 
     private fun getUserPath(): Path {
         val appSupportPath =
-            userHome.resolve("Library")
+            userHome
+                .resolve("Library")
                 .resolve("Application Support")
                 .resolve("CrossPaste")
         val appSupportNioPath = appSupportPath.toNioPath()
@@ -269,9 +257,7 @@ class MacosAppPathProvider : AppPathProvider {
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
-    ): Path {
-        return pathProvider.resolve(fileName, appFileType)
-    }
+    ): Path = pathProvider.resolve(fileName, appFileType)
 }
 
 class LinuxAppPathProvider : AppPathProvider {
@@ -300,18 +286,17 @@ class LinuxAppPathProvider : AppPathProvider {
         throw IllegalStateException("Could not find app path")
     }
 
-    private fun getAppExePath(): Path {
-        return getAppJarPath().noOptionParent.resolve("runtime").resolve("lib").normalized()
-    }
+    private fun getAppExePath(): Path =
+        getAppJarPath()
+            .noOptionParent
+            .resolve("runtime")
+            .resolve("lib")
+            .normalized()
 
-    private fun getUserPath(): Path {
-        return userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
-    }
+    private fun getUserPath(): Path = userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
 
     override fun resolve(
         fileName: String?,
         appFileType: AppFileType,
-    ): Path {
-        return pathProvider.resolve(fileName, appFileType)
-    }
+    ): Path = pathProvider.resolve(fileName, appFileType)
 }

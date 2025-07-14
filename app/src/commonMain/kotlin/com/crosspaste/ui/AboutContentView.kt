@@ -49,14 +49,16 @@ fun AboutContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier =
-                Modifier.align(Alignment.Center)
+                Modifier
+                    .align(Alignment.Center)
                     .offset(y = -xxLarge),
         ) {
             val onBackground =
@@ -141,7 +143,8 @@ fun AboutInfoItem(
     val copywriter = koinInject<GlobalCopywriter>()
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(xxxxLarge)
                 .padding(horizontal = giant, vertical = tiny2X)
                 .clip(tinyRoundedCornerShape)
@@ -150,7 +153,8 @@ fun AboutInfoItem(
     ) {
         Text(
             modifier =
-                Modifier.wrapContentSize()
+                Modifier
+                    .wrapContentSize()
                     .padding(start = tiny2X),
             text = copywriter.getText(title),
             style = aboutInfoTextStyle,

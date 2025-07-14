@@ -40,16 +40,11 @@ class DesktopExceptionHandler : ExceptionHandler() {
         return false
     }
 
-    private fun isExceptionMessageContainsPortInUse(throwable: Throwable): Boolean {
-        return throwable is java.net.BindException &&
+    private fun isExceptionMessageContainsPortInUse(throwable: Throwable): Boolean =
+        throwable is java.net.BindException &&
             throwable.message?.lowercase()?.contains("already in use") == true
-    }
 
-    override fun isPortAlreadyInUse(e: Throwable): Boolean {
-        return containsPortInUseMessage(e)
-    }
+    override fun isPortAlreadyInUse(e: Throwable): Boolean = containsPortInUseMessage(e)
 
-    override fun isConnectionRefused(e: Throwable): Boolean {
-        return e is ConnectException
-    }
+    override fun isConnectionRefused(e: Throwable): Boolean = e is ConnectException
 }

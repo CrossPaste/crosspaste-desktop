@@ -62,8 +62,8 @@ class PullClientApi(
         response: HttpResponse,
         api: String,
         key: Any,
-    ): ClientApiResult {
-        return if (response.status.value == 200) {
+    ): ClientApiResult =
+        if (response.status.value == 200) {
             logger.debug { "Success to pull $api" }
             SuccessResult(response.rawContent)
         } else {
@@ -77,5 +77,4 @@ class PullClientApi(
                 "Fail to pull $api $key: ${response.status.value} $failResponse",
             )
         }
-    }
 }

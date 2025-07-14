@@ -25,8 +25,8 @@ class UserImageFetcher(
     private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
-    override suspend fun fetch(): FetchResult? {
-        return withContext(ioDispatcher) {
+    override suspend fun fetch(): FetchResult? =
+        withContext(ioDispatcher) {
             val pasteFileCoordinate = data.pasteFileCoordinate
             val fileName = pasteFileCoordinate.filePath.name
             runCatching {
@@ -65,7 +65,6 @@ class UserImageFetcher(
                 logger.error(e) { "Error while fetching user image" }
             }.getOrNull()
         }
-    }
 }
 
 class UserImageFactory(
@@ -75,7 +74,5 @@ class UserImageFactory(
         data: ImageItem,
         options: Options,
         imageLoader: ImageLoader,
-    ): Fetcher {
-        return UserImageFetcher(data, thumbnailLoader)
-    }
+    ): Fetcher = UserImageFetcher(data, thumbnailLoader)
 }

@@ -63,7 +63,8 @@ fun TutorialButton() {
     ) {
         Text(
             modifier =
-                Modifier.padding(horizontal = tiny2X)
+                Modifier
+                    .padding(horizontal = tiny2X)
                     .scale(scale),
             text = copywriter.getText("newbie_tutorial"),
             color = Color.White,

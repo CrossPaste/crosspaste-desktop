@@ -35,36 +35,40 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
     override suspend fun getProcess(
         key: Long,
         taskNum: Int,
-    ): PasteSingleProcess {
-        return mainCoroutineDispatcher.async {
-            _processMap.value.computeIfAbsent(key) {
-                PasteSingleProcessImpl(taskNum)
-            }
-        }.await()
-    }
+    ): PasteSingleProcess =
+        mainCoroutineDispatcher
+            .async {
+                _processMap.value.computeIfAbsent(key) {
+                    PasteSingleProcessImpl(taskNum)
+                }
+            }.await()
 
     override suspend fun runTask(
         pasteDataId: Long,
         tasks: List<suspend () -> Pair<Int, ClientApiResult>>,
     ): List<Pair<Int, ClientApiResult>> {
         val process = getProcess(pasteDataId, tasks.size)
-        return ioScope.async {
-            tasks.map { task ->
-                async {
-                    semaphore.withPermit {
-                        val result = task()
-                        if (result.second is SuccessResult) {
-                            process.success(result.first)
+        return ioScope
+            .async {
+                tasks
+                    .map { task ->
+                        async {
+                            semaphore.withPermit {
+                                val result = task()
+                                if (result.second is SuccessResult) {
+                                    process.success(result.first)
+                                }
+                                result
+                            }
                         }
-                        result
-                    }
-                }
-            }.awaitAll()
-        }.await()
+                    }.awaitAll()
+            }.await()
     }
 }
 
-class PasteSingleProcessImpl(private val taskNum: Int) : PasteSingleProcess {
+class PasteSingleProcessImpl(
+    private val taskNum: Int,
+) : PasteSingleProcess {
 
     private val _process = MutableStateFlow<Float>(0.0f)
 

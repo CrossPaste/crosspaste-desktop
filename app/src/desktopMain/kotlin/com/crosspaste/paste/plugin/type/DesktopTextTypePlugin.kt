@@ -26,13 +26,9 @@ class DesktopTextTypePlugin(
         private val codecsUtils = getCodecsUtils()
     }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.TEXT_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.TEXT_TYPE
 
-    override fun getIdentifiers(): List<String> {
-        return listOf(UNICODE_STRING, TEXT, PLAIN_TEXT)
-    }
+    override fun getIdentifiers(): List<String> = listOf(UNICODE_STRING, TEXT, PLAIN_TEXT)
 
     override fun createPrePasteItem(
         itemIndex: Int,
@@ -74,15 +70,14 @@ class DesktopTextTypePlugin(
         size: Long,
         hash: String,
         pasteItem: PasteItem,
-    ): PasteItem {
-        return TextPasteItem(
+    ): PasteItem =
+        TextPasteItem(
             identifiers = pasteItem.identifiers,
             hash = hash,
             size = size,
             text = newText,
             extraInfo = pasteItem.extraInfo,
         )
-    }
 
     override fun updateText(
         pasteData: PasteData,

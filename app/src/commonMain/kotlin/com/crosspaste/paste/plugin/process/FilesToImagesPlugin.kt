@@ -22,10 +22,11 @@ class FilesToImagesPlugin(
         pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
-    ): List<PasteItem> {
-        return pasteItems.map { pasteAppearItem ->
+    ): List<PasteItem> =
+        pasteItems.map { pasteAppearItem ->
             if (pasteAppearItem is FilesPasteItem) {
-                if (pasteAppearItem.getFilePaths(userDataPathProvider)
+                if (pasteAppearItem
+                        .getFilePaths(userDataPathProvider)
                         .map { path -> path.extension }
                         .all { fileUtils.canPreviewImage(it) }
                 ) {
@@ -78,5 +79,4 @@ class FilesToImagesPlugin(
                 pasteAppearItem
             }
         }
-    }
 }

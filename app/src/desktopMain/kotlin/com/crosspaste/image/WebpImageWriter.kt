@@ -22,8 +22,8 @@ class WebpImageWriter : ImageWriter<BufferedImage> {
         image: BufferedImage,
         formatName: String,
         imagePath: Path,
-    ): Boolean {
-        return runCatching {
+    ): Boolean =
+        runCatching {
             val writer = ImageIO.getImageWritersByMIMEType("image/webp").next()
 
             // Configure encoding parameters
@@ -46,5 +46,4 @@ class WebpImageWriter : ImageWriter<BufferedImage> {
             logger.warn(it) { "Failed to write image to webp" }
             false
         }
-    }
 }

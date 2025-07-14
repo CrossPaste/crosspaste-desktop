@@ -40,38 +40,33 @@ interface AppConfig {
     companion object {
         // For compatibility with different storage implementations
         // it is convenient to read the correct configuration from the storage
-        fun toBoolean(any: Any): Boolean {
-            return when (any) {
+        fun toBoolean(any: Any): Boolean =
+            when (any) {
                 is Boolean -> any
                 is String -> any.toBoolean()
                 is Int -> any != 0
                 is Long -> any != 0L
                 else -> false
             }
-        }
 
-        fun toInt(any: Any): Int {
-            return when (any) {
+        fun toInt(any: Any): Int =
+            when (any) {
                 is Int -> any
                 is String -> any.toIntOrNull() ?: 0
                 is Boolean -> if (any) 1 else 0
                 is Long -> any.toInt()
                 else -> 0
             }
-        }
 
-        fun toLong(any: Any): Long {
-            return when (any) {
+        fun toLong(any: Any): Long =
+            when (any) {
                 is Long -> any
                 is String -> any.toLongOrNull() ?: 0L
                 is Boolean -> if (any) 1L else 0L
                 is Int -> any.toLong()
                 else -> 0L
             }
-        }
 
-        fun toString(any: Any): String {
-            return any.toString()
-        }
+        fun toString(any: Any): String = any.toString()
     }
 }

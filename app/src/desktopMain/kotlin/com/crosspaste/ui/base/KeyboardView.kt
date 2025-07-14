@@ -35,7 +35,8 @@ fun KeyboardView(
 
     Row(
         modifier =
-            Modifier.size(dpSize.plus(DpSize(small3X, small3X)))
+            Modifier
+                .size(dpSize.plus(DpSize(small3X, small3X)))
                 .clip(tiny4XRoundedCornerShape)
                 .background(background),
         horizontalArrangement = Arrangement.Center,

@@ -70,8 +70,8 @@ object DesktopProxy {
         }
     }
 
-    private fun isProxyWorking(address: InetSocketAddress): Boolean {
-        return try {
+    private fun isProxyWorking(address: InetSocketAddress): Boolean =
+        try {
             Socket().use { socket ->
                 val inetAddress = InetAddress.getByName(address.hostName)
                 val validAddress = InetSocketAddress(inetAddress, address.port)
@@ -82,10 +82,9 @@ object DesktopProxy {
             logger.warn(e) { "Proxy test failed" }
             false
         }
-    }
 
-    fun proxyToCommandLine(proxy: Proxy): String? {
-        return when (proxy.type()) {
+    fun proxyToCommandLine(proxy: Proxy): String? =
+        when (proxy.type()) {
             Proxy.Type.DIRECT -> null
             Proxy.Type.HTTP -> {
                 runCatching {
@@ -107,5 +106,4 @@ object DesktopProxy {
             }
             else -> null
         }
-    }
 }

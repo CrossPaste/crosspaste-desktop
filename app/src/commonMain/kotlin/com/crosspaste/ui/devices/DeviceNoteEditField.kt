@@ -41,7 +41,8 @@ fun DeviceNoteEditField(
 
     CustomTextField(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(xxxLarge)
                 .focusRequester(focusRequester)
                 .onKeyEvent {

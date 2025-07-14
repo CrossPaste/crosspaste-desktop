@@ -6,7 +6,9 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getCodecsUtils
 
-class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) : PasteProcessPlugin {
+class MultiImagesPlugin(
+    private val userDataPathProvider: UserDataPathProvider,
+) : PasteProcessPlugin {
 
     private val codecsUtils = getCodecsUtils()
 
@@ -14,8 +16,8 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
         pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
-    ): List<PasteItem> {
-        return if (pasteItems.size <= 1) {
+    ): List<PasteItem> =
+        if (pasteItems.size <= 1) {
             pasteItems
         } else {
             val allMemoryImages =
@@ -25,12 +27,12 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
 
             if (allMemoryImages) {
                 val maxSizeImagePasteItem =
-                    pasteItems.maxWith {
-                            a, b ->
+                    pasteItems.maxWith { a, b ->
                         a.size.compareTo(b.size)
                     } as ImagesPasteItem
 
-                pasteItems.filter { it != maxSizeImagePasteItem }
+                pasteItems
+                    .filter { it != maxSizeImagePasteItem }
                     .forEach {
                         it.clear(
                             clearResource = true,
@@ -44,14 +46,18 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
                 val relativePathList =
                     pasteItems.map { it as ImagesPasteItem }.flatMap { it.relativePathList }
                 val fileInfoMap =
-                    pasteItems.map { it as ImagesPasteItem }
+                    pasteItems
+                        .map { it as ImagesPasteItem }
                         .flatMap { it.fileInfoTreeMap.entries }
                         .associate { it.key to it.value }
                 val count = fileInfoMap.map { it.value.getCount() }.sum()
                 val size = fileInfoMap.map { it.value.size }.sum()
                 val hash =
-                    pasteItems.map { it as ImagesPasteItem }.map { it.hash }
-                        .toTypedArray().let { codecsUtils.hashByArray(it) }
+                    pasteItems
+                        .map { it as ImagesPasteItem }
+                        .map { it.hash }
+                        .toTypedArray()
+                        .let { codecsUtils.hashByArray(it) }
                 pasteItems.forEach {
                     it.clear(
                         clearResource = false,
@@ -70,5 +76,4 @@ class MultiImagesPlugin(private val userDataPathProvider: UserDataPathProvider) 
                 ).let { listOf(it) }
             }
         }
-    }
 }

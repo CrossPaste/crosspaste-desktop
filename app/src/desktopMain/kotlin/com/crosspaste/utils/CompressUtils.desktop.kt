@@ -10,17 +10,15 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
-actual fun getCompressUtils(): CompressUtils {
-    return DesktopCompressUtils
-}
+actual fun getCompressUtils(): CompressUtils = DesktopCompressUtils
 
 object DesktopCompressUtils : CompressUtils {
 
     override fun zipDir(
         sourceDir: Path,
         targetBufferedSink: BufferedSink,
-    ): Result<Unit> {
-        return runCatching {
+    ): Result<Unit> =
+        runCatching {
             require(sourceDir.isDirectory) { "Source must be a directory" }
 
             ZipOutputStream(
@@ -29,7 +27,8 @@ object DesktopCompressUtils : CompressUtils {
                 val basePath = sourceDir.toFile().absolutePath
                 sourceDir.toFile().walkTopDown().filter { it.isFile }.forEach { file ->
                     val entryPath =
-                        file.absolutePath.removePrefix(basePath)
+                        file.absolutePath
+                            .removePrefix(basePath)
                             .removePrefix(File.separator)
                             .replace(File.separatorChar, '/')
 
@@ -44,13 +43,12 @@ object DesktopCompressUtils : CompressUtils {
                 }
             }
         }
-    }
 
     override fun zipFile(
         sourceFile: Path,
         targetBufferedSink: BufferedSink,
-    ): Result<Unit> {
-        return runCatching {
+    ): Result<Unit> =
+        runCatching {
             require(!sourceFile.isDirectory) { "Source must be a file, not a directory" }
 
             ZipOutputStream(
@@ -66,13 +64,12 @@ object DesktopCompressUtils : CompressUtils {
                 zipOut.closeEntry()
             }
         }
-    }
 
     override fun unzip(
         bufferSource: BufferedSource,
         targetDir: Path,
-    ): Result<Unit> {
-        return runCatching {
+    ): Result<Unit> =
+        runCatching {
             ZipInputStream(
                 BufferedInputStream(bufferSource.inputStream()),
             ).use { zipIn ->
@@ -93,5 +90,4 @@ object DesktopCompressUtils : CompressUtils {
                 }
             }
         }
-    }
 }

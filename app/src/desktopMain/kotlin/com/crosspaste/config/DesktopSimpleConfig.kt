@@ -27,41 +27,35 @@ class DesktopSimpleConfig(
             jsonUtils.JSON.parseToJsonElement(it).jsonObject
         } ?: JsonObject(mapOf())
 
-    override fun getString(key: String): String? {
-        return lock.withLock {
+    override fun getString(key: String): String? =
+        lock.withLock {
             jsonObject[key]?.jsonPrimitive?.content
         }
-    }
 
-    override fun getBoolean(key: String): Boolean? {
-        return lock.withLock {
+    override fun getBoolean(key: String): Boolean? =
+        lock.withLock {
             jsonObject[key]?.jsonPrimitive?.boolean
         }
-    }
 
-    override fun getInt(key: String): Int? {
-        return lock.withLock {
+    override fun getInt(key: String): Int? =
+        lock.withLock {
             jsonObject[key]?.jsonPrimitive?.int
         }
-    }
 
-    override fun getLong(key: String): Long? {
-        return lock.withLock {
+    override fun getLong(key: String): Long? =
+        lock.withLock {
             jsonObject[key]?.jsonPrimitive?.long
         }
-    }
 
-    override fun getFloat(key: String): Float? {
-        return lock.withLock {
+    override fun getFloat(key: String): Float? =
+        lock.withLock {
             jsonObject[key]?.jsonPrimitive?.floatOrNull
         }
-    }
 
-    override fun getDouble(key: String): Double? {
-        return lock.withLock {
+    override fun getDouble(key: String): Double? =
+        lock.withLock {
             jsonObject[key]?.jsonPrimitive?.doubleOrNull
         }
-    }
 
     private fun set(
         key: String,
@@ -69,9 +63,11 @@ class DesktopSimpleConfig(
     ) {
         lock.withLock {
             jsonObject =
-                jsonObject.toMutableMap().apply {
-                    this[key] = jsonElement
-                }.let { JsonObject(it) }
+                jsonObject
+                    .toMutableMap()
+                    .apply {
+                        this[key] = jsonElement
+                    }.let { JsonObject(it) }
 
             oneFilePersist.saveBytes(
                 jsonUtils.JSON.encodeToString(jsonObject).encodeToByteArray(),
@@ -124,9 +120,11 @@ class DesktopSimpleConfig(
     override fun remove(key: String) {
         lock.withLock {
             jsonObject =
-                jsonObject.toMutableMap().apply {
-                    this.remove(key)
-                }.let { JsonObject(it) }
+                jsonObject
+                    .toMutableMap()
+                    .apply {
+                        this.remove(key)
+                    }.let { JsonObject(it) }
 
             oneFilePersist.saveBytes(
                 jsonUtils.JSON.encodeToString(jsonObject).encodeToByteArray(),

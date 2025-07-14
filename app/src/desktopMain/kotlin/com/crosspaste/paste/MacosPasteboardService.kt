@@ -60,12 +60,14 @@ class MacosPasteboardService(
                 runCatching {
                     val remote = IntByReference()
                     val isCrossPaste = IntByReference()
-                    MacosApi.INSTANCE.getPasteboardChangeCount(changeCount, remote, isCrossPaste)
+                    MacosApi.INSTANCE
+                        .getPasteboardChangeCount(changeCount, remote, isCrossPaste)
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
                                 val firstChange =
-                                    firstRead && changeCount ==
+                                    firstRead &&
+                                        changeCount ==
                                         configManager
                                             .getCurrentConfig()
                                             .lastPasteboardChangeCount

@@ -78,7 +78,8 @@ fun MainMenuView() {
 
     Column(
         modifier =
-            Modifier.fillMaxSize()
+            Modifier
+                .fillMaxSize()
                 .padding(vertical = medium),
     ) {
         prevMenuList.forEachIndexed { index, item ->
@@ -102,13 +103,12 @@ fun MainMenuView() {
 }
 
 @Composable
-private fun background(selected: Boolean): Color {
-    return if (selected) {
+private fun background(selected: Boolean): Color =
+    if (selected) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
         AppUIColors.generalBackground
     }
-}
 
 @Composable
 fun MainMenuItemView(
@@ -120,13 +120,15 @@ fun MainMenuItemView(
 
     Box(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(AppUISize.xxxLarge),
         contentAlignment = Alignment.Center,
     ) {
         Row(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .fillMaxHeight()
                     .padding(horizontal = small3X)
                     .clip(tinyRoundedCornerShape)

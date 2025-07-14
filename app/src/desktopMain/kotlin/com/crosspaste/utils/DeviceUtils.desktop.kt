@@ -24,17 +24,11 @@ class DesktopDeviceUtils(
             throw IllegalStateException("Unknown platform: ${platform.name}")
         }
 
-    override fun createAppInstanceId(): String {
-        return deviceUtils.createAppInstanceId()
-    }
+    override fun createAppInstanceId(): String = deviceUtils.createAppInstanceId()
 
-    override fun getDeviceId(): String {
-        return deviceUtils.getDeviceId()
-    }
+    override fun getDeviceId(): String = deviceUtils.getDeviceId()
 
-    override fun getDeviceName(): String {
-        return deviceUtils.getDeviceName()
-    }
+    override fun getDeviceName(): String = deviceUtils.getDeviceName()
 }
 
 object WindowsDeviceUtils : DeviceUtils {
@@ -58,32 +52,20 @@ object WindowsDeviceUtils : DeviceUtils {
         return null
     }
 
-    override fun createAppInstanceId(): String {
-        return getProductUUID() ?: UUID.randomUUID().toString()
-    }
+    override fun createAppInstanceId(): String = getProductUUID() ?: UUID.randomUUID().toString()
 
-    override fun getDeviceId(): String {
-        return getProductUUID() ?: "Unknown"
-    }
+    override fun getDeviceId(): String = getProductUUID() ?: "Unknown"
 
-    override fun getDeviceName(): String {
-        return Kernel32Util.getComputerName()
-    }
+    override fun getDeviceName(): String = Kernel32Util.getComputerName()
 }
 
 object MacosDeviceUtils : DeviceUtils {
 
-    override fun createAppInstanceId(): String {
-        return MacDeviceUtils.getHardwareUUID() ?: UUID.randomUUID().toString()
-    }
+    override fun createAppInstanceId(): String = MacDeviceUtils.getHardwareUUID() ?: UUID.randomUUID().toString()
 
-    override fun getDeviceId(): String {
-        return MacDeviceUtils.getHardwareUUID() ?: "Unknown"
-    }
+    override fun getDeviceId(): String = MacDeviceUtils.getHardwareUUID() ?: "Unknown"
 
-    override fun getDeviceName(): String {
-        return MacDeviceUtils.getComputerName() ?: "Unknown"
-    }
+    override fun getDeviceName(): String = MacDeviceUtils.getComputerName() ?: "Unknown"
 }
 
 object LinuxDeviceUtils : DeviceUtils {
@@ -97,13 +79,9 @@ object LinuxDeviceUtils : DeviceUtils {
         }
     }
 
-    override fun createAppInstanceId(): String {
-        return getMachineId() ?: UUID.randomUUID().toString()
-    }
+    override fun createAppInstanceId(): String = getMachineId() ?: UUID.randomUUID().toString()
 
-    override fun getDeviceId(): String {
-        return getMachineId() ?: "Unknown"
-    }
+    override fun getDeviceId(): String = getMachineId() ?: "Unknown"
 
     override fun getDeviceName(): String {
         val process = ProcessBuilder("hostname").start()

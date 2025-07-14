@@ -23,13 +23,9 @@ class DesktopUrlTypePlugin(
         private val codecsUtils = getCodecsUtils()
     }
 
-    override fun getPasteType(): PasteType {
-        return PasteType.URL_TYPE
-    }
+    override fun getPasteType(): PasteType = PasteType.URL_TYPE
 
-    override fun getIdentifiers(): List<String> {
-        return listOf(URL)
-    }
+    override fun getIdentifiers(): List<String> = listOf(URL)
 
     override fun createPrePasteItem(
         itemIndex: Int,

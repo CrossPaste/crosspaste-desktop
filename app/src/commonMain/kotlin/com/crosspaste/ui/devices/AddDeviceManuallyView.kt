@@ -61,7 +61,8 @@ import org.koin.compose.koinInject
 fun AddDeviceManuallyView() {
     Column(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .wrapContentHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -79,7 +80,8 @@ fun AddDeviceManuallyForm() {
 
     Row(
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+                .fillMaxWidth()
                 .height(xxxxLarge)
                 .background(AppUIColors.generalBackground)
                 .padding(horizontal = small2X, vertical = tiny2X),
@@ -179,7 +181,8 @@ fun AddDeviceManuallyForm() {
 
         Button(
             modifier =
-                Modifier.wrapContentWidth()
+                Modifier
+                    .wrapContentWidth()
                     .height(xxLarge)
                     .weight(0.4f),
             onClick = {

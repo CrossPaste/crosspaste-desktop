@@ -11,7 +11,5 @@ class DesktopPasteImportParam(
 
     private val fileUtils = getFileUtils()
 
-    override fun importBufferedSource(): BufferedSource? {
-        return fileUtils.fileSystem.source(importPath).buffer()
-    }
+    override fun importBufferedSource(): BufferedSource? = fileUtils.fileSystem.source(importPath).buffer()
 }

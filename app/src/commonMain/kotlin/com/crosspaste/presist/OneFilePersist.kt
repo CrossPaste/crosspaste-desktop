@@ -9,29 +9,29 @@ import okio.Path
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
-class OneFilePersist(val path: Path) {
+class OneFilePersist(
+    val path: Path,
+) {
 
     private val jsonUtils = getJsonUtils()
     private val fileSystem = getFileUtils().fileSystem
 
     @OptIn(InternalSerializationApi::class)
-    fun <T : Any> read(clazz: KClass<T>): T? {
-        return if (fileSystem.exists(path)) {
+    fun <T : Any> read(clazz: KClass<T>): T? =
+        if (fileSystem.exists(path)) {
             val content = fileSystem.read(path) { readUtf8() }
             val serializer = clazz.serializer()
             jsonUtils.JSON.decodeFromString(serializer, content)
         } else {
             null
         }
-    }
 
-    fun readBytes(): ByteArray? {
-        return if (fileSystem.exists(path)) {
+    fun readBytes(): ByteArray? =
+        if (fileSystem.exists(path)) {
             fileSystem.read(path) { readByteArray() }
         } else {
             null
         }
-    }
 
     @OptIn(InternalSerializationApi::class)
     fun <T : Any> save(config: T) {
@@ -48,14 +48,13 @@ class OneFilePersist(val path: Path) {
         writeWithParentDirs { }
     }
 
-    fun delete(): Boolean {
-        return if (fileSystem.exists(path)) {
+    fun delete(): Boolean =
+        if (fileSystem.exists(path)) {
             fileSystem.delete(path)
             true
         } else {
             false
         }
-    }
 
     private fun writeWithParentDirs(writeOperation: okio.BufferedSink.() -> Unit) {
         val parent = path.parent

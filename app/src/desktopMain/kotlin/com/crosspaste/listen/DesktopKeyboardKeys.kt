@@ -2,8 +2,8 @@ package com.crosspaste.listen
 
 import com.crosspaste.platform.Platform
 
-fun getDesktopKeyboardKeys(platform: Platform): KeyboardKeys {
-    return if (platform.isMacos()) {
+fun getDesktopKeyboardKeys(platform: Platform): KeyboardKeys =
+    if (platform.isMacos()) {
         MacKeyboardKeys
     } else if (platform.isWindows()) {
         WindowsKeyboardKeys
@@ -12,4 +12,3 @@ fun getDesktopKeyboardKeys(platform: Platform): KeyboardKeys {
     } else {
         throw IllegalStateException("Unsupported platform: $platform")
     }
-}

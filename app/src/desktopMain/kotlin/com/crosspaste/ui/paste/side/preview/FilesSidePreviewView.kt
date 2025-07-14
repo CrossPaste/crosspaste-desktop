@@ -86,21 +86,27 @@ fun FilesSidePreviewView(pasteData: PasteData) {
             ) {
                 Box(
                     modifier =
-                        Modifier.fillMaxSize()
+                        Modifier
+                            .fillMaxSize()
                             .padding(bottom = xxxLarge),
                     contentAlignment = Alignment.Center,
                 ) {
                     SubcomposeAsyncImage(
                         modifier = Modifier.size(gigantic),
                         model =
-                            ImageRequest.Builder(platformContext)
+                            ImageRequest
+                                .Builder(platformContext)
                                 .data(FileExtItem(filePath))
                                 .crossfade(true)
                                 .build(),
                         imageLoader = imageLoaders.fileExtImageLoader,
                         contentDescription = "fileType",
                         content = {
-                            when (this.painter.state.collectAsState().value) {
+                            when (
+                                this.painter.state
+                                    .collectAsState()
+                                    .value
+                            ) {
                                 is AsyncImagePainter.State.Loading,
                                 is AsyncImagePainter.State.Error,
                                 -> {

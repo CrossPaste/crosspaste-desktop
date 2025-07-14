@@ -33,15 +33,14 @@ interface FileUtils {
     fun bytesSize(
         size: Long,
         unit: String = MB,
-    ): Long {
-        return when (unit) {
+    ): Long =
+        when (unit) {
             KB -> size * 1024
             MB -> size * 1024 * 1024
             GB -> size * 1024 * 1024 * 1024
             TB -> size * 1024 * 1024 * 1024 * 1024
             else -> size
         }
-    }
 
     fun canPreviewImage(ext: String): Boolean
 
@@ -76,13 +75,12 @@ interface FileUtils {
         return userDataPathProvider.resolve(basePath, fileRelativePath, isFile = isFile)
     }
 
-    fun getFileInfoTree(path: Path): FileInfoTree {
-        return if (path.isDirectory) {
+    fun getFileInfoTree(path: Path): FileInfoTree =
+        if (path.isDirectory) {
             getDirFileInfoTree(path)
         } else {
             getSingleFileInfoTree(path)
         }
-    }
 
     private fun getDirFileInfoTree(path: Path): FileInfoTree {
         val builder = FileInfoTreeBuilder()
@@ -126,9 +124,7 @@ interface FileUtils {
     fun listFiles(
         path: Path,
         filter: (Path) -> Boolean = { true },
-    ): List<Path> {
-        return fileSystem.list(path).filter(filter)
-    }
+    ): List<Path> = fileSystem.list(path).filter(filter)
 
     fun existFile(path: Path): Boolean {
         val result =

@@ -46,14 +46,14 @@ fun PasteTooltipIconView(
     ) {
         Box(
             modifier =
-                Modifier.size(xxLarge)
+                Modifier
+                    .size(xxLarge)
                     .onPointerEvent(
                         eventType = PointerEventType.Enter,
                         onEvent = {
                             hoverIcon = true
                         },
-                    )
-                    .onPointerEvent(
+                    ).onPointerEvent(
                         eventType = PointerEventType.Exit,
                         onEvent = {
                             hoverIcon = false
@@ -63,7 +63,8 @@ fun PasteTooltipIconView(
         ) {
             Box(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .clip(tiny2XRoundedCornerShape)
                         .background(
                             if (hoverIcon) {
@@ -71,8 +72,7 @@ fun PasteTooltipIconView(
                             } else {
                                 Color.Transparent
                             },
-                        )
-                        .pointerInput(Unit) {
+                        ).pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
                                     onClick()

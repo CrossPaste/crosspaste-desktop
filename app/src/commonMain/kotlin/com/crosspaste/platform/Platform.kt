@@ -26,35 +26,19 @@ data class Platform(
         const val UNKNOWN_OS = "Unknown"
     }
 
-    fun isWindows(): Boolean {
-        return name == WINDOWS
-    }
+    fun isWindows(): Boolean = name == WINDOWS
 
-    fun isMacos(): Boolean {
-        return name == MACOS
-    }
+    fun isMacos(): Boolean = name == MACOS
 
-    fun isLinux(): Boolean {
-        return name == LINUX
-    }
+    fun isLinux(): Boolean = name == LINUX
 
-    fun isDesktop(): Boolean {
-        return isWindows() || isMacos() || isLinux()
-    }
+    fun isDesktop(): Boolean = isWindows() || isMacos() || isLinux()
 
-    fun isIphone(): Boolean {
-        return name == IPHONE
-    }
+    fun isIphone(): Boolean = name == IPHONE
 
-    fun isIpad(): Boolean {
-        return name == IPAD
-    }
+    fun isIpad(): Boolean = name == IPAD
 
-    fun isAndroid(): Boolean {
-        return name == ANDROID
-    }
+    fun isAndroid(): Boolean = name == ANDROID
 
-    fun is64bit(): Boolean {
-        return bitMode == 64
-    }
+    fun is64bit(): Boolean = bitMode == 64
 }

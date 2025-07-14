@@ -62,8 +62,7 @@ fun ToStartView(toStartAction: () -> Unit) {
                             onEvent = {
                                 transparency = 1.0f
                             },
-                        )
-                        .onPointerEvent(
+                        ).onPointerEvent(
                             eventType = PointerEventType.Exit,
                             onEvent = {
                                 transparency = 0.5f
@@ -74,7 +73,8 @@ fun ToStartView(toStartAction: () -> Unit) {
                     painter = toTop(),
                     contentDescription = "To Start",
                     modifier =
-                        Modifier.size(xLarge)
+                        Modifier
+                            .size(xLarge)
                             .rotate(-90f),
                     tint = AppUIColors.importantColor.copy(alpha = transparency),
                 )

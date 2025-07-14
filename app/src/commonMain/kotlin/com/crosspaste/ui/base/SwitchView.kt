@@ -108,8 +108,7 @@ fun CustomTextSwitch(
                         } else {
                             uncheckedThumbColor
                         },
-                    )
-                    .clickable { onCheckedChange(!checked) },
+                    ).clickable { onCheckedChange(!checked) },
             contentAlignment = Alignment.Center,
         ) {
             Row(

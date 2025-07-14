@@ -9,7 +9,5 @@ object SortPlugin : PasteProcessPlugin {
         pasteCoordinate: PasteCoordinate,
         pasteItems: List<PasteItem>,
         source: String?,
-    ): List<PasteItem> {
-        return pasteItems.sortedByDescending { it.getPasteType().priority }
-    }
+    ): List<PasteItem> = pasteItems.sortedByDescending { it.getPasteType().priority }
 }

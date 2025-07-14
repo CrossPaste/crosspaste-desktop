@@ -63,7 +63,8 @@ fun SyncDeviceContentView(
     ) {
         Row(
             modifier =
-                Modifier.wrapContentSize()
+                Modifier
+                    .wrapContentSize()
                     .padding(start = medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,

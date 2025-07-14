@@ -32,6 +32,7 @@ interface XFixes : Library {
     }
 }
 
+@Suppress("unused")
 @Structure.FieldOrder(
     "type",
     "serial",
@@ -44,7 +45,9 @@ interface XFixes : Library {
     "timestamp",
     "selectionTimestamp",
 )
-class XFixesSelectionNotifyEvent(ptr: Pointer) : Structure(ptr) {
+class XFixesSelectionNotifyEvent(
+    ptr: Pointer,
+) : Structure(ptr) {
     @JvmField var type: Int = 0
 
     @JvmField var serial: NativeLong? = null

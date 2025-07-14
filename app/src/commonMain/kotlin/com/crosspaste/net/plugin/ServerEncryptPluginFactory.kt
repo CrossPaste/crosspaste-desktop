@@ -15,7 +15,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.io.readByteArray
 
-class ServerEncryptPluginFactory(private val secureStore: SecureStore) {
+class ServerEncryptPluginFactory(
+    private val secureStore: SecureStore,
+) {
 
     fun createPlugin(): ApplicationPlugin<PluginConfig> {
         return createApplicationPlugin(
@@ -52,7 +54,9 @@ object EncryptResponse :
 
     private const val ENCRYPT_CHUNK_SIZE = 1024 * 256
 
-    class Context(private val context: PipelineContext<Any, PipelineCall>) {
+    class Context(
+        private val context: PipelineContext<Any, PipelineCall>,
+    ) {
         suspend fun transformBodyTo(
             body: OutgoingContent,
             encrypt: suspend (ByteArray) -> ByteArray,

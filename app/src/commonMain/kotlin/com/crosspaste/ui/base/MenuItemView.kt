@@ -61,7 +61,8 @@ fun MenuItemView(
 
     Row(
         modifier =
-            modifier.height(xxLarge)
+            modifier
+                .height(xxLarge)
                 .padding(paddingValues),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,

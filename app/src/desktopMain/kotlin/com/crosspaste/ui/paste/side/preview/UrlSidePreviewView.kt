@@ -57,7 +57,8 @@ fun UrlSidePreviewView(pasteData: PasteData) {
         ) {
             Column(
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .padding(bottom = huge),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -65,7 +66,8 @@ fun UrlSidePreviewView(pasteData: PasteData) {
                 SubcomposeAsyncImage(
                     modifier = Modifier.fillMaxSize(),
                     model =
-                        ImageRequest.Builder(platformContext)
+                        ImageRequest
+                            .Builder(platformContext)
                             .data(GenerateImageItem(openGraphPath, false, renderingHelper.scale))
                             .crossfade(true)
                             .build(),

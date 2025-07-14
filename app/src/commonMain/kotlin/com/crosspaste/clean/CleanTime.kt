@@ -1,6 +1,10 @@
 package com.crosspaste.clean
 
-enum class CleanTime(val days: Int, val quantity: Int, val unit: String) {
+enum class CleanTime(
+    val days: Int,
+    val quantity: Int,
+    val unit: String,
+) {
     ONE_DAY(1, 1, "day"),
     TWO_DAY(2, 2, "day"),
     THREE_DAY(3, 3, "day"),

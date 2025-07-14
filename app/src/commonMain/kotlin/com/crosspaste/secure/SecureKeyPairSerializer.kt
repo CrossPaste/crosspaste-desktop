@@ -15,27 +15,23 @@ class SecureKeyPairSerializer {
     private val cryptPublicKeyDecoder = ecdh.publicKeyDecoder(EC.Curve.P256)
     private val cryptPrivateKeyDecoder = ecdh.privateKeyDecoder(EC.Curve.P256)
 
-    fun encodeSignPublicKey(publicKey: ECDSA.PublicKey): ByteArray {
-        return publicKey.encodeToByteArrayBlocking(EC.PublicKey.Format.DER)
-    }
+    fun encodeSignPublicKey(publicKey: ECDSA.PublicKey): ByteArray =
+        publicKey.encodeToByteArrayBlocking(EC.PublicKey.Format.DER)
 
-    fun decodeSignPublicKey(bytes: ByteArray): ECDSA.PublicKey {
-        return signPublicKeyDecoder.decodeFromByteArrayBlocking(
+    fun decodeSignPublicKey(bytes: ByteArray): ECDSA.PublicKey =
+        signPublicKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PublicKey.Format.DER,
             bytes = bytes,
         )
-    }
 
-    fun encodeSignPrivateKey(privateKey: ECDSA.PrivateKey): ByteArray {
-        return privateKey.encodeToByteArrayBlocking(EC.PrivateKey.Format.DER)
-    }
+    fun encodeSignPrivateKey(privateKey: ECDSA.PrivateKey): ByteArray =
+        privateKey.encodeToByteArrayBlocking(EC.PrivateKey.Format.DER)
 
-    fun decodeSignPrivateKey(bytes: ByteArray): ECDSA.PrivateKey {
-        return signPrivateKeyDecoder.decodeFromByteArrayBlocking(
+    fun decodeSignPrivateKey(bytes: ByteArray): ECDSA.PrivateKey =
+        signPrivateKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PrivateKey.Format.DER,
             bytes = bytes,
         )
-    }
 
     fun encodeSignKeyPair(keyPair: ECDSA.KeyPair): ByteArray {
         val publicKeyBytes = encodeSignPublicKey(keyPair.publicKey)
@@ -82,27 +78,23 @@ class SecureKeyPairSerializer {
         )
     }
 
-    fun encodeCryptPublicKey(publicKey: ECDH.PublicKey): ByteArray {
-        return publicKey.encodeToByteArrayBlocking(EC.PublicKey.Format.DER)
-    }
+    fun encodeCryptPublicKey(publicKey: ECDH.PublicKey): ByteArray =
+        publicKey.encodeToByteArrayBlocking(EC.PublicKey.Format.DER)
 
-    fun decodeCryptPublicKey(bytes: ByteArray): ECDH.PublicKey {
-        return cryptPublicKeyDecoder.decodeFromByteArrayBlocking(
+    fun decodeCryptPublicKey(bytes: ByteArray): ECDH.PublicKey =
+        cryptPublicKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PublicKey.Format.DER,
             bytes = bytes,
         )
-    }
 
-    fun encodeCryptPrivateKey(privateKey: ECDH.PrivateKey): ByteArray {
-        return privateKey.encodeToByteArrayBlocking(EC.PrivateKey.Format.DER)
-    }
+    fun encodeCryptPrivateKey(privateKey: ECDH.PrivateKey): ByteArray =
+        privateKey.encodeToByteArrayBlocking(EC.PrivateKey.Format.DER)
 
-    fun decodeCryptPrivateKey(bytes: ByteArray): ECDH.PrivateKey {
-        return cryptPrivateKeyDecoder.decodeFromByteArrayBlocking(
+    fun decodeCryptPrivateKey(bytes: ByteArray): ECDH.PrivateKey =
+        cryptPrivateKeyDecoder.decodeFromByteArrayBlocking(
             format = EC.PrivateKey.Format.DER,
             bytes = bytes,
         )
-    }
 
     fun encodeCryptKeyPair(keyPair: ECDH.KeyPair): ByteArray {
         val publicKeyBytes = encodeCryptPublicKey(keyPair.publicKey)
@@ -209,12 +201,11 @@ class SecureKeyPairSerializer {
     private fun readIntFromByteArray(
         src: ByteArray,
         offset: Int,
-    ): Int {
-        return ((src[offset].toInt() and 0xFF) shl 24) or
+    ): Int =
+        ((src[offset].toInt() and 0xFF) shl 24) or
             ((src[offset + 1].toInt() and 0xFF) shl 16) or
             ((src[offset + 2].toInt() and 0xFF) shl 8) or
             (src[offset + 3].toInt() and 0xFF)
-    }
 }
 
 @OptIn(CryptographyProviderApi::class)

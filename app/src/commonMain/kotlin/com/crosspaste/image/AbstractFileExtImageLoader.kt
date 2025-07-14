@@ -11,7 +11,8 @@ import okio.Path
 
 abstract class AbstractFileExtImageLoader(
     private val userDataPathProvider: UserDataPathProvider,
-) : ConcurrentLoader<Path, Path>, FileExtImageLoader {
+) : ConcurrentLoader<Path, Path>,
+    FileExtImageLoader {
 
     private val logger = KotlinLogging.logger {}
 
@@ -22,13 +23,9 @@ abstract class AbstractFileExtImageLoader(
     override fun resolve(
         key: String,
         value: Path,
-    ): Path {
-        return userDataPathProvider.resolve("$key.png", AppFileType.FILE_EXT_ICON)
-    }
+    ): Path = userDataPathProvider.resolve("$key.png", AppFileType.FILE_EXT_ICON)
 
-    override fun exist(result: Path): Boolean {
-        return fileUtils.existFile(result)
-    }
+    override fun exist(result: Path): Boolean = fileUtils.existFile(result)
 
     override fun loggerWarning(
         value: Path,
@@ -37,7 +34,5 @@ abstract class AbstractFileExtImageLoader(
         logger.warn { "Failed to load icon for file extension: $value" }
     }
 
-    override fun convertToKey(value: Path): String {
-        return value.extension
-    }
+    override fun convertToKey(value: Path): String = value.extension
 }

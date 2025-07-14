@@ -21,10 +21,12 @@ class SecureMessageProcessor(
     init {
         val aes = provider.get(AES.CBC)
         val bytes =
-            privateKey.sharedSecretGenerator()
+            privateKey
+                .sharedSecretGenerator()
                 .generateSharedSecretToByteArrayBlocking(publicKey)
         val key =
-            aes.keyDecoder()
+            aes
+                .keyDecoder()
                 .decodeFromByteArrayBlocking(AES.Key.Format.RAW, bytes)
         cipher = key.cipher()
     }

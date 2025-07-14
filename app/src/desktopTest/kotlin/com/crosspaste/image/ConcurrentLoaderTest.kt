@@ -51,13 +51,9 @@ class TestConcurrentLoader : ConcurrentLoader<String, String> {
     override fun resolve(
         key: String,
         value: String,
-    ): String {
-        return key
-    }
+    ): String = key
 
-    override fun exist(result: String): Boolean {
-        return saveKeys.contains(result)
-    }
+    override fun exist(result: String): Boolean = saveKeys.contains(result)
 
     override fun save(
         key: String,
@@ -67,9 +63,7 @@ class TestConcurrentLoader : ConcurrentLoader<String, String> {
         saveKeys.add(key)
     }
 
-    override fun convertToKey(value: String): String {
-        return value
-    }
+    override fun convertToKey(value: String): String = value
 
     override fun loggerWarning(
         value: String,

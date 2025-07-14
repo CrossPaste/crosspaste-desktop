@@ -24,9 +24,7 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.modules.subclass
 
-actual fun getJsonUtils(): JsonUtils {
-    return DesktopJsonUtils
-}
+actual fun getJsonUtils(): JsonUtils = DesktopJsonUtils
 
 object DesktopJsonUtils : JsonUtils {
 

@@ -6,8 +6,9 @@ import com.google.zxing.qrcode.QRCodeWriter
 import java.awt.Color
 import java.awt.image.BufferedImage
 
-class DesktopQRCodeImage(data: ByteArray) :
-    PlatformImage(data) {
+class DesktopQRCodeImage(
+    data: ByteArray,
+) : PlatformImage(data) {
 
     private val writer = QRCodeWriter()
 

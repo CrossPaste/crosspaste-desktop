@@ -91,7 +91,8 @@ fun SearchTrailingIcon() {
 
     Row(
         modifier =
-            Modifier.padding(horizontal = small3X)
+            Modifier
+                .padding(horizontal = small3X)
                 .wrapContentWidth()
                 .height(huge),
         horizontalArrangement = Arrangement.Start,
@@ -119,18 +120,17 @@ fun SearchTrailingIcon() {
 
         Row(
             modifier =
-                Modifier.width(maxWidth)
+                Modifier
+                    .width(maxWidth)
                     .height(xxLarge)
                     .clip(tiny2XRoundedCornerShape)
                     .border(
                         tiny5X,
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                         tiny2XRoundedCornerShape,
-                    )
-                    .clickable {
+                    ).clickable {
                         showTypes = true
-                    }
-                    .padding(horizontal = small3X, vertical = small3X / 2),
+                    }.padding(horizontal = small3X, vertical = small3X / 2),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {

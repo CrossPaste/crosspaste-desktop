@@ -13,11 +13,7 @@ data class AppInfo(
     val userName: String,
 ) {
 
-    fun displayVersion(): String {
-        return "$appVersion${if (appRevision == "Unknown") "" else " ($appRevision)"}"
-    }
+    fun displayVersion(): String = "$appVersion${if (appRevision == "Unknown") "" else " ($appRevision)"}"
 
-    override fun toString(): String {
-        return Json.encodeToString(this)
-    }
+    override fun toString(): String = Json.encodeToString(this)
 }

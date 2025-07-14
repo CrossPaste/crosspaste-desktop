@@ -65,8 +65,8 @@ class GeneralSyncHandler(
         job = startJob()
     }
 
-    private fun startJob(): Job {
-        return syncHandlerScope.launch {
+    private fun startJob(): Job =
+        syncHandlerScope.launch {
             while (isActive) {
                 runCatching {
                     pollingResolve()
@@ -77,17 +77,13 @@ class GeneralSyncHandler(
                 }
             }
         }
-    }
 
-    override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo {
-        return syncRuntimeInfo
-    }
+    override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo = syncRuntimeInfo
 
-    override suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
-        return mutex.withLock {
+    override suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) =
+        mutex.withLock {
             this.syncRuntimeInfo = syncRuntimeInfo
         }
-    }
 
     private suspend fun pollingResolve() {
         mutex.withLock {
@@ -279,11 +275,10 @@ class GeneralSyncHandler(
         }
     }
 
-    private fun updateConnectInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? {
-        return update(doUpdate) { syncRuntimeInfo, todo ->
+    private fun updateConnectInfo(doUpdate: (SyncRuntimeInfo) -> SyncRuntimeInfo): SyncRuntimeInfo? =
+        update(doUpdate) { syncRuntimeInfo, todo ->
             syncRuntimeInfoDao.updateConnectInfo(syncRuntimeInfo, todo)
         }
-    }
 
     override suspend fun tryDirectUpdateConnected() {
         mutex.withLock {
@@ -367,12 +362,16 @@ class GeneralSyncHandler(
                         return@resolveConnecting
                     }
                     SyncState.UNMATCHED -> {
-                        logger.info { "heartbeat fail and connectState is unmatched, need to re verify $host ${syncRuntimeInfo.port}" }
+                        logger.info {
+                            "heartbeat fail and connectState is unmatched, need to re verify $host ${syncRuntimeInfo.port}"
+                        }
                         secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
                         tryUseTokenCache(host, syncRuntimeInfo.port)
                     }
                     SyncState.INCOMPATIBLE -> {
-                        logger.info { "heartbeat success and connectState is incompatible $host ${syncRuntimeInfo.port}" }
+                        logger.info {
+                            "heartbeat success and connectState is incompatible $host ${syncRuntimeInfo.port}"
+                        }
                         updateConnectInfo { syncRuntimeInfo ->
                             syncRuntimeInfo.copy(
                                 connectState = SyncState.INCOMPATIBLE,

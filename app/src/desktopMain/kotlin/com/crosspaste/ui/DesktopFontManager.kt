@@ -46,10 +46,11 @@ class DesktopFontManager(
     }
 
     companion object {
-        fun getUsableFontFamilyNamesOfSystem(): List<String> {
-            return GraphicsEnvironment.getLocalGraphicsEnvironment().availableFontFamilyNames
+        fun getUsableFontFamilyNamesOfSystem(): List<String> =
+            GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .availableFontFamilyNames
                 .toList()
-        }
 
         @OptIn(ExperimentalTextApi::class)
         private fun fromUri(uri: URI): FontFamily {

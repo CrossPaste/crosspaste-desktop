@@ -4,9 +4,7 @@ import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.SHA256
 import java.io.ByteArrayOutputStream
 
-actual fun getCodecsUtils(): CodecsUtils {
-    return DesktopCodecsUtils
-}
+actual fun getCodecsUtils(): CodecsUtils = DesktopCodecsUtils
 
 object DesktopCodecsUtils : CodecsUtils {
 

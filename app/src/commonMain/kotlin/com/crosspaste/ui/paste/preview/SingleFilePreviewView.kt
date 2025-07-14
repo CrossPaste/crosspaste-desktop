@@ -75,7 +75,8 @@ fun SingleFilePreviewView(
 
     Row(
         modifier =
-            Modifier.width(width)
+            Modifier
+                .width(width)
                 .wrapContentHeight()
                 .clip(tiny2XRoundedCornerShape)
                 .pointerInput(Unit) {
@@ -90,7 +91,8 @@ fun SingleFilePreviewView(
             SubcomposeAsyncImage(
                 modifier = Modifier.fillMaxSize(),
                 model =
-                    ImageRequest.Builder(platformContext)
+                    ImageRequest
+                        .Builder(platformContext)
                         .data(FileExtItem(filePath))
                         .crossfade(true)
                         .build(),
@@ -98,12 +100,17 @@ fun SingleFilePreviewView(
                 contentDescription = "fileType",
                 alignment = Alignment.Center,
                 content = {
-                    when (this.painter.state.collectAsState().value) {
+                    when (
+                        this.painter.state
+                            .collectAsState()
+                            .value
+                    ) {
                         is AsyncImagePainter.State.Loading,
                         is AsyncImagePainter.State.Error,
                         -> {
                             val modifier =
-                                Modifier.padding(small3X)
+                                Modifier
+                                    .padding(small3X)
                                     .size(appSize.mainPasteSize.height - small3X)
                             if (existFile) {
                                 if (isFile) {
@@ -126,7 +133,8 @@ fun SingleFilePreviewView(
 
         Column(
             modifier =
-                Modifier.fillMaxHeight()
+                Modifier
+                    .fillMaxHeight()
                     .fillMaxWidth()
                     .padding(horizontal = tiny)
                     .padding(bottom = tiny),

@@ -9,13 +9,12 @@ interface PasteFile {
     fun getHash(): String
 }
 
-class PasteFileImpl(private val path: Path, private val hash: String) : PasteFile {
+class PasteFileImpl(
+    private val path: Path,
+    private val hash: String,
+) : PasteFile {
 
-    override fun getFilePath(): Path {
-        return path
-    }
+    override fun getFilePath(): Path = path
 
-    override fun getHash(): String {
-        return hash
-    }
+    override fun getHash(): String = hash
 }

@@ -7,8 +7,7 @@ import com.crosspaste.app.generated.resources.Subset_RobotoCondensed_Medium
 import org.jetbrains.compose.resources.Font
 
 @Composable
-actual fun robotoFontFamily(): FontFamily {
-    return FontFamily(
+actual fun robotoFontFamily(): FontFamily =
+    FontFamily(
         Font(Res.font.Subset_RobotoCondensed_Medium),
     )
-}

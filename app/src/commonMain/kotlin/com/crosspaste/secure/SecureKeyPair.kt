@@ -8,11 +8,9 @@ data class SecureKeyPair(
     val cryptKeyPair: ECDH.KeyPair,
 ) {
 
-    fun getSignPublicKeyBytes(secureKeyPairSerializer: SecureKeyPairSerializer): ByteArray {
-        return secureKeyPairSerializer.encodeSignPublicKey(signKeyPair.publicKey)
-    }
+    fun getSignPublicKeyBytes(secureKeyPairSerializer: SecureKeyPairSerializer): ByteArray =
+        secureKeyPairSerializer.encodeSignPublicKey(signKeyPair.publicKey)
 
-    fun getCryptPublicKeyBytes(secureKeyPairSerializer: SecureKeyPairSerializer): ByteArray {
-        return secureKeyPairSerializer.encodeCryptPublicKey(cryptKeyPair.publicKey)
-    }
+    fun getCryptPublicKeyBytes(secureKeyPairSerializer: SecureKeyPairSerializer): ByteArray =
+        secureKeyPairSerializer.encodeCryptPublicKey(cryptKeyPair.publicKey)
 }

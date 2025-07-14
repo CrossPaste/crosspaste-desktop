@@ -46,24 +46,22 @@ class DesktopAppUpdateService(
 
     private var checkUpdate: Job? = null
 
-    private fun startPeriodicUpdateCheck(): Job {
-        return coroutineScope.launch {
+    private fun startPeriodicUpdateCheck(): Job =
+        coroutineScope.launch {
             while (true) {
                 checkForUpdate()
                 delay(TimeUnit.HOURS.toMillis(2))
             }
         }
-    }
 
     override fun checkForUpdate() {
         _lastVersion.value = readLastVersion()
     }
 
-    override fun existNewVersion(): Flow<Boolean> {
-        return combine(currentVersion, lastVersion) { current, last ->
+    override fun existNewVersion(): Flow<Boolean> =
+        combine(currentVersion, lastVersion) { current, last ->
             last?.let { it > current } == true
         }
-    }
 
     override fun start() {
         checkUpdate = startPeriodicUpdateCheck()
@@ -91,8 +89,8 @@ class DesktopAppUpdateService(
         }
     }
 
-    private fun SoftwareUpdateController.tryTriggerUpdateUI(): Boolean {
-        return try {
+    private fun SoftwareUpdateController.tryTriggerUpdateUI(): Boolean =
+        try {
             when (canTriggerUpdateCheckUI()) {
                 SoftwareUpdateController.Availability.AVAILABLE -> {
                     triggerUpdateCheckUI()
@@ -107,10 +105,9 @@ class DesktopAppUpdateService(
             logger.error(e) { "Failed to trigger update check UI" }
             false
         }
-    }
 
-    private fun readLastVersion(): Version? {
-        return DesktopClient.request(
+    private fun readLastVersion(): Version? =
+        DesktopClient.request(
             url = appUrls.checkMetadataUrl,
         ) { response ->
             val bytes = response.body().readBytes()
@@ -121,5 +118,4 @@ class DesktopAppUpdateService(
                 Version.parse(versionString)
             }
         }
-    }
 }

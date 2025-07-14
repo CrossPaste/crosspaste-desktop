@@ -51,8 +51,8 @@ class PasteClient(
         encrypt: Boolean = false,
         timeout: Long = 1000L,
         urlBuilder: URLBuilder.() -> Unit,
-    ): HttpResponse {
-        return client.post {
+    ): HttpResponse =
+        client.post {
             header("appInstanceId", appInfo.appInstanceId)
             targetAppInstanceId?.let {
                 header("targetAppInstanceId", it)
@@ -69,14 +69,13 @@ class PasteClient(
             }
             setBody(message, messageType)
         }
-    }
 
     suspend fun get(
         targetAppInstanceId: String? = null,
         timeout: Long = 1000L,
         urlBuilder: URLBuilder.() -> Unit,
-    ): HttpResponse {
-        return client.get {
+    ): HttpResponse =
+        client.get {
             header("appInstanceId", appInfo.appInstanceId)
             targetAppInstanceId?.let {
                 header("targetAppInstanceId", it)
@@ -88,5 +87,4 @@ class PasteClient(
                 urlBuilder()
             }
         }
-    }
 }

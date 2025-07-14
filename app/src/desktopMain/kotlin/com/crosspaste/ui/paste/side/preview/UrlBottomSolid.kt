@@ -39,7 +39,8 @@ fun UrlBottomSolid(
     ) {
         Column(
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .wrapContentHeight(),
         ) {
             if (title != null) {
@@ -62,9 +63,10 @@ fun UrlBottomSolid(
                 style =
                     AppUIFont.mediumBodyTextStyle.copy(
                         color =
-                            MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.topBackground,
-                            ).copy(alpha = 0.5f),
+                            MaterialTheme.colorScheme
+                                .contentColorFor(
+                                    AppUIColors.topBackground,
+                                ).copy(alpha = 0.5f),
                     ),
                 maxLines = if (title == null) 2 else 1,
                 overflow = TextOverflow.Ellipsis,

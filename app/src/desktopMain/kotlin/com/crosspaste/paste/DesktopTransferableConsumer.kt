@@ -15,9 +15,10 @@ class DesktopTransferableConsumer(
     override val logger = KotlinLogging.logger {}
 
     private val pasteTypePluginMap: Map<String, PasteTypePlugin> =
-        pasteTypePlugins.flatMap { pasteTypePlugin ->
-            pasteTypePlugin.getIdentifiers().map { it to pasteTypePlugin }
-        }.toMap()
+        pasteTypePlugins
+            .flatMap { pasteTypePlugin ->
+                pasteTypePlugin.getIdentifiers().map { it to pasteTypePlugin }
+            }.toMap()
 
     private fun createDataFlavorMap(pasteTransferable: PasteTransferable): Map<String, List<PasteDataFlavor>> {
         val dataFlavorMap = LinkedHashMap<String, MutableList<PasteDataFlavor>>()
@@ -59,7 +60,5 @@ class DesktopTransferableConsumer(
         }
     }
 
-    override fun getPlugin(identity: String): PasteTypePlugin? {
-        return pasteTypePluginMap[identity]
-    }
+    override fun getPlugin(identity: String): PasteTypePlugin? = pasteTypePluginMap[identity]
 }

@@ -28,7 +28,5 @@ data class KeyboardKeyDefine(
         return result
     }
 
-    override fun toString(): String {
-        return "KeyboardKeyDefine(name='$name', code=$code, rawCode=$rawCode, match=$match)"
-    }
+    override fun toString(): String = "KeyboardKeyDefine(name='$name', code=$code, rawCode=$rawCode, match=$match)"
 }

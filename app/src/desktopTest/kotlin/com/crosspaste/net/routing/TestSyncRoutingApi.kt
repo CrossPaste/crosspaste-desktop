@@ -13,9 +13,7 @@ class TestSyncRoutingApi : SyncRoutingApi {
 
     override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher)
 
-    override fun getSyncHandlers(): Map<String, SyncHandler> {
-        return innerSyncHandlers
-    }
+    override fun getSyncHandlers(): Map<String, SyncHandler> = innerSyncHandlers
 
     override fun updateSyncInfo(
         syncInfo: SyncInfo,
