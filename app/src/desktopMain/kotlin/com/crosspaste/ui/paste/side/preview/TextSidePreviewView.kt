@@ -9,18 +9,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.db.paste.PasteData
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUIFont.previewAutoSize
 import com.crosspaste.ui.theme.AppUISize.medium
+import org.koin.compose.koinInject
 
 @Composable
 fun TextSidePreviewView(pasteData: PasteData) {
     pasteData.getPasteItem(PasteText::class)?.let { pasteText ->
+        val copywriter = koinInject<GlobalCopywriter>()
         SidePasteLayoutView(
             pasteData = pasteData,
             pasteBottomContent = {
-                BottomGradient("${pasteText.text.length}")
+                BottomGradient(copywriter.getText("character_count", "${pasteText.text.length}"))
             },
         ) {
             Box(modifier = Modifier.fillMaxSize().padding(medium)) {
