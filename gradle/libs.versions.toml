@@ -36,7 +36,7 @@ sqldelight = "2.0.2"
 system-tray = "4.4"
 theme-detector = "3.9.1"
 turbine = "1.2.1"
-webp-imageio = "0.10.1"
+webp-imageio = "0.10.2"
 yaml = "2.4"
 zxing = "3.5.3"
 
