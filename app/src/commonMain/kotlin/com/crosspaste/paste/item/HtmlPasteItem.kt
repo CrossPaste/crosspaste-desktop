@@ -13,6 +13,7 @@ import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
@@ -53,7 +54,7 @@ class HtmlPasteItem(
     override fun getBackgroundColor(): Color? =
         extraInfo?.let { json ->
             runCatching {
-                json[BACKGROUND]?.jsonPrimitive?.long?.let { Color(it) }
+                json[BACKGROUND]?.jsonPrimitive?.int?.let { Color(it) }
             }.getOrNull()
         }
 

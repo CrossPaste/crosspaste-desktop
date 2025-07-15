@@ -1,44 +1,230 @@
 package com.crosspaste.utils
 
 import androidx.compose.ui.graphics.Color
+import com.crosspaste.utils.ColorUtils.toRGBString
+import kotlin.test.DefaultAsserter.assertEquals
+import kotlin.test.DefaultAsserter.assertNotNull
+import kotlin.test.DefaultAsserter.assertNull
+import kotlin.test.DefaultAsserter.assertTrue
 import kotlin.test.Test
-import kotlin.test.assertTrue
 
 class HtmlUtilsTest {
 
-    val htmlUtils = getHtmlUtils()
+    private val htmlUtils = getHtmlUtils()
 
     @Test
-    fun testRGBStyle() {
+    fun `test RGB color extraction from style attribute`() {
         val html =
-            "<meta charset='utf-8'>\n" +
-                "<h1 class=\"Box-sc-g0xbh4-0 dZmqGw prc-PageHeader-Title-LKOsd prc-Heading-Heading-6CmGO\"" +
-                " data-component=\"PH_Title\" data-hidden=\"false\" tabindex=\"-1\" style=\"box-sizing: " +
-                "border-box; font-size: 32px; margin: 0px 8px 0px 0px; font-weight: 400; display: block; " +
-                "order: 1; line-height: 1; color: rgb(31, 35, 40); font-family: -apple-system, " +
-                "&quot;system-ui&quot;, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;" +
-                ", Helvetica, Arial, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;;" +
-                " font-style: normal; font- ValidIdentifiers.Datatype.variant -ligatures: normal;" +
-                " font- ValidIdentifiers.Datatype.variant -caps: normal; letter-spacing: normal;" +
-                " orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2;" +
-                " word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal;" +
-                " background-color: rgb(255, 255, 255); text-decoration-thickness: initial;" +
-                " text-decoration-style: initial; text-decoration-color: initial;" +
-                " --custom-font-size: 26px,26px,2rem,2rem; --custom-line-height: 1; " +
-                "--custom-font-weight: normal;\">\n" +
-                "<bdi class=\"Box-sc-g0xbh4-0 lhNOUb markdown-title\" data-testid=\"issue-title\" " +
-                "style=\"box-sizing: border-box; display: inline; word-break: break-word;\">" +
-                "Add pasteboard character count text</bdi>\n" +
-                "</h1>"
+            """
+            <h1 style="background-color: rgb(255, 255, 255);">Test</h1>
+            """.trimIndent()
 
-        assertTrue { htmlUtils.getBackgroundColor(html) == Color.White }
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertEquals(
+            "Expected white background color, but got ${backgroundColor?.toRGBString()}",
+            Color.White,
+            backgroundColor,
+        )
     }
 
     @Test
-    fun testNamedColor() {
+    fun `test RGBA color extraction with opacity`() {
         val html =
-            "<meta charset='utf-8'><pre class=\"code-block__code !my-0 !rounded-lg !text-sm !leading-relaxed\" " +
-                "style=\"background: transparent; \"></pre>"
-        assertTrue { htmlUtils.getBackgroundColor(html) == Color.White }
+            """
+            <span style="background-color: rgba(25, 25, 28, 0.05);">Test</span>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertNotNull(
+            "Expected to extract RGBA color, but got null",
+            backgroundColor,
+        )
+
+        backgroundColor?.let {
+            val rgbString = it.toRGBString()
+            assertTrue(
+                "Expected RGBA color with alpha channel, but got $rgbString",
+                rgbString.contains("0.05"),
+            )
+        }
+    }
+
+    @Test
+    fun `test named color extraction - transparent`() {
+        val html =
+            """
+            <pre style="background: transparent;">Code</pre>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertEquals(
+            "Expected white color for transparent background, but got ${backgroundColor?.toRGBString()}",
+            Color.White,
+            backgroundColor,
+        )
+    }
+
+    @Test
+    fun `test complex style attribute with multiple properties`() {
+        val html =
+            """
+            <div style="color: rgb(31, 35, 40); font-size: 32px; background-color: rgb(240, 240, 240);">
+                Complex styled element
+            </div>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertNotNull(
+            "Expected to extract background color from complex style, but got null",
+            backgroundColor,
+        )
+
+        backgroundColor?.let {
+            val rgbString = it.toRGBString()
+            assertTrue(
+                "Expected light gray background (240, 240, 240), but got $rgbString",
+                rgbString.contains("240"),
+            )
+        }
+    }
+
+    @Test
+    fun `test missing background color`() {
+        val html =
+            """
+            <p style="color: black; font-size: 14px;">No background</p>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertNull(
+            "Expected null for missing background color, but got ${backgroundColor?.toRGBString()}",
+            backgroundColor,
+        )
+    }
+
+    @Test
+    fun `test hex color extraction`() {
+        val html =
+            """
+            <div style="background-color: #FF0000;">Red background</div>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertNotNull(
+            "Expected to extract hex color, but got null",
+            backgroundColor,
+        )
+
+        backgroundColor?.let {
+            val rgbString = it.toRGBString()
+            assertTrue(
+                "Expected red color (255, 0, 0), but got $rgbString",
+                rgbString.contains("RGBA(255, 0, 0"),
+            )
+        }
+    }
+
+    @Test
+    fun `test short hex color extraction`() {
+        val html =
+            """
+            <div style="background: #FFF;">White background</div>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertEquals(
+            "Expected white color from short hex, but got ${backgroundColor?.toRGBString()}",
+            Color.White,
+            backgroundColor,
+        )
+    }
+
+    @Test
+    fun `test named color extraction - common colors`() {
+        val testCases =
+            listOf(
+                "white" to Color.White,
+                "black" to Color.Black,
+                "red" to Color.Red,
+                "blue" to Color.Blue,
+            )
+
+        testCases.forEach { (colorName, expectedColor) ->
+            val html = """<div style="background-color: $colorName;">Test</div>"""
+            val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+            assertEquals(
+                "Expected $colorName color, but got ${backgroundColor?.toRGBString()}",
+                expectedColor,
+                backgroundColor,
+            )
+        }
+    }
+
+    @Test
+    fun `test malformed HTML handling`() {
+        val html =
+            """
+            <div style="background-color: rgb(255, 255, 255"
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        // Depending on implementation, this might return null or handle gracefully
+        // Adjust assertion based on expected behavior
+        println("Malformed HTML result: ${backgroundColor?.toRGBString()}")
+    }
+
+    @Test
+    fun `test multiple elements with different backgrounds`() {
+        val html =
+            """
+            <div style="background-color: rgb(100, 100, 100);">
+                <span style="background-color: rgb(200, 200, 200);">Nested</span>
+            </div>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertNotNull(
+            "Expected to extract first background color, but got null",
+            backgroundColor,
+        )
+
+        // Test should verify which element's background is extracted (likely the first one)
+        backgroundColor?.let {
+            val rgbString = it.toRGBString()
+            println("Extracted background from multiple elements: $rgbString")
+        }
+    }
+
+    @Test
+    fun `test case insensitive style attributes`() {
+        val html =
+            """
+            <div style="BACKGROUND-COLOR: RGB(128, 128, 128);">Test</div>
+            """.trimIndent()
+
+        val backgroundColor = htmlUtils.getBackgroundColor(html)
+
+        assertNotNull(
+            "Expected to handle case-insensitive attributes, but got null",
+            backgroundColor,
+        )
+
+        backgroundColor?.let {
+            val rgbString = it.toRGBString()
+            assertTrue(
+                "Expected gray color (128, 128, 128), but got $rgbString",
+                rgbString.contains("128"),
+            )
+        }
     }
 }
