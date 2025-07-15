@@ -45,7 +45,7 @@ class DesktopIconColorExtractor(
                             extractColorFromBytes(bytes)
                         }.getOrNull()
 
-                    logger.info { "$source - ${color?.toHexString()}" }
+                    logger.debug { "$source - ${color?.toHexString()}" }
 
                     colorCache[source] = color
                     color
