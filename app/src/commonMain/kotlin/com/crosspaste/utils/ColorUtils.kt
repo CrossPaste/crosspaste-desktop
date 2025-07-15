@@ -2,6 +2,7 @@ package com.crosspaste.utils
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -375,5 +376,18 @@ object ColorUtils {
             red.toString(16).padStart(2, '0').uppercase() +
             green.toString(16).padStart(2, '0').uppercase() +
             blue.toString(16).padStart(2, '0').uppercase()
+    }
+
+    fun Color.toRGBString(): String {
+        val argb = this.toArgb()
+
+        val alpha = ((argb shr 24) and 0xFF) / 255.0f
+        val red = (argb shr 16) and 0xFF
+        val green = (argb shr 8) and 0xFF
+        val blue = argb and 0xFF
+
+        val alphaFormatted = "%.2f".format(alpha)
+
+        return "RGBA($red, $green, $blue, $alphaFormatted)"
     }
 }

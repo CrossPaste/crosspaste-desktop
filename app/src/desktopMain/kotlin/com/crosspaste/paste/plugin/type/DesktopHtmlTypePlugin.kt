@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.type
 
+import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
@@ -78,7 +79,7 @@ class DesktopHtmlTypePlugin(
                             pasteItem.extraInfo,
                             update = {
                                 background?.let {
-                                    put(BACKGROUND, background.value.toLong() ushr 32)
+                                    put(BACKGROUND, background.toArgb())
                                 }
                             },
                         ),
