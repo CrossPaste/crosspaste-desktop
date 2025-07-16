@@ -65,18 +65,15 @@ object WindowsTrayView {
         val appLaunch = koinInject<DesktopAppLaunch>()
         val appSize = koinInject<DesktopAppSize>()
         val appLaunchState = koinInject<AppLaunchState>()
-        val appUpdateService = koinInject<AppUpdateService>()
         val appWindowManager = koinInject<DesktopAppWindowManager>() as WinAppWindowManager
-        val copywriter = koinInject<GlobalCopywriter>()
-        val menuHelper = koinInject<MenuHelper>()
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
         val trayIcon = painterResource(Res.drawable.crosspaste)
 
         var showMenu by remember { mutableStateOf(false) }
 
-        val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
+        val menuWidth by appSize.menuWindowWidth.collectAsState()
         val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
         LaunchedEffect(Unit) {
@@ -87,28 +84,10 @@ object WindowsTrayView {
             }
         }
 
-        val menuTexts = menuHelper.menuItems.map { it.title(copywriter) }
-
-        val newWidth =
-            measureTextWidth(
-                "new!",
-                MaterialTheme.typography.bodySmall
-                    .copy(fontStyle = FontStyle.Italic),
-            )
-
-        val maxWidth =
-            getFontWidth(menuTexts, extendFunction = {
-                if (existNewVersion && it == 0) {
-                    medium + newWidth
-                } else {
-                    zero
-                }
-            })
-
         val menuWindowState =
             rememberWindowState(
                 placement = WindowPlacement.Floating,
-                size = DpSize(maxWidth, appSize.getMenuWindowHeigh()),
+                size = DpSize(menuWidth, appSize.getMenuWindowHeigh()),
             )
 
         CrossPasteTray(
@@ -183,9 +162,35 @@ object WindowsTrayView {
     @Composable
     fun WindowTrayMenu(hideMenu: () -> Unit) {
         val appSize = koinInject<DesktopAppSize>()
+        val appUpdateService = koinInject<AppUpdateService>()
+        val copywriter = koinInject<GlobalCopywriter>()
         val menuHelper = koinInject<MenuHelper>()
 
+        val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
+
         val applicationExit = LocalExitApplication.current
+
+        val menuTexts = menuHelper.menuItems.map { it.title(copywriter) }
+
+        val newWidth =
+            measureTextWidth(
+                "new!",
+                MaterialTheme.typography.bodySmall
+                    .copy(fontStyle = FontStyle.Italic),
+            )
+
+        val maxWidth =
+            getFontWidth(menuTexts, extendFunction = {
+                if (existNewVersion && it == 0) {
+                    medium + newWidth
+                } else {
+                    zero
+                }
+            })
+
+        LaunchedEffect(maxWidth) {
+            appSize.updateMenuWindowWidth(maxWidth)
+        }
 
         Theme {
             Box(
