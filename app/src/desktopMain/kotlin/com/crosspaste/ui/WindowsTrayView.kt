@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunch
@@ -84,11 +84,14 @@ object WindowsTrayView {
             }
         }
 
-        val menuWindowState =
-            rememberWindowState(
-                placement = WindowPlacement.Floating,
-                size = DpSize(menuWidth, appSize.getMenuWindowHeigh()),
+        val menuWindowState by remember(menuWidth) {
+            mutableStateOf(
+                WindowState(
+                    placement = WindowPlacement.Floating,
+                    size = DpSize(menuWidth, appSize.getMenuWindowHeigh()),
+                ),
             )
+        }
 
         CrossPasteTray(
             icon = trayIcon,
@@ -183,14 +186,14 @@ object WindowsTrayView {
 
         val maxWidth =
             getFontWidth(menuTexts, extendFunction = {
-                if (existNewVersion && it == 0) {
+                if (existNewVersion && it == 4) {
                     medium + newWidth
                 } else {
                     zero
                 }
             })
 
-        LaunchedEffect(maxWidth) {
+        LaunchedEffect(maxWidth, copywriter.language()) {
             appSize.updateMenuWindowWidth(maxWidth)
         }
 
