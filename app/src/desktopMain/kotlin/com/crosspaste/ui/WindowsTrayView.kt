@@ -170,7 +170,9 @@ object WindowsTrayView {
 
         val applicationExit = LocalExitApplication.current
 
-        val menuTexts = menuHelper.menuItems.map { it.title(copywriter) }
+        val menuTexts by remember(copywriter.language()) {
+            mutableStateOf(menuHelper.menuItems.map { it.title(copywriter) })
+        }
 
         val newWidth =
             measureTextWidth(
