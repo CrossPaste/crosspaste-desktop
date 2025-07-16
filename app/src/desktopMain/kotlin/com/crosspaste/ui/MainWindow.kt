@@ -10,19 +10,23 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.listener.GlobalListener
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.ui.theme.ThemeDetector
 import org.jetbrains.jewel.foundation.theme.JewelTheme
@@ -47,11 +51,14 @@ fun MainWindow(windowIcon: Painter?) {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val globalListener = koinInject<GlobalListener>()
+    val platform = koinInject<Platform>()
     val themeDetector = koinInject<ThemeDetector>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
 
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+
+    val isMac by remember { mutableStateOf(platform.isMacos()) }
 
     val mainWindowState =
         rememberWindowState(
@@ -128,7 +135,7 @@ fun MainWindow(windowIcon: Painter?) {
                             Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
-                                .padding(horizontal = 60.dp),
+                                .padding(horizontal = if (isMac) huge else small3X),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.End,
                     ) {
