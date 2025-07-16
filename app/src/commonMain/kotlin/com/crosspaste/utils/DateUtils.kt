@@ -1,21 +1,23 @@
 package com.crosspaste.utils
 
 import com.crosspaste.ui.base.RelativeTime
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 fun getDateUtils(): DateUtils = DateUtils
 
+@OptIn(ExperimentalTime::class)
 object DateUtils {
 
     val TIME_ZONE: TimeZone = TimeZone.currentSystemDefault()

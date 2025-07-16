@@ -25,6 +25,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlin.time.ExperimentalTime
 
 class PasteDao(
     private val appControl: AppControl,
@@ -179,6 +180,7 @@ class PasteDao(
             }
     }
 
+    @OptIn(ExperimentalTime::class)
     private fun markDeleteSameHash(
         newPasteDataId: Long,
         newPasteDataType: Int,

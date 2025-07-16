@@ -16,6 +16,7 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.time.ExperimentalTime
 
 class CleanPasteTaskExecutor(
     private val pasteDao: PasteDao,
@@ -30,6 +31,7 @@ class CleanPasteTaskExecutor(
 
     private val cleanLock = Mutex()
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val config = configManager.getCurrentConfig()
         if (config.enableThresholdCleanup) {

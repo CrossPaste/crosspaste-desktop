@@ -11,6 +11,7 @@ import com.crosspaste.utils.TaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.ExperimentalTime
 
 class CleanTaskTaskExecutor(
     private val taskDao: TaskDao,
@@ -20,6 +21,7 @@ class CleanTaskTaskExecutor(
 
     override val taskType: Int = CLEAN_TASK_TASK
 
+    @OptIn(ExperimentalTime::class)
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult =
         runCatching {
             val twelveHours = 12.hours
