@@ -2,6 +2,7 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.reload.gradle.ComposeHotRun
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
@@ -23,6 +24,7 @@ version = versionProperties.getProperty("version")
 
 plugins {
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.compose.hot.reload)
     alias(libs.plugins.conveyor)
     alias(libs.plugins.download)
     alias(libs.plugins.jetbrainsCompose)
@@ -197,6 +199,52 @@ tasks.named("desktopProcessResources") {
     dependsOn("copyDevProperties")
 }
 
+private fun initJvmArgs(
+    jvmArgs: (Array<String>) -> Unit,
+    buildFullPlatform: Boolean = false,
+) {
+    // Add system properties that need to be set for all platforms
+    val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
+    val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
+    val globalListener = project.findProperty("globalListener")?.toString() ?: "true"
+    jvmArgs(
+        arrayOf(
+            "-DloggerLevel=$loggerLevel",
+            "-DappEnv=$appEnv",
+            "-Djava.net.preferIPv4Stack=true",
+            "-Djava.net.preferIPv6Addresses=false",
+            "-DglobalListener=$globalListener",
+            "-Dio.netty.maxDirectMemory=268435456",
+            "-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin",
+        ),
+    )
+
+    // Open modules required for all platforms
+    jvmArgs(arrayOf("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED"))
+    jvmArgs(arrayOf("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED"))
+
+    val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
+
+    if (os.isMacOsX || buildFullPlatform) {
+        jvmArgs(arrayOf("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED"))
+        jvmArgs(arrayOf("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED"))
+        jvmArgs(
+            arrayOf(
+                "-Dapple.awt.enableTemplateImages=true",
+                "-Dmac.bundleID=com.crosspaste.mac",
+            ),
+        )
+    }
+
+    if (os.isLinux || buildFullPlatform) {
+        jvmArgs(arrayOf("-Dlinux.force.trayType=AppIndicator"))
+    }
+}
+
+tasks.withType<ComposeHotRun>().configureEach {
+    initJvmArgs(this::jvmArgs)
+}
+
 compose.desktop {
 
     val buildFullPlatform: Boolean = System.getenv("BUILD_FULL_PLATFORM")?.lowercase() == "true"
@@ -293,24 +341,15 @@ compose.desktop {
             // includeAllModules = true
             modules("jdk.charsets", "java.net.http")
 
-            // Open modules required for all platforms
-            jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
-            jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
-
-            // Add system properties that need to be set for all platforms
-            val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
             val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
-            val globalListener = project.findProperty("globalListener")?.toString() ?: "true"
 
-            jvmArgs("-DloggerLevel=$loggerLevel")
-            jvmArgs("-DappEnv=$appEnv")
-            jvmArgs("-Djava.net.preferIPv4Stack=true")
-            jvmArgs("-Djava.net.preferIPv6Addresses=false")
-            jvmArgs("-DglobalListener=$globalListener")
-            jvmArgs("-Dio.netty.maxDirectMemory=268435456")
-            jvmArgs(
-                "-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin",
-            )
+            val jvmArgsLambda: (Array<String>) -> Unit = { args ->
+                args.forEach {
+                    jvmArgs(it)
+                }
+            }
+
+            initJvmArgs(jvmArgsLambda, buildFullPlatform)
 
             if (appEnv != "DEVELOPMENT") {
                 tasks.withType<Jar> {
@@ -347,11 +386,6 @@ compose.desktop {
                         <string>10.15.0</string>
                     """
                     }
-
-                    jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
-                    jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
-                    jvmArgs("-Dapple.awt.enableTemplateImages=true")
-                    jvmArgs("-Dmac.bundleID=$bundleID")
 
                     val process = Runtime.getRuntime().exec(arrayOf("uname", "-m"))
                     val result =
@@ -397,7 +431,6 @@ compose.desktop {
             }
 
             if (os.isLinux || buildFullPlatform) {
-                jvmArgs("-Dlinux.force.trayType=AppIndicator")
                 linux {
                     targetFormats(TargetFormat.Deb)
 
