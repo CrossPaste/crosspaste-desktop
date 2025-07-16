@@ -1,17 +1,27 @@
 package com.crosspaste.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.listener.GlobalListener
+import com.crosspaste.ui.base.PasteTooltipIconView
+import com.crosspaste.ui.base.pushpinActive
+import com.crosspaste.ui.base.pushpinInactive
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.ui.theme.ThemeDetector
@@ -38,6 +48,8 @@ fun MainWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val globalListener = koinInject<GlobalListener>()
     val themeDetector = koinInject<ThemeDetector>()
+
+    val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
 
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
@@ -97,7 +109,7 @@ fun MainWindow(windowIcon: Painter?) {
                 state = mainWindowState,
                 title = appWindowManager.mainWindowTitle,
                 icon = windowIcon,
-                alwaysOnTop = false,
+                alwaysOnTop = alwaysOnTop,
                 resizable = false,
             ) {
                 DisposableEffect(window) {
@@ -110,7 +122,26 @@ fun MainWindow(windowIcon: Painter?) {
                     }
                 }
 
-                TitleBar {}
+                TitleBar {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                                .padding(horizontal = 60.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        PasteTooltipIconView(
+                            painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
+                            text = "CrossPaste",
+                            contentDescription = "alwaysOnTop",
+                            onClick = {
+                                appWindowManager.switchAlwaysOnTopMainWindow()
+                            },
+                        )
+                    }
+                }
 
                 CrossPasteMainWindowContent()
             }
