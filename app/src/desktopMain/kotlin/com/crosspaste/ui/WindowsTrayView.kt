@@ -84,10 +84,13 @@ object WindowsTrayView {
             }
         }
 
-        val menuWindowState by remember(menuWidth) {
+        var position by remember { mutableStateOf<WindowPosition>(WindowPosition.PlatformDefault) }
+
+        val menuWindowState by remember(menuWidth, position) {
             mutableStateOf(
                 WindowState(
                     placement = WindowPlacement.Floating,
+                    position = position,
                     size = DpSize(menuWidth, appSize.getMenuWindowHeigh()),
                 ),
             )
@@ -112,7 +115,7 @@ object WindowsTrayView {
                         showMenu = true
                         val bounds = gd.defaultConfiguration.bounds
                         val density: Float = gd.displayMode.width.toFloat() / bounds.width
-                        menuWindowState.position =
+                        position =
                             WindowPosition(
                                 x = ((event.x / density) - insets.left).dp - appSize.menuWindowXOffset,
                                 y =
