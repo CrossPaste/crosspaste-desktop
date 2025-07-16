@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,15 +24,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.crosspaste.app.AppControl
+import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
+import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.lightSideBarColors
+import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.ui.theme.ThemeDetector
@@ -65,8 +74,10 @@ fun SidePasteLayoutView(
 
 @Composable
 fun SidePasteTitleView(pasteData: PasteData) {
+    val appControl = koinInject<AppControl>()
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
+    val pasteDao = koinInject<PasteDao>()
     val themeDetector = koinInject<ThemeDetector>()
 
     val isCurrentThemeDark = themeDetector.isCurrentThemeDark()
@@ -79,6 +90,10 @@ fun SidePasteTitleView(pasteData: PasteData) {
                 lightSideBarColors.getColor(type)
             },
         )
+    }
+
+    var favorite by remember(pasteData.id) {
+        mutableStateOf(pasteData.favorite)
     }
 
     val onBackground by remember(background) {
@@ -122,13 +137,31 @@ fun SidePasteTitleView(pasteData: PasteData) {
                     .wrapContentWidth(),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = copywriter.getText(pasteData.getTypeText()),
-                style =
-                    DesktopAppUIFont.sidePasteTitleTextStyle.copy(
-                        color = onBackground,
-                    ),
-            )
+            Row(
+                modifier = Modifier.wrapContentSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                Text(
+                    text = copywriter.getText(pasteData.getTypeText()),
+                    style =
+                        DesktopAppUIFont.sidePasteTitleTextStyle.copy(
+                            color = onBackground,
+                        ),
+                )
+                Spacer(Modifier.width(tiny4X))
+                PasteTooltipIconView(
+                    painter = if (favorite) favorite() else noFavorite(),
+                    contentDescription = "Favorite",
+                    tint = MaterialTheme.colorScheme.primary,
+                    text = copywriter.getText(if (favorite) "remove_from_favorites" else "favorite"),
+                ) {
+                    if (appControl.isFavoriteEnabled()) {
+                        pasteDao.setFavorite(pasteData.id, !favorite)
+                        favorite = !favorite
+                    }
+                }
+            }
             Text(
                 text = copywriter.getText(relativeTime.unit, relativeTime.value?.toString() ?: ""),
                 style =
