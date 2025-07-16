@@ -11,6 +11,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.MenuHelper
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -30,6 +31,7 @@ import java.awt.Rectangle
 class DesktopAppSize(
     private val configManager: DesktopConfigManager,
     private val lazyMenuHelper: Lazy<MenuHelper>,
+    private val platform: Platform,
 ) : AppSize,
     NativeMouseListener,
     ActiveGraphicsDevice {
@@ -168,4 +170,13 @@ class DesktopAppSize(
             )
         }
     }
+
+    fun getPinPushEndPadding(): Dp =
+        if (platform.isMacos()) {
+            huge
+        } else if (platform.isWindows()) {
+            80.dp
+        } else {
+            small3X
+        }
 }

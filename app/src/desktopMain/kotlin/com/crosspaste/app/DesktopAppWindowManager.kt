@@ -79,6 +79,9 @@ abstract class DesktopAppWindowManager(
     private val _showMainWindow = MutableStateFlow(false)
     val showMainWindow: StateFlow<Boolean> = _showMainWindow
 
+    private val _alwaysOnTopMainWindow = MutableStateFlow(false)
+    val alwaysOnTopMainWindow: StateFlow<Boolean> = _alwaysOnTopMainWindow
+
     var mainComposeWindow: ComposeWindow? = null
 
     private val _showMainDialog = MutableStateFlow(false)
@@ -109,6 +112,10 @@ abstract class DesktopAppWindowManager(
 
     fun showSearchWindow() {
         _showSearchWindow.value = true
+    }
+
+    fun switchAlwaysOnTopMainWindow() {
+        _alwaysOnTopMainWindow.value = !_alwaysOnTopMainWindow.value
     }
 
     fun setSearchWindowState(windowState: WindowState) {

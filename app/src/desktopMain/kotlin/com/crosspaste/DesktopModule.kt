@@ -499,7 +499,7 @@ class DesktopModule(
             single<AppSize> { get<DesktopAppSize>() }
             single<AppTokenApi> { DesktopAppTokenService(get()) }
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
-            single<DesktopAppSize> { DesktopAppSize(get(), lazy { get() }) }
+            single<DesktopAppSize> { DesktopAppSize(get(), lazy { get() }, get()) }
             single<DesktopAppWindowManager> {
                 getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
