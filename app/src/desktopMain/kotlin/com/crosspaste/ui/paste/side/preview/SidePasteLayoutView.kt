@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -153,7 +152,7 @@ fun SidePasteTitleView(pasteData: PasteData) {
                 PasteTooltipIconView(
                     painter = if (favorite) favorite() else noFavorite(),
                     contentDescription = "Favorite",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = onBackground,
                     text = copywriter.getText(if (favorite) "remove_from_favorites" else "favorite"),
                 ) {
                     if (appControl.isFavoriteEnabled()) {
