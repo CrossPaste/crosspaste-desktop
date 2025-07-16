@@ -40,7 +40,7 @@ class AppWindowManagerTest {
         val mockMenuHelper = mockk<MenuHelper> {}
 
         val mockDesktopAppSize =
-            spyk(DesktopAppSize(desktopConfigManager, lazy { mockMenuHelper })) {
+            spyk(DesktopAppSize(desktopConfigManager, lazy { mockMenuHelper }, platform)) {
                 every { getSearchWindowState() } returns WindowState()
             }
 
