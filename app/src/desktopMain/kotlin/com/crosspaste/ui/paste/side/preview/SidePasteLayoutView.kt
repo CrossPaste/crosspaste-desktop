@@ -153,6 +153,7 @@ fun SidePasteTitleView(pasteData: PasteData) {
                     painter = if (favorite) favorite() else noFavorite(),
                     contentDescription = "Favorite",
                     tint = onBackground,
+                    hover = background.copy(alpha = 0.3f),
                     text = copywriter.getText(if (favorite) "remove_from_favorites" else "favorite"),
                 ) {
                     if (appControl.isFavoriteEnabled()) {
