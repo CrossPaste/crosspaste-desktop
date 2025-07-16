@@ -126,9 +126,10 @@ class DesktopAppSize(
             )
         }
 
-    fun getMenuWindowDpSize(): DpSize {
-        val menuItemNum = lazyMenuHelper.value.menuItems.size + 1
-        return DpSize(150.dp, menuItemNum * 30.dp + DividerDefaults.Thickness)
+    fun getMenuWindowHeigh(): Dp {
+        val menuHelper = lazyMenuHelper.value
+        val menuItemNum = menuHelper.menuItems.size + 1
+        return menuItemNum * 30.dp + DividerDefaults.Thickness
     }
 
     override fun nativeMousePressed(nativeEvent: NativeMouseEvent) {

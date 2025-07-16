@@ -3,6 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -14,23 +15,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -57,21 +65,19 @@ object WindowsTrayView {
         val appLaunch = koinInject<DesktopAppLaunch>()
         val appSize = koinInject<DesktopAppSize>()
         val appLaunchState = koinInject<AppLaunchState>()
+        val appUpdateService = koinInject<AppUpdateService>()
         val appWindowManager = koinInject<DesktopAppWindowManager>() as WinAppWindowManager
+        val copywriter = koinInject<GlobalCopywriter>()
+        val menuHelper = koinInject<MenuHelper>()
         val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
         val trayIcon = painterResource(Res.drawable.crosspaste)
 
         var showMenu by remember { mutableStateOf(false) }
 
+        val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
         val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
-
-        val menuWindowState =
-            rememberWindowState(
-                placement = WindowPlacement.Floating,
-                size = appSize.getMenuWindowDpSize(),
-            )
 
         LaunchedEffect(Unit) {
             delay(1000)
@@ -80,6 +86,30 @@ object WindowsTrayView {
                 appLaunch.setFirstLaunchCompleted(true)
             }
         }
+
+        val menuTexts = menuHelper.menuItems.map { it.title(copywriter) }
+
+        val newWidth =
+            measureTextWidth(
+                "new!",
+                MaterialTheme.typography.bodySmall
+                    .copy(fontStyle = FontStyle.Italic),
+            )
+
+        val maxWidth =
+            getFontWidth(menuTexts, extendFunction = {
+                if (existNewVersion && it == 0) {
+                    medium + newWidth
+                } else {
+                    zero
+                }
+            })
+
+        val menuWindowState =
+            rememberWindowState(
+                placement = WindowPlacement.Floating,
+                size = DpSize(maxWidth, appSize.getMenuWindowHeigh()),
+            )
 
         CrossPasteTray(
             icon = trayIcon,
@@ -105,7 +135,7 @@ object WindowsTrayView {
                                 x = ((event.x / density) - insets.left).dp - appSize.menuWindowXOffset,
                                 y =
                                     (bounds.height - insets.bottom).dp -
-                                        appSize.getMenuWindowDpSize().height - medium,
+                                        appSize.getMenuWindowHeigh() - medium,
                             )
                     }
                 },
