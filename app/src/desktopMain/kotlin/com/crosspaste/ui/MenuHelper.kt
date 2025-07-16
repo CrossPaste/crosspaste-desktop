@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
@@ -15,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontStyle
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -24,13 +24,9 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUIFont.getFontWidth
-import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
@@ -212,24 +208,6 @@ class MenuHelper(
     ) {
         val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
-        val menuTexts = menuItems.map { it.title(copywriter) }
-
-        val newWidth =
-            measureTextWidth(
-                "new!",
-                MaterialTheme.typography.bodySmall
-                    .copy(fontStyle = FontStyle.Italic),
-            )
-
-        val maxWidth =
-            getFontWidth(menuTexts, extendFunction = {
-                if (existNewVersion && it == 0) {
-                    medium + newWidth
-                } else {
-                    zero
-                }
-            })
-
         Box(
             modifier =
                 Modifier
@@ -239,7 +217,7 @@ class MenuHelper(
             Column(
                 modifier =
                     Modifier
-                        .width(maxWidth)
+                        .fillMaxWidth()
                         .wrapContentHeight()
                         .clip(tiny2XRoundedCornerShape)
                         .background(MaterialTheme.colorScheme.surfaceBright),

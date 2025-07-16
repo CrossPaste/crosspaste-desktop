@@ -23,6 +23,8 @@ import com.crosspaste.utils.Memoize
 import com.crosspaste.utils.contains
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Point
@@ -126,9 +128,17 @@ class DesktopAppSize(
             )
         }
 
-    fun getMenuWindowDpSize(): DpSize {
-        val menuItemNum = lazyMenuHelper.value.menuItems.size + 1
-        return DpSize(150.dp, menuItemNum * 30.dp + DividerDefaults.Thickness)
+    private val _menuWindowWidth: MutableStateFlow<Dp> = MutableStateFlow(150.dp)
+    val menuWindowWidth: StateFlow<Dp> = _menuWindowWidth
+
+    fun getMenuWindowHeigh(): Dp {
+        val menuHelper = lazyMenuHelper.value
+        val menuItemNum = menuHelper.menuItems.size + 1
+        return menuItemNum * 30.dp + DividerDefaults.Thickness
+    }
+
+    fun updateMenuWindowWidth(menuWindowWidth: Dp) {
+        _menuWindowWidth.value = menuWindowWidth
     }
 
     override fun nativeMousePressed(nativeEvent: NativeMouseEvent) {
