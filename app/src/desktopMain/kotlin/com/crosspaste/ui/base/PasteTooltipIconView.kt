@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,9 +30,9 @@ import com.crosspaste.ui.theme.AppUISize.xxLarge
 @Composable
 fun PasteTooltipIconView(
     painter: Painter,
-    background: Color = MaterialTheme.colorScheme.surface,
     hover: Color = MaterialTheme.colorScheme.primaryContainer,
-    tint: Color? = null,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    onHover: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     text: String,
     contentDescription: String = "",
     onClick: () -> Unit,
@@ -87,9 +86,9 @@ fun PasteTooltipIconView(
                 modifier = Modifier.size(large2X),
                 tint =
                     if (hoverIcon) {
-                        MaterialTheme.colorScheme.contentColorFor(hover)
+                        onHover
                     } else {
-                        tint ?: MaterialTheme.colorScheme.contentColorFor(background)
+                        tint
                     },
             )
         }
