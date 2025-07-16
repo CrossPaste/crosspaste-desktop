@@ -9,7 +9,9 @@ conveyor-control = "1.1"
 cryptography = "0.5.0"
 download = "5.6.0"
 filekit = "0.10.0-beta04"
+foojay-resolver = "1.0.0"
 guava = "33.4.8-jre"
+hot-reload = "1.0.0-beta03"
 icu4j = "77.1"
 imageio = "3.12.0"
 intellij-kotlinx-coroutines = "1.10.1-intellij-5"
@@ -114,8 +116,10 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 [plugins]
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+compose-hot-reload = { id = "org.jetbrains.compose.hot-reload", version.ref = "hot-reload" }
 conveyor = { id = "dev.hydraulic.conveyor", version.ref = "conveyor" }
 download = { id = "de.undercouch.download", version.ref = "download" }
+foojay-resolver-convention = { id = "org.gradle.foojay-resolver-convention", version.ref = "foojay-resolver" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
