@@ -20,13 +20,10 @@ import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.listener.GlobalListener
-import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUISize.huge
-import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.ui.theme.ThemeDetector
 import org.jetbrains.jewel.foundation.theme.JewelTheme
@@ -51,14 +48,15 @@ fun MainWindow(windowIcon: Painter?) {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val globalListener = koinInject<GlobalListener>()
-    val platform = koinInject<Platform>()
     val themeDetector = koinInject<ThemeDetector>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
 
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
-    val isMac by remember { mutableStateOf(platform.isMacos()) }
+    val pushpinPadding by remember {
+        mutableStateOf(appSize.getPinPushEndPadding())
+    }
 
     val mainWindowState =
         rememberWindowState(
@@ -135,7 +133,7 @@ fun MainWindow(windowIcon: Painter?) {
                             Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
-                                .padding(horizontal = if (isMac) huge else small3X),
+                                .padding(horizontal = pushpinPadding),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.End,
                     ) {
