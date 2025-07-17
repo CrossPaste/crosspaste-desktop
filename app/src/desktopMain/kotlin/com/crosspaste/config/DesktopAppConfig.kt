@@ -42,7 +42,7 @@ data class DesktopAppConfig(
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = true,
-    val searchWindowStyle: String = DesktopSearchWindowStyle.CENTER_STYLE.style,
+    val searchWindowStyle: String = DesktopSearchWindowStyle.SIDE_STYLE.style,
 ) : AppConfig {
     override fun copy(
         key: String,
