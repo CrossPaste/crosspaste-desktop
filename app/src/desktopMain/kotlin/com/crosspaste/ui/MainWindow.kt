@@ -15,8 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.listener.GlobalListener
@@ -51,18 +49,12 @@ fun MainWindow(windowIcon: Painter?) {
     val themeDetector = koinInject<ThemeDetector>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
-
+    val mainWindowState by appWindowManager.mainWindowState.collectAsState()
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
     val pushpinPadding by remember {
         mutableStateOf(appSize.getPinPushEndPadding())
     }
-
-    val mainWindowState =
-        rememberWindowState(
-            size = appSize.mainWindowSize,
-            position = WindowPosition(Alignment.Center),
-        )
 
     // Initialize global listener only once
     LaunchedEffect(Unit) {
