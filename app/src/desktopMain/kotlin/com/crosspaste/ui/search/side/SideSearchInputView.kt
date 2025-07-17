@@ -1,6 +1,5 @@
 package com.crosspaste.ui.search.side
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -44,24 +43,21 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
-import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.TutorialButton
-import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestSearchInputFocus
+import com.crosspaste.ui.search.QuickPasteView
 import com.crosspaste.ui.search.SearchTrailingIcon
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -134,21 +130,7 @@ fun SideSearchInputView() {
                         ),
                 )
                 Spacer(modifier = Modifier.width(tiny))
-                Row(
-                    modifier =
-                        Modifier.clickable {
-                            mainCoroutineDispatcher.launch {
-                                pasteSelectionViewModel.toPaste()
-                            }
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    KeyboardView(keyboardValue = enter)
-                    Spacer(modifier = Modifier.width(tiny))
-                    Text("/")
-                    Spacer(modifier = Modifier.width(tiny))
-                    KeyboardView(keyboardValue = copywriter.getText("double_click"))
-                }
+                QuickPasteView()
             }
         }
 
