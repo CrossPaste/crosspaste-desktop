@@ -1,6 +1,8 @@
 package com.crosspaste.app
 
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
@@ -79,9 +81,6 @@ abstract class DesktopAppWindowManager(
     private val _showMainWindow = MutableStateFlow(false)
     val showMainWindow: StateFlow<Boolean> = _showMainWindow
 
-    private val _isMinimizedMainWindow = MutableStateFlow(false)
-    val isMinimizedMainWindow: StateFlow<Boolean> = _isMinimizedMainWindow
-
     private val _alwaysOnTopMainWindow = MutableStateFlow(false)
     val alwaysOnTopMainWindow: StateFlow<Boolean> = _alwaysOnTopMainWindow
 
@@ -92,6 +91,16 @@ abstract class DesktopAppWindowManager(
 
     private val _showSearchWindow = MutableStateFlow(false)
     var showSearchWindow: StateFlow<Boolean> = _showSearchWindow
+
+    private val _mainWindowState =
+        MutableStateFlow(
+            WindowState(
+                isMinimized = false,
+                size = appSize.mainWindowSize,
+                position = WindowPosition(Alignment.Center),
+            ),
+        )
+    val mainWindowState: StateFlow<WindowState> = _mainWindowState
 
     private val _searchWindowState =
         MutableStateFlow(
@@ -106,7 +115,12 @@ abstract class DesktopAppWindowManager(
     }
 
     fun showMainWindow() {
-        _isMinimizedMainWindow.value = false
+        _mainWindowState.value =
+            WindowState(
+                isMinimized = false,
+                size = appSize.mainWindowSize,
+                position = _mainWindowState.value.position,
+            )
         _showMainWindow.value = true
     }
 

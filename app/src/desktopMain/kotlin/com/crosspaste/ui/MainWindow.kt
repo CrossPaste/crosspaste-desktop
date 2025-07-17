@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -15,8 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.listener.GlobalListener
@@ -51,19 +50,12 @@ fun MainWindow(windowIcon: Painter?) {
     val themeDetector = koinInject<ThemeDetector>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
-    val isMinimized by appWindowManager.isMinimizedMainWindow.collectAsState()
+    val mainWindowState by appWindowManager.mainWindowState.collectAsState()
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
     val pushpinPadding by remember {
         mutableStateOf(appSize.getPinPushEndPadding())
     }
-
-    val mainWindowState =
-        rememberWindowState(
-            isMinimized = isMinimized,
-            size = appSize.mainWindowSize,
-            position = WindowPosition(Alignment.Center),
-        )
 
     // Initialize global listener only once
     LaunchedEffect(Unit) {
@@ -129,23 +121,25 @@ fun MainWindow(windowIcon: Painter?) {
                 }
 
                 TitleBar {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                                .padding(horizontal = pushpinPadding),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        PasteTooltipIconView(
-                            painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
-                            text = "CrossPaste",
-                            contentDescription = "alwaysOnTop",
-                            onClick = {
-                                appWindowManager.switchAlwaysOnTopMainWindow()
-                            },
-                        )
+                    WindowDraggableArea {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .padding(horizontal = pushpinPadding),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End,
+                        ) {
+                            PasteTooltipIconView(
+                                painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
+                                text = "CrossPaste",
+                                contentDescription = "alwaysOnTop",
+                                onClick = {
+                                    appWindowManager.switchAlwaysOnTopMainWindow()
+                                },
+                            )
+                        }
                     }
                 }
 
