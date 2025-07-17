@@ -13,7 +13,7 @@ interface TransferableConsumer {
         pasteTransferable: PasteTransferable,
         source: String?,
         remote: Boolean,
-    )
+    ): Result<Unit>
 
     fun getPlugin(identity: String): PasteTypePlugin?
 
