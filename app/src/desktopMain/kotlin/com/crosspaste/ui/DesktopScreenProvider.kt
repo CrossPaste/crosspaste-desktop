@@ -202,4 +202,9 @@ class DesktopScreenProvider(
                     ),
         )
     }
+
+    @Composable
+    fun DragTargetView() {
+        DragTargetContentView()
+    }
 }

@@ -504,6 +504,7 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceViewProvider> { DesktopDeviceViewProvider() }
             single<DialogService> { DialogService }
@@ -519,7 +520,7 @@ class DesktopModule(
             single<PasteDialogFactory> { DesktopPasteDialogFactory() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
-            single<ScreenProvider> { DesktopScreenProvider(get(), get()) }
+            single<ScreenProvider> { get<DesktopScreenProvider>() }
             single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get(), get(), get()) }
             single<ShortcutKeysAction> {

@@ -32,7 +32,7 @@ import org.koin.compose.koinInject
 fun CrossPasteMainWindowContent() {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val screenProvider = koinInject<ScreenProvider>()
+    val screenProvider = koinInject<DesktopScreenProvider>()
 
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
@@ -113,5 +113,7 @@ fun CrossPasteMainWindowContent() {
         screenProvider.ToastView()
 
         screenProvider.TokenView()
+
+        screenProvider.DragTargetView()
     }
 }
