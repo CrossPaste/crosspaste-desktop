@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -120,23 +121,25 @@ fun MainWindow(windowIcon: Painter?) {
                 }
 
                 TitleBar {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                                .padding(horizontal = pushpinPadding),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        PasteTooltipIconView(
-                            painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
-                            text = "CrossPaste",
-                            contentDescription = "alwaysOnTop",
-                            onClick = {
-                                appWindowManager.switchAlwaysOnTopMainWindow()
-                            },
-                        )
+                    WindowDraggableArea {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                                    .padding(horizontal = pushpinPadding),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End,
+                        ) {
+                            PasteTooltipIconView(
+                                painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
+                                text = "CrossPaste",
+                                contentDescription = "alwaysOnTop",
+                                onClick = {
+                                    appWindowManager.switchAlwaysOnTopMainWindow()
+                                },
+                            )
+                        }
                     }
                 }
 
