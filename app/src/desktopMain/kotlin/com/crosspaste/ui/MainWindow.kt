@@ -51,7 +51,7 @@ fun MainWindow(windowIcon: Painter?) {
     val themeDetector = koinInject<ThemeDetector>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
-
+    val isMinimized by appWindowManager.isMinimizedMainWindow.collectAsState()
     val showMainWindow by appWindowManager.showMainWindow.collectAsState()
 
     val pushpinPadding by remember {
@@ -60,6 +60,7 @@ fun MainWindow(windowIcon: Painter?) {
 
     val mainWindowState =
         rememberWindowState(
+            isMinimized = isMinimized,
             size = appSize.mainWindowSize,
             position = WindowPosition(Alignment.Center),
         )

@@ -79,6 +79,9 @@ abstract class DesktopAppWindowManager(
     private val _showMainWindow = MutableStateFlow(false)
     val showMainWindow: StateFlow<Boolean> = _showMainWindow
 
+    private val _isMinimizedMainWindow = MutableStateFlow(false)
+    val isMinimizedMainWindow: StateFlow<Boolean> = _isMinimizedMainWindow
+
     private val _alwaysOnTopMainWindow = MutableStateFlow(false)
     val alwaysOnTopMainWindow: StateFlow<Boolean> = _alwaysOnTopMainWindow
 
@@ -103,6 +106,7 @@ abstract class DesktopAppWindowManager(
     }
 
     fun showMainWindow() {
+        _isMinimizedMainWindow.value = false
         _showMainWindow.value = true
     }
 
