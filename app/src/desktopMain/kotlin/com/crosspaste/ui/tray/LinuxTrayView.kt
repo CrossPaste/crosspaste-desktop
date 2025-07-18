@@ -1,4 +1,4 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.tray
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -13,6 +13,8 @@ import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.base.MenuHelper
 import dorkbox.systemTray.SystemTray
 import dorkbox.systemTray.SystemTray.TrayType
 import io.github.oshai.kotlinlogging.KotlinLogging

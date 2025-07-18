@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.application
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileType
@@ -15,12 +14,8 @@ import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppName
 import com.crosspaste.app.AppStartUpService
 import com.crosspaste.app.AppUpdateService
-import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
-import com.crosspaste.app.generated.resources.Res
-import com.crosspaste.app.generated.resources.crosspaste
-import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
@@ -36,19 +31,15 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.DesktopPlatformProvider
-import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.CrossPasteWindows
-import com.crosspaste.ui.GrantAccessibilityPermissionsWindow
-import com.crosspaste.ui.LinuxTrayView
 import com.crosspaste.ui.LocalExitApplication
-import com.crosspaste.ui.MacTrayView
-import com.crosspaste.ui.WindowsTrayView
 import com.crosspaste.ui.base.PasteContextMenuRepresentation
+import com.crosspaste.ui.theme.DesktopTheme
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
@@ -60,7 +51,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
@@ -239,15 +230,8 @@ class CrossPaste {
             startApplication()
             logger.info { "CrossPaste started" }
 
-            val appLaunchState = koinApplication.koin.get<DesktopAppLaunchState>()
-            val appWindowManager = koinApplication.koin.get<DesktopAppWindowManager>()
-            val platform = koinApplication.koin.get<Platform>()
-
-            val isMacos = platform.isMacos()
-            val isWindows = platform.isWindows()
-            val isLinux = platform.isLinux()
-
             application {
+                val appWindowManager = koinInject<DesktopAppWindowManager>()
                 var exiting by remember { mutableStateOf(false) }
 
                 val exitApplication: (ExitMode) -> Unit = { mode ->
@@ -267,29 +251,8 @@ class CrossPaste {
                     LocalExitApplication provides exitApplication,
                     LocalContextMenuRepresentation provides contextMenuRepresentation,
                 ) {
-                    val windowIcon: Painter? =
-                        if (isMacos) {
-                            painterResource(Res.drawable.crosspaste_mac)
-                        } else if (isWindows || isLinux) {
-                            painterResource(Res.drawable.crosspaste)
-                        } else {
-                            null
-                        }
-
-                    if (appLaunchState.accessibilityPermissions) {
-                        if (!exiting) {
-                            if (isMacos) {
-                                MacTrayView.Tray()
-                            } else if (isWindows) {
-                                WindowsTrayView.Tray()
-                            } else if (isLinux) {
-                                LinuxTrayView.Tray()
-                            }
-                        }
-
-                        CrossPasteWindows(windowIcon)
-                    } else {
-                        GrantAccessibilityPermissionsWindow(windowIcon)
+                    DesktopTheme {
+                        CrossPasteWindows(exiting)
                     }
                 }
             }

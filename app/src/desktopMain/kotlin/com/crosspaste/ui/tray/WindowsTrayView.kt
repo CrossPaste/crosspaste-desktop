@@ -1,4 +1,4 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.tray
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -32,7 +32,9 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth

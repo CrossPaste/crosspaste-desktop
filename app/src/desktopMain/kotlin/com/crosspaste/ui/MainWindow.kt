@@ -22,24 +22,8 @@ import com.crosspaste.listener.GlobalListener
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
-import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.CrossPasteTheme.Theme
-import com.crosspaste.ui.theme.ThemeDetector
-import org.jetbrains.jewel.foundation.theme.JewelTheme
-import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
-import org.jetbrains.jewel.intui.standalone.theme.darkThemeDefinition
-import org.jetbrains.jewel.intui.standalone.theme.default
-import org.jetbrains.jewel.intui.standalone.theme.lightThemeDefinition
-import org.jetbrains.jewel.intui.window.decoratedWindow
-import org.jetbrains.jewel.intui.window.styling.dark
-import org.jetbrains.jewel.intui.window.styling.defaults
-import org.jetbrains.jewel.intui.window.styling.light
-import org.jetbrains.jewel.ui.ComponentStyling
 import org.jetbrains.jewel.window.DecoratedWindow
 import org.jetbrains.jewel.window.TitleBar
-import org.jetbrains.jewel.window.styling.TitleBarColors
-import org.jetbrains.jewel.window.styling.TitleBarMetrics
-import org.jetbrains.jewel.window.styling.TitleBarStyle
 import org.koin.compose.koinInject
 
 @Composable
@@ -47,7 +31,6 @@ fun MainWindow(windowIcon: Painter?) {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val globalListener = koinInject<GlobalListener>()
-    val themeDetector = koinInject<ThemeDetector>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
     val mainWindowState by appWindowManager.mainWindowState.collectAsState()
@@ -62,89 +45,50 @@ fun MainWindow(windowIcon: Painter?) {
         globalListener.start()
     }
 
-    Theme {
-        IntUiTheme(
-            theme =
-                if (themeDetector.isCurrentThemeDark()) {
-                    JewelTheme.darkThemeDefinition()
-                } else {
-                    JewelTheme.lightThemeDefinition()
-                },
-            styling =
-                ComponentStyling.default().decoratedWindow(
-                    titleBarStyle =
-                        if (themeDetector.isCurrentThemeDark()) {
-                            TitleBarStyle.dark(
-                                colors =
-                                    TitleBarColors.dark(
-                                        backgroundColor = AppUIColors.appBackground,
-                                        inactiveBackground = AppUIColors.appBackground,
-                                        borderColor = AppUIColors.appBackground,
-                                    ),
-                                metrics =
-                                    TitleBarMetrics.defaults(height = appSize.windowDecorationHeight),
-                            )
-                        } else {
-                            TitleBarStyle.light(
-                                colors =
-                                    TitleBarColors.light(
-                                        backgroundColor = AppUIColors.appBackground,
-                                        inactiveBackground = AppUIColors.appBackground,
-                                        borderColor = AppUIColors.appBackground,
-                                    ),
-                                metrics =
-                                    TitleBarMetrics.defaults(height = appSize.windowDecorationHeight),
-                            )
-                        },
-                ),
-            swingCompatMode = false,
-        ) {
-            DecoratedWindow(
-                onCloseRequest = {
-                    appWindowManager.hideMainWindow()
-                },
-                visible = showMainWindow,
-                state = mainWindowState,
-                title = appWindowManager.mainWindowTitle,
-                icon = windowIcon,
-                alwaysOnTop = alwaysOnTop,
-                resizable = false,
-            ) {
-                DisposableEffect(window) {
-                    // Set window reference for manager
-                    appWindowManager.mainComposeWindow = window
+    DecoratedWindow(
+        onCloseRequest = {
+            appWindowManager.hideMainWindow()
+        },
+        visible = showMainWindow,
+        state = mainWindowState,
+        title = appWindowManager.mainWindowTitle,
+        icon = windowIcon,
+        alwaysOnTop = alwaysOnTop,
+        resizable = false,
+    ) {
+        DisposableEffect(Unit) {
+            // Set window reference for manager
+            appWindowManager.mainComposeWindow = window
 
-                    onDispose {
-                        // Clean up window reference and listener
-                        appWindowManager.mainComposeWindow = null
-                    }
-                }
-
-                TitleBar {
-                    WindowDraggableArea {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .padding(horizontal = pushpinPadding),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.End,
-                        ) {
-                            PasteTooltipIconView(
-                                painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
-                                text = "CrossPaste",
-                                contentDescription = "alwaysOnTop",
-                                onClick = {
-                                    appWindowManager.switchAlwaysOnTopMainWindow()
-                                },
-                            )
-                        }
-                    }
-                }
-
-                CrossPasteMainWindowContent()
+            onDispose {
+                // Clean up window reference and listener
+                appWindowManager.mainComposeWindow = null
             }
         }
+
+        TitleBar {
+            WindowDraggableArea {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(horizontal = pushpinPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    PasteTooltipIconView(
+                        painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
+                        text = "CrossPaste",
+                        contentDescription = "alwaysOnTop",
+                        onClick = {
+                            appWindowManager.switchAlwaysOnTopMainWindow()
+                        },
+                    )
+                }
+            }
+        }
+
+        CrossPasteMainWindowContent()
     }
 }

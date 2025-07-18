@@ -12,7 +12,7 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listen.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.MenuHelper
+import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
@@ -85,8 +85,6 @@ class DesktopAppSize(
     val sideSearchPaddingSize: Dp = 16.dp
 
     val sidePasteSize: Dp = sideSearchWindowHeight - sideSearchInputHeight - (2 * sideSearchPaddingSize)
-
-    val grantAccessibilityPermissionsWindowsSize: DpSize = DpSize(width = 360.dp, height = 280.dp)
 
     override val deviceHeight: Dp = huge
 

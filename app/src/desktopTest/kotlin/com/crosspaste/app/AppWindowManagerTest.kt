@@ -4,7 +4,7 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
-import com.crosspaste.ui.MenuHelper
+import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import io.mockk.every
