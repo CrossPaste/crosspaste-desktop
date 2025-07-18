@@ -1,4 +1,4 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.base
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,9 +21,12 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.MenuItemView
-import com.crosspaste.ui.base.NewVersionButton
-import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.About
+import com.crosspaste.ui.Devices
+import com.crosspaste.ui.Export
+import com.crosspaste.ui.Import
+import com.crosspaste.ui.Settings
+import com.crosspaste.ui.ShortcutKeys
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape

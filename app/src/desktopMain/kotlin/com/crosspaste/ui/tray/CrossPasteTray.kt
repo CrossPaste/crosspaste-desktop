@@ -1,4 +1,4 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.tray
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect

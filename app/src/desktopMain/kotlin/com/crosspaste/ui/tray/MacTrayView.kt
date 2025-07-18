@@ -1,4 +1,4 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.tray
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -18,7 +18,9 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacAppUtils.useAll
 import com.crosspaste.platform.macos.api.WindowInfo
+import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.DesktopNotificationManager
+import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -108,7 +110,10 @@ object MacTrayView {
                                 appWindowManager.hideSearchWindow()
                             }
                         }
-                        frame.setLocation(windowInfo.x.toInt(), (windowInfo.y + windowInfo.height + 6).toInt())
+                        frame.setLocation(
+                            windowInfo.x.toInt(),
+                            (windowInfo.y + windowInfo.height + 6).toInt(),
+                        )
                         frame.isVisible = true
                         menu.show(frame, 0, 0)
                     }

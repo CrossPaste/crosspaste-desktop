@@ -1,14 +1,10 @@
-package com.crosspaste.ui
+package com.crosspaste.ui.theme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.ui.theme.ColorContrast
-import com.crosspaste.ui.theme.CrossPasteTheme
-import com.crosspaste.ui.theme.ThemeColor
-import com.crosspaste.ui.theme.ThemeDetector
 import com.jthemedetecor.OsThemeDetector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

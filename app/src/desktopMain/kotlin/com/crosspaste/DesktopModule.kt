@@ -186,8 +186,6 @@ import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.DesktopFontManager
 import com.crosspaste.ui.DesktopScreenProvider
-import com.crosspaste.ui.DesktopThemeDetector
-import com.crosspaste.ui.MenuHelper
 import com.crosspaste.ui.ScreenProvider
 import com.crosspaste.ui.base.DesktopExpandViewProvider
 import com.crosspaste.ui.base.DesktopIconStyle
@@ -198,6 +196,7 @@ import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.FontManager
 import com.crosspaste.ui.base.IconStyle
+import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.devices.DesktopDeviceViewProvider
@@ -214,6 +213,7 @@ import com.crosspaste.ui.paste.DesktopPasteboardViewProvider
 import com.crosspaste.ui.paste.PasteboardViewProvider
 import com.crosspaste.ui.settings.DesktopSettingsViewProvider
 import com.crosspaste.ui.settings.SettingsViewProvider
+import com.crosspaste.ui.theme.DesktopThemeDetector
 import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils

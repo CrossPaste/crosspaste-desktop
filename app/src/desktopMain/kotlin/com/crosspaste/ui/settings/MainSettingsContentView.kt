@@ -1,5 +1,7 @@
 package com.crosspaste.ui.settings
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.HorizontalDivider
@@ -8,6 +10,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppControl
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.paste.PasteboardService
@@ -20,6 +23,7 @@ import com.crosspaste.ui.base.layout
 import com.crosspaste.ui.base.palette
 import com.crosspaste.ui.base.shield
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -29,6 +33,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun MainSettingsContentView() {
+    val appLaunchState = koinInject<DesktopAppLaunchState>()
     val appControl = koinInject<AppControl>()
     val configManager = koinInject<DesktopConfigManager>()
     val crossPasteLogger = koinInject<CrossPasteLogger>()
@@ -36,6 +41,11 @@ fun MainSettingsContentView() {
     val settingsViewProvider = koinInject<SettingsViewProvider>()
 
     val config by configManager.config.collectAsState()
+
+    if (!appLaunchState.accessibilityPermissions) {
+        GrantAccessibilityView()
+        Spacer(modifier = Modifier.height(medium))
+    }
 
     HighlightedCard(
         modifier =
