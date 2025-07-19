@@ -47,8 +47,8 @@ class MenuHelper(
         MenuItem(
             title = { copywriter -> copywriter.getText("about") },
             action = {
+                appWindowManager.toScreen(About)
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
-                    appWindowManager.toScreen(About)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -58,9 +58,7 @@ class MenuHelper(
         MenuItem(
             title = { copywriter -> copywriter.getText("check_for_updates") },
             action = {
-                mainCoroutineDispatcher.launch(CoroutineName("Check for updates")) {
-                    appUpdateService.tryTriggerUpdate()
-                }
+                appUpdateService.tryTriggerUpdate()
             },
         )
 
@@ -68,8 +66,8 @@ class MenuHelper(
         MenuItem(
             title = { copywriter -> copywriter.getText("devices") },
             action = {
+                appWindowManager.toScreen(Devices)
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
-                    appWindowManager.toScreen(Devices)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -79,8 +77,8 @@ class MenuHelper(
         MenuItem(
             title = { copywriter -> copywriter.getText("export") },
             action = {
+                appWindowManager.toScreen(Export)
                 mainCoroutineDispatcher.launch(CoroutineName("Export")) {
-                    appWindowManager.toScreen(Export)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -90,8 +88,8 @@ class MenuHelper(
         MenuItem(
             title = { copywriter -> copywriter.getText("import") },
             action = {
+                appWindowManager.toScreen(Import)
                 mainCoroutineDispatcher.launch(CoroutineName("Import")) {
-                    appWindowManager.toScreen(Import)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -101,8 +99,8 @@ class MenuHelper(
         MenuItem(
             title = { copywriter -> copywriter.getText("settings") },
             action = {
+                appWindowManager.toScreen(Settings)
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
-                    appWindowManager.toScreen(Settings)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -112,8 +110,8 @@ class MenuHelper(
         MenuItem(
             title = { copywriter -> copywriter.getText("shortcut_keys") },
             action = {
+                appWindowManager.toScreen(ShortcutKeys)
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
-                    appWindowManager.toScreen(ShortcutKeys)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },

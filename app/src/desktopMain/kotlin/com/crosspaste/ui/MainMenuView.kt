@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.ExitMode
@@ -46,6 +47,7 @@ import org.koin.compose.koinInject
 @Composable
 fun MainMenuView() {
     val appLaunch = koinInject<DesktopAppLaunch>()
+    val appUpdateService = koinInject<AppUpdateService>()
     val appWindowManager = koinInject<AppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
 
@@ -115,6 +117,10 @@ fun MainMenuView() {
             MainMenuItemView(item.title, background(index == selectedIndex - prevMenuList.size)) {
                 appWindowManager.setScreen(ScreenContext(item.screenType))
             }
+        }
+
+        MainMenuItemView("check_for_updates", AppUIColors.generalBackground) {
+            appUpdateService.tryTriggerUpdate()
         }
 
         MainMenuItemView("quit", AppUIColors.generalBackground) {
