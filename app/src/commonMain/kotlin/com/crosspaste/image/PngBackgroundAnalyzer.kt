@@ -17,7 +17,6 @@ object PngBackgroundAnalyzer {
         val h = img.height
         val s = minOf(sampleSize, w, h)
 
-        // 把 Skia Image 拷到栅格内存 (Alpha_8888)
         val surface = Surface.makeRasterN32Premul(w, h)
         val canvas = surface.canvas
         canvas.drawImage(img, 0f, 0f)
