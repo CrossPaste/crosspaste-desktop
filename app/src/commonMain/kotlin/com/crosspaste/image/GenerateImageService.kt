@@ -37,19 +37,20 @@ class GenerateImageService {
         return suspendCancellableCoroutine { continuation ->
             val job =
                 generateCheckScope.launch {
-                    withTimeoutOrNull(timeoutMillis) {
-                        stateFlow.collect { state ->
-                            if (state) {
-                                continuation.resume(Unit)
-                                removeGenerateState(path)
-                                cancel()
+                    runCatching {
+                        withTimeoutOrNull(timeoutMillis) {
+                            stateFlow.collect { state ->
+                                if (state) {
+                                    continuation.resume(Unit)
+                                    cancel()
+                                }
                             }
                         }
-                    } ?: run {
-                        if (continuation.isActive) {
-                            continuation.resume(Unit)
-                            removeGenerateState(path)
-                        }
+                    }.apply {
+                        removeGenerateState(path)
+                    }
+                    if (continuation.isActive) {
+                        continuation.resume(Unit)
                     }
                 }
 

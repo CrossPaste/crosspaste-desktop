@@ -416,7 +416,7 @@ class DesktopModule(
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
             single<RenderingHelper> { DesktopRenderingHelper(get()) }
             single<RenderingService<String>>(named("htmlRendering")) {
-                DesktopHtmlRenderingService(get(), get(), get(), get(), get(), get(), get())
+                DesktopHtmlRenderingService(get(), get(), get(), get(), get(), get(), get(), get())
             }
             single<RenderingService<String>>(named("rtfRendering")) {
                 DesktopRtfRenderingService(get(), get(), get(), get())

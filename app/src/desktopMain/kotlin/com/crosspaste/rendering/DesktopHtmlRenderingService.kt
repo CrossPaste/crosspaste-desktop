@@ -1,9 +1,14 @@
 package com.crosspaste.rendering
 
+import androidx.compose.ui.graphics.toArgb
+import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.GenerateImageService
+import com.crosspaste.image.PngBackgroundAnalyzer
 import com.crosspaste.module.ModuleLoaderConfig
 import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
+import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.paste.plugin.type.HtmlTypePlugin
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.UserDataPathProvider
@@ -23,6 +28,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.json.put
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.chrome.ChromeDriver
@@ -36,6 +42,7 @@ class DesktopHtmlRenderingService(
     private val generateImageService: GenerateImageService,
     private val htmlTypePlugin: HtmlTypePlugin,
     private val renderingHelper: RenderingHelper,
+    private val pasteDao: PasteDao,
     private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : RenderingService<String> {
@@ -129,15 +136,15 @@ class DesktopHtmlRenderingService(
     }
 
     override suspend fun render(pasteData: PasteData) {
-        pasteData.getPasteItem(HtmlPasteItem::class)?.let { pasteHtml ->
+        pasteData.getPasteItem(HtmlPasteItem::class)?.let { htmlPasteItem ->
             val normalizeHtml =
                 htmlTypePlugin.normalizeHtml(
-                    pasteHtml.html,
+                    htmlPasteItem.html,
                     pasteData.source,
                 )
 
             val html2ImagePath =
-                pasteHtml.getRenderingFilePath(
+                htmlPasteItem.getRenderingFilePath(
                     pasteData.getPasteCoordinate(),
                     userDataPathProvider,
                 )
@@ -148,8 +155,30 @@ class DesktopHtmlRenderingService(
                 runCatching {
                     html2Image(normalizeHtml)?.let { bytes ->
                         filePersist.createOneFilePersist(html2ImagePath).saveBytes(bytes)
+                        val background = PngBackgroundAnalyzer.detect(bytes, 5, 1.0f)
+                        val extraInfo =
+                            updateExtraInfo(
+                                htmlPasteItem.extraInfo,
+                                update = {
+                                    put(BACKGROUND, background.toArgb())
+                                },
+                            )
+                        val newHtmlPasteItem =
+                            HtmlPasteItem(
+                                identifiers = htmlPasteItem.identifiers,
+                                hash = htmlPasteItem.hash,
+                                size = htmlPasteItem.size + 4,
+                                html = htmlPasteItem.html,
+                                extraInfo = extraInfo,
+                            )
+                        pasteDao.updatePasteAppearItem(
+                            id = pasteData.id,
+                            pasteItem = newHtmlPasteItem,
+                            pasteSearchContent = htmlPasteItem.getSearchContent(),
+                            addedSize = 4,
+                        )
+                        generateImageService.getGenerateState(html2ImagePath).emit(true)
                     }
-                    generateImageService.getGenerateState(html2ImagePath).emit(true)
                 }.onFailure { e ->
                     logger.error(e) { "Failed to convert HTML to image" }
                     restart()
