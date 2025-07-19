@@ -11,13 +11,13 @@ object PngBackgroundAnalyzer {
         sampleSize: Int,
         bottomWeight: Float,
     ): Color {
-        val img = Image.makeFromEncoded(bytes)
+        val img = Image.Companion.makeFromEncoded(bytes)
 
         val w = img.width
         val h = img.height
         val s = minOf(sampleSize, w, h)
 
-        val surface = Surface.makeRasterN32Premul(w, h)
+        val surface = Surface.Companion.makeRasterN32Premul(w, h)
         val canvas = surface.canvas
         canvas.drawImage(img, 0f, 0f)
 
