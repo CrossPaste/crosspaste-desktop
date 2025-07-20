@@ -10,10 +10,12 @@ import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
+import com.crosspaste.platform.windows.api.Kernel32
 import com.crosspaste.utils.getCodecsUtils
 import java.awt.datatransfer.DataFlavor
 import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 class DesktopTextTypePlugin(
     private val searchContentService: SearchContentService,
@@ -25,7 +27,13 @@ class DesktopTextTypePlugin(
         const val TEXT = "text/plain"
         const val PLAIN_TEXT = "Plain Text"
 
-        private val ansiCs = Charset.defaultCharset()
+        fun charsetForCodePage(cp: Int): Charset =
+            when (cp) {
+                65001 -> StandardCharsets.UTF_8
+                else -> Charset.forName("cp$cp")
+            }
+
+        private val ansiCs = charsetForCodePage(Kernel32.INSTANCE.GetACP())
 
         val ANSI_FLAVOR =
             DataFlavor(
