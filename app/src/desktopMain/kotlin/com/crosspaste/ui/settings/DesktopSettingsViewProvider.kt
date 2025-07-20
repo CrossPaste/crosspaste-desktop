@@ -6,10 +6,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.About
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.clipboard
@@ -24,6 +28,7 @@ class DesktopSettingsViewProvider(
     private val appInfo: AppInfo,
     private val appWindowManager: AppWindowManager,
     private val expandViewProvider: ExpandViewProvider,
+    private val platform: Platform,
 ) : SettingsViewProvider {
 
     @Composable
@@ -79,7 +84,12 @@ class DesktopSettingsViewProvider(
                 )
             },
         ) {
-            PasteboardSettingsContentView()
+            PasteboardSettingsContentView {
+                val isWindows by remember { mutableStateOf(platform.isWindows()) }
+                if (isWindows) {
+                    WindowsPasteboardSettingsContentView()
+                }
+            }
         }
     }
 

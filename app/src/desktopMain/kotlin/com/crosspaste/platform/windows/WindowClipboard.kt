@@ -12,29 +12,22 @@ object WindowClipboard {
     private val user32 = User32.INSTANCE
     private val kernel32 = Kernel32.INSTANCE
 
-    fun supplementCFText(text: String): Boolean {
+    fun supplementCFText(text: String) {
         // Open clipboard
         if (!user32.OpenClipboard(null)) {
             logger.error { "Failed to open clipboard to supplement CF_TEXT" }
-            return false
+            return
         }
 
         return try {
-            // Check if CF_TEXT format already exists
-            if (user32.IsClipboardFormatAvailable(ClipboardFormats.CF_TEXT)) {
-                logger.info { "Clipboard already has CF_TEXT format, skipping" }
-                true
+            // Regardless of whether CF_TEXT format exists, overwrite it
+            val success = addAnsiText(text)
+            if (success) {
+                logger.info { "Successfully supplemented CF_TEXT format" }
+                // Optional: add locale information
+                addLocale()
             } else {
-                // Add CF_TEXT format
-                val success = addAnsiText(text)
-                if (success) {
-                    logger.info { "Successfully supplemented CF_TEXT format" }
-                    // Optional: add locale information
-                    addLocale()
-                } else {
-                    logger.error { "Failed to add CF_TEXT format" }
-                }
-                success
+                logger.error { "Failed to add CF_TEXT format" }
             }
         } finally {
             // Ensure clipboard is closed
@@ -46,7 +39,7 @@ object WindowClipboard {
      * Add ANSI text format
      */
     private fun addAnsiText(text: String): Boolean {
-        return try {
+        return runCatching {
             // Get system code page
             val codePage = kernel32.GetACP()
             val charsetName = getCharsetForCodePage(codePage)
@@ -83,8 +76,8 @@ object WindowClipboard {
             // Set to clipboard
             val result = user32.SetClipboardData(ClipboardFormats.CF_TEXT, hGlobal)
             result != null
-        } catch (e: Exception) {
-            e.printStackTrace()
+        }.getOrElse { e ->
+            logger.error(e) { "Error adding CF_TEXT format" }
             false
         }
     }
@@ -93,7 +86,7 @@ object WindowClipboard {
      * Add locale information (optional)
      */
     private fun addLocale() {
-        try {
+        runCatching {
             // Check if locale information already exists
             if (user32.IsClipboardFormatAvailable(ClipboardFormats.CF_LOCALE)) {
                 return
@@ -123,8 +116,6 @@ object WindowClipboard {
 
             user32.SetClipboardData(ClipboardFormats.CF_LOCALE, hGlobal)
             logger.info { "Added locale information: $lcidValue (0x${lcidValue.toString(16)})" }
-        } catch (e: Exception) {
-            // Ignore locale setting errors
         }
     }
 
@@ -141,12 +132,12 @@ object WindowClipboard {
             65001 -> "UTF-8" // UTF-8
             else -> {
                 // Try using Cp + code page number
-                try {
+                runCatching {
                     val cpName = "cp$codePage"
                     // Test if this encoding is supported
                     "test".toByteArray(Charset.forName(cpName))
                     cpName
-                } catch (e: Exception) {
+                }.getOrElse {
                     "GBK" // Default to GBK
                 }
             }

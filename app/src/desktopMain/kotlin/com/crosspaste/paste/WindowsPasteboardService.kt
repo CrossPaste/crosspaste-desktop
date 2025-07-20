@@ -2,6 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.notification.NotificationManager
@@ -46,6 +47,8 @@ class WindowsPasteboardService(
     override val logger: KLogger = KotlinLogging.logger {}
 
     private val controlUtils = getControlUtils() as DesktopControlUtils
+
+    private val desktopConfigManager = configManager as DesktopConfigManager
 
     @Volatile
     private var existNew = false
@@ -258,49 +261,33 @@ class WindowsPasteboardService(
         return User32.INSTANCE.DefWindowProc(hWnd, uMsg, uParam, lParam).toInt()
     }
 
-    override fun tryWritePasteboard(
-        id: Long?,
+    override fun writePasteboard(
         pasteItem: PasteItem,
-        localOnly: Boolean,
-        filterFile: Boolean,
-        updateCreateTime: Boolean,
-    ): Result<Unit?> =
-        runCatching {
-            pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
-                it as DesktopWriteTransferable
-                systemClipboard.setContents(it, this)
-                if (pasteItem is PasteText) {
-                    WindowClipboard.supplementCFText(pasteItem.text)
-                }
-                ownerTransferable = it
-                owner = true
-                id?.let {
-                    currentPaste.setPasteId(id, updateCreateTime)
-                }
+        transferable: DesktopWriteTransferable,
+    ) {
+        super.writePasteboard(pasteItem, transferable)
+        if (desktopConfigManager.getCurrentConfig().legacySoftwareCompatibility) {
+            if (pasteItem is PasteText) {
+                WindowClipboard.supplementCFText(pasteItem.text)
             }
-        }.onFailure { e ->
-            logger.error(e) { "tryWritePasteboard error" }
         }
+    }
 
-    override fun tryWritePasteboard(
+    override fun writePasteboard(
         pasteData: PasteData,
-        localOnly: Boolean,
-        filterFile: Boolean,
-        primary: Boolean,
-        updateCreateTime: Boolean,
-    ): Result<Unit?> =
-        runCatching {
-            pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
-                it as DesktopWriteTransferable
-                systemClipboard.setContents(it, this)
-                pasteData.getPasteItem(PasteText::class)?.let { pasteItem ->
-                    WindowClipboard.supplementCFText(pasteItem.text)
+        transferable: DesktopWriteTransferable,
+    ) {
+        super.writePasteboard(pasteData, transferable)
+        if (desktopConfigManager.getCurrentConfig().legacySoftwareCompatibility) {
+            pasteData
+                .getPasteAppearItems()
+                .firstOrNull {
+                    it is PasteText
+                }.let { pasteItem ->
+                    (pasteItem as PasteText).let { textPasteItem ->
+                        WindowClipboard.supplementCFText(textPasteItem.text)
+                    }
                 }
-                ownerTransferable = it
-                owner = true
-                currentPaste.setPasteId(pasteData.id, updateCreateTime)
-            }
-        }.onFailure { e ->
-            logger.error(e) { "tryWritePasteboard error" }
         }
+    }
 }
