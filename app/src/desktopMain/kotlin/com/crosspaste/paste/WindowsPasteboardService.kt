@@ -3,8 +3,12 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteData
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteText
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.windows.WindowClipboard
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.DesktopControlUtils
@@ -253,4 +257,50 @@ class WindowsPasteboardService(
         }
         return User32.INSTANCE.DefWindowProc(hWnd, uMsg, uParam, lParam).toInt()
     }
+
+    override fun tryWritePasteboard(
+        id: Long?,
+        pasteItem: PasteItem,
+        localOnly: Boolean,
+        filterFile: Boolean,
+        updateCreateTime: Boolean,
+    ): Result<Unit?> =
+        runCatching {
+            pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
+                it as DesktopWriteTransferable
+                systemClipboard.setContents(it, this)
+                if (pasteItem is PasteText) {
+                    WindowClipboard.supplementCFText(pasteItem.text)
+                }
+                ownerTransferable = it
+                owner = true
+                id?.let {
+                    currentPaste.setPasteId(id, updateCreateTime)
+                }
+            }
+        }.onFailure { e ->
+            logger.error(e) { "tryWritePasteboard error" }
+        }
+
+    override fun tryWritePasteboard(
+        pasteData: PasteData,
+        localOnly: Boolean,
+        filterFile: Boolean,
+        primary: Boolean,
+        updateCreateTime: Boolean,
+    ): Result<Unit?> =
+        runCatching {
+            pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
+                it as DesktopWriteTransferable
+                systemClipboard.setContents(it, this)
+                pasteData.getPasteItem(PasteText::class)?.let { pasteItem ->
+                    WindowClipboard.supplementCFText(pasteItem.text)
+                }
+                ownerTransferable = it
+                owner = true
+                currentPaste.setPasteId(pasteData.id, updateCreateTime)
+            }
+        }.onFailure { e ->
+            logger.error(e) { "tryWritePasteboard error" }
+        }
 }
