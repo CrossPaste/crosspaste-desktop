@@ -521,7 +521,7 @@ class DesktopModule(
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { get<DesktopScreenProvider>() }
-            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get()) }
+            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get(), get(), get()) }
             single<ShortcutKeysAction> {
                 DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get())
