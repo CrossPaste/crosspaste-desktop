@@ -58,7 +58,7 @@ abstract class AbstractPasteboardService :
         runCatching {
             pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
                 it as DesktopWriteTransferable
-                systemClipboard.setContents(it, this)
+                writePasteboard(pasteItem, it)
                 ownerTransferable = it
                 owner = true
                 id?.let {
@@ -79,7 +79,7 @@ abstract class AbstractPasteboardService :
         runCatching {
             pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
                 it as DesktopWriteTransferable
-                systemClipboard.setContents(it, this)
+                writePasteboard(pasteData, it)
                 ownerTransferable = it
                 owner = true
                 currentPaste.setPasteId(pasteData.id, updateCreateTime)
@@ -87,6 +87,20 @@ abstract class AbstractPasteboardService :
         }.onFailure { e ->
             logger.error(e) { "tryWritePasteboard error" }
         }
+
+    open fun writePasteboard(
+        pasteItem: PasteItem,
+        transferable: DesktopWriteTransferable,
+    ) {
+        systemClipboard.setContents(transferable, this)
+    }
+
+    open fun writePasteboard(
+        pasteData: PasteData,
+        transferable: DesktopWriteTransferable,
+    ) {
+        systemClipboard.setContents(transferable, this)
+    }
 
     override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
         pasteDao.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->

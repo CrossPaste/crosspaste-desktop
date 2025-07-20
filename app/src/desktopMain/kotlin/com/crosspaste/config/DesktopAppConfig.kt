@@ -43,6 +43,7 @@ data class DesktopAppConfig(
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = true,
     val searchWindowStyle: String = DesktopSearchWindowStyle.SIDE_STYLE.style,
+    val legacySoftwareCompatibility: Boolean = false,
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -119,5 +120,11 @@ data class DesktopAppConfig(
             storagePath = if (key == "storagePath") toString(value) else storagePath,
             enableSoundEffect = if (key == "enableSoundEffect") toBoolean(value) else enableSoundEffect,
             searchWindowStyle = if (key == "searchWindowStyle") toString(value) else searchWindowStyle,
+            legacySoftwareCompatibility =
+                if (key == "legacySoftwareCompatibility") {
+                    toBoolean(value)
+                } else {
+                    legacySoftwareCompatibility
+                },
         )
 }

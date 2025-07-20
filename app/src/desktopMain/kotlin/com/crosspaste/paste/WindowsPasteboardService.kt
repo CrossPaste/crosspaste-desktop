@@ -2,9 +2,14 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteData
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteText
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.windows.WindowClipboard
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.DesktopControlUtils
@@ -42,6 +47,8 @@ class WindowsPasteboardService(
     override val logger: KLogger = KotlinLogging.logger {}
 
     private val controlUtils = getControlUtils() as DesktopControlUtils
+
+    private val desktopConfigManager = configManager as DesktopConfigManager
 
     @Volatile
     private var existNew = false
@@ -252,5 +259,35 @@ class WindowsPasteboardService(
                 )
         }
         return User32.INSTANCE.DefWindowProc(hWnd, uMsg, uParam, lParam).toInt()
+    }
+
+    override fun writePasteboard(
+        pasteItem: PasteItem,
+        transferable: DesktopWriteTransferable,
+    ) {
+        super.writePasteboard(pasteItem, transferable)
+        if (desktopConfigManager.getCurrentConfig().legacySoftwareCompatibility) {
+            if (pasteItem is PasteText) {
+                WindowClipboard.supplementCFText(pasteItem.text)
+            }
+        }
+    }
+
+    override fun writePasteboard(
+        pasteData: PasteData,
+        transferable: DesktopWriteTransferable,
+    ) {
+        super.writePasteboard(pasteData, transferable)
+        if (desktopConfigManager.getCurrentConfig().legacySoftwareCompatibility) {
+            pasteData
+                .getPasteAppearItems()
+                .firstOrNull {
+                    it is PasteText
+                }.let { pasteItem ->
+                    (pasteItem as PasteText).let { textPasteItem ->
+                        WindowClipboard.supplementCFText(textPasteItem.text)
+                    }
+                }
+        }
     }
 }

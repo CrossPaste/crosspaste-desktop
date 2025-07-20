@@ -108,6 +108,29 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         nMaxCount: Int,
     ): Int
 
+    fun OpenClipboard(hWndNewOwner: HWND?): Boolean
+
+    fun CloseClipboard(): Boolean
+
+    fun EmptyClipboard(): Boolean
+
+    fun SetClipboardData(
+        uFormat: Int,
+        hMem: HANDLE?,
+    ): HANDLE?
+
+    fun GetClipboardData(uFormat: Int): HANDLE?
+
+    fun IsClipboardFormatAvailable(format: Int): Boolean
+
+    fun EnumClipboardFormats(format: Int): Int
+
+    fun GetClipboardFormatName(
+        format: Int,
+        lpszFormatName: CharArray,
+        cchMaxCount: Int,
+    ): Int
+
     companion object {
         val INSTANCE =
             Native.load(
