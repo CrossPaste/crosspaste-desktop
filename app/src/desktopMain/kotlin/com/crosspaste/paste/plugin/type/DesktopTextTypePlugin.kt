@@ -12,6 +12,8 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.getCodecsUtils
 import java.awt.datatransfer.DataFlavor
+import java.io.ByteArrayInputStream
+import java.nio.charset.Charset
 
 class DesktopTextTypePlugin(
     private val searchContentService: SearchContentService,
@@ -22,6 +24,14 @@ class DesktopTextTypePlugin(
         const val UNICODE_STRING = "Unicode String"
         const val TEXT = "text/plain"
         const val PLAIN_TEXT = "Plain Text"
+
+        private val ansiCs = Charset.defaultCharset()
+
+        val ANSI_FLAVOR =
+            DataFlavor(
+                "text/plain;class=java.io.InputStream;charset=${ansiCs.name().lowercase()}",
+                "Plain Text (ANSI)",
+            )
 
         private val codecsUtils = getCodecsUtils()
     }
@@ -108,5 +118,9 @@ class DesktopTextTypePlugin(
     ) {
         pasteItem as TextPasteItem
         map[DataFlavor.stringFlavor.toPasteDataFlavor()] = pasteItem.text
+        map[ANSI_FLAVOR.toPasteDataFlavor()] =
+            ByteArrayInputStream(
+                (pasteItem.text.replace("\n", "\r\n") + "\u0000").toByteArray(ansiCs),
+            )
     }
 }
