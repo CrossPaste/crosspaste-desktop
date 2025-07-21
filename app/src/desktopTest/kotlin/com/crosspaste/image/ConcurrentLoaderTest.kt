@@ -1,10 +1,10 @@
 package com.crosspaste.image
 
 import com.crosspaste.utils.ConcurrentLoader
+import com.crosspaste.utils.StripedMutex
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -46,7 +46,7 @@ class TestConcurrentLoader : ConcurrentLoader<String, String> {
 
     val saveKeys: MutableList<String> = mutableListOf()
 
-    override val mutex: Mutex = Mutex()
+    override val mutex = StripedMutex()
 
     override fun resolve(
         key: String,
