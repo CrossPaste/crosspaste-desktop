@@ -211,15 +211,17 @@ jobs:
           shasum -a 256 * > checksum.txt
         working-directory: ./output
 
-      - name: Upload release app
-        id: upload_release_app
+      - name: Setup ossutil
+        id: setup_ossutil
         uses: manyuanrong/setup-ossutil@v3.0
         with:
           endpoint: "oss-cn-shenzhen.aliyuncs.com"
           access-key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           access-key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
-          assets: output/**:/${{ env.VERSION }}.${{ env.REVISION }}/
-        run: | 
+
+      - name: Upload release app
+        id: upload_release_app
+        run: |
           echo "Uploading release app to OSS..."
           ossutil cp -r output/ oss://crosspaste-desktop/${{ env.VERSION }}.${{ env.REVISION }}/
 
