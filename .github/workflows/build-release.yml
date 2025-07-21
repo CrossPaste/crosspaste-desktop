@@ -213,13 +213,15 @@ jobs:
 
       - name: Upload release app
         id: upload_release_app
-        uses: CrossPaste/oss-upload-action@main
+        uses: manyuanrong/setup-ossutil@v3.0
         with:
-          key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
-          key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
-          region: oss-cn-shenzhen
-          bucket: crosspaste-desktop
+          endpoint: "oss-cn-shenzhen.aliyuncs.com"
+          access-key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          access-key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
           assets: output/**:/${{ env.VERSION }}.${{ env.REVISION }}/
+        run: | 
+          echo "Uploading release app to OSS..."
+          ossutil cp -r output/ oss://crosspaste-desktop/${{ env.VERSION }}.${{ env.REVISION }}/
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment
