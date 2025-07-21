@@ -3,10 +3,10 @@ package com.crosspaste.image
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.ConcurrentLoader
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.sync.Mutex
 import okio.Path
 
 abstract class AbstractFileExtImageLoader(
@@ -18,7 +18,7 @@ abstract class AbstractFileExtImageLoader(
 
     private val fileUtils = getFileUtils()
 
-    override val mutex = Mutex()
+    override val mutex = StripedMutex()
 
     override fun resolve(
         key: String,

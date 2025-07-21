@@ -75,7 +75,7 @@ class DesktopRtfRenderingService(
                     .createOneFilePersist(rtf2ImagePath)
                     .createEmptyFile()
                 ImageIO.write(image, "png", rtf2ImagePath.toFile())
-                generateImageService.getGenerateState(rtf2ImagePath).emit(true)
+                generateImageService.markGenerationComplete(rtf2ImagePath)
             }
         }
     }

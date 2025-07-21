@@ -1,11 +1,8 @@
 package com.crosspaste.utils
 
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-
 interface ConcurrentLoader<T, R> : Loader<T, R> {
 
-    val mutex: Mutex
+    val mutex: StripedMutex
 
     fun resolve(
         key: String,

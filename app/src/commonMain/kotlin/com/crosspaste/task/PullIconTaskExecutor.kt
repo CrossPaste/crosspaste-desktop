@@ -14,14 +14,13 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.FileUtils
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import okio.Path
 
 class PullIconTaskExecutor(
@@ -37,7 +36,7 @@ class PullIconTaskExecutor(
 
     override val taskType: Int = TaskType.PULL_ICON_TASK
 
-    private val lock = Mutex()
+    private val mutex = StripedMutex()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
@@ -52,7 +51,7 @@ class PullIconTaskExecutor(
 
         return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
             pasteData.source?.let { source ->
-                lock.withLock(source) {
+                mutex.withLock(source) {
                     runCatching {
                         val appInstanceId = pasteData.appInstanceId
 

@@ -177,7 +177,7 @@ class DesktopHtmlRenderingService(
                             pasteSearchContent = htmlPasteItem.getSearchContent(),
                             addedSize = 4,
                         )
-                        generateImageService.getGenerateState(html2ImagePath).emit(true)
+                        generateImageService.markGenerationComplete(html2ImagePath)
                     }
                 }.onFailure { e ->
                     logger.error(e) { "Failed to convert HTML to image" }

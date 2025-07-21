@@ -33,7 +33,7 @@ class DesktopIconColorExtractor(
      * Get background color from icon path (with cache)
      */
     suspend fun getBackgroundColor(source: String): Color? =
-        mutex.withLock(source) {
+        mutex.withLock {
             if (colorCache.containsKey(source)) {
                 colorCache[source]
             } else {
