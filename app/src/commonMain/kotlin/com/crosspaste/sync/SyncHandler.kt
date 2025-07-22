@@ -2,12 +2,15 @@ package com.crosspaste.sync
 
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.net.VersionRelation
+import com.crosspaste.platform.Platform
 
 interface SyncHandler {
 
     var versionRelation: VersionRelation
 
     fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo
+
+    fun getSyncPlatform(): Platform = getCurrentSyncRuntimeInfo().platform
 
     suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
 

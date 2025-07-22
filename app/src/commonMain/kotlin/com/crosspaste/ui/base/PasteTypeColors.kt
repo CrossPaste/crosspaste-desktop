@@ -28,7 +28,7 @@ data class PasteTypeColors(
 val lightSideBarColors =
     PasteTypeColors(
         colorTypeColor = Color(0xFFFFE1E3),
-        fileTypeColor = Color(0xFFFFFBDB),
+        fileTypeColor = Color(0xFFFBEF92),
         htmlTypeColor = Color(0xFFEFD6FF),
         imageTypeColor = Color(0xFF9FDB91),
         rtfTypeColor = Color(0xFFFFD6C9),

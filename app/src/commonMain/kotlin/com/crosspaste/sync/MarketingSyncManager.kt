@@ -98,6 +98,6 @@ class MarketingSyncManager : SyncManager {
     ) {
     }
 
-    override fun removeSyncHandler(id: String) {
+    override fun removeSyncHandler(appInstanceId: String) {
     }
 }

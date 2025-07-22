@@ -3,15 +3,35 @@ package com.crosspaste.image.coil
 import coil3.Bitmap
 import coil3.size.Size
 import coil3.transform.Transformation
+import com.crosspaste.platform.Platform
 import org.jetbrains.skia.IRect
 import kotlin.math.roundToInt
 
 class CropTransformation(
-    private val cropTop: Float = 0.18f,
-    private val cropBottom: Float = 0.18f,
-    private val cropLeft: Float = 0f,
-    private val cropRight: Float = 0.18f,
+    currentPlatform: Platform,
+    syncPlatform: Platform?,
 ) : Transformation() {
+
+    private val cropTop: Float
+    private val cropBottom: Float
+    private val cropLeft: Float
+    private val cropRight: Float
+
+    init {
+        if ((syncPlatform ?: currentPlatform).isMacos()) {
+            // macOS specific crop values
+            cropTop = 0.18f
+            cropBottom = 0.18f
+            cropLeft = 0f
+            cropRight = 0.18f
+        } else {
+            // Other platforms (Windows, Linux, or unknown)
+            cropTop = 0f
+            cropBottom = 0f
+            cropLeft = 0f
+            cropRight = 0.18f
+        }
+    }
 
     override val cacheKey: String =
         "CropTransformation($cropTop,$cropBottom,$cropLeft,$cropRight)"
