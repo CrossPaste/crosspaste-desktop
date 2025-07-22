@@ -1,6 +1,7 @@
 package com.crosspaste.platform.windows.api
 
 import com.crosspaste.app.WinAppInfo
+import com.crosspaste.platform.windows.JIconExtract
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -273,8 +274,13 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             filePath: String,
             outputPath: String,
         ) {
-            val largeIcons = arrayOfNulls<HICON>(1) // Array to receive the large icon
-            val smallIcons = arrayOfNulls<HICON>(1) // Array to receive the small icon
+            JIconExtract.getIconForFile(filePath)?.let { icon ->
+                ImageIO.write(icon, "png", File(outputPath))
+                return@extractAndSaveIcon
+            }
+
+            val largeIcons = arrayOfNulls<HICON>(1)
+            val smallIcons = arrayOfNulls<HICON>(1)
             val iconCount =
                 Shell32.INSTANCE.ExtractIconEx(
                     filePath,
@@ -288,7 +294,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 val icon = largeIcons[0]!!
 
                 hiconToImage(icon)?.let { image ->
-                    ImageIO.write(image, "png", File(outputPath)) // Save the icon as a PNG file
+                    ImageIO.write(image, "png", File(outputPath))
                 }
             }
         }
