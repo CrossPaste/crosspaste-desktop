@@ -26,10 +26,10 @@ class CropTransformation(
             cropRight = 0.18f
         } else {
             // Other platforms (Windows, Linux, or unknown)
-            cropTop = 0.1f
-            cropBottom = 0.1f
-            cropLeft = 0.1f
-            cropRight = 0.1f
+            cropTop = 0f
+            cropBottom = 0f
+            cropLeft = 0f
+            cropRight = 0.18f
         }
     }
 
