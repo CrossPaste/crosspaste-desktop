@@ -22,7 +22,7 @@ class TestSyncRoutingApi : SyncRoutingApi {
         this.syncInfo = syncInfo
     }
 
-    override fun removeSyncHandler(id: String) {
-        innerSyncHandlers.remove(id)
+    override fun removeSyncHandler(appInstanceId: String) {
+        innerSyncHandlers.remove(appInstanceId)
     }
 }

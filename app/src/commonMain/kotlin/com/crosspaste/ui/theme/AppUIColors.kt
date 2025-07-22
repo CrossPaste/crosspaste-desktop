@@ -79,10 +79,6 @@ object AppUIColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.primaryContainer
 
-    val sidePasteTitle: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.secondaryContainer
-
     val topBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.surfaceContainerLowest

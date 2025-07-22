@@ -6,6 +6,7 @@ import com.crosspaste.db.paste.PasteData
 import com.crosspaste.db.paste.PasteState
 import com.crosspaste.db.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
@@ -14,6 +15,7 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
+import com.crosspaste.utils.ColorUtils.tryCovertToColor
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
@@ -25,13 +27,34 @@ open class MarketingPasteData(
     private val userDataPathProvider: UserDataPathProvider,
 ) {
 
-    companion object {
-        const val CROSSPASTE_MARKETING = "CrossPaste Marketing"
-    }
-
     private val codecsUtils = getCodecsUtils()
 
     private val fileUtils = getFileUtils()
+
+    private val color =
+        run {
+            val colorHex = "#FFA6D6D6"
+            val colorBytes = colorHex.encodeToByteArray()
+
+            PasteData(
+                id = 1L,
+                appInstanceId = "1",
+                favorite = false,
+                pasteAppearItem =
+                    ColorPasteItem(
+                        identifiers = listOf(),
+                        color = tryCovertToColor(colorHex)!!,
+                        size = colorBytes.size.toLong(),
+                        hash = codecsUtils.hash(colorBytes),
+                    ),
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.COLOR_TYPE.type,
+                source = "Figma",
+                size = colorBytes.size.toLong(),
+                hash = codecsUtils.hash(colorBytes),
+                pasteState = PasteState.LOADED,
+            )
+        }
 
     private val crossPasteDownloadUrl =
         run {
@@ -39,7 +62,7 @@ open class MarketingPasteData(
             val urlBytes = url.encodeToByteArray()
 
             PasteData(
-                id = 1L,
+                id = 2L,
                 appInstanceId = "1",
                 favorite = false,
                 pasteAppearItem =
@@ -51,7 +74,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.URL_TYPE.type,
-                source = CROSSPASTE_MARKETING,
+                source = "Google Chrome",
                 size = urlBytes.size.toLong(),
                 hash = codecsUtils.hash(urlBytes),
                 pasteState = PasteState.LOADED,
@@ -66,7 +89,7 @@ open class MarketingPasteData(
             val size = fileInfoTree.size
             val hash = fileInfoTree.hash
             PasteData(
-                id = 2L,
+                id = 3L,
                 appInstanceId = "1",
                 favorite = false,
                 pasteAppearItem =
@@ -81,7 +104,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.FILE_TYPE.type,
-                source = CROSSPASTE_MARKETING,
+                source = "Finder",
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -102,7 +125,7 @@ open class MarketingPasteData(
             val hash = fileUtils.getFileHash(imagePath)
 
             PasteData(
-                id = 3L,
+                id = 4L,
                 appInstanceId = "1",
                 favorite = false,
                 pasteAppearItem =
@@ -117,7 +140,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.IMAGE_TYPE.type,
-                source = CROSSPASTE_MARKETING,
+                source = "Photo Album",
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -140,7 +163,7 @@ open class MarketingPasteData(
             val hash = codecsUtils.hash(byteArray)
 
             PasteData(
-                id = 4L,
+                id = 5L,
                 appInstanceId = "1",
                 favorite = false,
                 pasteAppearItem =
@@ -152,7 +175,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.TEXT_TYPE.type,
-                source = CROSSPASTE_MARKETING,
+                source = "Notes Archive",
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -178,7 +201,7 @@ open class MarketingPasteData(
             val hash = codecsUtils.hash(byteArray)
 
             PasteData(
-                id = 5L,
+                id = 6L,
                 appInstanceId = "1",
                 favorite = false,
                 pasteAppearItem =
@@ -194,7 +217,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.HTML_TYPE.type,
-                source = CROSSPASTE_MARKETING,
+                source = "Google Chrome",
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -208,5 +231,6 @@ open class MarketingPasteData(
             imageFile,
             zipData,
             crossPasteDownloadUrl,
+            color,
         )
 }

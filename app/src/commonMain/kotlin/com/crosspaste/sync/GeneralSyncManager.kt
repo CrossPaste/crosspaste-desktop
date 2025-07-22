@@ -246,9 +246,9 @@ class GeneralSyncManager(
 
     override fun getSyncHandlers(): Map<String, SyncHandler> = internalSyncHandlers
 
-    override fun removeSyncHandler(id: String) {
+    override fun removeSyncHandler(appInstanceId: String) {
         realTimeSyncScope.launch(CoroutineName("RemoveSyncHandler")) {
-            syncRuntimeInfoDao.deleteSyncRuntimeInfo(id)
+            syncRuntimeInfoDao.deleteSyncRuntimeInfo(appInstanceId)
         }
     }
 

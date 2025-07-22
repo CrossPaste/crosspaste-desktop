@@ -1,6 +1,7 @@
 package com.crosspaste.net.routing
 
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -30,10 +31,12 @@ interface SyncRoutingApi {
 
     fun getSyncHandler(appInstanceId: String): SyncHandler? = getSyncHandlers()[appInstanceId]
 
+    fun getSyncPlatform(appInstanceId: String): Platform? = getSyncHandler(appInstanceId)?.getSyncPlatform()
+
     fun updateSyncInfo(
         syncInfo: SyncInfo,
         refresh: Boolean,
     )
 
-    fun removeSyncHandler(id: String)
+    fun removeSyncHandler(appInstanceId: String)
 }

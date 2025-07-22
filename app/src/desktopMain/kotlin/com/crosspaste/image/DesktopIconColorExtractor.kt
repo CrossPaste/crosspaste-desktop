@@ -7,10 +7,9 @@ import com.crosspaste.utils.ColorUtils.hsvToRgb
 import com.crosspaste.utils.ColorUtils.isNearWhiteOrBlack
 import com.crosspaste.utils.ColorUtils.rgbToHsv
 import com.crosspaste.utils.ColorUtils.toHexString
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Image
@@ -27,13 +26,13 @@ class DesktopIconColorExtractor(
     // Color cache
     private val colorCache = mutableMapOf<String, Color?>()
 
-    private val mutex = Mutex()
+    private val mutex = StripedMutex()
 
     /**
      * Get background color from icon path (with cache)
      */
     suspend fun getBackgroundColor(source: String): Color? =
-        mutex.withLock {
+        mutex.withLock(source) {
             if (colorCache.containsKey(source)) {
                 colorCache[source]
             } else {

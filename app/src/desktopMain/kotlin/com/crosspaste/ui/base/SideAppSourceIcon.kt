@@ -2,6 +2,9 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
@@ -14,6 +17,8 @@ import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.coil.CropTransformation
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
+import com.crosspaste.platform.Platform
+import com.crosspaste.sync.SyncManager
 import org.koin.compose.koinInject
 
 @Composable
@@ -22,8 +27,14 @@ fun SideAppSourceIcon(
     pasteData: PasteData,
     defaultIcon: @Composable () -> Unit = {},
 ) {
+    val syncManager = koinInject<SyncManager>()
     val imageLoaders = koinInject<ImageLoaders>()
+    val platform = koinInject<Platform>()
     val platformContext = koinInject<PlatformContext>()
+
+    val syncPlatform by remember(pasteData.appInstanceId) {
+        mutableStateOf(syncManager.getSyncPlatform(pasteData.appInstanceId))
+    }
 
     SubcomposeAsyncImage(
         modifier = modifier,
@@ -31,7 +42,7 @@ fun SideAppSourceIcon(
             ImageRequest
                 .Builder(platformContext)
                 .data(PasteDataItem(pasteData))
-                .transformations(CropTransformation())
+                .transformations(CropTransformation(platform, syncPlatform))
                 .crossfade(false)
                 .build(),
         imageLoader = imageLoaders.appSourceLoader,

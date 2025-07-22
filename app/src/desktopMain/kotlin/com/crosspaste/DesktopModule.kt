@@ -198,6 +198,7 @@ import com.crosspaste.ui.base.FontManager
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.PasteDialogFactory
+import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.devices.DesktopDeviceViewProvider
 import com.crosspaste.ui.devices.DeviceViewProvider
@@ -528,6 +529,7 @@ class DesktopModule(
             }
             single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
             single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get(), get()) }
+            single<SmartImageDisplayStrategy> { SmartImageDisplayStrategy() }
             single<SoundService> { DesktopSoundService(get()) }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<ToastManager> { ToastManager() }

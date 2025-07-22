@@ -84,7 +84,16 @@ class DesktopAppSize(
 
     val sideSearchPaddingSize: Dp = 16.dp
 
-    val sidePasteSize: Dp = sideSearchWindowHeight - sideSearchInputHeight - (2 * sideSearchPaddingSize)
+    val sideTitleHeight: Dp = huge
+
+    val sidePasteSize: DpSize =
+        run {
+            val size = sideSearchWindowHeight - sideSearchInputHeight - (2 * sideSearchPaddingSize)
+            DpSize(width = size, height = size)
+        }
+
+    val sidePasteContentSize: DpSize =
+        DpSize(width = sidePasteSize.width, height = sidePasteSize.height - sideTitleHeight)
 
     override val deviceHeight: Dp = huge
 
