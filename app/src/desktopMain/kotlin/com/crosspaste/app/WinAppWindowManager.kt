@@ -56,8 +56,7 @@ class WinAppWindowManager(
         fileDescription: String,
     ) {
         val iconPath = userDataPathProvider.resolve("$fileDescription.png", AppFileType.ICON)
-        val iconFile = iconPath.toFile()
-        if (!iconFile.exists()) {
+        if (!iconPath.toFile().exists()) {
             User32.extractAndSaveIcon(exeFilePath, iconPath.toString())
         }
     }
