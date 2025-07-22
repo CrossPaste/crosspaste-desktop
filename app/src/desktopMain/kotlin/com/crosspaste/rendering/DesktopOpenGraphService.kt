@@ -132,7 +132,7 @@ class DesktopOpenGraphService(
                             val inputStream = imageResponse.body()
                             val image = ImageIO.read(inputStream)
                             imageWriter.writeImage(image, "png", openGraphImage)
-                            generateImageService.getGenerateState(openGraphImage).emit(true)
+                            generateImageService.markGenerationComplete(openGraphImage)
                         }
                     } ?: run {
                         logger.warn { "No Open Graph image found for URL: ${urlPasteItem.url}" }

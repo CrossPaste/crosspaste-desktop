@@ -4,11 +4,11 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.ConcurrentLoader
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.fileNameRemoveExtension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
 import io.github.oshai.kotlinlogging.KLogger
-import kotlinx.coroutines.sync.Mutex
 import okio.Path
 
 abstract class AbstractThumbnailLoader(
@@ -20,7 +20,7 @@ abstract class AbstractThumbnailLoader(
 
     protected val fileUtils = getFileUtils()
 
-    override val mutex = Mutex()
+    override val mutex = StripedMutex()
 
     abstract val thumbnailSize: Int
 

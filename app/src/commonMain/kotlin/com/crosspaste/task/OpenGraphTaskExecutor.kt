@@ -7,10 +7,9 @@ import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.rendering.RenderingService
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.TaskUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class OpenGraphTaskExecutor(
     lazyUrlRenderingService: Lazy<RenderingService<String>>,
@@ -23,7 +22,7 @@ class OpenGraphTaskExecutor(
 
     private val urlRenderingService = lazyUrlRenderingService.value
 
-    private val mutex = Mutex()
+    private val mutex = StripedMutex()
 
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult =
         runCatching {

@@ -7,14 +7,13 @@ import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.rendering.RenderingService
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class Html2ImageTaskExecutor(
     private val lazyHtmlRenderingService: Lazy<RenderingService<String>>,
@@ -25,7 +24,7 @@ class Html2ImageTaskExecutor(
 
     override val taskType: Int = TaskType.HTML_TO_IMAGE_TASK
 
-    private val mutex = Mutex()
+    private val mutex = StripedMutex()
 
     private val htmlRenderingServiceDeferred: Deferred<RenderingService<String>> =
         CoroutineScope(ioDispatcher).async {

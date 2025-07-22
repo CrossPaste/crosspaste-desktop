@@ -3,10 +3,10 @@ package com.crosspaste.image
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.ConcurrentLoader
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.http.*
-import kotlinx.coroutines.sync.Mutex
 import okio.Path
 
 abstract class AbstractFaviconLoader(
@@ -18,7 +18,7 @@ abstract class AbstractFaviconLoader(
 
     protected val fileUtils = getFileUtils()
 
-    override val mutex = Mutex()
+    override val mutex = StripedMutex()
 
     private fun getGoogleIconUrl(host: String): String =
         "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://$host&size=256"
