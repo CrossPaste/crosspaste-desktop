@@ -18,7 +18,7 @@ class MarketingSyncManager : SyncManager {
     private val syncRuntimeInfos =
         listOf(
             SyncRuntimeInfo(
-                appInstanceId = "2",
+                appInstanceId = "$MACOS-id",
                 appVersion = "1.1.1",
                 userName = "user",
                 deviceId = "2",
@@ -34,7 +34,7 @@ class MarketingSyncManager : SyncManager {
                 connectState = SyncState.CONNECTED,
             ),
             SyncRuntimeInfo(
-                appInstanceId = "1",
+                appInstanceId = "$WINDOWS-id",
                 appVersion = "1.1.1",
                 userName = "user",
                 deviceId = "1",
