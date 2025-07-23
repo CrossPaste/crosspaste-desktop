@@ -11,9 +11,11 @@ import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteItemProperties.MARKETING_PATH
+import com.crosspaste.paste.item.PasteItemProperties.TITLE
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.Platform.Companion.MACOS
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.ColorUtils.tryCovertToColor
 import com.crosspaste.utils.getCodecsUtils
@@ -38,7 +40,7 @@ open class MarketingPasteData(
 
             PasteData(
                 id = 1L,
-                appInstanceId = "1",
+                appInstanceId = "$MACOS-id",
                 favorite = false,
                 pasteAppearItem =
                     ColorPasteItem(
@@ -56,14 +58,20 @@ open class MarketingPasteData(
             )
         }
 
-    private val crossPasteDownloadUrl =
+    private val url =
         run {
-            val url = "https://crosspaste.com/download"
+            val imagePath =
+                userDataPathProvider
+                    .resolve(appFileType = AppFileType.MARKETING)
+                    .resolve("openGraphImage.png")
+                    .toString()
+
+            val url = "https://github.com"
             val urlBytes = url.encodeToByteArray()
 
             PasteData(
                 id = 2L,
-                appInstanceId = "1",
+                appInstanceId = "$MACOS-id",
                 favorite = false,
                 pasteAppearItem =
                     UrlPasteItem(
@@ -71,6 +79,11 @@ open class MarketingPasteData(
                         url = url,
                         size = urlBytes.size.toLong(),
                         hash = codecsUtils.hash(urlBytes),
+                        extraInfo =
+                            buildJsonObject {
+                                put(MARKETING_PATH, imagePath)
+                                put(TITLE, "Github - Build software better, together")
+                            },
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.URL_TYPE.type,
@@ -90,7 +103,7 @@ open class MarketingPasteData(
             val hash = fileInfoTree.hash
             PasteData(
                 id = 3L,
-                appInstanceId = "1",
+                appInstanceId = "$MACOS-id",
                 favorite = false,
                 pasteAppearItem =
                     FilesPasteItem(
@@ -126,7 +139,7 @@ open class MarketingPasteData(
 
             PasteData(
                 id = 4L,
-                appInstanceId = "1",
+                appInstanceId = "$MACOS-id",
                 favorite = false,
                 pasteAppearItem =
                     ImagesPasteItem(
@@ -164,7 +177,7 @@ open class MarketingPasteData(
 
             PasteData(
                 id = 5L,
-                appInstanceId = "1",
+                appInstanceId = "$MACOS-id",
                 favorite = false,
                 pasteAppearItem =
                     TextPasteItem(
@@ -202,7 +215,7 @@ open class MarketingPasteData(
 
             PasteData(
                 id = 6L,
-                appInstanceId = "1",
+                appInstanceId = "$MACOS-id",
                 favorite = false,
                 pasteAppearItem =
                     HtmlPasteItem(
@@ -217,7 +230,7 @@ open class MarketingPasteData(
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.HTML_TYPE.type,
-                source = "Google Chrome",
+                source = "Email",
                 size = size,
                 hash = hash,
                 pasteState = PasteState.LOADED,
@@ -230,7 +243,7 @@ open class MarketingPasteData(
             text,
             imageFile,
             zipData,
-            crossPasteDownloadUrl,
+            url,
             color,
         )
 }

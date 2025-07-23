@@ -39,10 +39,14 @@ fun SearchWindow(windowIcon: Painter?) {
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
     val isMac by remember { mutableStateOf(platform.isMacos()) }
-    val isLinux by remember { mutableStateOf(platform.isLinux()) }
 
     var currentStyle by remember { mutableStateOf(config.searchWindowStyle) }
-    val isCenterStyle = config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style
+
+    val isCenterStyle by remember(currentStyle) {
+        mutableStateOf(
+            config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style,
+        )
+    }
 
     val animationProgress by animateFloatAsState(
         targetValue = if (showSearchWindow && !isCenterStyle) 0f else 1f,
@@ -85,7 +89,7 @@ fun SearchWindow(windowIcon: Painter?) {
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
-        transparent = !isLinux,
+        transparent = false,
         resizable = false,
     ) {
         LaunchedEffect(config.searchWindowStyle) {
