@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppSize
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopWriteTransferable
@@ -47,6 +48,7 @@ fun SidePastePreviewItemView(
     pasteContent: @Composable PasteData.() -> Unit,
 ) {
     val appSize = koinInject<DesktopAppSize>()
+    val configManager = koinInject<CommonConfigManager>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteProducer = koinInject<TransferableProducer>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
@@ -79,7 +81,7 @@ fun SidePastePreviewItemView(
                                     .produce(
                                         pasteData = pasteData,
                                         localOnly = true,
-                                        primary = true,
+                                        primary = configManager.getCurrentConfig().pastePrimaryTypeOnly,
                                     )?.let {
                                         it as DesktopWriteTransferable
                                     } ?: DesktopWriteTransferable(LinkedHashMap()),
