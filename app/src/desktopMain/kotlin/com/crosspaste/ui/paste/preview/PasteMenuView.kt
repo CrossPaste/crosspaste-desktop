@@ -559,9 +559,9 @@ fun getDetailInfo(
             "${copywriter.getText("source")}: $it",
         )
     }
-    val typeText = pasteData.getTypeText()
+    val typeName = pasteData.getTypeName()
     infos.add(
-        "${copywriter.getText("type")}: ${copywriter.getText(typeText)}",
+        "${copywriter.getText("type")}: ${copywriter.getText(typeName)}",
     )
     pasteData.createTime.let {
         infos.add(

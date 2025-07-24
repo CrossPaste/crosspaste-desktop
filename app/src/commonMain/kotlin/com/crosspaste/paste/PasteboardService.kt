@@ -51,15 +51,13 @@ interface PasteboardService : PasteboardMonitor {
         id: Long? = null,
         pasteItem: PasteItem,
         localOnly: Boolean = false,
-        filterFile: Boolean = false,
         updateCreateTime: Boolean = false,
     ): Result<Unit?>
 
     fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean = false,
-        filterFile: Boolean = false,
-        primary: Boolean = false,
+        primary: Boolean = configManager.getCurrentConfig().pastePrimaryTypeOnly,
         updateCreateTime: Boolean = false,
     ): Result<Unit?>
 

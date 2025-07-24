@@ -15,9 +15,9 @@ class DesktopWriteTransferableBuilder {
     fun add(
         pasteTypePlugin: PasteTypePlugin,
         pasteItem: PasteItem,
-        singleType: Boolean = false,
+        mixedCategory: Boolean,
     ): DesktopWriteTransferableBuilder {
-        pasteTypePlugin.buildTransferable(pasteItem, singleType, map)
+        pasteTypePlugin.buildTransferable(pasteItem, mixedCategory, map)
         return this
     }
 

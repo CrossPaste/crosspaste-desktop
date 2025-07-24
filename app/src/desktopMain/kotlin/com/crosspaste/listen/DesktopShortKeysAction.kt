@@ -112,7 +112,6 @@ class DesktopShortKeysAction(
                             pasteboardService.tryWritePasteboard(
                                 pasteData = it,
                                 localOnly = true,
-                                primary = true,
                                 updateCreateTime = true,
                             ),
                     )

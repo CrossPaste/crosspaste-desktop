@@ -79,8 +79,7 @@ fun SidePastePreviewItemView(
                                     .produce(
                                         pasteData = pasteData,
                                         localOnly = true,
-                                        filterFile = false,
-                                        primary = false,
+                                        primary = true,
                                     )?.let {
                                         it as DesktopWriteTransferable
                                     } ?: DesktopWriteTransferable(LinkedHashMap()),

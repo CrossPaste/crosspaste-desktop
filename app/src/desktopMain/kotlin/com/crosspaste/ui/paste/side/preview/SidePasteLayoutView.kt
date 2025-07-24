@@ -142,7 +142,7 @@ fun SidePasteTitleView(pasteData: PasteData) {
                 horizontalArrangement = Arrangement.Start,
             ) {
                 Text(
-                    text = copywriter.getText(pasteData.getTypeText()),
+                    text = copywriter.getText(pasteData.getTypeName()),
                     style =
                         DesktopAppUIFont.sidePasteTitleTextStyle.copy(
                             color = onBackground,

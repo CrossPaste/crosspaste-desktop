@@ -331,12 +331,12 @@ class PasteDao(
 
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
-        tryWritePasteboard: (PasteData, Boolean) -> Unit,
+        tryWritePasteboard: (PasteData) -> Unit,
     ): Result<Unit> {
         return runCatching {
             val remotePasteDataId = pasteData.id
             val tasks = mutableListOf<Long>()
-            val existFile = pasteData.existFileResource()
+            val existFile = pasteData.existFileCategory()
             val existIconFile: Boolean? =
                 pasteData.source?.let {
                     fileUtils.existFile(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
@@ -386,7 +386,9 @@ class PasteDao(
                 }
             }
 
-            tryWritePasteboard(pasteData, existFile)
+            if (!existFile) {
+                tryWritePasteboard(pasteData)
+            }
             taskExecutor.submitTasks(tasks)
         }.onFailure { e ->
             logger.error(e) { "Release remote paste data failed" }

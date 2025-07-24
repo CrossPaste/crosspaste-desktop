@@ -31,6 +31,7 @@ interface AppConfig {
     val useDefaultStoragePath: Boolean
     val storagePath: String
     val enableSoundEffect: Boolean
+    val pastePrimaryTypeOnly: Boolean
 
     fun copy(
         key: String,

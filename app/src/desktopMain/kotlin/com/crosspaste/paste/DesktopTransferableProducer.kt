@@ -17,18 +17,11 @@ class DesktopTransferableProducer(
     override fun produce(
         pasteItem: PasteItem,
         localOnly: Boolean,
-        filterFile: Boolean,
     ): DesktopWriteTransferable? {
         val builder = DesktopWriteTransferableBuilder()
 
-        if (filterFile) {
-            if (pasteItem is PasteFiles) {
-                return null
-            }
-        } else {
-            pasteTypePluginMap[pasteItem.getPasteType()]?.let {
-                builder.add(it, pasteItem, singleType = true)
-            }
+        pasteTypePluginMap[pasteItem.getPasteType()]?.let {
+            builder.add(it, pasteItem, mixedCategory = false)
         }
 
         return if (builder.isEmpty()) {
@@ -44,32 +37,32 @@ class DesktopTransferableProducer(
     override fun produce(
         pasteData: PasteData,
         localOnly: Boolean,
-        filterFile: Boolean,
         primary: Boolean,
     ): DesktopWriteTransferable? {
         val builder = DesktopWriteTransferableBuilder()
 
         val pasteAppearItems = pasteData.getPasteAppearItems()
 
-        if (primary) {
-            pasteAppearItems.firstOrNull()?.let { pasteAppearItem ->
-                if (!filterFile || pasteAppearItem !is PasteFiles) {
-                    pasteTypePluginMap[pasteAppearItem.getPasteType()]?.let {
-                        builder.add(it, pasteAppearItem, singleType = true)
-                    }
-                }
+        val pasteAppearItem = pasteAppearItems.firstOrNull()
+
+        if (pasteAppearItem == null) {
+            return null
+        }
+
+        val isFileCategory = pasteAppearItem is PasteFiles
+
+        val itemsToProcess =
+            if (primary) {
+                pasteAppearItems.reversed().filter { (it is PasteFiles) == isFileCategory }
+            } else {
+                pasteAppearItems.reversed()
             }
-        } else {
-            for (pasteAppearItem in pasteAppearItems.reversed()) {
-                if (filterFile) {
-                    if (pasteAppearItem is PasteFiles) {
-                        continue
-                    }
-                } else {
-                    pasteTypePluginMap[pasteAppearItem.getPasteType()]?.let {
-                        builder.add(it, pasteAppearItem)
-                    }
-                }
+
+        val mixedCategory = !primary
+
+        for (item in itemsToProcess) {
+            pasteTypePluginMap[item.getPasteType()]?.let {
+                builder.add(it, item, mixedCategory = mixedCategory)
             }
         }
 
