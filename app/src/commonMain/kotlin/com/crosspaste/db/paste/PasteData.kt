@@ -168,11 +168,11 @@ data class PasteData(
         }
     }
 
-    fun existFileResource(): Boolean {
+    fun existFileCategory(): Boolean {
         return getPasteAppearItems().any { it is PasteFiles }
     }
 
-    fun getTypeText(): String {
+    fun getTypeName(): String {
         return PasteType.fromType(this.pasteType).name
     }
 

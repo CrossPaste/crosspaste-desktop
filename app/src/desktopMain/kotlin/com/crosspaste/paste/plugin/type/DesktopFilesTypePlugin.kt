@@ -157,13 +157,13 @@ class DesktopFilesTypePlugin(
 
     override fun buildTransferable(
         pasteItem: PasteItem,
-        singleType: Boolean,
+        mixedCategory: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as FilesPasteItem
         val fileList: List<File> = pasteItem.getFilePaths(userDataPathProvider).map { it.toFile() }
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
-        if (!singleType) {
+        if (mixedCategory) {
             map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
                 ByteArrayInputStream(
                     fileList

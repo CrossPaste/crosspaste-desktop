@@ -52,11 +52,10 @@ abstract class AbstractPasteboardService :
         id: Long?,
         pasteItem: PasteItem,
         localOnly: Boolean,
-        filterFile: Boolean,
         updateCreateTime: Boolean,
     ): Result<Unit?> =
         runCatching {
-            pasteProducer.produce(pasteItem, localOnly, filterFile)?.let {
+            pasteProducer.produce(pasteItem, localOnly)?.let {
                 it as DesktopWriteTransferable
                 writePasteboard(pasteItem, it)
                 ownerTransferable = it
@@ -72,12 +71,11 @@ abstract class AbstractPasteboardService :
     override fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean,
-        filterFile: Boolean,
         primary: Boolean,
         updateCreateTime: Boolean,
     ): Result<Unit?> =
         runCatching {
-            pasteProducer.produce(pasteData, localOnly, filterFile, primary)?.let {
+            pasteProducer.produce(pasteData, localOnly, primary)?.let {
                 it as DesktopWriteTransferable
                 writePasteboard(pasteData, it)
                 ownerTransferable = it
@@ -103,30 +101,34 @@ abstract class AbstractPasteboardService :
     }
 
     override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
-        pasteDao.releaseRemotePasteData(pasteData) { storePasteData, filterFile ->
+        pasteDao.releaseRemotePasteData(pasteData) { storePasteData ->
             pasteboardChannel.trySend {
-                tryWritePasteboard(storePasteData, localOnly = true, filterFile = filterFile)
-                    .onFailure {
-                        notificationManager.sendNotification(
-                            title = { copyWriter -> copyWriter.getText("copy_failed") },
-                            message = it.message?.let { message -> { it -> message } },
-                            messageType = MessageType.Error,
-                        )
-                    }
+                tryWritePasteboard(
+                    pasteData = storePasteData,
+                    localOnly = true,
+                ).onFailure {
+                    notificationManager.sendNotification(
+                        title = { copyWriter -> copyWriter.getText("copy_failed") },
+                        message = it.message?.let { message -> { it -> message } },
+                        messageType = MessageType.Error,
+                    )
+                }
             }
         }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?> =
         pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
             pasteboardChannel.trySend {
-                tryWritePasteboard(storePasteData, localOnly = true, filterFile = false)
-                    .onFailure {
-                        notificationManager.sendNotification(
-                            title = { copyWriter -> copyWriter.getText("copy_failed") },
-                            message = it.message?.let { message -> { it -> message } },
-                            messageType = MessageType.Error,
-                        )
-                    }
+                tryWritePasteboard(
+                    pasteData = storePasteData,
+                    localOnly = true,
+                ).onFailure {
+                    notificationManager.sendNotification(
+                        title = { copyWriter -> copyWriter.getText("copy_failed") },
+                        message = it.message?.let { message -> { it -> message } },
+                        messageType = MessageType.Error,
+                    )
+                }
             }
         }
 

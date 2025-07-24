@@ -210,7 +210,7 @@ class DesktopImageTypePlugin(
 
     override fun buildTransferable(
         pasteItem: PasteItem,
-        singleType: Boolean,
+        mixedCategory: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as ImagesPasteItem
@@ -218,7 +218,7 @@ class DesktopImageTypePlugin(
         val fileList: List<File> = filePaths.map { it.toFile() }
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
 
-        if (!singleType) {
+        if (mixedCategory) {
             map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
                 ByteArrayInputStream(
                     fileList

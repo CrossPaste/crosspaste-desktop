@@ -44,6 +44,7 @@ data class DesktopAppConfig(
     override val enableSoundEffect: Boolean = true,
     val searchWindowStyle: String = DesktopSearchWindowStyle.SIDE_STYLE.style,
     val legacySoftwareCompatibility: Boolean = false,
+    override val pastePrimaryTypeOnly: Boolean = true,
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -126,5 +127,6 @@ data class DesktopAppConfig(
                 } else {
                     legacySoftwareCompatibility
                 },
+            pastePrimaryTypeOnly = if (key == "pastePrimaryTypeOnly") toBoolean(value) else pastePrimaryTypeOnly,
         )
 }

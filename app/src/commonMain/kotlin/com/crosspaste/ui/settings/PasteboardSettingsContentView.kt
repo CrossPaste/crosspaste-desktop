@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.CustomSwitch
+import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.skipForward
 import com.crosspaste.ui.base.sync
@@ -40,6 +41,27 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 .background(AppUIColors.generalBackground),
     ) {
         SettingItemsTitleView("paste_control")
+
+        SettingItemView(
+            painter = clipboard(),
+            text = "paste_primary_type_only",
+        ) {
+            CustomSwitch(
+                modifier =
+                    Modifier
+                        .width(medium * 2)
+                        .height(large2X),
+                checked = config.pastePrimaryTypeOnly,
+                onCheckedChange = { newPastePrimaryTypeOnly ->
+                    configManager.updateConfig(
+                        "pastePrimaryTypeOnly",
+                        newPastePrimaryTypeOnly,
+                    )
+                },
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
         SettingItemView(
             painter = skipForward(),

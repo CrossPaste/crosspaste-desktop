@@ -81,7 +81,7 @@ class DesktopUrlTypePlugin(
 
     override fun buildTransferable(
         pasteItem: PasteItem,
-        singleType: Boolean,
+        mixedCategory: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as UrlPasteItem
