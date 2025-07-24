@@ -88,8 +88,6 @@ fun SidePastePreviewItemView(
                         supportedActions =
                             listOf(
                                 DragAndDropTransferAction.Copy,
-                                DragAndDropTransferAction.Move,
-                                DragAndDropTransferAction.Link,
                             ),
                         dragDecorationOffset = offset,
                         onTransferCompleted = { action ->
