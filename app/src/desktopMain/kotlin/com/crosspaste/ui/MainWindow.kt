@@ -115,6 +115,11 @@ fun MainWindow(windowIcon: Painter?) {
                     }
                 }
                 Menu(copywriter.getText("action")) {
+                    Item(copywriter.getText("settings")) {
+                        appWindowManager.toScreen(Settings)
+                        appWindowManager.showMainWindow()
+
+                    }
                     Item(copywriter.getText("import")) {
                         appWindowManager.toScreen(Import)
                         appWindowManager.showMainWindow()
