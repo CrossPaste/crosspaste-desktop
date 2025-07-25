@@ -329,7 +329,11 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
         for window in windows {
             if window.title == title {
                 window.makeKeyAndOrderFront(nil)
-                NSApp.setActivationPolicy(.accessory)
+                if title == "CrossPaste" {
+                    NSApp.setActivationPolicy(.regular)
+                } else if title == "CrossPaste Search" {
+                    NSApp.setActivationPolicy(.accessory)
+                }
                 NSApp.activate(ignoringOtherApps: true)
                 break
             }
