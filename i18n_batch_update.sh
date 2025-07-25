@@ -76,20 +76,24 @@ update_properties_file() {
     if grep -q "^${key}=" "$file_path"; then
         # Update existing key
         # Use temp file to avoid issues on some systems
-        sed "s|^${key}=.*|${key}=${value}|" "$file_path" > "${file_path}.tmp" && mv "${file_path}.tmp" "$file_path"
-        echo "  Updated existing key: $key"
+        if sed "s|^${key}=.*|${key}=${value}|" "$file_path" > "${file_path}.tmp" && mv "${file_path}.tmp" "$file_path"; then
+            echo "  Updated existing key: $key"
+            ((SUCCESS_COUNT++))
+            return 0
+        else
+            echo "  Error: Failed to update file"
+            return 1
+        fi
     else
         # Add new key
-        echo "${key}=${value}" >> "$file_path"
-        echo "  Added new key: ${key}=${value}"
-    fi
-
-    if [ $? -eq 0 ]; then
-        ((SUCCESS_COUNT++))
-        return 0
-    else
-        echo "  Error: Failed to update file"
-        return 1
+        if echo "${key}=${value}" >> "$file_path"; then
+            echo "  Added new key: ${key}=${value}"
+            ((SUCCESS_COUNT++))
+            return 0
+        else
+            echo "  Error: Failed to update file"
+            return 1
+        fi
     fi
 }
 
