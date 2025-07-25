@@ -7,6 +7,7 @@
 development.properties
 local.properties
 local.conveyor.conf
+i18n_key.txt
 package*.json
 selenium-manager
 selenium-manager.exe
