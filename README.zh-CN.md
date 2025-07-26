@@ -1,5 +1,5 @@
 <div align="center">
-   <img src="doc/zh/marketing.webp" width="768px" height="432px" alt="海报" />
+   <img src="doc/zh/marketing.webp" width="986px" height="641px" alt="海报" />
    <h1>CrossPaste: 跨设备的通用粘贴板</h1>
    <p>
       <b>在任意设备间复制粘贴，就像在同一台设备上操作一样自然流畅</b>
