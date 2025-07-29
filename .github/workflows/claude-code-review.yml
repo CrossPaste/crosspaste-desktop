@@ -1,110 +1,218 @@
 name: Claude Code Review
 
 on:
-  pull_request:
-    types: [opened, synchronize, closed]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+  issue_comment:
+    types: [created]
 
 concurrency:
-  group: claude-review-pr-${{ github.event.pull_request.number }}
+  group: claude-review-pr-${{ github.event.issue.number }}
   cancel-in-progress: true
 
 jobs:
-  check-pr-status:
+  check-trigger:
+    if: github.event.issue.pull_request != null
     runs-on: ubuntu-latest
     outputs:
       should-review: ${{ steps.check.outputs.should-review }}
+      pr-number: ${{ steps.check.outputs.pr-number }}
     steps:
-      - id: check
+      - name: Check comment and permissions
+        id: check
         run: |
-          if [[ "${{ github.event.action }}" == "closed" ]]; then
-            echo "should-review=false" >> $GITHUB_OUTPUT
+          echo "🔍 Checking comment trigger..."
+          echo "Comment author: ${{ github.event.comment.user.login }}"
+          echo "Author association: ${{ github.event.comment.author_association }}"
+          echo "Comment body: ${{ github.event.comment.body }}"
+          
+          if [[ "${{ github.event.comment.body }}" == *"@claude review"* ]]; then
+            echo "✅ Found trigger phrase '@claude review'"
+          
+            if [[ "${{ contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) }}" == "true" ]]; then
+              echo "✅ User has required permissions"
+              echo "should-review=true" >> $GITHUB_OUTPUT
+              echo "pr-number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            else
+              echo "❌ User does not have required permissions"
+              echo "should-review=false" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "should-review=true" >> $GITHUB_OUTPUT
+            echo "❌ Trigger phrase not found"
+            echo "should-review=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: React to comment
+        if: steps.check.outputs.should-review == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: 'eyes'
+            });
+
+      - name: Post permission denied message
+        if: |
+          steps.check.outputs.should-review == 'false' && 
+          contains(github.event.comment.body, '@claude review')
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: `❌ @${{ github.event.comment.user.login }} Sorry, only repository owners, members, and collaborators can trigger Claude reviews.`
+            });
+
   claude-review:
-    # Only allow repository owner to trigger Claude code review to prevent token abuse
-    needs: check-pr-status
-    if: |
-      needs.check-pr-status.outputs.should-review == 'true' &&
-      contains(
-        fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
-        github.event.pull_request.author_association
-      )
-    
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should-review == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
-    timeout-minutes: 30
-
-    environment:
-      name: claude-review-approval
-      url: ${{ github.event.pull_request.html_url }}
+    timeout-minutes: 10
 
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
-    
+
     steps:
+      - name: Post starting comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.check-trigger.outputs.pr-number }},
+              body: `🤖 Claude is starting to review this PR...\n\nRequested by @${{ github.event.comment.user.login }}`
+            });
+            
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: comment.data.id,
+              content: 'rocket'
+            });
+
+      - name: Get PR details
+        id: pr-details
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ needs.check-trigger.outputs.pr-number }}
+            });
+            
+            core.setOutput('head-sha', pr.data.head.sha);
+            core.setOutput('base-sha', pr.data.base.sha);
+            core.setOutput('pr-title', pr.data.title);
+            core.setOutput('pr-body', pr.data.body || 'No description provided');
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          ref: ${{ steps.pr-details.outputs.head-sha }}
 
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          github_token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
-          # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
+          # Optional: Specify model (defaults to Claude Sonnet 4)
           # model: "claude-opus-4-20250514"
-          
-          # Direct prompt for automated review (no @claude mention needed)
+
           direct_prompt: |
+            You are reviewing a pull request. Here's the context:
+            
+            PR Title: ${{ steps.pr-details.outputs.pr-title }}
+            PR Description: ${{ steps.pr-details.outputs.pr-body }}
+            
             Please review this pull request and provide feedback on:
             - Code quality and best practices
             - Potential bugs or issues
             - Performance considerations
             - Security concerns
             - Test coverage
+            - Documentation completeness
             
-            Be constructive and helpful in your feedback.
-          
-          # Optional: Customize review based on file types
-          # direct_prompt: |
-          #   Review this PR focusing on:
-          #   - For TypeScript files: Type safety and proper interface usage
-          #   - For API endpoints: Security, input validation, and error handling
-          #   - For React components: Performance, accessibility, and best practices
-          #   - For tests: Coverage, edge cases, and test quality
-          
-          # Optional: Different prompts for different authors
-          # direct_prompt: |
-          #   ${{ github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR' && 
-          #   'Welcome! Please review this PR from a first-time contributor. Be encouraging and provide detailed explanations for any suggestions.' ||
-          #   'Please provide a thorough code review focusing on our coding standards and best practices.' }}
-          
-          # Optional: Add specific tools for running tests or linting
-          # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
-          
-          # Optional: Skip review for certain conditions
-          # if: |
-          #   !contains(github.event.pull_request.title, '[skip-review]') &&
-          #   !contains(github.event.pull_request.title, '[WIP]')
+            Be constructive and helpful in your feedback. Use markdown formatting for clarity.
+            
+            If the changes look good overall, mention that as well. Not every PR needs extensive feedback.
 
-  cleanup-on-close:
-    if: github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Mark as skipped
-        run: |
-          echo "PR is closed, skipping Claude review"
+      - name: Handle review success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: '+1'
+            });
+
+      - name: Handle review failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: '-1'
+            });
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.check-trigger.outputs.pr-number }},
+              body: `❌ Claude review failed. This could be due to:
+                - API rate limits
+                - Invalid API key
+                - Network issues
+                - Action timeout
+                Please check the [action logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
+                You can try again by commenting \`@claude review\` after resolving any issues.`
+            });
+
+      - name: Handle timeout
+        if: cancelled()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.check-trigger.outputs.pr-number }},
+              body: `⏱️ Claude review was cancelled or timed out after 30 minutes. This might happen with very large PRs. You can try again with \`@claude review\`.`
+            });
+
+log-usage:
+  needs: [check-trigger, claude-review]
+  if: always() && needs.check-trigger.outputs.should-review == 'true'
+  runs-on: ubuntu-latest
+  steps:
+    - name: Log review attempt
+      run: |
+        echo "📊 Claude Review Usage:"
+        echo "- Triggered by: @${{ github.event.comment.user.login }}"
+        echo "- PR: #${{ needs.check-trigger.outputs.pr-number }}"
+        echo "- Status: ${{ needs.claude-review.result }}"
+        echo "- Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
