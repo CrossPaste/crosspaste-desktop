@@ -73,7 +73,7 @@ jobs:
     if: needs.check-trigger.outputs.should-review == 'true'
     runs-on: ubuntu-latest
     continue-on-error: true
-    timeout-minutes: 30
+    timeout-minutes: 10
 
     permissions:
       contents: read
@@ -178,20 +178,16 @@ jobs:
               content: '-1'
             });
             
-            // 发布错误评论
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: ${{ needs.check-trigger.outputs.pr-number }},
               body: `❌ Claude review failed. This could be due to:
-
                 - API rate limits
                 - Invalid API key
                 - Network issues
                 - Action timeout
-              
                 Please check the [action logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.
-                
                 You can try again by commenting \`@claude review\` after resolving any issues.`
             });
 
