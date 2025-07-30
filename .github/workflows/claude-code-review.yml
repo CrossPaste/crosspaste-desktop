@@ -203,16 +203,3 @@ jobs:
               issue_number: ${{ needs.check-trigger.outputs.pr-number }},
               body: `⏱️ Claude review was cancelled or timed out after 30 minutes. This might happen with very large PRs. You can try again with \`@claude review\`.`
             });
-
-log-usage:
-  needs: [check-trigger, claude-review]
-  if: always() && needs.check-trigger.outputs.should-review == 'true'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Log review attempt
-      run: |
-        echo "📊 Claude Review Usage:"
-        echo "- Triggered by: @${{ github.event.comment.user.login }}"
-        echo "- PR: #${{ needs.check-trigger.outputs.pr-number }}"
-        echo "- Status: ${{ needs.claude-review.result }}"
-        echo "- Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
