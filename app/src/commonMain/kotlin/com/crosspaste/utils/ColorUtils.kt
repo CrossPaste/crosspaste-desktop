@@ -270,7 +270,7 @@ object ColorUtils {
         val green = (argb shr 8) and 0xFF
         val blue = argb and 0xFF
 
-        val alphaFormatted = "%.2f".format(alpha)
+        val alphaFormatted = ((alpha * 100).roundToInt()) / 100.0
 
         return "RGBA($red, $green, $blue, $alphaFormatted)"
     }
