@@ -60,6 +60,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -184,17 +185,22 @@ fun SidePasteboardContentView() {
 
     LaunchedEffect(searchResult) {
         if (searchResult.isNotEmpty()) {
-            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-            if (searchResult.size > visibleItems.size) {
-                showScrollbar = true
-            }
-
             val currentFirstItemId = searchResult.first().id
-            if (currentFirstItemId != previousFirstItemId &&
-                searchListState.firstVisibleItemIndex == 1
-            ) {
-                searchListState.animateScrollToItem(0)
-                showToStart = false
+
+            if (currentFirstItemId != previousFirstItemId) {
+                snapshotFlow { searchListState.layoutInfo }
+                    .take(2)
+                    .collect { layoutInfo ->
+                        val visibleItems = layoutInfo.visibleItemsInfo
+                        if (searchResult.size > visibleItems.size) {
+                            showScrollbar = true
+                        }
+
+                        if (searchListState.firstVisibleItemIndex <= 1) {
+                            searchListState.animateScrollToItem(0)
+                            showToStart = false
+                        }
+                    }
             }
             previousFirstItemId = currentFirstItemId
         }
