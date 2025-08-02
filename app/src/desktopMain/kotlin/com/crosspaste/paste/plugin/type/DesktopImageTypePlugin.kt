@@ -18,6 +18,7 @@ import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin.Companion.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.utils.FileNameNormalizer
 import com.crosspaste.utils.getFileUtils
 import com.fleeksoft.ksoup.Ksoup
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -96,8 +97,10 @@ class DesktopImageTypePlugin(
 
         image?.let {
             var name =
-                tryGetImageName(dataFlavorMap, pasteTransferable)
-                    ?: fileUtils.createRandomFileName(ext = "png")
+                FileNameNormalizer.normalize(
+                    tryGetImageName(dataFlavorMap, pasteTransferable)
+                        ?: fileUtils.createRandomFileName(ext = "png"),
+                )
             val ext =
                 fileUtils.getImageExtFromFileName(name) ?: run {
                     name += ".png"
