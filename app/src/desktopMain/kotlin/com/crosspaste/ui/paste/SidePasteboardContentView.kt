@@ -60,6 +60,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -95,6 +96,8 @@ fun SidePasteboardContentView() {
     val latestSearchResult = rememberUpdatedState(searchResult)
 
     val pasteListFocusRequester = remember { FocusRequester() }
+
+    var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(showSearchWindow, inputSearch, searchFavorite, searchSort, searchPasteType) {
         if (showSearchWindow) {
@@ -180,10 +183,26 @@ fun SidePasteboardContentView() {
         }
     }
 
-    LaunchedEffect(searchResult.size) {
-        val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-        if (searchResult.size > visibleItems.size) {
-            showScrollbar = true
+    LaunchedEffect(searchResult) {
+        if (searchResult.isNotEmpty()) {
+            val currentFirstItemId = searchResult.first().id
+
+            if (currentFirstItemId != previousFirstItemId) {
+                snapshotFlow { searchListState.layoutInfo }
+                    .take(2)
+                    .collect { layoutInfo ->
+                        val visibleItems = layoutInfo.visibleItemsInfo
+                        if (searchResult.size > visibleItems.size) {
+                            showScrollbar = true
+                        }
+
+                        if (searchListState.firstVisibleItemIndex <= 1) {
+                            searchListState.animateScrollToItem(0)
+                            showToStart = false
+                        }
+                    }
+            }
+            previousFirstItemId = currentFirstItemId
         }
     }
 
