@@ -16,6 +16,7 @@ import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FileInfoTree
+import com.crosspaste.utils.FileNameNormalizer
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
@@ -103,7 +104,7 @@ class DesktopFilesTypePlugin(
 
             for (file in files) {
                 val path = file.toOkioPath(normalize = true)
-                val fileName = file.name
+                val fileName = FileNameNormalizer.normalize(file.name)
 
                 if (useRefCopyFiles) {
                     val relativePath = path.name
