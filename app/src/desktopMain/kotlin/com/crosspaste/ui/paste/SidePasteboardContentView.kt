@@ -96,6 +96,8 @@ fun SidePasteboardContentView() {
 
     val pasteListFocusRequester = remember { FocusRequester() }
 
+    var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
+
     LaunchedEffect(showSearchWindow, inputSearch, searchFavorite, searchSort, searchPasteType) {
         if (showSearchWindow) {
             pasteSelectionViewModel.initSelectIndex()
@@ -180,10 +182,21 @@ fun SidePasteboardContentView() {
         }
     }
 
-    LaunchedEffect(searchResult.size) {
-        val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-        if (searchResult.size > visibleItems.size) {
-            showScrollbar = true
+    LaunchedEffect(searchResult) {
+        if (searchResult.isNotEmpty()) {
+            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
+            if (searchResult.size > visibleItems.size) {
+                showScrollbar = true
+            }
+
+            val currentFirstItemId = searchResult.first().id
+            if (currentFirstItemId != previousFirstItemId &&
+                searchListState.firstVisibleItemIndex == 1
+            ) {
+                searchListState.animateScrollToItem(0)
+                showToStart = false
+            }
+            previousFirstItemId = currentFirstItemId
         }
     }
 
