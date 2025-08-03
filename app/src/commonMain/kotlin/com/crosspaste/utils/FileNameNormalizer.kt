@@ -67,8 +67,24 @@ object FileNameNormalizer {
 
         // Split base name / extension (keep the dot in [extension]).
         val lastDotIdx = if (preserveExtension) fileName.lastIndexOf('.') else -1
-        val baseName = if (lastDotIdx > 0) fileName.substring(0, lastDotIdx) else fileName
-        val extension = if (lastDotIdx > 0) fileName.substring(lastDotIdx) else ""
+
+        // Handle special case: filename starts with dot (like ".txt", ".gitignore")
+        val baseName: String
+        val extension: String
+
+        if (preserveExtension && fileName.startsWith('.') && lastDotIdx == 0 && fileName.length > 1) {
+            // File starts with dot - treat as extension-only file
+            baseName = "unnamed"
+            extension = fileName // Keep the whole filename as extension
+        } else if (lastDotIdx > 0) {
+            // Normal case: has both base name and extension
+            baseName = fileName.substring(0, lastDotIdx)
+            extension = fileName.substring(lastDotIdx)
+        } else {
+            // No extension or extension preservation disabled
+            baseName = fileName
+            extension = ""
+        }
 
         // 1) Replace illegal chars in the base name.
         var normalized =
@@ -113,7 +129,7 @@ object FileNameNormalizer {
                             },
                         )
                     }
-                }.trim(' ', '.') // just in case
+                }.trimEnd(' ', '.') // only trim trailing spaces and dots, not the leading dot
 
             return normalized + normalizedExt
         }
