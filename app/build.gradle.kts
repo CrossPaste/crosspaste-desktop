@@ -82,47 +82,6 @@ kotlin {
     }
 
     sourceSets {
-        val desktopMain by getting
-
-        desktopMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.compose.shimmer)
-            implementation(libs.conveyor.control)
-            implementation(libs.guava)
-            implementation(libs.icu4j)
-            implementation(libs.imageio.core)
-            implementation(libs.imageio.jpeg)
-            implementation(libs.jewel.decorated.window)
-            implementation(libs.jewel.foundation)
-            implementation(libs.jewel.int.ui.decorated.window)
-            implementation(libs.jewel.int.ui.standalone)
-            implementation(libs.jewel.ui)
-            implementation(libs.jmdns)
-            implementation(libs.jna)
-            implementation(libs.jna.platform)
-            implementation(libs.jnativehook)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.cio)
-            implementation(libs.ktor.client.logging)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.ktor.server.compression)
-            implementation(libs.ktor.server.content.negotiation)
-            implementation(libs.ktor.server.core)
-            implementation(libs.ktor.server.netty)
-            implementation(libs.ktor.server.status.pages)
-            implementation(libs.logback.classic)
-            implementation(libs.selenium.chrome.driver)
-            implementation(libs.selenium.devtools)
-            implementation(libs.sqlite.driver)
-            implementation(libs.system.tray)
-            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.9.1") {
-                exclude(group = "net.java.dev.jna")
-            }
-            implementation(libs.webp.imageio)
-            implementation(libs.zxing.core)
-            implementation(libs.zxing.javase)
-        }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -144,6 +103,15 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ksoup)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.server.compression)
+            implementation(libs.ktor.server.content.negotiation)
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.status.pages)
             implementation(libs.lifecycle.common)
             implementation(libs.lifecycle.runtime)
             implementation(libs.lifecycle.runtime.compose)
@@ -155,7 +123,38 @@ kotlin {
             implementation(libs.sqldelight.coroutines.extensions)
         }
 
-        val commonTest by getting
+        val desktopMain by getting
+
+        desktopMain.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.compose.shimmer)
+            implementation(libs.conveyor.control)
+            implementation(libs.guava)
+            implementation(libs.icu4j)
+            implementation(libs.imageio.core)
+            implementation(libs.imageio.jpeg)
+            implementation(libs.jewel.decorated.window)
+            implementation(libs.jewel.foundation)
+            implementation(libs.jewel.int.ui.decorated.window)
+            implementation(libs.jewel.int.ui.standalone)
+            implementation(libs.jewel.ui)
+            implementation(libs.jmdns)
+            implementation(libs.jna)
+            implementation(libs.jna.platform)
+            implementation(libs.jnativehook)
+            implementation(libs.ktor.server.netty)
+            implementation(libs.logback.classic)
+            implementation(libs.selenium.chrome.driver)
+            implementation(libs.selenium.devtools)
+            implementation(libs.sqlite.driver)
+            implementation(libs.system.tray)
+            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.9.1") {
+                exclude(group = "net.java.dev.jna")
+            }
+            implementation(libs.webp.imageio)
+            implementation(libs.zxing.core)
+            implementation(libs.zxing.javase)
+        }
 
         commonTest.dependencies {
             implementation(libs.koin.test)
