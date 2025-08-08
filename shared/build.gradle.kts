@@ -1,11 +1,25 @@
+import java.io.FileReader
+import java.util.Properties
+
+val versionProperties = Properties()
+versionProperties.load(
+    FileReader(
+        project.projectDir
+            .toPath()
+            .parent
+            .resolve("app/src/desktopMain/resources/crosspaste-version.properties")
+            .toFile(),
+    ),
+)
+
+group = "com.crosspaste"
+version = versionProperties.getProperty("version")
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ktlint)
 }
-
-group = "com.crosspaste"
-version = "1.0.0"
 
 ktlint {
     verbose = true
