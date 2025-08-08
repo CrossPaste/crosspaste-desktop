@@ -2,7 +2,7 @@ package com.crosspaste.image.coil
 
 import coil3.key.Keyer
 import coil3.request.Options
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFileCoordinate
 import okio.Path
 

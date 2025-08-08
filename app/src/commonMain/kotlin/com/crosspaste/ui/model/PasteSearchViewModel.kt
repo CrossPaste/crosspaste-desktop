@@ -1,7 +1,7 @@
 package com.crosspaste.ui.model
 
 import androidx.lifecycle.ViewModel
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

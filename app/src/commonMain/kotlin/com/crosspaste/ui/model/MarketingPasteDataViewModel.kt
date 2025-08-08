@@ -1,6 +1,6 @@
 package com.crosspaste.ui.model
 
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

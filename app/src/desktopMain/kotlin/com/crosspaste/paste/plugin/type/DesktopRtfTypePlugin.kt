@@ -1,9 +1,9 @@
 package com.crosspaste.paste.plugin.type
 
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.toPasteDataFlavor

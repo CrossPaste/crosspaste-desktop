@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape

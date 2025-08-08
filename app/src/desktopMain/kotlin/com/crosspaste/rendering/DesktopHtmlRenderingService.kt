@@ -2,10 +2,10 @@ package com.crosspaste.rendering
 
 import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.PngBackgroundAnalyzer
 import com.crosspaste.module.ModuleLoaderConfig
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
 import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND

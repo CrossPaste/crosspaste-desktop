@@ -1,11 +1,7 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.paste.PasteCollection
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
-import com.crosspaste.db.paste.PasteState
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime

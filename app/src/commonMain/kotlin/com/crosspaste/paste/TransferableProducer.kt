@@ -1,6 +1,5 @@
 package com.crosspaste.paste
 
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.PasteItem
 
 interface TransferableProducer {

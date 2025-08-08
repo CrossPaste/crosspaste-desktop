@@ -13,9 +13,9 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
+import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 

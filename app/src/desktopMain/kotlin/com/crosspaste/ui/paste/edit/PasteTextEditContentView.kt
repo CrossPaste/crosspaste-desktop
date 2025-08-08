@@ -12,8 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.ui.base.CustomTextField

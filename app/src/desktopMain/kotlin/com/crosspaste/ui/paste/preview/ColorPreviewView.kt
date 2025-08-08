@@ -22,7 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.app.AppSize
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.theme.AppUIColors

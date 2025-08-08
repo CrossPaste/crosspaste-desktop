@@ -1,7 +1,6 @@
 package com.crosspaste.task
 
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -12,6 +11,7 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles

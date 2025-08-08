@@ -1,7 +1,5 @@
 package com.crosspaste.paste
 
-import com.crosspaste.db.paste.PasteData
-
 interface PasteMenuService {
 
     fun copyPasteData(pasteData: PasteData)

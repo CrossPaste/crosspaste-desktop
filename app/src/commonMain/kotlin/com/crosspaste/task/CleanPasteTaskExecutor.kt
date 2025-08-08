@@ -3,12 +3,12 @@ package com.crosspaste.task
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.paste.PasteType
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getDateUtils

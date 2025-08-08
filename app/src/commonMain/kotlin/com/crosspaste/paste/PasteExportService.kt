@@ -2,7 +2,6 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.notification.MessageType

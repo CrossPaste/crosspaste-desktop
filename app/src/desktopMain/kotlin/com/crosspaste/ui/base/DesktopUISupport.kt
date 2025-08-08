@@ -5,12 +5,12 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteColor
@@ -84,7 +84,7 @@ class DesktopUISupport(
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("cant_open_email_client") },
-                message = email?.let { email -> { it -> email } },
+                message = email?.let { email -> { email } },
                 messageType = MessageType.Error,
             )
         }

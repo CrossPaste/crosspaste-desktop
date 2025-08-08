@@ -6,8 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles

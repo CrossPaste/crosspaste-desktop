@@ -3,7 +3,7 @@ package com.crosspaste.ui.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow

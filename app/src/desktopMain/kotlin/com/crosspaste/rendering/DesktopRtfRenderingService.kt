@@ -1,7 +1,7 @@
 package com.crosspaste.rendering
 
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.GenerateImageService
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist

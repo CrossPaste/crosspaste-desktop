@@ -1,11 +1,11 @@
 package com.crosspaste.ui.model
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.db.paste.PasteCollection
-import com.crosspaste.db.paste.PasteData
-import com.crosspaste.db.paste.PasteState
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteState
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem

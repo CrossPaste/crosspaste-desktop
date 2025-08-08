@@ -25,7 +25,7 @@ class DesktopConfigManager(
 
     override val config: StateFlow<DesktopAppConfig> = _config
 
-    override var notificationManager: NotificationManager? = null
+    var notificationManager: NotificationManager? = null
 
     override fun loadConfig(): DesktopAppConfig? = configFilePersist.read(DesktopAppConfig::class)
 

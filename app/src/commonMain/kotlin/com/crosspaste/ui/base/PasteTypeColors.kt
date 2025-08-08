@@ -1,7 +1,7 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.PasteType
 
 data class PasteTypeColors(
     val colorTypeColor: Color,

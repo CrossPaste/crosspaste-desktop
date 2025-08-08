@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.utils.ColorUtils

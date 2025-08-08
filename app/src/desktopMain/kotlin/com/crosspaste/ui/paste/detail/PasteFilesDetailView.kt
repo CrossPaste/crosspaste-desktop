@@ -35,7 +35,6 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
@@ -44,6 +43,7 @@ import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider

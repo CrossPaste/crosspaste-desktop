@@ -11,7 +11,11 @@ import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.paste.CurrentPaste
+import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
+import com.crosspaste.paste.PasteState
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem

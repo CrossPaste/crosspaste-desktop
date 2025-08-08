@@ -2,7 +2,7 @@ package com.crosspaste.ui.model
 
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.SearchContentService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
