@@ -1,6 +1,6 @@
 package com.crosspaste.rendering
 
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 
 interface RenderingService<T> {
 

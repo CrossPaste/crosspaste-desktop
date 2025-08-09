@@ -12,13 +12,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.COLOR
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.ui.theme.AppUISize.colossal
 import com.crosspaste.ui.theme.AppUISize.gigantic

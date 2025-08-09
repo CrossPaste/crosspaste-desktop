@@ -1,7 +1,5 @@
 package com.crosspaste.paste
 
-import com.crosspaste.db.paste.PasteData
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.type.PasteTypePlugin

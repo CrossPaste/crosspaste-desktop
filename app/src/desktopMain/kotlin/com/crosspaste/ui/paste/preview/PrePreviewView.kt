@@ -7,7 +7,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.ui.base.PasteProgressbar
 import com.crosspaste.ui.paste.PasteboardViewProvider

@@ -7,8 +7,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.PasteData
 import org.koin.compose.koinInject
 
 @Composable

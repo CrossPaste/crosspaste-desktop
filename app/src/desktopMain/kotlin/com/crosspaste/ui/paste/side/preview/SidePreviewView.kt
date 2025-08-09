@@ -1,9 +1,9 @@
 package com.crosspaste.ui.paste.side.preview
 
 import androidx.compose.runtime.Composable
-import com.crosspaste.db.paste.PasteData
-import com.crosspaste.db.paste.PasteState
-import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteState
+import com.crosspaste.paste.PasteType
 import com.crosspaste.ui.paste.preview.PrePreviewView
 
 @Composable

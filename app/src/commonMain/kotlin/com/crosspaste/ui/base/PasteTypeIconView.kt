@@ -5,7 +5,7 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.theme.AppUISize.large2X
 
 @Composable

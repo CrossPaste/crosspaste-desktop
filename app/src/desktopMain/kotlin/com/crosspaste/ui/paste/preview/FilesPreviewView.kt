@@ -8,8 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.path.UserDataPathProvider

@@ -34,9 +34,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.db.paste.PasteType
-import com.crosspaste.db.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.ascSort

@@ -1,6 +1,6 @@
 package com.crosspaste.ui.base
 
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
 import okio.Path
 
 interface UISupport {

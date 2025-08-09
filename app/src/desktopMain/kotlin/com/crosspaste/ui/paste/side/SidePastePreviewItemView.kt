@@ -25,9 +25,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopWriteTransferable
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.model.FocusedElement
@@ -91,8 +91,7 @@ fun SidePastePreviewItemView(
                                 DragAndDropTransferAction.Copy,
                             ),
                         dragDecorationOffset = offset,
-                        onTransferCompleted = { action ->
-                        },
+                        onTransferCompleted = {},
                     )
                 }.size(appSize.sidePasteSize)
                 .clip(small3XRoundedCornerShape)

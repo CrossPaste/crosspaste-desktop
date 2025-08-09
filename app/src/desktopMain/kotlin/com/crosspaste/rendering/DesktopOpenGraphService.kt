@@ -1,10 +1,10 @@
 package com.crosspaste.rendering
 
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageWriter
 import com.crosspaste.net.DesktopClient
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
 import com.crosspaste.paste.item.PasteItemProperties.TITLE

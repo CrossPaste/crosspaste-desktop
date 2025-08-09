@@ -4,7 +4,6 @@ import androidx.compose.foundation.ContextMenuItem
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -50,7 +49,7 @@ class DesktopPasteMenuService(
             fail = { e ->
                 notificationManager.sendNotification(
                     title = { it.getText("copy_failed") },
-                    message = e.message?.let { message -> { it -> message } },
+                    message = e.message?.let { message -> { message } },
                     messageType = MessageType.Error,
                 )
             },
@@ -75,7 +74,7 @@ class DesktopPasteMenuService(
             fail = { e ->
                 notificationManager.sendNotification(
                     title = { it.getText("copy_failed") },
-                    message = e.message?.let { message -> { it -> message } },
+                    message = e.message?.let { message -> { message } },
                     messageType = MessageType.Error,
                 )
             },

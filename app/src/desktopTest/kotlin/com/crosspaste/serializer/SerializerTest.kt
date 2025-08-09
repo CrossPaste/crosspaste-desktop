@@ -1,9 +1,9 @@
 package com.crosspaste.serializer
 
-import com.crosspaste.db.paste.PasteCollection
-import com.crosspaste.db.paste.PasteData
-import com.crosspaste.db.paste.PasteState
-import com.crosspaste.db.paste.PasteType
+import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteState
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.utils.DateUtils

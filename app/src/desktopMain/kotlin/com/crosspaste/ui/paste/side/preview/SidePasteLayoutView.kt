@@ -25,9 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors

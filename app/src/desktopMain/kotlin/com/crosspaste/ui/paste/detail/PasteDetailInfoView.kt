@@ -41,8 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.AppSourceIcon
 import com.crosspaste.ui.base.DefaultPasteTypeIcon
 import com.crosspaste.ui.base.PasteTooltipIconView

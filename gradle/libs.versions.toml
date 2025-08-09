@@ -25,6 +25,7 @@ kotlin-logging = "7.0.11"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1-0.6.x-compat"
 kotlinx-serialization = "1.9.0"
+kotlinx-uuid = "0.1.6"
 ksoup = "0.2.5"
 ktlint = "13.0.0"
 ktor = "3.2.3"
@@ -53,7 +54,7 @@ compose-material3 = { module = "androidx.compose.material3:material3", version.r
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "compose-shimmer" }
 conveyor-control = { module = "dev.hydraulic.conveyor:conveyor-control", version.ref = "conveyor-control" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
-cryptography-provider = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
+cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
 filekit = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
@@ -72,15 +73,17 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
-kotlinx-coroutines-core = { module = "com.intellij.platform:kotlinx-coroutines-core", version.ref = "intellij-kotlinx-coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-uuid = { module = "app.softwork:kotlinx-uuid-core", version.ref = "kotlinx-uuid" }
 ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-io = { module = "io.ktor:ktor-io", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-compression = { module = "io.ktor:ktor-server-compression", version.ref = "ktor" }
 ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }

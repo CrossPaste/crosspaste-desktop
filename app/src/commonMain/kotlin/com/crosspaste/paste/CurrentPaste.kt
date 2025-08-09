@@ -1,7 +1,6 @@
 package com.crosspaste.paste
 
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 abstract class CurrentPaste {

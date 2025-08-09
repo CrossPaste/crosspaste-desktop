@@ -2,7 +2,6 @@ package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.image.ImageWriter
 import com.crosspaste.paste.DesktopPasteDataFlavor
 import com.crosspaste.paste.PasteCollector
@@ -10,6 +9,7 @@ import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem

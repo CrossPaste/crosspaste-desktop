@@ -13,9 +13,9 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.theme.AppUISize.large2X

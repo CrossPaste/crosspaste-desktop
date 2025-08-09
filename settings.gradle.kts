@@ -28,3 +28,4 @@ plugins {
 }
 
 include(":app")
+include(":shared")

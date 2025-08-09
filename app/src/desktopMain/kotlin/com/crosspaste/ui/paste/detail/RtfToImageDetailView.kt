@@ -12,12 +12,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.path.UserDataPathProvider

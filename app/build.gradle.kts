@@ -83,6 +83,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":shared"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -92,7 +93,6 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.svg)
             implementation(libs.cryptography.core)
-            implementation(libs.cryptography.provider)
             implementation(libs.filekit)
             implementation(libs.koin.compose)
             implementation(libs.koin.core)
@@ -129,6 +129,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.compose.shimmer)
             implementation(libs.conveyor.control)
+            implementation(libs.cryptography.provider.jdk)
             implementation(libs.guava)
             implementation(libs.icu4j)
             implementation(libs.imageio.core)

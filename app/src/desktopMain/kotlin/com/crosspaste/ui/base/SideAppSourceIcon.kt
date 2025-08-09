@@ -13,10 +13,10 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.transformations
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.image.coil.CropTransformation
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
+import com.crosspaste.paste.PasteData
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncManager
 import org.koin.compose.koinInject

@@ -45,10 +45,10 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView

@@ -1,7 +1,6 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppWindowManager
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
@@ -109,7 +108,7 @@ abstract class AbstractPasteboardService :
                 ).onFailure {
                     notificationManager.sendNotification(
                         title = { copyWriter -> copyWriter.getText("copy_failed") },
-                        message = it.message?.let { message -> { it -> message } },
+                        message = it.message?.let { message -> { message } },
                         messageType = MessageType.Error,
                     )
                 }
@@ -125,7 +124,7 @@ abstract class AbstractPasteboardService :
                 ).onFailure {
                     notificationManager.sendNotification(
                         title = { copyWriter -> copyWriter.getText("copy_failed") },
-                        message = it.message?.let { message -> { it -> message } },
+                        message = it.message?.let { message -> { message } },
                         messageType = MessageType.Error,
                     )
                 }

@@ -4,7 +4,6 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText

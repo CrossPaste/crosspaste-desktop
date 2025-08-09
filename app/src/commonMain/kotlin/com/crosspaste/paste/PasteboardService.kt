@@ -2,7 +2,6 @@ package com.crosspaste.paste
 
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.item.PasteItem
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope

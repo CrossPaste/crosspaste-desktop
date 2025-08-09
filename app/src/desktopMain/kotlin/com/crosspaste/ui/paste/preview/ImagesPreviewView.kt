@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
-import com.crosspaste.db.paste.PasteData
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider

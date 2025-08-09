@@ -17,7 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.crosspaste.db.paste.PasteData
+import com.crosspaste.paste.PasteData
+import com.crosspaste.ui.paste.PasteTypeIconPainter
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
@@ -31,7 +32,7 @@ fun DefaultPasteTypeIcon(
 ) {
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
     Icon(
-        painter = type.IconPainter(),
+        painter = PasteTypeIconPainter(type),
         contentDescription = "Paste Icon",
         modifier = modifier.size(size),
         tint = iconColor,
@@ -55,7 +56,7 @@ fun SideDefaultPasteTypeIcon(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter = type.IconPainter(),
+            painter = PasteTypeIconPainter(type),
             contentDescription = "Paste Icon",
             modifier =
                 modifier

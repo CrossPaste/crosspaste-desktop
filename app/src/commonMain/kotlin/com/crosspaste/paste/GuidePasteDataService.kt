@@ -2,11 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppLaunchState
-import com.crosspaste.db.paste.PasteCollection
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteData
-import com.crosspaste.db.paste.PasteState
-import com.crosspaste.db.paste.PasteType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
