@@ -16,34 +16,44 @@ enum class DateStyle {
         when (this) {
             FULL ->
                 when (locale) {
-                    "zh" -> "yyyy年MM月dd日 EEEE"
+                    "zh", "zh_hant" -> "yyyy年MM月dd日 EEEE"
                     "ja" -> "yyyy年MM月dd日 EEEE"
-                    "en" -> "EEEE, MM/dd/yyyy"
-                    "es" -> "EEEE, dd 'de' MM 'de' yyyy"
-                    else -> "EEEE, MM/dd/yyyy"
+                    "ko" -> "yyyy년 MM월 dd일 EEEE"
+                    "es" -> "EEEE, dd 'de' MMMM 'de' yyyy"
+                    "de" -> "EEEE, dd. MMMM yyyy"
+                    "fr" -> "EEEE dd MMMM yyyy"
+                    "fa" -> "EEEE، dd MMMM yyyy"
+                    else -> "EEEE, MMMM dd, yyyy"
                 }
             LONG ->
                 when (locale) {
-                    "zh" -> "yyyy年MM月dd日"
+                    "zh", "zh_hant" -> "yyyy年MM月dd日"
                     "ja" -> "yyyy年MM月dd日"
-                    "en" -> "MM/dd/yyyy"
-                    "es" -> "dd 'de' MM 'de' yyyy"
-                    else -> "MM/dd/yyyy"
+                    "ko" -> "yyyy년 MM월 dd일"
+                    "es" -> "dd 'de' MMMM 'de' yyyy"
+                    "de" -> "dd. MMMM yyyy"
+                    "fr" -> "dd MMMM yyyy"
+                    "fa" -> "dd MMMM yyyy"
+                    else -> "MMMM dd, yyyy"
                 }
             MEDIUM ->
                 when (locale) {
-                    "zh" -> "yyyy年MM月dd日"
+                    "zh", "zh_hant" -> "yyyy年MM月dd日"
                     "ja" -> "yyyy年MM月dd日"
-                    "en" -> "MM/dd/yyyy"
-                    "es" -> "dd/MM/yyyy"
-                    else -> "MM/dd/yyyy"
+                    "ko" -> "yyyy. MM. dd"
+                    "es", "fr" -> "dd/MM/yyyy"
+                    "de" -> "dd.MM.yyyy"
+                    "fa" -> "yyyy/MM/dd"
+                    else -> "MMM dd, yyyy"
                 }
             SHORT ->
                 when (locale) {
-                    "zh" -> "yyyy/MM/dd"
-                    "ja" -> "yyyy/MM/dd"
-                    "en" -> "M/d/yy"
+                    "zh", "zh_hant", "ja" -> "yyyy/MM/dd"
+                    "ko" -> "yy. M. d"
                     "es" -> "d/M/yy"
+                    "de" -> "dd.MM.yy"
+                    "fr" -> "dd/MM/yy"
+                    "fa" -> "yy/M/d"
                     else -> "M/d/yy"
                 }
         }
@@ -58,25 +68,19 @@ enum class TimeStyle {
 
     internal fun toPattern(locale: String): String =
         when (this) {
-            FULL ->
-                when (locale) {
-                    "zh", "ja" -> "HH:mm:ss"
-                    else -> "HH:mm:ss z"
-                }
+            FULL -> "HH:mm:ss zzzz"
             LONG ->
                 when (locale) {
-                    "zh", "ja" -> "HH:mm:ss"
-                    else -> "HH:mm:ss"
+                    "ko" -> "HH시 mm분 ss초 z"
+                    else -> "HH:mm:ss z"
                 }
             MEDIUM ->
                 when (locale) {
-                    "zh" -> "HH:mm:ss"
                     "ja" -> "HH時mm分ss秒"
                     else -> "HH:mm:ss"
                 }
             SHORT ->
                 when (locale) {
-                    "zh" -> "HH:mm"
                     "ja" -> "HH時mm分"
                     else -> "HH:mm"
                 }
