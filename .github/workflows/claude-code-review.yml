@@ -4,6 +4,10 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  issues: write
+  pull-requests: write
+
 concurrency:
   group: claude-review-pr-${{ github.event.issue.number }}
   cancel-in-progress: true
