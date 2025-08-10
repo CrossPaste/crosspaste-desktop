@@ -43,6 +43,7 @@ import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.getAppEnvUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.vinceglb.filekit.FileKit
@@ -124,11 +125,25 @@ class CrossPaste {
                     koin.get<CleanScheduler>().start()
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
-                    koin.get<RenderingService<String>>(named("htmlRendering")).start()
-                    koin.get<RenderingService<String>>(named("rtfRendering")).start()
-                    koin.get<RenderingService<String>>(named("urlRendering")).start()
                     koin.get<GuidePasteDataService>().initData()
                     FileKit.init(appId = AppName)
+
+                    ioCoroutineDispatcher.launch {
+                        val jobs =
+                            listOf(
+                                async(ioDispatcher) {
+                                    koin.get<RenderingService<String>>(named("htmlRendering")).start()
+                                },
+                                async(ioDispatcher) {
+                                    koin.get<RenderingService<String>>(named("rtfRendering")).start()
+                                },
+                                async(ioDispatcher) {
+                                    koin.get<RenderingService<String>>(named("urlRendering")).start()
+                                },
+                            )
+
+                        jobs.awaitAll()
+                    }
                 } else {
                     exitProcess(0)
                 }
