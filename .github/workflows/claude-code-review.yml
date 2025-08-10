@@ -5,40 +5,28 @@ on:
     types: [created]
 
 concurrency:
-  group: claude-review-pr-${{ github.event.issue.number }}
-  cancel-in-progress: true
+  group: ${{ github.event.comment.user.type == 'Bot' && format('skip-{0}-{1}', github.event.issue.number, github.run_id) || format('claude-review-pr-{0}', github.event.issue.number) }}
+  cancel-in-progress: false
 
 jobs:
   check-trigger:
-    if: github.event.issue.pull_request != null
+    if: |
+      github.event.issue.pull_request != null && 
+      github.event.comment.user.type != 'Bot' &&
+      github.event.comment.user.login != 'github-actions[bot]' &&
+      contains(github.event.comment.body, '@claude review') &&
+      contains('guiyanakuang', github.event.comment.user.login)
     runs-on: ubuntu-latest
     outputs:
       should-review: ${{ steps.check.outputs.should-review }}
       pr-number: ${{ steps.check.outputs.pr-number }}
     steps:
-      - name: Check comment and permissions
+      - name: Validate and prepare review
         id: check
         run: |
-          echo "🔍 Checking comment trigger..."
-          echo "Comment author: ${{ github.event.comment.user.login }}"
-          echo "Author association: ${{ github.event.comment.author_association }}"
-          echo "Comment body: ${{ github.event.comment.body }}"
-          
-          if [[ "${{ github.event.comment.body }}" == *"@claude review"* ]]; then
-            echo "✅ Found trigger phrase '@claude review'"
-          
-            if [[ "${{ contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) }}" == "true" ]]; then
-              echo "✅ User has required permissions"
-              echo "should-review=true" >> $GITHUB_OUTPUT
-              echo "pr-number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
-            else
-              echo "❌ User does not have required permissions"
-              echo "should-review=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "❌ Trigger phrase not found"
-            echo "should-review=false" >> $GITHUB_OUTPUT
-          fi
+          echo "✅ User ${{ github.event.comment.user.login }} is authorized"
+          echo "should-review=true" >> $GITHUB_OUTPUT
+          echo "pr-number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT 
 
       - name: React to comment
         if: steps.check.outputs.should-review == 'true'
