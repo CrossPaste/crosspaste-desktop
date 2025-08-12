@@ -7,10 +7,12 @@ import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.minutes
 
 class CleanScheduler(
     private val taskDao: TaskDao,
@@ -20,27 +22,54 @@ class CleanScheduler(
 
     private val logger = KotlinLogging.logger {}
 
-    private val coroutineScope = CoroutineScope(ioDispatcher)
+    private val coroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+
+    private val cleanInterval = 5.minutes
 
     fun start() {
         coroutineScope.launch {
+            logger.info { "CleanScheduler started" }
+
             while (isActive) {
-                cleanPaste()
-                cleanTask()
-                delay(5 * 60 * 1000)
+                try {
+                    launch { safeCleanPaste() }
+                    launch { safeCleanTask() }
+                    delay(cleanInterval)
+                } catch (e: Exception) {
+                    logger.error(e) { "Unexpected error in clean scheduler main loop" }
+                    delay(1.minutes)
+                }
             }
+
+            logger.info { "CleanScheduler stopped" }
+        }
+    }
+
+    private suspend fun safeCleanPaste() {
+        runCatching {
+            if (configManager.getCurrentConfig().enableExpirationCleanup) {
+                cleanPaste()
+            }
+        }.onFailure { e ->
+            logger.error(e) { "Error during paste cleanup" }
         }
     }
 
     private suspend fun cleanPaste() {
-        if (configManager.getCurrentConfig().enableExpirationCleanup) {
-            val taskId =
-                taskDao.createTask(
-                    pasteDataId = null,
-                    taskType = TaskType.CLEAN_PASTE_TASK,
-                )
-            taskExecutor.submitTask(taskId)
-            logger.info { "submit clean paste task: $taskId" }
+        val taskId =
+            taskDao.createTask(
+                pasteDataId = null,
+                taskType = TaskType.CLEAN_PASTE_TASK,
+            )
+        taskExecutor.submitTask(taskId)
+        logger.info { "Submitted clean paste task: $taskId" }
+    }
+
+    private suspend fun safeCleanTask() {
+        runCatching {
+            cleanTask()
+        }.onFailure { e ->
+            logger.error(e) { "Error during task cleanup" }
         }
     }
 
@@ -51,7 +80,7 @@ class CleanScheduler(
                 taskType = TaskType.CLEAN_TASK_TASK,
             )
         taskExecutor.submitTask(taskId)
-        logger.info { "submit clean task task: $taskId" }
+        logger.info { "Submitted clean task task: $taskId" }
     }
 
     fun stop() {
