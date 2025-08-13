@@ -371,16 +371,16 @@ class DesktopModule(
                     MarketingSyncManager()
                 } else {
                     GeneralSyncManager(
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        lazy { get() },
+                        dialogService = get(),
+                        pasteDialogFactory = get(),
+                        ratingPromptManager = get(),
+                        secureStore = get(),
+                        syncClientApi = get(),
+                        syncInfoFactory = get(),
+                        syncRuntimeInfoDao = get(),
+                        telnetHelper = get(),
+                        tokenCache = get(),
+                        lazyNearbyDeviceManager = lazy { get() },
                     )
                 }
             }

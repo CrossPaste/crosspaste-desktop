@@ -42,6 +42,7 @@ class GeneralSyncManager(
     private val dialogService: DialogService,
     private val pasteDialogFactory: PasteDialogFactory,
     private val ratingPromptManager: RatingPromptManager,
+    override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
     private val syncInfoFactory: SyncInfoFactory,
@@ -63,9 +64,7 @@ class GeneralSyncManager(
 
     private val ignoreVerifySet: StateFlow<Set<String>> = _ignoreVerifySet.asStateFlow()
 
-    private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
-
-    override val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
     private val nearbyDeviceManager: NearbyDeviceManager by lazyNearbyDeviceManager
 
