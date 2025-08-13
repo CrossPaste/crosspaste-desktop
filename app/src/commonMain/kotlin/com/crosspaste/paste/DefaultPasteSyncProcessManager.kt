@@ -5,15 +5,16 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.mainDispatcher
 import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 
 class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
@@ -27,7 +28,7 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
     override val processMap: StateFlow<Map<Long, PasteSingleProcess>> = _processMap
 
     override suspend fun cleanProcess(key: Long) {
-        mainCoroutineDispatcher.launch {
+        withContext(mainDispatcher) {
             _processMap.value.remove(key)
         }
     }
@@ -70,7 +71,7 @@ class PasteSingleProcessImpl(
     private val taskNum: Int,
 ) : PasteSingleProcess {
 
-    private val _process = MutableStateFlow<Float>(0.0f)
+    private val _process = MutableStateFlow(0.0f)
 
     override var process: StateFlow<Float> = _process
 
@@ -83,6 +84,10 @@ class PasteSingleProcessImpl(
     override fun success(index: Int) {
         platformLock.lock()
         try {
+            if (index !in tasks.indices) {
+                return
+            }
+
             if (!tasks[index]) {
                 tasks[index] = true
                 successNum += 1
