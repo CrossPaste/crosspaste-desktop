@@ -169,7 +169,7 @@ class DesktopFilesTypePlugin(
                 ByteArrayInputStream(
                     fileList
                         .joinToString(separator = "\n") { it.absolutePath }
-                        .toByteArray(),
+                        .encodeToByteArray(),
                 )
             map[DataFlavor.stringFlavor.toPasteDataFlavor()] =
                 fileList.joinToString(separator = "\n") { it.name }

@@ -111,7 +111,7 @@ object FileNameNormalizer {
         if (normalized.isEmpty()) normalized = "file"
 
         // 5) Enforce length limit (UTF-8 bytes). Reserve space for the extension.
-        val extBytes = extension.toByteArray(Charsets.UTF_8).size
+        val extBytes = extension.encodeToByteArray().size
         val maxBaseNameBytes = maxOf(50, 255 - extBytes)
         normalized = limitLength(normalized, maxBaseNameBytes)
 
@@ -144,13 +144,13 @@ object FileNameNormalizer {
         text: String,
         maxBytes: Int,
     ): String {
-        val utf8 = text.toByteArray(Charsets.UTF_8)
+        val utf8 = text.encodeToByteArray()
         if (utf8.size <= maxBytes) return text
 
         val result = StringBuilder()
         var byteCount = 0
         for (ch in text) {
-            val chBytes = ch.toString().toByteArray(Charsets.UTF_8).size
+            val chBytes = ch.toString().encodeToByteArray().size
             if (byteCount + chBytes > maxBytes) break
             result.append(ch)
             byteCount += chBytes
@@ -181,7 +181,7 @@ object FileNameNormalizer {
         }
 
         // Length ≤ 255 bytes (UTF-8)
-        if (fileName.toByteArray(Charsets.UTF_8).size > 255) return false
+        if (fileName.encodeToByteArray().size > 255) return false
 
         return true
     }
