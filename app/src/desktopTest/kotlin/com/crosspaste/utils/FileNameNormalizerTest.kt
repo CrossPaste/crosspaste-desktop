@@ -105,7 +105,7 @@ class FileNameNormalizerTest {
     fun testLengthLimiting() {
         val longName = "a".repeat(300) + ".txt"
         val normalized = FileNameNormalizer.normalize(longName)
-        assertTrue(normalized.toByteArray(Charsets.UTF_8).size <= 255)
+        assertTrue(normalized.encodeToByteArray().size <= 255)
         assertTrue(normalized.endsWith(".txt"))
     }
 

@@ -52,7 +52,7 @@ class MurmurHash3Test {
     @Test
     fun `test streaming updates vs single update`() {
         val seed = 999u
-        val input = "Hello, World! This is a test string for MurmurHash3.".toByteArray()
+        val input = "Hello, World! This is a test string for MurmurHash3.".encodeToByteArray()
 
         // Single update
         val streaming1 = StreamingMurmurHash3(seed)
@@ -78,7 +78,7 @@ class MurmurHash3Test {
 
     @Test
     fun `test different seeds`() {
-        val input = "Test string".toByteArray()
+        val input = "Test string".encodeToByteArray()
         val seeds = listOf(0u, 1u, 42u, 0xDEADBEEFu, UInt.MAX_VALUE)
 
         for (seed in seeds) {
@@ -135,7 +135,7 @@ class MurmurHash3Test {
             )
 
         for (testCase in testCases) {
-            val input = testCase.input.toByteArray()
+            val input = testCase.input.encodeToByteArray()
             val seed = testCase.seed
 
             val regular = MurmurHash3(seed).hash128x64(input)
