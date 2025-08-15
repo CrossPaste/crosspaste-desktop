@@ -221,8 +221,5 @@ fun SideSearchInputView() {
                 ),
             textStyle = MaterialTheme.typography.bodyMedium,
         )
-
-        Row(modifier = Modifier) {
-        }
     }
 }
