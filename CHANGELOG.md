@@ -2,6 +2,213 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.2.1] - 2025-7-26
+# Highlights 🌟
+
+- 🌐 **New Language Support**
+  German(`de`), French(`fr`), Korean(`ko`), andTraditionalChinese(`zh‑Hant`) are now fully localised, with automatic English fallback for missing keys.
+
+- 🔍 **Sidebar Search Window 2.0**
+  brand‑new edge window with its own search box, clipboard list, settings button, context menu, and favourite toggle for lightning‑fast access.
+
+- 🚀 **One‑Click Online Upgrade**
+  trigger the updater directly from the app UI to stay current without manual downloads.
+
+- 🖼️ **Smarter Content Intelligence**
+  Open Graph title/image extraction, rendered‑image background‑colour analysis, and ANSI text fallback for legacy apps.
+
+- ✨ **Drag & Drop Everywhere**
+  drag clips into/out of the *main* window, plus double‑click‑to‑paste in the side window.
+
+- 💄 **Customise Your Workspace**
+  choose a custom font, keep the main window *always on top*, pin windows, and enjoy refined icons & dialogs.
+
+# Bug Fixes 🐛
+
+- Fixed uncaught exceptions during update checks (#2863)
+- Prevented clipboard‑rendering info from syncing across devices (#2896)
+- Resolved Linux tray menu and mixed‑window display issues (#2916 #2920)
+- Corrected search footer text contrast and hover states (#2922 #3015)
+- Fixed JSON serialisation, index mismatches, RTF icon assignment, and tutorial‑button visibility (#2936 #2973 #2968 #2984)
+- Patched HTML background‑colour extraction & alpha‑loss bugs, plus added extra tests (#2988 #2990)
+- Fixed window not showing after minimisation on some platforms (#3008)
+- Resolve mutex lock conflicts in concurrent operations (#3035)
+
+# New Features ✨
+
+- :sparkles: Native system file dialogs for open/save operations (#2954)
+- :sparkles: Right‑click context menu, creation‑time stamp, character count, and hints for pasteboards (#2938 #2946 #2986 #2960)
+- :sparkles: Hot‑reload support via *compose‑hot‑reload* (#2994)
+- :sparkles: Check‑for‑updates menu item added to the main window (#3023)
+- :sparkles: Support for dragging clipboard data across apps in side window (#2956)
+- :sparkles: Add configurable paste behavior with primary/mixed type (#3047)
+
+# UI Improvements 💄
+
+- :lipstick: Movable decorative bar and improved notification/dialog layout (#2911 #2942 #2943)
+- :lipstick: Settings button in edge window and polished basic‑type icons (#2940 #2944)
+- :lipstick: Added quit option, favourite star, pin button, and better default widths (#2951 #2996 #2998 #3000)
+- :lipstick: Adjusted dialog width, font‑settings icon, and check‑for‑updates visibility (#2943 #2963 #3023)
+- :lipstick: Enhance side panel UI with smart image display and improved sync handling (#3037)
+- :lipstick: Improve Windows icon extraction implementation (#3039)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Replaced **Jsoup → Ksoup** for full multiplatform parsing (#2887)
+- :hammer: Unified search window instance & refactored window‑position logic (#2918 #2929)
+- :hammer: Moved JVM‑only code and PNG analyser to `DesktopMain`, removed unused SVGs and search methods (#2965 #3021 #2971 #2910)
+- :hammer: Created `DesktopClient`, revamped `AppConfig`, `RenderingService`, and general code structure (#2890 #2866 #2894 #2892)
+
+# Performance ⚡
+
+- :zap: Faster page‑title / image extraction and smoother decoration‑bar drag (#2958 #3009)
+
+# Dependencies ⬆️
+
+- ⬆️ **Compose** 1.8.2 → 1.8.3 (#2876)
+- ⬆️ **Compose‑plugin** 1.8.1 → 1.8.2 (#2933)
+- ⬆️ **Kotlin** 2.1.21 → 2.2.0 (#2899)
+- ⬆️ **Ktor** 3.1.3 → 3.2.2 (#2857 #2932 #3026)
+- ⬆️ **Okio** 3.12.0 → 3.15.0 (#2858 #2897 #2931)
+- ⬆️ **Lifecycle** 2.9.0 → 2.9.1 (#2878)
+- ⬆️ **Koin** 4.0.4 → 4.1.0 (#2852)
+- ⬆️ **ktlint‑gradle** 12.3.0 → 13.0.0 (#2980)
+- ⬆️ **mockk** 1.14.2 → 1.14.5 (#2879 #2982 #3027)
+- ⬆️ **webp‑imageio** 0.10.0 → 0.10.2 (#2901 #2982)
+- ⬆️ **kotlinx‑serialization‑json** 1.8.1 → 1.9.0 (#2900)
+- ⬆️ **kotlinx‑datetime** 0.6.2 → 0.7.1‑0.6.x‑compat (#2979)
+- ⬆️ Plus routine bumps to **cryptography**, **turbine**, **coroutines‑core**, **jSystemThemeDetector**, and *compose‑hot‑reload* (#2930 #2855 #2981 #2934 #3028).
+
+# Documentation 📝
+
+- :memo: Added **CLAUDE.md** and refreshed README (#2908 #2854)
+
+# Build & Tooling 👷
+
+- :construction_worker: Introduced **Claude Code Review** workflow, approval bindings, and auto‑close logic (#2909 #2924 #2927 #2953)
+- :construction_worker: Split OSS upload steps to prevent CI time‑outs and updated OSS plugin (#3031 #3033)
+- :construction_worker: Added hot‑reload build support (#2994)
+
+# Contributors ✨
+
+- **@amir1376** implemented the new *font‑settings* feature (#2961) — welcome aboard!
+
+---
+
+**Full Changelog**: <https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.0.1444...1.2.1.1551>
+
+# [1.2.0] - 2025-6-10
+# Highlights 🌟
+
+- 🌐 **Persian Language Support Added**  
+  We’ve added support for Persian language (`fa`) to enhance international accessibility.
+
+- 🔍 **Enhanced Search Matching with ICU4J Tokenizer**  
+  Search experience has been significantly improved, especially for multi-language content and punctuation-based queries.
+
+- 🧠 **Auto-generate Text from HTML/RTF Clipboard**  
+  When copying rich content, plain text versions are now auto-generated to improve compatibility and fallback rendering.
+
+- 🔄 **HTML Charset Enforcement**  
+  Introduced `ensureHtmlCharsetUtf8` to fix issues with incorrect HTML encoding on some systems, ensuring consistent display.
+
+- 💡 **New Guide Auto Switch**  
+  The usage guide now updates automatically when switching languages.
+
+- 🤝 **Recommendation Sharing Feature**  
+  Easily share CrossPaste with your friends through a new built-in recommendation system — complete with preview and social support.
+
+- 🧪 **New Unit Tests**  
+  Added tests to ensure correct behavior of reactive `SyncRuntimeInfoDao` flows.
+
+- 🐧 **Ubuntu `.deb` Package Support**  
+  Official `.deb` installation support for Ubuntu 22.04 LTS (Jammy) and later has been added.
+
+# Bug Fixes 🐛
+
+- :bug: Prevent crash by specifying parentCoroutineContext during port conflict (#2711)
+- :bug: Fix IP address not syncing to other devices after DHCP reassignment (#2715)
+- :bug: Fix `AbstractMethodError` in ExpandView (#2727)
+- :bug: Correct background and icon color contrast (#2742)
+- :bug: Fix ExpandView compilation issue on Android Compose (#2738)
+- :bug: Revert `TextOverflow` to `Ellipsis` from `Clip` for better layout (#2812)
+- :bug: Fix UI regression issues after refactor (#2824)
+- :bug: Fix `rememberCoroutineScope` exits due to partial UI switching (#2839)
+- :bug: Fix device sync control settings being unintentionally overridden (#2835)
+- :bug: Fix `SQLITE_BUSY` caused by bulk deletion (#2840)
+- :bug: Fix incorrect icon color in search window (#2793)
+
+# New Features ✨
+
+- :sparkles: Add auto-scroll support in `ExpandView` component (#2795)
+- :sparkles: Automatically update guide when switching languages (#2760)
+- :sparkles: Add recommendation sharing feature (#2770)
+- :sparkles: Auto-generate missing text from HTML/RTF clipboard (#2828)
+- :sparkles: Add `ensureHtmlCharsetUtf8` method (#2831)
+
+# UI Improvements 💄
+
+- :lipstick: Create HighlightedCard display effect (#2703)
+- :lipstick: Add vertical alignment to `DialogButtonsView` button row (#2713)
+- :lipstick: Add leading/trailing icons to search input (#2723)
+- :lipstick: Change toast text alignment to `Justify` (#2744)
+- :lipstick: Use Divider (1.dp) in search window (#2777)
+- :lipstick: Switch default theme to blue Sea (#2779)
+- :lipstick: Enable scrolling for long text (#2791)
+- :lipstick: Improve `DialogButtonsView` spacing (#2801)
+- :lipstick: Implement spacing and sizing system (#2803)
+- :lipstick: Remove `CursorWait` usage for better UX (#2842)
+- :lipstick: Improve `ToastView` message readability (#2844)
+- :lipstick: Polish UI visuals and enhance consistency (#2787)
+
+# Multiplatform & Refactor & Code Style 🔨
+
+- :hammer: Improve ExpandView to support platform-specific rendering (#2725)
+- :hammer: Use DI to provide Platform instance for better testability (#2740)
+- :hammer: Migrate deprecated APIs for JDK 21 compatibility (#2752)
+- :hammer: Move core initialization to `InitPasteDataService` (#2754)
+- :hammer: Obtain `DesktopAppSize` through DI framework (#2756)
+- :hammer: Rename `GlobalCopywriter` with platform prefix (#2762)
+- :hammer: Remove `MobileExpandView` since desktop is fully handled (#2797)
+- :hammer: Limit `windowDecorationHeight` to desktop (#2799)
+- :hammer: Extract all `textStyles` to `AppUIFont` (#2805)
+- :hammer: Replace `toByteArray` with `encodeToByteArray` for UTF-8 (#2808)
+- :hammer: Remove redundant `encodeToString` import (#2810)
+- :hammer: Extract UI constants to `AppUISize`, `AppUIFont`, `AppUIColors` (#2822)
+
+# Dependencies ⬆️
+
+- ⬆️ Bump `org.jsoup:jsoup` from 1.19.1 → 1.20.1 (#2709)
+- ⬆️ Bump `io.mockk:mockk` from 1.14.0 → 1.14.2 (#2708)
+- ⬆️ Bump `ktor` from 3.1.2 → 3.1.3 (#2716)
+- ⬆️ Bump `compose` from 1.8.0 → 1.8.1 → 1.8.2 (#2718, #2772)
+- ⬆️ Bump `compose-plugin` from 1.7.3 → 1.8.0 → 1.8.1 (#2719, #2771)
+- ⬆️ Bump `lifecycle` from 2.8.4 → 2.9.0-beta01 → 2.9.0 (#2717, #2721)
+- ⬆️ Bump `coil` from 3.1.0 → 3.2.0 (#2732)
+- ⬆️ Bump `kotlin` from 2.1.20 → 2.1.21 (#2733)
+- ⬆️ Bump `sqldelight` from 2.0.2 → 2.1.0, then reverted (#2750, #2764)
+- ⬆️ Bump `org.jlleitschuh.gradle.ktlint` from 12.2.0 → 12.3.0 (#2773)
+- ⬆️ Bump `com.valentinilk.shimmer:compose-shimmer` from 1.3.2 → 1.3.3 (#2781)
+- ⬆️ Bump `okio` from 3.11.0 → 3.12.0 (#2817)
+- ⬆️ Bump `webp-imageio` from 0.9.0 → 0.10.0 (#2819)
+
+# Documentation 📝
+
+- :memo: Update changelog (#2699)
+- :memo: Add DeepWiki official badge (#2785)
+- :memo: Add sponsors and GitHub star buttons to README (#2768)
+
+# Build & Tooling 👷
+
+- :construction_worker: Upgrade JBR to 21.0.7b968.13 (#2745)
+- :construction_worker: Upgrade Conveyor to 18.1 and JDK to 21 (#2816)
+
+# New Contributors ✨
+
+- @amir1376 made their first contribution in https://github.com/CrossPaste/crosspaste-desktop/pull/2728
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.1.2.1375...1.2.0.1444
+
 # [1.1.2] - 2025-5-1
 ## Highlights 🌟
 
