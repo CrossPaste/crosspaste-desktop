@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -133,7 +134,10 @@ fun SidePastePreviewItemView(
                 modifier =
                     Modifier.fillMaxSize(),
                 shape = small3XRoundedCornerShape,
-                containerColor = AppUIColors.pasteBackground,
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = AppUIColors.pasteBackground,
+                    ),
             ) {
                 PasteContextMenuView(
                     items = pasteMenuService.pasteMenuItemsProvider(pasteData),
