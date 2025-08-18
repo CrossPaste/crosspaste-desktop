@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
@@ -28,7 +29,10 @@ fun PastePreviewItemView(
         HighlightedCard(
             modifier = Modifier.fillMaxSize(),
             shape = tiny2XRoundedCornerShape,
-            containerColor = AppUIColors.pasteBackground,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = AppUIColors.pasteBackground,
+                ),
         ) {
             pasteData.pasteContent()
         }

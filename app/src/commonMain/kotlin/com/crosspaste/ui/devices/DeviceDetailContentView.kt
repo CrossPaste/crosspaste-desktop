@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -151,7 +152,10 @@ fun DeviceDetailContentView() {
                 modifier =
                     Modifier.wrapContentSize(),
                 shape = tinyRoundedCornerShape,
-                containerColor = AppUIColors.generalBackground,
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = AppUIColors.generalBackground,
+                    ),
             ) {
                 SettingItemsTitleView("sync_control")
 
@@ -224,7 +228,10 @@ fun DeviceDetailContentView() {
                 modifier =
                     Modifier.wrapContentSize(),
                 shape = tinyRoundedCornerShape,
-                containerColor = AppUIColors.generalBackground,
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = AppUIColors.generalBackground,
+                    ),
             ) {
                 SettingItemsTitleView("base_info")
 
