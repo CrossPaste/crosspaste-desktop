@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.ExpandViewProvider
+import com.crosspaste.ui.base.rememberExpandableState
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
@@ -40,12 +41,12 @@ fun DevicesContentView() {
 
             if (syncRuntimeInfos.isNotEmpty()) {
                 expandViewProvider.ExpandView(
+                    state = rememberExpandableState(true),
                     horizontalPadding = zero,
-                    defaultExpand = true,
-                    barContent = { iconScale ->
+                    barContent = {
                         expandViewProvider.ExpandBarView(
+                            state = this.state,
                             title = "my_devices",
-                            iconScale = iconScale,
                         )
                     },
                 ) {
@@ -56,11 +57,10 @@ fun DevicesContentView() {
 
             expandViewProvider.ExpandView(
                 horizontalPadding = zero,
-                defaultExpand = false,
-                barContent = { iconScale ->
+                barContent = {
                     expandViewProvider.ExpandBarView(
+                        state = this.state,
                         title = "add_device_manually",
-                        iconScale = iconScale,
                     )
                 },
             ) {
@@ -68,12 +68,12 @@ fun DevicesContentView() {
             }
             Spacer(modifier = Modifier.height(small3X))
             expandViewProvider.ExpandView(
+                state = rememberExpandableState(true),
                 horizontalPadding = zero,
-                defaultExpand = true,
-                barContent = { iconScale ->
+                barContent = {
                     expandViewProvider.ExpandBarView(
+                        state = this.state,
                         title = "nearby_devices",
-                        iconScale = iconScale,
                     )
                 },
             ) {

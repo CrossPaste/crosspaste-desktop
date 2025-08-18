@@ -16,18 +16,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,10 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.boundsInParent
@@ -49,14 +46,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.settings.LocalSettingsScrollState
-import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 
 class DesktopExpandViewProvider(
@@ -66,41 +61,41 @@ class DesktopExpandViewProvider(
     @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
     @Composable
     override fun ExpandView(
-        defaultExpand: Boolean,
+        state: ExpandableState,
         horizontalPadding: Dp,
         barBackground: Color,
         onBarBackground: Color,
         backgroundColor: Color,
-        barContent: @Composable RowScope.(Float) -> Unit,
-        content: @Composable () -> Unit,
+        barContent: @Composable ExpandViewScope.() -> Unit,
+        content: @Composable ExpandViewScope.() -> Unit,
     ) {
-        var expand by remember { mutableStateOf(defaultExpand) }
-        var hover by remember { mutableStateOf(false) }
         val scrollState = LocalSettingsScrollState.current
-        var cardBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+        var cardBounds by remember { mutableStateOf<Rect?>(null) }
+
+        val scope =
+            remember(state) {
+                object : ExpandViewScope {
+                    override val state: ExpandableState = state
+                }
+            }
 
         val arrowRotation by animateFloatAsState(
-            targetValue = if (expand) 90f else 0f,
+            targetValue = if (state.isExpanded) 90f else 0f,
             animationSpec = tween(300, easing = FastOutSlowInEasing),
         )
 
         val elevation by animateDpAsState(
-            targetValue = if (hover) tiny3X else zero,
-            animationSpec = tween(300),
-        )
-
-        val iconScale by animateFloatAsState(
-            targetValue = if (hover || expand) 1f else 0.8f,
+            targetValue = if (state.isHovered) tiny3X else zero,
             animationSpec = tween(300),
         )
 
         val arrowOffset by animateFloatAsState(
-            targetValue = if (hover || expand) 8f else 0f,
+            targetValue = if (state.isExpandedOrHovered()) 8f else 0f,
             animationSpec = tween(300),
         )
 
         val bottomCornerRadius by animateDpAsState(
-            targetValue = if (expand) zero else tiny,
+            targetValue = if (state.isExpanded) zero else tiny,
             animationSpec = tween(300, easing = FastOutSlowInEasing),
         )
 
@@ -112,8 +107,8 @@ class DesktopExpandViewProvider(
                 bottomEnd = bottomCornerRadius,
             )
 
-        LaunchedEffect(expand) {
-            if (expand && scrollState != null && cardBounds != null) {
+        LaunchedEffect(state.isExpanded) {
+            if (state.isExpanded && scrollState != null && cardBounds != null) {
                 val bounds = cardBounds!!
 
                 // calculate the top position of the card in the scrollable content
@@ -150,9 +145,9 @@ class DesktopExpandViewProvider(
                         .combinedClickable(
                             interactionSource = MutableInteractionSource(),
                             indication = null,
-                            onClick = { expand = !expand },
-                        ).onPointerEvent(PointerEventType.Enter) { hover = true }
-                        .onPointerEvent(PointerEventType.Exit) { hover = false }
+                            onClick = { state.onToggle() },
+                        ).onPointerEvent(PointerEventType.Enter) { state.enter() }
+                        .onPointerEvent(PointerEventType.Exit) { state.exit() }
                         .graphicsLayer(
                             shadowElevation = elevation.value,
                             shape = animatedShape,
@@ -162,7 +157,7 @@ class DesktopExpandViewProvider(
                         .padding(horizontal = medium, vertical = small2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                barContent(iconScale)
+                scope.barContent()
 
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -188,7 +183,7 @@ class DesktopExpandViewProvider(
             }
 
             AnimatedVisibility(
-                visible = expand,
+                visible = state.isExpanded,
                 enter =
                     fadeIn(animationSpec = tween(300)) +
                         expandVertically(
@@ -207,47 +202,10 @@ class DesktopExpandViewProvider(
                             .background(backgroundColor),
                 ) {
                     Column {
-                        content()
+                        scope.content()
                     }
                 }
             }
-        }
-    }
-
-    @Composable
-    override fun ExpandBarView(
-        title: String,
-        iconScale: Float,
-        onBarBackground: Color,
-        icon: @Composable () -> Painter?,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            icon()?.let {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(xLarge)
-                            .graphicsLayer(
-                                scaleX = iconScale,
-                                scaleY = iconScale,
-                                transformOrigin = TransformOrigin(0.5f, 0.5f),
-                            ),
-                ) {
-                    Icon(
-                        painter = it,
-                        contentDescription = null,
-                        modifier = Modifier.matchParentSize(),
-                        tint = onBarBackground,
-                    )
-                }
-                Spacer(modifier = Modifier.width(tiny))
-            }
-
-            Text(
-                text = copywriter.getText(title),
-                style = AppUIFont.expandTitleTextStyle,
-                color = onBarBackground,
-            )
         }
     }
 }
