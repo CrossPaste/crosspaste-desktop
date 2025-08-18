@@ -211,8 +211,6 @@ import com.crosspaste.ui.model.MarketingPasteSearchViewModel
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.paste.DesktopPasteboardViewProvider
-import com.crosspaste.ui.paste.PasteboardViewProvider
 import com.crosspaste.ui.settings.DesktopSettingsViewProvider
 import com.crosspaste.ui.settings.SettingsViewProvider
 import com.crosspaste.ui.theme.DesktopThemeDetector
@@ -519,7 +517,6 @@ class DesktopModule(
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
             single<NativeMouseListener> { get<DesktopAppSize>() }
             single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get(), get()) }
-            single<PasteboardViewProvider> { DesktopPasteboardViewProvider() }
             single<PasteDialogFactory> { DesktopPasteDialogFactory() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }

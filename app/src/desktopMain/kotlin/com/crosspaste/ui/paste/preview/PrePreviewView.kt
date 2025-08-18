@@ -10,13 +10,11 @@ import androidx.compose.ui.draw.clip
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.ui.base.PasteProgressbar
-import com.crosspaste.ui.paste.PasteboardViewProvider
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
 fun PrePreviewView(pasteData: PasteData) {
-    val pasteboardViewProvider = koinInject<PasteboardViewProvider>()
     val pasteSyncProcessManager = koinInject<PasteSyncProcessManager<Long>>()
 
     val processMap by pasteSyncProcessManager.processMap.collectAsState()
@@ -43,7 +41,7 @@ fun PrePreviewView(pasteData: PasteData) {
                             .fillMaxSize()
                             .clip(tiny2XRoundedCornerShape),
                 ) {
-                    pasteboardViewProvider.PasteShimmer(singleProcess)
+                    PasteShimmerContentView(singleProcess)
                 }
             },
             pasteRightInfo = { toShow ->
