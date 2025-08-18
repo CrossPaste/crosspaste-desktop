@@ -61,11 +61,11 @@ class DesktopSettingsViewProvider(
     @Composable
     override fun NetSettingsView() {
         expandViewProvider.ExpandView(
-            barContent = { iconScale ->
+            barContent = {
                 expandViewProvider.ExpandBarView(
+                    state = this.state,
                     title = "network",
                     icon = { network() },
-                    iconScale = iconScale,
                 )
             },
         ) {
@@ -76,11 +76,11 @@ class DesktopSettingsViewProvider(
     @Composable
     override fun PasteboardSettingsView() {
         expandViewProvider.ExpandView(
-            barContent = { iconScale ->
+            barContent = {
                 expandViewProvider.ExpandBarView(
+                    state = this.state,
                     title = "pasteboard",
                     icon = { clipboard() },
-                    iconScale = iconScale,
                 )
             },
         ) {
@@ -96,11 +96,11 @@ class DesktopSettingsViewProvider(
     @Composable
     override fun StoreSettingsView() {
         expandViewProvider.ExpandView(
-            barContent = { iconScale ->
+            barContent = {
                 expandViewProvider.ExpandBarView(
+                    state = this.state,
                     title = "store",
                     icon = { database() },
-                    iconScale = iconScale,
                 )
             },
         ) {
