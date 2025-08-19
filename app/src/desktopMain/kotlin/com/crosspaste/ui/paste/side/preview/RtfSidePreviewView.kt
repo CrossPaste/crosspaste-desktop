@@ -8,16 +8,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.paste.GenerateImageView
+import com.crosspaste.ui.paste.PasteDataScope
 import org.koin.compose.koinInject
 
 @Composable
-fun RtfSidePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(RtfPasteItem::class)?.let { rtfPasteItem ->
+fun PasteDataScope.RtfSidePreviewView() {
+    getPasteItem(RtfPasteItem::class).let { rtfPasteItem ->
         val copywriter = koinInject<GlobalCopywriter>()
         val text = rtfPasteItem.getText()
         SidePasteLayoutView(

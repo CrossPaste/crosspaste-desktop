@@ -30,7 +30,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.FileIcon
@@ -39,6 +38,7 @@ import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -51,8 +51,8 @@ import kotlinx.coroutines.sync.withLock
 import org.koin.compose.koinInject
 
 @Composable
-fun FilesSidePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteFiles::class)?.let { pasteFiles ->
+fun PasteDataScope.FilesSidePreviewView() {
+    getPasteItem(PasteFiles::class).let { pasteFiles ->
         if (pasteFiles.count > 0) {
             val imageLoaders = koinInject<ImageLoaders>()
             val platformContext = koinInject<PlatformContext>()

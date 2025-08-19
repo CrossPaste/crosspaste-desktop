@@ -22,9 +22,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.app.AppSize
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.giant
@@ -34,8 +34,8 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import org.koin.compose.koinInject
 
 @Composable
-fun ColorPreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteColor ->
+fun PasteDataScope.ColorPreviewView() {
+    getPasteItem(ColorPasteItem::class).let { pasteColor ->
         SimplePreviewContentView(pasteData) {
             val appSize = koinInject<AppSize>()
             val uiSupport = koinInject<UISupport>()

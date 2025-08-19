@@ -29,7 +29,6 @@ import coil3.request.crossfade
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.path.UserDataPathProvider
@@ -37,13 +36,14 @@ import com.crosspaste.ui.base.ImageDisplayStrategy
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.imageSlash
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
 
 @Composable
-fun ImageSidePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteImages::class)?.let { pasteImages ->
+fun PasteDataScope.ImageSidePreviewView() {
+    getPasteItem(PasteImages::class).let { pasteImages ->
         if (pasteImages.count > 0) {
             val appSize = koinInject<DesktopAppSize>()
             val imageLoaders = koinInject<ImageLoaders>()

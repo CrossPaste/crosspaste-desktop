@@ -9,14 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteColor
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.utils.ColorUtils
 
 @Composable
-fun ColorSidePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteColor::class)?.let { pasteColor ->
+fun PasteDataScope.ColorSidePreviewView() {
+    getPasteItem(PasteColor::class).let { pasteColor ->
         SidePasteLayoutView(
             pasteData = pasteData,
             pasteBottomContent = {},
