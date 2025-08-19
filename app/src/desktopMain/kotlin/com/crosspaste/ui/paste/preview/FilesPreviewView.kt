@@ -9,24 +9,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.paste.PasteContextMenuView
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun FilesPreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(FilesPasteItem::class)?.let {
+fun PasteDataScope.FilesPreviewView() {
+    getPasteItem(FilesPasteItem::class).let { pasteFiles ->
         val appSize = koinInject<AppSize>()
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
-        val pasteFilePaths = it.getFilePaths(userDataPathProvider)
-        val fileInfoTreeMap = it.fileInfoTreeMap
+        val pasteFilePaths = pasteFiles.getFilePaths(userDataPathProvider)
+        val fileInfoTreeMap = pasteFiles.fileInfoTreeMap
         val fileUtils = getFileUtils()
 
         ComplexPreviewContentView(pasteData) {
@@ -47,7 +46,7 @@ fun FilesPreviewView(pasteData: PasteData) {
                     items =
                         pasteMenuService.fileMenuItemsProvider(
                             pasteData = pasteData,
-                            pasteItem = it,
+                            pasteItem = pasteFiles,
                             index = index,
                         ),
                 ) {

@@ -19,7 +19,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.paste.SidePasteboardContentView
+import com.crosspaste.ui.paste.side.SidePasteboardContentView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher

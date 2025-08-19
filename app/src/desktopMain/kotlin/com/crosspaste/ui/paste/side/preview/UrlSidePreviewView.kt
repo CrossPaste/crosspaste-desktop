@@ -27,21 +27,21 @@ import coil3.request.crossfade
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.rendering.RenderingHelper
 import com.crosspaste.ui.base.ImageDisplayStrategy
 import com.crosspaste.ui.base.PasteUrlIcon
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @Composable
-fun UrlSidePreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(UrlPasteItem::class)?.let { urlPasteItem ->
+fun PasteDataScope.UrlSidePreviewView() {
+    getPasteItem(UrlPasteItem::class).let { urlPasteItem ->
         val appSize = koinInject<DesktopAppSize>()
         val imageLoaders = koinInject<ImageLoaders>()
         val platformContext = koinInject<PlatformContext>()

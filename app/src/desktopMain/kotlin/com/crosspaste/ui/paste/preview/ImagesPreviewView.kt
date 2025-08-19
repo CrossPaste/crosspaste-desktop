@@ -6,17 +6,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.paste.PasteContextMenuView
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
 
 @Composable
-fun ImagesPreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(ImagesPasteItem::class)?.let { pasteFiles ->
+fun PasteDataScope.ImagesPreviewView() {
+    getPasteItem(ImagesPasteItem::class).let { pasteFiles ->
         val appSize = koinInject<AppSize>()
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()

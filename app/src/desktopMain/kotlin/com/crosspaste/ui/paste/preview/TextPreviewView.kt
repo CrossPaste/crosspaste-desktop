@@ -8,15 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUIFont.previewAutoSize
 import com.crosspaste.ui.theme.AppUISize.small3X
 
 @Composable
-fun TextPreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteText::class)?.let { pasteText ->
+fun PasteDataScope.TextPreviewView() {
+    getPasteItem(PasteText::class).let { pasteText ->
         SimplePreviewContentView(pasteData) {
             Row(
                 modifier =

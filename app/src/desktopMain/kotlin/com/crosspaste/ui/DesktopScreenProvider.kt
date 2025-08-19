@@ -27,8 +27,8 @@ import com.crosspaste.ui.devices.QRContentView
 import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
-import com.crosspaste.ui.paste.PasteboardContentView
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
+import com.crosspaste.ui.paste.preview.PasteboardContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.theme.AppUISize.medium

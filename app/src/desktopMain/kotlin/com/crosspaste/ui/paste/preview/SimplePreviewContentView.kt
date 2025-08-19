@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.PasteData
-import com.crosspaste.ui.paste.PasteContextMenuView
 import org.koin.compose.koinInject
 
 @Composable

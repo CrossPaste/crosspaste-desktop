@@ -33,7 +33,8 @@ import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.paste.PasteContextMenuView
+import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.paste.preview.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import kotlinx.coroutines.runBlocking
@@ -41,8 +42,7 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SidePastePreviewItemView(
-    pasteData: PasteData,
+fun PasteDataScope.SidePasteItemView(
     selected: Boolean,
     onPress: () -> Unit,
     onDoubleTap: () -> Unit,

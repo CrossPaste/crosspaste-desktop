@@ -7,14 +7,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.ui.base.PasteProgressbar
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
-fun PrePreviewView(pasteData: PasteData) {
+fun PasteDataScope.PrePreviewView() {
     val pasteSyncProcessManager = koinInject<PasteSyncProcessManager<Long>>()
 
     val processMap by pasteSyncProcessManager.processMap.collectAsState()

@@ -1,4 +1,4 @@
-package com.crosspaste.ui.paste
+package com.crosspaste.ui.paste.side
 
 import androidx.compose.foundation.HorizontalScrollbar
 import androidx.compose.foundation.ScrollbarStyle
@@ -48,9 +48,8 @@ import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestPasteListFocus
+import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.preview.PasteEmptyScreenView
-import com.crosspaste.ui.paste.side.SidePastePreviewItemView
-import com.crosspaste.ui.paste.side.ToStartView
 import com.crosspaste.ui.paste.side.preview.SidePreviewView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -255,18 +254,24 @@ fun SidePasteboardContentView() {
                     val currentIndex by rememberUpdatedState(index)
                     val currentPasteData by rememberUpdatedState(pasteData)
 
-                    Spacer(modifier = Modifier.width(medium))
-                    SidePastePreviewItemView(
-                        pasteData = currentPasteData,
-                        selected = index == selectedIndex,
-                        onPress = {
-                            pasteSelectionViewModel.clickSelectedIndex(currentIndex)
-                        },
-                        onDoubleTap = {
-                            pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
-                        },
-                    ) {
-                        SidePreviewView(this)
+                    val scope =
+                        remember(currentPasteData.id, currentPasteData.pasteState) {
+                            createPasteDataScope(currentPasteData)
+                        }
+
+                    scope?.let {
+                        Spacer(modifier = Modifier.width(medium))
+                        scope.SidePasteItemView(
+                            selected = currentIndex == selectedIndex,
+                            onPress = {
+                                pasteSelectionViewModel.clickSelectedIndex(currentIndex)
+                            },
+                            onDoubleTap = {
+                                pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
+                            },
+                        ) {
+                            scope.SidePreviewView()
+                        }
                     }
 
                     if (index == searchResult.size - 1) {

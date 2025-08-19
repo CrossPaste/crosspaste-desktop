@@ -1,4 +1,4 @@
-package com.crosspaste.ui.paste
+package com.crosspaste.ui.paste.preview
 
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
@@ -37,10 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.ui.model.PasteDataViewModel
-import com.crosspaste.ui.paste.preview.PasteEmptyScreenView
-import com.crosspaste.ui.paste.preview.PastePreviewItemView
-import com.crosspaste.ui.paste.preview.PasteSpecificPreviewView
-import com.crosspaste.ui.paste.preview.PasteToTopView
+import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -147,11 +144,18 @@ fun PasteboardContentView(openTopBar: () -> Unit) {
                     val currentIndex by rememberUpdatedState(index)
                     val currentPasteData by rememberUpdatedState(pasteData)
 
-                    PastePreviewItemView(currentPasteData) {
-                        PasteSpecificPreviewView(this)
-                    }
-                    if (currentIndex < rememberPasteDataList.size - 1) {
-                        Spacer(modifier = Modifier.height(small3X))
+                    val scope =
+                        remember(currentPasteData.id, currentPasteData.pasteState) {
+                            createPasteDataScope(currentPasteData)
+                        }
+
+                    scope?.let {
+                        scope.PastePreviewItemView {
+                            PasteItemView()
+                        }
+                        if (currentIndex < rememberPasteDataList.size - 1) {
+                            Spacer(modifier = Modifier.height(small3X))
+                        }
                     }
                 }
             }

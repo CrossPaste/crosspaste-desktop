@@ -7,15 +7,15 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteUrl
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIFont.pasteUrlStyle
 import com.crosspaste.ui.theme.AppUIFont.previewAutoSize
 import com.crosspaste.ui.theme.AppUISize.small3X
 
 @Composable
-fun UrlPreviewView(pasteData: PasteData) {
-    pasteData.getPasteItem(PasteUrl::class)?.let { pasteUrl ->
+fun PasteDataScope.UrlPreviewView() {
+    getPasteItem(PasteUrl::class).let { pasteUrl ->
         SimplePreviewContentView(pasteData) {
             Row(
                 modifier =
