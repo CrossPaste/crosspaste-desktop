@@ -27,13 +27,13 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
-import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.lightSideBarColors
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -46,13 +46,12 @@ import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 @Composable
-fun SidePasteLayoutView(
-    pasteData: PasteData,
+fun PasteDataScope.SidePasteLayoutView(
     pasteBottomContent: @Composable () -> Unit,
     pasteContent: @Composable () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        SidePasteTitleView(pasteData)
+        SidePasteTitleView()
         Box(
             modifier =
                 Modifier
@@ -72,7 +71,7 @@ fun SidePasteLayoutView(
 }
 
 @Composable
-fun SidePasteTitleView(pasteData: PasteData) {
+fun PasteDataScope.SidePasteTitleView() {
     val appControl = koinInject<AppControl>()
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
@@ -103,7 +102,7 @@ fun SidePasteTitleView(pasteData: PasteData) {
         mutableStateOf(DateUtils.getRelativeTime(pasteData.createTime))
     }
 
-    LaunchedEffect(isCurrentThemeDark) {
+    LaunchedEffect(isCurrentThemeDark, pasteData.source) {
         pasteData.source?.let {
             desktopIconColorExtractor.getBackgroundColor(it)?.let { color -> background = color }
         }
@@ -173,7 +172,6 @@ fun SidePasteTitleView(pasteData: PasteData) {
         Spacer(Modifier.weight(1f))
         SidePasteTypeIconView(
             modifier = Modifier.fillMaxHeight().wrapContentWidth(),
-            pasteData = pasteData,
             tint = onBackground,
         )
     }

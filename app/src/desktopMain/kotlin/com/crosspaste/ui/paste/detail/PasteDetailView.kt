@@ -10,13 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.crosspaste.app.DesktopAppSize
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteDetailView(
-    detailView: @Composable () -> Unit,
-    detailInfoView: @Composable () -> Unit,
+fun PasteDataScope.PasteDetailView(
+    detailView: @Composable PasteDataScope.() -> Unit,
+    detailInfoView: @Composable PasteDataScope.() -> Unit,
 ) {
     val appSize = koinInject<DesktopAppSize>()
 

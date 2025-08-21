@@ -16,9 +16,9 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.PasteText
+import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.DesktopAppUIFont.detailPasteTextStyle
 import com.crosspaste.utils.DateUtils
@@ -26,13 +26,11 @@ import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteTextDetailView(
-    pasteData: PasteData,
-    pasteText: PasteText,
-    onDoubleClick: () -> Unit,
-) {
+fun PasteDataScope.PasteTextDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val fileUtils = getFileUtils()
+
+    val pasteText = getPasteItem(TextPasteItem::class)
     val text = pasteText.text
     val pasteItem = pasteText as PasteItem
 
@@ -63,7 +61,6 @@ fun PasteTextDetailView(
         },
         detailInfoView = {
             PasteDetailInfoView(
-                pasteData = pasteData,
                 items =
                     listOf(
                         PasteDetailInfoItem(TYPE, copywriter.getText("text")),

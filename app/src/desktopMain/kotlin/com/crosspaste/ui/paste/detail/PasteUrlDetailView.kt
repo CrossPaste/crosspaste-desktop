@@ -14,10 +14,10 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.PasteUrl
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIFont.pasteUrlStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.utils.DateUtils
@@ -25,14 +25,11 @@ import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteUrlDetailView(
-    pasteData: PasteData,
-    pasteUrl: PasteUrl,
-    onDoubleClick: () -> Unit,
-) {
+fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val fileUtils = getFileUtils()
+    val pasteUrl = getPasteItem(UrlPasteItem::class)
     val url = pasteUrl.url
     val pasteItem = pasteUrl as PasteItem
 
@@ -63,7 +60,6 @@ fun PasteUrlDetailView(
         },
         detailInfoView = {
             PasteDetailInfoView(
-                pasteData = pasteData,
                 items =
                     listOf(
                         PasteDetailInfoItem(TYPE, copywriter.getText("link")),

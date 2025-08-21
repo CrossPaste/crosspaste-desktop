@@ -17,27 +17,25 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.GenerateImageView
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun HtmlToImageDetailView(
-    pasteData: PasteData,
-    htmlPasteItem: HtmlPasteItem,
-    onDoubleClick: () -> Unit,
-) {
+fun PasteDataScope.HtmlToImageDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val fileUtils = getFileUtils()
+
+    val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
 
     val filePath by remember(pasteData.id) {
         mutableStateOf(
@@ -76,7 +74,6 @@ fun HtmlToImageDetailView(
         },
         detailInfoView = {
             PasteDetailInfoView(
-                pasteData = pasteData,
                 items =
                     listOf(
                         PasteDetailInfoItem(TYPE, copywriter.getText("html")),

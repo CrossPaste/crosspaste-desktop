@@ -42,12 +42,12 @@ import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.AppSourceIcon
 import com.crosspaste.ui.base.DefaultPasteTypeIcon
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -69,9 +69,8 @@ data class PasteDetailInfoItem(
 )
 
 @Composable
-fun PasteDetailInfoView(
+fun PasteDataScope.PasteDetailInfoView(
     indexInfo: String? = null,
-    pasteData: PasteData,
     items: List<PasteDetailInfoItem>,
 ) {
     val appControl = koinInject<AppControl>()
@@ -111,12 +110,9 @@ fun PasteDetailInfoView(
         pasteData.source?.let { source ->
 
             AppSourceIcon(
-                pasteData = pasteData,
-                source = source,
                 size = xxLarge,
             ) {
                 DefaultPasteTypeIcon(
-                    pasteData = pasteData,
                     iconColor = MaterialTheme.colorScheme.primary,
                     size = xxLarge,
                 )

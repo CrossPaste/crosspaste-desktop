@@ -21,7 +21,6 @@ fun PasteDataScope.TextSidePreviewView() {
     getPasteItem(PasteText::class).let { pasteText ->
         val copywriter = koinInject<GlobalCopywriter>()
         SidePasteLayoutView(
-            pasteData = pasteData,
             pasteBottomContent = {
                 BottomGradient(copywriter.getText("character_count", "${pasteText.text.length}"))
             },

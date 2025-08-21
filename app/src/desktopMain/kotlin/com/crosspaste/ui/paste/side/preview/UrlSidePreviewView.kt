@@ -65,7 +65,6 @@ fun PasteDataScope.UrlSidePreviewView() {
         }
 
         SidePasteLayoutView(
-            pasteData = pasteData,
             pasteBottomContent = {
                 UrlBottomSolid(
                     title = urlPasteItem.getTitle(),
@@ -104,7 +103,6 @@ fun PasteDataScope.UrlSidePreviewView() {
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     PasteUrlIcon(
-                                        pasteData = pasteData,
                                         iconColor =
                                             MaterialTheme.colorScheme.contentColorFor(
                                                 AppUIColors.pasteBackground,

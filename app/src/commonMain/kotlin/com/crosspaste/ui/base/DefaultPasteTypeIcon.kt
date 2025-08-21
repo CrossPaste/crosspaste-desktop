@@ -17,16 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.crosspaste.paste.PasteData
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.PasteTypeIconPainter
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
 @Composable
-fun DefaultPasteTypeIcon(
+fun PasteDataScope.DefaultPasteTypeIcon(
     modifier: Modifier = Modifier,
-    pasteData: PasteData,
     iconColor: Color,
     size: Dp,
 ) {
@@ -40,9 +39,8 @@ fun DefaultPasteTypeIcon(
 }
 
 @Composable
-fun SideDefaultPasteTypeIcon(
+fun PasteDataScope.SideDefaultPasteTypeIcon(
     modifier: Modifier = Modifier,
-    pasteData: PasteData,
     tint: Color,
 ) {
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }

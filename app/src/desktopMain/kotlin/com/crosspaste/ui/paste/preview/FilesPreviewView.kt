@@ -28,7 +28,7 @@ fun PasteDataScope.FilesPreviewView() {
         val fileInfoTreeMap = pasteFiles.fileInfoTreeMap
         val fileUtils = getFileUtils()
 
-        ComplexPreviewContentView(pasteData) {
+        ComplexPreviewContentView {
             items(pasteFilePaths.size) { index ->
                 val itemWidthSize =
                     if (pasteFilePaths.size > 1) {

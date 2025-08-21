@@ -56,9 +56,8 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.info.createPasteInfoWithoutConverter
-import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
-import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.ImageShowMode
 import com.crosspaste.ui.base.PasteIconButton
@@ -68,6 +67,7 @@ import com.crosspaste.ui.base.chevronRight
 import com.crosspaste.ui.base.imageCompress
 import com.crosspaste.ui.base.imageExpand
 import com.crosspaste.ui.base.imageSlash
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -85,11 +85,8 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PasteImagesDetailView(
-    pasteData: PasteData,
-    pasteFiles: PasteFiles,
-    onDoubleClick: () -> Unit,
-) {
+fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
+    val pasteFiles = getPasteItem(ImagesPasteItem::class)
     if (pasteFiles.count > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
         val imageLoaders = koinInject<ImageLoaders>()
@@ -340,14 +337,12 @@ fun PasteImagesDetailView(
             detailInfoView = {
                 PasteDetailInfoView(
                     indexInfo = if (pasteFiles.count <= 1) null else "(${index + 1}/${pasteFiles.count})",
-                    pasteData = pasteData,
                     items =
-                        detailInfoItems(
+                        DetailInfoItems(
                             imageInfo,
                             imagePath,
                             copywriter,
                             fileUtils,
-                            pasteData,
                         ),
                 )
             },
@@ -356,12 +351,11 @@ fun PasteImagesDetailView(
 }
 
 @Composable
-fun detailInfoItems(
+fun PasteDataScope.DetailInfoItems(
     imageInfo: ImageInfo? = null,
     imagePath: Path,
     copywriter: GlobalCopywriter,
     fileUtils: FileUtils,
-    pasteData: PasteData,
 ): List<PasteDetailInfoItem> {
     val details =
         mutableListOf(

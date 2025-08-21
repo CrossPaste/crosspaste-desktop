@@ -16,15 +16,14 @@ import coil3.request.transformations
 import com.crosspaste.image.coil.CropTransformation
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
-import com.crosspaste.paste.PasteData
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.ui.paste.PasteDataScope
 import org.koin.compose.koinInject
 
 @Composable
-fun SideAppSourceIcon(
+fun PasteDataScope.SideAppSourceIcon(
     modifier: Modifier = Modifier,
-    pasteData: PasteData,
     defaultIcon: @Composable () -> Unit = {},
 ) {
     val syncManager = koinInject<SyncManager>()

@@ -67,7 +67,6 @@ fun PasteDataScope.ImageSidePreviewView() {
             }
 
             SidePasteLayoutView(
-                pasteData = pasteData,
                 pasteBottomContent = {},
             ) {
                 Box(

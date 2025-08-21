@@ -36,7 +36,7 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteDataScope.ColorPreviewView() {
     getPasteItem(ColorPasteItem::class).let { pasteColor ->
-        SimplePreviewContentView(pasteData) {
+        SimplePreviewContentView {
             val appSize = koinInject<AppSize>()
             val uiSupport = koinInject<UISupport>()
             Row(

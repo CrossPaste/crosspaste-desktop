@@ -32,7 +32,7 @@ fun PasteDataScope.RtfPreviewView() {
             pasteData.getPasteItem(PasteText::class)?.previewText()
                 ?: rtfPasteItem.getText()
 
-        SimplePreviewContentView(pasteData) {
+        SimplePreviewContentView {
             GenerateImageView(
                 modifier = Modifier.fillMaxSize(),
                 imagePath = filePath,

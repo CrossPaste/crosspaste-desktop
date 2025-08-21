@@ -43,8 +43,7 @@ import com.crosspaste.info.PasteInfos.FILE_NAME
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.PasteData
-import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.FileIcon
@@ -53,6 +52,7 @@ import com.crosspaste.ui.base.FolderIcon
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.chevronLeft
 import com.crosspaste.ui.base.chevronRight
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -67,13 +67,10 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PasteFilesDetailView(
-    pasteData: PasteData,
-    pasteFiles: PasteFiles,
-    onDoubleClick: () -> Unit,
-) {
+fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
+    val pasteFiles = getPasteItem(FilesPasteItem::class)
     val showFileCount = pasteFiles.getFilePaths(userDataPathProvider).size
     if (showFileCount > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
@@ -249,7 +246,6 @@ fun PasteFilesDetailView(
             detailInfoView = {
                 PasteDetailInfoView(
                     indexInfo = if (showFileCount <= 1) null else "(${index + 1}/$showFileCount)",
-                    pasteData = pasteData,
                     items =
                         listOf(
                             PasteDetailInfoItem(FILE_NAME, filePath.name),

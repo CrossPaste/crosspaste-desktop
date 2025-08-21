@@ -23,7 +23,6 @@ fun PasteDataScope.HtmlSidePreviewView() {
         val text = htmlPasteItem.getText()
         val backgroundColor = htmlPasteItem.getBackgroundColor()?.let { Color(it) } ?: Color.White
         SidePasteLayoutView(
-            pasteData = pasteData,
             pasteBottomContent = {
                 BottomGradient(
                     text = copywriter.getText("character_count", "${text.length}"),
