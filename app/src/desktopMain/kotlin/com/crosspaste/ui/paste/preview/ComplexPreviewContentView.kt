@@ -8,14 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.paste.PasteData
+import com.crosspaste.ui.paste.PasteDataScope
 import org.koin.compose.koinInject
 
 @Composable
-fun ComplexPreviewContentView(
-    pasteData: PasteData,
-    content: LazyListScope.() -> Unit,
-) {
+fun PasteDataScope.ComplexPreviewContentView(content: LazyListScope.() -> Unit) {
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
     PasteSpecificPreviewContentView(
@@ -39,7 +36,7 @@ fun ComplexPreviewContentView(
             }
         },
         pasteRightInfo = { toShow ->
-            PasteMenuView(pasteData = pasteData, toShow = toShow)
+            PasteMenuView(toShow = toShow)
         },
     )
 }

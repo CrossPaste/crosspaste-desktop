@@ -32,7 +32,7 @@ fun PasteDataScope.HtmlPreviewView() {
             pasteData.getPasteItem(PasteText::class)?.previewText()
                 ?: htmlPasteItem.getText()
 
-        SimplePreviewContentView(pasteData) {
+        SimplePreviewContentView {
             GenerateImageView(
                 modifier = Modifier.fillMaxSize(),
                 imagePath = filePath,

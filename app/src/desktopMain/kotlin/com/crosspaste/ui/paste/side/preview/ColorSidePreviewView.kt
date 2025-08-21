@@ -18,7 +18,6 @@ import com.crosspaste.utils.ColorUtils
 fun PasteDataScope.ColorSidePreviewView() {
     getPasteItem(PasteColor::class).let { pasteColor ->
         SidePasteLayoutView(
-            pasteData = pasteData,
             pasteBottomContent = {},
         ) {
             Box(

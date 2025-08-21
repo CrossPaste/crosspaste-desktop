@@ -48,7 +48,6 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
@@ -57,6 +56,7 @@ import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.base.moreVertical
 import com.crosspaste.ui.base.noFavorite
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.large
@@ -73,10 +73,7 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun PasteMenuView(
-    pasteData: PasteData,
-    toShow: (Boolean) -> Unit,
-) {
+fun PasteDataScope.PasteMenuView(toShow: (Boolean) -> Unit) {
     val density = LocalDensity.current
     val appControl = koinInject<AppControl>()
     val pasteDao = koinInject<PasteDao>()
@@ -186,7 +183,6 @@ fun PasteMenuView(
             }
 
             DetailMenuItem(
-                pasteData = pasteData,
                 tint = AppUIColors.importantColor,
                 background =
                     if (hoverSource) {
@@ -222,7 +218,7 @@ fun PasteMenuView(
                     dismissOnClickOutside = true,
                 ),
         ) {
-            MoreMenuItems(pasteData) {
+            MoreMenuItems {
                 showPopup = false
                 showMenu = false
                 toShow(false)
@@ -446,15 +442,14 @@ fun FavoriteMenuItem(
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun DetailMenuItem(
-    pasteData: PasteData,
+fun PasteDataScope.DetailMenuItem(
     tint: Color,
     background: Color,
     hoverSource: (Boolean) -> Unit,
 ) {
     val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val detailInfo = getDetailInfo(copywriter, pasteData)
+    val detailInfo = getDetailInfo(copywriter)
     PasteTooltipAreaView(
         Modifier
             .fillMaxWidth()
@@ -495,7 +490,6 @@ fun DetailMenuItem(
                 contentAlignment = Alignment.Center,
             ) {
                 PasteTypeIconView(
-                    pasteData = pasteData,
                     tint = tint,
                     background = background,
                     size = medium,
@@ -508,10 +502,7 @@ fun DetailMenuItem(
 private val PointerEvent.position get() = changes.first().position
 
 @Composable
-fun MoreMenuItems(
-    pasteData: PasteData,
-    hideMore: () -> Unit,
-) {
+fun PasteDataScope.MoreMenuItems(hideMore: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     Box(
@@ -549,10 +540,7 @@ fun MoreMenuItems(
     }
 }
 
-fun getDetailInfo(
-    copywriter: Copywriter,
-    pasteData: PasteData,
-): String {
+fun PasteDataScope.getDetailInfo(copywriter: Copywriter): String {
     val infos = mutableListOf<String>()
     pasteData.source?.let {
         infos.add(

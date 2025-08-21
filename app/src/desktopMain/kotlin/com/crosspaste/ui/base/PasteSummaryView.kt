@@ -28,15 +28,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteData
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteSummaryView(
-    pasteData: PasteData,
+fun PasteDataScope.PasteSummaryView(
     selected: Boolean,
     onPress: () -> Unit,
     onDoubleTap: () -> Unit,
@@ -93,7 +92,6 @@ fun PasteSummaryView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PasteTypeIconView(
-                    pasteData = pasteData,
                     tint = MaterialTheme.colorScheme.contentColorFor(background),
                     background = background,
                 )

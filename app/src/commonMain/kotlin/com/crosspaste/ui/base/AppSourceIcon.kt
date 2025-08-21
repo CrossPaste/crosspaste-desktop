@@ -16,57 +16,59 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
-import com.crosspaste.paste.PasteData
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 
 @Composable
-fun AppSourceIcon(
+fun PasteDataScope.AppSourceIcon(
     modifier: Modifier = Modifier,
-    pasteData: PasteData,
-    source: String,
     size: Dp = large2X,
     defaultIcon: @Composable () -> Unit = {},
 ) {
-    val iconStyle = koinInject<IconStyle>()
-    val imageLoaders = koinInject<ImageLoaders>()
-    val platformContext = koinInject<PlatformContext>()
+    pasteData.source?.let { source ->
+        val iconStyle = koinInject<IconStyle>()
+        val imageLoaders = koinInject<ImageLoaders>()
+        val platformContext = koinInject<PlatformContext>()
 
-    val paddingRatio = 0.075f
-    val contentRatio = 1f - (paddingRatio * 2)
+        val paddingRatio = 0.075f
+        val contentRatio = 1f - (paddingRatio * 2)
 
-    val isMacStyleIcon by remember(source) { mutableStateOf(iconStyle.isMacStyleIcon(source)) }
-    val imageSize by remember(source, size, isMacStyleIcon) {
-        mutableStateOf(
-            if (isMacStyleIcon) size / contentRatio else size,
+        val isMacStyleIcon by remember(source) { mutableStateOf(iconStyle.isMacStyleIcon(source)) }
+        val imageSize by remember(source, size, isMacStyleIcon) {
+            mutableStateOf(
+                if (isMacStyleIcon) size / contentRatio else size,
+            )
+        }
+
+        SubcomposeAsyncImage(
+            modifier = modifier.size(imageSize),
+            model =
+                ImageRequest
+                    .Builder(platformContext)
+                    .data(PasteDataItem(pasteData))
+                    .crossfade(false)
+                    .build(),
+            imageLoader = imageLoaders.appSourceLoader,
+            contentDescription = "Paste Icon",
+            content = {
+                val state =
+                    this.painter.state
+                        .collectAsState()
+                        .value
+                when (state) {
+                    is AsyncImagePainter.State.Loading,
+                    is AsyncImagePainter.State.Error,
+                    -> {
+                        defaultIcon()
+                    }
+                    else -> {
+                        SubcomposeAsyncImageContent()
+                    }
+                }
+            },
         )
+    } ?: run {
+        defaultIcon()
     }
-
-    SubcomposeAsyncImage(
-        modifier = modifier.size(imageSize),
-        model =
-            ImageRequest
-                .Builder(platformContext)
-                .data(PasteDataItem(pasteData))
-                .crossfade(false)
-                .build(),
-        imageLoader = imageLoaders.appSourceLoader,
-        contentDescription = "Paste Icon",
-        content = {
-            val state =
-                this.painter.state
-                    .collectAsState()
-                    .value
-            when (state) {
-                is AsyncImagePainter.State.Loading,
-                is AsyncImagePainter.State.Error,
-                -> {
-                    defaultIcon()
-                }
-                else -> {
-                    SubcomposeAsyncImageContent()
-                }
-            }
-        },
-    )
 }

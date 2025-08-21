@@ -21,7 +21,6 @@ fun PasteDataScope.RtfSidePreviewView() {
         val copywriter = koinInject<GlobalCopywriter>()
         val text = rtfPasteItem.getText()
         SidePasteLayoutView(
-            pasteData = pasteData,
             pasteBottomContent = {
                 BottomGradient(
                     text = copywriter.getText("character_count", "${text.length}"),

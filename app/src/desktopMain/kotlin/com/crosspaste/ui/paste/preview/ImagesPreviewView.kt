@@ -22,7 +22,7 @@ fun PasteDataScope.ImagesPreviewView() {
         val imagePaths = pasteFiles.getFilePaths(userDataPathProvider)
         val pasteCoordinate = pasteData.getPasteCoordinate()
 
-        ComplexPreviewContentView(pasteData) {
+        ComplexPreviewContentView {
             items(imagePaths.size) { index ->
                 val itemWidthSize =
                     if (imagePaths.size >

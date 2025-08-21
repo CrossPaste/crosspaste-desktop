@@ -15,13 +15,12 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
-import com.crosspaste.paste.PasteData
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteUrlIcon(
-    pasteData: PasteData,
+fun PasteDataScope.PasteUrlIcon(
     iconColor: Color,
     size: Dp = large2X,
 ) {

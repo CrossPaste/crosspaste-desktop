@@ -40,6 +40,7 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.base.PasteSummaryView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -161,16 +162,22 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 val currentIndex by rememberUpdatedState(index)
                 val currentPasteData by rememberUpdatedState(pasteData)
 
-                PasteSummaryView(
-                    pasteData = currentPasteData,
-                    selected = (currentIndex == selectedIndex),
-                    onPress = {
-                        setSelectedIndex(currentIndex)
-                    },
-                    onDoubleTap = {
-                        pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
-                    },
-                )
+                val scope =
+                    remember(currentPasteData.id, currentPasteData.pasteState) {
+                        createPasteDataScope(currentPasteData)
+                    }
+
+                scope?.let {
+                    scope.PasteSummaryView(
+                        selected = (currentIndex == selectedIndex),
+                        onPress = {
+                            setSelectedIndex(currentIndex)
+                        },
+                        onDoubleTap = {
+                            pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
+                        },
+                    )
+                }
             }
         }
 

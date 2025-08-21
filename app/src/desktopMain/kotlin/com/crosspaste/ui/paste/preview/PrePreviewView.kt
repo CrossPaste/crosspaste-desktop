@@ -45,7 +45,7 @@ fun PasteDataScope.PrePreviewView() {
                 }
             },
             pasteRightInfo = { toShow ->
-                PasteMenuView(pasteData = pasteData, toShow = toShow)
+                PasteMenuView(toShow = toShow)
             },
         )
     }

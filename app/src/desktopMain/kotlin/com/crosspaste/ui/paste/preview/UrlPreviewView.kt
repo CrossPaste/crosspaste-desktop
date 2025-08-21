@@ -16,7 +16,7 @@ import com.crosspaste.ui.theme.AppUISize.small3X
 @Composable
 fun PasteDataScope.UrlPreviewView() {
     getPasteItem(PasteUrl::class).let { pasteUrl ->
-        SimplePreviewContentView(pasteData) {
+        SimplePreviewContentView {
             Row(
                 modifier =
                     Modifier

@@ -79,7 +79,6 @@ fun PasteDataScope.FilesSidePreviewView() {
             var hover by remember { mutableStateOf(false) }
 
             SidePasteLayoutView(
-                pasteData = pasteData,
                 pasteBottomContent = {
                     BottomGradient(filePath.name)
                 },
