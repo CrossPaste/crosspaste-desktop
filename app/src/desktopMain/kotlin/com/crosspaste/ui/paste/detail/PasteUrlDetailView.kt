@@ -14,7 +14,6 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.PasteDataScope
@@ -29,9 +28,8 @@ fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
     val fileUtils = getFileUtils()
-    val pasteUrl = getPasteItem(UrlPasteItem::class)
-    val url = pasteUrl.url
-    val pasteItem = pasteUrl as PasteItem
+    val urlPasteItem = getPasteItem(UrlPasteItem::class)
+    val url = urlPasteItem.url
 
     PasteDetailView(
         detailView = {
@@ -42,7 +40,7 @@ fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
-                                    uiSupport.openUrlInBrowser(pasteUrl.url)
+                                    uiSupport.openUrlInBrowser(urlPasteItem.url)
                                 },
                                 onDoubleTap = {
                                     onDoubleClick()
@@ -63,7 +61,7 @@ fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
                 items =
                     listOf(
                         PasteDetailInfoItem(TYPE, copywriter.getText("link")),
-                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
+                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(urlPasteItem.size)),
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
                             DATE,

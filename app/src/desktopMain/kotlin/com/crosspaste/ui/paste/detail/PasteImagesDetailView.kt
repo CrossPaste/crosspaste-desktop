@@ -86,8 +86,8 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
-    val pasteFiles = getPasteItem(ImagesPasteItem::class)
-    if (pasteFiles.count > 0) {
+    val imagesPasteItem = getPasteItem(ImagesPasteItem::class)
+    if (imagesPasteItem.count > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
         val imageLoaders = koinInject<ImageLoaders>()
         val platformContext = koinInject<PlatformContext>()
@@ -109,7 +109,7 @@ fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
                 mutex.withLock {
                     val nextIndex = index + 1
                     index =
-                        if (nextIndex < pasteFiles.count) {
+                        if (nextIndex < imagesPasteItem.count) {
                             nextIndex
                         } else {
                             autoRoll = false
@@ -119,7 +119,7 @@ fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
             }
         }
 
-        val imagePath = pasteFiles.getFilePaths(userDataPathProvider)[index]
+        val imagePath = imagesPasteItem.getFilePaths(userDataPathProvider)[index]
 
         val pasteFileCoordinate = PasteFileCoordinate(pasteData.getPasteCoordinate(), imagePath)
 
@@ -247,7 +247,7 @@ fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
                             )
                         }
 
-                        if (pasteFiles.count > 1 && hover) {
+                        if (imagesPasteItem.count > 1 && hover) {
                             Row(modifier = Modifier.fillMaxWidth().height(xxLarge)) {
                                 PasteIconButton(
                                     size = large,
@@ -257,7 +257,7 @@ fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
                                                 val currentIndex = index - 1
                                                 index =
                                                     if (currentIndex < 0) {
-                                                        pasteFiles.count.toInt() - 1
+                                                        imagesPasteItem.count.toInt() - 1
                                                     } else {
                                                         currentIndex
                                                     }
@@ -283,7 +283,7 @@ fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
                                             mutex.withLock {
                                                 val currentIndex = index + 1
                                                 index =
-                                                    if (currentIndex >= pasteFiles.count) {
+                                                    if (currentIndex >= imagesPasteItem.count) {
                                                         0
                                                     } else {
                                                         currentIndex
@@ -336,7 +336,7 @@ fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
             },
             detailInfoView = {
                 PasteDetailInfoView(
-                    indexInfo = if (pasteFiles.count <= 1) null else "(${index + 1}/${pasteFiles.count})",
+                    indexInfo = if (imagesPasteItem.count <= 1) null else "(${index + 1}/${imagesPasteItem.count})",
                     items =
                         DetailInfoItems(
                             imageInfo,

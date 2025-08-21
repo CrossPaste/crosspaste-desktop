@@ -30,9 +30,9 @@ fun PasteDataScope.PasteTextDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val fileUtils = getFileUtils()
 
-    val pasteText = getPasteItem(TextPasteItem::class)
-    val text = pasteText.text
-    val pasteItem = pasteText as PasteItem
+    val textPasteItem = getPasteItem(TextPasteItem::class)
+    val text = textPasteItem.text
+    val pasteItem = textPasteItem as PasteItem
 
     PasteDetailView(
         detailView = {

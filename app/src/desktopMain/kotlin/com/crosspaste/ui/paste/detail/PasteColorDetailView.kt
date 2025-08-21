@@ -33,7 +33,7 @@ fun PasteDataScope.PasteColorDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val fileUtils = getFileUtils()
 
-    val pasteColor = getPasteItem(ColorPasteItem::class)
+    val colorPasteItem = getPasteItem(ColorPasteItem::class)
 
     PasteDetailView(
         detailView = {
@@ -55,7 +55,7 @@ fun PasteDataScope.PasteColorDetailView(onDoubleClick: () -> Unit) {
                         Modifier
                             .size(gigantic)
                             .clip(tiny2XRoundedCornerShape)
-                            .background(Color(pasteColor.color).copy(alpha = 0.3f)),
+                            .background(Color(colorPasteItem.color).copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
@@ -67,7 +67,7 @@ fun PasteDataScope.PasteColorDetailView(onDoubleClick: () -> Unit) {
                                     shape = tiny2XRoundedCornerShape,
                                     spotColor = Color.Black.copy(alpha = 0.1f),
                                 ).clip(tiny2XRoundedCornerShape)
-                                .background(Color(pasteColor.color)),
+                                .background(Color(colorPasteItem.color)),
                     )
                 }
             }
@@ -78,7 +78,7 @@ fun PasteDataScope.PasteColorDetailView(onDoubleClick: () -> Unit) {
                     listOf(
                         PasteDetailInfoItem(
                             key = COLOR,
-                            value = pasteColor.toHexString(),
+                            value = colorPasteItem.toHexString(),
                         ),
                         PasteDetailInfoItem(TYPE, copywriter.getText("color")),
                         PasteDetailInfoItem(SIZE, fileUtils.formatBytes(4L)),

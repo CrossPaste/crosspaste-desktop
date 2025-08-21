@@ -18,7 +18,7 @@ fun createPasteDataScope(pasteData: PasteData): PasteDataScope? =
         null
     }
 
-class PasteDataScopeImpl(
+internal class PasteDataScopeImpl(
     override val pasteData: PasteData,
 ) : PasteDataScope {
 
