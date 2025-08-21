@@ -44,7 +44,6 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.FilesPasteItem
-import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.FileIcon
 import com.crosspaste.ui.base.FileSlashIcon
@@ -70,14 +69,12 @@ import org.koin.compose.koinInject
 fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
-    val pasteFiles = getPasteItem(FilesPasteItem::class)
-    val showFileCount = pasteFiles.getFilePaths(userDataPathProvider).size
+    val filesPasteItem = getPasteItem(FilesPasteItem::class)
+    val showFileCount = filesPasteItem.getFilePaths(userDataPathProvider).size
     if (showFileCount > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
         val imageLoaders = koinInject<ImageLoaders>()
         val platformContext = koinInject<PlatformContext>()
-
-        val pasteItem = pasteFiles as PasteItem
 
         val fileUtils = getFileUtils()
 
@@ -105,12 +102,12 @@ fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
             }
         }
 
-        val filePath = pasteFiles.getFilePaths(userDataPathProvider)[index]
+        val filePath = filesPasteItem.getFilePaths(userDataPathProvider)[index]
         val existFile by remember(filePath) {
             mutableStateOf(fileUtils.existFile(filePath))
         }
         val isFile by remember(filePath) {
-            mutableStateOf(pasteFiles.fileInfoTreeMap[filePath.name]!!.isFile())
+            mutableStateOf(filesPasteItem.fileInfoTreeMap[filePath.name]!!.isFile())
         }
 
         var hover by remember { mutableStateOf(false) }
@@ -193,7 +190,7 @@ fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
                                                 val currentIndex = index - 1
                                                 index =
                                                     if (currentIndex < 0) {
-                                                        pasteFiles.count.toInt() - 1
+                                                        filesPasteItem.count.toInt() - 1
                                                     } else {
                                                         currentIndex
                                                     }
@@ -219,7 +216,7 @@ fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
                                             mutex.withLock {
                                                 val currentIndex = index + 1
                                                 index =
-                                                    if (currentIndex >= pasteFiles.count) {
+                                                    if (currentIndex >= filesPasteItem.count) {
                                                         0
                                                     } else {
                                                         currentIndex
@@ -250,7 +247,7 @@ fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
                         listOf(
                             PasteDetailInfoItem(FILE_NAME, filePath.name),
                             PasteDetailInfoItem(TYPE, copywriter.getText("file")),
-                            PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
+                            PasteDetailInfoItem(SIZE, fileUtils.formatBytes(filesPasteItem.size)),
                             PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                             PasteDetailInfoItem(
                                 DATE,

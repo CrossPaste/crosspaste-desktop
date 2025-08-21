@@ -3,10 +3,11 @@ package com.crosspaste.ui.search.center
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.PasteType
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.paste.PasteDataScopeImpl
+import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.detail.HtmlToImageDetailView
 import com.crosspaste.ui.paste.detail.PasteColorDetailView
 import com.crosspaste.ui.paste.detail.PasteFilesDetailView
@@ -25,10 +26,8 @@ fun DetailPasteDataView() {
     currentPasteData?.let { pasteData ->
 
         val scope =
-            if (pasteData.isValid()) {
-                PasteDataScopeImpl(pasteData)
-            } else {
-                null
+            remember(pasteData.id, pasteData.pasteState) {
+                createPasteDataScope(pasteData)
             }
 
         scope?.let {
