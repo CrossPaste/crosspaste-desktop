@@ -4,12 +4,11 @@ import androidx.compose.runtime.Composable
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.paste.preview.PrePreviewView
 
 @Composable
 fun PasteDataScope.SidePreviewView() {
     if (pasteData.pasteState == PasteState.LOADING) {
-        PrePreviewView()
+        PreSidePreviewView()
     } else {
         when (pasteData.getType()) {
             PasteType.TEXT_TYPE -> TextSidePreviewView()
