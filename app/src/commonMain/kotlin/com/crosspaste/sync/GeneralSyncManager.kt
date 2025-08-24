@@ -6,6 +6,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -40,6 +41,7 @@ import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
     private val dialogService: DialogService,
+    private val networkInterfaceService: NetworkInterfaceService,
     private val pasteDialogFactory: PasteDialogFactory,
     private val ratingPromptManager: RatingPromptManager,
     override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
@@ -171,6 +173,7 @@ class GeneralSyncManager(
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler =
         GeneralSyncHandler(
             syncRuntimeInfo,
+            networkInterfaceService,
             ratingPromptManager,
             secureStore,
             syncClientApi,

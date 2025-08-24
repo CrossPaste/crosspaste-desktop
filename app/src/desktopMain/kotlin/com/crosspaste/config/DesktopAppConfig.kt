@@ -29,7 +29,6 @@ data class DesktopAppConfig(
     // MB
     override val maxStorage: Long = 2048,
     override val cleanupPercentage: Int = 20,
-    override val enableDiscovery: Boolean = true,
     override val blacklist: String = "[]",
     override val enableSkipPreLaunchPasteboardContent: Boolean = true,
     override val lastPasteboardChangeCount: Int = -1,
@@ -45,6 +44,7 @@ data class DesktopAppConfig(
     val searchWindowStyle: String = DesktopSearchWindowStyle.SIDE_STYLE.style,
     val legacySoftwareCompatibility: Boolean = false,
     override val pastePrimaryTypeOnly: Boolean = true,
+    val useNetworkInterfaces: String = "[]",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -82,7 +82,6 @@ data class DesktopAppConfig(
                 },
             maxStorage = if (key == "maxStorage") toLong(value) else maxStorage,
             cleanupPercentage = if (key == "cleanupPercentage") toInt(value) else cleanupPercentage,
-            enableDiscovery = if (key == "enableDiscovery") toBoolean(value) else enableDiscovery,
             blacklist = if (key == "blacklist") toString(value) else blacklist,
             enableSkipPreLaunchPasteboardContent =
                 if (key == "enableSkipPreLaunchPasteboardContent") {
@@ -128,5 +127,6 @@ data class DesktopAppConfig(
                     legacySoftwareCompatibility
                 },
             pastePrimaryTypeOnly = if (key == "pastePrimaryTypeOnly") toBoolean(value) else pastePrimaryTypeOnly,
+            useNetworkInterfaces = if (key == "useNetworkInterfaces") toString(value) else useNetworkInterfaces,
         )
 }

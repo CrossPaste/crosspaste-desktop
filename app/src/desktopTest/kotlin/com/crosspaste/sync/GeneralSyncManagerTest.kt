@@ -6,6 +6,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -38,6 +39,7 @@ class GeneralSyncManagerTest {
     private fun createMocks(): Mocks =
         Mocks(
             dialogService = mockk(relaxed = true),
+            networkInterfaceService = mockk(relaxed = true),
             pasteDialogFactory = mockk(relaxed = true),
             ratingPromptManager = mockk(relaxed = true),
             secureStore = mockk(relaxed = true),
@@ -55,6 +57,7 @@ class GeneralSyncManagerTest {
     ): GeneralSyncManager =
         GeneralSyncManager(
             dialogService = mocks.dialogService,
+            networkInterfaceService = mocks.networkInterfaceService,
             pasteDialogFactory = mocks.pasteDialogFactory,
             ratingPromptManager = mocks.ratingPromptManager,
             realTimeSyncScope = scope,
@@ -92,6 +95,7 @@ class GeneralSyncManagerTest {
 
     data class Mocks(
         val dialogService: DialogService,
+        val networkInterfaceService: NetworkInterfaceService,
         val pasteDialogFactory: PasteDialogFactory,
         val ratingPromptManager: RatingPromptManager,
         val secureStore: SecureStore,

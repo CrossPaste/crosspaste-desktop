@@ -25,6 +25,12 @@ expect fun bell(): Painter
 expect fun check(): Painter
 
 @Composable
+expect fun checkboxUnchecked(): Painter
+
+@Composable
+expect fun checkboxChecked(): Painter
+
+@Composable
 expect fun circle(): Painter
 
 @Composable

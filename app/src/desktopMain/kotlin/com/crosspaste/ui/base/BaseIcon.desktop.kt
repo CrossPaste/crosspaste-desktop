@@ -9,6 +9,8 @@ import com.crosspaste.app.generated.resources.archive
 import com.crosspaste.app.generated.resources.autorenew
 import com.crosspaste.app.generated.resources.bell
 import com.crosspaste.app.generated.resources.check
+import com.crosspaste.app.generated.resources.checkbox_checked
+import com.crosspaste.app.generated.resources.checkbox_unchecked
 import com.crosspaste.app.generated.resources.circle
 import com.crosspaste.app.generated.resources.clipboard
 import com.crosspaste.app.generated.resources.close
@@ -57,6 +59,12 @@ actual fun bell(): Painter = painterResource(Res.drawable.bell)
 
 @Composable
 actual fun check(): Painter = painterResource(Res.drawable.check)
+
+@Composable
+actual fun checkboxUnchecked(): Painter = painterResource(Res.drawable.checkbox_unchecked)
+
+@Composable
+actual fun checkboxChecked(): Painter = painterResource(Res.drawable.checkbox_checked)
 
 @Composable
 actual fun circle(): Painter = painterResource(Res.drawable.circle)

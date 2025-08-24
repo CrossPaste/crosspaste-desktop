@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
@@ -25,7 +26,8 @@ import javax.jmdns.impl.util.ByteWrangler
 class DesktopPasteBonjourService(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
-    private val nearbyDeviceManager: NearbyDeviceManager,
+    nearbyDeviceManager: NearbyDeviceManager,
+    private val networkInterfaceService: NetworkInterfaceService,
 ) : PasteBonjourService {
 
     companion object {
@@ -34,58 +36,88 @@ class DesktopPasteBonjourService(
 
     private val logger = KotlinLogging.logger {}
 
+    private val actionChannel = Channel<List<NetworkInterfaceInfo>>(Channel.UNLIMITED)
+
     private val supervisorJob = SupervisorJob()
 
     private val scope = CoroutineScope(ioDispatcher + supervisorJob)
 
+    private val serviceListener = DesktopServiceListener(nearbyDeviceManager)
+
     private val jmdnsMap: MutableMap<String, JmDNS> = ConcurrentMap()
 
-    override fun registerService(): PasteBonjourService {
-        val endpointInfo = endpointInfoFactory.createEndpointInfo()
+    init {
+        scope.launch {
+            networkInterfaceService.networkInterfaces.collect { interfaces ->
+                actionChannel.send(interfaces)
+            }
+        }
+
+        scope.launch {
+            for (interfaces in actionChannel) {
+                processNetworkChange(interfaces)
+            }
+        }
+    }
+
+    fun processNetworkChange(interfaces: List<NetworkInterfaceInfo>) {
+        close()
+
+        setup(interfaces)
+    }
+
+    fun setup(interfaces: List<NetworkInterfaceInfo>) {
+        val hostInfoList = interfaces.map { info -> info.toHostInfo() }
+        val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
         val syncInfo = SyncInfo(appInfo, endpointInfo)
+
         logger.debug { "Registering service: $syncInfo" }
 
         val txtRecordDict = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
 
-        val serviceListener = DesktopServiceListener(nearbyDeviceManager)
-
-        for (hostInfo in endpointInfo.hostInfoList) {
-            scope.launch {
-                val hostAddress = hostInfo.hostAddress
-                jmdnsMap.computeIfAbsent(hostAddress) {
-                    val jmDNS = JmDNS.create(InetAddress.getByName(hostAddress))
-                    val serviceInfo =
-                        ServiceInfo.create(
-                            SERVICE_TYPE,
-                            "crosspaste@${appInfo.appInstanceId}@${hostAddress.replace(".", "_")}",
-                            endpointInfo.port,
-                            0,
-                            0,
-                            txtRecordDict,
-                        )
-                    jmDNS.addServiceListener(SERVICE_TYPE, serviceListener)
-                    jmDNS.registerService(serviceInfo)
-                    jmDNS
-                }
-            }
-        }
-        return this
-    }
-
-    override fun unregisterService(): PasteBonjourService {
         val deferred =
             scope.async {
-                jmdnsMap.values
-                    .map { jmDNS ->
+                hostInfoList
+                    .map { hostInfo ->
                         async {
-                            jmDNS.unregisterAllServices()
-                            jmDNS.close()
+                            val hostAddress = hostInfo.hostAddress
+                            jmdnsMap.computeIfAbsent(hostAddress) {
+                                val jmDNS = JmDNS.create(InetAddress.getByName(hostAddress))
+                                val serviceInfo =
+                                    ServiceInfo.create(
+                                        SERVICE_TYPE,
+                                        "crosspaste@${appInfo.appInstanceId}@${hostAddress.replace(".", "_")}",
+                                        endpointInfo.port,
+                                        0,
+                                        0,
+                                        txtRecordDict,
+                                    )
+                                jmDNS.addServiceListener(SERVICE_TYPE, serviceListener)
+                                jmDNS.registerService(serviceInfo)
+                                jmDNS
+                            }
                         }
                     }.awaitAll()
             }
+
         runBlocking { deferred.await() }
-        jmdnsMap.clear()
-        return this
+    }
+
+    override fun close() {
+        runCatching {
+            val deferred =
+                scope.async {
+                    jmdnsMap.values
+                        .map { jmDNS ->
+                            async {
+                                jmDNS.unregisterAllServices()
+                                jmDNS.close()
+                            }
+                        }.awaitAll()
+                }
+            runBlocking { deferred.await() }
+            jmdnsMap.clear()
+        }
     }
 }
 
