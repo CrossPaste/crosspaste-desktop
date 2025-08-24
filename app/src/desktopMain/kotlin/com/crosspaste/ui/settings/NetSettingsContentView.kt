@@ -97,12 +97,17 @@ fun NetSettingsContentView() {
                             useNetworkInterfaces = listOf(it.name)
                             val newUseNetworkInterfaces =
                                 jsonUtils.JSON.encodeToString(useNetworkInterfaces)
-                            configManager.updateConfig("useNetworkInterfaces", newUseNetworkInterfaces)
+                            configManager.updateConfig(
+                                listOf("useNetworkInterfaces", "enableDiscovery"),
+                                listOf(newUseNetworkInterfaces, true),
+                            )
                         }
                     } else {
-                        configManager.updateConfig("useNetworkInterfaces", "[]")
+                        configManager.updateConfig(
+                            listOf("useNetworkInterfaces", "enableDiscovery"),
+                            listOf("[]", false),
+                        )
                     }
-                    configManager.updateConfig("enableDiscovery", enableDiscovery)
                 },
             )
         }

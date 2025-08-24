@@ -34,9 +34,12 @@ class DesktopNetworkInterfaceService(
             )
 
     private fun initNetworkInterfaceInfos(): List<NetworkInterfaceInfo> {
-        if (configManager.getCurrentConfig().enableDiscovery &&
-            configManager.getCurrentConfig().useNetworkInterfaces.isEmpty()
-        ) {
+        val config = configManager.getCurrentConfig()
+        val useNetworkInterfaces =
+            jsonUtils.JSON.decodeFromString<List<String>>(
+                config.useNetworkInterfaces,
+            )
+        if (config.enableDiscovery && useNetworkInterfaces.isEmpty()) {
             val preferredInterface = getPreferredNetworkInterface()
             if (preferredInterface != null) {
                 val useNetworkInterfacesJson =
