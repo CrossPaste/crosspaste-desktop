@@ -6,6 +6,10 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.HostInfoFilter
+import com.crosspaste.net.HostInfoFilterImpl
+import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.net.NoFilter
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.VersionRelation
@@ -16,9 +20,6 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
-import com.crosspaste.utils.HostInfoFilter
-import com.crosspaste.utils.HostInfoFilterImpl
-import com.crosspaste.utils.NoFilter
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -36,6 +37,7 @@ import kotlin.math.min
 
 class GeneralSyncHandler(
     private var syncRuntimeInfo: SyncRuntimeInfo,
+    private val networkInterfaceService: NetworkInterfaceService,
     private val ratingPromptManager: RatingPromptManager,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
@@ -121,7 +123,13 @@ class GeneralSyncHandler(
                 } ?: NoFilter
             } ?: NoFilter
 
-        val currentSyncInfo = syncInfoFactory.createSyncInfo(hostInfoFilter)
+        val hostInfoList =
+            networkInterfaceService
+                .getCurrentUseNetworkInterfaces()
+                .map { it.toHostInfo() }
+                .filter { hostInfoFilter.filter(it) }
+
+        val currentSyncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
         return if (syncInfo == null) {
             syncInfo = currentSyncInfo
             currentSyncInfo

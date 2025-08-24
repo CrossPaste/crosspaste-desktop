@@ -4,12 +4,14 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.image.PlatformImage
+import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getJsonUtils
 
 abstract class QRCodeGenerator(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
+    private val networkInterfaceService: NetworkInterfaceService,
 ) {
 
     private val codecsUtils = getCodecsUtils()
@@ -18,7 +20,11 @@ abstract class QRCodeGenerator(
     abstract fun generateQRCode(token: CharArray): PlatformImage
 
     protected fun buildQRCode(token: CharArray): String {
-        val endpointInfo = endpointInfoFactory.createEndpointInfo()
+        val hostInfoList =
+            networkInterfaceService
+                .getCurrentUseNetworkInterfaces()
+                .map { it.toHostInfo() }
+        val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
         val syncInfo = SyncInfo(appInfo, endpointInfo)
         return buildQRCode(syncInfo, token)
     }

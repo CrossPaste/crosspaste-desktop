@@ -4,11 +4,13 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.image.DesktopQRCodeImage
 import com.crosspaste.image.PlatformImage
+import com.crosspaste.net.NetworkInterfaceService
 
 class DesktopQRCodeGenerator(
     appInfo: AppInfo,
     endpointInfoFactory: EndpointInfoFactory,
-) : QRCodeGenerator(appInfo, endpointInfoFactory) {
+    networkInterfaceService: NetworkInterfaceService,
+) : QRCodeGenerator(appInfo, endpointInfoFactory, networkInterfaceService) {
 
     override fun generateQRCode(token: CharArray): PlatformImage =
         DesktopQRCodeImage(

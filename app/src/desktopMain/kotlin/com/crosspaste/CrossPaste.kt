@@ -121,7 +121,7 @@ class CrossPaste {
                     koin.get<PasteClient>()
                     // bonjour service should be registered after paste server started
                     // only server started, bonjour service can get the port
-                    koin.get<PasteBonjourService>().registerService()
+                    koin.get<PasteBonjourService>()
                     koin.get<CleanScheduler>().start()
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
@@ -205,7 +205,7 @@ class CrossPaste {
                             ) { it.stop() }
                         },
                         async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
-                        async { stopService<PasteBonjourService>("PasteBonjourService") { it.unregisterService() } },
+                        async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } },
                         async { stopService<Server>("PasteServer") { it.stop() } },
                         async { stopService<SyncManager>("SyncManager") { it.stop() } },
                         async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },

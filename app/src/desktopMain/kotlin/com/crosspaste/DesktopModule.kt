@@ -74,10 +74,12 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
+import com.crosspaste.net.DesktopNetworkInterfaceService
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopPasteServer
 import com.crosspaste.net.DesktopServerFactory
 import com.crosspaste.net.DesktopServerModule
+import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.Server
@@ -272,7 +274,7 @@ class DesktopModule(
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
             single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
-            single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get()) }
+            single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
             single<RecommendationService> { DesktopRecommendationService(get(), get(), get(), get()) }
             single<Platform> { platform }
@@ -320,6 +322,8 @@ class DesktopModule(
     // NetworkModule.kt
     override fun networkModule() =
         module {
+            single<ExceptionHandler> { DesktopExceptionHandler() }
+            single<FaviconLoader> { DesktopFaviconLoader(get()) }
             single<NearbyDeviceManager> {
                 if (marketingMode) {
                     MarketingNearbyDeviceManager()
@@ -327,9 +331,8 @@ class DesktopModule(
                     GeneralNearbyDeviceManager(get(), get(), get(), get())
                 }
             }
-            single<ExceptionHandler> { DesktopExceptionHandler() }
-            single<FaviconLoader> { DesktopFaviconLoader(get()) }
-            single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get()) }
+            single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get()) }
+            single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
             single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
             single<PullClientApi> { PullClientApi(get(), get()) }
             single<PasteClientApi> { PasteClientApi(get(), get()) }
@@ -360,6 +363,7 @@ class DesktopModule(
                     get(),
                     get(),
                     get(),
+                    get(),
                 )
             }
             single<SyncApi> { SyncApi }
@@ -370,6 +374,7 @@ class DesktopModule(
                 } else {
                     GeneralSyncManager(
                         dialogService = get(),
+                        networkInterfaceService = get(),
                         pasteDialogFactory = get(),
                         ratingPromptManager = get(),
                         secureStore = get(),

@@ -28,13 +28,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppSize
-import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.net.NetworkInterfaceInfo
+import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.link
-import com.crosspaste.ui.base.network
 import com.crosspaste.ui.base.wifi
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -43,25 +44,31 @@ import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.utils.getJsonUtils
-import com.crosspaste.utils.getNetUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
+fun NetSettingsContentView() {
     val appSize = koinInject<AppSize>()
-    val configManager = koinInject<CommonConfigManager>()
+    val configManager = koinInject<DesktopConfigManager>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
+    val networkInterfaceService = koinInject<NetworkInterfaceService>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val netUtils = getNetUtils()
     val jsonUtils = getJsonUtils()
 
-    var ip: String? by remember { mutableStateOf(null) }
     var port: String? by remember { mutableStateOf(null) }
 
     val config by configManager.config.collectAsState()
 
+    var networkInterfaces by remember { mutableStateOf(listOf<NetworkInterfaceInfo>()) }
+
+    var useNetworkInterfaces by remember { mutableStateOf(listOf<String>()) }
+
+    LaunchedEffect(config.useNetworkInterfaces) {
+        useNetworkInterfaces = jsonUtils.JSON.decodeFromString(config.useNetworkInterfaces)
+    }
+
     LaunchedEffect(Unit) {
-        ip = netUtils.getPreferredLocalIPAddress() ?: "N/A"
+        networkInterfaces = networkInterfaceService.getAllNetworkInterfaceInfo()
         val currentPort = config.port
         port = if (currentPort == 0) "N/A" else currentPort.toString()
     }
@@ -75,15 +82,58 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
         SettingItemsTitleView("network_info")
 
         SettingItemView(
-            painter = network(),
-            text = "ip_address",
+            painter = wifi(),
+            text = "allow_discovery_by_new_devices",
         ) {
-            ip?.let {
-                SettingsText(text = it)
-            } ?: run {
-                CircularProgressIndicator(modifier = Modifier.size(xLarge))
-            }
+            CustomSwitch(
+                modifier =
+                    Modifier
+                        .width(medium * 2)
+                        .height(large2X),
+                checked = useNetworkInterfaces.isNotEmpty(),
+                onCheckedChange = { enableDiscovery ->
+                    if (enableDiscovery) {
+                        networkInterfaceService.getPreferredNetworkInterface()?.let {
+                            useNetworkInterfaces = listOf(it.name)
+                            val newUseNetworkInterfaces =
+                                jsonUtils.JSON.encodeToString(useNetworkInterfaces)
+                            configManager.updateConfig(
+                                listOf("useNetworkInterfaces", "enableDiscovery"),
+                                listOf(newUseNetworkInterfaces, true),
+                            )
+                        }
+                    } else {
+                        configManager.updateConfig(
+                            listOf("useNetworkInterfaces", "enableDiscovery"),
+                            listOf("[]", false),
+                        )
+                    }
+                },
+            )
         }
+
+        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
+
+        SettingCheckboxView(
+            list = networkInterfaces.map { it.toString() },
+            getCurrentCheckboxValue = { index ->
+                config.useNetworkInterfaces.contains(networkInterfaces.map { it.name }[index])
+            },
+            onChange = { index, isChecked ->
+                val currentInterface = networkInterfaces.map { it.name }[index]
+                useNetworkInterfaces =
+                    if (isChecked) {
+                        useNetworkInterfaces + currentInterface
+                    } else {
+                        useNetworkInterfaces - currentInterface
+                    }
+                val newUseNetworkInterfaces = jsonUtils.JSON.encodeToString(useNetworkInterfaces)
+                configManager.updateConfig(
+                    listOf("useNetworkInterfaces", "enableDiscovery"),
+                    listOf(newUseNetworkInterfaces, useNetworkInterfaces.isNotEmpty()),
+                )
+            },
+        )
 
         HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
 
@@ -96,31 +146,6 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             } ?: run {
                 CircularProgressIndicator(modifier = Modifier.size(xLarge))
             }
-        }
-    }
-
-    Column(
-        modifier =
-            Modifier
-                .wrapContentSize()
-                .background(AppUIColors.generalBackground),
-    ) {
-        SettingItemsTitleView("service_discovery")
-
-        SettingItemView(
-            painter = wifi(),
-            text = "allow_discovery_by_new_devices",
-        ) {
-            CustomSwitch(
-                modifier =
-                    Modifier
-                        .width(medium * 2)
-                        .height(large2X),
-                checked = config.enableDiscovery,
-                onCheckedChange = { newIsAllowDiscovery ->
-                    configManager.updateConfig("enableDiscovery", newIsAllowDiscovery)
-                },
-            )
         }
     }
 
@@ -189,6 +214,4 @@ fun NetSettingsContentView(extContent: @Composable () -> Unit = {}) {
             }
         }
     }
-
-    extContent()
 }

@@ -8,6 +8,7 @@ import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.db.secure.SecureIO
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -94,6 +95,16 @@ class SyncTest : KoinTest {
 
                 // net component
                 single<ExceptionHandler> { DesktopExceptionHandler() }
+                single<NetworkInterfaceService> {
+                    TestNetworkInterfaceService(
+                        testNetworkInterfaces =
+                            listOf(
+                                NetworkInterfaceInfo("eth0", 24, "192.168.1.100"),
+                                NetworkInterfaceInfo("wlan0", 24, "192.168.1.101"),
+                            ),
+                        testPreferredInterface = NetworkInterfaceInfo("eth0", 24, "192.168.1.100"),
+                    )
+                }
                 single<PasteClient> { PasteClient(get(named("clientAppInfo")), get(), get()) }
                 single<Platform> { platform }
                 single<Server> {
@@ -110,16 +121,17 @@ class SyncTest : KoinTest {
                 }
                 single<ServerModule> {
                     TestServerModule(
-                        get(named("serverAppInfo")),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
-                        get(named("serverSecureStore")),
-                        get(),
-                        get(),
-                        get(),
-                        get(),
+                        appInfo = get(named("serverAppInfo")),
+                        appTokenApi = get(),
+                        endpointInfoFactory = get(),
+                        exceptionHandler = get(),
+                        networkInterfaceService = get(),
+                        secureKeyPairSerializer = get(),
+                        secureStore = get(named("serverSecureStore")),
+                        serverEncryptPluginFactory = get(),
+                        serverDecryptionPluginFactory = get(),
+                        syncApi = get(),
+                        syncRoutingApi = get(),
                     )
                 }
                 single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(named("clientSecureStore")), get()) }
@@ -200,7 +212,15 @@ class SyncTest : KoinTest {
         val syncInfo =
             SyncInfo(
                 appInfo = clientAppInfo,
-                endpointInfo = endpointInfoFactory.createEndpointInfo(),
+                endpointInfo =
+                    endpointInfoFactory.createEndpointInfo(
+                        listOf(
+                            HostInfo(
+                                hostAddress = "localhost",
+                                networkPrefixLength = 24,
+                            ),
+                        ),
+                    ),
             )
 
         result =

@@ -8,6 +8,7 @@ import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
@@ -26,6 +27,7 @@ fun Routing.syncRouting(
     appTokenApi: AppTokenApi,
     endpointInfoFactory: EndpointInfoFactory,
     exceptionHandler: ExceptionHandler,
+    networkInterfaceService: NetworkInterfaceService,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
     syncApi: SyncApi,
@@ -34,7 +36,7 @@ fun Routing.syncRouting(
     val logger = KotlinLogging.logger {}
 
     get("/sync/heartbeat") {
-        getAppInstanceId(call)?.let { appInstanceId ->
+        getAppInstanceId(call)?.let {
             val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
             if (targetAppInstanceId != appInfo.appInstanceId) {
                 logger.debug { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
@@ -92,7 +94,13 @@ fun Routing.syncRouting(
     }
 
     get("/sync/syncInfo") {
-        val endpointInfo = endpointInfoFactory.createEndpointInfo()
+        val host = call.request.host()
+        val hostInfoList =
+            networkInterfaceService
+                .getCurrentUseNetworkInterfaces()
+                .map { it.toHostInfo() }
+                .filter { it.hostAddress == host }
+        val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
         val syncInfo = SyncInfo(appInfo, endpointInfo)
         successResponse(call, syncInfo)
     }

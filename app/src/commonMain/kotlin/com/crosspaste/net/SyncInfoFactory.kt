@@ -2,22 +2,17 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.utils.HostInfoFilter
 
 class SyncInfoFactory(
     val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
 ) {
 
-    fun createSyncInfo(hostInfoFilter: HostInfoFilter): SyncInfo {
-        // todo add cache, createEndpointInfo maybe slow
-        return SyncInfo(
+    fun createSyncInfo(hostInfoList: List<HostInfo>): SyncInfo =
+        SyncInfo(
             appInfo = appInfo,
-            endpointInfo =
-                endpointInfoFactory.createEndpointInfo(
-                    hostInfoFilter,
-                ),
+            endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList),
         )
-    }
 }

@@ -43,7 +43,7 @@ class DesktopConfigManager(
         val oldConfig = _config.value
         _config.value = oldConfig.copy(key, value)
         runCatching {
-            saveConfig(key, value, _config.value)
+            saveConfig(_config.value)
         }.onFailure {
             notificationManager?.let { manager ->
                 manager.sendNotification(
@@ -55,11 +55,32 @@ class DesktopConfigManager(
         }
     }
 
-    override fun saveConfig(
-        key: String,
-        value: Any,
-        config: DesktopAppConfig,
+    @Synchronized
+    override fun updateConfig(
+        keys: List<String>,
+        values: List<Any>,
     ) {
+        require(keys.size == values.size)
+        val oldConfig = _config.value
+        var newConfig = oldConfig
+        for (i in keys.indices) {
+            newConfig = newConfig.copy(key = keys[i], value = values[i])
+        }
+        _config.value = newConfig
+        runCatching {
+            saveConfig(_config.value)
+        }.onFailure {
+            notificationManager?.let { manager ->
+                manager.sendNotification(
+                    title = { it.getText("failed_to_save_config") },
+                    messageType = MessageType.Error,
+                )
+            }
+            _config.value = oldConfig
+        }
+    }
+
+    fun saveConfig(config: DesktopAppConfig) {
         configFilePersist.save(config)
     }
 }
