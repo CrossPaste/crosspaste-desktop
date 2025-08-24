@@ -23,15 +23,5 @@ interface ConfigManager<T : AppConfig> {
     fun updateConfig(
         keys: List<String>,
         values: List<Any>,
-    ) {
-        keys.forEachIndexed { index, key ->
-            updateConfig(key, values[index])
-        }
-    }
-
-    fun saveConfig(
-        key: String,
-        value: Any,
-        config: T,
     )
 }

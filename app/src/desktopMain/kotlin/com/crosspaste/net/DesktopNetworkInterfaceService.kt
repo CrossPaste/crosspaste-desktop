@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 
 class DesktopNetworkInterfaceService(
-    configManager: DesktopConfigManager,
+    private val configManager: DesktopConfigManager,
     networkRefreshScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : AbstractNetworkInterfaceService() {
 
@@ -30,11 +30,24 @@ class DesktopNetworkInterfaceService(
             }.stateIn(
                 scope = networkRefreshScope,
                 started = SharingStarted.Eagerly,
-                initialValue =
-                    createNetworkInterfaceInfos(
-                        configManager.getCurrentConfig().useNetworkInterfaces,
-                    ),
+                initialValue = initNetworkInterfaceInfos(),
             )
+
+    private fun initNetworkInterfaceInfos(): List<NetworkInterfaceInfo> {
+        if (configManager.getCurrentConfig().enableDiscovery &&
+            configManager.getCurrentConfig().useNetworkInterfaces.isEmpty()
+        ) {
+            val preferredInterface = getPreferredNetworkInterface()
+            if (preferredInterface != null) {
+                val useNetworkInterfacesJson =
+                    jsonUtils.JSON.encodeToString(listOf(preferredInterface.name))
+                configManager.updateConfig("useNetworkInterfaces", useNetworkInterfacesJson)
+            }
+        }
+        return createNetworkInterfaceInfos(
+            configManager.getCurrentConfig().useNetworkInterfaces,
+        )
+    }
 
     private fun createNetworkInterfaceInfos(useNetworkInterfacesJson: String): List<NetworkInterfaceInfo> {
         val useNetworkInterfaces =

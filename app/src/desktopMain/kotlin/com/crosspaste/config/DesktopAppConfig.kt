@@ -29,6 +29,7 @@ data class DesktopAppConfig(
     // MB
     override val maxStorage: Long = 2048,
     override val cleanupPercentage: Int = 20,
+    override val enableDiscovery: Boolean = true,
     override val blacklist: String = "[]",
     override val enableSkipPreLaunchPasteboardContent: Boolean = true,
     override val lastPasteboardChangeCount: Int = -1,

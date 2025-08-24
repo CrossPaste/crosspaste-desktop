@@ -18,6 +18,7 @@ interface AppConfig {
     // MB
     val maxStorage: Long
     val cleanupPercentage: Int
+    val enableDiscovery: Boolean
     val blacklist: String
     val enableSkipPreLaunchPasteboardContent: Boolean
     val lastPasteboardChangeCount: Int
