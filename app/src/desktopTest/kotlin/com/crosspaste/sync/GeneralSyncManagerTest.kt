@@ -14,6 +14,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
+import com.crosspaste.ui.devices.DeviceScopeFactory
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -38,6 +39,7 @@ class GeneralSyncManagerTest {
 
     private fun createMocks(): Mocks =
         Mocks(
+            deviceScopeFactory = mockk(relaxed = true),
             dialogService = mockk(relaxed = true),
             networkInterfaceService = mockk(relaxed = true),
             pasteDialogFactory = mockk(relaxed = true),
@@ -56,6 +58,7 @@ class GeneralSyncManagerTest {
         scope: CoroutineScope,
     ): GeneralSyncManager =
         GeneralSyncManager(
+            deviceScopeFactory = mocks.deviceScopeFactory,
             dialogService = mocks.dialogService,
             networkInterfaceService = mocks.networkInterfaceService,
             pasteDialogFactory = mocks.pasteDialogFactory,
@@ -94,6 +97,7 @@ class GeneralSyncManagerTest {
         )
 
     data class Mocks(
+        val deviceScopeFactory: DeviceScopeFactory,
         val dialogService: DialogService,
         val networkInterfaceService: NetworkInterfaceService,
         val pasteDialogFactory: PasteDialogFactory,
