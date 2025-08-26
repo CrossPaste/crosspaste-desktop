@@ -3,7 +3,7 @@ package com.crosspaste.rendering
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageWriter
-import com.crosspaste.net.DesktopClient
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
@@ -14,6 +14,7 @@ import com.crosspaste.utils.getFileUtils
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.serialization.json.put
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
@@ -21,6 +22,7 @@ import javax.imageio.ImageIO
 class DesktopOpenGraphService(
     private val generateImageService: GenerateImageService,
     private val imageWriter: ImageWriter<BufferedImage>,
+    private val resourcesClient: ResourcesClient,
     private val pasteDao: PasteDao,
     private val searchContentService: SearchContentService,
     private val userDataPathProvider: UserDataPathProvider,
@@ -41,9 +43,8 @@ class DesktopOpenGraphService(
             if (fileUtils.existFile(openGraphImage)) {
                 logger.info { "Open graph image file exists" }
             } else {
-                DesktopClient.suspendRequest(urlPasteItem.url) { response ->
-                    val bytes = response.body().readBytes()
-                    response.headers()
+                resourcesClient.suspendRequest(urlPasteItem.url) { response ->
+                    val bytes = response.getBody().toInputStream().readBytes()
                     val html = String(bytes)
                     val doc = Ksoup.parse(html)
 
@@ -128,8 +129,8 @@ class DesktopOpenGraphService(
                         ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
 
                     ogImage?.let { imageUrl ->
-                        DesktopClient.suspendRequest(imageUrl) { imageResponse ->
-                            val inputStream = imageResponse.body()
+                        resourcesClient.suspendRequest(imageUrl) { imageResponse ->
+                            val inputStream = imageResponse.getBody().toInputStream()
                             val image = ImageIO.read(inputStream)
                             imageWriter.writeImage(image, "png", openGraphImage)
                             generateImageService.markGenerationComplete(openGraphImage)

@@ -5,6 +5,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.PngBackgroundAnalyzer
 import com.crosspaste.module.ModuleLoaderConfig
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
@@ -42,6 +43,7 @@ class DesktopHtmlRenderingService(
     private val generateImageService: GenerateImageService,
     private val htmlTypePlugin: HtmlTypePlugin,
     private val renderingHelper: RenderingHelper,
+    private val resourcesClient: ResourcesClient,
     private val pasteDao: PasteDao,
     private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
@@ -71,7 +73,7 @@ class DesktopHtmlRenderingService(
             .loadProperties("chrome-driver.properties")
 
     override fun start() {
-        val chromeModuleLoader = ChromeModuleLoader(userDataPathProvider)
+        val chromeModuleLoader = ChromeModuleLoader(resourcesClient, userDataPathProvider)
         val chromeServiceModule =
             ChromeServiceServiceModule(
                 appPathProvider,

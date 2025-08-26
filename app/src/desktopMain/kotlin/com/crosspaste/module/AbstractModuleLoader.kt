@@ -1,10 +1,11 @@
 package com.crosspaste.module
 
-import com.crosspaste.net.DesktopClient
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.utils.RetryUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
+import io.ktor.utils.io.jvm.javaio.*
 import okio.Path
 import java.time.Duration
 import java.time.Instant
@@ -19,6 +20,8 @@ abstract class AbstractModuleLoader : ModuleLoader {
 
     override val codecsUtils = getCodecsUtils()
 
+    abstract val resourcesClient: ResourcesClient
+
     override fun downloadModule(
         url: String,
         path: Path,
@@ -26,18 +29,13 @@ abstract class AbstractModuleLoader : ModuleLoader {
         fileUtils.deleteFile(path)
         logger.info { "Downloading: $url" }
 
-        return DesktopClient.request(url) { response ->
-            val contentLength =
-                response
-                    .headers()
-                    .firstValue("Content-Length")
-                    .orElse("-1")
-                    .toLong()
+        return resourcesClient.request(url) { response ->
+            val contentLength = response.getContentLength()
             var bytesRead = 0L
             var lastLogTime = Instant.EPOCH
             var lastLoggedProgress = -1L
 
-            response.body().use { input ->
+            response.getBody().toInputStream().use { input ->
                 path.toFile().outputStream().buffered().use { output ->
                     val buffer = ByteArray(8192) // 8KB buffer
                     var read: Int
