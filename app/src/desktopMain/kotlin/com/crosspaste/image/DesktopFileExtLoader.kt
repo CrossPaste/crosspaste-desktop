@@ -9,7 +9,7 @@ import okio.Path
 import java.awt.image.BufferedImage
 
 class DesktopFileExtLoader(
-    imageWriter: ImageWriter<BufferedImage>,
+    imageHandler: ImageHandler<BufferedImage>,
     platform: Platform,
     userDataPathProvider: UserDataPathProvider,
 ) : AbstractFileExtImageLoader(userDataPathProvider) {
@@ -18,7 +18,7 @@ class DesktopFileExtLoader(
         if (platform.isMacos()) {
             { key, _, result -> macSaveExtIcon(key, result) }
         } else if (platform.isWindows()) {
-            { _, value, result -> windowsSaveExtIcon(value, result, imageWriter) }
+            { _, value, result -> windowsSaveExtIcon(value, result, imageHandler) }
         } else if (platform.isLinux()) {
             { key, _, result -> linuxSaveExtIcon(key, result) }
         } else {
@@ -44,10 +44,10 @@ private fun macSaveExtIcon(
 private fun windowsSaveExtIcon(
     filePath: Path,
     savePath: Path,
-    imageWriter: ImageWriter<BufferedImage>,
+    imageHandler: ImageHandler<BufferedImage>,
 ) {
     JIconExtract.getIconForFile(filePath.toFile())?.let { icon ->
-        imageWriter.writeImage(icon, "png", savePath)
+        imageHandler.writeImage(icon, "png", savePath)
     }
 }
 

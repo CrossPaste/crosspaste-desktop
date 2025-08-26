@@ -2,26 +2,24 @@ package com.crosspaste.rendering
 
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.image.GenerateImageService
-import com.crosspaste.image.ImageWriter
+import com.crosspaste.image.ImageHandler
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.SearchContentService
-import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
-import com.crosspaste.paste.item.PasteItemProperties.TITLE
+import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.toByteArray
 import kotlinx.serialization.json.put
-import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
 
-class DesktopOpenGraphService(
+class OpenGraphService<Image>(
     private val generateImageService: GenerateImageService,
-    private val imageWriter: ImageWriter<BufferedImage>,
+    private val imageHandler: ImageHandler<Image>,
     private val resourcesClient: ResourcesClient,
     private val pasteDao: PasteDao,
     private val searchContentService: SearchContentService,
@@ -44,8 +42,8 @@ class DesktopOpenGraphService(
                 logger.info { "Open graph image file exists" }
             } else {
                 resourcesClient.suspendRequest(urlPasteItem.url) { response ->
-                    val bytes = response.getBody().toInputStream().readBytes()
-                    val html = String(bytes)
+                    val bytes = response.getBody().toByteArray()
+                    val html = bytes.decodeToString()
                     val doc = Ksoup.parse(html)
 
                     val htmlTitle =
@@ -62,10 +60,10 @@ class DesktopOpenGraphService(
 
                     htmlTitle?.let { title ->
                         val extraInfo =
-                            updateExtraInfo(
+                            PasteItem.updateExtraInfo(
                                 urlPasteItem.extraInfo,
                                 update = {
-                                    put(TITLE, title)
+                                    put(PasteItemProperties.TITLE, title)
                                 },
                             )
                         val newUrlPasteItem =
@@ -130,10 +128,10 @@ class DesktopOpenGraphService(
 
                     ogImage?.let { imageUrl ->
                         resourcesClient.suspendRequest(imageUrl) { imageResponse ->
-                            val inputStream = imageResponse.getBody().toInputStream()
-                            val image = ImageIO.read(inputStream)
-                            imageWriter.writeImage(image, "png", openGraphImage)
-                            generateImageService.markGenerationComplete(openGraphImage)
+                            imageHandler.readImage(imageResponse.getBody())?.also { image ->
+                                imageHandler.writeImage(image, "png", openGraphImage)
+                                generateImageService.markGenerationComplete(openGraphImage)
+                            }
                         }
                     } ?: run {
                         logger.warn { "No Open Graph image found for URL: ${urlPasteItem.url}" }
