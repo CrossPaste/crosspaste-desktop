@@ -1,12 +1,14 @@
 package com.crosspaste.image
 
-import com.crosspaste.net.DesktopClient
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.path.UserDataPathProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.utils.io.jvm.javaio.*
 import okio.Path
 import java.io.FileOutputStream
 
 class DesktopFaviconLoader(
+    private val resourcesClient: ResourcesClient,
     userDataPathProvider: UserDataPathProvider,
 ) : AbstractFaviconLoader(userDataPathProvider) {
 
@@ -16,11 +18,9 @@ class DesktopFaviconLoader(
         url: String,
         path: Path,
     ): Path? =
-        DesktopClient.request(url) { response ->
+        resourcesClient.request(url) { response ->
             FileOutputStream(path.toFile()).use { output ->
-                response.body().use { input ->
-                    input.copyTo(output)
-                }
+                response.getBody().toInputStream().copyTo(output)
             }
             path
         }

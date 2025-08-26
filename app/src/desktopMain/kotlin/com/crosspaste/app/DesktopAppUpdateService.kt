@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import com.crosspaste.net.DesktopClient
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
@@ -8,6 +8,7 @@ import com.crosspaste.utils.cpuDispatcher
 import dev.hydraulic.conveyor.control.SoftwareUpdateController
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.z4kn4fein.semver.Version
+import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -16,7 +17,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.io.ByteArrayInputStream
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
@@ -25,6 +25,7 @@ class DesktopAppUpdateService(
     private val appUrls: AppUrls,
     private val uiSupport: UISupport,
     private val notificationManager: NotificationManager,
+    private val resourcesClient: ResourcesClient,
 ) : AppUpdateService {
 
     private val logger = KotlinLogging.logger {}
@@ -107,11 +108,10 @@ class DesktopAppUpdateService(
         }
 
     private fun readLastVersion(): Version? =
-        DesktopClient.request(
+        resourcesClient.request(
             url = appUrls.checkMetadataUrl,
         ) { response ->
-            val bytes = response.body().readBytes()
-            val inputStream = ByteArrayInputStream(bytes)
+            val inputStream = response.getBody().toInputStream()
             val properties = Properties()
             properties.load(inputStream)
             properties.getProperty("app.version")?.let { versionString ->

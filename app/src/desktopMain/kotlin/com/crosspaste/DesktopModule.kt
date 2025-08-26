@@ -77,11 +77,13 @@ import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.net.DesktopNetworkInterfaceService
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopPasteServer
+import com.crosspaste.net.DesktopResourcesClient
 import com.crosspaste.net.DesktopServerFactory
 import com.crosspaste.net.DesktopServerModule
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.net.Server
 import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
@@ -258,7 +260,7 @@ class DesktopModule(
             single<AppPathProvider> { appPathProvider }
             single<AppRestartService> { DesktopAppRestartService(get(), get()) }
             single<AppStartUpService> { DesktopAppStartUpService(get(), get(), get(), get()) }
-            single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get()) }
+            single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
             single<AppUrls> { DesktopAppUrls }
             single<CacheManager> { DesktopCacheManager(get(), get()) }
             @Suppress("UNCHECKED_CAST")
@@ -325,7 +327,7 @@ class DesktopModule(
     override fun networkModule() =
         module {
             single<ExceptionHandler> { DesktopExceptionHandler() }
-            single<FaviconLoader> { DesktopFaviconLoader(get()) }
+            single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
             single<NearbyDeviceManager> {
                 if (marketingMode) {
                     MarketingNearbyDeviceManager()
@@ -334,6 +336,7 @@ class DesktopModule(
                 }
             }
             single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get()) }
+            single<ResourcesClient> { DesktopResourcesClient() }
             single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
             single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
             single<PullClientApi> { PullClientApi(get(), get()) }
@@ -425,13 +428,13 @@ class DesktopModule(
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
             single<RenderingHelper> { DesktopRenderingHelper(get()) }
             single<RenderingService<String>>(named("htmlRendering")) {
-                DesktopHtmlRenderingService(get(), get(), get(), get(), get(), get(), get(), get())
+                DesktopHtmlRenderingService(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
             single<RenderingService<String>>(named("rtfRendering")) {
                 DesktopRtfRenderingService(get(), get(), get(), get())
             }
             single<RenderingService<String>>(named("urlRendering")) {
-                DesktopOpenGraphService(get(), get(), get(), get(), get())
+                DesktopOpenGraphService(get(), get(), get(), get(), get(), get())
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<GenerateImageService> { GenerateImageService() }

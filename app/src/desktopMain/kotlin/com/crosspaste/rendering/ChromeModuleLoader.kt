@@ -1,6 +1,7 @@
 package com.crosspaste.rendering
 
 import com.crosspaste.module.AbstractModuleLoader
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.path.UserDataPathProvider
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -9,6 +10,7 @@ import java.util.zip.ZipInputStream
 import kotlin.io.path.createDirectories
 
 class ChromeModuleLoader(
+    override val resourcesClient: ResourcesClient,
     override val userDataPathProvider: UserDataPathProvider,
 ) : AbstractModuleLoader() {
 

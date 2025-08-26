@@ -1,7 +1,10 @@
 package com.crosspaste.net
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.ConcurrentMap
+import io.ktor.util.collections.*
+import io.ktor.utils.io.*
+import kotlinx.io.asSource
+import kotlinx.io.buffered
 import java.io.InputStream
 import java.net.Proxy
 import java.net.ProxySelector
@@ -11,11 +14,13 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-object DesktopClient {
+class DesktopResourcesClient : ResourcesClient {
+
+    companion object {
+        private val GOOGLE_URI = URI("https://www.google.com")
+    }
 
     private val logger = KotlinLogging.logger {}
-
-    private val GOOGLE_URI = URI("https://www.google.com")
 
     private val noProxyClient =
         HttpClient
@@ -40,9 +45,9 @@ object DesktopClient {
         }
     }
 
-    fun <T> request(
+    override fun <T> request(
         url: String,
-        success: (HttpResponse<InputStream>) -> T,
+        success: (ClientResponse) -> T,
     ): T? =
         runCatching {
             proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
@@ -50,9 +55,9 @@ object DesktopClient {
             } ?: request(url, noProxyClient, success)
         }.getOrNull()
 
-    suspend fun <T> suspendRequest(
+    override suspend fun <T> suspendRequest(
         url: String,
-        success: suspend (HttpResponse<InputStream>) -> T,
+        success: suspend (ClientResponse) -> T,
     ): T? =
         runCatching {
             proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
@@ -66,7 +71,7 @@ object DesktopClient {
     private fun <T> request(
         url: String,
         client: HttpClient,
-        success: (HttpResponse<InputStream>) -> T,
+        success: (ClientResponse) -> T,
     ): T? {
         val uri = URI(url)
 
@@ -75,7 +80,7 @@ object DesktopClient {
         val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
         return if (response.statusCode() in 200..299) {
-            success(response)
+            success(DesktopClientResponse(response))
         } else {
             logger.warn { "Failed to fetch data from $url, status code: ${response.statusCode()}" }
             null
@@ -85,7 +90,7 @@ object DesktopClient {
     private suspend fun <T> suspendRequest(
         url: String,
         client: HttpClient,
-        success: suspend (HttpResponse<InputStream>) -> T,
+        success: suspend (ClientResponse) -> T,
     ): T? {
         val uri = URI(url)
 
@@ -94,7 +99,7 @@ object DesktopClient {
         val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
         return if (response.statusCode() in 200..299) {
-            success(response)
+            success(DesktopClientResponse(response))
         } else {
             logger.warn { "Failed to fetch data from $url, status code: ${response.statusCode()}" }
             null
@@ -113,4 +118,18 @@ object DesktopClient {
             .header("DNT", "1")
             .timeout(Duration.ofSeconds(5))
             .build()
+}
+
+class DesktopClientResponse(
+    private val response: HttpResponse<InputStream>,
+) : ClientResponse {
+
+    override fun getBody(): ByteReadChannel = ByteReadChannel(response.body().asSource().buffered())
+
+    override fun getContentLength(): Long =
+        response
+            .headers()
+            .firstValue("Content-Length")
+            .orElse("-1")
+            .toLong()
 }
