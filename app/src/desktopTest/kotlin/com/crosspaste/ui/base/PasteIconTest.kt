@@ -56,11 +56,11 @@ class PasteIconTest {
             listOf(
                 "color.svg",
                 "file.svg",
-                "file-slash.svg",
+                "file_slash.svg",
                 "folder.svg",
                 "html.svg",
                 "image.svg",
-                "image-slash.svg",
+                "image_slash.svg",
                 "link.svg",
                 "rtf.svg",
                 "text.svg",
