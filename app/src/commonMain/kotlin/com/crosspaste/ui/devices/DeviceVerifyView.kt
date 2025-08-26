@@ -57,7 +57,7 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @Composable
-fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
+fun DeviceScope.DeviceVerifyView() {
     val syncManager = koinInject<SyncManager>()
     val dialogService = koinInject<DialogService>()
 
@@ -95,7 +95,6 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             VerificationContent(
-                syncRuntimeInfo,
                 tokens,
                 isError,
                 focusRequesters,
@@ -111,8 +110,7 @@ fun DeviceVerifyView(syncRuntimeInfo: SyncRuntimeInfo) {
 }
 
 @Composable
-fun VerificationContent(
-    syncRuntimeInfo: SyncRuntimeInfo,
+fun DeviceScope.VerificationContent(
     tokens: MutableList<String>,
     isError: Boolean,
     focusRequesters: List<FocusRequester>,
@@ -125,24 +123,20 @@ fun VerificationContent(
                 .fillMaxWidth()
                 .wrapContentHeight(),
     ) {
-        DeviceInfoHeader(syncRuntimeInfo)
+        DeviceTokenHeader()
         Spacer(modifier = Modifier.size(large2X))
         TokenInputRow(tokens, isError, focusRequesters, confirmAction, cancelAction)
     }
 }
 
 @Composable
-fun DeviceInfoHeader(syncRuntimeInfo: SyncRuntimeInfo) {
-    DeviceBarView(
-        modifier = Modifier,
-        background = AppUIColors.generalBackground,
-        syncRuntimeInfo = syncRuntimeInfo,
-    ) { currentBackground ->
+fun DeviceScope.DeviceTokenHeader() {
+    HoverableDeviceBarView { background ->
         Row(horizontalArrangement = Arrangement.End) {
             Text(
                 text = syncRuntimeInfo.connectHostAddress ?: "unknown",
                 style = generalBodyTextStyle,
-                color = MaterialTheme.colorScheme.contentColorFor(currentBackground),
+                color = MaterialTheme.colorScheme.contentColorFor(background),
             )
             Spacer(modifier = Modifier.width(small2X))
         }

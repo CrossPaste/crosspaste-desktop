@@ -3,7 +3,6 @@ package com.crosspaste.ui.devices
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.ui.base.allowReceive
@@ -18,7 +17,7 @@ import com.crosspaste.ui.theme.CrossPasteTheme.unmatchedColor
 import com.crosspaste.ui.theme.CrossPasteTheme.unverifiedColor
 
 @Composable
-fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter =
+fun DeviceScope.AllowSendAndReceiveImage(): Painter =
     if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
         unverified()
     } else if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
@@ -31,8 +30,7 @@ fun AllowSendAndReceiveImage(syncRuntimeInfo: SyncRuntimeInfo): Painter =
         block()
     }
 
-fun getConnectStateColorAndText(
-    syncRuntimeInfo: SyncRuntimeInfo,
+fun DeviceScope.getConnectStateColorAndText(
     versionRelation: VersionRelation?,
     refresh: Boolean,
     background: Color,

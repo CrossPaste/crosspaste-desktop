@@ -19,11 +19,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppSize
+import com.crosspaste.db.sync.SyncRuntimeInfo
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.ui.base.RecommendContentView
 import com.crosspaste.ui.base.ToastListView
 import com.crosspaste.ui.devices.DeviceDetailContentView
+import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.DevicesContentView
+import com.crosspaste.ui.devices.NearbyDeviceDetailContentView
 import com.crosspaste.ui.devices.QRContentView
+import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
@@ -38,6 +43,8 @@ import com.crosspaste.ui.theme.AppUISize.zero
 class DesktopScreenProvider(
     private val appSize: DesktopAppSize,
     private val appWindowManager: AppWindowManager,
+    private val deviceScopeFactory: DeviceScopeFactory,
+    private val syncScopeFactory: SyncScopeFactory,
 ) : ScreenProvider {
 
     @Composable
@@ -52,7 +59,14 @@ class DesktopScreenProvider(
 
     @Composable
     override fun DeviceDetailScreen() {
-        DeviceDetailContentView()
+        val screen by appWindowManager.screenContext.collectAsState()
+
+        val scope =
+            remember {
+                deviceScopeFactory.createDeviceScope(screen.context as SyncRuntimeInfo)
+            }
+
+        scope.DeviceDetailContentView()
     }
 
     @Composable
@@ -116,6 +130,9 @@ class DesktopScreenProvider(
                 DeviceDetail -> {
                     DeviceDetailScreen()
                 }
+                NearbyDeviceDetail -> {
+                    NearbyDeviceDetailScreen()
+                }
                 PasteTextEdit -> {
                     PasteTextEditScreen()
                 }
@@ -130,6 +147,18 @@ class DesktopScreenProvider(
     @Composable
     override fun ImportScreen() {
         PasteImportContentView()
+    }
+
+    @Composable
+    override fun NearbyDeviceDetailScreen() {
+        val screen by appWindowManager.screenContext.collectAsState()
+
+        val scope =
+            remember {
+                syncScopeFactory.createSyncScope(screen.context as SyncInfo)
+            }
+
+        scope.NearbyDeviceDetailContentView()
     }
 
     @Composable

@@ -33,10 +33,10 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
-import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.wifi
+import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -50,9 +50,9 @@ import org.koin.compose.koinInject
 fun NetSettingsContentView() {
     val appSize = koinInject<AppSize>()
     val configManager = koinInject<DesktopConfigManager>()
-    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
-    val networkInterfaceService = koinInject<NetworkInterfaceService>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val networkInterfaceService = koinInject<NetworkInterfaceService>()
+    val syncScopeFactory = koinInject<SyncScopeFactory>()
     val jsonUtils = getJsonUtils()
 
     var port: String? by remember { mutableStateOf(null) }
@@ -193,17 +193,13 @@ fun NetSettingsContentView() {
                         val currentIndex by rememberUpdatedState(index)
                         val currentSyncInfo by rememberUpdatedState(syncInfo)
 
-                        BlackListDeviceView(currentSyncInfo) {
-                            val blackSyncInfos: List<SyncInfo> =
-                                jsonUtils.JSON
-                                    .decodeFromString<List<SyncInfo>>(
-                                        config.blacklist,
-                                    ).filter { it.appInfo.appInstanceId != currentSyncInfo.appInfo.appInstanceId }
+                        val scope =
+                            remember(currentSyncInfo.appInfo.appInstanceId) {
+                                syncScopeFactory.createSyncScope(currentSyncInfo)
+                            }
 
-                            val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
-                            configManager.updateConfig("blacklist", newBlackList)
-                            blacklist.remove(currentSyncInfo)
-                            nearbyDeviceManager.refreshSyncManager()
+                        scope.BlackListDeviceView {
+                            blacklist.remove(it)
                         }
 
                         if (currentIndex != blacklist.size - 1) {

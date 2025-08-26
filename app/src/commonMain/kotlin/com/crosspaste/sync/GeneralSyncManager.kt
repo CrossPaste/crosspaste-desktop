@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import androidx.compose.runtime.remember
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.ChangeType
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -13,6 +14,7 @@ import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
+import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.DeviceVerifyView
 import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.ioDispatcher
@@ -40,6 +42,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
+    private val deviceScopeFactory: DeviceScopeFactory,
     private val dialogService: DialogService,
     private val networkInterfaceService: NetworkInterfaceService,
     private val pasteDialogFactory: PasteDialogFactory,
@@ -164,7 +167,9 @@ class GeneralSyncManager(
                             title = "do_you_trust_this_device?",
                             onDismissRequest = { dialogService.popDialog() },
                         ) {
-                            DeviceVerifyView(syncRuntimeInfo = info)
+                            val scope = remember { deviceScopeFactory.createDeviceScope(info) }
+
+                            scope.DeviceVerifyView()
                         }
                     dialogService.pushDialog(dialog)
                 }.launchIn(realTimeSyncScope)

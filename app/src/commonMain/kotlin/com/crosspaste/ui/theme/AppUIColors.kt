@@ -71,10 +71,6 @@ object AppUIColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.primary
 
-    val selectedDeviceBackground: Color
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.secondaryContainer
-
     val selectedMenuBackground: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.primaryContainer

@@ -203,8 +203,10 @@ import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.devices.DesktopDeviceViewProvider
-import com.crosspaste.ui.devices.DeviceViewProvider
+import com.crosspaste.ui.devices.DesktopDeviceScopeFactory
+import com.crosspaste.ui.devices.DesktopSyncScopeFactory
+import com.crosspaste.ui.devices.DeviceScopeFactory
+import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.model.GeneralPasteDataViewModel
 import com.crosspaste.ui.model.GeneralPasteSearchViewModel
 import com.crosspaste.ui.model.MarketingPasteData
@@ -373,6 +375,7 @@ class DesktopModule(
                     MarketingSyncManager()
                 } else {
                     GeneralSyncManager(
+                        deviceScopeFactory = get(),
                         dialogService = get(),
                         networkInterfaceService = get(),
                         pasteDialogFactory = get(),
@@ -510,9 +513,9 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
-            single<DeviceViewProvider> { DesktopDeviceViewProvider() }
+            single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
             single<DialogService> { DialogService }
             single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
             single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
@@ -535,6 +538,7 @@ class DesktopModule(
             single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get(), get()) }
             single<SmartImageDisplayStrategy> { SmartImageDisplayStrategy() }
             single<SoundService> { DesktopSoundService(get()) }
+            single<SyncScopeFactory> { DesktopSyncScopeFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<ToastManager> { ToastManager() }
             single<TokenCache> { TokenCache }

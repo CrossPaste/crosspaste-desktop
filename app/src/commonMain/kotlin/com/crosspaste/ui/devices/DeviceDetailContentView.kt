@@ -21,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,14 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.HighlightedCard
+import com.crosspaste.ui.base.TableData
+import com.crosspaste.ui.base.TableRow
+import com.crosspaste.ui.base.TableRowImpl
 import com.crosspaste.ui.base.alertCircle
-import com.crosspaste.ui.base.measureTextWidth
 import com.crosspaste.ui.settings.SettingItemsTitleView
 import com.crosspaste.ui.settings.SettingSwitchItemView
 import com.crosspaste.ui.theme.AppUIColors
@@ -48,23 +48,15 @@ import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.ui.theme.AppUISize.tiny6X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
-fun DeviceDetailContentView() {
+fun DeviceScope.DeviceDetailContentView() {
     val appControl = koinInject<AppControl>()
     val appInfo = koinInject<AppInfo>()
-    val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val deviceViewProvider = koinInject<DeviceViewProvider>()
     val syncManager = koinInject<SyncManager>()
-
-    val screen by appWindowManager.screenContext.collectAsState()
-
-    var syncRuntimeInfo by remember { mutableStateOf(screen.context as SyncRuntimeInfo) }
 
     var syncHandler by remember {
         mutableStateOf(syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId))
@@ -76,8 +68,7 @@ fun DeviceDetailContentView() {
 
     val settingsTextStyle = SettingsTextStyle()
 
-    LaunchedEffect(screen) {
-        syncRuntimeInfo = screen.context as SyncRuntimeInfo
+    LaunchedEffect(syncRuntimeInfo.appInstanceId) {
         syncHandler = syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId)
         versionRelation = syncHandler?.versionRelation
     }
@@ -89,12 +80,9 @@ fun DeviceDetailContentView() {
                 .background(AppUIColors.appBackground)
                 .clip(tinyRoundedCornerShape),
     ) {
-        deviceViewProvider.DeviceConnectView(syncRuntimeInfo, false) { }
+        DeviceDetailHeaderView()
 
-        HorizontalDivider(
-            thickness = tiny6X,
-            color = AppUIColors.lightBorderColor,
-        )
+        Spacer(Modifier.height(medium))
 
         Column(
             modifier =
@@ -205,24 +193,10 @@ fun DeviceDetailContentView() {
 
             Spacer(Modifier.height(medium))
 
-            var maxWidth by remember { mutableStateOf(zero) }
-
-            val properties =
+            val tableData =
                 remember(syncRuntimeInfo) {
-                    arrayOf(
-                        Pair("app_version", syncRuntimeInfo.appVersion),
-                        Pair("user_name", syncRuntimeInfo.userName),
-                        Pair("device_id", syncRuntimeInfo.deviceId),
-                        Pair("arch", syncRuntimeInfo.platform.arch),
-                        Pair("connect_host", syncRuntimeInfo.connectHostAddress ?: "N/A"),
-                        Pair("port", syncRuntimeInfo.port.toString()),
-                    )
+                    syncRuntimeInfo.toTableData(copywriter)
                 }
-
-            for (property in properties) {
-                maxWidth =
-                    maxOf(maxWidth, measureTextWidth(copywriter.getText(property.first), settingsTextStyle))
-            }
 
             HighlightedCard(
                 modifier =
@@ -235,10 +209,13 @@ fun DeviceDetailContentView() {
             ) {
                 SettingItemsTitleView("base_info")
 
+                val width = tableData.measureColumnWidth(0, settingsTextStyle)
+
                 Column(
                     modifier = Modifier.wrapContentSize(),
                 ) {
-                    properties.forEachIndexed { index, pair ->
+                    val data = tableData.getData()
+                    data.forEachIndexed { index, row ->
                         Row(
                             modifier =
                                 Modifier
@@ -246,17 +223,19 @@ fun DeviceDetailContentView() {
                                     .padding(small2X),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            val columns = row.getColumns()
                             Text(
-                                modifier = Modifier.width(maxWidth + medium),
-                                text = copywriter.getText(pair.first),
+                                modifier = Modifier.width(width),
+                                text = columns[0],
                                 style = settingsTextStyle,
                                 color =
                                     MaterialTheme.colorScheme.contentColorFor(
                                         AppUIColors.generalBackground,
                                     ),
                             )
+                            Spacer(modifier = Modifier.width(medium))
                             Text(
-                                text = pair.second,
+                                text = columns[1],
                                 style = MaterialTheme.typography.bodyMedium,
                                 color =
                                     MaterialTheme.colorScheme.contentColorFor(
@@ -264,7 +243,7 @@ fun DeviceDetailContentView() {
                                     ),
                             )
                         }
-                        if (index < properties.size - 1) {
+                        if (index < data.size - 1) {
                             HorizontalDivider(modifier = Modifier.padding(start = small))
                         }
                     }
@@ -273,3 +252,46 @@ fun DeviceDetailContentView() {
         }
     }
 }
+
+fun SyncRuntimeInfo.toTableData(copywriter: GlobalCopywriter): TableData =
+    object : TableData {
+        override fun getData(): List<TableRow> =
+            listOf(
+                TableRowImpl(
+                    listOf(
+                        copywriter.getText("app_version"),
+                        appVersion,
+                    ),
+                ),
+                TableRowImpl(
+                    listOf(
+                        copywriter.getText("user_name"),
+                        userName,
+                    ),
+                ),
+                TableRowImpl(
+                    listOf(
+                        copywriter.getText("device_id"),
+                        deviceId,
+                    ),
+                ),
+                TableRowImpl(
+                    listOf(
+                        copywriter.getText("arch"),
+                        platform.arch,
+                    ),
+                ),
+                TableRowImpl(
+                    listOf(
+                        copywriter.getText("connect_host"),
+                        connectHostAddress ?: "N?A",
+                    ),
+                ),
+                TableRowImpl(
+                    listOf(
+                        copywriter.getText("port"),
+                        port.toString(),
+                    ),
+                ),
+            )
+    }
