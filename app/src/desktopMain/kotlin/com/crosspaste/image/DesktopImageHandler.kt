@@ -2,11 +2,14 @@ package com.crosspaste.image
 
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import kotlinx.io.Source
 import okio.Path
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
-object DesktopImageWriter : ImageWriter<BufferedImage> {
+object DesktopImageHandler : ImageHandler<BufferedImage> {
 
     private val fileUtils = getFileUtils()
 
@@ -35,4 +38,16 @@ object DesktopImageWriter : ImageWriter<BufferedImage> {
                 true
             }
         }
+
+    override fun readImage(imagePath: Path): BufferedImage? =
+        runCatching {
+            ImageIO.read(imagePath.toFile())
+        }.getOrNull()
+
+    override fun readImage(source: Source): BufferedImage? = readImage(ByteReadChannel(source))
+
+    override fun readImage(byteReadChannel: ByteReadChannel): BufferedImage? =
+        runCatching {
+            ImageIO.read(byteReadChannel.toInputStream())
+        }.getOrNull()
 }

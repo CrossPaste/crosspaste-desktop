@@ -54,12 +54,12 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.DesktopFileExtLoader
 import com.crosspaste.image.DesktopIconColorExtractor
-import com.crosspaste.image.DesktopImageWriter
+import com.crosspaste.image.DesktopImageHandler
 import com.crosspaste.image.DesktopThumbnailLoader
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.GenerateImageService
-import com.crosspaste.image.ImageWriter
+import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.listen.ActiveGraphicsDevice
@@ -158,9 +158,9 @@ import com.crosspaste.presist.FilePersist
 import com.crosspaste.recommend.DesktopRecommendationService
 import com.crosspaste.recommend.RecommendationService
 import com.crosspaste.rendering.DesktopHtmlRenderingService
-import com.crosspaste.rendering.DesktopOpenGraphService
 import com.crosspaste.rendering.DesktopRenderingHelper
 import com.crosspaste.rendering.DesktopRtfRenderingService
+import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingHelper
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.secure.DesktopSecureStoreFactory
@@ -273,8 +273,8 @@ class DesktopModule(
             single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
             single<FileExtImageLoader> { DesktopFileExtLoader(get(), get(), get()) }
             single<FilePersist> { FilePersist }
+            single<ImageHandler<BufferedImage>> { DesktopImageHandler }
             single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get(), get()) }
-            single<ImageWriter<BufferedImage>> { DesktopImageWriter }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
             single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
@@ -434,7 +434,7 @@ class DesktopModule(
                 DesktopRtfRenderingService(get(), get(), get(), get())
             }
             single<RenderingService<String>>(named("urlRendering")) {
-                DesktopOpenGraphService(get(), get(), get(), get(), get(), get())
+                OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
             }
             single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
             single<GenerateImageService> { GenerateImageService() }

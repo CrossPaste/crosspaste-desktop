@@ -2,7 +2,7 @@ package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.image.ImageWriter
+import com.crosspaste.image.ImageHandler
 import com.crosspaste.paste.DesktopPasteDataFlavor
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
@@ -22,6 +22,9 @@ import com.crosspaste.utils.FileNameNormalizer
 import com.crosspaste.utils.getFileUtils
 import com.fleeksoft.ksoup.Ksoup
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.io.asSource
+import kotlinx.io.buffered
+import okio.Path.Companion.toOkioPath
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.image.BufferedImage
@@ -29,11 +32,10 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
 import java.net.URI
-import javax.imageio.ImageIO
 
 class DesktopImageTypePlugin(
     private val appInfo: AppInfo,
-    private val imageWriter: ImageWriter<BufferedImage>,
+    private val imageHandler: ImageHandler<BufferedImage>,
     private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
 ) : ImageTypePlugin {
@@ -92,7 +94,7 @@ class DesktopImageTypePlugin(
         if (transferData is Image) {
             image = toBufferedImage(img = transferData)
         } else if (transferData is InputStream) {
-            image = ImageIO.read(transferData)
+            image = imageHandler.readImage(transferData.asSource().buffered())
         }
 
         image?.let {
@@ -122,7 +124,7 @@ class DesktopImageTypePlugin(
                     AppFileType.IMAGE,
                     userDataPathProvider,
                 )
-            if (imageWriter.writeImage(image, ext, imagePath)) {
+            if (imageHandler.writeImage(image, ext, imagePath)) {
                 val fileTree = fileUtils.getFileInfoTree(imagePath)
                 val count = fileTree.getCount()
                 val size = fileTree.size
@@ -238,7 +240,7 @@ class DesktopImageTypePlugin(
                 map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
                 runCatching {
                     val start = System.currentTimeMillis()
-                    val image: BufferedImage? = ImageIO.read(fileList[0])
+                    val image: BufferedImage? = imageHandler.readImage(fileList[0].toOkioPath())
                     image?.let { map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it }
                     val end = System.currentTimeMillis()
                     logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
