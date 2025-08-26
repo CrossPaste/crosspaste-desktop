@@ -23,6 +23,7 @@ import org.koin.compose.koinInject
 @Composable
 fun NearbyDevicesView() {
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
+    val syncScopeFactory = koinInject<SyncScopeFactory>()
 
     val nearbyDevicesList by nearbyDeviceManager.syncInfos.collectAsState()
 
@@ -62,7 +63,12 @@ fun NearbyDevicesView() {
                     val currentIndex by rememberUpdatedState(index)
                     val currentSyncInfo by rememberUpdatedState(syncInfo)
 
-                    NearbyDeviceView(currentSyncInfo)
+                    val scope =
+                        remember(currentSyncInfo.appInfo.appInstanceId) {
+                            syncScopeFactory.createSyncScope(currentSyncInfo)
+                        }
+
+                    scope.NearbyDeviceView()
 
                     if (currentIndex != nearbyDevicesList.size - 1 || !isScrollable) {
                         HorizontalDivider()

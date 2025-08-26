@@ -28,6 +28,10 @@ object Import : ScreenType {
     override val name: String = "import"
 }
 
+object NearbyDeviceDetail : ScreenType {
+    override val name: String = "nearby_device_detail"
+}
+
 object Pasteboard : ScreenType {
     override val name: String = "pasteboard"
 }
