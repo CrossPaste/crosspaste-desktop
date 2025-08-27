@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.VersionRelation
@@ -55,6 +56,7 @@ import org.koin.compose.koinInject
 fun DeviceScope.DeviceDetailCoreView() {
     val appControl = koinInject<AppControl>()
     val appInfo = koinInject<AppInfo>()
+    val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val syncManager = koinInject<SyncManager>()
 
@@ -152,7 +154,7 @@ fun DeviceScope.DeviceDetailCoreView() {
                             .getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                             ?.updateAllowSend(allowSend) {
                                 it?.let {
-                                    syncRuntimeInfo = it
+                                    appWindowManager.updateScreenContext(it)
                                 }
                             }
                     }
@@ -172,7 +174,7 @@ fun DeviceScope.DeviceDetailCoreView() {
                             .getSyncHandlers()[syncRuntimeInfo.appInstanceId]
                             ?.updateAllowReceive(allowReceive) {
                                 it?.let {
-                                    syncRuntimeInfo = it
+                                    appWindowManager.updateScreenContext(it)
                                 }
                             }
                     }

@@ -62,7 +62,7 @@ class DesktopScreenProvider(
         val screen by appWindowManager.screenContext.collectAsState()
 
         val scope =
-            remember {
+            remember(screen.context) {
                 deviceScopeFactory.createDeviceScope(screen.context as SyncRuntimeInfo)
             }
 
@@ -154,7 +154,7 @@ class DesktopScreenProvider(
         val screen by appWindowManager.screenContext.collectAsState()
 
         val scope =
-            remember {
+            remember(screen.context) {
                 syncScopeFactory.createSyncScope(screen.context as SyncInfo)
             }
 

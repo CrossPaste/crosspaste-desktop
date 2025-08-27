@@ -173,4 +173,14 @@ abstract class DesktopAppWindowManager(
                 ScreenContext(screenType, _screenContext.value, context)
             }
     }
+
+    override fun updateScreenContext(context: Any) {
+        val oldScreen = _screenContext.value
+        _screenContext.value =
+            ScreenContext(
+                oldScreen.screenType,
+                oldScreen.nextScreenContext,
+                context,
+            )
+    }
 }

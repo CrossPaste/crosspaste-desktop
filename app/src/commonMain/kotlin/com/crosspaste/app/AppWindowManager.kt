@@ -40,4 +40,6 @@ interface AppWindowManager {
         screenType: ScreenType,
         context: Any = Unit,
     )
+
+    fun updateScreenContext(context: Any)
 }
