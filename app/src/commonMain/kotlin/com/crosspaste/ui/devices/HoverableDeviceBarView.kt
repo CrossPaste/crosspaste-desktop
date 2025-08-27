@@ -41,10 +41,10 @@ fun PlatformScope.HoverableDeviceBarView(content: @Composable (Color) -> Unit) {
                 .height(appSize.deviceHeight)
                 .background(background)
                 .hoverModifier(
-                    onEnter = {
+                    onHover = {
                         hover = true
                     },
-                    onExit = {
+                    onExitHover = {
                         hover = false
                     },
                 ),

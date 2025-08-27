@@ -24,20 +24,20 @@ class DesktopSyncScope(
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun Modifier.hoverModifier(
-        onEnter: () -> Unit,
-        onExit: () -> Unit,
+        onHover: () -> Unit,
+        onExitHover: () -> Unit,
     ): Modifier {
         val appWindowManager = koinInject<AppWindowManager>()
         return this
             .onPointerEvent(
                 eventType = PointerEventType.Enter,
                 onEvent = {
-                    onEnter()
+                    onHover()
                 },
             ).onPointerEvent(
                 eventType = PointerEventType.Exit,
                 onEvent = {
-                    onExit()
+                    onExitHover()
                 },
             ).clickable {
                 appWindowManager.toScreen(NearbyDeviceDetail, syncInfo)

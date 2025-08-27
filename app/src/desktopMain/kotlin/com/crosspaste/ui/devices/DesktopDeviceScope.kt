@@ -20,8 +20,8 @@ class DesktopDeviceScope(
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun Modifier.hoverModifier(
-        onEnter: () -> Unit,
-        onExit: () -> Unit,
+        onHover: () -> Unit,
+        onExitHover: () -> Unit,
     ): Modifier {
         val appWindowManager = koinInject<AppWindowManager>()
         val syncManager = koinInject<SyncManager>()
@@ -29,12 +29,12 @@ class DesktopDeviceScope(
             .onPointerEvent(
                 eventType = PointerEventType.Enter,
                 onEvent = {
-                    onEnter()
+                    onHover()
                 },
             ).onPointerEvent(
                 eventType = PointerEventType.Exit,
                 onEvent = {
-                    onExit()
+                    onExitHover()
                 },
             ).clickable {
                 if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {

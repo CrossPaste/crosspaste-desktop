@@ -23,7 +23,7 @@ interface PlatformScope {
 
     @Composable
     fun Modifier.hoverModifier(
-        onEnter: () -> Unit = {},
-        onExit: () -> Unit = {},
+        onHover: () -> Unit = {},
+        onExitHover: () -> Unit = {},
     ): Modifier = this
 }
