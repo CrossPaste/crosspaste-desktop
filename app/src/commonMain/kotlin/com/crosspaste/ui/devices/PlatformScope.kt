@@ -25,5 +25,5 @@ interface PlatformScope {
     fun Modifier.hoverModifier(
         onEnter: () -> Unit = {},
         onExit: () -> Unit = {},
-    ): Modifier
+    ): Modifier = this
 }

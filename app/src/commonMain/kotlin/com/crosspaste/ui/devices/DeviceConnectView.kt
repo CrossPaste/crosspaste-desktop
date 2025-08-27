@@ -126,7 +126,7 @@ private fun DeviceScope.DeviceMenuButton(background: Color) {
                             .background(AppUIColors.menuBackground),
                 ) {
                     MenuItemView(copywriter.getText("add_note")) {
-                        onEdit(dialogService, pasteDialogFactory, syncManager)
+                        onEditDevice(dialogService, pasteDialogFactory, syncManager)
                         showPopup = false
                     }
                     MenuItemView(copywriter.getText("remove_device")) {

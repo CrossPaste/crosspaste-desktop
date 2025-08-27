@@ -157,7 +157,7 @@ fun SyncInfo.toTableData(copywriter: GlobalCopywriter): TableData =
                         listOf(
                             TableRowImpl(
                                 listOf(
-                                    copywriter.getText("IP"),
+                                    "IP",
                                     endpointInfo.hostInfoList[0].hostAddress,
                                 ),
                             ),
