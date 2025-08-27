@@ -18,7 +18,7 @@ fun MyDevicesView(syncRuntimeInfos: List<SyncRuntimeInfo>) {
         Column(modifier = Modifier.fillMaxWidth()) {
             for ((index, syncRuntimeInfo) in syncRuntimeInfos.withIndex()) {
                 val scope =
-                    remember(syncRuntimeInfo.appInstanceId) {
+                    remember(syncRuntimeInfo) {
                         deviceScopeFactory.createDeviceScope(syncRuntimeInfo)
                     }
 

@@ -194,7 +194,7 @@ fun NetSettingsContentView() {
                         val currentSyncInfo by rememberUpdatedState(syncInfo)
 
                         val scope =
-                            remember(currentSyncInfo.appInfo.appInstanceId) {
+                            remember(currentSyncInfo) {
                                 syncScopeFactory.createSyncScope(currentSyncInfo)
                             }
 

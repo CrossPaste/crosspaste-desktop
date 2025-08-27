@@ -44,15 +44,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import org.koin.compose.koinInject
 
 @Composable
-fun DeviceScope.DeviceConnectView() {
-    HoverableDeviceBarView { background ->
-        DeviceConnectStateView(background)
-        DeviceMenuButton(background)
-    }
-}
-
-@Composable
-private fun DeviceScope.DeviceMenuButton(background: Color) {
+fun DeviceScope.DeviceMenuButton(background: Color) {
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
     val pasteDialogFactory = koinInject<PasteDialogFactory>()
@@ -126,7 +118,7 @@ private fun DeviceScope.DeviceMenuButton(background: Color) {
                             .background(AppUIColors.menuBackground),
                 ) {
                     MenuItemView(copywriter.getText("add_note")) {
-                        onEdit(dialogService, pasteDialogFactory, syncManager)
+                        onEditDevice(dialogService, pasteDialogFactory, syncManager)
                         showPopup = false
                     }
                     MenuItemView(copywriter.getText("remove_device")) {

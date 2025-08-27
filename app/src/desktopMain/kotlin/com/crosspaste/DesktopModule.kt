@@ -296,26 +296,27 @@ class DesktopModule(
             single<Database> { createDatabase(get()) }
             single<PasteDao> {
                 PasteDao(
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    lazy { get() },
-                    listOf(
-                        RemoveInvalidPlugin,
-                        DistinctPlugin(get()),
-                        GenerateTextPlugin,
-                        GenerateUrlPlugin,
-                        TextToColorPlugin,
-                        FilesToImagesPlugin(get()),
-                        FileToUrlPlugin(get()),
-                        RemoveFolderImagePlugin(get()),
-                        RemoveHtmlImagePlugin(get()),
-                        SortPlugin,
-                    ),
-                    get(),
-                    get(),
-                    get(),
+                    appControl = get(),
+                    appInfo = get(),
+                    currentPaste = get(),
+                    database = get(),
+                    lazyTaskExecutor = lazy { get() },
+                    pasteProcessPlugins =
+                        listOf(
+                            RemoveInvalidPlugin,
+                            DistinctPlugin(get()),
+                            GenerateTextPlugin,
+                            GenerateUrlPlugin,
+                            TextToColorPlugin,
+                            FilesToImagesPlugin(get()),
+                            FileToUrlPlugin(get()),
+                            RemoveFolderImagePlugin(get()),
+                            RemoveHtmlImagePlugin(get()),
+                            SortPlugin,
+                        ),
+                    searchContentService = get(),
+                    taskDao = get(),
+                    userDataPathProvider = get(),
                 )
             }
             single<SecureIO> { SecureDao(get()) }
@@ -354,21 +355,21 @@ class DesktopModule(
             }
             single<ServerModule> {
                 DesktopServerModule(
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
-                    get(),
+                    appControl = get(),
+                    appInfo = get(),
+                    appTokenApi = get(),
+                    cacheManager = get(),
+                    endpointInfoFactory = get(),
+                    exceptionHandler = get(),
+                    networkInterfaceService = get(),
+                    pasteboardService = get(),
+                    secureKeyPairSerializer = get(),
+                    secureStore = get(),
+                    syncApi = get(),
+                    syncRoutingApi = get(),
+                    serverEncryptPluginFactory = get(),
+                    serverDecryptionPluginFactory = get(),
+                    userDataPathProvider = get(),
                 )
             }
             single<SyncApi> { SyncApi }

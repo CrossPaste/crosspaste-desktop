@@ -45,7 +45,7 @@ data class DesktopAppConfig(
     val searchWindowStyle: String = DesktopSearchWindowStyle.SIDE_STYLE.style,
     val legacySoftwareCompatibility: Boolean = false,
     override val pastePrimaryTypeOnly: Boolean = true,
-    val useNetworkInterfaces: String = "[]",
+    override val useNetworkInterfaces: String = "[]",
 ) : AppConfig {
     override fun copy(
         key: String,

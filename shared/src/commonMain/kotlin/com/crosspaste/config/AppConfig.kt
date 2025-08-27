@@ -32,6 +32,7 @@ interface AppConfig {
     val storagePath: String
     val enableSoundEffect: Boolean
     val pastePrimaryTypeOnly: Boolean
+    val useNetworkInterfaces: String
 
     fun copy(
         key: String,

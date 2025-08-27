@@ -167,7 +167,7 @@ class GeneralSyncManager(
                             title = "do_you_trust_this_device?",
                             onDismissRequest = { dialogService.popDialog() },
                         ) {
-                            val scope = remember { deviceScopeFactory.createDeviceScope(info) }
+                            val scope = remember(info) { deviceScopeFactory.createDeviceScope(info) }
 
                             scope.DeviceVerifyView()
                         }

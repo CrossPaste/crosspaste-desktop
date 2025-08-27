@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -11,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.platform.Platform
+import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
@@ -25,7 +27,13 @@ interface DeviceScope : PlatformScope {
 
     override fun getDeviceDisplayName(): String = syncRuntimeInfo.getDeviceDisplayName()
 
-    fun onEdit(
+    fun getSyncHandler(syncManager: SyncManager): SyncHandler? =
+        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+
+    @Composable
+    fun DeviceConnectView()
+
+    fun onEditDevice(
         dialogService: DialogService,
         pasteDialogFactory: PasteDialogFactory,
         syncManager: SyncManager,
@@ -46,7 +54,7 @@ interface DeviceScope : PlatformScope {
                     if (inputNoteName == "") {
                         isError = true
                     } else {
-                        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.let { syncHandler ->
+                        getSyncHandler(syncManager)?.let { syncHandler ->
                             syncHandler.updateNoteName(inputNoteName) {}
                         }
                         dialogService.popDialog()
