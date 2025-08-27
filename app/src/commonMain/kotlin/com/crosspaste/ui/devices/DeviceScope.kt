@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +29,9 @@ interface DeviceScope : PlatformScope {
 
     fun getSyncHandler(syncManager: SyncManager): SyncHandler? =
         syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+
+    @Composable
+    fun DeviceConnectView()
 
     fun onEditDevice(
         dialogService: DialogService,

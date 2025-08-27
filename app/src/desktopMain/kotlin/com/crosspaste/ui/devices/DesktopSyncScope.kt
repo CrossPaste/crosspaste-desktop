@@ -23,12 +23,13 @@ class DesktopSyncScope(
 
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
-    override fun Modifier.hoverModifier(
+    override fun hoverModifier(
+        modifier: Modifier,
         onHover: () -> Unit,
         onExitHover: () -> Unit,
     ): Modifier {
         val appWindowManager = koinInject<AppWindowManager>()
-        return this
+        return modifier
             .onPointerEvent(
                 eventType = PointerEventType.Enter,
                 onEvent = {
