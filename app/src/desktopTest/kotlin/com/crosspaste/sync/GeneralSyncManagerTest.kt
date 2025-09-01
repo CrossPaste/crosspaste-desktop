@@ -147,9 +147,9 @@ class GeneralSyncManagerTest {
 
             syncManager.start()
 
-            advanceUntilIdle()
-
             syncManager.removeSyncHandler(testSyncRuntimeInfo.appInstanceId)
+
+            advanceUntilIdle()
 
             coVerify { mocks.syncResolver.emitEvent(any()) }
         }
