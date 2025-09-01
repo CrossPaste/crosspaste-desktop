@@ -28,6 +28,7 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
+import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import io.ktor.server.netty.*
 import kotlinx.coroutines.runBlocking
@@ -183,7 +184,7 @@ class SyncTest : KoinTest {
                         .concatToString()
                         .toInt(),
                 ) {
-                    buildUrl("localhost", readWritePort.getValue())
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             }
 
@@ -203,7 +204,7 @@ class SyncTest : KoinTest {
         result =
             runBlocking {
                 syncClientApi.heartbeat(targetAppInstanceId = serverAppInfo.appInstanceId) {
-                    buildUrl("localhost", readWritePort.getValue())
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             }
 
@@ -229,7 +230,7 @@ class SyncTest : KoinTest {
                     syncInfo = syncInfo,
                     targetAppInstanceId = serverAppInfo.appInstanceId,
                 ) {
-                    buildUrl("localhost", readWritePort.getValue())
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             }
 

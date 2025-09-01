@@ -15,10 +15,7 @@ class TestSyncRoutingApi : SyncRoutingApi {
 
     override fun getSyncHandlers(): Map<String, SyncHandler> = innerSyncHandlers
 
-    override fun updateSyncInfo(
-        syncInfo: SyncInfo,
-        refresh: Boolean,
-    ) {
+    override fun updateSyncInfo(syncInfo: SyncInfo) {
         this.syncInfo = syncInfo
     }
 

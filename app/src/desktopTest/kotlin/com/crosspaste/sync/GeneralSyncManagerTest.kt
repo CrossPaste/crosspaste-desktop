@@ -1,17 +1,10 @@
 package com.crosspaste.sync
 
-import com.crosspaste.app.RatingPromptManager
-import com.crosspaste.db.sync.ChangeType
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.net.NetworkInterfaceService
-import com.crosspaste.net.SyncInfoFactory
-import com.crosspaste.net.TelnetHelper
-import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.platform.Platform
-import com.crosspaste.secure.SecureStore
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.devices.DeviceScopeFactory
@@ -21,7 +14,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
-import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -41,16 +33,9 @@ class GeneralSyncManagerTest {
         Mocks(
             deviceScopeFactory = mockk(relaxed = true),
             dialogService = mockk(relaxed = true),
-            networkInterfaceService = mockk(relaxed = true),
             pasteDialogFactory = mockk(relaxed = true),
-            ratingPromptManager = mockk(relaxed = true),
-            secureStore = mockk(relaxed = true),
-            syncClientApi = mockk(relaxed = true),
-            syncInfoFactory = mockk(relaxed = true),
+            syncResolver = mockk(relaxed = true),
             syncRuntimeInfoDao = mockk(relaxed = true),
-            telnetHelper = mockk(relaxed = true),
-            tokenCache = TokenCache,
-            nearbyDeviceManager = mockk(relaxed = true),
         )
 
     private fun createSyncManager(
@@ -60,17 +45,10 @@ class GeneralSyncManagerTest {
         GeneralSyncManager(
             deviceScopeFactory = mocks.deviceScopeFactory,
             dialogService = mocks.dialogService,
-            networkInterfaceService = mocks.networkInterfaceService,
             pasteDialogFactory = mocks.pasteDialogFactory,
-            ratingPromptManager = mocks.ratingPromptManager,
             realTimeSyncScope = scope,
-            secureStore = mocks.secureStore,
-            syncClientApi = mocks.syncClientApi,
-            syncInfoFactory = mocks.syncInfoFactory,
+            syncResolver = mocks.syncResolver,
             syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
-            telnetHelper = mocks.telnetHelper,
-            tokenCache = mocks.tokenCache,
-            lazyNearbyDeviceManager = lazy { mocks.nearbyDeviceManager },
         )
 
     private fun createTestSyncRuntimeInfo(
@@ -99,16 +77,9 @@ class GeneralSyncManagerTest {
     data class Mocks(
         val deviceScopeFactory: DeviceScopeFactory,
         val dialogService: DialogService,
-        val networkInterfaceService: NetworkInterfaceService,
         val pasteDialogFactory: PasteDialogFactory,
-        val ratingPromptManager: RatingPromptManager,
-        val secureStore: SecureStore,
-        val syncClientApi: SyncClientApi,
-        val syncInfoFactory: SyncInfoFactory,
+        val syncResolver: SyncResolver,
         val syncRuntimeInfoDao: SyncRuntimeInfoDao,
-        val telnetHelper: TelnetHelper,
-        val tokenCache: TokenCache,
-        val nearbyDeviceManager: NearbyDeviceManager,
     )
 
     @Test
@@ -129,8 +100,8 @@ class GeneralSyncManagerTest {
             coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf(testSyncRuntimeInfo)
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
                 MutableStateFlow(listOf(testSyncRuntimeInfo))
-            every { mocks.nearbyDeviceManager.updateSyncManager() } just runs
-            coEvery { mocks.telnetHelper.switchHost(any(), any()) } returns null
+
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
 
             val childScope = CoroutineScope(coroutineContext + Job())
             val syncManager = createSyncManager(mocks, childScope)
@@ -143,8 +114,6 @@ class GeneralSyncManagerTest {
             coVerify(exactly = 1) { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() }
 
             assertEquals(1, syncManager.getSyncHandlers().size)
-
-            syncManager.stop()
         }
 
     @Test
@@ -158,23 +127,31 @@ class GeneralSyncManagerTest {
             val handler = syncManager.createSyncHandler(testSyncInfo)
 
             assertNotNull(handler)
-            assertEquals(testSyncInfo.appInstanceId, handler.getCurrentSyncRuntimeInfo().appInstanceId)
+            assertEquals(testSyncInfo.appInstanceId, handler.currentSyncRuntimeInfo.appInstanceId)
         }
 
     @Test
     fun testRemoveSyncHandler() =
         runTest {
             val mocks = createMocks()
-            val testSyncInfo = createTestSyncRuntimeInfo()
+            val testSyncRuntimeInfo = createTestSyncRuntimeInfo()
 
-            coEvery { mocks.syncRuntimeInfoDao.deleteSyncRuntimeInfo(any()) } just runs
+            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf(testSyncRuntimeInfo)
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(listOf(testSyncRuntimeInfo))
 
-            val syncManager = createSyncManager(mocks, this)
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
 
-            syncManager.removeSyncHandler(testSyncInfo.appInstanceId)
-            advanceTimeBy(100)
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
 
-            coVerify { mocks.syncRuntimeInfoDao.deleteSyncRuntimeInfo(testSyncInfo.appInstanceId) }
+            syncManager.start()
+
+            advanceUntilIdle()
+
+            syncManager.removeSyncHandler(testSyncRuntimeInfo.appInstanceId)
+
+            coVerify { mocks.syncResolver.emitEvent(any()) }
         }
 
     @Test
@@ -185,7 +162,6 @@ class GeneralSyncManagerTest {
 
             // Should not throw exception when handler doesn't exist
             syncManager.trustByToken("non-existent", 123456)
-            advanceTimeBy(100)
         }
 
     @Test
@@ -196,43 +172,46 @@ class GeneralSyncManagerTest {
                 mockk<SyncInfo> {
                     every { appInfo.appInstanceId } returns "test-app-1"
                 }
-            val testSyncRuntimeInfo = createTestSyncRuntimeInfo()
 
-            coEvery {
-                mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
-            } returns (ChangeType.NEW_INSTANCE to testSyncRuntimeInfo)
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
 
-            val syncManager = createSyncManager(mocks, this)
-            syncManager.updateSyncInfo(syncInfo, refresh = false)
-            advanceTimeBy(100)
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
 
-            coVerify { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo) }
+            syncManager.updateSyncInfo(syncInfo)
+            advanceUntilIdle()
+
+            coVerify { mocks.syncResolver.emitEvent(any()) }
         }
 
     @Test
     fun testRefreshDoesNotThrowException() =
         runTest {
             val mocks = createMocks()
-            val syncManager = createSyncManager(mocks, this)
+            val testSyncRuntimeInfo = createTestSyncRuntimeInfo()
+
+            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf(testSyncRuntimeInfo)
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(listOf(testSyncRuntimeInfo))
+
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+
+            syncManager.start()
 
             // Test that refresh methods don't throw exceptions
             syncManager.refresh(callback = { })
-            syncManager.refresh(listOf("non-existent-1", "non-existent-2"), callback = { })
-            advanceTimeBy(100) // Just ensure no immediate crashes
-        }
+            advanceUntilIdle()
 
-    @Test
-    fun testIgnoreVerifyAndToVerify() =
-        runTest {
-            val mocks = createMocks()
-            val syncManager = createSyncManager(mocks, this)
+            coVerify { mocks.syncResolver.emitEvent(any()) }
 
-            // These methods should not throw exceptions
-            syncManager.ignoreVerify("test-app-1")
-            advanceTimeBy(100)
+            syncManager.refresh(listOf("test-app-1"), callback = { })
+            advanceUntilIdle()
 
-            syncManager.toVerify("test-app-1")
-            advanceTimeBy(100)
+            coVerify { mocks.syncResolver.emitEvent(any()) }
         }
 
     @Test
@@ -241,7 +220,6 @@ class GeneralSyncManagerTest {
             val mocks = createMocks()
             coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns emptyList()
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns MutableStateFlow(emptyList())
-            every { mocks.nearbyDeviceManager.updateSyncManager() } just runs
 
             val childScope = CoroutineScope(coroutineContext + Job())
             val syncManager = createSyncManager(mocks, childScope)
@@ -262,20 +240,15 @@ class GeneralSyncManagerTest {
 
             coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns emptyList()
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
-            every { mocks.nearbyDeviceManager.updateSyncManager() } just runs
-            every { mocks.nearbyDeviceManager.refreshSyncManager() } just runs
-            coEvery { mocks.telnetHelper.switchHost(any(), any()) } returns null
 
             val childScope = CoroutineScope(coroutineContext + Job())
             val syncManager = createSyncManager(mocks, childScope)
             syncManager.start()
 
-            advanceTimeBy(1000)
+            advanceUntilIdle()
 
             assertEquals(0, syncManager.realTimeSyncRuntimeInfos.value.size)
             assertEquals(0, syncManager.getSyncHandlers().size)
-
-            verify { mocks.nearbyDeviceManager.updateSyncManager() }
 
             syncManager.stop()
         }
@@ -285,23 +258,32 @@ class GeneralSyncManagerTest {
         runTest {
             val mocks = createMocks()
 
-            coEvery { mocks.telnetHelper.switchHost(any(), any()) } returns null
-
-            val syncManager = createSyncManager(mocks, this)
-
             val testSyncInfo1 = createTestSyncRuntimeInfo("app-1", "device-1")
             val testSyncInfo2 = createTestSyncRuntimeInfo("app-2", "device-2")
 
+            val syncInfosFlow = MutableStateFlow<List<SyncRuntimeInfo>>(emptyList())
+
+            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns emptyList()
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+
+            syncInfosFlow.value = listOf(testSyncInfo1, testSyncInfo2)
+
+            advanceUntilIdle()
+
             // Test createSyncHandler functionality directly
-            val handler1 = syncManager.createSyncHandler(testSyncInfo1)
-            val handler2 = syncManager.createSyncHandler(testSyncInfo2)
+            val handler1 = syncManager.getSyncHandler(testSyncInfo1.appInstanceId)
+            val handler2 = syncManager.getSyncHandler(testSyncInfo2.appInstanceId)
 
             // Verify handlers are created correctly
             assertNotNull(handler1)
             assertNotNull(handler2)
-            assertEquals("app-1", handler1.getCurrentSyncRuntimeInfo().appInstanceId)
-            assertEquals("app-2", handler2.getCurrentSyncRuntimeInfo().appInstanceId)
-            assertEquals("device-1", handler1.getCurrentSyncRuntimeInfo().deviceId)
-            assertEquals("device-2", handler2.getCurrentSyncRuntimeInfo().deviceId)
+            assertEquals("app-1", handler1.currentSyncRuntimeInfo.appInstanceId)
+            assertEquals("app-2", handler2.currentSyncRuntimeInfo.appInstanceId)
+            assertEquals("device-1", handler1.currentSyncRuntimeInfo.deviceId)
+            assertEquals("device-2", handler2.currentSyncRuntimeInfo.deviceId)
         }
 }
