@@ -25,7 +25,7 @@ fun NearbyDevicesView() {
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val syncScopeFactory = koinInject<SyncScopeFactory>()
 
-    val nearbyDevicesList by nearbyDeviceManager.syncInfos.collectAsState()
+    val nearbyDevicesList by nearbyDeviceManager.nearbySyncInfos.collectAsState()
 
     val searching by nearbyDeviceManager.searching.collectAsState()
 

@@ -78,6 +78,24 @@ class MarketingSyncManager : SyncManager {
     override fun toVerify(appInstanceId: String) {
     }
 
+    override fun updateAllowSend(
+        appInstanceId: String,
+        allowSend: Boolean,
+    ) {
+    }
+
+    override fun updateAllowReceive(
+        appInstanceId: String,
+        allowReceive: Boolean,
+    ) {
+    }
+
+    override fun updateNoteName(
+        appInstanceId: String,
+        noteName: String,
+    ) {
+    }
+
     override fun trustByToken(
         appInstanceId: String,
         token: Int,
@@ -92,10 +110,7 @@ class MarketingSyncManager : SyncManager {
 
     override fun getSyncHandlers(): Map<String, SyncHandler> = internalSyncHandlers
 
-    override fun updateSyncInfo(
-        syncInfo: SyncInfo,
-        refresh: Boolean,
-    ) {
+    override fun updateSyncInfo(syncInfo: SyncInfo) {
     }
 
     override fun removeSyncHandler(appInstanceId: String) {

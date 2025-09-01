@@ -198,9 +198,7 @@ fun NetSettingsContentView() {
                                 syncScopeFactory.createSyncScope(currentSyncInfo)
                             }
 
-                        scope.BlackListDeviceView {
-                            blacklist.remove(it)
-                        }
+                        scope.BlackListDeviceView()
 
                         if (currentIndex != blacklist.size - 1) {
                             HorizontalDivider(modifier = Modifier.fillMaxWidth())

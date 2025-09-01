@@ -6,7 +6,6 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.utils.TxtRecordUtils
 import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
@@ -103,6 +102,14 @@ class DesktopPasteBonjourService(
         runBlocking { deferred.await() }
     }
 
+    override fun request(appInstanceId: String) {
+        jmdnsMap[appInstanceId]?.let { jmdns ->
+            for (serviceInfo in jmdns.list(SERVICE_TYPE)) {
+                jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+            }
+        }
+    }
+
     override fun close() {
         runCatching {
             val deferred =
@@ -127,8 +134,6 @@ class DesktopServiceListener(
 
     private val logger = KotlinLogging.logger {}
 
-    private val coroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher)
-
     override fun serviceAdded(event: ServiceEvent) {
         logger.debug { "Service added: " + event.info }
     }
@@ -137,17 +142,13 @@ class DesktopServiceListener(
         val map: Map<String, ByteArray> = mutableMapOf()
         ByteWrangler.readProperties(map, event.info.textBytes)
         val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
-        coroutineScope.launch {
-            nearbyDeviceManager.removeDevice(syncInfo)
-        }
+        nearbyDeviceManager.removeDevice(syncInfo)
     }
 
     override fun serviceResolved(event: ServiceEvent) {
         val map: Map<String, ByteArray> = mutableMapOf()
         ByteWrangler.readProperties(map, event.info.textBytes)
         val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
-        coroutineScope.launch {
-            nearbyDeviceManager.addDevice(syncInfo)
-        }
+        nearbyDeviceManager.addDevice(syncInfo)
     }
 }

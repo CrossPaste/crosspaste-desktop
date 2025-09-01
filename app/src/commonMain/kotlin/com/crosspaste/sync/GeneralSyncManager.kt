@@ -1,17 +1,10 @@
 package com.crosspaste.sync
 
 import androidx.compose.runtime.remember
-import com.crosspaste.app.RatingPromptManager
-import com.crosspaste.db.sync.ChangeType
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.net.NetworkInterfaceService
-import com.crosspaste.net.SyncInfoFactory
-import com.crosspaste.net.TelnetHelper
-import com.crosspaste.net.clientapi.SyncClientApi
-import com.crosspaste.secure.SecureStore
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.devices.DeviceScopeFactory
@@ -28,6 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,17 +38,10 @@ import kotlinx.coroutines.withContext
 class GeneralSyncManager(
     private val deviceScopeFactory: DeviceScopeFactory,
     private val dialogService: DialogService,
-    private val networkInterfaceService: NetworkInterfaceService,
     private val pasteDialogFactory: PasteDialogFactory,
-    private val ratingPromptManager: RatingPromptManager,
     override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
-    private val secureStore: SecureStore,
-    private val syncClientApi: SyncClientApi,
-    private val syncInfoFactory: SyncInfoFactory,
+    private val syncResolver: SyncResolver,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
-    private val telnetHelper: TelnetHelper,
-    private val tokenCache: TokenCache,
-    lazyNearbyDeviceManager: Lazy<NearbyDeviceManager>,
 ) : SyncManager {
 
     private val logger = KotlinLogging.logger {}
@@ -71,7 +58,7 @@ class GeneralSyncManager(
 
     private val internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
-    private val nearbyDeviceManager: NearbyDeviceManager by lazyNearbyDeviceManager
+    private val eventBus = MutableSharedFlow<SyncEvent>()
 
     private var started = false
 
@@ -83,6 +70,12 @@ class GeneralSyncManager(
         started = true
 
         realTimeSyncScope.launch {
+            eventBus.collect { event ->
+                syncResolver.emitEvent(event)
+            }
+        }
+
+        realTimeSyncScope.launch {
             val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
             internalSyncHandlers.putAll(
                 syncRuntimeInfos.map { syncRuntimeInfo ->
@@ -90,8 +83,6 @@ class GeneralSyncManager(
                 },
             )
             _realTimeSyncRuntimeInfos.value = syncRuntimeInfos
-            nearbyDeviceManager.updateSyncManager()
-            this@GeneralSyncManager.refresh()
             startCollectingSyncRuntimeInfosFlow()
         }
         startCollectingPasteDialog()
@@ -122,7 +113,7 @@ class GeneralSyncManager(
                     val newSet = currentAppInstanceIdSet - previousAppInstanceIdSet
 
                     deleteSet.forEach { appInstanceId ->
-                        internalSyncHandlers.remove(appInstanceId)?.clearContext()
+                        internalSyncHandlers.remove(appInstanceId)
                     }
 
                     newSet.forEach { appInstanceId ->
@@ -130,20 +121,19 @@ class GeneralSyncManager(
                             createSyncHandler(list.first { it.appInstanceId == appInstanceId })
                     }
 
-                    withContext(mainDispatcher) {
-                        _realTimeSyncRuntimeInfos.value = list
-                        _ignoreVerifySet.update { set ->
-                            set
-                                .filter {
-                                    it in currentAppInstanceIdSet
-                                }.toSet()
+                    list
+                        .filter { it.appInstanceId !in newSet }
+                        .forEach {
+                            internalSyncHandlers[it.appInstanceId]?.updateSyncRuntimeInfo(it)
                         }
-                        if (newSet.isNotEmpty() || deleteSet.isNotEmpty()) {
-                            nearbyDeviceManager.refreshSyncManager()
-                        }
-                    }
 
                     _realTimeSyncRuntimeInfos.value = list
+
+                    _ignoreVerifySet.value =
+                        _ignoreVerifySet.value
+                            .filter {
+                                it in currentAppInstanceIdSet
+                            }.toSet()
                 }
             }
     }
@@ -175,18 +165,12 @@ class GeneralSyncManager(
                 }.launchIn(realTimeSyncScope)
     }
 
+    private suspend fun emitEvent(event: SyncEvent) {
+        eventBus.emit(event)
+    }
+
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler =
-        GeneralSyncHandler(
-            syncRuntimeInfo,
-            networkInterfaceService,
-            ratingPromptManager,
-            secureStore,
-            syncClientApi,
-            syncInfoFactory,
-            syncRuntimeInfoDao,
-            telnetHelper,
-            tokenCache,
-        )
+        GeneralSyncHandler(syncRuntimeInfo, ::emitEvent)
 
     override fun ignoreVerify(appInstanceId: String) {
         _ignoreVerifySet.update { it + appInstanceId }
@@ -205,7 +189,7 @@ class GeneralSyncManager(
                             .values
                             .map {
                                 async {
-                                    doResolveSync(it)
+                                    it.forceResolve()
                                 }
                             }
                     jobs.awaitAll()
@@ -230,7 +214,7 @@ class GeneralSyncManager(
                             .mapNotNull { getSyncHandler(it) }
                             .map {
                                 async {
-                                    doResolveSync(it)
+                                    it.forceResolve()
                                 }
                             }
                     jobs.awaitAll()
@@ -243,19 +227,13 @@ class GeneralSyncManager(
         }
     }
 
-    private suspend fun doResolveSync(syncHandler: SyncHandler) {
-        runCatching {
-            syncHandler.forceResolve()
-        }.onFailure { e ->
-            logger.error(e) { "resolve sync error" }
-        }
-    }
-
     override fun getSyncHandlers(): Map<String, SyncHandler> = internalSyncHandlers
 
     override fun removeSyncHandler(appInstanceId: String) {
-        realTimeSyncScope.launch(CoroutineName("RemoveSyncHandler")) {
-            syncRuntimeInfoDao.deleteSyncRuntimeInfo(appInstanceId)
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch(CoroutineName("RemoveSyncHandler")) {
+                syncHandler.removeDevice()
+            }
         }
     }
 
@@ -263,37 +241,49 @@ class GeneralSyncManager(
         appInstanceId: String,
         token: Int,
     ) {
-        internalSyncHandlers[appInstanceId]?.also { syncHandler ->
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch {
                 syncHandler.trustByToken(token)
-                doResolveSync(syncHandler)
             }
         }
     }
 
-    override fun updateSyncInfo(
-        syncInfo: SyncInfo,
-        refresh: Boolean,
+    override fun updateAllowSend(
+        appInstanceId: String,
+        allowSend: Boolean,
     ) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch {
+                syncHandler.updateAllowSend(allowSend)
+            }
+        }
+    }
+
+    override fun updateAllowReceive(
+        appInstanceId: String,
+        allowReceive: Boolean,
+    ) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch {
+                syncHandler.updateAllowReceive(allowReceive)
+            }
+        }
+    }
+
+    override fun updateNoteName(
+        appInstanceId: String,
+        noteName: String,
+    ) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch {
+                syncHandler.updateNoteName(noteName)
+            }
+        }
+    }
+
+    override fun updateSyncInfo(syncInfo: SyncInfo) {
         realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
-            val (changeType, syncRuntimeInfo) = syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
-
-            if (changeType != ChangeType.NO_CHANGE &&
-                changeType != ChangeType.NEW_INSTANCE
-            ) {
-                getSyncHandler(syncInfo.appInfo.appInstanceId)
-                    ?.setCurrentSyncRuntimeInfo(syncRuntimeInfo)
-            }
-
-            if (refresh) {
-                if (changeType == ChangeType.NO_CHANGE ||
-                    changeType == ChangeType.INFO_CHANGE
-                ) {
-                    getSyncHandler(syncInfo.appInfo.appInstanceId)?.tryDirectUpdateConnected()
-                } else if (changeType == ChangeType.NET_CHANGE) {
-                    refresh(listOf(syncRuntimeInfo.appInstanceId))
-                }
-            }
+            emitEvent(SyncEvent.UpdateSyncInfo(syncInfo))
         }
     }
 

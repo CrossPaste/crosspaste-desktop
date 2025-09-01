@@ -3,46 +3,42 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.platform.Platform
+import kotlinx.coroutines.flow.StateFlow
 
 interface SyncHandler {
 
-    var versionRelation: VersionRelation
+    val syncRuntimeInfoFlow: StateFlow<SyncRuntimeInfo>
 
-    fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo
+    val versionRelation: StateFlow<VersionRelation>
 
-    fun getSyncPlatform(): Platform = getCurrentSyncRuntimeInfo().platform
+    val currentSyncRuntimeInfo: SyncRuntimeInfo
+        get() = syncRuntimeInfoFlow.value
 
-    suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
+    val currentVersionRelation: VersionRelation
+        get() = versionRelation.value
+
+    fun getSyncPlatform(): Platform = syncRuntimeInfoFlow.value.platform
+
+    fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
 
     suspend fun getConnectHostAddress(): String?
 
     suspend fun forceResolve()
 
-    fun updateAllowSend(
-        allowSend: Boolean,
-        callback: (SyncRuntimeInfo?) -> Unit,
-    )
+    suspend fun updateAllowSend(allowSend: Boolean)
 
-    fun updateAllowReceive(
-        allowReceive: Boolean,
-        callback: (SyncRuntimeInfo?) -> Unit,
-    )
+    suspend fun updateAllowReceive(allowReceive: Boolean)
 
-    fun updateNoteName(
-        noteName: String,
-        callback: (SyncRuntimeInfo?) -> Unit,
-    )
-
-    suspend fun tryDirectUpdateConnected()
+    suspend fun updateNoteName(noteName: String)
 
     // use user input token to trust
     suspend fun trustByToken(token: Int)
 
-    suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo)
+    suspend fun showToken()
 
     suspend fun notifyExit()
 
     suspend fun markExit()
 
-    suspend fun clearContext()
+    suspend fun removeDevice()
 }

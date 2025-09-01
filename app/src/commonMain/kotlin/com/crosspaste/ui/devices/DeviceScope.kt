@@ -12,7 +12,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.platform.Platform
-import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
@@ -26,9 +25,6 @@ interface DeviceScope : PlatformScope {
         get() = syncRuntimeInfo.platform
 
     override fun getDeviceDisplayName(): String = syncRuntimeInfo.getDeviceDisplayName()
-
-    fun getSyncHandler(syncManager: SyncManager): SyncHandler? =
-        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
 
     @Composable
     fun DeviceConnectView()
@@ -54,9 +50,7 @@ interface DeviceScope : PlatformScope {
                     if (inputNoteName == "") {
                         isError = true
                     } else {
-                        getSyncHandler(syncManager)?.let { syncHandler ->
-                            syncHandler.updateNoteName(inputNoteName) {}
-                        }
+                        syncManager.updateNoteName(syncRuntimeInfo.appInstanceId, inputNoteName)
                         dialogService.popDialog()
                     }
                 }

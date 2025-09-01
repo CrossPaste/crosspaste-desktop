@@ -33,7 +33,7 @@ fun Routing.pasteRouting(
                     return@let
                 }
 
-            if (!syncHandler.getCurrentSyncRuntimeInfo().allowReceive) {
+            if (!syncHandler.currentSyncRuntimeInfo.allowReceive) {
                 logger.debug { "sync handler ($appInstanceId), user not allow receive" }
                 failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_USER.toErrorCode())
                 return@let

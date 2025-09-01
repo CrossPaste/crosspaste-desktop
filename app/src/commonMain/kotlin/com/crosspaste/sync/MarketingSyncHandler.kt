@@ -2,52 +2,43 @@ package com.crosspaste.sync
 
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.net.VersionRelation
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class MarketingSyncHandler(
-    private var syncRuntimeInfo: SyncRuntimeInfo,
+    syncRuntimeInfo: SyncRuntimeInfo,
 ) : SyncHandler {
 
-    override var versionRelation: VersionRelation = VersionRelation.EQUAL_TO
+    private val _syncRuntimeInfo: MutableStateFlow<SyncRuntimeInfo> = MutableStateFlow(syncRuntimeInfo)
 
-    override fun getCurrentSyncRuntimeInfo(): SyncRuntimeInfo = syncRuntimeInfo
+    override val syncRuntimeInfoFlow: StateFlow<SyncRuntimeInfo> = _syncRuntimeInfo
 
-    override suspend fun setCurrentSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
-        this.syncRuntimeInfo = syncRuntimeInfo
+    private val _versionRelation: MutableStateFlow<VersionRelation> = MutableStateFlow(VersionRelation.EQUAL_TO)
+
+    override var versionRelation: StateFlow<VersionRelation> = _versionRelation
+
+    override fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
+        _syncRuntimeInfo.value = syncRuntimeInfo
     }
 
-    override suspend fun getConnectHostAddress(): String? = syncRuntimeInfo.connectHostAddress
+    override suspend fun getConnectHostAddress(): String? = currentSyncRuntimeInfo.connectHostAddress
 
     override suspend fun forceResolve() {
     }
 
-    override fun updateAllowSend(
-        allowSend: Boolean,
-        callback: (SyncRuntimeInfo?) -> Unit,
-    ) {
-        callback(syncRuntimeInfo.copy(allowSend = allowSend))
+    override suspend fun updateAllowSend(allowSend: Boolean) {
     }
 
-    override fun updateAllowReceive(
-        allowReceive: Boolean,
-        callback: (SyncRuntimeInfo?) -> Unit,
-    ) {
-        callback(syncRuntimeInfo.copy(allowReceive = allowReceive))
+    override suspend fun updateAllowReceive(allowReceive: Boolean) {
     }
 
-    override fun updateNoteName(
-        noteName: String,
-        callback: (SyncRuntimeInfo?) -> Unit,
-    ) {
-        callback(syncRuntimeInfo.copy(noteName = noteName))
-    }
-
-    override suspend fun tryDirectUpdateConnected() {
+    override suspend fun updateNoteName(noteName: String) {
     }
 
     override suspend fun trustByToken(token: Int) {
     }
 
-    override suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo) {
+    override suspend fun showToken() {
     }
 
     override suspend fun notifyExit() {
@@ -56,6 +47,6 @@ class MarketingSyncHandler(
     override suspend fun markExit() {
     }
 
-    override suspend fun clearContext() {
+    override suspend fun removeDevice() {
     }
 }
