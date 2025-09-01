@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.remove
 import com.crosspaste.ui.devices.SyncDeviceView
@@ -24,9 +23,8 @@ import com.crosspaste.utils.getJsonUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun SyncScope.BlackListDeviceView(remove: (SyncInfo) -> Unit) {
+fun SyncScope.BlackListDeviceView() {
     val configManager = koinInject<CommonConfigManager>()
-    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val jsonUtils = getJsonUtils()
 
     val config by configManager.config.collectAsState()
@@ -43,8 +41,6 @@ fun SyncScope.BlackListDeviceView(remove: (SyncInfo) -> Unit) {
 
                 val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                 configManager.updateConfig("blacklist", newBlackList)
-                remove(syncInfo)
-                nearbyDeviceManager.refreshSyncManager()
             },
             modifier =
                 Modifier

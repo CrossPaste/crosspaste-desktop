@@ -21,7 +21,6 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.buttonTextStyle
@@ -42,7 +41,6 @@ fun SyncScope.NearbyDeviceView() {
     val appControl = koinInject<AppControl>()
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val syncManager = koinInject<SyncManager>()
 
     val jsonUtils = getJsonUtils()
@@ -62,7 +60,7 @@ fun SyncScope.NearbyDeviceView() {
                 modifier = Modifier.height(xxLarge),
                 onClick = {
                     if (appControl.isDeviceConnectionEnabled(syncManager.getSyncHandlers().size + 1)) {
-                        syncManager.updateSyncInfo(syncInfo, refresh = true)
+                        syncManager.updateSyncInfo(syncInfo)
                     }
                 },
                 shape = tiny3XRoundedCornerShape,
@@ -95,7 +93,6 @@ fun SyncScope.NearbyDeviceView() {
                     blackSyncInfos.add(syncInfo)
                     val newBlackList = jsonUtils.JSON.encodeToString(blackSyncInfos)
                     configManager.updateConfig("blacklist", newBlackList)
-                    nearbyDeviceManager.refreshSyncManager()
                 },
                 shape = tiny3XRoundedCornerShape,
                 border = BorderStroke(tiny5X, disconnectedColor(AppUIColors.generalBackground)),

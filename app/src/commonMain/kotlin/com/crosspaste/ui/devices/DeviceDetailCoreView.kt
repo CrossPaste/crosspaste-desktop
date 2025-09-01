@@ -20,7 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.VersionRelation
@@ -56,24 +55,18 @@ import org.koin.compose.koinInject
 fun DeviceScope.DeviceDetailCoreView() {
     val appControl = koinInject<AppControl>()
     val appInfo = koinInject<AppInfo>()
-    val appWindowManager = koinInject<AppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val syncManager = koinInject<SyncManager>()
 
-    var syncHandler by remember {
+    var syncHandler by remember(syncRuntimeInfo.appInstanceId) {
         mutableStateOf(syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId))
     }
 
-    var versionRelation by remember {
-        mutableStateOf(syncHandler?.versionRelation)
+    val versionRelation by syncHandler?.versionRelation?.collectAsState() ?: remember {
+        mutableStateOf(null)
     }
 
     val settingsTextStyle = SettingsTextStyle()
-
-    LaunchedEffect(syncRuntimeInfo.appInstanceId) {
-        syncHandler = syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId)
-        versionRelation = syncHandler?.versionRelation
-    }
 
     Column(
         modifier =
@@ -150,13 +143,7 @@ fun DeviceScope.DeviceDetailCoreView() {
                     },
                 ) { allowSend ->
                     if (appControl.isSyncControlEnabled()) {
-                        syncManager
-                            .getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                            ?.updateAllowSend(allowSend) {
-                                it?.let {
-                                    appWindowManager.updateScreenContext(it)
-                                }
-                            }
+                        syncManager.updateAllowSend(syncRuntimeInfo.appInstanceId, allowSend)
                     }
                 }
 
@@ -170,13 +157,7 @@ fun DeviceScope.DeviceDetailCoreView() {
                     },
                 ) { allowReceive ->
                     if (appControl.isSyncControlEnabled()) {
-                        syncManager
-                            .getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-                            ?.updateAllowReceive(allowReceive) {
-                                it?.let {
-                                    appWindowManager.updateScreenContext(it)
-                                }
-                            }
+                        syncManager.updateAllowReceive(syncRuntimeInfo.appInstanceId, allowReceive)
                     }
                 }
             }

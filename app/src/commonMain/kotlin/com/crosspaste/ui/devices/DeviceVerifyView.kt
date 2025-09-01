@@ -67,7 +67,7 @@ fun DeviceScope.DeviceVerifyView() {
     val focusRequesters = remember { List(tokenCount) { FocusRequester() } }
 
     LaunchedEffect(Unit) {
-        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken(syncRuntimeInfo)
+        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken()
     }
 
     val setError = { value: Boolean -> isError = value }
@@ -131,7 +131,7 @@ fun DeviceScope.VerificationContent(
 
 @Composable
 fun DeviceScope.DeviceTokenHeader() {
-    HoverableDeviceBarView { background ->
+    StaticDeviceBarView { background ->
         Row(horizontalArrangement = Arrangement.End) {
             Text(
                 text = syncRuntimeInfo.connectHostAddress ?: "unknown",

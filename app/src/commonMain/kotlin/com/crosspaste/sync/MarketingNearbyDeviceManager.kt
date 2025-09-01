@@ -5,14 +5,19 @@ import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.Platform.Companion.LINUX
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class MarketingNearbyDeviceManager : NearbyDeviceManager {
 
+    override val nearbyDeviceScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+
     override val searching: StateFlow<Boolean> = MutableStateFlow(false)
 
-    override val syncInfos: StateFlow<List<SyncInfo>> =
+    override val nearbySyncInfos: StateFlow<List<SyncInfo>> =
         MutableStateFlow(
             listOf(
                 SyncInfo(
@@ -45,11 +50,5 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
     }
 
     override fun removeDevice(syncInfo: SyncInfo) {
-    }
-
-    override fun refreshSyncManager() {
-    }
-
-    override fun updateSyncManager() {
     }
 }

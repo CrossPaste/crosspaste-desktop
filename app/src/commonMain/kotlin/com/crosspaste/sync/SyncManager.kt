@@ -18,6 +18,21 @@ interface SyncManager : SyncRoutingApi {
 
     fun toVerify(appInstanceId: String)
 
+    fun updateAllowSend(
+        appInstanceId: String,
+        allowSend: Boolean,
+    )
+
+    fun updateAllowReceive(
+        appInstanceId: String,
+        allowReceive: Boolean,
+    )
+
+    fun updateNoteName(
+        appInstanceId: String,
+        noteName: String,
+    )
+
     fun trustByToken(
         appInstanceId: String,
         token: Int,

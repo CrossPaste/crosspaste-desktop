@@ -89,19 +89,21 @@ data class SyncRuntimeInfo(
             )
         }
 
-        fun updateSyncRuntimeInfo(
-            syncRuntimeInfo: SyncRuntimeInfo,
-            syncInfo: SyncInfo,
-        ): SyncRuntimeInfo {
-            return syncRuntimeInfo.copy(
-                appVersion = syncInfo.appInfo.appVersion,
-                userName = syncInfo.appInfo.userName,
-                deviceId = syncInfo.endpointInfo.deviceId,
-                deviceName = syncInfo.endpointInfo.deviceName,
-                platform = syncInfo.endpointInfo.platform,
-                hostInfoList = syncInfo.endpointInfo.hostInfoList,
-                port = syncInfo.endpointInfo.port,
-            )
+        fun hostInfoListEqual(
+            hostInfoList: List<HostInfo>,
+            otherHostInfoList: List<HostInfo>,
+        ): Boolean {
+            if (hostInfoList.size != otherHostInfoList.size) {
+                return false
+            }
+            val sortHostInfoList = hostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
+            val otherSortHostInfoList = otherHostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
+            for (i in 0 until hostInfoList.size) {
+                if (sortHostInfoList[i].hostAddress != otherSortHostInfoList[i].hostAddress) {
+                    return false
+                }
+            }
+            return true
         }
     }
 

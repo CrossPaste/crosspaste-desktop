@@ -3,8 +3,6 @@ package com.crosspaste.db.sync
 import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
-import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
-import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.updateSyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
@@ -32,15 +30,10 @@ class SyncRuntimeInfoDao(private val database: Database) {
 
     private fun updateTemplate(
         syncRuntimeInfo: SyncRuntimeInfo,
-        todo: () -> Unit = {},
         updateAction: (SyncRuntimeInfo) -> Boolean,
     ): String? {
-        var change = false
-        database.transactionWithResult {
-            change = updateAction(syncRuntimeInfo)
-            if (change) {
-                todo()
-            }
+        val change = database.transactionWithResult {
+            updateAction(syncRuntimeInfo)
         }
         return if (change) {
             syncRuntimeInfo.appInstanceId
@@ -49,8 +42,8 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
-        return updateTemplate(syncRuntimeInfo, todo) {
+    fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo): String? {
+        return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateConnectInfo(
                 syncRuntimeInfo.port.toLong(),
                 syncRuntimeInfo.connectNetworkPrefixLength?.toLong(),
@@ -63,8 +56,8 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
-        return updateTemplate(syncRuntimeInfo, todo) {
+    fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo): String? {
+        return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateAllowReceive(
                 syncRuntimeInfo.allowReceive,
                 nowEpochMilliseconds(),
@@ -74,8 +67,8 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
-        return updateTemplate(syncRuntimeInfo, todo) {
+    fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo): String? {
+        return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateAllowSend(
                 syncRuntimeInfo.allowSend,
                 nowEpochMilliseconds(),
@@ -85,8 +78,8 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo, todo: () -> Unit): String? {
-        return updateTemplate(syncRuntimeInfo, todo) {
+    fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo): String? {
+        return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateNoteName(
                 syncRuntimeInfo.noteName,
                 nowEpochMilliseconds(),
@@ -102,7 +95,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
 
     // only use in GeneralSyncManager，if want to insertOrUpdateSyncInfo SyncRuntimeInfo
     // use SyncManager.updateSyncInfo，it will refresh connect state
-    fun insertOrUpdateSyncInfo(syncInfo: SyncInfo): Pair<ChangeType, SyncRuntimeInfo> {
+    fun insertOrUpdateSyncInfo(syncInfo: SyncInfo) {
         return database.transactionWithResult {
             val now = nowEpochMilliseconds()
             val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
@@ -124,9 +117,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     now,
                     syncInfo.appInfo.appInstanceId,
                 )
-                getChangeType(it, syncInfo)
             } ?: run {
-                val syncRuntimeInfo = createSyncRuntimeInfo(syncInfo)
                 syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
                     syncInfo.appInfo.appInstanceId,
                     syncInfo.appInfo.appVersion,
@@ -143,49 +134,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     now,
                     now,
                 )
-                Pair(ChangeType.NEW_INSTANCE, syncRuntimeInfo)
             }
         }
     }
-
-    private fun getChangeType(
-        syncRuntimeInfo: SyncRuntimeInfo,
-        newSyncInfo: SyncInfo,
-    ): Pair<ChangeType, SyncRuntimeInfo> {
-        val changeType = if (
-            hostInfoListEqual(syncRuntimeInfo.hostInfoList, newSyncInfo.endpointInfo.hostInfoList) ||
-            syncRuntimeInfo.port != newSyncInfo.endpointInfo.port)
-        {
-            ChangeType.NET_CHANGE
-        } else if (syncRuntimeInfo.appVersion != newSyncInfo.appInfo.appVersion ||
-            syncRuntimeInfo.userName != newSyncInfo.appInfo.userName ||
-            syncRuntimeInfo.deviceId != newSyncInfo.endpointInfo.deviceId ||
-            syncRuntimeInfo.deviceName != newSyncInfo.endpointInfo.deviceName ||
-            syncRuntimeInfo.platform != newSyncInfo.endpointInfo.platform)
-        {
-            ChangeType.INFO_CHANGE
-        } else {
-            ChangeType.NO_CHANGE
-        }
-
-        return Pair(changeType, updateSyncRuntimeInfo(syncRuntimeInfo, newSyncInfo))
-    }
-
-    private fun hostInfoListEqual(
-        hostInfoList: List<HostInfo>,
-        otherHostInfoList: List<HostInfo>,
-    ): Boolean {
-        if (hostInfoList.size != otherHostInfoList.size) {
-            return false
-        }
-        val sortHostInfoList = hostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
-        val otherSortHostInfoList = otherHostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
-        for (i in 0 until hostInfoList.size) {
-            if (sortHostInfoList[i].hostAddress != otherSortHostInfoList[i].hostAddress) {
-                return false
-            }
-        }
-        return true
-    }
-
 }

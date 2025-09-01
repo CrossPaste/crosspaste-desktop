@@ -53,6 +53,7 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 import com.crosspaste.ui.theme.CrossPasteTheme.connectedColor
+import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
@@ -202,16 +203,17 @@ fun AddDeviceManuallyForm() {
                 }
 
                 runBlocking {
+                    val hostAndPort = HostAndPort(ip, port.toInt())
                     when (
                         val result =
                             syncClientApi.syncInfo {
-                                buildUrl(ip, port.toInt())
+                                buildUrl(hostAndPort)
                             }
                     ) {
                         is SuccessResult -> {
                             // add device
                             val syncInfo = result.getResult<SyncInfo>()
-                            syncManager.updateSyncInfo(syncInfo, refresh = true)
+                            syncManager.updateSyncInfo(syncInfo)
                             ip = ""
                             port = ""
                         }

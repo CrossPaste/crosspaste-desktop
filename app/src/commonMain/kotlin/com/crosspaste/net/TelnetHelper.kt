@@ -1,6 +1,7 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -62,9 +63,10 @@ class TelnetHelper(
         timeout: Long = 500L,
     ): VersionRelation? =
         runCatching {
+            val hostAndPort = HostAndPort(hostAddress, port)
             val httpResponse =
                 pasteClient.get(timeout = timeout) {
-                    buildUrl(hostAddress, port)
+                    buildUrl(hostAndPort)
                     buildUrl("sync", "telnet")
                 }
             logger.info { "httpResponse.status = ${httpResponse.status.value} $hostAddress:$port" }

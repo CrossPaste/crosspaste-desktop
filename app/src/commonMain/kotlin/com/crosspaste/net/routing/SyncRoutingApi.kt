@@ -33,10 +33,7 @@ interface SyncRoutingApi {
 
     fun getSyncPlatform(appInstanceId: String): Platform? = getSyncHandler(appInstanceId)?.getSyncPlatform()
 
-    fun updateSyncInfo(
-        syncInfo: SyncInfo,
-        refresh: Boolean,
-    )
+    fun updateSyncInfo(syncInfo: SyncInfo)
 
     fun removeSyncHandler(appInstanceId: String)
 }

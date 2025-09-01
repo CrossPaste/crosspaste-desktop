@@ -177,6 +177,7 @@ import com.crosspaste.sync.MarketingSyncManager
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.sync.SyncResolver
 import com.crosspaste.sync.TokenCache
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.CleanTaskTaskExecutor
@@ -381,18 +382,22 @@ class DesktopModule(
                     GeneralSyncManager(
                         deviceScopeFactory = get(),
                         dialogService = get(),
-                        networkInterfaceService = get(),
                         pasteDialogFactory = get(),
-                        ratingPromptManager = get(),
-                        secureStore = get(),
-                        syncClientApi = get(),
-                        syncInfoFactory = get(),
+                        syncResolver = get(),
                         syncRuntimeInfoDao = get(),
-                        telnetHelper = get(),
-                        tokenCache = get(),
-                        lazyNearbyDeviceManager = lazy { get() },
                     )
                 }
+            }
+            single<SyncResolver> {
+                SyncResolver(
+                    lazyPasteBonjourService = lazy { get() },
+                    ratingPromptManager = get(),
+                    secureStore = get(),
+                    syncClientApi = get(),
+                    syncRuntimeInfoDao = get(),
+                    telnetHelper = get(),
+                    tokenCache = get(),
+                )
             }
             single<SyncRoutingApi> { get<SyncManager>() }
             single<TelnetHelper> { TelnetHelper(get(), get()) }
@@ -517,7 +522,7 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
             single<DialogService> { DialogService }

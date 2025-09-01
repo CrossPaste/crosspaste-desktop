@@ -15,6 +15,7 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.PasteData
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getJsonUtils
@@ -76,8 +77,8 @@ class SyncPasteTaskExecutor(
 
     private fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> =
         syncManager.getSyncHandlers().filter { (key, handler) ->
-            handler.getCurrentSyncRuntimeInfo().allowSend &&
-                handler.versionRelation == VersionRelation.EQUAL_TO &&
+            handler.currentSyncRuntimeInfo.allowSend &&
+                handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                 (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
         }
 
@@ -129,16 +130,17 @@ class SyncPasteTaskExecutor(
         pasteData: PasteData,
         hostAddress: String,
     ): ClientApiResult {
-        val syncRuntimeInfo = handler.getCurrentSyncRuntimeInfo()
+        val syncRuntimeInfo = handler.currentSyncRuntimeInfo
         val port = syncRuntimeInfo.port
         val targetAppInstanceId = syncRuntimeInfo.appInstanceId
 
         return if (appControl.isSendEnabled()) {
+            val hostAndPort = HostAndPort(hostAddress, port)
             pasteClientApi.sendPaste(
                 pasteData,
                 targetAppInstanceId,
             ) {
-                buildUrl(hostAddress, port)
+                buildUrl(hostAndPort)
             }
         } else {
             createFailureResult(

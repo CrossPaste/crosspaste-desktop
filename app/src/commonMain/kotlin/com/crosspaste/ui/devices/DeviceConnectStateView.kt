@@ -10,6 +10,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,9 +42,13 @@ fun DeviceScope.DeviceConnectStateView(background: Color) {
         mutableStateOf(syncManager.getSyncHandler(syncRuntimeInfo.appInstanceId))
     }
 
+    val versionRelation by syncHandler?.versionRelation?.collectAsState() ?: remember {
+        mutableStateOf(null)
+    }
+
     val (connectColor, connectText) =
         getConnectStateColorAndText(
-            versionRelation = syncHandler?.versionRelation,
+            versionRelation = versionRelation,
             refresh = refreshing,
             background = background,
         )

@@ -2,13 +2,15 @@ package com.crosspaste.utils
 
 import io.ktor.http.*
 
-fun URLBuilder.buildUrl(
-    host: String,
-    port: Int,
-) {
+data class HostAndPort(
+    val host: String,
+    val port: Int,
+)
+
+fun URLBuilder.buildUrl(hostAndPort: HostAndPort) {
     this.protocol = URLProtocol.HTTP
-    this.port = port
-    this.host = host
+    this.host = hostAndPort.host
+    this.port = hostAndPort.port
 }
 
 fun URLBuilder.buildUrl(vararg paths: String) {

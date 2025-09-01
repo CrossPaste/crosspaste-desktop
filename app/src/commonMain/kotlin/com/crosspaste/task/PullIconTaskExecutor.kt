@@ -14,6 +14,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.FileUtils
+import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
@@ -58,7 +59,7 @@ class PullIconTaskExecutor(
                         val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
                         if (!fileUtils.existFile(iconPath)) {
                             syncManager.getSyncHandlers()[appInstanceId]?.let {
-                                val port = it.getCurrentSyncRuntimeInfo().port
+                                val port = it.currentSyncRuntimeInfo.port
                                 it.getConnectHostAddress()?.let { host ->
                                     pullIcon(source, iconPath, host, port, baseExtraInfo)
                                 } ?: run {
@@ -97,8 +98,9 @@ class PullIconTaskExecutor(
         port: Int,
         baseExtraInfo: BaseExtraInfo,
     ): PasteTaskResult {
+        val hostAndPort = HostAndPort(host, port)
         val toUrl: URLBuilder.() -> Unit = {
-            buildUrl(host, port)
+            buildUrl(hostAndPort)
         }
 
         val result = pullClientApi.pullIcon(source, toUrl)

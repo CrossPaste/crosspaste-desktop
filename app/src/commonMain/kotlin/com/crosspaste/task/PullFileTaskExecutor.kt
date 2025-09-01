@@ -23,6 +23,7 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.FileUtils
+import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getDateUtils
@@ -106,7 +107,7 @@ class PullFileTaskExecutor(
             }
 
             syncManager.getSyncHandlers()[appInstanceId]?.let {
-                val port = it.getCurrentSyncRuntimeInfo().port
+                val port = it.currentSyncRuntimeInfo.port
 
                 it.getConnectHostAddress()?.let { host ->
                     pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
@@ -148,8 +149,9 @@ class PullFileTaskExecutor(
         filesIndex: FilesIndex,
         pullExtraInfo: PullExtraInfo,
     ): PasteTaskResult {
+        val hostAndPort = HostAndPort(host, port)
         val toUrl: URLBuilder.() -> Unit = {
-            buildUrl(host, port)
+            buildUrl(hostAndPort)
         }
 
         val tasks: List<suspend () -> Pair<Int, ClientApiResult>> =

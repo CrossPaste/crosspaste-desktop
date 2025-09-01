@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,8 +20,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppSize
-import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.RecommendContentView
 import com.crosspaste.ui.base.ToastListView
 import com.crosspaste.ui.devices.DeviceDetailContentView
@@ -44,6 +45,7 @@ class DesktopScreenProvider(
     private val appSize: DesktopAppSize,
     private val appWindowManager: AppWindowManager,
     private val deviceScopeFactory: DeviceScopeFactory,
+    private val syncManager: SyncManager,
     private val syncScopeFactory: SyncScopeFactory,
 ) : ScreenProvider {
 
@@ -61,12 +63,25 @@ class DesktopScreenProvider(
     override fun DeviceDetailScreen() {
         val screen by appWindowManager.screenContext.collectAsState()
 
-        val scope =
-            remember(screen.context) {
-                deviceScopeFactory.createDeviceScope(screen.context as SyncRuntimeInfo)
-            }
+        val syncRuntimeInfo by syncManager
+            .getSyncHandlers()[screen.context as String]
+            ?.syncRuntimeInfoFlow
+            ?.collectAsState() ?: remember { mutableStateOf(null) }
 
-        scope.DeviceDetailContentView()
+        LaunchedEffect(syncRuntimeInfo) {
+            if (syncRuntimeInfo == null) {
+                appWindowManager.setScreen(ScreenContext(Devices))
+            }
+        }
+
+        syncRuntimeInfo?.let { currentSyncRuntimeInfo ->
+            val scope =
+                remember(currentSyncRuntimeInfo) {
+                    deviceScopeFactory.createDeviceScope(currentSyncRuntimeInfo)
+                }
+
+            scope.DeviceDetailContentView()
+        }
     }
 
     @Composable

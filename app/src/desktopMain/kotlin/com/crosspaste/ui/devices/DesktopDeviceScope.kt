@@ -41,7 +41,7 @@ class DesktopDeviceScope(
                 if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
                     syncManager.toVerify(syncRuntimeInfo.appInstanceId)
                 } else {
-                    appWindowManager.toScreen(DeviceDetail, syncRuntimeInfo)
+                    appWindowManager.toScreen(DeviceDetail, syncRuntimeInfo.appInstanceId)
                 }
             }
     }
