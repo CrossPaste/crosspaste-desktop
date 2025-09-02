@@ -31,6 +31,13 @@ sealed interface SyncEvent {
         override fun toString(): String = "ResolveConnection ${syncRuntimeInfo.appInstanceId}"
     }
 
+    data class ForceResolveConnection(
+        override val syncRuntimeInfo: SyncRuntimeInfo,
+        val updateVersionRelation: (VersionRelation) -> Unit,
+    ) : SyncRunTimeInfoEvent {
+        override fun toString(): String = "ForceResolveConnection ${syncRuntimeInfo.appInstanceId}"
+    }
+
     data class TrustByToken(
         override val syncRuntimeInfo: SyncRuntimeInfo,
         val token: Int,

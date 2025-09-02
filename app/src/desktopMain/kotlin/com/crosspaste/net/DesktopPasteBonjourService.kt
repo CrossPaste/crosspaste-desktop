@@ -105,7 +105,9 @@ class DesktopPasteBonjourService(
     override fun request(appInstanceId: String) {
         jmdnsMap[appInstanceId]?.let { jmdns ->
             for (serviceInfo in jmdns.list(SERVICE_TYPE)) {
-                jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+                if (serviceInfo.name.contains(appInstanceId)) {
+                    jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+                }
             }
         }
     }

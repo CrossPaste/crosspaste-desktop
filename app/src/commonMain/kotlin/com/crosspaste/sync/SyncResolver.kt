@@ -48,6 +48,10 @@ class SyncResolver(
                     event.syncRuntimeInfo.resolveConnection(event.updateVersionRelation)
                 }
 
+                is SyncEvent.ForceResolveConnection -> {
+                    event.syncRuntimeInfo.forceResolveConnection(event.updateVersionRelation)
+                }
+
                 is SyncEvent.TrustByToken -> {
                     event.syncRuntimeInfo.trustByToken(event.token)
                 }
@@ -208,6 +212,12 @@ class SyncResolver(
         } else {
             resolveConnecting(updateVersionRelation)
         }
+    }
+
+    private suspend fun SyncRuntimeInfo.forceResolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
+        logger.info { "Force resolve connection ${this.appInstanceId}" }
+        refreshSyncInfo(appInstanceId)
+        resolveConnection(updateVersionRelation)
     }
 
     private suspend fun heartbeat(
