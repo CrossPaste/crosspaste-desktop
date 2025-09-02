@@ -1,13 +1,14 @@
 package com.crosspaste.db.sync
 
 import app.cash.sqldelight.Query
-import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.receiveAsFlow
 
 class SyncRuntimeInfoDao(private val database: Database) {
 
@@ -15,13 +16,32 @@ class SyncRuntimeInfoDao(private val database: Database) {
 
     private val syncRuntimeInfoDatabaseQueries = database.syncRuntimeInfoDatabaseQueries
 
+    private val updateNotifier = Channel<String>(Channel.UNLIMITED)
+
     private fun createGetAllSyncRuntimeInfosQuery(): Query<SyncRuntimeInfo> {
         return syncRuntimeInfoDatabaseQueries.getAllSyncRuntimeInfos(SyncRuntimeInfo::mapper)
     }
 
     fun getAllSyncRuntimeInfosFlow(): Flow<List<SyncRuntimeInfo>> {
-        return createGetAllSyncRuntimeInfosQuery().asFlow()
-            .map { it.executeAsList() }
+        return flow {
+            val currentMap = getAllSyncRuntimeInfos().associateBy { it.appInstanceId }.toMutableMap()
+            emit(currentMap.values.toList())
+
+            updateNotifier.receiveAsFlow().collect { appInstanceId ->
+                val updated = syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
+                    appInstanceId,
+                    SyncRuntimeInfo::mapper
+                ).executeAsOneOrNull()
+
+                if (updated != null) {
+                    currentMap[appInstanceId] = updated
+                } else {
+                    currentMap.remove(appInstanceId)
+                }
+
+                emit(currentMap.values.toList())
+            }
+        }
     }
 
     fun getAllSyncRuntimeInfos(): List<SyncRuntimeInfo> {
@@ -36,6 +56,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
             updateAction(syncRuntimeInfo)
         }
         return if (change) {
+            updateNotifier.trySend(syncRuntimeInfo.appInstanceId)
             syncRuntimeInfo.appInstanceId
         } else {
             null
@@ -90,13 +111,19 @@ class SyncRuntimeInfoDao(private val database: Database) {
     }
 
     fun deleteSyncRuntimeInfo(appInstanceId: String) {
-        syncRuntimeInfoDatabaseQueries.deleteSyncRuntimeInfo(appInstanceId)
+        val deleted = database.transactionWithResult {
+            syncRuntimeInfoDatabaseQueries.deleteSyncRuntimeInfo(appInstanceId)
+            syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+        }
+        if (deleted) {
+            updateNotifier.trySend(appInstanceId)
+        }
     }
 
     // only use in GeneralSyncManager，if want to insertOrUpdateSyncInfo SyncRuntimeInfo
     // use SyncManager.updateSyncInfo，it will refresh connect state
     fun insertOrUpdateSyncInfo(syncInfo: SyncInfo) {
-        return database.transactionWithResult {
+        database.transactionWithResult {
             val now = nowEpochMilliseconds()
             val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
             syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
@@ -136,5 +163,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                 )
             }
         }
+
+        updateNotifier.trySend(syncInfo.appInfo.appInstanceId)
     }
 }
