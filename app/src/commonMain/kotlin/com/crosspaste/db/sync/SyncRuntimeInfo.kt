@@ -112,6 +112,12 @@ data class SyncRuntimeInfo(
     }
 
     fun diffSyncInfo(syncInfo: SyncInfo): Boolean {
+        if (port != syncInfo.endpointInfo.port) {
+            return true
+        }
+        if (!hostInfoListEqual(hostInfoList, syncInfo.endpointInfo.hostInfoList)) {
+            return true
+        }
         if (appInstanceId != syncInfo.appInfo.appInstanceId) {
             return true
         }
@@ -128,12 +134,6 @@ data class SyncRuntimeInfo(
             return true
         }
         if (platform != syncInfo.endpointInfo.platform) {
-            return true
-        }
-        if (!hostInfoListEqual(hostInfoList, syncInfo.endpointInfo.hostInfoList)) {
-            return true
-        }
-        if (port != syncInfo.endpointInfo.port) {
             return true
         }
         return false
