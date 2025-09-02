@@ -76,13 +76,6 @@ class GeneralSyncManager(
         }
 
         realTimeSyncScope.launch {
-            val syncRuntimeInfos = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
-            internalSyncHandlers.putAll(
-                syncRuntimeInfos.map { syncRuntimeInfo ->
-                    syncRuntimeInfo.appInstanceId to createSyncHandler(syncRuntimeInfo)
-                },
-            )
-            _realTimeSyncRuntimeInfos.value = syncRuntimeInfos
             startCollectingSyncRuntimeInfosFlow()
         }
         startCollectingPasteDialog()
