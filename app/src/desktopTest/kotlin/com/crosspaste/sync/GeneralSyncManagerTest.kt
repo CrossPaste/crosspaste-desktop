@@ -133,7 +133,6 @@ class GeneralSyncManagerTest {
             val mocks = createMocks()
             val testSyncRuntimeInfo = createTestSyncRuntimeInfo()
 
-            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf(testSyncRuntimeInfo)
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
                 MutableStateFlow(listOf(testSyncRuntimeInfo))
 
@@ -143,6 +142,8 @@ class GeneralSyncManagerTest {
             val syncManager = createSyncManager(mocks, childScope)
 
             syncManager.start()
+
+            advanceUntilIdle()
 
             syncManager.removeSyncHandler(testSyncRuntimeInfo.appInstanceId)
 
@@ -188,7 +189,6 @@ class GeneralSyncManagerTest {
             val mocks = createMocks()
             val testSyncRuntimeInfo = createTestSyncRuntimeInfo()
 
-            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf(testSyncRuntimeInfo)
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
                 MutableStateFlow(listOf(testSyncRuntimeInfo))
 
@@ -215,8 +215,8 @@ class GeneralSyncManagerTest {
     fun testStop() =
         runTest {
             val mocks = createMocks()
-            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns emptyList()
-            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns MutableStateFlow(emptyList())
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(emptyList())
 
             val childScope = CoroutineScope(coroutineContext + Job())
             val syncManager = createSyncManager(mocks, childScope)
@@ -235,7 +235,6 @@ class GeneralSyncManagerTest {
             val mocks = createMocks()
             val syncInfosFlow = MutableStateFlow<List<SyncRuntimeInfo>>(emptyList())
 
-            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns emptyList()
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
 
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -260,7 +259,6 @@ class GeneralSyncManagerTest {
 
             val syncInfosFlow = MutableStateFlow<List<SyncRuntimeInfo>>(emptyList())
 
-            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns emptyList()
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
 
             val childScope = CoroutineScope(coroutineContext + Job())

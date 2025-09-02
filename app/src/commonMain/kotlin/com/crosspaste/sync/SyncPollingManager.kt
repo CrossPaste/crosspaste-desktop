@@ -13,28 +13,60 @@ import kotlin.math.min
 class SyncPollingManager(
     private val syncHandlerScope: CoroutineScope,
 ) {
+    companion object {
+        private const val DEFAULT_POLL_INTERVAL = 60000L
+        private const val RETRY_BASE_DELAY = 500L
+        private const val MAX_RETRY_POWER = 10
+
+        // Check every second if we need to execute earlier
+        private const val CHECK_INTERVAL = 1000L
+    }
 
     private val logger = KotlinLogging.logger {}
 
-    private var recommendedRefreshTime: Long = 0L
+    @Volatile
+    private var nextExecutionTime: Long = 0L
 
+    @Volatile
     private var failTime = 0
+
+    // Version number to track state changes
+    @Volatile
+    private var stateVersion = 0
 
     fun reset() {
         failTime = 0
+        stateVersion++
+        // Update next execution time immediately
+        updateNextExecutionTime()
     }
 
     fun fail() {
         failTime++
+        stateVersion++
+        // Recalculate time immediately on failure
+        updateNextExecutionTime()
+    }
+
+    private fun updateNextExecutionTime() {
+        val delayTime =
+            if (failTime > 0) {
+                val power = min(MAX_RETRY_POWER, failTime)
+                RETRY_BASE_DELAY + min(RETRY_BASE_DELAY * (1L shl power), DEFAULT_POLL_INTERVAL)
+            } else {
+                DEFAULT_POLL_INTERVAL
+            }
+
+        val newTime = nowEpochMilliseconds() + delayTime
+
+        nextExecutionTime = newTime
     }
 
     fun startPollingResolve(action: suspend () -> Unit): Job =
         syncHandlerScope.launch {
             while (isActive) {
                 runCatching {
-                    if (recommendedRefreshTime > nowEpochMilliseconds()) {
-                        waitNext()
-                    }
+                    waitForNextExecution()
                     action()
                 }.onFailure { e ->
                     if (e !is CancellationException) {
@@ -44,24 +76,21 @@ class SyncPollingManager(
             }
         }
 
-    private suspend fun waitNext() {
-        if (recommendedRefreshTime <= nowEpochMilliseconds()) {
-            recommendedRefreshTime = computeRefreshTime()
+    private suspend fun waitForNextExecution() {
+        if (nextExecutionTime <= nowEpochMilliseconds()) {
+            updateNextExecutionTime()
         }
 
-        do {
-            // if recommendedRefreshTime is updated, then we continue to wait for the new time
-            val waitTime = recommendedRefreshTime - nowEpochMilliseconds()
-            delay(waitTime)
-        } while (waitTime > 0)
-    }
-
-    private fun computeRefreshTime(): Long {
-        var delayTime = 60000L // wait 1 min by default
-        if (failTime > 0) {
-            val power = min(11, failTime)
-            delayTime = 1000 + min(20L * (1L shl power), 59000L)
+        while (nextExecutionTime > nowEpochMilliseconds()) {
+            // Use shorter check intervals to respond to state changes
+            val waitTime =
+                min(
+                    CHECK_INTERVAL,
+                    nextExecutionTime - nowEpochMilliseconds(),
+                )
+            if (waitTime > 0) {
+                delay(waitTime)
+            }
         }
-        return nowEpochMilliseconds() + delayTime
     }
 }
