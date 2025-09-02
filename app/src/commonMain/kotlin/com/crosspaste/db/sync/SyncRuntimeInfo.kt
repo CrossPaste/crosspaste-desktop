@@ -110,4 +110,32 @@ data class SyncRuntimeInfo(
     fun getDeviceDisplayName(): String {
         return noteName ?: deviceName
     }
+
+    fun diffSyncInfo(syncInfo: SyncInfo): Boolean {
+        if (appInstanceId != syncInfo.appInfo.appInstanceId) {
+            return true
+        }
+        if (appVersion != syncInfo.appInfo.appVersion) {
+            return true
+        }
+        if (userName != syncInfo.appInfo.userName) {
+            return true
+        }
+        if (deviceId != syncInfo.endpointInfo.deviceId) {
+            return true
+        }
+        if (deviceName != syncInfo.endpointInfo.deviceName) {
+            return true
+        }
+        if (platform != syncInfo.endpointInfo.platform) {
+            return true
+        }
+        if (!hostInfoListEqual(hostInfoList, syncInfo.endpointInfo.hostInfoList)) {
+            return true
+        }
+        if (port != syncInfo.endpointInfo.port) {
+            return true
+        }
+        return false
+    }
 }

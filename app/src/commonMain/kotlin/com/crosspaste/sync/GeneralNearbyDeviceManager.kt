@@ -58,18 +58,19 @@ class GeneralNearbyDeviceManager(
             syncManager.realTimeSyncRuntimeInfos,
             blackSyncInfos,
         ) { infosMap, syncRuntimeInfos, blackSyncInfos ->
-            val existAppInstanceIds =
-                syncRuntimeInfos
-                    .map { it.appInstanceId }
-                    .toSet()
+            val existSyncMap = syncRuntimeInfos.associateBy { info -> info.appInstanceId }
+
             infosMap.values
-                .filter { existAppInstanceIds.contains(it.appInfo.appInstanceId) }
                 .forEach { info ->
-                    syncManager.updateSyncInfo(info)
+                    existSyncMap[info.appInfo.appInstanceId]?.diffSyncInfo(info)?.let {
+                        if (it) {
+                            syncManager.updateSyncInfo(info)
+                        }
+                    }
                 }
             infosMap.values
                 .filter {
-                    !existAppInstanceIds.contains(it.appInfo.appInstanceId) &&
+                    !existSyncMap.contains(it.appInfo.appInstanceId) &&
                         !blackSyncInfos.contains(it.appInfo.appInstanceId) &&
                         !isSelf(it.appInfo.appInstanceId)
                 }.sortedBy { it.appInfo.appInstanceId }
