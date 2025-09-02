@@ -75,9 +75,8 @@ class GeneralSyncManager(
             }
         }
 
-        realTimeSyncScope.launch {
-            startCollectingSyncRuntimeInfosFlow()
-        }
+        startCollectingSyncRuntimeInfosFlow()
+
         startCollectingPasteDialog()
     }
 
