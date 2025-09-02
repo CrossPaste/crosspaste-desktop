@@ -22,7 +22,14 @@ class SyncRuntimeInfoDao(private val database: Database) {
         return syncRuntimeInfoDatabaseQueries.getAllSyncRuntimeInfos(SyncRuntimeInfo::mapper)
     }
 
+    private fun cleanUpdateNotifier() {
+        while (updateNotifier.tryReceive().isSuccess) {
+            // do nothing
+        }
+    }
+
     fun getAllSyncRuntimeInfosFlow(): Flow<List<SyncRuntimeInfo>> {
+        cleanUpdateNotifier()
         return flow {
             val currentMap = getAllSyncRuntimeInfos().associateBy { it.appInstanceId }.toMutableMap()
             emit(currentMap.values.toList())
