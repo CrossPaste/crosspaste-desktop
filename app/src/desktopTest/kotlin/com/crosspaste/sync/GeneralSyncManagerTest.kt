@@ -97,7 +97,6 @@ class GeneralSyncManagerTest {
         runTest {
             val mocks = createMocks()
             val testSyncRuntimeInfo = createTestSyncRuntimeInfo()
-            coEvery { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf(testSyncRuntimeInfo)
             every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
                 MutableStateFlow(listOf(testSyncRuntimeInfo))
 
@@ -110,8 +109,6 @@ class GeneralSyncManagerTest {
             syncManager.start() // Second call should be ignored
 
             advanceUntilIdle()
-
-            coVerify(exactly = 1) { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfos() }
 
             assertEquals(1, syncManager.getSyncHandlers().size)
         }
