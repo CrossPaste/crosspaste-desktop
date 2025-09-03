@@ -263,71 +263,114 @@ compose.desktop {
 
         if (os.isMacOsX || buildFullPlatform) {
             if (!buildFullPlatform) {
-                tasks.register<Exec>("compileSwift") {
-                    group = "build"
-                    description = "Compile Swift code and output the dylib to the build directory."
+                val compileSwiftTask =
+                    tasks.register<Exec>("compileSwift") {
+                        group = "build"
+                        description = "Compile Swift code and output the dylib to generated directory."
 
-                    val currentArch = System.getProperty("os.arch")
-                    val targetArch =
-                        when {
-                            currentArch.contains("arm") || currentArch.contains("aarch64") -> "arm64-apple-macos11"
-                            else -> "x86_64-apple-macos10.15"
+                        onlyIf {
+                            DefaultNativePlatform.getCurrentOperatingSystem().isMacOsX
                         }
 
-                    val archDir =
-                        when {
-                            currentArch.contains("arm") || currentArch.contains("aarch64") -> "darwin-aarch64"
-                            else -> "darwin-x86-64"
+                        val currentArch = System.getProperty("os.arch")
+                        val targetArch =
+                            when {
+                                currentArch.contains("arm") || currentArch.contains("aarch64") -> "arm64-apple-macos11"
+                                else -> "x86_64-apple-macos10.15"
+                            }
+
+                        val archDir =
+                            when {
+                                currentArch.contains("arm") || currentArch.contains("aarch64") -> "darwin-aarch64"
+                                else -> "darwin-x86-64"
+                            }
+
+                        val inputFile = layout.projectDirectory.file("src/desktopMain/swift/MacosApi.swift").asFile
+
+                        val outputDir =
+                            layout.buildDirectory
+                                .dir("generated/swift/$archDir")
+                                .get()
+                                .asFile
+                        val outputFile = File(outputDir, "libMacosApi.dylib")
+
+                        commandLine(
+                            "swiftc",
+                            "-emit-library",
+                            inputFile.absolutePath,
+                            "-target",
+                            targetArch,
+                            "-o",
+                            outputFile.absolutePath,
+                        )
+
+                        inputs.file(inputFile)
+                        outputs.file(outputFile)
+
+                        doFirst {
+                            outputDir.mkdirs()
                         }
+                    }
 
-                    val inputFile =
-                        layout.projectDirectory.file("src/desktopMain/swift/MacosApi.swift").asFile
+                tasks.named<ProcessResources>("desktopProcessResources") {
+                    dependsOn(compileSwiftTask)
 
-                    val outputFile =
-                        layout.buildDirectory
-                            .file("classes/kotlin/desktop/main/$archDir/libMacosApi.dylib")
-                            .get()
-                            .asFile
-
-                    commandLine(
-                        "swiftc",
-                        "-emit-library",
-                        inputFile.absolutePath,
-                        "-target",
-                        targetArch,
-                        "-o",
-                        outputFile.absolutePath,
-                    )
-
-                    inputs.file(inputFile)
-                    outputs.file(outputFile)
+                    from(
+                        compileSwiftTask.map {
+                            layout.buildDirectory.dir("generated/swift").get()
+                        },
+                    ) {
+                        include("**/*.dylib")
+                        into("")
+                    }
                 }
 
                 tasks.named("desktopJar") {
-                    dependsOn("compileSwift")
+                    dependsOn("desktopProcessResources")
                 }
+
                 tasks.named("desktopTest") {
-                    dependsOn("compileSwift")
+                    dependsOn("desktopProcessResources")
                 }
-                tasks.named("compileSwift") {
-                    dependsOn("ktlintCommonMainSourceSetCheck")
+
+                tasks.findByName("ktlintCommonMainSourceSetCheck")?.let {
+                    compileSwiftTask.configure {
+                        dependsOn(it)
+                    }
                 }
             } else {
                 // If it is to build the full platform
                 // then the GitHub action will prepare the dylibs files compiled under
                 // the Intel and ARM architectures to the dylib directory
-                tasks.register<Copy>("copyDylibs") {
-                    from("dylib/")
-                    into(layout.buildDirectory.file("classes/kotlin/desktop/main"))
+                val copyDylibsTask =
+                    tasks.register<Copy>("copyDylibs") {
+                        from("dylib/")
+                        into(layout.buildDirectory.dir("generated/swift"))
+
+                        doFirst {
+                            destinationDir.mkdirs()
+                        }
+                    }
+
+                tasks.named<ProcessResources>("desktopProcessResources") {
+                    dependsOn(copyDylibsTask)
+
+                    from(
+                        copyDylibsTask.map {
+                            layout.buildDirectory.dir("generated/swift").get()
+                        },
+                    ) {
+                        include("**/*.dylib")
+                        into("")
+                    }
                 }
-                tasks.named("copyDylibs") {
-                    dependsOn("desktopMainClasses")
-                }
+
                 tasks.named("desktopJar") {
-                    dependsOn("copyDylibs")
+                    dependsOn("desktopProcessResources")
                 }
+
                 tasks.named("desktopTest") {
-                    dependsOn("copyDylibs")
+                    dependsOn("desktopProcessResources")
                 }
             }
         }
@@ -466,6 +509,21 @@ tasks.withType<Test> {
         "--add-opens",
         "java.base/java.lang.reflect=ALL-UNNAMED",
     )
+}
+
+afterEvaluate {
+    tasks.withType<ComposeHotRun>().configureEach {
+        val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
+        if (os.isMacOsX) {
+            tasks.findByName("compileSwift")?.let {
+                dependsOn(it)
+            }
+        }
+    }
+
+    tasks.findByName("desktopRun")?.apply {
+        dependsOn("desktopProcessResources")
+    }
 }
 
 // region Work around temporary Compose bugs.
