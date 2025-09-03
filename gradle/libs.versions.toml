@@ -1,4 +1,5 @@
 [versions]
+atomicfu = "0.29.0"
 coil = "3.3.0"
 compose = "1.9.0"
 compose-material3 = "1.3.2"
@@ -118,6 +119,7 @@ io-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 [plugins]
+atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-hot-reload = { id = "org.jetbrains.compose.hot-reload", version.ref = "hot-reload" }
 conveyor = { id = "dev.hydraulic.conveyor", version.ref = "conveyor" }
