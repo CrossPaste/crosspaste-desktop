@@ -1,8 +1,7 @@
 package com.crosspaste.utils
 
 import java.nio.ByteBuffer
-
-actual typealias ByteOrder = java.nio.ByteOrder
+import java.nio.ByteOrder
 
 @OptIn(ExperimentalUnsignedTypes::class)
 actual fun ByteArray.asULongArray(): ULongArray {

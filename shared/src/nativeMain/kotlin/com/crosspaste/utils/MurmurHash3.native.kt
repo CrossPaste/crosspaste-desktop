@@ -15,7 +15,7 @@ import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.posix.memcpy
 
-actual class ByteOrder {
+class ByteOrder {
     companion object {
         val BIG_ENDIAN: ByteOrder = ByteOrder()
         val LITTLE_ENDIAN: ByteOrder = ByteOrder()

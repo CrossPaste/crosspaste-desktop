@@ -2,8 +2,6 @@ package com.crosspaste.utils
 
 import kotlin.math.min
 
-expect class ByteOrder
-
 @OptIn(ExperimentalUnsignedTypes::class)
 expect fun ByteArray.asULongArray(): ULongArray
 
