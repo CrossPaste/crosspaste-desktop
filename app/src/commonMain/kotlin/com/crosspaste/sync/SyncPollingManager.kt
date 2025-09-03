@@ -2,11 +2,15 @@ package com.crosspaste.sync
 
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
 
@@ -24,42 +28,42 @@ class SyncPollingManager(
 
     private val logger = KotlinLogging.logger {}
 
-    @Volatile
-    private var nextExecutionTime: Long = 0L
+    private val nextExecutionTime = atomic(0L)
+    private val failTimeRef = atomic(0)
+    private val stateVersionRef = atomic(0)
 
-    @Volatile
-    private var failTime = 0
+    private val stateMutex = Mutex()
 
-    // Version number to track state changes
-    @Volatile
-    private var stateVersion = 0
-
-    fun reset() {
-        failTime = 0
-        stateVersion++
-        // Update next execution time immediately
-        updateNextExecutionTime()
+    suspend fun reset() {
+        stateMutex.withLock {
+            failTimeRef.value = 0
+            stateVersionRef.update { it + 1 }
+            // Update next execution time immediately
+            updateNextExecutionTimeInternal()
+        }
     }
 
-    fun fail() {
-        failTime++
-        stateVersion++
-        // Recalculate time immediately on failure
-        updateNextExecutionTime()
+    suspend fun fail() {
+        stateMutex.withLock {
+            failTimeRef.update { it + 1 }
+            stateVersionRef.update { it + 1 }
+            // Recalculate time immediately on failure
+            updateNextExecutionTimeInternal()
+        }
     }
 
-    private fun updateNextExecutionTime() {
+    private fun updateNextExecutionTimeInternal() {
+        val currentFailTime = failTimeRef.value
         val delayTime =
-            if (failTime > 0) {
-                val power = min(MAX_RETRY_POWER, failTime)
+            if (currentFailTime > 0) {
+                val power = min(MAX_RETRY_POWER, currentFailTime)
                 RETRY_BASE_DELAY + min(RETRY_BASE_DELAY * (1L shl power), DEFAULT_POLL_INTERVAL)
             } else {
                 DEFAULT_POLL_INTERVAL
             }
 
         val newTime = nowEpochMilliseconds() + delayTime
-
-        nextExecutionTime = newTime
+        nextExecutionTime.value = newTime
     }
 
     fun startPollingResolve(action: suspend () -> Unit): Job =
@@ -77,16 +81,21 @@ class SyncPollingManager(
         }
 
     private suspend fun waitForNextExecution() {
-        if (nextExecutionTime <= nowEpochMilliseconds()) {
-            updateNextExecutionTime()
+        val currentNextExecution = nextExecutionTime.value
+        if (currentNextExecution <= nowEpochMilliseconds()) {
+            stateMutex.withLock {
+                if (nextExecutionTime.value <= nowEpochMilliseconds()) {
+                    updateNextExecutionTimeInternal()
+                }
+            }
         }
 
-        while (nextExecutionTime > nowEpochMilliseconds()) {
+        while (nextExecutionTime.value > nowEpochMilliseconds()) {
             // Use shorter check intervals to respond to state changes
             val waitTime =
                 min(
                     CHECK_INTERVAL,
-                    nextExecutionTime - nowEpochMilliseconds(),
+                    nextExecutionTime.value - nowEpochMilliseconds(),
                 )
             if (waitTime > 0) {
                 delay(waitTime)

@@ -23,6 +23,7 @@ group = "com.crosspaste"
 version = versionProperties.getProperty("version")
 
 plugins {
+    alias(libs.plugins.atomicfu)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.compose.hot.reload)
     alias(libs.plugins.conveyor)
