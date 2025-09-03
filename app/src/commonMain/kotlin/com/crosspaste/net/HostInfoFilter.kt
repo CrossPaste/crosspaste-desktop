@@ -1,8 +1,7 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
-import java.net.InetAddress
-import java.nio.ByteBuffer
+import io.ktor.network.sockets.InetSocketAddress
 
 interface HostInfoFilter {
 
@@ -23,33 +22,45 @@ class HostInfoFilterImpl(
     val networkPrefixLength: Short,
 ) : HostInfoFilter {
 
-    override fun filter(hostInfo: HostInfo): Boolean =
-        networkPrefixLength == hostInfo.networkPrefixLength &&
-            hostPreFixMatch(hostAddress, hostInfo.hostAddress, networkPrefixLength)
+    private val selfBytes: ByteArray? by lazy { resolveIpBytes(hostAddress) }
+    private val selfMaxBits: Int by lazy { (selfBytes?.size ?: 0) * 8 }
 
-    private fun hostPreFixMatch(
-        host1: String,
-        host2: String,
-        prefixLength: Short,
+    override fun filter(hostInfo: HostInfo): Boolean {
+        val otherBytes = resolveIpBytes(hostInfo.hostAddress) ?: return false
+        val self = selfBytes ?: return false
+        if (self.size != otherBytes.size) return false
+
+        val maxBits = selfMaxBits
+        val plen = networkPrefixLength.toInt().coerceIn(0, maxBits)
+
+        return compareWithMask(self, otherBytes, plen)
+    }
+
+    private fun resolveIpBytes(host: String): ByteArray? =
+        try {
+            InetSocketAddress(host, 0).resolveAddress()
+        } catch (_: Throwable) {
+            null
+        }
+
+    private fun compareWithMask(
+        a: ByteArray,
+        b: ByteArray,
+        prefixLength: Int,
     ): Boolean {
-        // Convert host IP addresses to InetAddress objects
-        val inetAddress1 = InetAddress.getByName(host1)
-        val inetAddress2 = InetAddress.getByName(host2)
+        if (a.size != b.size) return false
+        val fullBytes = prefixLength / 8
+        val remainBits = prefixLength % 8
 
-        // Convert InetAddress to byte arrays
-        val bytes1 = inetAddress1.address
-        val bytes2 = inetAddress2.address
+        for (i in 0 until fullBytes) {
+            if (a[i] != b[i]) return false
+        }
+        if (remainBits == 0) return true
 
-        // Calculate subnet mask from prefixLength, ensuring it doesn't exceed 32 bits
-        val maskLength = if (prefixLength > 32) 32 else prefixLength.toInt()
-        val mask = -0x1 shl (32 - maskLength)
-
-        // Convert byte arrays to integers and apply the subnet mask
-        val addr1 = ByteBuffer.wrap(bytes1).int and mask
-        val addr2 = ByteBuffer.wrap(bytes2).int and mask
-
-        // Compare the masked addresses to check if they are in the same subnet
-        return addr1 == addr2
+        val mask = (0xFF shl (8 - remainBits)) and 0xFF
+        val aa = a[fullBytes].toInt() and 0xFF
+        val bb = b[fullBytes].toInt() and 0xFF
+        return (aa and mask) == (bb and mask)
     }
 
     override fun equals(other: Any?): Boolean {
