@@ -1,18 +1,24 @@
 package com.crosspaste.app
 
+import com.crosspaste.ui.Pasteboard
 import com.crosspaste.ui.ScreenContext
 import com.crosspaste.ui.ScreenType
 import com.crosspaste.utils.mainDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-interface AppWindowManager {
+abstract class AppWindowManager {
 
-    val screenContext: StateFlow<ScreenContext>
+    private val _screenContext = MutableStateFlow(ScreenContext(Pasteboard))
 
-    val showMainDialog: StateFlow<Boolean>
+    val screenContext: StateFlow<ScreenContext> = _screenContext
+
+    private val _showMainDialog = MutableStateFlow(false)
+
+    val showMainDialog: StateFlow<Boolean> = _showMainDialog
 
     fun doLongTaskInMain(
         scope: CoroutineScope,
@@ -30,16 +36,26 @@ interface AppWindowManager {
         }
     }
 
-    suspend fun toPaste()
+    abstract suspend fun toPaste()
 
-    fun setScreen(screenContext: ScreenContext)
+    fun returnScreen() {
+        setScreen(screenContext.value.returnNext())
+    }
 
-    fun returnScreen()
+    fun setScreen(screenContext: ScreenContext) {
+        _screenContext.value = screenContext
+    }
 
     fun toScreen(
         screenType: ScreenType,
         context: Any = Unit,
-    )
-
-    fun updateScreenContext(context: Any)
+    ) {
+        setScreen(
+            if (context == Unit) {
+                ScreenContext(screenType, _screenContext.value)
+            } else {
+                ScreenContext(screenType, _screenContext.value, context)
+            },
+        )
+    }
 }
