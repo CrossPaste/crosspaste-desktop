@@ -8,9 +8,6 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.Pasteboard
-import com.crosspaste.ui.ScreenContext
-import com.crosspaste.ui.ScreenType
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -19,7 +16,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
@@ -56,7 +52,7 @@ fun getDesktopAppWindowManager(
 abstract class DesktopAppWindowManager(
     val appSize: DesktopAppSize,
     val configManager: DesktopConfigManager,
-) : AppWindowManager {
+) : AppWindowManager() {
 
     companion object {
         private const val MAIN_WINDOW_TITLE: String = "CrossPaste"
@@ -75,9 +71,6 @@ abstract class DesktopAppWindowManager(
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val _screenContext = MutableStateFlow(ScreenContext(Pasteboard))
-    override val screenContext: StateFlow<ScreenContext> = _screenContext.asStateFlow()
-
     private val _showMainWindow = MutableStateFlow(false)
     val showMainWindow: StateFlow<Boolean> = _showMainWindow
 
@@ -85,9 +78,6 @@ abstract class DesktopAppWindowManager(
     val alwaysOnTopMainWindow: StateFlow<Boolean> = _alwaysOnTopMainWindow
 
     var mainComposeWindow: ComposeWindow? = null
-
-    private val _showMainDialog = MutableStateFlow(false)
-    override val showMainDialog: StateFlow<Boolean> = _showMainDialog
 
     private val _showSearchWindow = MutableStateFlow(false)
     var showSearchWindow: StateFlow<Boolean> = _showSearchWindow
@@ -153,34 +143,4 @@ abstract class DesktopAppWindowManager(
     abstract suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 
     abstract fun getPrevAppName(): Flow<String?>
-
-    override fun returnScreen() {
-        _screenContext.value = screenContext.value.returnNext()
-    }
-
-    override fun setScreen(screenContext: ScreenContext) {
-        _screenContext.value = screenContext
-    }
-
-    override fun toScreen(
-        screenType: ScreenType,
-        context: Any,
-    ) {
-        _screenContext.value =
-            if (context == Unit) {
-                ScreenContext(screenType, _screenContext.value)
-            } else {
-                ScreenContext(screenType, _screenContext.value, context)
-            }
-    }
-
-    override fun updateScreenContext(context: Any) {
-        val oldScreen = _screenContext.value
-        _screenContext.value =
-            ScreenContext(
-                oldScreen.screenType,
-                oldScreen.nextScreenContext,
-                context,
-            )
-    }
 }
