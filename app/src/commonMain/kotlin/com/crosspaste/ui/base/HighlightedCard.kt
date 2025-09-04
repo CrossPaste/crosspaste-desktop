@@ -18,7 +18,7 @@ fun HighlightedCard(
     shape: RoundedCornerShape,
     colors: CardColors = CardDefaults.cardColors(),
     elevation: CardElevation = highlightedCardElevation,
-    border: BorderStroke =
+    border: BorderStroke? =
         BorderStroke(
             width = tiny6X,
             color = AppUIColors.lightBorderColor,
