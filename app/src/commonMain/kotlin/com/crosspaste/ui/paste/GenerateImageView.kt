@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.FixedScale
@@ -53,11 +54,8 @@ fun GenerateImageView(
         contentScale = FixedScale(density.density / renderingHelper.scale.toFloat()),
         contentDescription = "generate Image to preview",
         content = {
-            when (
-                this.painter.state
-                    .collectAsState()
-                    .value
-            ) {
+            val state by this.painter.state.collectAsState()
+            when (state) {
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,
                 -> {
