@@ -87,7 +87,7 @@ fun PasteDataScope.ImageSidePreviewView() {
                             contentScale = displayResult.contentScale,
                             alignment = displayResult.alignment,
                             content = {
-                                val state = painter.state.collectAsState().value
+                                val state by painter.state.collectAsState()
                                 when (state) {
                                     is AsyncImagePainter.State.Loading -> {
                                         Row(
