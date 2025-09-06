@@ -2,15 +2,15 @@ package com.crosspaste.paste.item
 
 interface PasteColor {
 
-    val color: Long
+    val color: Int
 
-    fun getRed(): Int = ((color shr 16) and 0xFF).toInt()
+    fun getRed(): Int = ((color shr 16) and 0xFF)
 
-    fun getGreen(): Int = ((color shr 8) and 0xFF).toInt()
+    fun getGreen(): Int = ((color shr 8) and 0xFF)
 
-    fun getBlue(): Int = (color and 0xFF).toInt()
+    fun getBlue(): Int = (color and 0xFF)
 
-    fun getAlpha(): Int = ((color shr 24) and 0xFF).toInt()
+    fun getAlpha(): Int = ((color shr 24) and 0xFF)
 
     fun toHexString(): String =
         buildString {

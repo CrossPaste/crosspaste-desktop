@@ -16,7 +16,7 @@ class ColorPasteItem(
     override val identifiers: List<String>,
     override val hash: String,
     override val size: Long,
-    override val color: Long,
+    override val color: Int,
     override val extraInfo: JsonObject? = null,
 ) : PasteItem,
     PasteColor {
@@ -25,7 +25,7 @@ class ColorPasteItem(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
-        color = jsonObject["color"]!!.jsonPrimitive.content.toLong(),
+        color = jsonObject["color"]!!.jsonPrimitive.content.toInt(),
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
@@ -39,7 +39,7 @@ class ColorPasteItem(
         data: Any,
         hash: String,
     ): PasteItem =
-        (data as? Long)?.let { color ->
+        (data as? Int)?.let { color ->
             ColorPasteItem(
                 identifiers = identifiers,
                 hash = hash,
