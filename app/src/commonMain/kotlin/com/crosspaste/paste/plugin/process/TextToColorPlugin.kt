@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.process
 
+import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
@@ -17,13 +18,13 @@ object TextToColorPlugin : PasteProcessPlugin {
     ): List<PasteItem> {
         if (pasteItems.all { it !is ColorPasteItem }) {
             pasteItems.filterIsInstance<TextPasteItem>().firstOrNull()?.let {
-                colorUtils.tryCovertToColor(it.text)?.let { color ->
+                colorUtils.toColor(it.text)?.let { color ->
                     return pasteItems +
                         ColorPasteItem(
                             identifiers = it.identifiers,
-                            hash = color.toString(),
+                            hash = color.toArgb().toString(),
                             size = 8L,
-                            color = color,
+                            color = color.toArgb(),
                         )
                 }
             }

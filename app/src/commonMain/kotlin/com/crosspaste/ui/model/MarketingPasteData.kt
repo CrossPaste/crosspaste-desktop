@@ -1,5 +1,6 @@
 package com.crosspaste.ui.model
 
+import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.app.AppFileType
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteCollection
@@ -17,7 +18,7 @@ import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform.Companion.MACOS
 import com.crosspaste.presist.FileInfoTree
-import com.crosspaste.utils.ColorUtils.tryCovertToColor
+import com.crosspaste.utils.ColorUtils.parseHexColor
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
@@ -45,9 +46,9 @@ open class MarketingPasteData(
                 pasteAppearItem =
                     ColorPasteItem(
                         identifiers = listOf(),
-                        color = tryCovertToColor(colorHex)!!,
+                        color = parseHexColor(colorHex)!!.toArgb(),
                         size = colorBytes.size.toLong(),
-                        hash = codecsUtils.hash(colorBytes),
+                        hash = parseHexColor(colorHex)!!.toArgb().toString(),
                     ),
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.COLOR_TYPE.type,
