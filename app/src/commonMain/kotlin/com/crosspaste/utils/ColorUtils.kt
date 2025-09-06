@@ -413,10 +413,10 @@ object ColorUtils {
             }
             4 -> {
                 // #RGBA -> #RRGGBBAA
-                val r = cleanHex[0].toString().repeat(2).toIntOrNull(16) ?: return null
-                val g = cleanHex[1].toString().repeat(2).toIntOrNull(16) ?: return null
-                val b = cleanHex[2].toString().repeat(2).toIntOrNull(16) ?: return null
-                val a = cleanHex[3].toString().repeat(2).toIntOrNull(16) ?: return null
+                val a = cleanHex[0].toString().repeat(2).toIntOrNull(16) ?: return null
+                val r = cleanHex[1].toString().repeat(2).toIntOrNull(16) ?: return null
+                val g = cleanHex[2].toString().repeat(2).toIntOrNull(16) ?: return null
+                val b = cleanHex[3].toString().repeat(2).toIntOrNull(16) ?: return null
                 Color(r, g, b, a)
             }
             6 -> {
@@ -427,11 +427,11 @@ object ColorUtils {
                 Color(r, g, b)
             }
             8 -> {
-                // #RRGGBBAA
-                val r = cleanHex.take(2).toIntOrNull(16) ?: return null
-                val g = cleanHex.substring(2, 4).toIntOrNull(16) ?: return null
-                val b = cleanHex.substring(4, 6).toIntOrNull(16) ?: return null
-                val a = cleanHex.substring(6, 8).toIntOrNull(16) ?: return null
+                // #AARRGGBB
+                val a = cleanHex.take(2).toIntOrNull(16) ?: return null
+                val r = cleanHex.substring(2, 4).toIntOrNull(16) ?: return null
+                val g = cleanHex.substring(4, 6).toIntOrNull(16) ?: return null
+                val b = cleanHex.substring(6, 8).toIntOrNull(16) ?: return null
                 Color(r, g, b, a)
             }
             else -> null

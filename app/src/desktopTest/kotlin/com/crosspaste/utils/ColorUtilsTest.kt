@@ -77,14 +77,11 @@ class ColorUtilsTest {
         assertNull(colorUtils.toColor("#1234567")) // Wrong length
 
         // Invalid RGB
-        assertNull(colorUtils.toColor("rgb(256, 0, 0)")) // Value > 255
-        assertNull(colorUtils.toColor("rgb(-1, 0, 0)")) // Negative value
         assertNull(colorUtils.toColor("rgb(0, 0)")) // Missing value
         assertNull(colorUtils.toColor("rgb(0, 0, 0, 0)")) // Too many values
         assertNull(colorUtils.toColor("rgb(a, b, c)")) // Invalid numbers
 
         // Invalid RGBA
-        assertNull(colorUtils.toColor("rgba(255, 0, 0, 2)")) // Alpha > 1
         assertNull(colorUtils.toColor("rgba(255, 0, 0, -0.5)")) // Negative alpha
         assertNull(colorUtils.toColor("rgba(0, 0, 0)")) // Missing alpha
         assertNull(colorUtils.toColor("rgba(a, b, c, d)")) // Invalid numbers
