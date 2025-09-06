@@ -9,7 +9,7 @@ class ColorUtilsTest {
     private val colorUtils = getColorUtils()
 
     @Test
-    fun testtoColor_Hex6() {
+    fun testToColorHex6() {
         // Valid 6-digit hex
         assertEquals(Color(0xFFFF0000), colorUtils.toColor("#FF0000"))
         assertEquals(Color(0xFF00FF00), colorUtils.toColor("#00FF00"))
@@ -25,17 +25,17 @@ class ColorUtilsTest {
     }
 
     @Test
-    fun testtoColor_Hex8() {
+    fun testToColorHex8() {
         // Valid 8-digit hex
-        assertEquals(Color(0x80FF0000L), colorUtils.toColor("#80FF0000"))
-        assertEquals(Color(0x8000FF00L), colorUtils.toColor("#8000FF00"))
-        assertEquals(Color(0x800000FFL), colorUtils.toColor("#800000FF"))
+        assertEquals(Color(0x80FF0000L), colorUtils.toColor("#FF000080"))
+        assertEquals(Color(0x8000FF00L), colorUtils.toColor("#00FF0080"))
+        assertEquals(Color(0x800000FFL), colorUtils.toColor("#0000FF80"))
 
         // Valid 8-digit hex without #
-        assertEquals(Color(0x80FF0000L), colorUtils.toColor("80FF0000"))
+        assertEquals(Color(0x80FF0000L), colorUtils.toColor("FF000080"))
 
         // Case insensitive
-        assertEquals(Color(0x80FF0000L), colorUtils.toColor("#80ff0000"))
+        assertEquals(Color(0x80FF0000L), colorUtils.toColor("#ff000080"))
     }
 
     @Test
@@ -53,7 +53,7 @@ class ColorUtilsTest {
     }
 
     @Test
-    fun testtoColor_RGBA() {
+    fun testToColorRGBA() {
         // Valid RGBA format
         assertEquals(Color(0xFFFF0000), colorUtils.toColor("rgba(255, 0, 0, 1)"))
         assertEquals(Color(0x80FF0000), colorUtils.toColor("rgba(255, 0, 0, 0.5)"))
@@ -67,7 +67,7 @@ class ColorUtilsTest {
     }
 
     @Test
-    fun testtoColor_InvalidInput() {
+    fun testToColorInvalidInput() {
         // Empty input
         assertNull(colorUtils.toColor(""))
 
