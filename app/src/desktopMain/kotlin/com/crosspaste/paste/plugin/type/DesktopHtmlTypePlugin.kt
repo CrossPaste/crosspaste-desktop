@@ -1,17 +1,23 @@
 package com.crosspaste.paste.plugin.type
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
+import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.html.HTMLCodec
 import com.crosspaste.plugin.office.OfficeHtmlPlugin
+import com.crosspaste.utils.HtmlColorUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getHtmlUtils
+import kotlinx.serialization.json.put
 import java.awt.datatransfer.DataFlavor
 
 class DesktopHtmlTypePlugin(
@@ -60,6 +66,7 @@ class DesktopHtmlTypePlugin(
     ) {
         if (transferData is String) {
             val html = extractHtml(transferData)
+            val background = HtmlColorUtils.getBackgroundColor(html) ?: Color.Transparent
             val htmlBytes = html.encodeToByteArray()
             val hash = codecsUtils.hash(htmlBytes)
             val size = htmlBytes.size.toLong()
@@ -69,7 +76,13 @@ class DesktopHtmlTypePlugin(
                     hash = hash,
                     size = size,
                     html = html,
-                    extraInfo = pasteItem.extraInfo,
+                    extraInfo =
+                        updateExtraInfo(
+                            pasteItem.extraInfo,
+                            update = {
+                                put(BACKGROUND, background.toArgb())
+                            },
+                        ),
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)

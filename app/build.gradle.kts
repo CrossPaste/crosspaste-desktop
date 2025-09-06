@@ -115,6 +115,7 @@ kotlin {
             implementation(libs.lifecycle.viewmodel.compose)
             implementation(libs.material.desktop)
             implementation(libs.okio)
+            implementation(libs.richeditor)
             implementation(libs.semver)
             implementation(libs.sqldelight.coroutines.extensions)
         }
@@ -141,8 +142,7 @@ kotlin {
             implementation(libs.jnativehook)
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.classic)
-            implementation(libs.selenium.chrome.driver)
-            implementation(libs.selenium.devtools)
+            implementation(libs.ph.css)
             implementation(libs.sqlite.driver)
             implementation(libs.system.tray)
             implementation("com.github.Dansoftowner:jSystemThemeDetector:3.9.1") {
