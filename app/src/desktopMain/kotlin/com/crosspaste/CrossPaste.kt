@@ -132,9 +132,6 @@ class CrossPaste {
                         val jobs =
                             listOf(
                                 async(ioDispatcher) {
-                                    koin.get<RenderingService<String>>(named("htmlRendering")).start()
-                                },
-                                async(ioDispatcher) {
                                     koin.get<RenderingService<String>>(named("rtfRendering")).start()
                                 },
                                 async(ioDispatcher) {
@@ -185,12 +182,6 @@ class CrossPaste {
                         },
                         async {
                             stopService<TaskExecutor>("TaskExecutor") { it.shutdown() }
-                        },
-                        async {
-                            stopService<RenderingService<String>>(
-                                qualifier = named("htmlRendering"),
-                                serviceName = "RenderingService",
-                            ) { it.stop() }
                         },
                         async {
                             stopService<RenderingService<String>>(
