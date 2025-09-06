@@ -102,10 +102,7 @@ fun SingleImagePreviewView(
             contentDescription = "imageType",
             content = {
                 val context = this
-                val state =
-                    context.painter.state
-                        .collectAsState()
-                        .value
+                val state by context.painter.state.collectAsState()
                 Row {
                     Box(
                         modifier =

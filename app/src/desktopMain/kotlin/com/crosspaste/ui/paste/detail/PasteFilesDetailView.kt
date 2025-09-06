@@ -154,11 +154,8 @@ fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
                             imageLoader = imageLoaders.fileExtImageLoader,
                             contentDescription = "fileType",
                             content = {
-                                when (
-                                    this.painter.state
-                                        .collectAsState()
-                                        .value
-                                ) {
+                                val state by this.painter.state.collectAsState()
+                                when (state) {
                                     is AsyncImagePainter.State.Loading,
                                     is AsyncImagePainter.State.Error,
                                     -> {

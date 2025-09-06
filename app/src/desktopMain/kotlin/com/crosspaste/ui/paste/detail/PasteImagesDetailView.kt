@@ -175,7 +175,7 @@ fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
                                 contentDescription = "imageType",
                                 contentScale = ContentScale.Crop,
                                 content = {
-                                    val state = painter.state.collectAsState().value
+                                    val state by painter.state.collectAsState()
                                     when (state) {
                                         is AsyncImagePainter.State.Loading -> {
                                             Row(
