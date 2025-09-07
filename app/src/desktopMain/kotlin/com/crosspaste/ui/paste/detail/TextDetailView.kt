@@ -4,6 +4,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -14,22 +16,23 @@ import com.crosspaste.info.PasteInfos.DATE
 import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
-import com.crosspaste.paste.item.UrlPasteItem
-import com.crosspaste.ui.base.UISupport
+import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.AppUIFont.pasteUrlStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.DesktopAppUIFont.detailPasteTextStyle
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
+fun PasteDataScope.TextDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val uiSupport = koinInject<UISupport>()
     val fileUtils = getFileUtils()
-    val urlPasteItem = getPasteItem(UrlPasteItem::class)
-    val url = urlPasteItem.url
+
+    val textPasteItem = getPasteItem(TextPasteItem::class)
+    val text = textPasteItem.text
+    val pasteItem = textPasteItem as PasteItem
 
     PasteDetailView(
         detailView = {
@@ -39,9 +42,6 @@ fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
                         .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
-                                onTap = {
-                                    uiSupport.openUrlInBrowser(urlPasteItem.url)
-                                },
                                 onDoubleTap = {
                                     onDoubleClick()
                                 },
@@ -49,10 +49,13 @@ fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
                         }.padding(small3X),
             ) {
                 Text(
-                    text = url,
-                    modifier = Modifier.fillMaxSize(),
+                    text = text,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
                     overflow = TextOverflow.Ellipsis,
-                    style = pasteUrlStyle,
+                    style = detailPasteTextStyle,
                 )
             }
         },
@@ -60,8 +63,8 @@ fun PasteDataScope.PasteUrlDetailView(onDoubleClick: () -> Unit) {
             PasteDetailInfoView(
                 items =
                     listOf(
-                        PasteDetailInfoItem(TYPE, copywriter.getText("link")),
-                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(urlPasteItem.size)),
+                        PasteDetailInfoItem(TYPE, copywriter.getText("text")),
+                        PasteDetailInfoItem(SIZE, fileUtils.formatBytes(pasteItem.size)),
                         PasteDetailInfoItem(REMOTE, copywriter.getText(if (pasteData.remote) "yes" else "no")),
                         PasteDetailInfoItem(
                             DATE,

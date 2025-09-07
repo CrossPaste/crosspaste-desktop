@@ -1,44 +1,68 @@
 package com.crosspaste.ui.paste.preview
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.PasteText
-import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.paste.GenerateImageView
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.ThemeDetector
+import com.crosspaste.utils.getColorUtils
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichText
 import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.HtmlPreviewView() {
     getPasteItem(HtmlPasteItem::class).let { htmlPasteItem ->
-        val userDataPathProvider = koinInject<UserDataPathProvider>()
+        val themeDetector = koinInject<ThemeDetector>()
 
-        val filePath by remember(pasteData.id) {
-            mutableStateOf(
-                htmlPasteItem.getRenderingFilePath(
-                    pasteData.getPasteCoordinate(),
-                    userDataPathProvider,
-                ),
-            )
+        val colorUtils = getColorUtils()
+
+        val backgroundColorValue by remember(pasteData.id) {
+            mutableStateOf(htmlPasteItem.getBackgroundColor())
         }
 
-        val previewText =
-            pasteData.getPasteItem(PasteText::class)?.previewText()
-                ?: htmlPasteItem.getText()
+        val backgroundColor =
+            backgroundColorValue?.let {
+                val color = Color(it)
+                if (color == Color.Transparent) {
+                    MaterialTheme.colorScheme.background
+                } else {
+                    color
+                }
+            } ?: MaterialTheme.colorScheme.background
+        val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
+        val richTextColor =
+            if (isDark == themeDetector.isCurrentThemeDark()) {
+                MaterialTheme.colorScheme.onBackground
+            } else {
+                MaterialTheme.colorScheme.background
+            }
 
         SimplePreviewContentView {
-            GenerateImageView(
-                modifier = Modifier.fillMaxSize(),
-                imagePath = filePath,
-                text = previewText,
-                preview = true,
-                alignment = Alignment.TopStart,
+            val state = rememberRichTextState()
+
+            LaunchedEffect(htmlPasteItem.html) {
+                state.setHtml(htmlPasteItem.html)
+            }
+
+            RichText(
+                color = richTextColor,
+                state = state,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(backgroundColor)
+                        .padding(tiny),
             )
         }
     }

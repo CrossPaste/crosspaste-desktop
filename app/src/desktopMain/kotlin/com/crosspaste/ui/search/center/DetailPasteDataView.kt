@@ -8,13 +8,13 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.PasteType
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.createPasteDataScope
-import com.crosspaste.ui.paste.detail.HtmlToImageDetailView
-import com.crosspaste.ui.paste.detail.PasteColorDetailView
-import com.crosspaste.ui.paste.detail.PasteFilesDetailView
-import com.crosspaste.ui.paste.detail.PasteImagesDetailView
-import com.crosspaste.ui.paste.detail.PasteTextDetailView
-import com.crosspaste.ui.paste.detail.PasteUrlDetailView
-import com.crosspaste.ui.paste.detail.RtfToImageDetailView
+import com.crosspaste.ui.paste.detail.ColorDetailView
+import com.crosspaste.ui.paste.detail.FilesDetailView
+import com.crosspaste.ui.paste.detail.HtmlDetailView
+import com.crosspaste.ui.paste.detail.ImagesDetailView
+import com.crosspaste.ui.paste.detail.RtfDetailView
+import com.crosspaste.ui.paste.detail.TextDetailView
+import com.crosspaste.ui.paste.detail.UrlDetailView
 import org.koin.compose.koinInject
 
 @Composable
@@ -38,25 +38,25 @@ fun DetailPasteDataView() {
 
             when (pasteData.getType()) {
                 PasteType.TEXT_TYPE -> {
-                    scope.PasteTextDetailView(onDoubleClick)
+                    scope.TextDetailView(onDoubleClick)
                 }
                 PasteType.COLOR_TYPE -> {
-                    scope.PasteColorDetailView(onDoubleClick)
+                    scope.ColorDetailView(onDoubleClick)
                 }
                 PasteType.URL_TYPE -> {
-                    scope.PasteUrlDetailView(onDoubleClick)
+                    scope.UrlDetailView(onDoubleClick)
                 }
                 PasteType.HTML_TYPE -> {
-                    scope.HtmlToImageDetailView(onDoubleClick)
+                    scope.HtmlDetailView(onDoubleClick)
                 }
                 PasteType.RTF_TYPE -> {
-                    scope.RtfToImageDetailView(onDoubleClick)
+                    scope.RtfDetailView(onDoubleClick)
                 }
                 PasteType.IMAGE_TYPE -> {
-                    scope.PasteImagesDetailView(onDoubleClick)
+                    scope.ImagesDetailView(onDoubleClick)
                 }
                 PasteType.FILE_TYPE -> {
-                    scope.PasteFilesDetailView(onDoubleClick)
+                    scope.FilesDetailView(onDoubleClick)
                 }
                 else -> {
                 }

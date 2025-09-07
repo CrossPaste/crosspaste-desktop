@@ -66,7 +66,7 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PasteDataScope.PasteFilesDetailView(onDoubleClick: () -> Unit) {
+fun PasteDataScope.FilesDetailView(onDoubleClick: () -> Unit) {
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val filesPasteItem = getPasteItem(FilesPasteItem::class)

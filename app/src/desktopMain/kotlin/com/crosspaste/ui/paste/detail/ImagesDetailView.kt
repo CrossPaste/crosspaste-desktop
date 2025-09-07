@@ -85,7 +85,7 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PasteDataScope.PasteImagesDetailView(onDoubleClick: () -> Unit) {
+fun PasteDataScope.ImagesDetailView(onDoubleClick: () -> Unit) {
     val imagesPasteItem = getPasteItem(ImagesPasteItem::class)
     if (imagesPasteItem.count > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
