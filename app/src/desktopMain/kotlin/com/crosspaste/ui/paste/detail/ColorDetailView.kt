@@ -29,7 +29,7 @@ import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteDataScope.PasteColorDetailView(onDoubleClick: () -> Unit) {
+fun PasteDataScope.ColorDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val fileUtils = getFileUtils()
 
