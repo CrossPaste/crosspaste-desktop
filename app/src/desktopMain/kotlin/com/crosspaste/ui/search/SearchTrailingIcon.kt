@@ -182,7 +182,7 @@ fun SearchTrailingIcon() {
                                 textStyle = textStyle,
                                 paddingValues = paddingValues,
                             ) {
-                                pasteSearchViewModel.setPasteType(null)
+                                pasteSearchViewModel.updatePasteType(null)
                                 currentType = null
                                 showTypes = false
                             }
@@ -197,7 +197,7 @@ fun SearchTrailingIcon() {
                                     paddingValues = paddingValues,
                                     background = MaterialTheme.colorScheme.surfaceBright,
                                 ) {
-                                    pasteSearchViewModel.setPasteType(pasteType.type)
+                                    pasteSearchViewModel.updatePasteType(pasteType.type)
                                     currentType = pasteType
                                     showTypes = false
                                 }

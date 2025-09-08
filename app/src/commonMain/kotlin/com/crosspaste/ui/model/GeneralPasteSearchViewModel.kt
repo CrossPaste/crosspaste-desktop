@@ -27,7 +27,7 @@ class GeneralPasteSearchViewModel(
         searchParams
             .distinctUntilChanged()
             .flatMapLatest { params ->
-                logger.info { "to searchPasteDataFlow" }
+                logger.info { "to searchPasteDataFlow $params" }
                 pasteDao
                     .searchPasteDataFlow(
                         searchTerms = params.searchTerms,
@@ -36,6 +36,7 @@ class GeneralPasteSearchViewModel(
                         pasteType = params.pasteType,
                         limit = params.limit,
                     ).map { pasteDataList ->
+                        updateAllSearchSize(pasteDataList.size)
                         pasteDataList.filter { it.isValid() }
                     }
             }.stateIn(
