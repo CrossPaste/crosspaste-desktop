@@ -78,8 +78,6 @@ object ColorUtils {
             "^$PREFIX_HSLA\\s*\\(\\s*$PATTERN_PART_VALUE\\s*,\\s*$PATTERN_PART_PERCENTAGE\\s*,\\s*$PATTERN_PART_PERCENTAGE\\s*,\\s*$PATTERN_PART_OPACITY\\s*\\)$",
         )
 
-    private val PATTERN_HEX = Regex("^$PREFIX_HEX([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
-
     fun toColor(value: String): Color? {
         parseHexColor(value)?.let { color -> return color }
 
@@ -138,16 +136,6 @@ object ColorUtils {
         val realValue = value.trim()
         return realValue.startsWith(PREFIX_HSLA) &&
             PATTERN_HSLA.matches(realValue)
-    }
-
-    /**
-     * Check if the passed String is valid CSS hex color value.
-     * Example value: #ff0000
-     */
-    fun isHexColorValue(value: String): Boolean {
-        val realValue = value.trim()
-        return realValue[0] == PREFIX_HEX &&
-            PATTERN_HEX.matches(realValue)
     }
 
     private fun mod(
@@ -526,7 +514,7 @@ object ColorUtils {
                 else -> baseSaturation
             }
 
-        return hslToColor(targetHue, adjustedSaturation, adjustedLightness)
+        return hslToColor(targetHue / 360f, adjustedSaturation / 100f, adjustedLightness / 100f)
     }
 
     fun rgbToHsv(
