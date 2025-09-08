@@ -28,6 +28,9 @@ abstract class PasteSearchViewModel : ViewModel() {
 
     private val _searchLimit = MutableStateFlow(QUERY_BATCH_SIZE)
 
+    // Includes invalid paste data
+    private val _allSearchSize = MutableStateFlow(0)
+
     abstract val convertTerm: (String) -> List<String>
 
     @OptIn(FlowPreview::class)
@@ -64,24 +67,27 @@ abstract class PasteSearchViewModel : ViewModel() {
         _searchSort.value = !_searchSort.value
     }
 
-    fun setPasteType(pasteType: Int?) {
+    fun updatePasteType(pasteType: Int?) {
         _searchPasteType.value = pasteType
     }
 
-    fun tryAddLimit(): Boolean {
-        val currentResults = searchResults.value
-        return if (_searchLimit.value == currentResults.size) {
+    fun updateAllSearchSize(size: Int) {
+        _allSearchSize.value = size
+    }
+
+    fun tryAddLimit(): Boolean =
+        if (_searchLimit.value == _allSearchSize.value) {
             _searchLimit.value += QUERY_BATCH_SIZE
             true
         } else {
             false
         }
-    }
 
     fun resetSearch() {
         _inputSearch.value = ""
         _searchFavorite.value = false
         _searchSort.value = true
         _searchLimit.value = QUERY_BATCH_SIZE
+        _allSearchSize.value = 0
     }
 }
