@@ -1,54 +1,74 @@
 package com.crosspaste.ui.paste.side.preview
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.RtfPasteItem
-import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.paste.GenerateImageView
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.ThemeDetector
+import com.crosspaste.utils.getColorUtils
+import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.ui.material3.RichText
 import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.RtfSidePreviewView() {
-    getPasteItem(RtfPasteItem::class).let { rtfPasteItem ->
-        val copywriter = koinInject<GlobalCopywriter>()
-        val text = rtfPasteItem.getText()
-        SidePasteLayoutView(
-            pasteBottomContent = {
-                BottomGradient(
-                    text = copywriter.getText("character_count", "${text.length}"),
-                )
-            },
-        ) {
-            val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val themeDetector = koinInject<ThemeDetector>()
+    val rtfPasteItem = getPasteItem(RtfPasteItem::class)
 
-            val filePath by remember(pasteData.id) {
-                mutableStateOf(
-                    rtfPasteItem.getRenderingFilePath(
-                        pasteData.getPasteCoordinate(),
-                        userDataPathProvider,
-                    ),
-                )
-            }
+    val colorUtils = getColorUtils()
 
-            val previewText =
-                pasteData.getPasteItem(PasteText::class)?.previewText()
-                    ?: text
+    val backgroundColor by remember(pasteData.id) {
+        mutableStateOf(Color(rtfPasteItem.getBackgroundColor()))
+    }
 
-            GenerateImageView(
-                modifier = Modifier.fillMaxSize(),
-                imagePath = filePath,
-                text = previewText,
-                preview = false,
-                alignment = Alignment.TopStart,
-            )
+    val rtfBackground =
+        if (backgroundColor == Color.Transparent) {
+            MaterialTheme.colorScheme.background
+        } else {
+            backgroundColor
         }
+    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
+    val richTextColor =
+        if (isDark == themeDetector.isCurrentThemeDark()) {
+            MaterialTheme.colorScheme.onBackground
+        } else {
+            MaterialTheme.colorScheme.background
+        }
+
+    SidePasteLayoutView(
+        pasteBottomContent = {
+            BottomGradient(
+                text = copywriter.getText("character_count", "${rtfPasteItem.getText().length}"),
+                backgroundColor = rtfBackground,
+            )
+        },
+    ) {
+        val state = rememberRichTextState()
+
+        LaunchedEffect(rtfPasteItem.getHtml()) {
+            state.setHtml(rtfPasteItem.getHtml())
+        }
+
+        RichText(
+            color = richTextColor,
+            state = state,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(rtfBackground)
+                    .padding(small2X),
+        )
     }
 }

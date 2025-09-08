@@ -15,16 +15,17 @@ object HtmlUtils {
         return "data:text/html;charset=UTF-8;base64,$encodedContent"
     }
 
-    fun getHtmlText(html: String): String {
-        val jsoupDoc: Document = Ksoup.parse(html)
-        val outputSettings = Document.OutputSettings()
-        outputSettings.prettyPrint(false)
-        jsoupDoc.outputSettings(outputSettings)
-        jsoupDoc.select("br").before("\\n")
-        jsoupDoc.select("p").before("\\n")
-        val str = jsoupDoc.html().replace("\\\\n".toRegex(), "\n")
-        return Ksoup.clean(str, Safelist.none(), "", outputSettings)
-    }
+    fun getHtmlText(html: String): String? =
+        runCatching {
+            val ksoupDoc: Document = Ksoup.parse(html)
+            val outputSettings = Document.OutputSettings()
+            outputSettings.prettyPrint(false)
+            ksoupDoc.outputSettings(outputSettings)
+            ksoupDoc.select("br").before("\\n")
+            ksoupDoc.select("p").before("\\n")
+            val str = ksoupDoc.html().replace("\\\\n".toRegex(), "\n")
+            return Ksoup.clean(str, Safelist.none(), "", outputSettings)
+        }.getOrNull()
 
     fun ensureHtmlCharsetUtf8(html: String): String =
         runCatching {

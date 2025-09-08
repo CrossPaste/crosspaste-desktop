@@ -13,7 +13,7 @@ import com.crosspaste.paste.item.PasteText
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUIFont.previewAutoSize
-import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
 import org.koin.compose.koinInject
 
 @Composable
@@ -25,7 +25,7 @@ fun PasteDataScope.TextSidePreviewView() {
                 BottomGradient(copywriter.getText("character_count", "${pasteText.text.length}"))
             },
         ) {
-            Box(modifier = Modifier.fillMaxSize().padding(medium)) {
+            Box(modifier = Modifier.fillMaxSize().padding(small2X)) {
                 BasicText(
                     modifier = Modifier.fillMaxSize(),
                     text = AnnotatedString(pasteText.previewText()),

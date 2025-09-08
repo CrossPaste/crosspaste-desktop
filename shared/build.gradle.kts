@@ -50,6 +50,7 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.uuid)
+            implementation(libs.kotlin.logging)
             implementation(libs.ksoup)
             implementation(libs.ktor.io)
             implementation(libs.okio)

@@ -22,48 +22,44 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.HtmlPreviewView() {
-    getPasteItem(HtmlPasteItem::class).let { htmlPasteItem ->
-        val themeDetector = koinInject<ThemeDetector>()
+    val themeDetector = koinInject<ThemeDetector>()
+    val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
 
-        val colorUtils = getColorUtils()
+    val colorUtils = getColorUtils()
 
-        val backgroundColorValue by remember(pasteData.id) {
-            mutableStateOf(htmlPasteItem.getBackgroundColor())
+    val backgroundColor by remember(pasteData.id) {
+        mutableStateOf(Color(htmlPasteItem.getBackgroundColor()))
+    }
+
+    val htmlBackground =
+        if (backgroundColor == Color.Transparent) {
+            MaterialTheme.colorScheme.background
+        } else {
+            backgroundColor
+        }
+    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
+    val richTextColor =
+        if (isDark == themeDetector.isCurrentThemeDark()) {
+            MaterialTheme.colorScheme.onBackground
+        } else {
+            MaterialTheme.colorScheme.background
         }
 
-        val backgroundColor =
-            backgroundColorValue?.let {
-                val color = Color(it)
-                if (color == Color.Transparent) {
-                    MaterialTheme.colorScheme.background
-                } else {
-                    color
-                }
-            } ?: MaterialTheme.colorScheme.background
-        val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
-        val richTextColor =
-            if (isDark == themeDetector.isCurrentThemeDark()) {
-                MaterialTheme.colorScheme.onBackground
-            } else {
-                MaterialTheme.colorScheme.background
-            }
+    SimplePreviewContentView {
+        val state = rememberRichTextState()
 
-        SimplePreviewContentView {
-            val state = rememberRichTextState()
-
-            LaunchedEffect(htmlPasteItem.html) {
-                state.setHtml(htmlPasteItem.html)
-            }
-
-            RichText(
-                color = richTextColor,
-                state = state,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                        .padding(tiny),
-            )
+        LaunchedEffect(htmlPasteItem.html) {
+            state.setHtml(htmlPasteItem.html)
         }
+
+        RichText(
+            color = richTextColor,
+            state = state,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(htmlBackground)
+                    .padding(tiny),
+        )
     }
 }

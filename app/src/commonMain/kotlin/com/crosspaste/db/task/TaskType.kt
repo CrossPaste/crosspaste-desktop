@@ -8,8 +8,11 @@ object TaskType {
     const val PULL_FILE_TASK = 2
     const val CLEAN_PASTE_TASK = 3
     @Deprecated("not used anymore")
+    @Suppress("unused")
     const val HTML_TO_IMAGE_TASK = 4
     const val PULL_ICON_TASK = 5
+    @Deprecated("not used anymore")
+    @Suppress("unused")
     const val RTF_TO_IMAGE_TASK = 6
     const val CLEAN_TASK_TASK = 7
     const val SWITCH_LANGUAGE_TASK = 8

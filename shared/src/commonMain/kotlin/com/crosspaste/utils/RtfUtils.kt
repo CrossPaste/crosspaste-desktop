@@ -4,5 +4,7 @@ expect fun getRtfUtils(): RtfUtils
 
 interface RtfUtils {
 
-    fun getRtfText(rtf: String): String
+    fun getText(rtf: String): String?
+
+    fun rtfToHtml(rtf: String): String?
 }

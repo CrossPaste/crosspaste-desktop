@@ -1,13 +1,20 @@
 package com.crosspaste.paste.plugin.type
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
+import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
+import com.crosspaste.utils.HtmlColorUtils
 import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.getRtfUtils
+import kotlinx.serialization.json.put
 import java.awt.datatransfer.DataFlavor
 import java.io.InputStream
 
@@ -23,6 +30,7 @@ class DesktopRtfTypePlugin : RtfTypePlugin {
             )
 
         private val codecsUtils = getCodecsUtils()
+        private val rtfUtils = getRtfUtils()
     }
 
     override fun getPasteType(): PasteType = PasteType.RTF_TYPE
@@ -59,13 +67,21 @@ class DesktopRtfTypePlugin : RtfTypePlugin {
             val hash = codecsUtils.hash(rtfBytes)
             val size = rtfBytes.size.toLong()
             val rtf = rtfBytes.toString(Charsets.UTF_8)
+            val html = rtfUtils.rtfToHtml(rtf) ?: return
+            val background = HtmlColorUtils.getBackgroundColor(html) ?: Color.Transparent
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 RtfPasteItem(
                     identifiers = pasteItem.identifiers,
                     hash = hash,
                     size = size,
                     rtf = rtf,
-                    extraInfo = pasteItem.extraInfo,
+                    extraInfo =
+                        updateExtraInfo(
+                            pasteItem.extraInfo,
+                            update = {
+                                put(BACKGROUND, background.toArgb())
+                            },
+                        ),
                 )
             }
             pasteCollector.updateCollectItem(itemIndex, this::class, update)
