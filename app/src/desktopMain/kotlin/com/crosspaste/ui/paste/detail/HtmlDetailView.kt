@@ -36,27 +36,24 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteDataScope.HtmlDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val uiSupport = koinInject<UISupport>()
     val themeDetector = koinInject<ThemeDetector>()
+    val uiSupport = koinInject<UISupport>()
 
     val colorUtils = getColorUtils()
     val fileUtils = getFileUtils()
 
     val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
 
-    val backgroundColorValue by remember(pasteData.id) {
-        mutableStateOf(htmlPasteItem.getBackgroundColor())
+    val backgroundColor by remember(pasteData.id) {
+        mutableStateOf(Color(htmlPasteItem.getBackgroundColor()))
     }
 
-    val backgroundColor =
-        backgroundColorValue?.let {
-            val color = Color(it)
-            if (color == Color.Transparent) {
-                MaterialTheme.colorScheme.background
-            } else {
-                color
-            }
-        } ?: MaterialTheme.colorScheme.background
+    val htmlBackground =
+        if (backgroundColor == Color.Transparent) {
+            MaterialTheme.colorScheme.background
+        } else {
+            backgroundColor
+        }
     val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
     val richTextColor =
         if (isDark == themeDetector.isCurrentThemeDark()) {
@@ -84,7 +81,7 @@ fun PasteDataScope.HtmlDetailView(onDoubleClick: () -> Unit) {
                         .fillMaxSize()
                         .horizontalScroll(horizontalScrollState)
                         .verticalScroll(verticalScrollState)
-                        .background(backgroundColor)
+                        .background(htmlBackground)
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {

@@ -158,7 +158,6 @@ import com.crosspaste.presist.FilePersist
 import com.crosspaste.recommend.DesktopRecommendationService
 import com.crosspaste.recommend.RecommendationService
 import com.crosspaste.rendering.DesktopRenderingHelper
-import com.crosspaste.rendering.DesktopRtfRenderingService
 import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingHelper
 import com.crosspaste.rendering.RenderingService
@@ -184,7 +183,6 @@ import com.crosspaste.task.DeletePasteTaskExecutor
 import com.crosspaste.task.OpenGraphTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
-import com.crosspaste.task.Rtf2ImageTaskExecutor
 import com.crosspaste.task.SwitchLanguageTaskExecutor
 import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
@@ -431,9 +429,6 @@ class DesktopModule(
             single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
             single<RenderingHelper> { DesktopRenderingHelper(get()) }
-            single<RenderingService<String>>(named("rtfRendering")) {
-                DesktopRtfRenderingService(get(), get(), get(), get())
-            }
             single<RenderingService<String>>(named("urlRendering")) {
                 OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
             }
@@ -461,10 +456,6 @@ class DesktopModule(
                         ),
                         PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                         PullIconTaskExecutor(get(), get(), get(), get()),
-                        Rtf2ImageTaskExecutor(
-                            lazy { get<RenderingService<String>>(named("rtfRendering")) },
-                            get(),
-                        ),
                         SwitchLanguageTaskExecutor(get(), get()),
                         SyncPasteTaskExecutor(get(), get(), get(), get()),
                     ),

@@ -490,9 +490,7 @@ class PasteDao(
     }
 
     private fun addRenderingTask(id: Long, pasteType: PasteType, addTask: (Long) -> Unit) {
-        if (pasteType.isRtf()) {
-            addTask(taskDao.createTask(id, TaskType.RTF_TO_IMAGE_TASK))
-        } else if (pasteType.isUrl()) {
+        if (pasteType.isUrl()) {
             addTask(taskDao.createTask(id, TaskType.OPEN_GRAPH_TASK))
         }
     }

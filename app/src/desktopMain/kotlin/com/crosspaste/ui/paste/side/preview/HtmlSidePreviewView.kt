@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.getColorUtils
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
@@ -23,52 +23,51 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.HtmlSidePreviewView() {
-    val colorUtils = getColorUtils()
-    getPasteItem(HtmlPasteItem::class).let { htmlPasteItem ->
-        val copywriter = koinInject<GlobalCopywriter>()
-        val themeDetector = koinInject<ThemeDetector>()
-        val text = htmlPasteItem.getText()
-        val backgroundColorValue by remember(pasteData.id) {
-            mutableStateOf(htmlPasteItem.getBackgroundColor())
-        }
-        val backgroundColor =
-            backgroundColorValue?.let {
-                val color = Color(it)
-                if (color == Color.Transparent) {
-                    MaterialTheme.colorScheme.background
-                } else {
-                    color
-                }
-            } ?: MaterialTheme.colorScheme.background
-        val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
-        val richTextColor =
-            if (isDark == themeDetector.isCurrentThemeDark()) {
-                MaterialTheme.colorScheme.onBackground
-            } else {
-                MaterialTheme.colorScheme.background
-            }
-        SidePasteLayoutView(
-            pasteBottomContent = {
-                BottomGradient(
-                    text = copywriter.getText("character_count", "${text.length}"),
-                    backgroundColor = backgroundColor,
-                )
-            },
-        ) {
-            val state = rememberRichTextState()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val themeDetector = koinInject<ThemeDetector>()
+    val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
 
-            LaunchedEffect(htmlPasteItem.html) {
-                state.setHtml(htmlPasteItem.html)
-            }
-            RichText(
-                color = richTextColor,
-                state = state,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                        .padding(tiny),
-            )
+    val colorUtils = getColorUtils()
+
+    val backgroundColor by remember(pasteData.id) {
+        mutableStateOf(Color(htmlPasteItem.getBackgroundColor()))
+    }
+
+    val htmlBackground =
+        if (backgroundColor == Color.Transparent) {
+            MaterialTheme.colorScheme.background
+        } else {
+            backgroundColor
         }
+    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
+    val richTextColor =
+        if (isDark == themeDetector.isCurrentThemeDark()) {
+            MaterialTheme.colorScheme.onBackground
+        } else {
+            MaterialTheme.colorScheme.background
+        }
+
+    SidePasteLayoutView(
+        pasteBottomContent = {
+            BottomGradient(
+                text = copywriter.getText("character_count", "${htmlPasteItem.getText().length}"),
+                backgroundColor = htmlBackground,
+            )
+        },
+    ) {
+        val state = rememberRichTextState()
+
+        LaunchedEffect(htmlPasteItem.html) {
+            state.setHtml(htmlPasteItem.html)
+        }
+        RichText(
+            color = richTextColor,
+            state = state,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(htmlBackground)
+                    .padding(small2X),
+        )
     }
 }

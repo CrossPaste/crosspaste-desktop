@@ -32,14 +32,14 @@ class HtmlPasteItem(
 
     companion object {
         val fileUtils = getFileUtils()
-        val jsonUtils = getJsonUtils()
         val htmlUtils = getHtmlUtils()
+        val jsonUtils = getJsonUtils()
 
         const val HTML2IMAGE = "html2Image.png"
     }
 
     private val htmlTextCache by lazy {
-        htmlUtils.getHtmlText(html)
+        htmlUtils.getHtmlText(html) ?: ""
     }
 
     constructor(jsonObject: JsonObject) : this(
@@ -50,12 +50,14 @@ class HtmlPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getBackgroundColor(): Int? =
+    override fun getText(): String = htmlTextCache
+
+    override fun getBackgroundColor(): Int =
         extraInfo?.let { json ->
             runCatching {
                 json[BACKGROUND]?.jsonPrimitive?.int
             }.getOrNull()
-        }
+        } ?: 0
 
     override fun bind(pasteCoordinate: PasteCoordinate): HtmlPasteItem =
         HtmlPasteItem(
@@ -68,16 +70,15 @@ class HtmlPasteItem(
 
     override fun getPasteType(): PasteType = PasteType.HTML_TYPE
 
-    override fun getSearchContent(): String = htmlTextCache.lowercase()
+    override fun getSearchContent(): String = getText()
 
-    override fun getSummary(): String = htmlTextCache
+    override fun getSummary(): String = getText()
 
     override fun update(
         data: Any,
         hash: String,
     ): PasteItem =
         (data as? String)?.let { html ->
-            // todo update html image
             HtmlPasteItem(
                 identifiers = identifiers,
                 hash = hash,
@@ -119,7 +120,8 @@ class HtmlPasteItem(
     override fun isValid(): Boolean =
         hash.isNotEmpty() &&
             size > 0 &&
-            html.isNotEmpty()
+            html.isNotEmpty() &&
+            htmlTextCache.isNotEmpty()
 
     override fun toJson(): String =
         buildJsonObject {

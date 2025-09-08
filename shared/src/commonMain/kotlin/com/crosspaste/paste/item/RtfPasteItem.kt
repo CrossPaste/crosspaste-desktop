@@ -3,6 +3,7 @@ package com.crosspaste.paste.item
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.RtfPasteItemSerializer
 import com.crosspaste.utils.getFileUtils
@@ -11,6 +12,7 @@ import com.crosspaste.utils.getRtfUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
@@ -37,7 +39,11 @@ class RtfPasteItem(
     }
 
     private val rtfTextCache by lazy {
-        rtfUtils.getRtfText(rtf)
+        rtfUtils.getText(rtf) ?: ""
+    }
+
+    private val rtfHtmlCache by lazy {
+        rtfUtils.rtfToHtml(rtf) ?: ""
     }
 
     constructor(jsonObject: JsonObject) : this(
@@ -47,6 +53,17 @@ class RtfPasteItem(
         rtf = jsonObject["rtf"]!!.jsonPrimitive.content,
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
+
+    override fun getText(): String = rtfTextCache
+
+    override fun getHtml(): String = rtfHtmlCache
+
+    override fun getBackgroundColor(): Int =
+        extraInfo?.let { json ->
+            runCatching {
+                json[BACKGROUND]?.jsonPrimitive?.int
+            }.getOrNull()
+        } ?: 0
 
     override fun bind(pasteCoordinate: PasteCoordinate): RtfPasteItem =
         RtfPasteItem(
@@ -110,7 +127,9 @@ class RtfPasteItem(
     override fun isValid(): Boolean =
         hash.isNotEmpty() &&
             size > 0 &&
-            rtf.isNotEmpty()
+            rtf.isNotEmpty() &&
+            rtfTextCache.isNotEmpty() &&
+            rtfHtmlCache.isNotEmpty()
 
     override fun toJson(): String =
         buildJsonObject {
