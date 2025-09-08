@@ -44,8 +44,6 @@ abstract class PasteSearchViewModel : ViewModel() {
         ) { inputSearch, favorite, sort, pasteType, limit ->
             val searchTerms = convertTerm(inputSearch)
 
-            println("Search Params: $searchTerms, $favorite, $sort, $pasteType, $limit")
-
             SearchParams(
                 searchTerms = searchTerms,
                 favorite = favorite,
