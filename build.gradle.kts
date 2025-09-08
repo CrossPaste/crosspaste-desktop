@@ -8,3 +8,17 @@ plugins {
     alias(libs.plugins.kotlinSerialization) apply false
     alias(libs.plugins.sqlDelight) apply false
 }
+
+allprojects {
+    configurations.configureEach {
+        resolutionStrategy {
+            componentSelection {
+                all {
+                    if (candidate.version.contains("dev", ignoreCase = true)) {
+                        reject("Skip dev builds")
+                    }
+                }
+            }
+        }
+    }
+}
