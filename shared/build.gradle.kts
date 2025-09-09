@@ -61,5 +61,9 @@ kotlin {
                 implementation(libs.cryptography.provider.jdk)
             }
         }
+
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
     }
 }
