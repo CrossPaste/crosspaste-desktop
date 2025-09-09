@@ -84,13 +84,12 @@ class PasteImportService(
 
             fileUtils.readByLines(pasteDataFile) { line ->
                 count++
-                runCatching {
-                    val pasteData = readPasteData(line)
+                readPasteData(line)?.let { pasteData ->
                     if (importPasteData(basePath, count, pasteData)) {
                         updateProgress(count.toFloat() / importCount.toFloat())
                     }
-                }.onFailure { e ->
-                    logger.error(e) { "Error importing paste data, index = $count" }
+                } ?: run {
+                    logger.error { "Error parsing paste data, index = $count" }
                     failCount++
                 }
             }
@@ -177,7 +176,7 @@ class PasteImportService(
         }
     }
 
-    private fun readPasteData(line: String): PasteData {
+    private fun readPasteData(line: String): PasteData? {
         val json = codecsUtils.base64Decode(line).decodeToString()
         return PasteData.fromJson(json)
     }

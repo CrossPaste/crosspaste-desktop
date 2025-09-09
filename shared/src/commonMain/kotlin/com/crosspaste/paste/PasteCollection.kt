@@ -22,7 +22,7 @@ data class PasteCollection(
         fun fromJson(json: String): PasteCollection {
             val jsonArray = jsonUtils.JSON.parseToJsonElement(json).jsonArray
             return PasteCollection(
-                jsonArray.map {
+                jsonArray.mapNotNull {
                     PasteItem.fromJson(it.jsonPrimitive.content)
                 },
             )

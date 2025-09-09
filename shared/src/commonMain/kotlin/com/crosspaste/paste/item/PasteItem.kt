@@ -4,6 +4,7 @@ import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteItemProperties.MARKETING_PATH
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getJsonUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -18,9 +19,11 @@ sealed interface PasteItem {
 
     companion object {
 
+        private val logger = KotlinLogging.logger { }
+
         private val jsonUtils = getJsonUtils()
 
-        fun fromJson(json: String): PasteItem {
+        fun fromJson(json: String): PasteItem? {
             val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
             jsonObject["type"]!!.jsonPrimitive.content.toInt().let {
                 return when (it) {
@@ -31,7 +34,10 @@ sealed interface PasteItem {
                     PasteType.RTF_TYPE.type -> RtfPasteItem(jsonObject)
                     PasteType.TEXT_TYPE.type -> TextPasteItem(jsonObject)
                     PasteType.URL_TYPE.type -> UrlPasteItem(jsonObject)
-                    else -> throw IllegalArgumentException("Unknown paste type: $it")
+                    else -> {
+                        logger.warn { "Unsupported PasteItem type $it" }
+                        null
+                    }
                 }
             }
         }
