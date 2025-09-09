@@ -607,4 +607,81 @@ object ColorUtils {
 
         return "RGBA($red, $green, $blue, $alphaFormatted)"
     }
+
+    /**
+     * Get the best text color
+     * Not only considers luminance, but also hue differences,
+     * ensuring readability on any background
+     */
+    fun Color.getBestTextColor(): Color {
+        val bgLuminance = this.luminance()
+
+        // Basic decision: choose black or white based on background luminance
+        val baseTextColor =
+            if (bgLuminance > 0.5f) {
+                Color.Black
+            } else {
+                Color.White
+            }
+
+        // For medium luminance backgrounds (0.4–0.6), extra handling is needed
+        if (bgLuminance in 0.4f..0.6f) {
+            // Calculate contrast with black and white
+            val contrastWithBlack = calculateContrast(this, Color.Black)
+            val contrastWithWhite = calculateContrast(this, Color.White)
+
+            // WCAG AA requires a contrast ratio of at least 4.5:1
+            val minContrast = 4.5f
+
+            return when {
+                contrastWithBlack >= minContrast && contrastWithWhite >= minContrast -> {
+                    // Both satisfy, choose the higher contrast
+                    if (contrastWithBlack > contrastWithWhite) Color.Black else Color.White
+                }
+                contrastWithBlack >= minContrast -> Color.Black
+                contrastWithWhite >= minContrast -> Color.White
+                else -> {
+                    // If neither satisfies, try enhancing the contrast
+                    getEnhancedContrastColor()
+                }
+            }
+        }
+
+        return baseTextColor
+    }
+
+    /**
+     * Enhanced contrast color
+     * When pure black or white is not ideal, generate
+     * a slightly shaded or outlined alternative
+     */
+    private fun Color.getEnhancedContrastColor(): Color {
+        val luminance = this.luminance()
+
+        // For medium luminance, slightly adjusting the shade improves readability
+        return if (luminance > 0.5f) {
+            // Dark gray instead of pure black
+            Color(0xFF1A1A1A)
+        } else {
+            // Light gray-white instead of pure white
+            Color(0xFFF5F5F5)
+        }
+    }
+
+    /**
+     * Calculate the contrast ratio between two colors
+     * Based on WCAG 2.0 standard
+     */
+    private fun calculateContrast(
+        color1: Color,
+        color2: Color,
+    ): Float {
+        val lum1 = color1.luminance()
+        val lum2 = color2.luminance()
+
+        val brightest = max(lum1, lum2)
+        val darkest = min(lum1, lum2)
+
+        return (brightest + 0.05f) / (darkest + 0.05f)
+    }
 }

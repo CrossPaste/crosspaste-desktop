@@ -11,8 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.DesktopAppUIColors
-import com.crosspaste.utils.ColorUtils
+import com.crosspaste.utils.ColorUtils.getBestTextColor
 
 @Composable
 fun PasteDataScope.ColorSidePreviewView() {
@@ -31,12 +30,7 @@ fun PasteDataScope.ColorSidePreviewView() {
                     text = pasteColor.toHexString(),
                     style =
                         MaterialTheme.typography.headlineSmall.copy(
-                            color =
-                                if (ColorUtils.isDarkColor(Color(pasteColor.color))) {
-                                    DesktopAppUIColors.sideOnDarkColor
-                                } else {
-                                    DesktopAppUIColors.sideOnLightColor
-                                },
+                            color = Color(pasteColor.color).getBestTextColor(),
                         ),
                 )
             }
