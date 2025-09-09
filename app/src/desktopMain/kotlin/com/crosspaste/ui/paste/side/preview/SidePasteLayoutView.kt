@@ -38,9 +38,9 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny4X
-import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.ui.theme.ThemeDetector
+import com.crosspaste.utils.ColorUtils.getBestTextColor
 import com.crosspaste.utils.DateUtils
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
@@ -95,7 +95,7 @@ fun PasteDataScope.SidePasteTitleView() {
     }
 
     val onBackground by remember(background) {
-        mutableStateOf(DesktopAppUIColors.getSideTitleColor(background))
+        mutableStateOf(background.getBestTextColor())
     }
 
     var relativeTime by remember(pasteData.id) {
