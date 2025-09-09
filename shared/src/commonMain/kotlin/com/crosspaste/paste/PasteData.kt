@@ -13,6 +13,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.boolean
@@ -47,27 +48,32 @@ data class PasteData(
 
     companion object {
 
+        private val logger = KotlinLogging.logger { }
+
         private val jsonUtils = getJsonUtils()
 
-        fun fromJson(json: String): PasteData {
-            val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
-            return PasteData(
-                appInstanceId = jsonObject["appInstanceId"]!!.jsonPrimitive.content,
-                favorite = jsonObject["favorite"]!!.jsonPrimitive.boolean,
-                pasteAppearItem =
-                    jsonObject["pasteAppearItem"]?.let {
-                        PasteItem.fromJson(it.jsonPrimitive.content)
-                    },
-                pasteCollection =
-                    PasteCollection.fromJson(
-                        jsonObject["pasteCollection"]!!.jsonPrimitive.content,
-                    ),
-                pasteType = jsonObject["pasteType"]!!.jsonPrimitive.long.toInt(),
-                source = jsonObject["source"]?.jsonPrimitive?.content,
-                size = jsonObject["size"]!!.jsonPrimitive.long,
-                hash = jsonObject["hash"]!!.jsonPrimitive.content,
-            )
-        }
+        fun fromJson(json: String): PasteData? =
+            runCatching {
+                val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
+                PasteData(
+                    appInstanceId = jsonObject["appInstanceId"]!!.jsonPrimitive.content,
+                    favorite = jsonObject["favorite"]!!.jsonPrimitive.boolean,
+                    pasteAppearItem =
+                        jsonObject["pasteAppearItem"]?.let {
+                            PasteItem.fromJson(it.jsonPrimitive.content)
+                        },
+                    pasteCollection =
+                        PasteCollection.fromJson(
+                            jsonObject["pasteCollection"]!!.jsonPrimitive.content,
+                        ),
+                    pasteType = jsonObject["pasteType"]!!.jsonPrimitive.long.toInt(),
+                    source = jsonObject["source"]?.jsonPrimitive?.content,
+                    size = jsonObject["size"]!!.jsonPrimitive.long,
+                    hash = jsonObject["hash"]!!.jsonPrimitive.content,
+                )
+            }.onFailure { e ->
+                logger.error(e) { "Error while parsing PasteData" }
+            }.getOrNull()
 
         fun mapper(
             id: Long,
