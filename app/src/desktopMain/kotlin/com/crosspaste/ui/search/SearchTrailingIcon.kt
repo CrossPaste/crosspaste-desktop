@@ -63,11 +63,7 @@ fun SearchTrailingIcon() {
 
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
 
-    val searchSort by pasteSearchViewModel.searchSort.collectAsState()
-
-    val searchFavorite by pasteSearchViewModel.searchFavorite.collectAsState()
-
-    val searchPasteType by pasteSearchViewModel.searchPasteType.collectAsState()
+    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
 
     val density = LocalDensity.current
 
@@ -99,7 +95,7 @@ fun SearchTrailingIcon() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PasteTooltipIconView(
-            painter = if (searchSort) descSort() else ascSort(),
+            painter = if (searchBaseParams.sort) descSort() else ascSort(),
             contentDescription = "Sort by creation time",
             tint = MaterialTheme.colorScheme.primary,
             text = copywriter.getText("sort_by_creation_time"),
@@ -108,7 +104,7 @@ fun SearchTrailingIcon() {
         }
 
         PasteTooltipIconView(
-            painter = if (searchFavorite) favorite() else noFavorite(),
+            painter = if (searchBaseParams.favorite) favorite() else noFavorite(),
             contentDescription = "Favorite",
             tint = MaterialTheme.colorScheme.primary,
             text = copywriter.getText("whether_to_search_only_favorites"),
@@ -176,7 +172,7 @@ fun SearchTrailingIcon() {
                                 .clip(tiny2XRoundedCornerShape)
                                 .background(MaterialTheme.colorScheme.surfaceBright),
                     ) {
-                        if (searchPasteType != null) {
+                        if (searchBaseParams.pasteType != null) {
                             MenuItemView(
                                 text = copywriter.getText("all_types"),
                                 textStyle = textStyle,

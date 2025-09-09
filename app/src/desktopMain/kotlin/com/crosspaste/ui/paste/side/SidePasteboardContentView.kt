@@ -80,11 +80,7 @@ fun SidePasteboardContentView() {
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
-    val searchFavorite by pasteSearchViewModel.searchFavorite.collectAsState()
-
-    val searchSort by pasteSearchViewModel.searchSort.collectAsState()
-
-    val searchPasteType by pasteSearchViewModel.searchPasteType.collectAsState()
+    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
 
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
@@ -98,7 +94,13 @@ fun SidePasteboardContentView() {
 
     var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
 
-    LaunchedEffect(showSearchWindow, inputSearch, searchFavorite, searchSort, searchPasteType) {
+    LaunchedEffect(
+        showSearchWindow,
+        inputSearch,
+        searchBaseParams.favorite,
+        searchBaseParams.sort,
+        searchBaseParams.pasteType,
+    ) {
         if (showSearchWindow) {
             pasteSelectionViewModel.initSelectIndex()
             delay(32)
