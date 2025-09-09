@@ -23,24 +23,27 @@ sealed interface PasteItem {
 
         private val jsonUtils = getJsonUtils()
 
-        fun fromJson(json: String): PasteItem? {
-            val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
-            jsonObject["type"]!!.jsonPrimitive.content.toInt().let {
-                return when (it) {
-                    PasteType.COLOR_TYPE.type -> ColorPasteItem(jsonObject)
-                    PasteType.FILE_TYPE.type -> FilesPasteItem(jsonObject)
-                    PasteType.HTML_TYPE.type -> HtmlPasteItem(jsonObject)
-                    PasteType.IMAGE_TYPE.type -> ImagesPasteItem(jsonObject)
-                    PasteType.RTF_TYPE.type -> RtfPasteItem(jsonObject)
-                    PasteType.TEXT_TYPE.type -> TextPasteItem(jsonObject)
-                    PasteType.URL_TYPE.type -> UrlPasteItem(jsonObject)
-                    else -> {
-                        logger.warn { "Unsupported PasteItem type $it" }
-                        null
+        fun fromJson(json: String): PasteItem? =
+            runCatching {
+                val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
+                jsonObject["type"]!!.jsonPrimitive.content.toInt().let {
+                    when (it) {
+                        PasteType.COLOR_TYPE.type -> ColorPasteItem(jsonObject)
+                        PasteType.FILE_TYPE.type -> FilesPasteItem(jsonObject)
+                        PasteType.HTML_TYPE.type -> HtmlPasteItem(jsonObject)
+                        PasteType.IMAGE_TYPE.type -> ImagesPasteItem(jsonObject)
+                        PasteType.RTF_TYPE.type -> RtfPasteItem(jsonObject)
+                        PasteType.TEXT_TYPE.type -> TextPasteItem(jsonObject)
+                        PasteType.URL_TYPE.type -> UrlPasteItem(jsonObject)
+                        else -> {
+                            logger.warn { "Unsupported PasteItem type $it" }
+                            null
+                        }
                     }
                 }
-            }
-        }
+            }.onFailure { e ->
+                logger.error(e) { "Failed to parse PasteItem from json" }
+            }.getOrNull()
 
         // To be compatible with older versions
         // the extraInfo field may be a JsonObject or a String
