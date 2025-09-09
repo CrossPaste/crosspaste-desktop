@@ -16,25 +16,25 @@ enum class DateStyle {
         when (this) {
             FULL ->
                 when (locale) {
-                    "zh", "zh_hant" -> "yyyy年MM月dd日 EEEE"
-                    "ja" -> "yyyy年MM月dd日 EEEE"
-                    "ko" -> "yyyy년 MM월 dd일 EEEE"
-                    "es" -> "EEEE, dd 'de' MMMM 'de' yyyy"
-                    "de" -> "EEEE, dd. MMMM yyyy"
-                    "fr" -> "EEEE dd MMMM yyyy"
-                    "fa" -> "EEEE، dd MMMM yyyy"
-                    else -> "EEEE, MMMM dd, yyyy"
+                    "zh", "zh_hant" -> "yyyy年MM月dd日"
+                    "ja" -> "yyyy年MM月dd日"
+                    "ko" -> "yyyy년 MM월 dd일"
+                    "es" -> "dd/MM/yyyy"
+                    "de" -> "dd.MM.yyyy"
+                    "fr" -> "dd/MM/yyyy"
+                    "fa" -> "yyyy/MM/dd"
+                    else -> "MM/dd/yyyy"
                 }
             LONG ->
                 when (locale) {
                     "zh", "zh_hant" -> "yyyy年MM月dd日"
                     "ja" -> "yyyy年MM月dd日"
                     "ko" -> "yyyy년 MM월 dd일"
-                    "es" -> "dd 'de' MMMM 'de' yyyy"
-                    "de" -> "dd. MMMM yyyy"
-                    "fr" -> "dd MMMM yyyy"
-                    "fa" -> "dd MMMM yyyy"
-                    else -> "MMMM dd, yyyy"
+                    "es" -> "dd/MM/yyyy"
+                    "de" -> "dd.MM.yyyy"
+                    "fr" -> "dd/MM/yyyy"
+                    "fa" -> "yyyy/MM/dd"
+                    else -> "MM/dd/yyyy"
                 }
             MEDIUM ->
                 when (locale) {
@@ -44,7 +44,7 @@ enum class DateStyle {
                     "es", "fr" -> "dd/MM/yyyy"
                     "de" -> "dd.MM.yyyy"
                     "fa" -> "yyyy/MM/dd"
-                    else -> "MMM dd, yyyy"
+                    else -> "MM/dd/yyyy"
                 }
             SHORT ->
                 when (locale) {
