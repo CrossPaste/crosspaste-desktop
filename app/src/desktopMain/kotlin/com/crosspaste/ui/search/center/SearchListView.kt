@@ -72,11 +72,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val inputSearch by pasteSearchViewModel.inputSearch.debounce(500).collectAsState("")
 
-    val searchFavorite by pasteSearchViewModel.searchFavorite.collectAsState()
-
-    val searchSort by pasteSearchViewModel.searchSort.collectAsState()
-
-    val searchPasteType by pasteSearchViewModel.searchPasteType.collectAsState()
+    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
 
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
@@ -88,7 +84,13 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val pasteListFocusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(showSearchWindow, inputSearch, searchFavorite, searchSort, searchPasteType) {
+    LaunchedEffect(
+        showSearchWindow,
+        inputSearch,
+        searchBaseParams.favorite,
+        searchBaseParams.sort,
+        searchBaseParams.pasteType,
+    ) {
         if (showSearchWindow) {
             pasteSelectionViewModel.initSelectIndex()
             delay(32)

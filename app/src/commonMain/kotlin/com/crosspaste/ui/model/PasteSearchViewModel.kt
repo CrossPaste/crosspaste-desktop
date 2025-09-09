@@ -1,55 +1,64 @@
 package com.crosspaste.ui.model
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.crosspaste.paste.PasteData
+import com.crosspaste.utils.getDateUtils
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 abstract class PasteSearchViewModel : ViewModel() {
 
     companion object {
         const val QUERY_BATCH_SIZE = 50
+        const val LOAD_MORE_THROTTLE_MS = 500L
     }
 
     private val _inputSearch = MutableStateFlow("")
+
     val inputSearch = _inputSearch
 
-    private val _searchFavorite = MutableStateFlow(false)
-    val searchFavorite = _searchFavorite
+    private val _searchBaseParams =
+        MutableStateFlow(
+            SearchBaseParams(
+                favorite = false,
+                sort = true,
+                pasteType = null,
+                limit = QUERY_BATCH_SIZE,
+            ),
+        )
 
-    private val _searchSort = MutableStateFlow(true)
-    val searchSort = _searchSort
+    val searchBaseParams = _searchBaseParams
 
-    private val _searchPasteType = MutableStateFlow<Int?>(null)
-    val searchPasteType = _searchPasteType
-
-    private val _searchLimit = MutableStateFlow(QUERY_BATCH_SIZE)
-
-    // Includes invalid paste data
-    private val _allSearchSize = MutableStateFlow(0)
+    private val _loadAll = MutableStateFlow(false)
 
     abstract val convertTerm: (String) -> List<String>
+
+    private var lastLoadTime = 0L
+    private val loadMoreMutex = Mutex()
+
+    private val dateUtils = getDateUtils()
 
     @OptIn(FlowPreview::class)
     val searchParams =
         combine(
             _inputSearch.debounce(500),
-            _searchFavorite,
-            _searchSort,
-            _searchPasteType,
-            _searchLimit,
-        ) { inputSearch, favorite, sort, pasteType, limit ->
+            _searchBaseParams,
+        ) { inputSearch, searchBaseParams ->
             val searchTerms = convertTerm(inputSearch)
 
             SearchParams(
                 searchTerms = searchTerms,
-                favorite = favorite,
-                sort = sort,
-                pasteType = pasteType,
-                limit = limit,
+                favorite = searchBaseParams.favorite,
+                sort = searchBaseParams.sort,
+                pasteType = searchBaseParams.pasteType,
+                limit = searchBaseParams.limit,
             )
         }
 
@@ -57,37 +66,81 @@ abstract class PasteSearchViewModel : ViewModel() {
 
     fun updateInputSearch(input: String) {
         _inputSearch.value = input
+        _searchBaseParams.value =
+            _searchBaseParams.value.copy(
+                limit = QUERY_BATCH_SIZE,
+            )
+        _loadAll.value = false
     }
 
     fun switchFavorite() {
-        _searchFavorite.value = !_searchFavorite.value
+        _searchBaseParams.value =
+            _searchBaseParams.value.copy(
+                favorite = !_searchBaseParams.value.favorite,
+                limit = QUERY_BATCH_SIZE,
+            )
+        _loadAll.value = false
     }
 
     fun switchSort() {
-        _searchSort.value = !_searchSort.value
+        _searchBaseParams.value =
+            _searchBaseParams.value.copy(
+                sort = !_searchBaseParams.value.sort,
+            )
     }
 
     fun updatePasteType(pasteType: Int?) {
-        _searchPasteType.value = pasteType
+        _searchBaseParams.value =
+            _searchBaseParams.value.copy(
+                pasteType = pasteType,
+                limit = QUERY_BATCH_SIZE,
+            )
+        _loadAll.value = false
     }
 
-    fun updateAllSearchSize(size: Int) {
-        _allSearchSize.value = size
-    }
-
-    fun tryAddLimit(): Boolean =
-        if (_searchLimit.value == _allSearchSize.value) {
-            _searchLimit.value += QUERY_BATCH_SIZE
-            true
-        } else {
-            false
+    fun tryAddLimit(): Boolean {
+        if (_loadAll.value) {
+            return false
         }
+
+        val currentTime = dateUtils.nowEpochMilliseconds()
+
+        if (currentTime - lastLoadTime < LOAD_MORE_THROTTLE_MS) {
+            return false
+        }
+
+        viewModelScope.launch {
+            loadMoreMutex.withLock {
+                if (!_loadAll.value &&
+                    dateUtils.nowEpochMilliseconds() - lastLoadTime >= LOAD_MORE_THROTTLE_MS
+                ) {
+                    lastLoadTime = dateUtils.nowEpochMilliseconds()
+                    _searchBaseParams.value =
+                        _searchBaseParams.value.copy(
+                            limit = _searchBaseParams.value.limit + QUERY_BATCH_SIZE,
+                        )
+                }
+            }
+        }
+
+        return true
+    }
+
+    fun checkLoadAll(size: Int) {
+        if (size < _searchBaseParams.value.limit) {
+            _loadAll.value = true
+        }
+    }
 
     fun resetSearch() {
         _inputSearch.value = ""
-        _searchFavorite.value = false
-        _searchSort.value = true
-        _searchLimit.value = QUERY_BATCH_SIZE
-        _allSearchSize.value = 0
+        _searchBaseParams.value =
+            _searchBaseParams.value.copy(
+                favorite = false,
+                pasteType = null,
+                sort = true,
+                limit = QUERY_BATCH_SIZE,
+            )
+        _loadAll.value = false
     }
 }

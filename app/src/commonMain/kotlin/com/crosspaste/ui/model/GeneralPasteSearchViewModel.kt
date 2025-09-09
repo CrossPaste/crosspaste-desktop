@@ -36,7 +36,7 @@ class GeneralPasteSearchViewModel(
                         pasteType = params.pasteType,
                         limit = params.limit,
                     ).map { pasteDataList ->
-                        updateAllSearchSize(pasteDataList.size)
+                        checkLoadAll(pasteDataList.size)
                         pasteDataList.filter { it.isValid() }
                     }
             }.stateIn(
