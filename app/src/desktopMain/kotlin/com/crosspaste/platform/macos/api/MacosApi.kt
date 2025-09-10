@@ -1,11 +1,10 @@
 package com.crosspaste.platform.macos.api
 
+import com.sun.jna.Callback
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
-import com.sun.jna.Structure
 import com.sun.jna.ptr.IntByReference
-import java.awt.GraphicsDevice
 
 interface MacosApi : Library {
 
@@ -42,8 +41,6 @@ interface MacosApi : Library {
     fun getHardwareUUID(): Pointer?
 
     fun getCurrentActiveApp(): Pointer?
-
-    fun getTrayWindowInfos(pid: Long): Pointer?
 
     fun saveAppIcon(
         bundleIdentifier: String,
@@ -88,6 +85,31 @@ interface MacosApi : Library {
         metadataPath: String,
     ): Boolean
 
+    fun trayInit(
+        iconData: ByteArray,
+        iconDataLength: Int,
+        tooltip: String,
+        leftClickCallback: LeftClickCallback,
+    ): Boolean
+
+    fun trayAddMenuItem(
+        itemId: Int,
+        title: String,
+        enabled: Boolean,
+    )
+
+    fun trayAddSeparator()
+
+    fun traySetCallback(callback: MenuCallback)
+
+    fun trayUpdateMenuItem(
+        itemId: Int,
+        title: String,
+        enabled: Boolean,
+    )
+
+    fun trayCleanup()
+
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
 
@@ -102,57 +124,10 @@ interface MacosApi : Library {
     }
 }
 
-@Structure.FieldOrder("x", "y", "width", "height", "displayID")
-class WindowInfo :
-    Structure,
-    AutoCloseable {
-    @JvmField var x: Float = 0f
-
-    @JvmField var y: Float = 0f
-
-    @JvmField var width: Float = 0f
-
-    @JvmField var height: Float = 0f
-
-    @JvmField var displayID: Int = 0
-
-    constructor() : super()
-
-    constructor(p: Pointer) : super(p) {
-        read()
-    }
-
-    fun contains(
-        x: Int,
-        y: Int,
-    ): Boolean = x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height
-
-    fun contained(graphicsDevice: GraphicsDevice): Boolean {
-        val displayWidth = graphicsDevice.displayMode.width
-        val displayHeight = graphicsDevice.displayMode.height
-        val bound = graphicsDevice.defaultConfiguration.bounds
-        return bound.x <= this.x &&
-            bound.x + displayWidth >= this.x + this.width &&
-            bound.y <= this.y &&
-            bound.y + displayHeight >= this.y + this.height
-    }
-
-    override fun toString(): String = "WindowInfo(x=$x, y=$y, width=$width, height=$height, displayID=$displayID)"
-
-    override fun close() {
-        clear()
-    }
+fun interface MenuCallback : Callback {
+    fun invoke(itemId: Int)
 }
 
-@Structure.FieldOrder("count", "windowInfos")
-class WindowInfoArray(
-    p: Pointer,
-) : Structure(p) {
-    @JvmField var count: Int = 0
-
-    @JvmField var windowInfos: Pointer? = null
-
-    init {
-        read()
-    }
+fun interface LeftClickCallback : Callback {
+    fun invoke()
 }
