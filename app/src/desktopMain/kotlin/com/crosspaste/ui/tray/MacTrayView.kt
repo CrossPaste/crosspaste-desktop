@@ -3,37 +3,28 @@ package com.crosspaste.ui.tray
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.crosspaste.app.DesktopAppLaunch
-import com.crosspaste.app.DesktopAppLaunchState
+import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.generated.resources.Res
-import com.crosspaste.app.generated.resources.crosspaste_svg
-import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.notification.NotificationManager
-import com.crosspaste.platform.macos.MacAppUtils
-import com.crosspaste.platform.macos.MacAppUtils.useAll
-import com.crosspaste.platform.macos.api.WindowInfo
+import com.crosspaste.app.ExitMode
+import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.platform.macos.api.LeftClickCallback
+import com.crosspaste.platform.macos.api.MacosApi
+import com.crosspaste.platform.macos.api.MenuCallback
 import com.crosspaste.ui.LocalExitApplication
-import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.MenuHelper
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
-import java.awt.Color
-import java.awt.GraphicsEnvironment
-import java.awt.event.InputEvent
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import javax.swing.JFrame
 
 object MacTrayView {
 
@@ -42,106 +33,116 @@ object MacTrayView {
     @Composable
     fun Tray() {
         val applicationExit = LocalExitApplication.current
-
-        val appLaunch = koinInject<DesktopAppLaunch>()
-        val appLaunchState = koinInject<DesktopAppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
-        val copywriter = koinInject<GlobalCopywriter>()
+        val configManager = koinInject<CommonConfigManager>()
         val menuHelper = koinInject<MenuHelper>()
-        val notificationManager = koinInject<NotificationManager>() as DesktopNotificationManager
 
-        val trayIcon = painterResource(Res.drawable.crosspaste_svg)
-
-        var menu by remember {
-            mutableStateOf(menuHelper.createMacPopupMenu(applicationExit))
-        }
-        val frame by remember { mutableStateOf(TransparentFrame()) }
-
-        val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
-        val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
-
-        DisposableEffect(copywriter.language()) {
-            frame.removeAll()
-            menu = menuHelper.createMacPopupMenu(applicationExit)
-            frame.add(menu)
-            onDispose {
-                frame.dispose()
-            }
-        }
+        var trayManager by remember { mutableStateOf<NativeTrayManager?>(null) }
 
         LaunchedEffect(Unit) {
-            // wait for the app to be launched
-            delay(1000)
-            val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
-            windowInfos.useAll {
-                val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                val screenDevice = ge.defaultScreenDevice
-
-                (windowInfos.firstOrNull { it.contained(screenDevice) } ?: windowInfos.firstOrNull())?.let {
-                    if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                        appWindowManager.showMainWindow()
-                        appLaunch.setFirstLaunchCompleted(true)
-                    }
-                }
-            }
+            trayManager =
+                NativeTrayManager(
+                    appWindowManager,
+                    configManager,
+                    menuHelper,
+                    applicationExit,
+                )
         }
 
-        CrossPasteTray(
-            icon = trayIcon,
-            state = remember { notificationManager.trayState },
-            tooltip = "CrossPaste",
-            mouseListener =
-                MacTrayMouseClicked(appLaunchState) { event, windowInfo ->
-                    val isCtrlDown = (event.modifiersEx and InputEvent.CTRL_DOWN_MASK) != 0
-                    if (event.button == MouseEvent.BUTTON1 && !isCtrlDown) {
-                        mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
-                            appWindowManager.hideMainWindow()
-                            if (showSearchWindow) {
-                                appWindowManager.hideSearchWindow()
-                            } else {
-                                appWindowManager.recordActiveInfoAndShowSearchWindow(
-                                    useShortcutKeys = false,
-                                )
-                            }
-                        }
-                    } else {
-                        mainCoroutineDispatcher.launch(CoroutineName("Hide CrossPaste")) {
-                            if (showSearchWindow) {
-                                appWindowManager.hideSearchWindow()
-                            }
-                        }
-                        frame.setLocation(
-                            windowInfo.x.toInt(),
-                            (windowInfo.y + windowInfo.height + 6).toInt(),
-                        )
-                        frame.isVisible = true
-                        menu.show(frame, 0, 0)
-                    }
-                },
-        )
-    }
-
-    class MacTrayMouseClicked(
-        private val appLaunchState: DesktopAppLaunchState,
-        private val mouseClickedAction: (MouseEvent, WindowInfo) -> Unit,
-    ) : MouseAdapter() {
-
-        override fun mouseClicked(e: MouseEvent) {
-            val windowInfos = MacAppUtils.getTrayWindowInfos(appLaunchState.pid)
-            windowInfos.useAll {
-                windowInfos.first { it.contains(e.xOnScreen, e.yOnScreen) }.let {
-                    mouseClickedAction(e, it)
+        DisposableEffect(Unit) {
+            onDispose {
+                try {
+                    trayManager?.cleanup()
+                } catch (e: Exception) {
+                    logger.error(e) { "Failed to cleanup tray manager" }
                 }
             }
         }
     }
+}
 
-    class TransparentFrame : JFrame() {
-        init {
-            isUndecorated = true
-            background = Color(0, 0, 0, 0)
-            isVisible = true
-            setResizable(false)
+@OptIn(ExperimentalCoroutinesApi::class)
+class NativeTrayManager(
+    appWindowManager: DesktopAppWindowManager,
+    configManager: CommonConfigManager,
+    menuHelper: MenuHelper,
+    applicationExit: (ExitMode) -> Unit,
+) {
+    private val lib = MacosApi.INSTANCE
+
+    private val menuScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+
+    private var menuCallbacks = mutableMapOf<Int, () -> Unit>()
+
+    val bytes =
+        Thread
+            .currentThread()
+            .contextClassLoader
+            .getResourceAsStream("crosspaste-mac-tray.png")
+            ?.readBytes() ?: ByteArray(0)
+
+    private val callback: MenuCallback =
+        MenuCallback { itemId ->
+            menuCallbacks[itemId]?.invoke()
         }
+
+    private val leftClickCallback =
+        LeftClickCallback {
+            appWindowManager.hideMainWindow()
+            if (appWindowManager.showSearchWindow.value) {
+                appWindowManager.hideSearchWindow()
+            } else {
+                menuScope.launch {
+                    appWindowManager.recordActiveInfoAndShowSearchWindow(
+                        useShortcutKeys = false,
+                    )
+                }
+            }
+        }
+
+    init {
+        lib.traySetCallback(callback)
+        val success = lib.trayInit(bytes, bytes.size, AppName, leftClickCallback)
+        if (!success) {
+            throw RuntimeException("Failed to initialize tray")
+        }
+        menuScope.launch {
+            var isFirst = true
+            configManager.config
+                .map { it.language }
+                .distinctUntilChanged()
+                .collect {
+                    menuHelper.createMacMenu(this@NativeTrayManager, applicationExit, !isFirst)
+                    isFirst = false
+                }
+        }
+    }
+
+    fun addMenuItem(
+        itemId: Int,
+        title: String,
+        enabled: Boolean = true,
+        onClick: () -> Unit,
+    ): Int {
+        menuCallbacks[itemId] = onClick
+        lib.trayAddMenuItem(itemId, title, enabled)
+        return itemId
+    }
+
+    fun addSeparator() {
+        lib.trayAddSeparator()
+    }
+
+    fun updateMenuItem(
+        itemId: Int,
+        title: String,
+        enabled: Boolean = true,
+    ) {
+        lib.trayUpdateMenuItem(itemId, title, enabled)
+    }
+
+    fun cleanup() {
+        lib.trayCleanup()
+        menuCallbacks.clear()
     }
 }

@@ -2,8 +2,6 @@ package com.crosspaste.platform.macos
 
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.platform.macos.api.MacosApi.Companion.INSTANCE
-import com.crosspaste.platform.macos.api.WindowInfo
-import com.crosspaste.platform.macos.api.WindowInfoArray
 import com.sun.jna.Pointer
 
 object MacAppUtils {
@@ -61,27 +59,4 @@ object MacAppUtils {
         thumbnailImagePath: String,
         metadataPath: String,
     ): Boolean = INSTANCE.createThumbnail(originalImagePath, thumbnailImagePath, metadataPath)
-
-    fun getTrayWindowInfos(pid: Long): List<WindowInfo> =
-        INSTANCE.getTrayWindowInfos(pid)?.let {
-            val windowInfoArray = WindowInfoArray(it)
-            windowInfoArray.read()
-
-            val count = windowInfoArray.count
-            val windowInfos = windowInfoArray.windowInfos!!
-
-            (0 until count).map { i ->
-                val windowInfo = WindowInfo(windowInfos.share((i * WindowInfo().size()).toLong()))
-                windowInfo.read()
-                windowInfo
-            }
-        } ?: emptyList()
-
-    fun List<WindowInfo>.useAll(block: (List<WindowInfo>) -> Unit) {
-        runCatching {
-            block(this)
-        }.let {
-            this.forEach { it.close() }
-        }
-    }
 }

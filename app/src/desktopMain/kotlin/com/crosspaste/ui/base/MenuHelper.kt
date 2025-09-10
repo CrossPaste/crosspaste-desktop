@@ -30,11 +30,11 @@ import com.crosspaste.ui.ShortcutKeys
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.tray.NativeTrayManager
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.awt.PopupMenu
 
 class MenuHelper(
     private val appUpdateService: AppUpdateService,
@@ -168,38 +168,39 @@ class MenuHelper(
             }
     }
 
-    fun createMacPopupMenu(applicationExit: (ExitMode) -> Unit): PopupMenu {
-        val popupMenu = PopupMenu()
-
-        for (item in menuItems) {
-            popupMenu.add(
-                createMacMenuItem(
-                    text = item.title(copywriter),
-                    action = item.action,
-                ),
+    fun createMacMenu(
+        trayManager: NativeTrayManager,
+        applicationExit: (ExitMode) -> Unit,
+        update: Boolean = false,
+    ) {
+        if (!update) {
+            for ((index, item) in menuItems.withIndex()) {
+                trayManager.addMenuItem(
+                    itemId = index,
+                    title = item.title(copywriter),
+                ) {
+                    item.action()
+                }
+            }
+            trayManager.addSeparator()
+            trayManager.addMenuItem(
+                itemId = menuItems.size + 1,
+                title = copywriter.getText("quit"),
+            ) {
+                applicationExit(ExitMode.EXIT)
+            }
+        } else {
+            for ((index, item) in menuItems.withIndex()) {
+                trayManager.updateMenuItem(
+                    itemId = index,
+                    title = item.title(copywriter),
+                )
+            }
+            trayManager.updateMenuItem(
+                itemId = menuItems.size + 1,
+                title = copywriter.getText("quit"),
             )
         }
-
-        popupMenu.addSeparator()
-
-        popupMenu.add(
-            createMacMenuItem(
-                text = copywriter.getText("quit"),
-                action = { applicationExit(ExitMode.EXIT) },
-            ),
-        )
-        return popupMenu
-    }
-
-    private fun createMacMenuItem(
-        text: String,
-        action: () -> Unit,
-    ): java.awt.MenuItem {
-        val menuItem = java.awt.MenuItem(text)
-        menuItem.addActionListener {
-            action()
-        }
-        return menuItem
     }
 
     @Composable
@@ -223,7 +224,7 @@ class MenuHelper(
                         .clip(tiny2XRoundedCornerShape)
                         .background(MaterialTheme.colorScheme.surfaceBright),
             ) {
-                menuItems.forEachIndexed { index, item ->
+                menuItems.forEachIndexed { _, item ->
                     MenuItemView(
                         text = item.title(copywriter),
                         background = AppUIColors.menuBackground,

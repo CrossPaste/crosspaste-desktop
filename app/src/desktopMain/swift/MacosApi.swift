@@ -153,69 +153,6 @@ public func getCurrentActiveApp() -> UnsafePointer<CChar>? {
     return nil
 }
 
-public struct WindowInfo {
-   var x: Float
-   var y: Float
-   var width: Float
-   var height: Float
-   var displayID: UInt32
-}
-
-public struct WindowInfoArray {
-    var count: Int32
-    var windowInfos: UnsafeMutableRawPointer
-}
-
-@_cdecl("getTrayWindowInfos")
-public func getTrayWindowInfos(pid: Int) -> UnsafeMutableRawPointer? {
-    var trayWindows: [WindowInfo] = []
-    let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-    if let windowInfo = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] {
-       for info in windowInfo {
-           if let bounds = info[kCGWindowBounds as String] as? [String: Any],
-              let layer = info[kCGWindowLayer as String] as? Int,
-              layer == 25,  // Menu bar/status item layer
-              let ownerPID = info[kCGWindowOwnerPID as String] as? Int,
-              ownerPID == pid,
-              let x = bounds["X"] as? CGFloat,
-              let y = bounds["Y"] as? CGFloat,
-              let width = bounds["Width"] as? CGFloat,
-              let height = bounds["Height"] as? CGFloat,
-              width < 50 && height < 50 {
-                  var displayID = CGMainDisplayID()  // Default to main display
-                  for screen in NSScreen.screens {
-                      if let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber,
-                         screen.frame.contains(CGPoint(x: x, y: y)) {
-                          displayID = screenNumber.uint32Value
-                          break
-                      }
-                  }
-                  let windowInfo = WindowInfo(
-                      x: Float(x),
-                      y: Float(y),
-                      width: Float(width),
-                      height: Float(height),
-                      displayID: displayID
-                  )
-                  trayWindows.append(windowInfo)
-           }
-       }
-    }
-    let arrayPtr = UnsafeMutablePointer<WindowInfoArray>.allocate(capacity: 1)
-    // Allocate memory for the array of WindowInfo structs
-    let count = trayWindows.count
-    let bufferPtr = UnsafeMutableBufferPointer<WindowInfo>.allocate(capacity: count)
-
-    // Copy the WindowInfo structs into the allocated memory
-    for (index, window) in trayWindows.enumerated() {
-        bufferPtr[index] = window
-    }
-
-    arrayPtr.pointee = WindowInfoArray(count: Int32(count), windowInfos: UnsafeMutableRawPointer(bufferPtr.baseAddress!))
-
-    return UnsafeMutableRawPointer(arrayPtr)
-}
-
 @_cdecl("saveAppIcon")
 public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePointer<CChar>) {
     let bundleIdentifierString = String(cString: bundleIdentifier)
@@ -489,4 +426,181 @@ public func createThumbnail(
     }
 
     return true
+}
+
+var statusItem: NSStatusItem?
+var menu: NSMenu?
+var callbackPointer: (@convention(c) (Int) -> Void)?
+
+class MenuActionHandler: NSObject {
+    let itemId: Int
+
+    init(itemId: Int) {
+        self.itemId = itemId
+    }
+
+    @objc func menuItemClicked(_ sender: NSMenuItem) {
+        callbackPointer?(itemId)
+    }
+}
+
+var handlers: [MenuActionHandler] = []
+
+var leftClickCallbackPointer: (@convention(c) () -> Void)?
+
+class StatusItemHandler: NSObject {
+    @objc func statusItemClicked(_ sender: Any?) {
+        let event = NSApp.currentEvent
+
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            if let button = statusItem?.button, let menu = menu {
+                statusItem?.menu = menu
+                button.performClick(nil)
+                statusItem?.menu = nil
+            }
+        } else {
+            leftClickCallbackPointer?()
+        }
+    }
+}
+
+
+var statusItemHandler: StatusItemHandler?
+
+@_cdecl("trayInit")
+public func trayInit(iconData: UnsafePointer<UInt8>,
+                     iconDataLength: Int,
+                     tooltip: UnsafePointer<CChar>,
+                     leftClickCallback: @escaping @convention(c) () -> Void) -> Bool {
+    return autoreleasepool {
+        if !Thread.isMainThread {
+            var result = false
+            DispatchQueue.main.sync {
+                result = trayInit(iconData: iconData,
+                                  iconDataLength: iconDataLength,
+                                  tooltip: tooltip,
+                                  leftClickCallback: leftClickCallback)
+            }
+            return result
+        }
+
+        leftClickCallbackPointer = leftClickCallback
+
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        let data = Data(bytes: iconData, count: iconDataLength)
+        if let image = NSImage(data: data) {
+            image.size = NSSize(width: 20, height: 20)
+            image.isTemplate = true
+            statusItem?.button?.image = image
+        } else {
+            statusItem?.button?.title = "App"
+        }
+
+        let tooltipStr = String(cString: tooltip)
+        statusItem?.button?.toolTip = tooltipStr
+
+        menu = NSMenu()
+
+        if let button = statusItem?.button {
+            statusItemHandler = StatusItemHandler()
+            button.action = #selector(StatusItemHandler.statusItemClicked(_:))
+            button.target = statusItemHandler
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        }
+
+        return true
+    }
+}
+
+@_cdecl("trayAddMenuItem")
+public func trayAddMenuItem(itemId: Int,
+                            title: UnsafePointer<CChar>,
+                            enabled: Bool) {
+    autoreleasepool {
+        if !Thread.isMainThread {
+            DispatchQueue.main.sync {
+                trayAddMenuItem(itemId: itemId, title: title, enabled: enabled)
+            }
+            return
+        }
+
+        let titleStr = String(cString: title)
+        let menuItem = NSMenuItem(title: titleStr, action: nil, keyEquivalent: "")
+        menuItem.isEnabled = enabled
+
+        let handler = MenuActionHandler(itemId: itemId)
+        handlers.append(handler)
+        menuItem.target = handler
+        menuItem.action = #selector(MenuActionHandler.menuItemClicked(_:))
+
+        menu?.addItem(menuItem)
+    }
+}
+
+@_cdecl("trayAddSeparator")
+public func trayAddSeparator() {
+    autoreleasepool {
+        if !Thread.isMainThread {
+            DispatchQueue.main.sync {
+                trayAddSeparator()
+            }
+            return
+        }
+
+        menu?.addItem(NSMenuItem.separator())
+    }
+}
+
+@_cdecl("traySetCallback")
+public func traySetCallback(callback: @escaping @convention(c) (Int) -> Void) {
+    callbackPointer = callback
+}
+
+@_cdecl("trayUpdateMenuItem")
+public func trayUpdateMenuItem(itemId: Int,
+                               title: UnsafePointer<CChar>?,
+                               enabled: Bool) {
+    autoreleasepool {
+        if !Thread.isMainThread {
+            DispatchQueue.main.sync {
+                trayUpdateMenuItem(itemId: itemId, title: title, enabled: enabled)
+            }
+            return
+        }
+
+        guard let menuItems = menu?.items else { return }
+
+        for (_, handler) in handlers.enumerated() {
+            if handler.itemId == itemId {
+                let menuItem = menuItems[itemId]
+
+                if let title = title {
+                    menuItem.title = String(cString: title)
+                }
+                menuItem.isEnabled = enabled
+                break
+            }
+        }
+    }
+}
+
+@_cdecl("trayCleanup")
+public func trayCleanup() {
+    autoreleasepool {
+        if !Thread.isMainThread {
+            DispatchQueue.main.sync {
+                trayCleanup()
+            }
+            return
+        }
+
+        if let statusItem = statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+        }
+        statusItem = nil
+        menu = nil
+        handlers.removeAll()
+        callbackPointer = nil
+    }
 }
