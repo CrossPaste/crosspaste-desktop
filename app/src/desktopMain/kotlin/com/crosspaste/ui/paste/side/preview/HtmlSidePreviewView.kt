@@ -58,10 +58,6 @@ fun PasteDataScope.HtmlSidePreviewView() {
         val state = rememberRichTextState()
 
         LaunchedEffect(htmlPasteItem.html) {
-            println(
-                "${pasteData.id} backgroundColor = $backgroundColor htmlBackground = $htmlBackground richTextColor = $richTextColor",
-            )
-
             state.setHtml(htmlPasteItem.html)
         }
         RichText(
