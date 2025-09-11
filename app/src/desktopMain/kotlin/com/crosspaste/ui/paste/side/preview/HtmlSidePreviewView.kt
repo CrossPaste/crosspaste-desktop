@@ -39,7 +39,7 @@ fun PasteDataScope.HtmlSidePreviewView() {
         } else {
             backgroundColor
         }
-    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
+    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(htmlBackground)) }
     val richTextColor =
         if (isDark == themeDetector.isCurrentThemeDark()) {
             MaterialTheme.colorScheme.onBackground
@@ -58,6 +58,10 @@ fun PasteDataScope.HtmlSidePreviewView() {
         val state = rememberRichTextState()
 
         LaunchedEffect(htmlPasteItem.html) {
+            println(
+                "${pasteData.id} backgroundColor = $backgroundColor htmlBackground = $htmlBackground richTextColor = $richTextColor",
+            )
+
             state.setHtml(htmlPasteItem.html)
         }
         RichText(

@@ -53,7 +53,7 @@ fun PasteDataScope.RtfDetailView(onDoubleClick: () -> Unit) {
         } else {
             backgroundColor
         }
-    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(backgroundColor)) }
+    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(rtfBackground)) }
     val richTextColor =
         if (isDark == themeDetector.isCurrentThemeDark()) {
             MaterialTheme.colorScheme.onBackground
