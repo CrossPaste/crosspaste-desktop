@@ -69,7 +69,7 @@ fun SearchTrailingIcon() {
 
     var showTypes by remember { mutableStateOf(false) }
 
-    var currentType by remember { mutableStateOf<PasteType?>(null) }
+    var currentType = searchBaseParams.pasteType?.let { PasteType.fromType(it) }
 
     val textStyle =
         MaterialTheme.typography.labelLarge.copy(
