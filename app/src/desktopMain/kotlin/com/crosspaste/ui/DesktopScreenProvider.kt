@@ -124,9 +124,6 @@ class DesktopScreenProvider(
                 QrCode -> {
                     QRScreen()
                 }
-                Debug -> {
-                    DebugScreen()
-                }
                 Settings -> {
                     SettingsScreen()
                 }

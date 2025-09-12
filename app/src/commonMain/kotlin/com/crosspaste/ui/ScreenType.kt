@@ -12,10 +12,6 @@ object Export : ScreenType {
     override val name: String = "export"
 }
 
-object Debug : ScreenType {
-    override val name: String = "debug"
-}
-
 object Devices : ScreenType {
     override val name: String = "devices"
 }
