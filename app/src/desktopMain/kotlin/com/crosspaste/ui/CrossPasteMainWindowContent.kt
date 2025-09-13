@@ -103,7 +103,7 @@ fun CrossPasteMainWindowContent() {
                             .fillMaxHeight()
                             .background(AppUIColors.appBackground),
                 ) {
-                    screenProvider.CrossPasteScreen()
+                    screenProvider.screen()
                 }
             }
         }

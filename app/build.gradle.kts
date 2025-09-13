@@ -114,6 +114,7 @@ kotlin {
             implementation(libs.lifecycle.viewmodel)
             implementation(libs.lifecycle.viewmodel.compose)
             implementation(libs.material.desktop)
+            implementation(libs.navigation.compose)
             implementation(libs.okio)
             implementation(libs.richeditor)
             implementation(libs.semver)

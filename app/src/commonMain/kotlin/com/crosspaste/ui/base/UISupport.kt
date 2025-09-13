@@ -1,5 +1,6 @@
 package com.crosspaste.ui.base
 
+import androidx.navigation.NavController
 import com.crosspaste.paste.PasteData
 import okio.Path
 
@@ -26,11 +27,15 @@ interface UISupport {
 
     fun openImage(imagePath: Path)
 
-    fun openText(pasteData: PasteData)
+    fun openText(
+        navController: NavController,
+        pasteData: PasteData,
+    )
 
     fun openRtf(pasteData: PasteData)
 
     fun openPasteData(
+        navController: NavController,
         pasteData: PasteData,
         index: Int = 0,
     )

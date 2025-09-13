@@ -3,31 +3,25 @@ package com.crosspaste.ui.paste.edit
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.save
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteTextEditContentView() {
-    val appWindowManager = koinInject<AppWindowManager>()
-    val screen by appWindowManager.screenContext.collectAsState()
-
-    val pasteData = screen.context as PasteData
+fun PasteDataScope.PasteTextEditContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
     val textUpdater = koinInject<TextTypePlugin>()

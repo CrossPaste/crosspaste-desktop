@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.navigation.NavController
 import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -15,6 +16,7 @@ import com.crosspaste.platform.macos.api.LeftClickCallback
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.platform.macos.api.MenuCallback
 import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -33,6 +35,7 @@ object MacTrayView {
     @Composable
     fun Tray() {
         val applicationExit = LocalExitApplication.current
+        val navController = LocalNavHostController.current
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val configManager = koinInject<CommonConfigManager>()
         val menuHelper = koinInject<MenuHelper>()
@@ -46,6 +49,7 @@ object MacTrayView {
                     configManager,
                     menuHelper,
                     applicationExit,
+                    navController,
                 )
         }
 
@@ -67,6 +71,7 @@ class NativeTrayManager(
     configManager: CommonConfigManager,
     menuHelper: MenuHelper,
     applicationExit: (ExitMode) -> Unit,
+    navController: NavController,
 ) {
     private val lib = MacosApi.INSTANCE
 
@@ -112,7 +117,7 @@ class NativeTrayManager(
                 .map { it.language }
                 .distinctUntilChanged()
                 .collect {
-                    menuHelper.createMacMenu(this@NativeTrayManager, applicationExit, !isFirst)
+                    menuHelper.createMacMenu(this@NativeTrayManager, applicationExit, navController, !isFirst)
                     isFirst = false
                 }
         }

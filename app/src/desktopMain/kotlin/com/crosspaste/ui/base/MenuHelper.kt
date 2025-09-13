@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.navigation.NavController
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -46,9 +47,9 @@ class MenuHelper(
     val about =
         MenuItem(
             title = { copywriter -> copywriter.getText("about") },
-            action = {
-                appWindowManager.toScreen(About)
+            action = { navController ->
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
+                    navController.navigate(About)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -65,9 +66,9 @@ class MenuHelper(
     val devices =
         MenuItem(
             title = { copywriter -> copywriter.getText("devices") },
-            action = {
-                appWindowManager.toScreen(Devices)
+            action = { navController ->
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
+                    navController.navigate(Devices)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -76,9 +77,9 @@ class MenuHelper(
     val export =
         MenuItem(
             title = { copywriter -> copywriter.getText("export") },
-            action = {
-                appWindowManager.toScreen(Export)
+            action = { navController ->
                 mainCoroutineDispatcher.launch(CoroutineName("Export")) {
+                    navController.navigate(Export)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -87,9 +88,9 @@ class MenuHelper(
     val import =
         MenuItem(
             title = { copywriter -> copywriter.getText("import") },
-            action = {
-                appWindowManager.toScreen(Import)
+            action = { navController ->
                 mainCoroutineDispatcher.launch(CoroutineName("Import")) {
+                    navController.navigate(Import)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -98,9 +99,9 @@ class MenuHelper(
     val settings =
         MenuItem(
             title = { copywriter -> copywriter.getText("settings") },
-            action = {
-                appWindowManager.toScreen(Settings)
+            action = { navController ->
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
+                    navController.navigate(Settings)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -109,9 +110,9 @@ class MenuHelper(
     val shortcutKeys =
         MenuItem(
             title = { copywriter -> copywriter.getText("shortcut_keys") },
-            action = {
-                appWindowManager.toScreen(ShortcutKeys)
+            action = { navController ->
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
+                    navController.navigate(ShortcutKeys)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -137,7 +138,10 @@ class MenuHelper(
             faq,
         )
 
-    fun createLinuxTrayMenu(applicationExit: (ExitMode) -> Unit): List<dorkbox.systemTray.MenuItem> {
+    fun createLinuxTrayMenu(
+        applicationExit: (ExitMode) -> Unit,
+        navController: NavController,
+    ): List<dorkbox.systemTray.MenuItem> {
         val openSearchWindow =
             dorkbox.systemTray.MenuItem(
                 copywriter.getText("open_search_window"),
@@ -156,7 +160,7 @@ class MenuHelper(
                     dorkbox.systemTray.MenuItem(
                         item.title(copywriter),
                     ) {
-                        item.action()
+                        item.action(navController)
                     }
                 }
 
@@ -171,6 +175,7 @@ class MenuHelper(
     fun createMacMenu(
         trayManager: NativeTrayManager,
         applicationExit: (ExitMode) -> Unit,
+        navController: NavController,
         update: Boolean = false,
     ) {
         if (!update) {
@@ -179,7 +184,7 @@ class MenuHelper(
                     itemId = index,
                     title = item.title(copywriter),
                 ) {
-                    item.action()
+                    item.action(navController)
                 }
             }
             trayManager.addSeparator()
@@ -205,8 +210,9 @@ class MenuHelper(
 
     @Composable
     fun createWindowsMenu(
-        closeWindowMenu: () -> Unit,
         applicationExit: (ExitMode) -> Unit,
+        closeWindowMenu: () -> Unit,
+        navController: NavController,
     ) {
         val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
@@ -242,7 +248,7 @@ class MenuHelper(
                                 null
                             },
                         onClick = {
-                            item.action()
+                            item.action(navController)
                             closeWindowMenu()
                         },
                     )
@@ -262,5 +268,5 @@ class MenuHelper(
 
 data class MenuItem(
     val title: (Copywriter) -> String,
-    val action: () -> Unit,
+    val action: (NavController) -> Unit,
 )

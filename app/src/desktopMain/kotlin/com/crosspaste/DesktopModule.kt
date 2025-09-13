@@ -504,7 +504,7 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
             single<DialogService> { DialogService }
@@ -520,7 +520,7 @@ class DesktopModule(
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { get<DesktopScreenProvider>() }
-            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get(), get()) }
+            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get(), get(), get()) }
             single<ShortcutKeysAction> {
                 DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get())
@@ -533,7 +533,7 @@ class DesktopModule(
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<ToastManager> { ToastManager() }
             single<TokenCache> { TokenCache }
-            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get(), get()) }
+            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
         }
 
     // ViewModelModule.kt

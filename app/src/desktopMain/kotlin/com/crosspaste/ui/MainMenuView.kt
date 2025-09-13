@@ -28,8 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.AppUpdateService
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.ExitMode
 import com.crosspaste.config.DesktopConfigManager
@@ -48,7 +48,6 @@ import org.koin.compose.koinInject
 fun MainMenuView() {
     val appLaunch = koinInject<DesktopAppLaunch>()
     val appUpdateService = koinInject<AppUpdateService>()
-    val appWindowManager = koinInject<AppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
 
     val prevMenuList by remember {
@@ -78,11 +77,17 @@ fun MainMenuView() {
 
     val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
-    val screen by appWindowManager.screenContext.collectAsState()
+    val navController = LocalNavHostController.current
 
-    val selectedIndex by remember(screen.screenType) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+
+    val routeName = backStackEntry?.let { getRouteName(it.destination) }
+
+    val selectedIndex by remember(routeName) {
         mutableStateOf(
-            (prevMenuList + nextMenuList).indexOfFirst { it.screenType == screen.screenType },
+            (prevMenuList + nextMenuList).indexOfFirst {
+                it.route.name == routeName
+            },
         )
     }
 
@@ -96,7 +101,7 @@ fun MainMenuView() {
     ) {
         prevMenuList.forEachIndexed { index, item ->
             MainMenuItemView(item.title, background(index == selectedIndex)) {
-                appWindowManager.setScreen(ScreenContext(item.screenType))
+                navController.navigate(item.route)
             }
         }
 
@@ -115,7 +120,7 @@ fun MainMenuView() {
 
         nextMenuList.forEachIndexed { index, item ->
             MainMenuItemView(item.title, background(index == selectedIndex - prevMenuList.size)) {
-                appWindowManager.setScreen(ScreenContext(item.screenType))
+                navController.navigate(item.route)
             }
         }
 
@@ -188,5 +193,5 @@ fun MainMenuItemView(
 
 data class MainMenuItem(
     val title: String,
-    val screenType: ScreenType,
+    val route: Route,
 )

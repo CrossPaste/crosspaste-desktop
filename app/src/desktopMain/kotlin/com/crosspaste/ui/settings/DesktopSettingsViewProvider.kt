@@ -12,9 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.crosspaste.app.AppInfo
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.About
+import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.database
@@ -26,13 +26,14 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 
 class DesktopSettingsViewProvider(
     private val appInfo: AppInfo,
-    private val appWindowManager: AppWindowManager,
     private val expandViewProvider: ExpandViewProvider,
     private val platform: Platform,
 ) : SettingsViewProvider {
 
     @Composable
     override fun AboutItemView() {
+        val navController = LocalNavHostController.current
+
         SettingItemView(
             text = "about",
             painter = info(),
@@ -42,7 +43,7 @@ class DesktopSettingsViewProvider(
                     Modifier
                         .clip(tiny2XRoundedCornerShape)
                         .clickable(onClick = {
-                            appWindowManager.toScreen(About)
+                            navController.navigate(About)
                         })
                         .padding(tiny2X),
             ) {
