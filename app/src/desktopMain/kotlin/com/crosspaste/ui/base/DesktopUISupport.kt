@@ -1,9 +1,9 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.navigation.NavController
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
-import com.crosspaste.app.AppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.GlobalCopywriter
@@ -36,7 +36,6 @@ import javax.swing.JColorChooser
 
 class DesktopUISupport(
     private val appUrls: AppUrls,
-    private val appWindowManager: AppWindowManager,
     private val colorTypePlugin: ColorTypePlugin,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
@@ -195,8 +194,11 @@ class DesktopUISupport(
         }
     }
 
-    override fun openText(pasteData: PasteData) {
-        appWindowManager.toScreen(PasteTextEdit, pasteData)
+    override fun openText(
+        navController: NavController,
+        pasteData: PasteData,
+    ) {
+        navController.navigate(PasteTextEdit(pasteData))
     }
 
     override fun openRtf(pasteData: PasteData) {
@@ -219,13 +221,14 @@ class DesktopUISupport(
     }
 
     override fun openPasteData(
+        navController: NavController,
         pasteData: PasteData,
         index: Int,
     ) {
         pasteData.pasteAppearItem?.let { item ->
             val pasteType = pasteData.getType()
             when (pasteType) {
-                PasteType.TEXT_TYPE -> openText(pasteData)
+                PasteType.TEXT_TYPE -> openText(navController, pasteData)
                 PasteType.COLOR_TYPE -> openColorPicker(pasteData)
                 PasteType.URL_TYPE -> openUrlInBrowser((item as UrlPasteItem).url)
                 PasteType.HTML_TYPE -> openHtml(pasteData.id, (item as HtmlPasteItem).html)

@@ -41,6 +41,7 @@ import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
@@ -82,6 +83,8 @@ fun SideSearchInputView() {
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
+
+    val navController = LocalNavHostController.current
 
     LaunchedEffect(showSearchWindow) {
         if (showSearchWindow) {
@@ -152,7 +155,7 @@ fun SideSearchInputView() {
                 tint = MaterialTheme.colorScheme.primary,
                 text = copywriter.getText("settings"),
             ) {
-                appWindowManager.toScreen(Settings)
+                navController.navigate(Settings)
                 appWindowManager.showMainWindow()
                 appWindowManager.hideSearchWindow()
             }

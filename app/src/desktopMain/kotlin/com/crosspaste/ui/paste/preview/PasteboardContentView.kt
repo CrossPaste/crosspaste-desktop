@@ -53,7 +53,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteboardContentView(openTopBar: () -> Unit) {
+fun PasteboardContentView() {
     val pasteDataViewModel = koinInject<PasteDataViewModel>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 
