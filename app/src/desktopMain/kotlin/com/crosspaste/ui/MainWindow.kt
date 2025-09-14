@@ -51,6 +51,8 @@ fun MainWindow(windowIcon: Painter?) {
 
     val applicationExit = LocalExitApplication.current
 
+    val navController = LocalNavHostController.current
+
     // Initialize global listener only once
     LaunchedEffect(Unit) {
         globalListener.start()
@@ -106,35 +108,35 @@ fun MainWindow(windowIcon: Painter?) {
             MenuBar {
                 Menu(copywriter.getText("sync")) {
                     Item(copywriter.getText("devices")) {
-                        appWindowManager.toScreen(Devices)
+                        navController.navigate(Devices)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("scan")) {
-                        appWindowManager.toScreen(QrCode)
+                        navController.navigate(QrCode)
                         appWindowManager.showMainWindow()
                     }
                 }
                 Menu(copywriter.getText("action")) {
                     Item(copywriter.getText("settings")) {
-                        appWindowManager.toScreen(Settings)
+                        navController.navigate(Settings)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("import")) {
-                        appWindowManager.toScreen(Import)
+                        navController.navigate(Import)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("export")) {
-                        appWindowManager.toScreen(Export)
+                        navController.navigate(Export)
                         appWindowManager.showMainWindow()
                     }
                 }
                 Menu(copywriter.getText("help")) {
                     Item(copywriter.getText("shortcut_keys")) {
-                        appWindowManager.toScreen(ShortcutKeys)
+                        navController.navigate(ShortcutKeys)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("about")) {
-                        appWindowManager.toScreen(About)
+                        navController.navigate(About)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("check_for_updates")) {

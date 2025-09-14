@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.application
+import androidx.navigation.compose.rememberNavController
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppLaunchState
@@ -37,6 +38,7 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.CrossPasteWindows
 import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.base.PasteContextMenuRepresentation
 import com.crosspaste.ui.theme.DesktopTheme
 import com.crosspaste.utils.DesktopDeviceUtils
@@ -243,9 +245,12 @@ class CrossPaste {
 
                 val contextMenuRepresentation = remember { PasteContextMenuRepresentation() }
 
+                val navController = rememberNavController()
+
                 CompositionLocalProvider(
                     LocalExitApplication provides exitApplication,
                     LocalContextMenuRepresentation provides contextMenuRepresentation,
+                    LocalNavHostController provides navController,
                 ) {
                     DesktopTheme {
                         CrossPasteWindows(exiting)

@@ -33,6 +33,7 @@ import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.measureTextWidth
@@ -177,6 +178,7 @@ object WindowsTrayView {
         val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
         val applicationExit = LocalExitApplication.current
+        val navController = LocalNavHostController.current
 
         val menuTexts by remember(copywriter.language()) {
             mutableStateOf(menuHelper.menuItems.map { it.title(copywriter) })
@@ -216,8 +218,9 @@ object WindowsTrayView {
                 contentAlignment = Alignment.Center,
             ) {
                 menuHelper.createWindowsMenu(
-                    closeWindowMenu = hideMenu,
                     applicationExit = applicationExit,
+                    closeWindowMenu = hideMenu,
+                    navController = navController,
                 )
             }
         }

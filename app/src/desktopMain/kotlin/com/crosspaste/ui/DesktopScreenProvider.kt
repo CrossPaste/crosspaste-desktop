@@ -1,5 +1,7 @@
 package com.crosspaste.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -18,9 +20,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
-import com.crosspaste.app.AppWindowManager
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.paste.PasteData
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.RecommendContentView
 import com.crosspaste.ui.base.ToastListView
@@ -33,6 +39,7 @@ import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
+import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.ui.paste.preview.PasteboardContentView
 import com.crosspaste.ui.settings.SettingsContentView
@@ -40,37 +47,90 @@ import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.zero
+import kotlin.reflect.typeOf
 
 class DesktopScreenProvider(
     private val appSize: DesktopAppSize,
-    private val appWindowManager: AppWindowManager,
     private val deviceScopeFactory: DeviceScopeFactory,
     private val syncManager: SyncManager,
     private val syncScopeFactory: SyncScopeFactory,
 ) : ScreenProvider {
 
     @Composable
-    override fun AboutScreen() {
-        AboutContentView()
+    override fun screen() {
+        val navController = LocalNavHostController.current
+
+        NavHost(
+            navController = navController,
+            startDestination = Pasteboard,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None },
+        ) {
+            composable<Pasteboard> {
+                PasteboardScreen()
+            }
+            composable<Devices> {
+                DevicesScreen()
+            }
+            composable<QrCode> { QRScreen() }
+            composable<Settings> { SettingsScreen() }
+            composable<ShortcutKeys> { ShortcutKeysScreen() }
+            composable<Export> { ExportScreen() }
+            composable<Import> { ImportScreen() }
+            composable<About> { AboutScreen() }
+            composable<DeviceDetail> { backStackEntry ->
+                backStackEntry.DeviceDetailScreen()
+            }
+            composable<NearbyDeviceDetail>(
+                typeMap =
+                    mapOf(
+                        typeOf<SyncInfo>() to JsonNavType(SyncInfo.serializer()),
+                    ),
+            ) { backStackEntry ->
+                backStackEntry.NearbyDeviceDetailScreen()
+            }
+            composable<PasteTextEdit>(
+                typeMap =
+                    mapOf(
+                        typeOf<PasteData>() to JsonNavType(PasteData.serializer()),
+                    ),
+            ) { backStackEntry ->
+                backStackEntry.PasteTextEditScreen()
+            }
+            composable<Recommend> { RecommendScreen() }
+        }
     }
 
     @Composable
-    override fun CrossPasteScreen() {
-        HomeScreen()
+    private fun AboutScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            AboutContentView()
+        }
     }
 
     @Composable
-    override fun DeviceDetailScreen() {
-        val screen by appWindowManager.screenContext.collectAsState()
+    private fun NavBackStackEntry.DeviceDetailScreen() {
+        val navController = LocalNavHostController.current
+
+        val deviceDetail = toRoute<DeviceDetail>()
 
         val syncRuntimeInfo by syncManager
-            .getSyncHandlers()[screen.context as String]
+            .getSyncHandlers()[deviceDetail.appInstanceId]
             ?.syncRuntimeInfoFlow
             ?.collectAsState() ?: remember { mutableStateOf(null) }
 
         LaunchedEffect(syncRuntimeInfo) {
             if (syncRuntimeInfo == null) {
-                appWindowManager.setScreen(ScreenContext(Devices))
+                navController.navigate(Devices)
             }
         }
 
@@ -79,137 +139,185 @@ class DesktopScreenProvider(
                 remember(currentSyncRuntimeInfo) {
                     deviceScopeFactory.createDeviceScope(currentSyncRuntimeInfo)
                 }
-
-            scope.DeviceDetailContentView()
-        }
-    }
-
-    @Composable
-    override fun DevicesScreen() {
-        DevicesContentView()
-    }
-
-    @Composable
-    override fun ExportScreen() {
-        PasteExportContentView()
-    }
-
-    @Composable
-    override fun HomeScreen() {
-        val screen by appWindowManager.screenContext.collectAsState()
-
-        var modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(start = medium)
-                .padding(bottom = medium)
-
-        modifier =
-            when (screen.screenType) {
-                Pasteboard, Settings ->
-                    modifier
-                else ->
-                    modifier.padding(end = medium)
-            }
-
-        Box(modifier = modifier) {
-            WindowDecoration(screen.screenType.name)
-            when (screen.screenType) {
-                Pasteboard -> {
-                    PasteboardScreen {}
-                }
-                Devices -> {
-                    DevicesScreen()
-                }
-                QrCode -> {
-                    QRScreen()
-                }
-                Settings -> {
-                    SettingsScreen()
-                }
-                ShortcutKeys -> {
-                    ShortcutKeysScreen()
-                }
-                Export -> {
-                    ExportScreen()
-                }
-                Import -> {
-                    ImportScreen()
-                }
-                About -> {
-                    AboutScreen()
-                }
-                DeviceDetail -> {
-                    DeviceDetailScreen()
-                }
-                NearbyDeviceDetail -> {
-                    NearbyDeviceDetailScreen()
-                }
-                PasteTextEdit -> {
-                    PasteTextEditScreen()
-                }
-                Recommend -> {
-                    RecommendScreen()
-                }
-                else -> {}
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = medium)
+                        .padding(bottom = medium),
+            ) {
+                WindowDecoration()
+                scope.DeviceDetailContentView()
             }
         }
     }
 
     @Composable
-    override fun ImportScreen() {
-        PasteImportContentView()
+    private fun DevicesScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            DevicesContentView()
+        }
     }
 
     @Composable
-    override fun NearbyDeviceDetailScreen() {
-        val screen by appWindowManager.screenContext.collectAsState()
+    private fun ExportScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            PasteExportContentView()
+        }
+    }
 
+    @Composable
+    private fun ImportScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            PasteImportContentView()
+        }
+    }
+
+    @Composable
+    private fun NavBackStackEntry.NearbyDeviceDetailScreen() {
+        val nearbyDeviceDetail = toRoute<NearbyDeviceDetail>()
         val scope =
-            remember(screen.context) {
-                syncScopeFactory.createSyncScope(screen.context as SyncInfo)
+            remember(nearbyDeviceDetail) {
+                syncScopeFactory.createSyncScope(nearbyDeviceDetail.syncInfo)
+            }
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            scope.NearbyDeviceDetailContentView()
+        }
+    }
+
+    @Composable
+    private fun PasteboardScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(start = medium, bottom = medium),
+        ) {
+            WindowDecoration()
+            PasteboardContentView()
+        }
+    }
+
+    @Composable
+    private fun NavBackStackEntry.PasteTextEditScreen() {
+        val navController = LocalNavHostController.current
+
+        val pasteTextEdit = toRoute<PasteTextEdit>()
+        val currentPasteData = pasteTextEdit.pasteData
+        val scope =
+            remember(currentPasteData.id, currentPasteData.pasteState) {
+                createPasteDataScope(currentPasteData)
             }
 
-        scope.NearbyDeviceDetailContentView()
+        LaunchedEffect(scope) {
+            if (scope == null) {
+                navController.navigate(Pasteboard)
+            }
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            scope?.PasteTextEditContentView()
+        }
     }
 
     @Composable
-    override fun PasteboardScreen(openTopBar: () -> Unit) {
-        PasteboardContentView(openTopBar)
+    private fun QRScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            QRContentView()
+        }
     }
 
     @Composable
-    override fun PasteTextEditScreen() {
-        PasteTextEditContentView()
+    private fun ShortcutKeysScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            ShortcutKeysContentView()
+        }
     }
 
     @Composable
-    override fun QRScreen() {
-        QRContentView()
+    private fun SettingsScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            SettingsContentView()
+        }
     }
 
     @Composable
-    fun ShortcutKeysScreen() {
-        ShortcutKeysContentView()
+    private fun RecommendScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            RecommendContentView()
+        }
     }
 
     @Composable
-    override fun SettingsScreen() {
-        SettingsContentView()
-    }
-
-    @Composable
-    override fun RecommendScreen() {
-        RecommendContentView()
-    }
-
-    @Composable
-    override fun TokenView() {
+    fun TokenView() {
         TokenView(IntOffset(0, 0))
     }
 
     @Composable
-    override fun ToastView() {
+    fun ToastView() {
         val density = LocalDensity.current
 
         val yOffset by remember {

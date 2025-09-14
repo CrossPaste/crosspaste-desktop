@@ -32,6 +32,7 @@ ktor = "3.2.3"
 lifecycle = "2.9.3"
 logback = "1.5.18"
 mockk = "1.14.5"
+navigation = "2.9.0-rc02"
 okio = "3.16.0"
 ph-css = "8.0.0"
 richeditor = "1.0.0-rc13"
@@ -100,6 +101,7 @@ lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-vie
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 ph-css = { module = "com.helger:ph-css", version.ref = "ph-css" }
 richeditor = { module = "com.mohamedrejeb.richeditor:richeditor-compose", version.ref = "richeditor" }

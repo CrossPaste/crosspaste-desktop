@@ -9,9 +9,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
@@ -21,9 +23,16 @@ import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun WindowDecoration(title: String) {
+fun WindowDecoration() {
     val appSize = koinInject<DesktopAppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
+
+    val navController = LocalNavHostController.current
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+
+    val routeName =
+        backStackEntry?.let { getRouteName(it.destination) }
 
     Row(
         modifier =
@@ -35,14 +44,16 @@ fun WindowDecoration(title: String) {
                 .padding(bottom = tiny),
         verticalAlignment = Alignment.Bottom,
     ) {
-        Text(
-            modifier = Modifier,
-            text = copywriter.getText(title),
-            color =
-                MaterialTheme.colorScheme.contentColorFor(
-                    AppUIColors.appBackground,
-                ),
-            style = MaterialTheme.typography.titleMedium,
-        )
+        if (routeName != null) {
+            Text(
+                modifier = Modifier,
+                text = copywriter.getText(routeName),
+                color =
+                    MaterialTheme.colorScheme.contentColorFor(
+                        AppUIColors.appBackground,
+                    ),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
     }
 }

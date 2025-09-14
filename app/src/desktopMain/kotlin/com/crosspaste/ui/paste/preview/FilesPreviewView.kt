@@ -12,6 +12,7 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.extension
@@ -27,6 +28,8 @@ fun PasteDataScope.FilesPreviewView() {
         val pasteFilePaths = pasteFiles.getFilePaths(userDataPathProvider)
         val fileInfoTreeMap = pasteFiles.fileInfoTreeMap
         val fileUtils = getFileUtils()
+
+        val navController = LocalNavHostController.current
 
         ComplexPreviewContentView {
             items(pasteFilePaths.size) { index ->
@@ -45,6 +48,7 @@ fun PasteDataScope.FilesPreviewView() {
                 PasteContextMenuView(
                     items =
                         pasteMenuService.fileMenuItemsProvider(
+                            navController = navController,
                             pasteData = pasteData,
                             pasteItem = pasteFiles,
                             index = index,
