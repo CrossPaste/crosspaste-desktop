@@ -14,7 +14,6 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalExitApplication
-import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.base.MenuHelper
 import dorkbox.systemTray.SystemTray
 import dorkbox.systemTray.SystemTray.TrayType
@@ -45,7 +44,6 @@ object LinuxTrayView {
     @Composable
     fun Tray() {
         val applicationExit = LocalExitApplication.current
-        val navController = LocalNavHostController.current
         val appLaunchState = koinInject<AppLaunchState>()
         val appLaunch = koinInject<DesktopAppLaunch>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
@@ -69,7 +67,7 @@ object LinuxTrayView {
             tray?.setTooltip("CrossPaste")
 
             tray?.let { linuxTray ->
-                for (item in menuHelper.createLinuxTrayMenu(applicationExit, navController)) {
+                for (item in menuHelper.createLinuxTrayMenu(applicationExit)) {
                     linuxTray.menu.add(item)
                 }
             }

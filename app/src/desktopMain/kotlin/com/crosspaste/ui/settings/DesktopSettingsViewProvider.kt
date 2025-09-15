@@ -14,7 +14,7 @@ import androidx.compose.ui.draw.clip
 import com.crosspaste.app.AppInfo
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.About
-import com.crosspaste.ui.LocalNavHostController
+import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.database
@@ -23,6 +23,7 @@ import com.crosspaste.ui.base.network
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import org.koin.compose.koinInject
 
 class DesktopSettingsViewProvider(
     private val appInfo: AppInfo,
@@ -32,7 +33,7 @@ class DesktopSettingsViewProvider(
 
     @Composable
     override fun AboutItemView() {
-        val navController = LocalNavHostController.current
+        val navigationManager = koinInject<NavigationManager>()
 
         SettingItemView(
             text = "about",
@@ -43,7 +44,7 @@ class DesktopSettingsViewProvider(
                     Modifier
                         .clip(tiny2XRoundedCornerShape)
                         .clickable(onClick = {
-                            navController.navigate(About)
+                            navigationManager.navigateAndClearStack(About)
                         })
                         .padding(tiny2X),
             ) {

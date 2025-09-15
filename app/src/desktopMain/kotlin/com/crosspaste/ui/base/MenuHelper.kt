@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.navigation.NavController
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -26,6 +25,7 @@ import com.crosspaste.ui.About
 import com.crosspaste.ui.Devices
 import com.crosspaste.ui.Export
 import com.crosspaste.ui.Import
+import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.ShortcutKeys
 import com.crosspaste.ui.theme.AppUIColors
@@ -39,17 +39,18 @@ import kotlinx.coroutines.launch
 
 class MenuHelper(
     private val appUpdateService: AppUpdateService,
-    private val copywriter: GlobalCopywriter,
     private val appWindowManager: DesktopAppWindowManager,
+    private val copywriter: GlobalCopywriter,
+    private val navigationManager: NavigationManager,
     uiSupport: UISupport,
 ) {
 
     val about =
         MenuItem(
             title = { copywriter -> copywriter.getText("about") },
-            action = { navController ->
+            action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
-                    navController.navigate(About)
+                    navigationManager.navigateAndClearStack(About)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -66,9 +67,9 @@ class MenuHelper(
     val devices =
         MenuItem(
             title = { copywriter -> copywriter.getText("devices") },
-            action = { navController ->
+            action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
-                    navController.navigate(Devices)
+                    navigationManager.navigateAndClearStack(Devices)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -77,9 +78,9 @@ class MenuHelper(
     val export =
         MenuItem(
             title = { copywriter -> copywriter.getText("export") },
-            action = { navController ->
+            action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Export")) {
-                    navController.navigate(Export)
+                    navigationManager.navigateAndClearStack(Export)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -88,9 +89,9 @@ class MenuHelper(
     val import =
         MenuItem(
             title = { copywriter -> copywriter.getText("import") },
-            action = { navController ->
+            action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Import")) {
-                    navController.navigate(Import)
+                    navigationManager.navigateAndClearStack(Import)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -99,9 +100,9 @@ class MenuHelper(
     val settings =
         MenuItem(
             title = { copywriter -> copywriter.getText("settings") },
-            action = { navController ->
+            action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
-                    navController.navigate(Settings)
+                    navigationManager.navigateAndClearStack(Settings)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -110,9 +111,9 @@ class MenuHelper(
     val shortcutKeys =
         MenuItem(
             title = { copywriter -> copywriter.getText("shortcut_keys") },
-            action = { navController ->
+            action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
-                    navController.navigate(ShortcutKeys)
+                    navigationManager.navigateAndClearStack(ShortcutKeys)
                     appWindowManager.recordActiveInfoAndShowMainWindow(false)
                 }
             },
@@ -138,10 +139,7 @@ class MenuHelper(
             faq,
         )
 
-    fun createLinuxTrayMenu(
-        applicationExit: (ExitMode) -> Unit,
-        navController: NavController,
-    ): List<dorkbox.systemTray.MenuItem> {
+    fun createLinuxTrayMenu(applicationExit: (ExitMode) -> Unit): List<dorkbox.systemTray.MenuItem> {
         val openSearchWindow =
             dorkbox.systemTray.MenuItem(
                 copywriter.getText("open_search_window"),
@@ -160,7 +158,7 @@ class MenuHelper(
                     dorkbox.systemTray.MenuItem(
                         item.title(copywriter),
                     ) {
-                        item.action(navController)
+                        item.action()
                     }
                 }
 
@@ -175,7 +173,6 @@ class MenuHelper(
     fun createMacMenu(
         trayManager: NativeTrayManager,
         applicationExit: (ExitMode) -> Unit,
-        navController: NavController,
         update: Boolean = false,
     ) {
         if (!update) {
@@ -184,7 +181,7 @@ class MenuHelper(
                     itemId = index,
                     title = item.title(copywriter),
                 ) {
-                    item.action(navController)
+                    item.action()
                 }
             }
             trayManager.addSeparator()
@@ -212,7 +209,6 @@ class MenuHelper(
     fun createWindowsMenu(
         applicationExit: (ExitMode) -> Unit,
         closeWindowMenu: () -> Unit,
-        navController: NavController,
     ) {
         val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
@@ -248,7 +244,7 @@ class MenuHelper(
                                 null
                             },
                         onClick = {
-                            item.action(navController)
+                            item.action()
                             closeWindowMenu()
                         },
                     )
@@ -268,5 +264,5 @@ class MenuHelper(
 
 data class MenuItem(
     val title: (Copywriter) -> String,
-    val action: (NavController) -> Unit,
+    val action: () -> Unit,
 )

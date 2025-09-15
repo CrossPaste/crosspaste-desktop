@@ -1,7 +1,6 @@
 package com.crosspaste.paste
 
 import androidx.compose.foundation.ContextMenuItem
-import androidx.navigation.NavController
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.db.paste.PasteDao
@@ -83,11 +82,10 @@ class DesktopPasteMenuService(
     }
 
     override fun openPasteData(
-        navController: NavController,
         pasteData: PasteData,
         index: Int,
     ) {
-        uiSupport.openPasteData(navController, pasteData, index)
+        uiSupport.openPasteData(pasteData, index)
         val pasteType = pasteData.getType()
         if (!pasteType.isText() && !pasteType.isColor()) {
             desktopAppWindowManager.hideMainWindow()
@@ -134,7 +132,6 @@ class DesktopPasteMenuService(
     }
 
     fun fileMenuItemsProvider(
-        navController: NavController,
         pasteData: PasteData,
         pasteItem: PasteItem,
         index: Int = 0,
@@ -148,22 +145,19 @@ class DesktopPasteMenuService(
                     )
                 },
                 ContextMenuItem(copywriter.getText("open")) {
-                    openPasteData(navController, pasteData, index)
+                    openPasteData(pasteData, index)
                 },
             )
         }
 
-    fun pasteMenuItemsProvider(
-        navController: NavController,
-        pasteData: PasteData,
-    ): () -> List<ContextMenuItem> =
+    fun pasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
         {
             listOf(
                 ContextMenuItem(copywriter.getText("copy")) {
                     copyPasteData(pasteData)
                 },
                 ContextMenuItem(copywriter.getText("open")) {
-                    openPasteData(navController, pasteData)
+                    openPasteData(pasteData)
                 },
                 ContextMenuItem(copywriter.getText("delete")) {
                     deletePasteData(pasteData)

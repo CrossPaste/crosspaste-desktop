@@ -9,7 +9,6 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
@@ -22,8 +21,6 @@ fun PasteDataScope.ImagesPreviewView() {
         val userDataPathProvider = koinInject<UserDataPathProvider>()
         val imagePaths = pasteFiles.getFilePaths(userDataPathProvider)
         val pasteCoordinate = pasteData.getPasteCoordinate()
-
-        val navController = LocalNavHostController.current
 
         ComplexPreviewContentView {
             items(imagePaths.size) { index ->
@@ -39,7 +36,6 @@ fun PasteDataScope.ImagesPreviewView() {
                 PasteContextMenuView(
                     items =
                         pasteMenuService.fileMenuItemsProvider(
-                            navController = navController,
                             pasteData = pasteData,
                             pasteItem = pasteFiles,
                             index = index,

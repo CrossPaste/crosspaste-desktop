@@ -2,7 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
 
-interface ScreenProvider {
+interface ScreenProvider : NavigationManager {
 
     @Composable
     fun screen()

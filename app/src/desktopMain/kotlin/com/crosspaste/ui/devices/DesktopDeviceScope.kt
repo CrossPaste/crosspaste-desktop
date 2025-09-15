@@ -10,7 +10,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.DeviceDetail
-import com.crosspaste.ui.LocalNavHostController
+import com.crosspaste.ui.NavigationManager
 import org.koin.compose.koinInject
 
 class DesktopDeviceScope(
@@ -25,7 +25,7 @@ class DesktopDeviceScope(
         onExitHover: () -> Unit,
     ): Modifier {
         val syncManager = koinInject<SyncManager>()
-        val navController = LocalNavHostController.current
+        val navigationManager = koinInject<NavigationManager>()
         return modifier
             .onPointerEvent(
                 eventType = PointerEventType.Enter,
@@ -41,7 +41,7 @@ class DesktopDeviceScope(
                 if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
                     syncManager.toVerify(syncRuntimeInfo.appInstanceId)
                 } else {
-                    navController.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
+                    navigationManager.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
                 }
             }
     }

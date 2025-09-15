@@ -30,7 +30,6 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopWriteTransferable
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.TransferableProducer
-import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -140,10 +139,8 @@ fun PasteDataScope.SidePasteItemView(
                         containerColor = AppUIColors.pasteBackground,
                     ),
             ) {
-                val navController = LocalNavHostController.current
-
                 PasteContextMenuView(
-                    items = pasteMenuService.pasteMenuItemsProvider(navController, pasteData),
+                    items = pasteMenuService.pasteMenuItemsProvider(pasteData),
                 ) {
                     pasteData.pasteContent()
                 }
