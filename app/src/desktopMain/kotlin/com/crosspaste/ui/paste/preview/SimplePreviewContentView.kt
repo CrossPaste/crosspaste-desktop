@@ -7,15 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.paste.PasteDataScope
 import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.SimplePreviewContentView(content: @Composable () -> Unit) {
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
-
-    val navController = LocalNavHostController.current
 
     PasteSpecificPreviewContentView(
         pasteMainContent = {
@@ -35,7 +32,7 @@ fun PasteDataScope.SimplePreviewContentView(content: @Composable () -> Unit) {
                         },
             ) {
                 PasteContextMenuView(
-                    items = pasteMenuService.pasteMenuItemsProvider(navController, pasteData),
+                    items = pasteMenuService.pasteMenuItemsProvider(pasteData),
                 ) {
                     content()
                 }

@@ -48,7 +48,6 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
-import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
@@ -507,8 +506,6 @@ fun PasteDataScope.MoreMenuItems(hideMore: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
 
-    val navController = LocalNavHostController.current
-
     Box(
         modifier =
             Modifier
@@ -533,7 +530,7 @@ fun PasteDataScope.MoreMenuItems(hideMore: () -> Unit) {
                     .background(AppUIColors.menuBackground),
         ) {
             MenuItemView(copywriter.getText("open")) {
-                pasteMenuService.openPasteData(navController, pasteData)
+                pasteMenuService.openPasteData(pasteData)
                 hideMore()
             }
             MenuItemView(copywriter.getText("delete")) {

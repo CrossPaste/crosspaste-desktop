@@ -1,7 +1,6 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.navigation.NavController
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
 import com.crosspaste.db.paste.PasteDao
@@ -20,6 +19,7 @@ import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.plugin.type.ColorTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
@@ -38,6 +38,7 @@ class DesktopUISupport(
     private val appUrls: AppUrls,
     private val colorTypePlugin: ColorTypePlugin,
     private val copywriter: GlobalCopywriter,
+    private val navigationManager: NavigationManager,
     private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
     private val platform: Platform,
@@ -134,7 +135,7 @@ class DesktopUISupport(
 
     override fun openColorPicker(pasteData: PasteData) {
         pasteData.getPasteItem(PasteColor::class)?.let { pasteColor ->
-            val initialColor = Color(pasteColor.color.toInt())
+            val initialColor = Color(pasteColor.color)
             EventQueue.invokeLater {
                 JColorChooser(initialColor)
                 val result =
@@ -194,11 +195,8 @@ class DesktopUISupport(
         }
     }
 
-    override fun openText(
-        navController: NavController,
-        pasteData: PasteData,
-    ) {
-        navController.navigate(PasteTextEdit(pasteData))
+    override fun openText(pasteData: PasteData) {
+        navigationManager.navigate(PasteTextEdit(pasteData))
     }
 
     override fun openRtf(pasteData: PasteData) {
@@ -221,14 +219,13 @@ class DesktopUISupport(
     }
 
     override fun openPasteData(
-        navController: NavController,
         pasteData: PasteData,
         index: Int,
     ) {
         pasteData.pasteAppearItem?.let { item ->
             val pasteType = pasteData.getType()
             when (pasteType) {
-                PasteType.TEXT_TYPE -> openText(navController, pasteData)
+                PasteType.TEXT_TYPE -> openText(pasteData)
                 PasteType.COLOR_TYPE -> openColorPicker(pasteData)
                 PasteType.URL_TYPE -> openUrlInBrowser((item as UrlPasteItem).url)
                 PasteType.HTML_TYPE -> openHtml(pasteData.id, (item as HtmlPasteItem).html)

@@ -8,8 +8,9 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.LocalNavHostController
+import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.NearbyDeviceDetail
+import org.koin.compose.koinInject
 
 class DesktopSyncScope(
     override val syncInfo: SyncInfo,
@@ -27,7 +28,7 @@ class DesktopSyncScope(
         onHover: () -> Unit,
         onExitHover: () -> Unit,
     ): Modifier {
-        val navController = LocalNavHostController.current
+        val navigationManager = koinInject<NavigationManager>()
         return modifier
             .onPointerEvent(
                 eventType = PointerEventType.Enter,
@@ -40,7 +41,7 @@ class DesktopSyncScope(
                     onExitHover()
                 },
             ).clickable {
-                navController.navigate(NearbyDeviceDetail(syncInfo))
+                navigationManager.navigate(NearbyDeviceDetail(syncInfo))
             }
     }
 }

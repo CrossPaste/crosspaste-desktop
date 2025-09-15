@@ -1,7 +1,5 @@
 package com.crosspaste.ui
 
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavType
 import androidx.savedstate.SavedState
 import androidx.savedstate.read
@@ -12,8 +10,7 @@ import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
-@Serializable
-sealed interface Route {
+interface Route {
     val name: String
 }
 
@@ -103,23 +100,6 @@ object ShortcutKeys : Route {
     const val NAME: String = "shortcut_keys"
     override val name: String = NAME
 }
-
-fun getRouteName(dest: NavDestination): String? =
-    when {
-        dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
-        dest.hasRoute<Devices>() -> Devices.NAME
-        dest.hasRoute<DeviceDetail>() -> DeviceDetail.NAME
-        dest.hasRoute<Settings>() -> Settings.NAME
-        dest.hasRoute<QrCode>() -> QrCode.NAME
-        dest.hasRoute<Import>() -> Import.NAME
-        dest.hasRoute<Export>() -> Export.NAME
-        dest.hasRoute<ShortcutKeys>() -> ShortcutKeys.NAME
-        dest.hasRoute<About>() -> About.NAME
-        dest.hasRoute<Recommend>() -> Recommend.NAME
-        dest.hasRoute<NearbyDeviceDetail>() -> NearbyDeviceDetail.NAME
-        dest.hasRoute<PasteTextEdit>() -> PasteTextEdit.NAME
-        else -> null
-    }
 
 class JsonNavType<T : Any>(
     private val serializer: KSerializer<T>,

@@ -49,6 +49,7 @@ fun MainMenuView() {
     val appLaunch = koinInject<DesktopAppLaunch>()
     val appUpdateService = koinInject<AppUpdateService>()
     val configManager = koinInject<DesktopConfigManager>()
+    val navigateManage = koinInject<NavigationManager>()
 
     val prevMenuList by remember {
         mutableStateOf(
@@ -101,7 +102,7 @@ fun MainMenuView() {
     ) {
         prevMenuList.forEachIndexed { index, item ->
             MainMenuItemView(item.title, background(index == selectedIndex)) {
-                navController.navigate(item.route)
+                navigateManage.navigateAndClearStack(item.route)
             }
         }
 
@@ -120,7 +121,7 @@ fun MainMenuView() {
 
         nextMenuList.forEachIndexed { index, item ->
             MainMenuItemView(item.title, background(index == selectedIndex - prevMenuList.size)) {
-                navController.navigate(item.route)
+                navigateManage.navigateAndClearStack(item.route)
             }
         }
 

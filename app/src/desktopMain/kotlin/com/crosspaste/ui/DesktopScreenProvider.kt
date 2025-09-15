@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
@@ -47,6 +48,7 @@ import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.zero
+import kotlinx.coroutines.channels.Channel
 import kotlin.reflect.typeOf
 
 class DesktopScreenProvider(
@@ -56,9 +58,48 @@ class DesktopScreenProvider(
     private val syncScopeFactory: SyncScopeFactory,
 ) : ScreenProvider {
 
+    private val navigationEvents = Channel<NavigationEvent>(Channel.UNLIMITED)
+
+    override fun navigate(route: Route) {
+        navigationEvents.trySend(NavigationEvent.Navigate(route))
+    }
+
+    override fun navigateAndClearStack(route: Route) {
+        navigationEvents.trySend(NavigationEvent.NavigateAndClearStack(route))
+    }
+
+    override fun navigateUp() {
+        navigationEvents.trySend(NavigationEvent.NavigateUp)
+    }
+
+    override fun navigateAction(
+        event: NavigationEvent,
+        navController: NavHostController,
+    ) {
+        when (event) {
+            is NavigationEvent.Navigate -> {
+                navController.navigate(event.route)
+            }
+            is NavigationEvent.NavigateAndClearStack -> {
+                navController.navigate(event.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+            is NavigationEvent.NavigateUp -> {
+                navController.navigateUp()
+            }
+        }
+    }
+
     @Composable
     override fun screen() {
         val navController = LocalNavHostController.current
+
+        LaunchedEffect(Unit) {
+            for (event in navigationEvents) {
+                navigateAction(event, navController)
+            }
+        }
 
         NavHost(
             navController = navController,
@@ -68,21 +109,15 @@ class DesktopScreenProvider(
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None },
         ) {
-            composable<Pasteboard> {
-                PasteboardScreen()
-            }
+            composable<About> { AboutScreen() }
             composable<Devices> {
                 DevicesScreen()
             }
-            composable<QrCode> { QRScreen() }
-            composable<Settings> { SettingsScreen() }
-            composable<ShortcutKeys> { ShortcutKeysScreen() }
-            composable<Export> { ExportScreen() }
-            composable<Import> { ImportScreen() }
-            composable<About> { AboutScreen() }
             composable<DeviceDetail> { backStackEntry ->
                 backStackEntry.DeviceDetailScreen()
             }
+            composable<Export> { ExportScreen() }
+            composable<Import> { ImportScreen() }
             composable<NearbyDeviceDetail>(
                 typeMap =
                     mapOf(
@@ -90,6 +125,9 @@ class DesktopScreenProvider(
                     ),
             ) { backStackEntry ->
                 backStackEntry.NearbyDeviceDetailScreen()
+            }
+            composable<Pasteboard> {
+                PasteboardScreen()
             }
             composable<PasteTextEdit>(
                 typeMap =
@@ -99,7 +137,10 @@ class DesktopScreenProvider(
             ) { backStackEntry ->
                 backStackEntry.PasteTextEditScreen()
             }
+            composable<QrCode> { QRScreen() }
             composable<Recommend> { RecommendScreen() }
+            composable<Settings> { SettingsScreen() }
+            composable<ShortcutKeys> { ShortcutKeysScreen() }
         }
     }
 
@@ -119,8 +160,6 @@ class DesktopScreenProvider(
 
     @Composable
     private fun NavBackStackEntry.DeviceDetailScreen() {
-        val navController = LocalNavHostController.current
-
         val deviceDetail = toRoute<DeviceDetail>()
 
         val syncRuntimeInfo by syncManager
@@ -130,7 +169,7 @@ class DesktopScreenProvider(
 
         LaunchedEffect(syncRuntimeInfo) {
             if (syncRuntimeInfo == null) {
-                navController.navigate(Devices)
+                navigateAndClearStack(Devices)
             }
         }
 
@@ -228,8 +267,6 @@ class DesktopScreenProvider(
 
     @Composable
     private fun NavBackStackEntry.PasteTextEditScreen() {
-        val navController = LocalNavHostController.current
-
         val pasteTextEdit = toRoute<PasteTextEdit>()
         val currentPasteData = pasteTextEdit.pasteData
         val scope =
@@ -239,7 +276,7 @@ class DesktopScreenProvider(
 
         LaunchedEffect(scope) {
             if (scope == null) {
-                navController.navigate(Pasteboard)
+                navigateAndClearStack(Pasteboard)
             }
         }
 

@@ -40,6 +40,7 @@ fun MainWindow(windowIcon: Painter?) {
     val copywriter = koinInject<GlobalCopywriter>()
     val globalListener = koinInject<GlobalListener>()
     val platform = koinInject<Platform>()
+    val navigateManage = koinInject<NavigationManager>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
     val mainWindowState by appWindowManager.mainWindowState.collectAsState()
@@ -50,8 +51,6 @@ fun MainWindow(windowIcon: Painter?) {
     }
 
     val applicationExit = LocalExitApplication.current
-
-    val navController = LocalNavHostController.current
 
     // Initialize global listener only once
     LaunchedEffect(Unit) {
@@ -108,35 +107,35 @@ fun MainWindow(windowIcon: Painter?) {
             MenuBar {
                 Menu(copywriter.getText("sync")) {
                     Item(copywriter.getText("devices")) {
-                        navController.navigate(Devices)
+                        navigateManage.navigateAndClearStack(Devices)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("scan")) {
-                        navController.navigate(QrCode)
+                        navigateManage.navigateAndClearStack(QrCode)
                         appWindowManager.showMainWindow()
                     }
                 }
                 Menu(copywriter.getText("action")) {
                     Item(copywriter.getText("settings")) {
-                        navController.navigate(Settings)
+                        navigateManage.navigateAndClearStack(Settings)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("import")) {
-                        navController.navigate(Import)
+                        navigateManage.navigateAndClearStack(Import)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("export")) {
-                        navController.navigate(Export)
+                        navigateManage.navigateAndClearStack(Export)
                         appWindowManager.showMainWindow()
                     }
                 }
                 Menu(copywriter.getText("help")) {
                     Item(copywriter.getText("shortcut_keys")) {
-                        navController.navigate(ShortcutKeys)
+                        navigateManage.navigateAndClearStack(ShortcutKeys)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("about")) {
-                        navController.navigate(About)
+                        navigateManage.navigateAndClearStack(About)
                         appWindowManager.showMainWindow()
                     }
                     Item(copywriter.getText("check_for_updates")) {
