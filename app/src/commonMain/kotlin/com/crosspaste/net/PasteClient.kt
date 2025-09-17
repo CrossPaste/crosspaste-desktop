@@ -26,6 +26,9 @@ class PasteClient(
 
     private val client: HttpClient =
         HttpClient(CIO) {
+            install(DefaultRequest) {
+                header(HttpHeaders.AcceptEncoding, "identity")
+            }
             install(HttpTimeout) {
                 requestTimeoutMillis = 1000
             }

@@ -65,7 +65,7 @@ class PullClientApi(
     ): ClientApiResult =
         if (response.status.value == 200) {
             logger.debug { "Success to pull $api" }
-            SuccessResult(response.rawContent)
+            SuccessResult(response.bodyAsChannel())
         } else {
             val failResponse = response.body<FailResponse>()
             createFailureResult(

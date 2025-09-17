@@ -38,7 +38,7 @@ class ClientDecryptPlugin(
                         return@intercept
                     }
                     logger.debug { "client decrypt $appInstanceId" }
-                    val byteReadChannel: ByteReadChannel = it.rawContent
+                    val byteReadChannel: ByteReadChannel = it.bodyAsChannel()
 
                     val contentType = it.call.response.contentType()
 
