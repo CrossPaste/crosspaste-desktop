@@ -13,6 +13,8 @@ show_usage() {
     echo "en=English Text"
     echo "es=Texto en español"
     echo "zh=中文文本"
+    echo "zh_hant=繁體中文文本"
+    echo "zh-hant=繁體中文文本 (alternative format)"
     echo "..."
     exit 1
 }
@@ -51,11 +53,18 @@ fi
 
 echo ""
 echo "Preparing to add key: $KEY_NAME"
+echo "i18n directory: $I18N_DIR"
+echo ""
+
+# List available property files for debugging
+echo "Available property files:"
+ls -la "$I18N_DIR"/*.properties 2>/dev/null | awk '{print "  - " $NF}'
 echo ""
 
 # Process counter
 SUCCESS_COUNT=0
 TOTAL_COUNT=0
+SKIPPED_COUNT=0
 
 # Add or update key-value pair in properties file
 update_properties_file() {
@@ -97,6 +106,14 @@ update_properties_file() {
     fi
 }
 
+# Function to normalize language code
+# Converts zh-hant to zh_hant, zh-hans to zh_hans, etc.
+normalize_lang_code() {
+    local lang="$1"
+    # Convert hyphen to underscore for consistency
+    echo "$lang" | sed 's/-/_/g'
+}
+
 # Read input file and process each language
 while IFS='=' read -r lang value; do
     # Skip empty lines and comments
@@ -104,14 +121,26 @@ while IFS='=' read -r lang value; do
     [[ "$lang" =~ ^[[:space:]]*# ]] && continue
 
     # Trim whitespace
-    lang=$(echo "$lang" | tr -d '[:space:]')
+    lang=$(echo "$lang" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
     # Skip key line
     [ "$lang" = "key" ] && continue
 
-    # Build file path
-    PROP_FILE="${I18N_DIR}/${lang}.properties"
+    # Skip if value is empty
+    if [ -z "$value" ]; then
+        echo "Warning: Skipping empty value for language: $lang"
+        ((SKIPPED_COUNT++))
+        continue
+    fi
+
+    # Normalize language code (convert hyphen to underscore)
+    normalized_lang=$(normalize_lang_code "$lang")
+
+    # Build file path with normalized language code
+    PROP_FILE="${I18N_DIR}/${normalized_lang}.properties"
+
+    echo "Language code: '$lang' -> Normalized: '$normalized_lang'"
 
     # Update file
     update_properties_file "$PROP_FILE" "$KEY_NAME" "$value"
@@ -120,4 +149,11 @@ while IFS='=' read -r lang value; do
 done < "$INPUT_FILE"
 
 echo ""
-echo "Done! Successfully updated $SUCCESS_COUNT/$TOTAL_COUNT files"
+echo "========================================="
+echo "Summary:"
+echo "  Total languages processed: $TOTAL_COUNT"
+echo "  Successfully updated: $SUCCESS_COUNT"
+if [ $SKIPPED_COUNT -gt 0 ]; then
+    echo "  Skipped (empty values): $SKIPPED_COUNT"
+fi
+echo "========================================="
