@@ -1,13 +1,10 @@
 package com.crosspaste.ui.paste.side.preview
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
@@ -23,24 +20,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
-import com.crosspaste.ui.theme.AppUISize.huge
-import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.getUrlUtils
 
 @Composable
 fun UrlBottomSolid(
+    modifier: Modifier = Modifier,
     title: String? = null,
     url: String,
+    maxLines: Int,
 ) {
     Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(huge)
-                .background(AppUIColors.topBackground)
-                .padding(horizontal = small3X, vertical = small3X),
+        modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -71,7 +63,7 @@ fun UrlBottomSolid(
                             .contentColorFor(AppUIColors.topBackground)
                             .copy(alpha = 0.5f),
                 )
-            val maxLines = if (title == null) 2 else 1
+            val maxLines = if (title == null) maxLines else maxLines - 1
 
             val density = LocalDensity.current
 
