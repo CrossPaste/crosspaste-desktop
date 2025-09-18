@@ -7,6 +7,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import okio.Path
+import kotlin.coroutines.cancellation.CancellationException
 
 class GenerateImageService {
 
@@ -19,28 +20,30 @@ class GenerateImageService {
     suspend fun awaitGeneration(
         path: Path,
         timeoutMillis: Long = 30_000,
-    ) {
+    ): Boolean {
         if (fileUtils.existFile(path)) {
-            return
+            return true
         }
 
-        val existingFlow =
-            mutex.withLock {
-                generateMap[path]
-            }
-
         val stateFlow =
-            existingFlow ?: mutex.withLock {
+            mutex.withLock {
                 generateMap.getOrPut(path) { MutableStateFlow(false) }
             }
 
-        try {
-            withTimeoutOrNull(timeoutMillis) {
-                stateFlow.first { it }
-            }
+        return try {
+            val result =
+                withTimeoutOrNull(timeoutMillis) {
+                    stateFlow.first { it }
+                }
+            result ?: false
+        } catch (e: CancellationException) {
+            throw e
         } finally {
             mutex.withLock {
-                generateMap.remove(path)
+                val flow = generateMap[path]
+                if (flow != null && flow.subscriptionCount.value == 0) {
+                    generateMap.remove(path)
+                }
             }
         }
     }

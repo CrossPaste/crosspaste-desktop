@@ -12,7 +12,10 @@ import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 class GenerateImageFetcher(
     private val appSize: AppSize,
@@ -26,12 +29,18 @@ class GenerateImageFetcher(
     private val fileUtils = getFileUtils()
 
     override suspend fun fetch(): FetchResult? =
-        withContext(ioDispatcher) {
-            val path = item.path
-            val preview = item.preview
-            val density = item.density
-            runCatching {
+        runCatching {
+            withContext(ioDispatcher) {
+                currentCoroutineContext().ensureActive()
+
+                val path = item.path
+                val preview = item.preview
+                val density = item.density
+
                 generateImageService.awaitGeneration(path)
+
+                currentCoroutineContext().ensureActive()
+
                 if (fileUtils.existFile(path)) {
                     val image =
                         if (preview) {
@@ -52,10 +61,17 @@ class GenerateImageFetcher(
                 } else {
                     null
                 }
-            }.onFailure { e ->
-                logger.error(e) { "Failed to generate image $path" }
-            }.getOrNull()
-        }
+            }
+        }.onFailure { e ->
+            when (e) {
+                is CancellationException -> {
+                    logger.debug { "Image generation cancelled for ${item.path}" }
+                }
+                else -> {
+                    logger.error(e) { "Failed to generate image ${item.path}" }
+                }
+            }
+        }.getOrNull()
 }
 
 class GenerateImageFactory(
