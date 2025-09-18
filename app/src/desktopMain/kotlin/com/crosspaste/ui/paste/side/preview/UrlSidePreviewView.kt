@@ -1,9 +1,12 @@
 package com.crosspaste.ui.paste.side.preview
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
@@ -34,9 +37,12 @@ import com.crosspaste.ui.base.ImageDisplayStrategy
 import com.crosspaste.ui.base.PasteUrlIcon
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.paste.preview.UrlBottomSolid
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.ui.theme.DesktopAppUIFont
 import org.koin.compose.koinInject
 
 @Composable
@@ -67,8 +73,22 @@ fun PasteDataScope.UrlSidePreviewView() {
         SidePasteLayoutView(
             pasteBottomContent = {
                 UrlBottomSolid(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(huge)
+                            .background(AppUIColors.topBackground)
+                            .padding(small3X),
+                    titleStyle =
+                        DesktopAppUIFont.sideUrlTitleTextStyle.copy(
+                            color =
+                                MaterialTheme.colorScheme.contentColorFor(
+                                    AppUIColors.topBackground,
+                                ),
+                        ),
                     title = urlPasteItem.getTitle(),
                     url = urlPasteItem.url,
+                    maxLines = 2,
                 )
             },
         ) {
