@@ -1,4 +1,4 @@
-package com.crosspaste.ui.paste.side.preview
+package com.crosspaste.ui.paste.preview
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -15,18 +15,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.tiny4X
-import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.getUrlUtils
 
 @Composable
 fun UrlBottomSolid(
     modifier: Modifier = Modifier,
+    titleStyle: TextStyle,
     title: String? = null,
     url: String,
     maxLines: Int,
@@ -44,13 +45,7 @@ fun UrlBottomSolid(
             if (title != null) {
                 Text(
                     text = title,
-                    style =
-                        DesktopAppUIFont.sideUrlTitleTextStyle.copy(
-                            color =
-                                MaterialTheme.colorScheme.contentColorFor(
-                                    AppUIColors.topBackground,
-                                ),
-                        ),
+                    style = titleStyle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
