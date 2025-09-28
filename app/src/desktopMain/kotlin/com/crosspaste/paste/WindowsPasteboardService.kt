@@ -282,7 +282,7 @@ class WindowsPasteboardService(
                 .getPasteAppearItems()
                 .firstOrNull {
                     it is PasteText
-                }.let { pasteItem ->
+                }?.let { pasteItem ->
                     (pasteItem as PasteText).let { textPasteItem ->
                         WindowClipboard.supplementCFText(textPasteItem.text)
                     }
