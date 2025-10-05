@@ -7,6 +7,7 @@ import okio.Path
 
 interface PasteFiles {
 
+    // The number of files in this paste item
     val count: Long
 
     val basePath: String?
@@ -20,6 +21,8 @@ interface PasteFiles {
     fun getAppFileType(): AppFileType
 
     fun getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path>
+
+    fun getDirectChildrenCount(): Long = fileInfoTreeMap.size.toLong()
 
     fun isRefFiles(): Boolean = basePath != null
 }

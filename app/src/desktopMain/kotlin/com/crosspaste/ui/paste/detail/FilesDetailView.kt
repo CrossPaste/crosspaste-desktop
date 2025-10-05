@@ -70,7 +70,7 @@ fun PasteDataScope.FilesDetailView(onDoubleClick: () -> Unit) {
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
     val filesPasteItem = getPasteItem(FilesPasteItem::class)
-    val showFileCount = filesPasteItem.getFilePaths(userDataPathProvider).size
+    val showFileCount = filesPasteItem.getDirectChildrenCount()
     if (showFileCount > 0) {
         val copywriter = koinInject<GlobalCopywriter>()
         val imageLoaders = koinInject<ImageLoaders>()
@@ -187,7 +187,7 @@ fun PasteDataScope.FilesDetailView(onDoubleClick: () -> Unit) {
                                                 val currentIndex = index - 1
                                                 index =
                                                     if (currentIndex < 0) {
-                                                        filesPasteItem.count.toInt() - 1
+                                                        (showFileCount - 1).toInt()
                                                     } else {
                                                         currentIndex
                                                     }
@@ -213,7 +213,7 @@ fun PasteDataScope.FilesDetailView(onDoubleClick: () -> Unit) {
                                             mutex.withLock {
                                                 val currentIndex = index + 1
                                                 index =
-                                                    if (currentIndex >= filesPasteItem.count) {
+                                                    if (currentIndex >= showFileCount) {
                                                         0
                                                     } else {
                                                         currentIndex

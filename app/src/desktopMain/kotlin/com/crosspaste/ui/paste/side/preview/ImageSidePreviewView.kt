@@ -43,105 +43,103 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.ImageSidePreviewView() {
-    getPasteItem(PasteImages::class).let { pasteImages ->
-        if (pasteImages.count > 0) {
-            val appSize = koinInject<DesktopAppSize>()
-            val imageLoaders = koinInject<ImageLoaders>()
-            val platformContext = koinInject<PlatformContext>()
-            val smartImageDisplayStrategy = SmartImageDisplayStrategy()
-            val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val appSize = koinInject<DesktopAppSize>()
+    val imageLoaders = koinInject<ImageLoaders>()
+    val platformContext = koinInject<PlatformContext>()
+    val smartImageDisplayStrategy = SmartImageDisplayStrategy()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
 
-            var index by remember(pasteData.id) { mutableStateOf(0) }
+    val imagePasteItem = getPasteItem(PasteImages::class)
 
-            val imagePath = pasteImages.getFilePaths(userDataPathProvider)[index]
+    var index by remember(pasteData.id) { mutableStateOf(0) }
 
-            val pasteFileCoordinate = PasteFileCoordinate(pasteData.getPasteCoordinate(), imagePath)
+    val imagePath = imagePasteItem.getFilePaths(userDataPathProvider)[index]
 
-            var displayResult by remember {
-                mutableStateOf(
-                    ImageDisplayStrategy.DisplayResult(
-                        contentScale = ContentScale.Fit,
-                        alignment = Alignment.Center,
-                    ),
-                )
-            }
+    val pasteFileCoordinate = PasteFileCoordinate(pasteData.getPasteCoordinate(), imagePath)
 
-            SidePasteLayoutView(
-                pasteBottomContent = {},
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(modifier = Modifier.wrapContentSize()) {
-                        SubcomposeAsyncImage(
-                            modifier = Modifier.wrapContentSize(),
-                            model =
-                                ImageRequest
-                                    .Builder(platformContext)
-                                    .data(ImageItem(pasteFileCoordinate, false))
-                                    .crossfade(true)
-                                    .build(),
-                            imageLoader = imageLoaders.userImageLoader,
-                            contentDescription = "imageType",
-                            contentScale = displayResult.contentScale,
-                            alignment = displayResult.alignment,
-                            content = {
-                                val state by painter.state.collectAsState()
-                                when (state) {
-                                    is AsyncImagePainter.State.Loading -> {
-                                        Row(
-                                            modifier = Modifier.fillMaxSize(),
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(gigantic),
-                                                strokeWidth = tiny,
-                                            )
-                                        }
-                                    }
+    var displayResult by remember {
+        mutableStateOf(
+            ImageDisplayStrategy.DisplayResult(
+                contentScale = ContentScale.Fit,
+                alignment = Alignment.Center,
+            ),
+        )
+    }
 
-                                    is AsyncImagePainter.State.Error -> {
-                                        Icon(
-                                            painter = imageSlash(),
-                                            contentDescription = imagePath.name,
-                                            modifier = Modifier.size(gigantic),
-                                            tint = MaterialTheme.colorScheme.onBackground,
-                                        )
-                                    }
-
-                                    else -> {
-                                        val dstSize =
-                                            with(LocalDensity.current) {
-                                                Size(
-                                                    appSize.sidePasteContentSize.width.toPx(),
-                                                    appSize.sidePasteContentSize.height.toPx(),
-                                                )
-                                            }
-
-                                        val intrinsicSize = painter.intrinsicSize
-
-                                        val srcSize =
-                                            Size(
-                                                intrinsicSize.width,
-                                                intrinsicSize.height,
-                                            )
-
-                                        displayResult = smartImageDisplayStrategy.compute(srcSize, dstSize)
-
-                                        TransparentBackground(modifier = Modifier.matchParentSize())
-
-                                        SubcomposeAsyncImageContent(
-                                            contentScale = displayResult.contentScale,
-                                            alignment = displayResult.alignment,
-                                        )
-                                    }
+    SidePasteLayoutView(
+        pasteBottomContent = {},
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(modifier = Modifier.wrapContentSize()) {
+                SubcomposeAsyncImage(
+                    modifier = Modifier.wrapContentSize(),
+                    model =
+                        ImageRequest
+                            .Builder(platformContext)
+                            .data(ImageItem(pasteFileCoordinate, false))
+                            .crossfade(true)
+                            .build(),
+                    imageLoader = imageLoaders.userImageLoader,
+                    contentDescription = "imageType",
+                    contentScale = displayResult.contentScale,
+                    alignment = displayResult.alignment,
+                    content = {
+                        val state by painter.state.collectAsState()
+                        when (state) {
+                            is AsyncImagePainter.State.Loading -> {
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(gigantic),
+                                        strokeWidth = tiny,
+                                    )
                                 }
-                            },
-                        )
-                    }
-                }
+                            }
+
+                            is AsyncImagePainter.State.Error -> {
+                                Icon(
+                                    painter = imageSlash(),
+                                    contentDescription = imagePath.name,
+                                    modifier = Modifier.size(gigantic),
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
+
+                            else -> {
+                                val dstSize =
+                                    with(LocalDensity.current) {
+                                        Size(
+                                            appSize.sidePasteContentSize.width.toPx(),
+                                            appSize.sidePasteContentSize.height.toPx(),
+                                        )
+                                    }
+
+                                val intrinsicSize = painter.intrinsicSize
+
+                                val srcSize =
+                                    Size(
+                                        intrinsicSize.width,
+                                        intrinsicSize.height,
+                                    )
+
+                                displayResult = smartImageDisplayStrategy.compute(srcSize, dstSize)
+
+                                TransparentBackground(modifier = Modifier.matchParentSize())
+
+                                SubcomposeAsyncImageContent(
+                                    contentScale = displayResult.contentScale,
+                                    alignment = displayResult.alignment,
+                                )
+                            }
+                        }
+                    },
+                )
             }
         }
     }
