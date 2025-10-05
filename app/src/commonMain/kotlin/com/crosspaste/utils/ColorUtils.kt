@@ -684,4 +684,12 @@ object ColorUtils {
 
         return (brightest + 0.05f) / (darkest + 0.05f)
     }
+
+    fun Color.lighten(factor: Float): Color =
+        Color(
+            red = (red + (1f - red) * factor).coerceIn(0f, 1f),
+            green = (green + (1f - green) * factor).coerceIn(0f, 1f),
+            blue = (blue + (1f - blue) * factor).coerceIn(0f, 1f),
+            alpha = alpha,
+        )
 }
