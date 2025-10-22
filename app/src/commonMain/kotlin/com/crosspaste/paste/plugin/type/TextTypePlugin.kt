@@ -3,6 +3,7 @@ package com.crosspaste.paste.plugin.type
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.TextPasteItem
 
 interface TextTypePlugin : PasteTypePlugin {
 
@@ -11,5 +12,5 @@ interface TextTypePlugin : PasteTypePlugin {
         newText: String,
         pasteItem: PasteItem,
         pasteDao: PasteDao,
-    ): PasteItem
+    ): Result<TextPasteItem>
 }

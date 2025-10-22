@@ -9,6 +9,7 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -89,6 +90,8 @@ class DesktopPasteMenuService(
         val pasteType = pasteData.getType()
         if (!pasteType.isText() && !pasteType.isColor()) {
             desktopAppWindowManager.hideMainWindow()
+        } else {
+            desktopAppWindowManager.showMainWindow()
         }
     }
 
@@ -150,18 +153,74 @@ class DesktopPasteMenuService(
             )
         }
 
-    fun pasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
+    private fun createCopyContextMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuItem(copywriter.getText("copy")) {
+            copyPasteData(pasteData)
+        }
+
+    private fun createDeleteContextMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuItem(copywriter.getText("delete")) {
+            deletePasteData(pasteData)
+        }
+
+    private fun createLoadingMenuItems(pasteData: PasteData): List<ContextMenuItem> =
+        listOf(
+            createCopyContextMenuItem(pasteData),
+            createDeleteContextMenuItem(pasteData),
+        )
+
+    private fun createBaseMenuItems(pasteData: PasteData): List<ContextMenuItem> =
+        listOf(
+            createCopyContextMenuItem(pasteData),
+            ContextMenuItem(copywriter.getText("open")) {
+                openPasteData(pasteData)
+            },
+            createDeleteContextMenuItem(pasteData),
+        )
+
+    private fun createTextMenuItems(pasteDataScope: PasteDataScope): List<ContextMenuItem> =
+        listOf(
+            createCopyContextMenuItem(pasteDataScope.pasteData),
+            ContextMenuItem(copywriter.getText("edit")) {
+                openPasteData(pasteDataScope.pasteData)
+            },
+            createDeleteContextMenuItem(pasteDataScope.pasteData),
+        )
+
+    fun mainPasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
         {
-            listOf(
-                ContextMenuItem(copywriter.getText("copy")) {
-                    copyPasteData(pasteData)
-                },
-                ContextMenuItem(copywriter.getText("open")) {
-                    openPasteData(pasteData)
-                },
-                ContextMenuItem(copywriter.getText("delete")) {
-                    deletePasteData(pasteData)
-                },
-            )
+            if (pasteData.pasteState == PasteState.LOADING) {
+                createLoadingMenuItems(pasteData)
+            } else {
+                when (pasteData.getType()) {
+                    PasteType.TEXT_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.HTML_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.IMAGE_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
+                    else -> createLoadingMenuItems(pasteData)
+                }
+            }
+        }
+
+    fun sidePasteMenuItemsProvider(pasteDataScope: PasteDataScope): () -> List<ContextMenuItem> =
+        {
+            val pasteData = pasteDataScope.pasteData
+            if (pasteData.pasteState == PasteState.LOADING) {
+                createLoadingMenuItems(pasteData)
+            } else {
+                when (pasteData.getType()) {
+                    PasteType.TEXT_TYPE -> createTextMenuItems(pasteDataScope)
+                    PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.HTML_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.IMAGE_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
+                    else -> createLoadingMenuItems(pasteData)
+                }
+            }
         }
 }

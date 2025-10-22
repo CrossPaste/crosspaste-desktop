@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
@@ -33,6 +34,10 @@ fun SearchWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
     val platform = koinInject<Platform>()
+
+    val navController = LocalNavHostController.current
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
 
     val config by configManager.config.collectAsState()
     val currentSearchWindowState by appWindowManager.searchWindowState.collectAsState()
@@ -87,7 +92,7 @@ fun SearchWindow(windowIcon: Painter?) {
         state = windowState,
         title = appWindowManager.searchWindowTitle,
         icon = windowIcon,
-        alwaysOnTop = true,
+        alwaysOnTop = false,
         undecorated = true,
         transparent = false,
         resizable = false,
@@ -115,7 +120,9 @@ fun SearchWindow(windowIcon: Painter?) {
                     }
 
                     override fun windowLostFocus(e: WindowEvent?) {
-                        appWindowManager.hideSearchWindow()
+                        if (backStackEntry?.let { getRouteName(it.destination) } != PasteTextEdit.NAME) {
+                            appWindowManager.hideSearchWindow()
+                        }
                     }
                 }
 

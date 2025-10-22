@@ -165,7 +165,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
                 val currentPasteData by rememberUpdatedState(pasteData)
 
                 val scope =
-                    remember(currentPasteData.id, currentPasteData.pasteState) {
+                    remember(currentPasteData.id, currentPasteData.pasteState, currentPasteData.pasteSearchContent) {
                         createPasteDataScope(currentPasteData)
                     }
 

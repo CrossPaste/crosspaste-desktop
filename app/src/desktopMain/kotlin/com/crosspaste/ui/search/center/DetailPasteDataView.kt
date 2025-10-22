@@ -26,7 +26,7 @@ fun DetailPasteDataView() {
     currentPasteData?.let { pasteData ->
 
         val scope =
-            remember(pasteData.id, pasteData.pasteState) {
+            remember(pasteData.id, pasteData.pasteState, pasteData.pasteSearchContent) {
                 createPasteDataScope(pasteData)
             }
 

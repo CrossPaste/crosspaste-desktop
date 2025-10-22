@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -35,12 +36,16 @@ fun PasteTooltipIconView(
     onHover: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     text: String,
     contentDescription: String = "",
+    opacity: Float = 1f,
     onClick: () -> Unit,
 ) {
     var hoverIcon by remember { mutableStateOf(false) }
 
     PasteTooltipAreaView(
-        modifier = Modifier.size(xxLarge),
+        modifier =
+            Modifier
+                .size(xxLarge)
+                .alpha(opacity),
         text = text,
     ) {
         Box(

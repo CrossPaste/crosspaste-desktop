@@ -20,51 +20,50 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.FilesPreviewView() {
-    getPasteItem(FilesPasteItem::class).let { pasteFiles ->
-        val appSize = koinInject<AppSize>()
-        val pasteMenuService = koinInject<DesktopPasteMenuService>()
-        val userDataPathProvider = koinInject<UserDataPathProvider>()
-        val pasteFilePaths = pasteFiles.getFilePaths(userDataPathProvider)
-        val fileInfoTreeMap = pasteFiles.fileInfoTreeMap
-        val fileUtils = getFileUtils()
+    val filesPasteItem = getPasteItem(FilesPasteItem::class)
+    val appSize = koinInject<AppSize>()
+    val pasteMenuService = koinInject<DesktopPasteMenuService>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val pasteFilePaths = filesPasteItem.getFilePaths(userDataPathProvider)
+    val fileInfoTreeMap = filesPasteItem.fileInfoTreeMap
+    val fileUtils = getFileUtils()
 
-        ComplexPreviewContentView {
-            items(pasteFilePaths.size) { index ->
-                val itemWidthSize =
-                    if (pasteFilePaths.size > 1) {
-                        appSize.mainPasteSize.width / 2
-                    } else {
-                        appSize.mainPasteSize.width
-                    }
-                val filepath = pasteFilePaths[index]
-                val fileInfoTree = fileInfoTreeMap[filepath.name]!!
-                val isImage by remember(filepath) {
-                    mutableStateOf(fileUtils.canPreviewImage(filepath.extension))
+    ComplexPreviewContentView {
+        items(pasteFilePaths.size) { index ->
+            val itemWidthSize =
+                if (pasteFilePaths.size > 1) {
+                    appSize.mainPasteSize.width / 2
+                } else {
+                    appSize.mainPasteSize.width
                 }
+            val filepath = pasteFilePaths[index]
+            val fileInfoTree = fileInfoTreeMap[filepath.name]!!
+            val isImage by remember(filepath) {
+                mutableStateOf(fileUtils.canPreviewImage(filepath.extension))
+            }
 
-                PasteContextMenuView(
-                    items =
-                        pasteMenuService.fileMenuItemsProvider(
-                            pasteData = pasteData,
-                            pasteItem = pasteFiles,
-                            index = index,
-                        ),
-                ) {
-                    val pasteFileInfoTreeCoordinate =
-                        PasteFileInfoTreeCoordinate(
-                            pasteData.getPasteCoordinate(),
-                            filepath,
-                            fileInfoTree,
-                        )
-                    if (isImage) {
-                        SingleImagePreviewView(pasteFileInfoTreeCoordinate, itemWidthSize)
-                    } else {
-                        SingleFilePreviewView(pasteFileInfoTreeCoordinate, itemWidthSize)
-                    }
+            PasteContextMenuView(
+                items =
+                    pasteMenuService.fileMenuItemsProvider(
+                        pasteData = pasteData,
+                        pasteItem = filesPasteItem,
+                        index = index,
+                    ),
+            ) {
+                val pasteFileInfoTreeCoordinate =
+                    PasteFileInfoTreeCoordinate(
+                        pasteData.getPasteCoordinate(),
+                        filepath,
+                        fileInfoTree,
+                    )
+                if (isImage) {
+                    SingleImagePreviewView(pasteFileInfoTreeCoordinate, itemWidthSize)
+                } else {
+                    SingleFilePreviewView(pasteFileInfoTreeCoordinate, itemWidthSize)
                 }
-                if (index != pasteFilePaths.size - 1) {
-                    Spacer(modifier = Modifier.size(tiny))
-                }
+            }
+            if (index != pasteFilePaths.size - 1) {
+                Spacer(modifier = Modifier.size(tiny))
             }
         }
     }
