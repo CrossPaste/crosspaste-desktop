@@ -19,17 +19,20 @@ class DesktopColorTypePlugin(
         newColor: Long,
         pasteItem: PasteItem,
         pasteDao: PasteDao,
-    ) {
+    ): Result<ColorPasteItem> {
         val newPasteItem = (pasteItem as ColorPasteItem).update(newColor, newColor.toString())
-        pasteDao.updatePasteAppearItem(
-            id = pasteData.id,
-            pasteItem = newPasteItem,
-            pasteSearchContent =
-                searchContentService.createSearchContent(
-                    pasteData.source,
-                    newPasteItem.getSearchContent(),
-                ),
-        )
+        return pasteDao
+            .updatePasteAppearItem(
+                id = pasteData.id,
+                pasteItem = newPasteItem,
+                pasteSearchContent =
+                    searchContentService.createSearchContent(
+                        pasteData.source,
+                        newPasteItem.getSearchContent(),
+                    ),
+            ).map {
+                newPasteItem
+            }
     }
 
     override fun getPasteType(): PasteType = PasteType.COLOR_TYPE

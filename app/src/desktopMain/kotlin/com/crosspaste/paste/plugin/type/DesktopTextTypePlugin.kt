@@ -70,7 +70,7 @@ class DesktopTextTypePlugin(
         size: Long,
         hash: String,
         pasteItem: PasteItem,
-    ): PasteItem =
+    ): TextPasteItem =
         TextPasteItem(
             identifiers = pasteItem.identifiers,
             hash = hash,
@@ -84,21 +84,23 @@ class DesktopTextTypePlugin(
         newText: String,
         pasteItem: PasteItem,
         pasteDao: PasteDao,
-    ): PasteItem {
+    ): Result<TextPasteItem> {
         val textBytes = newText.encodeToByteArray()
         val hash = codecsUtils.hash(textBytes)
         val newPasteItem = buildNewPasteItem(newText, textBytes.size.toLong(), hash, pasteItem)
-        pasteDao.updatePasteAppearItem(
-            id = pasteData.id,
-            pasteItem = newPasteItem,
-            pasteSearchContent =
-                searchContentService.createSearchContent(
-                    pasteData.source,
-                    newPasteItem.getSearchContent(),
-                ),
-            addedSize = newPasteItem.size - pasteItem.size,
-        )
-        return newPasteItem
+        return pasteDao
+            .updatePasteAppearItem(
+                id = pasteData.id,
+                pasteItem = newPasteItem,
+                pasteSearchContent =
+                    searchContentService.createSearchContent(
+                        pasteData.source,
+                        newPasteItem.getSearchContent(),
+                    ),
+                addedSize = newPasteItem.size - pasteItem.size,
+            ).map {
+                newPasteItem
+            }
     }
 
     override fun buildTransferable(

@@ -140,7 +140,7 @@ fun PasteDataScope.SidePasteItemView(
                     ),
             ) {
                 PasteContextMenuView(
-                    items = pasteMenuService.pasteMenuItemsProvider(pasteData),
+                    items = pasteMenuService.sidePasteMenuItemsProvider(this@SidePasteItemView),
                 ) {
                     pasteData.pasteContent()
                 }

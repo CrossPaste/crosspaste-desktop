@@ -18,24 +18,23 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.TextSidePreviewView() {
-    getPasteItem(PasteText::class).let { pasteText ->
-        val copywriter = koinInject<GlobalCopywriter>()
-        SidePasteLayoutView(
-            pasteBottomContent = {
-                BottomGradient(copywriter.getText("character_count", "${pasteText.text.length}"))
-            },
-        ) {
-            Box(modifier = Modifier.fillMaxSize().padding(small2X)) {
-                BasicText(
-                    modifier = Modifier.fillMaxSize(),
-                    text = AnnotatedString(pasteText.previewText()),
-                    maxLines = 9,
-                    softWrap = true,
-                    overflow = TextOverflow.Ellipsis,
-                    style = pasteTextStyle,
-                    autoSize = previewAutoSize,
-                )
-            }
+    val pasteText = getPasteItem(PasteText::class)
+    val copywriter = koinInject<GlobalCopywriter>()
+    SidePasteLayoutView(
+        pasteBottomContent = {
+            BottomGradient(copywriter.getText("character_count", "${pasteText.text.length}"))
+        },
+    ) {
+        Box(modifier = Modifier.fillMaxSize().padding(small2X)) {
+            BasicText(
+                modifier = Modifier.fillMaxSize(),
+                text = AnnotatedString(pasteText.previewText()),
+                maxLines = 9,
+                softWrap = true,
+                overflow = TextOverflow.Ellipsis,
+                style = pasteTextStyle,
+                autoSize = previewAutoSize,
+            )
         }
     }
 }

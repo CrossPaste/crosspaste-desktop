@@ -237,14 +237,23 @@ class PasteDao(
         pasteItem: PasteItem,
         pasteSearchContent: String,
         addedSize: Long = 0L,
-    ) {
-        pasteDatabaseQueries.updatePasteAppearItem(
-            id = id,
-            pasteAppearItem = pasteItem.toJson(),
-            pasteSearchContent = pasteSearchContent,
-            addedSize = addedSize,
-            hash = pasteItem.hash,
-        )
+    ): Result<Unit> {
+        database.transactionWithResult {
+            pasteDatabaseQueries.updatePasteAppearItem(
+                id = id,
+                pasteAppearItem = pasteItem.toJson(),
+                pasteSearchContent = pasteSearchContent,
+                addedSize = addedSize,
+                hash = pasteItem.hash,
+            )
+            pasteDatabaseQueries.change().executeAsOne() > 0
+        }.let { changed ->
+            return if (changed) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Update paste appear item failed for id=$id"))
+            }
+        }
     }
 
     fun updatePasteState(id: Long, pasteState: Int) {
@@ -280,6 +289,8 @@ class PasteDao(
                 mapper = PasteData::mapper,
             )
         } else {
+            logger.info { "Creating paste simpleSearch" }
+
             pasteDatabaseQueries.simpleSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,

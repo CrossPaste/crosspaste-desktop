@@ -32,7 +32,7 @@ fun PasteDataScope.SimplePreviewContentView(content: @Composable () -> Unit) {
                         },
             ) {
                 PasteContextMenuView(
-                    items = pasteMenuService.pasteMenuItemsProvider(pasteData),
+                    items = pasteMenuService.mainPasteMenuItemsProvider(pasteData),
                 ) {
                     content()
                 }

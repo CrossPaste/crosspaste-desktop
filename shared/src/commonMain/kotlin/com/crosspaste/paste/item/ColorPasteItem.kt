@@ -38,7 +38,7 @@ class ColorPasteItem(
     override fun update(
         data: Any,
         hash: String,
-    ): PasteItem =
+    ): ColorPasteItem =
         (data as? Int)?.let { color ->
             ColorPasteItem(
                 identifiers = identifiers,
