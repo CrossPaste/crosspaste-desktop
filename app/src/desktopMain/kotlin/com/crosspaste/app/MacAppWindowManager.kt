@@ -6,6 +6,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacPasteUtils
 import com.crosspaste.utils.getSystemProperty
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -111,9 +112,12 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideSearchWindowAndPaste(
+        size: Int,
+        preparePaste: suspend (Int) -> Boolean,
+    ) {
         logger.info { "unActive search window" }
-        val toPaste = preparePaste()
+        val toPaste = preparePaste(0)
         val prevAppId = prevMacAppInfo.value?.bundleIdentifier ?: ""
         if (toPaste) {
             val pair = macPasteUtils.getPasteMemory()
@@ -122,6 +126,12 @@ class MacAppWindowManager(
                 pair.first,
                 pair.second,
             )
+            for (i in 1 until size) {
+                delay(1000)
+                if (preparePaste(i)) {
+                    toPaste()
+                }
+            }
         } else {
             MacAppUtils.searchToBack(prevAppId)
         }

@@ -28,34 +28,34 @@ class PasteSelectionViewModel(
 
     val focusedElement: StateFlow<FocusedElement> = _focusedElement
 
-    private val _selectedIndex = MutableStateFlow(0)
+    private val _selectedIndexes = MutableStateFlow(listOf(0))
 
-    val selectedIndex: StateFlow<Int> =
+    val selectedIndexes: StateFlow<List<Int>> =
         combine(
             searchViewModel.searchResults,
-            _selectedIndex,
-        ) { results, index ->
-            if (index >= results.size) {
-                0
+            _selectedIndexes,
+        ) { results, indexes ->
+            if (indexes.isEmpty()) {
+                listOf(0)
             } else {
-                index
+                indexes.filter { it >= 0 && it < results.size }.ifEmpty { listOf(0) }
             }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0,
+            initialValue = listOf(0),
         )
 
-    val currentPasteData: StateFlow<PasteData?> =
+    val currentPasteDataList: StateFlow<List<PasteData>> =
         combine(
             searchViewModel.searchResults,
-            selectedIndex,
-        ) { results, index ->
-            results.getOrNull(index)
+            selectedIndexes,
+        ) { results, indexes ->
+            indexes.mapNotNull { index -> results.getOrNull(index) }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null,
+            initialValue = listOf(),
         )
 
     private val _uiEvent = MutableSharedFlow<UIEvent>()
@@ -70,13 +70,15 @@ class PasteSelectionViewModel(
     }
 
     fun selectPrev() {
-        _selectedIndex.value = (_selectedIndex.value - 1).coerceAtLeast(0)
+        _selectedIndexes.value = listOf((_selectedIndexes.value.min() - 1).coerceAtLeast(0))
     }
 
     fun selectNext() {
-        _selectedIndex.value =
-            (_selectedIndex.value + 1)
-                .coerceAtMost(searchViewModel.searchResults.value.size - 1)
+        _selectedIndexes.value =
+            listOf(
+                (_selectedIndexes.value.max() + 1)
+                    .coerceAtMost(searchViewModel.searchResults.value.size - 1),
+            )
     }
 
     fun setFocusedElement(focusedElement: FocusedElement) {
@@ -84,27 +86,45 @@ class PasteSelectionViewModel(
     }
 
     fun initSelectIndex() {
-        _selectedIndex.value = 0
+        _selectedIndexes.value = listOf(0)
     }
 
-    fun clickSelectedIndex(selectedIndex: Int) {
-        _selectedIndex.value = selectedIndex
+    fun clickSelectedIndex(
+        selectedIndex: Int,
+        isShiftPressed: Boolean = false,
+    ) {
+        _selectedIndexes.value =
+            if (isShiftPressed) {
+                val list = _selectedIndexes.value
+                when {
+                    selectedIndex in list -> {
+                        if (list.size > 1) {
+                            list.filter { it != selectedIndex }
+                        } else {
+                            list
+                        }
+                    }
+                    else -> list + selectedIndex
+                }
+            } else {
+                listOf(selectedIndex)
+            }
         requestPasteListFocus()
     }
 
     suspend fun toPaste() {
-        appWindowManager.hideSearchWindowAndPaste {
-            currentPasteData.first()?.let { pasteData ->
+        currentPasteDataList.first().let { pasteDataList ->
+            appWindowManager.hideSearchWindowAndPaste(pasteDataList.size) { index ->
                 withContext(ioDispatcher) {
                     pasteboardService
                         .tryWritePasteboard(
-                            pasteData = pasteData,
+                            pasteData = pasteDataList[index],
                             localOnly = true,
                             updateCreateTime = true,
                         ).isSuccess
                 }
-            } == true
+            }
         }
-        _selectedIndex.value = 0
+        _selectedIndexes.value = listOf(0)
     }
 }
