@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crosspaste.config.DesktopConfigManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -39,9 +40,18 @@ class TestWindowManager(
         bringToFront(searchWindowTitle)
     }
 
-    override suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean) {
-        val toPaste = preparePaste()
+    override suspend fun hideSearchWindowAndPaste(
+        size: Int,
+        preparePaste: suspend (Int) -> Boolean,
+    ) {
+        val toPaste = preparePaste(0)
         bringToBack(searchWindowTitle, toPaste)
+        for (i in 1 until size) {
+            delay(1000)
+            if (preparePaste(i)) {
+                toPaste()
+            }
+        }
         hideSearchWindow()
     }
 
