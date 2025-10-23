@@ -6,6 +6,7 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -86,9 +87,18 @@ class LinuxAppWindowManager(
         prevLinuxAppInfo.value = X11Api.bringToFront(searchWindow)
     }
 
-    override suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideSearchWindowAndPaste(
+        size: Int,
+        preparePaste: suspend (Int) -> Boolean,
+    ) {
         logger.info { "unActive search window" }
-        bringToBack(preparePaste())
+        bringToBack(preparePaste(0))
+        for (i in 1 until size) {
+            delay(1000)
+            if (preparePaste(i)) {
+                toPaste()
+            }
+        }
         hideSearchWindow()
     }
 

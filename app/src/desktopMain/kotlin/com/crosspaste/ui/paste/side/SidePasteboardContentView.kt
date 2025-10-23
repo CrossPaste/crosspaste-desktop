@@ -40,6 +40,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import com.crosspaste.app.DesktopAppWindowManager
@@ -84,7 +89,7 @@ fun SidePasteboardContentView() {
 
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
-    val selectedIndex by pasteSelectionViewModel.selectedIndex.collectAsState()
+    val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
@@ -93,6 +98,8 @@ fun SidePasteboardContentView() {
     val pasteListFocusRequester = remember { FocusRequester() }
 
     var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
+
+    var isShiftPressed by remember { mutableStateOf(false) }
 
     LaunchedEffect(
         showSearchWindow,
@@ -109,7 +116,7 @@ fun SidePasteboardContentView() {
         }
     }
 
-    LaunchedEffect(selectedIndex, showSearchWindow) {
+    LaunchedEffect(selectedIndexes, showSearchWindow) {
         if (showSearchWindow) {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             val viewportStartOffset = searchListState.layoutInfo.viewportStartOffset
@@ -118,6 +125,8 @@ fun SidePasteboardContentView() {
             if (visibleItems.isEmpty()) return@LaunchedEffect
 
             val itemSpacing = visibleItems[0].size
+
+            val selectedIndex = selectedIndexes.firstOrNull() ?: return@LaunchedEffect
 
             visibleItems.find { it.index == selectedIndex }?.let { selectedItem ->
                 val itemStart = selectedItem.offset
@@ -232,7 +241,26 @@ fun SidePasteboardContentView() {
                 Modifier
                     .fillMaxSize()
                     .focusRequester(pasteListFocusRequester)
-                    .focusable(),
+                    .focusable()
+                    .onKeyEvent { keyEvent ->
+                        when {
+                            keyEvent.type == KeyEventType.KeyDown &&
+                                keyEvent.key == Key.ShiftLeft ||
+                                keyEvent.key == Key.ShiftRight -> {
+                                println("Shift Key Down")
+                                isShiftPressed = true
+                                true
+                            }
+                            keyEvent.type == KeyEventType.KeyUp &&
+                                keyEvent.key == Key.ShiftLeft ||
+                                keyEvent.key == Key.ShiftRight -> {
+                                println("Shift Key Up")
+                                isShiftPressed = false
+                                true
+                            }
+                            else -> false
+                        }
+                    },
             contentAlignment = Alignment.CenterStart,
         ) {
             LazyRow(
@@ -268,12 +296,14 @@ fun SidePasteboardContentView() {
                     scope?.let {
                         Spacer(modifier = Modifier.width(medium))
                         scope.SidePasteItemView(
-                            selected = currentIndex == selectedIndex,
+                            selected = currentIndex in selectedIndexes,
                             onPress = {
-                                pasteSelectionViewModel.clickSelectedIndex(currentIndex)
+                                pasteSelectionViewModel.clickSelectedIndex(currentIndex, isShiftPressed)
                             },
                             onDoubleTap = {
-                                pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
+                                if (!isShiftPressed) {
+                                    pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
+                                }
                             },
                         ) {
                             scope.SidePreviewView()

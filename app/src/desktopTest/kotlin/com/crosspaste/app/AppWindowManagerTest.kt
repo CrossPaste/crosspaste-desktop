@@ -62,14 +62,14 @@ class AppWindowManagerTest {
         runBlocking { testAppWindowManager.recordActiveInfoAndShowSearchWindow(true) }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
         assertEquals("Chrome", runBlocking { testAppWindowManager.getPrevAppName().first() })
-        runBlocking { testAppWindowManager.hideSearchWindowAndPaste(preparePaste = { true }) }
+        runBlocking { testAppWindowManager.hideSearchWindowAndPaste(size = 1, preparePaste = { true }) }
         assertEquals(2, testAppWindowManager.pasterId)
         assertEquals("Chrome", testAppWindowManager.getCurrentActiveAppName())
         runBlocking { testAppWindowManager.recordActiveInfoAndShowMainWindow(true) }
         runBlocking { testAppWindowManager.recordActiveInfoAndShowSearchWindow(false) }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
         assertEquals("Chrome", runBlocking { testAppWindowManager.getPrevAppName().first() })
-        runBlocking { testAppWindowManager.hideSearchWindowAndPaste(preparePaste = { false }) }
+        runBlocking { testAppWindowManager.hideSearchWindowAndPaste(size = 1, preparePaste = { false }) }
         assertEquals(2, testAppWindowManager.pasterId)
         runBlocking { testAppWindowManager.toPaste() }
         assertEquals(3, testAppWindowManager.pasterId)

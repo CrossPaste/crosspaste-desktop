@@ -76,7 +76,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
-    val selectedIndex by pasteSelectionViewModel.selectedIndex.collectAsState()
+    val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
 
     val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
 
@@ -98,12 +98,12 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
         }
     }
 
-    LaunchedEffect(selectedIndex, showSearchWindow) {
+    LaunchedEffect(selectedIndexes, showSearchWindow) {
         if (showSearchWindow) {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             if (visibleItems.isNotEmpty()) {
                 val lastIndex = visibleItems.last().index
-
+                val selectedIndex = selectedIndexes.firstOrNull() ?: return@LaunchedEffect
                 if (lastIndex < selectedIndex) {
                     searchListState.animateScrollToItem(selectedIndex - 9)
                 } else if (visibleItems.first().index > selectedIndex) {
@@ -171,7 +171,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
                 scope?.let {
                     scope.PasteSummaryView(
-                        selected = (currentIndex == selectedIndex),
+                        selected = (currentIndex in selectedIndexes),
                         onPress = {
                             setSelectedIndex(currentIndex)
                         },

@@ -140,7 +140,10 @@ abstract class DesktopAppWindowManager(
 
     abstract suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean)
 
-    abstract suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
+    abstract suspend fun hideSearchWindowAndPaste(
+        size: Int,
+        preparePaste: suspend (Int) -> Boolean = { false },
+    )
 
     abstract fun getPrevAppName(): Flow<String?>
 }

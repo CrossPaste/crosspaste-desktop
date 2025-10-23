@@ -111,9 +111,18 @@ class WinAppWindowManager(
         }
     }
 
-    override suspend fun hideSearchWindowAndPaste(preparePaste: suspend () -> Boolean) {
+    override suspend fun hideSearchWindowAndPaste(
+        size: Int,
+        preparePaste: suspend (Int) -> Boolean,
+    ) {
         logger.info { "unActive search window" }
-        bringToBack(preparePaste(), searchHWND)
+        bringToBack(preparePaste(0), searchHWND)
+        for (i in 1 until size) {
+            delay(1000)
+            if (preparePaste(i)) {
+                toPaste()
+            }
+        }
         hideSearchWindow()
     }
 

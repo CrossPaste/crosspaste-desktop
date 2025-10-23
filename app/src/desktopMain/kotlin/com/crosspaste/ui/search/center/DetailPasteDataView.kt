@@ -21,9 +21,9 @@ import org.koin.compose.koinInject
 fun DetailPasteDataView() {
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
-    val currentPasteData by pasteSelectionViewModel.currentPasteData.collectAsState()
+    val currentPasteDataList by pasteSelectionViewModel.currentPasteDataList.collectAsState()
 
-    currentPasteData?.let { pasteData ->
+    currentPasteDataList.firstOrNull()?.let { pasteData ->
 
         val scope =
             remember(pasteData.id, pasteData.pasteState, pasteData.pasteSearchContent) {
