@@ -236,12 +236,17 @@ class SyncResolver(
 
         return when (result) {
             is SuccessResult -> {
-                val versionRelation: VersionRelation = result.getResult()
-                updateVersionRelation(versionRelation)
-                if (versionRelation == VersionRelation.EQUAL_TO) {
-                    SyncState.CONNECTED
-                } else {
-                    SyncState.INCOMPATIBLE
+                val versionRelation: VersionRelation? = result.getResult()
+                versionRelation?.let {
+                    updateVersionRelation(versionRelation)
+                    if (versionRelation == VersionRelation.EQUAL_TO) {
+                        SyncState.CONNECTED
+                    } else {
+                        SyncState.INCOMPATIBLE
+                    }
+                } ?: run {
+                    logger.info { "heartbeat success but versionRelation is null $host $port" }
+                    SyncState.DISCONNECTED
                 }
             }
 

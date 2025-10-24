@@ -66,7 +66,9 @@ class SyncClientApi(
             }
         }, transformData = {
             val result = it.bodyAsText()
-            syncApi.compareVersion(result.toIntOrNull() ?: -1)
+            result.toIntOrNull()?.let { connectedVersion ->
+                syncApi.compareVersion(connectedVersion)
+            }
         })
 
     suspend fun trust(
