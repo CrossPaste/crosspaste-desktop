@@ -73,7 +73,9 @@ class TelnetHelper(
 
             if (httpResponse.status.value == 200) {
                 val result = httpResponse.bodyAsText()
-                syncApi.compareVersion(result.toIntOrNull() ?: -1)
+                result.toIntOrNull()?.let {
+                    syncApi.compareVersion(it)
+                }
             } else {
                 null
             }
