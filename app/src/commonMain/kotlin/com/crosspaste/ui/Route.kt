@@ -21,6 +21,12 @@ object About : Route {
 }
 
 @Serializable
+object Extension : Route {
+    const val NAME: String = "extension"
+    override val name: String = NAME
+}
+
+@Serializable
 object Export : Route {
     const val NAME: String = "export"
     override val name: String = NAME

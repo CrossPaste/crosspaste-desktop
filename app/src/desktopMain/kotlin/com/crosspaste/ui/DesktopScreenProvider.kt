@@ -38,6 +38,7 @@ import com.crosspaste.ui.devices.NearbyDeviceDetailContentView
 import com.crosspaste.ui.devices.QRContentView
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.devices.TokenView
+import com.crosspaste.ui.extend.ExtensionContentView
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.paste.createPasteDataScope
@@ -117,6 +118,7 @@ class DesktopScreenProvider(
                 backStackEntry.DeviceDetailScreen()
             }
             composable<Export> { ExportScreen() }
+            composable<Extension> { ExtensionScreen() }
             composable<Import> { ImportScreen() }
             composable<NearbyDeviceDetail>(
                 typeMap =
@@ -216,6 +218,20 @@ class DesktopScreenProvider(
         ) {
             WindowDecoration()
             PasteExportContentView()
+        }
+    }
+
+    @Composable
+    private fun ExtensionScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            WindowDecoration()
+            ExtensionContentView()
         }
     }
 
