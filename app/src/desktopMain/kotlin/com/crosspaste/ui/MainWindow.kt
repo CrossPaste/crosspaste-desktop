@@ -120,6 +120,10 @@ fun MainWindow(windowIcon: Painter?) {
                         navigateManage.navigateAndClearStack(Settings)
                         appWindowManager.showMainWindow()
                     }
+                    Item(copywriter.getText("extension")) {
+                        navigateManage.navigateAndClearStack(Extension)
+                        appWindowManager.showMainWindow()
+                    }
                     Item(copywriter.getText("import")) {
                         navigateManage.navigateAndClearStack(Import)
                         appWindowManager.showMainWindow()

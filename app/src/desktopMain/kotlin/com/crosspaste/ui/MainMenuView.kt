@@ -58,6 +58,7 @@ fun MainMenuView() {
                 MainMenuItem("devices", Devices),
                 MainMenuItem("scan", QrCode),
                 MainMenuItem("settings", Settings),
+                MainMenuItem("extension", Extension),
             ),
         )
     }

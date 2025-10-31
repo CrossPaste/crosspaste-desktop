@@ -24,6 +24,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.About
 import com.crosspaste.ui.Devices
 import com.crosspaste.ui.Export
+import com.crosspaste.ui.Extension
 import com.crosspaste.ui.Import
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Settings
@@ -86,6 +87,17 @@ class MenuHelper(
             },
         )
 
+    val extension =
+        MenuItem(
+            title = { copywriter -> copywriter.getText("extension") },
+            action = {
+                mainCoroutineDispatcher.launch(CoroutineName("Extension")) {
+                    navigationManager.navigateAndClearStack(Extension)
+                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                }
+            },
+        )
+
     val import =
         MenuItem(
             title = { copywriter -> copywriter.getText("import") },
@@ -133,6 +145,7 @@ class MenuHelper(
         listOf(
             devices,
             settings,
+            extension,
             shortcutKeys,
             about,
             checkUpdate,
