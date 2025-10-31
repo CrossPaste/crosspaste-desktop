@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
@@ -74,7 +75,6 @@ fun SettingsContentView() {
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .padding(end = medium)
                         .clip(tinyRoundedCornerShape)
                         .verticalScroll(scrollState),
             ) {
@@ -86,6 +86,7 @@ fun SettingsContentView() {
                     Modifier
                         .background(color = Color.Transparent)
                         .fillMaxHeight()
+                        .offset(x = medium)
                         .padding(end = tiny3X)
                         .align(Alignment.CenterEnd)
                         .draggable(
