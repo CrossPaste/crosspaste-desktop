@@ -4,6 +4,7 @@ import com.crosspaste.config.AppConfig.Companion.toBoolean
 import com.crosspaste.config.AppConfig.Companion.toInt
 import com.crosspaste.config.AppConfig.Companion.toLong
 import com.crosspaste.config.AppConfig.Companion.toString
+import com.crosspaste.ui.extension.ProxyType
 import com.crosspaste.ui.theme.ColorContrast
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.ui.theme.SeaColor
@@ -46,6 +47,10 @@ data class DesktopAppConfig(
     val legacySoftwareCompatibility: Boolean = false,
     override val pastePrimaryTypeOnly: Boolean = true,
     override val useNetworkInterfaces: String = "[]",
+    val useManualProxy: Boolean = false,
+    val proxyType: String = ProxyType.HTTP,
+    val proxyHost: String = "127.0.0.1",
+    val proxyPort: String = "7890",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -129,5 +134,9 @@ data class DesktopAppConfig(
                 },
             pastePrimaryTypeOnly = if (key == "pastePrimaryTypeOnly") toBoolean(value) else pastePrimaryTypeOnly,
             useNetworkInterfaces = if (key == "useNetworkInterfaces") toString(value) else useNetworkInterfaces,
+            useManualProxy = if (key == "useManualProxy") toBoolean(value) else useManualProxy,
+            proxyType = if (key == "proxyType") toString(value) else proxyType,
+            proxyHost = if (key == "proxyHost") toString(value) else proxyHost,
+            proxyPort = if (key == "proxyPort") toString(value) else proxyPort,
         )
 }

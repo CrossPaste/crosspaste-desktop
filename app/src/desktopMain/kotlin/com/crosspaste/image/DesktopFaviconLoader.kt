@@ -14,11 +14,11 @@ class DesktopFaviconLoader(
 
     override val logger = KotlinLogging.logger {}
 
-    override fun saveIco(
+    override suspend fun saveIco(
         url: String,
         path: Path,
     ): Path? =
-        resourcesClient.request(url) { response ->
+        resourcesClient.request(url).getOrNull()?.let { response ->
             FileOutputStream(path.toFile()).use { output ->
                 response.getBody().toInputStream().copyTo(output)
             }

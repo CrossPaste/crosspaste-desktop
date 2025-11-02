@@ -42,7 +42,7 @@ class DesktopThumbnailLoader(
         }
     }
 
-    override fun save(
+    override suspend fun save(
         key: String,
         value: PasteFileCoordinate,
         result: Path,

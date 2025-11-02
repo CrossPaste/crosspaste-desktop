@@ -25,7 +25,7 @@ class DesktopFileExtLoader(
             throw IllegalStateException("Unsupported platform: $platform")
         }
 
-    override fun save(
+    override suspend fun save(
         key: String,
         value: Path,
         result: Path,

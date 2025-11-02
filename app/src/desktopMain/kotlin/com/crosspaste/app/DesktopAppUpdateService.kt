@@ -4,19 +4,21 @@ import com.crosspaste.net.ResourcesClient
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.utils.cpuDispatcher
+import com.crosspaste.utils.ioDispatcher
 import dev.hydraulic.conveyor.control.SoftwareUpdateController
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.z4kn4fein.semver.Version
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
@@ -32,7 +34,7 @@ class DesktopAppUpdateService(
 
     private val controller: SoftwareUpdateController? = SoftwareUpdateController.getInstance()
 
-    private val coroutineScope = CoroutineScope(cpuDispatcher)
+    private val coroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private val _currentVersion: MutableStateFlow<Version> =
         MutableStateFlow(
@@ -108,14 +110,18 @@ class DesktopAppUpdateService(
         }
 
     private fun readLastVersion(): Version? =
-        resourcesClient.request(
-            url = appUrls.checkMetadataUrl,
-        ) { response ->
-            val inputStream = response.getBody().toInputStream()
-            val properties = Properties()
-            properties.load(inputStream)
-            properties.getProperty("app.version")?.let { versionString ->
-                Version.parse(versionString)
-            }
+        runBlocking {
+            resourcesClient
+                .request(
+                    url = appUrls.checkMetadataUrl,
+                ).getOrNull()
+                ?.let { response ->
+                    val inputStream = response.getBody().toInputStream()
+                    val properties = Properties()
+                    properties.load(inputStream)
+                    properties.getProperty("app.version")?.let { versionString ->
+                        Version.parse(versionString)
+                    }
+                }
         }
 }
