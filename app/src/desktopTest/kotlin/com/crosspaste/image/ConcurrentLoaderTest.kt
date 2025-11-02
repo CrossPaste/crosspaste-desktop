@@ -55,7 +55,7 @@ class TestConcurrentLoader : ConcurrentLoader<String, String> {
 
     override fun exist(result: String): Boolean = saveKeys.contains(result)
 
-    override fun save(
+    override suspend fun save(
         key: String,
         value: String,
         result: String,
