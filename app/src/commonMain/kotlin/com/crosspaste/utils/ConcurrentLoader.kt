@@ -16,7 +16,7 @@ interface ConcurrentLoader<T, R> : Loader<T, R> {
 
     fun exist(result: R): Boolean
 
-    fun save(
+    suspend fun save(
         key: String,
         value: T,
         result: R,

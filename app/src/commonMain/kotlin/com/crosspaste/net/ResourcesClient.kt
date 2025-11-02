@@ -1,23 +1,20 @@
 package com.crosspaste.net
 
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.contentLength
 import io.ktor.utils.io.*
 
 interface ResourcesClient {
 
-    fun <T> request(
-        url: String,
-        success: (ClientResponse) -> T,
-    ): T?
-
-    suspend fun <T> suspendRequest(
-        url: String,
-        success: suspend (ClientResponse) -> T,
-    ): T?
+    suspend fun request(url: String): Result<ClientResponse>
 }
 
-interface ClientResponse {
+class ClientResponse(
+    private val response: HttpResponse,
+) {
 
-    fun getBody(): ByteReadChannel
+    suspend fun getBody(): ByteReadChannel = response.bodyAsChannel()
 
-    fun getContentLength(): Long
+    fun getContentLength(): Long = response.contentLength() ?: -1L
 }

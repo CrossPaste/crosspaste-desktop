@@ -25,7 +25,7 @@ abstract class AbstractFaviconLoader(
 
     private fun getDefaultIcoUrl(host: String): String = "https://$host/favicon.ico"
 
-    abstract fun saveIco(
+    abstract suspend fun saveIco(
         url: String,
         path: Path,
     ): Path?
@@ -44,7 +44,7 @@ abstract class AbstractFaviconLoader(
         logger.warn(e) { "Failed to get favicon for $value" }
     }
 
-    override fun save(
+    override suspend fun save(
         key: String,
         value: String,
         result: Path,

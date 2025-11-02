@@ -22,14 +22,14 @@ abstract class AbstractModuleLoader : ModuleLoader {
 
     abstract val resourcesClient: ResourcesClient
 
-    override fun downloadModule(
+    override suspend fun downloadModule(
         url: String,
         path: Path,
     ): Boolean {
         fileUtils.deleteFile(path)
         logger.info { "Downloading: $url" }
 
-        return resourcesClient.request(url) { response ->
+        return resourcesClient.request(url).getOrNull()?.let { response ->
             val contentLength = response.getContentLength()
             var bytesRead = 0L
             var lastLogTime = Instant.EPOCH

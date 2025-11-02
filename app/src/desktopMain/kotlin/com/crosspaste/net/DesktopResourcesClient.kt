@@ -1,135 +1,91 @@
 package com.crosspaste.net
 
+import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.ui.extension.ProxyType
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.ProxyBuilder
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.http
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.request
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.headers
+import io.ktor.http.isSuccess
 import io.ktor.util.collections.*
-import io.ktor.utils.io.*
-import kotlinx.io.asSource
-import kotlinx.io.buffered
-import java.io.InputStream
-import java.net.Proxy
-import java.net.ProxySelector
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.Duration
 
-class DesktopResourcesClient : ResourcesClient {
+class DesktopResourcesClient(
+    val configManager: DesktopConfigManager,
+) : ResourcesClient {
 
     companion object {
-        private val GOOGLE_URI = URI("https://www.google.com")
+        fun createClient(proxyConfig: Proxy?): HttpClient =
+            HttpClient(CIO) {
+                engine {
+                    proxyConfig?.let {
+                        proxy =
+                            if (proxyConfig.type == ProxyType.HTTP) {
+                                ProxyBuilder.http("http://${proxyConfig.host}:${proxyConfig.port}")
+                            } else {
+                                ProxyBuilder.socks(proxyConfig.host, proxyConfig.port)
+                            }
+                    }
+                }
+            }
     }
 
     private val logger = KotlinLogging.logger {}
 
-    private val noProxyClient =
-        HttpClient
-            .newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build()
+    private val noProxyClient = createClient(null)
 
     private val proxyClientMap: ConcurrentMap<Proxy, HttpClient> = ConcurrentMap()
 
-    init {
-        proxyClientMap[Proxy.NO_PROXY] = noProxyClient
-        val proxy = DesktopProxy.getProxy(GOOGLE_URI)
-        if (proxy != Proxy.NO_PROXY) {
-            (proxy.address() as java.net.InetSocketAddress?)?.let { address ->
-                proxyClientMap[proxy] =
-                    HttpClient
-                        .newBuilder()
-                        .proxy(ProxySelector.of(address))
-                        .followRedirects(HttpClient.Redirect.NORMAL)
-                        .build()
+    private fun getProxy(): Proxy? {
+        val config = configManager.getCurrentConfig()
+        return if (config.useManualProxy) {
+            config.proxyPort.toIntOrNull()?.let {
+                Proxy(config.proxyType, config.proxyHost, it)
+            }
+        } else {
+            null
+        }
+    }
+
+    private fun getHttpClient(): HttpClient {
+        val proxy = getProxy()
+        return proxy?.let {
+            proxyClientMap.getOrPut(proxy) {
+                createClient(proxy)
+            }
+        } ?: noProxyClient
+    }
+
+    override suspend fun request(url: String): Result<ClientResponse> {
+        val response = clientRequest(url, getHttpClient())
+        return if (response.status.isSuccess()) {
+            Result.success(ClientResponse(response))
+        } else {
+            logger.warn { "Failed to fetch data from $url, status code: ${response.status.value}" }
+            Result.failure(Exception("HTTP error: ${response.status.value}"))
+        }
+    }
+
+    private suspend fun clientRequest(
+        url: String,
+        client: HttpClient,
+    ): HttpResponse =
+        client.request(url) {
+            headers {
+                append(
+                    "User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                )
+                append("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+                append("Accept-Language", "en-US,en;q=0.9")
+                append("DNT", "1")
+            }
+            timeout {
+                requestTimeoutMillis = 5000L
             }
         }
-    }
-
-    override fun <T> request(
-        url: String,
-        success: (ClientResponse) -> T,
-    ): T? =
-        runCatching {
-            proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
-                request(url, it.value, success)
-            } ?: request(url, noProxyClient, success)
-        }.getOrNull()
-
-    override suspend fun <T> suspendRequest(
-        url: String,
-        success: suspend (ClientResponse) -> T,
-    ): T? =
-        runCatching {
-            proxyClientMap.entries.firstOrNull { it.key != Proxy.NO_PROXY }?.let {
-                suspendRequest(url, it.value, success)
-            } ?: suspendRequest(url, noProxyClient, success)
-        }.getOrElse {
-            logger.warn { "Failed to fetch data from $url: ${it.message}" }
-            null
-        }
-
-    private fun <T> request(
-        url: String,
-        client: HttpClient,
-        success: (ClientResponse) -> T,
-    ): T? {
-        val uri = URI(url)
-
-        val request = buildRequest(uri)
-
-        val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-
-        return if (response.statusCode() in 200..299) {
-            success(DesktopClientResponse(response))
-        } else {
-            logger.warn { "Failed to fetch data from $url, status code: ${response.statusCode()}" }
-            null
-        }
-    }
-
-    private suspend fun <T> suspendRequest(
-        url: String,
-        client: HttpClient,
-        success: suspend (ClientResponse) -> T,
-    ): T? {
-        val uri = URI(url)
-
-        val request = buildRequest(uri)
-
-        val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-
-        return if (response.statusCode() in 200..299) {
-            success(DesktopClientResponse(response))
-        } else {
-            logger.warn { "Failed to fetch data from $url, status code: ${response.statusCode()}" }
-            null
-        }
-    }
-
-    private fun buildRequest(uri: URI): HttpRequest =
-        HttpRequest
-            .newBuilder()
-            .uri(uri)
-            .header(
-                "User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            ).header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-            .header("Accept-Language", "en-US,en;q=0.9")
-            .header("DNT", "1")
-            .timeout(Duration.ofSeconds(5))
-            .build()
-}
-
-class DesktopClientResponse(
-    private val response: HttpResponse<InputStream>,
-) : ClientResponse {
-
-    override fun getBody(): ByteReadChannel = ByteReadChannel(response.body().asSource().buffered())
-
-    override fun getContentLength(): Long =
-        response
-            .headers()
-            .firstValue("Content-Length")
-            .orElse("-1")
-            .toLong()
 }

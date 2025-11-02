@@ -41,7 +41,7 @@ class OpenGraphService<Image>(
             if (fileUtils.existFile(openGraphImage)) {
                 logger.info { "Open graph image file exists" }
             } else {
-                resourcesClient.suspendRequest(urlPasteItem.url) { response ->
+                resourcesClient.request(urlPasteItem.url).onSuccess { response ->
                     val bytes = response.getBody().toByteArray()
                     val html = bytes.decodeToString()
                     val doc = Ksoup.parse(html)
@@ -127,7 +127,7 @@ class OpenGraphService<Image>(
                         ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
 
                     ogImage?.let { imageUrl ->
-                        resourcesClient.suspendRequest(imageUrl) { imageResponse ->
+                        resourcesClient.request(imageUrl).onSuccess { imageResponse ->
                             imageHandler.readImage(imageResponse.getBody())?.also { image ->
                                 imageHandler.writeImage(image, "png", openGraphImage)
                                 generateImageService.markGenerationComplete(openGraphImage)

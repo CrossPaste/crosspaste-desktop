@@ -38,7 +38,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
     /**
      * Download module from url to path
      */
-    fun downloadModule(
+    suspend fun downloadModule(
         url: String,
         path: Path,
     ): Boolean
@@ -56,7 +56,7 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
             for (moduleItem in value.moduleItems) {
                 val urls = moduleItem.getUrls()
                 val installResult: Boolean? =
-                    retryUtils.retry(value.retryNumber) {
+                    retryUtils.suspendRetry(value.retryNumber) {
                         val downTempPath =
                             userDataPathProvider.resolve(
                                 moduleItem.downloadFileName,
@@ -65,19 +65,19 @@ interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {
                         if (!fileUtils.existFile(downTempPath)) {
                             if (!downloadModule(urls[it], downTempPath)) {
                                 fileUtils.deleteFile(downTempPath)
-                                return@retry null
+                                return@suspendRetry null
                             }
                         }
 
                         if (!verifyInstall(downTempPath, moduleItem.sha256)) {
                             fileUtils.deleteFile(downTempPath)
-                            return@retry null
+                            return@suspendRetry null
                         }
 
                         if (installModule(moduleItem.downloadFileName, downTempPath, installPath)) {
-                            return@retry true
+                            return@suspendRetry true
                         } else {
-                            return@retry null
+                            return@suspendRetry null
                         }
                     }
 
