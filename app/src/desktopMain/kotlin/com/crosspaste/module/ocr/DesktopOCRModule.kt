@@ -1,6 +1,7 @@
 package com.crosspaste.module.ocr
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.DE
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
@@ -28,10 +29,11 @@ import org.bytedeco.tesseract.TessBaseAPI
 import org.bytedeco.tesseract.global.tesseract
 
 class DesktopOCRModule(
+    private val appPathProvider: AppPathProvider,
+    private val appWindowManager: DesktopAppWindowManager,
     private val configManager: DesktopConfigManager,
     private val copywriter: GlobalCopywriter,
     private val navigateManager: NavigationManager,
-    private val appPathProvider: AppPathProvider,
 ) : OCRModule {
 
     companion object Companion {
@@ -164,6 +166,7 @@ class DesktopOCRModule(
             val ocrLanguageList = splitOcrLanguages(ocrLanguage)
             if (ocrLanguageList.isEmpty()) {
                 navigateManager.navigate(OCR)
+                appWindowManager.showMainWindow()
                 return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
             } else {
                 val existLanguages = existLanguages(ocrLanguageList)
@@ -171,6 +174,7 @@ class DesktopOCRModule(
                     if (existLanguages.isEmpty()) {
                         updateOrCreateApi("")
                         navigateManager.navigate(OCR)
+                        appWindowManager.showMainWindow()
                         return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
                     } else {
                         val newOcrLanguages = existLanguages.joinToString("+")
