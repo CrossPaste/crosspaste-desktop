@@ -6,6 +6,8 @@ interface CrossPasteModule {
 
     fun appModule(): Module
 
+    fun extensionModule(): Module
+
     fun sqlDelightModule(): Module
 
     fun networkModule(): Module

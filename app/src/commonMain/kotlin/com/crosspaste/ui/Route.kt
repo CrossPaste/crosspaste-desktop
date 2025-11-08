@@ -67,6 +67,12 @@ data class NearbyDeviceDetail(
 }
 
 @Serializable
+object OCR : Route {
+    const val NAME: String = "ocr"
+    override val name: String = NAME
+}
+
+@Serializable
 object Pasteboard : Route {
     const val NAME: String = "pasteboard"
     override val name: String = NAME

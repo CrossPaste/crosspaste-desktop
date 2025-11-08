@@ -12,6 +12,7 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<Extension>() -> Extension.NAME
         dest.hasRoute<Import>() -> Import.NAME
         dest.hasRoute<NearbyDeviceDetail>() -> NearbyDeviceDetail.NAME
+        dest.hasRoute<OCR>() -> OCR.NAME
         dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
         dest.hasRoute<PasteTextEdit>() -> PasteTextEdit.NAME
         dest.hasRoute<QrCode>() -> QrCode.NAME

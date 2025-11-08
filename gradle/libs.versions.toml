@@ -37,6 +37,7 @@ richeditor = "1.0.0-rc13"
 semver = "3.0.0"
 sqldelight = "2.0.2"
 system-tray = "4.4"
+tesseract-platform = "5.5.1-1.5.12"
 theme-detector = "3.9.1"
 turbine = "1.2.1"
 webp-imageio = "0.10.2"
@@ -101,6 +102,7 @@ semver = { module = "io.github.z4kn4fein:semver", version.ref = "semver" }
 sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 system-tray = { module = "com.dorkbox:SystemTray", version.ref = "system-tray" }
+tesseract-platform = { module = "org.bytedeco:tesseract-platform", version.ref = "tesseract-platform" }
 theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
 webp-imageio = { module = "com.github.usefulness:webp-imageio", version.ref = "webp-imageio" }
 yaml = { module = "org.yaml:snakeyaml", version.ref = "yaml" }

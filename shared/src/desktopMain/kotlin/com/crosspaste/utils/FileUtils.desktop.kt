@@ -2,6 +2,8 @@ package com.crosspaste.utils
 
 import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import okio.FileSystem
 import okio.Path
 import java.io.RandomAccessFile
@@ -29,14 +31,17 @@ object DesktopFileUtils : FileUtils {
         byteReadChannel: ByteReadChannel,
     ) {
         val buffer = ByteArray(fileBufferSize)
+        val context = currentCoroutineContext()
         path.toFile().outputStream().use { outputStream ->
-            while (true) {
+            while (!byteReadChannel.isClosedForRead) {
+                context.ensureActive()
                 val readSize = byteReadChannel.readAvailable(buffer)
                 if (readSize == -1) {
                     break
                 }
                 outputStream.write(buffer, 0, readSize)
             }
+            outputStream.flush()
         }
     }
 
