@@ -6,6 +6,7 @@ import com.crosspaste.net.ResourcesClient
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.util.collections.*
 import io.ktor.utils.io.*
@@ -28,6 +29,8 @@ class ModuleDownloadManager(
 
         val fileUtils = getFileUtils()
     }
+
+    private val logger = KotlinLogging.logger {}
 
     private val moduleDownloadStates = ConcurrentMap<String, MutableStateFlow<ModuleDownloadState>>()
 
@@ -78,6 +81,7 @@ class ModuleDownloadManager(
                             }
 
                             override fun onSuccess() {
+                                logger.info { "Successfully downloaded ${task.fileName}" }
                                 val completedState =
                                     DownloadState.Completed(
                                         task.id,
@@ -91,6 +95,7 @@ class ModuleDownloadManager(
                                 throwable: Throwable?,
                             ) {
                                 val error = throwable ?: Exception("HTTP Error: ${httpStatusCode.value}")
+                                logger.error(error) { "Download failed for task ${task.id}" }
                                 if (throwable is CancellationException) {
                                     tracker.isCancelled = true
                                     val cancelledState = DownloadState.Cancelled(task.id)
