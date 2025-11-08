@@ -5,9 +5,13 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.image.OCRModule
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.utils.ioDispatcher
@@ -22,7 +26,9 @@ class DesktopPasteMenuService(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
+    private val ocrModule: OCRModule,
     private val uiSupport: UISupport,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : PasteMenuService {
     private val desktopAppWindowManager = appWindowManager as DesktopAppWindowManager
 
@@ -163,6 +169,34 @@ class DesktopPasteMenuService(
             deletePasteData(pasteData)
         }
 
+    private fun createEditContextMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuItem(copywriter.getText("edit")) {
+            openPasteData(pasteData)
+        }
+
+    private fun createExtractTextContextMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuItem(copywriter.getText("extract_text")) {
+            val extractText =
+                pasteData
+                    .getPasteItem(ImagesPasteItem::class)
+                    ?.getFilePaths(userDataPathProvider)
+                    ?.mapNotNull { path ->
+                        ocrModule.extractText(path).getOrNull()
+                    }?.joinToString(separator = "\n")
+
+            if (!extractText.isNullOrEmpty()) {
+                pasteboardService.tryWritePasteboard(
+                    pasteItem = createTextPasteItem(text = extractText),
+                    localOnly = false,
+                )
+            }
+        }
+
+    private fun createOpenContextMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuItem(copywriter.getText("open")) {
+            openPasteData(pasteData)
+        }
+
     private fun createLoadingMenuItems(pasteData: PasteData): List<ContextMenuItem> =
         listOf(
             createCopyContextMenuItem(pasteData),
@@ -172,19 +206,23 @@ class DesktopPasteMenuService(
     private fun createBaseMenuItems(pasteData: PasteData): List<ContextMenuItem> =
         listOf(
             createCopyContextMenuItem(pasteData),
-            ContextMenuItem(copywriter.getText("open")) {
-                openPasteData(pasteData)
-            },
+            createOpenContextMenuItem(pasteData),
             createDeleteContextMenuItem(pasteData),
         )
 
-    private fun createTextMenuItems(pasteDataScope: PasteDataScope): List<ContextMenuItem> =
+    private fun createTextMenuItems(pasteData: PasteData): List<ContextMenuItem> =
         listOf(
-            createCopyContextMenuItem(pasteDataScope.pasteData),
-            ContextMenuItem(copywriter.getText("edit")) {
-                openPasteData(pasteDataScope.pasteData)
-            },
-            createDeleteContextMenuItem(pasteDataScope.pasteData),
+            createCopyContextMenuItem(pasteData),
+            createEditContextMenuItem(pasteData),
+            createDeleteContextMenuItem(pasteData),
+        )
+
+    private fun createImageMenuItems(pasteData: PasteData): List<ContextMenuItem> =
+        listOf(
+            createCopyContextMenuItem(pasteData),
+            createEditContextMenuItem(pasteData),
+            createExtractTextContextMenuItem(pasteData),
+            createDeleteContextMenuItem(pasteData),
         )
 
     fun mainPasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
@@ -193,12 +231,12 @@ class DesktopPasteMenuService(
                 createLoadingMenuItems(pasteData)
             } else {
                 when (pasteData.getType()) {
-                    PasteType.TEXT_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.TEXT_TYPE -> createTextMenuItems(pasteData)
                     PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.HTML_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.IMAGE_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
                     PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
                     else -> createLoadingMenuItems(pasteData)
                 }
@@ -212,12 +250,12 @@ class DesktopPasteMenuService(
                 createLoadingMenuItems(pasteData)
             } else {
                 when (pasteData.getType()) {
-                    PasteType.TEXT_TYPE -> createTextMenuItems(pasteDataScope)
+                    PasteType.TEXT_TYPE -> createTextMenuItems(pasteData)
                     PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.HTML_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.IMAGE_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
                     PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
                     else -> createLoadingMenuItems(pasteData)
                 }

@@ -1,11 +1,9 @@
 package com.crosspaste.ui.settings
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,8 +15,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,6 +42,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CustomTextSwitch
+import com.crosspaste.ui.base.SettingButton
 import com.crosspaste.ui.base.anglesUpDown
 import com.crosspaste.ui.base.clock
 import com.crosspaste.ui.base.color
@@ -73,13 +70,10 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
-import com.crosspaste.ui.theme.AppUISize.tiny5X
-import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
-import com.crosspaste.ui.theme.AppUISize.zeroButtonElevation
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.Quadruple
 import com.crosspaste.utils.getFileUtils
@@ -316,8 +310,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
         ) {
             var cleaning by remember { mutableStateOf(false) }
 
-            Button(
-                modifier = Modifier.height(xxLarge),
+            SettingButton(
                 onClick = {
                     cleaning = true
                     ioCoroutineDispatcher.launch {
@@ -328,11 +321,6 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                             }
                     }
                 },
-                shape = tinyRoundedCornerShape,
-                colors = ButtonDefaults.buttonColors(),
-                border = BorderStroke(tiny5X, MaterialTheme.colorScheme.surfaceDim),
-                contentPadding = PaddingValues(horizontal = tiny, vertical = zero),
-                elevation = zeroButtonElevation,
             ) {
                 if (!cleaning) {
                     Text(

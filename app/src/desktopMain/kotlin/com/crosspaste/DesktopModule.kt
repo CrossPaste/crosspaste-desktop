@@ -60,6 +60,7 @@ import com.crosspaste.image.FaviconLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
+import com.crosspaste.image.OCRModule
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.listen.ActiveGraphicsDevice
@@ -74,6 +75,9 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.log.CrossPasteLogger
+import com.crosspaste.module.ModuleDownloadManager
+import com.crosspaste.module.ModuleManager
+import com.crosspaste.module.ocr.DesktopOCRModule
 import com.crosspaste.net.DesktopNetworkInterfaceService
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopPasteServer
@@ -267,6 +271,16 @@ class DesktopModule(
             single<DesktopAppLaunch> { DesktopAppLaunch(get(), get()) }
             single<DesktopAppLaunchState> { runBlocking { get<DesktopAppLaunch>().launch() } }
             single<DesktopConfigManager> { configManager }
+            single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
+            single<ModuleDownloadManager> { ModuleDownloadManager(get(), get()) }
+            single<ModuleManager> {
+                val ocrModule = get<OCRModule>()
+                ModuleManager(
+                    mapOf(
+                        ocrModule.moduleId to ocrModule,
+                    ),
+                )
+            }
             single<DeviceUtils> { deviceUtils }
             single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
             single<FileExtImageLoader> { DesktopFileExtLoader(get(), get(), get()) }
@@ -275,7 +289,6 @@ class DesktopModule(
             single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get(), get()) }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
-            single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
             single<RecommendationService> { DesktopRecommendationService(get(), get(), get(), get()) }
@@ -285,6 +298,11 @@ class DesktopModule(
             single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
             single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider(get())) }
             single<FontManager> { DesktopFontManager(get()) }
+        }
+
+    override fun extensionModule() =
+        module {
+            single<OCRModule> { DesktopOCRModule(get(), get(), get(), get(), get()) }
         }
 
     // SqlDelight
@@ -433,7 +451,9 @@ class DesktopModule(
             single<RenderingService<String>>(named("urlRendering")) {
                 OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
             }
-            single<DesktopPasteMenuService> { DesktopPasteMenuService(get(), get(), get(), get(), get(), get()) }
+            single<DesktopPasteMenuService> {
+                DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get())
+            }
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
             single<PasteboardService> {
@@ -564,6 +584,7 @@ class DesktopModule(
         GlobalContext.startKoin {
             modules(
                 appModule(),
+                extensionModule(),
                 sqlDelightModule(),
                 networkModule(),
                 securityModule(),
