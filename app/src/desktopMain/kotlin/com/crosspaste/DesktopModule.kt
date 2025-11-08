@@ -302,7 +302,7 @@ class DesktopModule(
 
     override fun extensionModule() =
         module {
-            single<OCRModule> { DesktopOCRModule(get(), get(), get(), get()) }
+            single<OCRModule> { DesktopOCRModule(get(), get(), get(), get(), get()) }
         }
 
     // SqlDelight
@@ -456,7 +456,6 @@ class DesktopModule(
             }
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
-            single<OCRModule> { DesktopOCRModule(get(), get(), get(), get()) }
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
