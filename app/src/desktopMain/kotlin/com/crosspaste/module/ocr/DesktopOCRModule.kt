@@ -20,10 +20,12 @@ import com.crosspaste.module.ModuleDownloadState
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.OCR
-import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okio.Path
+import org.bytedeco.javacpp.BytePointer
 import org.bytedeco.leptonica.global.leptonica
 import org.bytedeco.tesseract.TessBaseAPI
 import org.bytedeco.tesseract.global.tesseract
@@ -83,7 +85,7 @@ class DesktopOCRModule(
 
     override val desc: String = "Optical Character Recognition Module"
 
-    private val lock = createPlatformLock()
+    private val mutex = Mutex()
 
     private val trainedDataPath =
         run {
@@ -103,7 +105,9 @@ class DesktopOCRModule(
 
     private fun createApi(ocrLanguage: String): TessBaseAPI? {
         val innerApi = TessBaseAPI()
-        return if (innerApi.Init(trainedDataPath.toString(), ocrLanguage) != 0) {
+        val dataPath = BytePointer(trainedDataPath.toString())
+        val language = BytePointer(ocrLanguage)
+        return if (innerApi.Init(dataPath, language) != 0) {
             null
         } else {
             innerApi.SetPageSegMode(6)
@@ -135,8 +139,8 @@ class DesktopOCRModule(
         }
     }
 
-    override fun addLanguage(language: String) {
-        lock.withLock {
+    override suspend fun addLanguage(language: String) {
+        mutex.withLock {
             getTrainedDataName(language)?.let {
                 val ocrLanguage = configManager.getCurrentConfig().ocrLanguage
                 val languageSet = splitOcrLanguages(ocrLanguage).toSet()
@@ -148,8 +152,8 @@ class DesktopOCRModule(
         }
     }
 
-    override fun removeLanguage(language: String) {
-        lock.withLock {
+    override suspend fun removeLanguage(language: String) {
+        mutex.withLock {
             val ocrLanguageList = splitOcrLanguages(configManager.getCurrentConfig().ocrLanguage)
 
             val newOcrLanguages =
@@ -160,8 +164,8 @@ class DesktopOCRModule(
         }
     }
 
-    override fun extractText(path: Path): Result<String> =
-        lock.withLock {
+    override suspend fun extractText(path: Path): Result<String> =
+        mutex.withLock {
             val ocrLanguage = configManager.getCurrentConfig().ocrLanguage
             val ocrLanguageList = splitOcrLanguages(ocrLanguage)
             if (ocrLanguageList.isEmpty()) {
@@ -170,22 +174,20 @@ class DesktopOCRModule(
                 return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
             } else {
                 val existLanguages = existLanguages(ocrLanguageList)
-                if (existLanguages.size != ocrLanguageList.size) {
-                    if (existLanguages.isEmpty()) {
-                        updateOrCreateApi("")
-                        navigateManager.navigate(OCR)
-                        appWindowManager.showMainWindow()
-                        return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
-                    } else {
-                        val newOcrLanguages = existLanguages.joinToString("+")
-                        updateOrCreateApi(newOcrLanguages)
-                    }
+                if (existLanguages.isEmpty()) {
+                    updateOrCreateApi("")
+                    navigateManager.navigate(OCR)
+                    appWindowManager.showMainWindow()
+                    return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
+                } else if (existLanguages.size != ocrLanguageList.size || api == null) {
+                    val newOcrLanguages = existLanguages.joinToString("+")
+                    updateOrCreateApi(newOcrLanguages)
                 }
 
-                if (api == null) {
+                api?.let {
+                    extractTextFromImage(it, path)
+                } ?: run {
                     Result.failure(IllegalStateException("Failed to initialize Tesseract API"))
-                } else {
-                    extractTextFromImage(api!!, path)
                 }
             }
         }

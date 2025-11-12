@@ -176,19 +176,21 @@ class DesktopPasteMenuService(
 
     private fun createExtractTextContextMenuItem(pasteData: PasteData): ContextMenuItem =
         ContextMenuItem(copywriter.getText("extract_text")) {
-            val extractText =
-                pasteData
-                    .getPasteItem(ImagesPasteItem::class)
-                    ?.getFilePaths(userDataPathProvider)
-                    ?.mapNotNull { path ->
-                        ocrModule.extractText(path).getOrNull()
-                    }?.joinToString(separator = "\n")
+            menuScope.launch {
+                val extractText =
+                    pasteData
+                        .getPasteItem(ImagesPasteItem::class)
+                        ?.getFilePaths(userDataPathProvider)
+                        ?.mapNotNull { path ->
+                            ocrModule.extractText(path).getOrNull()
+                        }?.joinToString(separator = "\n")
 
-            if (!extractText.isNullOrEmpty()) {
-                pasteboardService.tryWritePasteboard(
-                    pasteItem = createTextPasteItem(text = extractText),
-                    localOnly = false,
-                )
+                if (!extractText.isNullOrEmpty()) {
+                    pasteboardService.tryWritePasteboard(
+                        pasteItem = createTextPasteItem(text = extractText),
+                        localOnly = false,
+                    )
+                }
             }
         }
 
