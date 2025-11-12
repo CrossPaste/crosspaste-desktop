@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +45,7 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -59,6 +61,8 @@ fun OCRContentView() {
     val ocrLanguageList = splitOcrLanguages(config.ocrLanguage)
 
     val downloadState by moduleDownloadManager.getModuleDownloadState(ocrModule.moduleId).collectAsState()
+
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier =
@@ -83,7 +87,9 @@ fun OCRContentView() {
                             index = index + 1,
                             language = language,
                         ) {
-                            ocrModule.removeLanguage(language.abridge)
+                            scope.launch {
+                                ocrModule.removeLanguage(language.abridge)
+                            }
                         }
                     }
                 }
@@ -126,7 +132,9 @@ fun OCRContentView() {
                                 )
                             },
                             onLoadClick = {
-                                ocrModule.addLanguage(language.abridge)
+                                scope.launch {
+                                    ocrModule.addLanguage(language.abridge)
+                                }
                             },
                         )
                     }

@@ -5,9 +5,9 @@ import okio.Path
 
 interface OCRModule : ServiceModule {
 
-    fun addLanguage(language: String)
+    suspend fun addLanguage(language: String)
 
-    fun removeLanguage(language: String)
+    suspend fun removeLanguage(language: String)
 
-    fun extractText(path: Path): Result<String>
+    suspend fun extractText(path: Path): Result<String>
 }
