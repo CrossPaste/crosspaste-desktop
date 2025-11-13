@@ -13,8 +13,6 @@ import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
-import com.crosspaste.sync.NearbyDeviceManager
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.failResponse
@@ -28,14 +26,13 @@ fun Routing.syncRouting(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
     exceptionHandler: ExceptionHandler,
-    nearbyDeviceManager: NearbyDeviceManager,
     networkInterfaceService: NetworkInterfaceService,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
     syncApi: SyncApi,
     syncInfoFactory: SyncInfoFactory,
-    syncManager: SyncManager,
     syncRoutingApi: SyncRoutingApi,
+    updateSyncInfo: (String) -> Unit,
 ) {
     val logger = KotlinLogging.logger {}
 
@@ -163,12 +160,7 @@ fun Routing.syncRouting(
                         ),
                 )
             }.onSuccess { trustResponse ->
-                nearbyDeviceManager.nearbySyncInfos.value
-                    .firstOrNull {
-                        it.appInfo.appInstanceId == appInstanceId
-                    }?.let {
-                        syncManager.updateSyncInfo(it)
-                    }
+                updateSyncInfo(appInstanceId)
                 successResponse(call, trustResponse)
             }.onFailure {
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())

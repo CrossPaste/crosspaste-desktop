@@ -13,7 +13,6 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
-import com.crosspaste.sync.SyncManager
 import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 
@@ -30,7 +29,6 @@ class DesktopServerModule(
     secureStore: SecureStore,
     syncApi: SyncApi,
     syncInfoFactory: SyncInfoFactory,
-    syncManager: SyncManager,
     syncRoutingApi: SyncRoutingApi,
     serverEncryptPluginFactory: ServerEncryptPluginFactory,
     serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
@@ -48,7 +46,6 @@ class DesktopServerModule(
         secureStore,
         syncApi,
         syncInfoFactory,
-        syncManager,
         syncRoutingApi,
         serverEncryptPluginFactory,
         serverDecryptionPluginFactory,

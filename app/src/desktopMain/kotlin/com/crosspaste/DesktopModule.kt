@@ -383,7 +383,6 @@ class DesktopModule(
                     secureStore = get(),
                     syncApi = get(),
                     syncInfoFactory = get(),
-                    syncManager = get(),
                     syncRoutingApi = get(),
                     serverEncryptPluginFactory = get(),
                     serverDecryptionPluginFactory = get(),

@@ -3,15 +3,39 @@ package com.crosspaste.net
 import com.crosspaste.db.sync.HostInfo
 import io.ktor.network.sockets.InetSocketAddress
 
-class HostInfoFilter(
+interface HostInfoFilter {
+
+    companion object {
+        fun createHostInfoFilter(
+            hostAddress: String,
+            networkPrefixLength: Short,
+        ): HostInfoFilter = HostInfoFilterImpl(hostAddress, networkPrefixLength)
+    }
+
+    fun filter(host: String): Boolean
+
+    fun filter(hostInfo: HostInfo): Boolean
+}
+
+object NoFilter : HostInfoFilter {
+    override fun filter(host: String): Boolean = true
+
+    override fun filter(hostInfo: HostInfo): Boolean = true
+
+    override fun equals(other: Any?): Boolean = this === other
+
+    override fun hashCode(): Int = 0
+}
+
+private class HostInfoFilterImpl(
     val hostAddress: String,
     val networkPrefixLength: Short,
-) {
+) : HostInfoFilter {
 
     private val selfBytes: ByteArray? by lazy { resolveIpBytes(hostAddress) }
     private val selfMaxBits: Int by lazy { (selfBytes?.size ?: 0) * 8 }
 
-    fun filter(host: String): Boolean {
+    override fun filter(host: String): Boolean {
         val otherBytes = resolveIpBytes(host) ?: return false
         val self = selfBytes ?: return false
         if (self.size != otherBytes.size) return false
@@ -22,7 +46,7 @@ class HostInfoFilter(
         return compareWithMask(self, otherBytes, plen)
     }
 
-    fun filter(hostInfo: HostInfo): Boolean = filter(hostInfo.hostAddress)
+    override fun filter(hostInfo: HostInfo): Boolean = filter(hostInfo.hostAddress)
 
     private fun resolveIpBytes(host: String): ByteArray? =
         try {
@@ -53,7 +77,7 @@ class HostInfoFilter(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is HostInfoFilter) return false
+        if (other !is HostInfoFilterImpl) return false
 
         if (hostAddress != other.hostAddress) return false
         if (networkPrefixLength != other.networkPrefixLength) return false

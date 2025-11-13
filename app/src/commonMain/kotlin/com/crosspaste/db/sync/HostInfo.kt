@@ -1,6 +1,6 @@
 package com.crosspaste.db.sync
 
-import com.crosspaste.net.HostInfoFilter
+import com.crosspaste.net.HostInfoFilter.Companion.createHostInfoFilter
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,7 +9,7 @@ data class HostInfo(
     var hostAddress: String
 ) {
     fun filter(host: String): Boolean {
-        return HostInfoFilter(
+        return createHostInfoFilter(
             hostAddress = hostAddress,
             networkPrefixLength = networkPrefixLength,
         ).filter(host)

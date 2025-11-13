@@ -17,7 +17,6 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -41,7 +40,6 @@ open class DefaultServerModule(
     private val secureStore: SecureStore,
     private val syncApi: SyncApi,
     private val syncInfoFactory: SyncInfoFactory,
-    private val syncManager: SyncManager,
     private val syncRoutingApi: SyncRoutingApi,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
     private val serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
@@ -74,15 +72,15 @@ open class DefaultServerModule(
                     appInfo,
                     appTokenApi,
                     exceptionHandler,
-                    nearbyDeviceManager,
                     networkInterfaceService,
                     secureKeyPairSerializer,
                     secureStore,
                     syncApi,
                     syncInfoFactory,
-                    syncManager,
                     syncRoutingApi,
-                )
+                ) {
+                    updateSyncInfo(it)
+                }
                 pasteRouting(
                     appControl,
                     pasteboardService,
@@ -96,4 +94,13 @@ open class DefaultServerModule(
                 )
             }
         }
+
+    private fun updateSyncInfo(appInstanceId: String) {
+        nearbyDeviceManager.nearbySyncInfos.value
+            .firstOrNull {
+                it.appInfo.appInstanceId == appInstanceId
+            }?.let {
+                syncRoutingApi.updateSyncInfo(it)
+            }
+    }
 }
