@@ -1,6 +1,7 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.net.HostInfoFilter.Companion.createHostInfoFilter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,7 +27,7 @@ class HostInfoFilterTest {
         assertSame(NoFilter, NoFilter)
         assertFalse(NoFilter.equals(null))
         assertFalse(NoFilter.equals("not-a-filter"))
-        assertFalse(NoFilter.equals(HostInfoFilterImpl("192.168.1.1", 24)))
+        assertFalse(NoFilter.equals(createHostInfoFilter("192.168.1.1", 24)))
     }
 
     @Test
@@ -37,7 +38,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testIPv4SameSubnetFiltering() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 24)
+        val filter = createHostInfoFilter("192.168.1.100", 24)
 
         assertTrue(filter.filter(HostInfo(24, "192.168.1.1")))
         assertTrue(filter.filter(HostInfo(24, "192.168.1.50")))
@@ -47,7 +48,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testIPv4DifferentSubnetFiltering() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 24)
+        val filter = createHostInfoFilter("192.168.1.100", 24)
 
         assertFalse(filter.filter(HostInfo(24, "192.168.2.1")))
         assertFalse(filter.filter(HostInfo(24, "10.0.0.1")))
@@ -57,7 +58,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testIPv4SmallerSubnetFiltering() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 16)
+        val filter = createHostInfoFilter("192.168.1.100", 16)
 
         assertTrue(filter.filter(HostInfo(16, "192.168.1.1")))
         assertTrue(filter.filter(HostInfo(16, "192.168.255.255")))
@@ -70,7 +71,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testIPv4LargerSubnetFiltering() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 30)
+        val filter = createHostInfoFilter("192.168.1.100", 30)
 
         assertTrue(filter.filter(HostInfo(30, "192.168.1.100")))
         assertTrue(filter.filter(HostInfo(30, "192.168.1.101")))
@@ -84,7 +85,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testIPv6SameSubnetFiltering() {
-        val filter = HostInfoFilterImpl("2001:db8:85a3::8a2e:370:7334", 64)
+        val filter = createHostInfoFilter("2001:db8:85a3::8a2e:370:7334", 64)
 
         assertTrue(filter.filter(HostInfo(64, "2001:db8:85a3::1")))
         assertTrue(filter.filter(HostInfo(64, "2001:db8:85a3::ffff")))
@@ -93,7 +94,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testIPv6DifferentSubnetFiltering() {
-        val filter = HostInfoFilterImpl("2001:db8:85a3::8a2e:370:7334", 64)
+        val filter = createHostInfoFilter("2001:db8:85a3::8a2e:370:7334", 64)
 
         assertFalse(filter.filter(HostInfo(64, "2001:db8:85a4::1")))
         assertFalse(filter.filter(HostInfo(64, "2001:db8:85a2::1")))
@@ -103,8 +104,8 @@ class HostInfoFilterTest {
 
     @Test
     fun testIPv6MixedWithIPv4() {
-        val ipv4Filter = HostInfoFilterImpl("192.168.1.100", 24)
-        val ipv6Filter = HostInfoFilterImpl("2001:db8:85a3::1", 64)
+        val ipv4Filter = createHostInfoFilter("192.168.1.100", 24)
+        val ipv6Filter = createHostInfoFilter("2001:db8:85a3::1", 64)
 
         assertFalse(ipv4Filter.filter(HostInfo(64, "2001:db8:85a3::1")))
         assertFalse(ipv6Filter.filter(HostInfo(24, "192.168.1.1")))
@@ -112,7 +113,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testInvalidIPAddressHandling() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 24)
+        val filter = createHostInfoFilter("192.168.1.100", 24)
 
         assertFalse(filter.filter(HostInfo(24, "invalid-ip")))
         assertFalse(filter.filter(HostInfo(24, "999.999.999.999")))
@@ -123,7 +124,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testInvalidSelfIPAddress() {
-        val filter = HostInfoFilterImpl("invalid-ip", 24)
+        val filter = createHostInfoFilter("invalid-ip", 24)
 
         assertFalse(filter.filter(HostInfo(24, "192.168.1.1")))
         assertFalse(filter.filter(HostInfo(24, "invalid-ip")))
@@ -131,7 +132,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testBoundaryConditionsPrefixLength0() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 0)
+        val filter = createHostInfoFilter("192.168.1.100", 0)
 
         assertTrue(filter.filter(HostInfo(0, "192.168.1.1")))
         assertTrue(filter.filter(HostInfo(0, "10.0.0.1")))
@@ -141,7 +142,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testBoundaryConditionsPrefixLength32() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 32)
+        val filter = createHostInfoFilter("192.168.1.100", 32)
 
         assertTrue(filter.filter(HostInfo(32, "192.168.1.100")))
 
@@ -152,7 +153,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testBoundaryConditionsPrefixLength128IPv6() {
-        val filter = HostInfoFilterImpl("2001:db8:85a3::8a2e:370:7334", 128)
+        val filter = createHostInfoFilter("2001:db8:85a3::8a2e:370:7334", 128)
 
         assertTrue(filter.filter(HostInfo(128, "2001:db8:85a3::8a2e:370:7334")))
 
@@ -162,7 +163,7 @@ class HostInfoFilterTest {
 
     @Test
     fun testNegativePrefixLength() {
-        val filter = HostInfoFilterImpl("192.168.1.100", -5)
+        val filter = createHostInfoFilter("192.168.1.100", -5)
 
         assertTrue(filter.filter(HostInfo(-5, "192.168.1.1")))
         assertTrue(filter.filter(HostInfo(-5, "10.0.0.1")))
@@ -170,18 +171,18 @@ class HostInfoFilterTest {
 
     @Test
     fun testExcessivePrefixLength() {
-        val filter = HostInfoFilterImpl("192.168.1.100", 50)
+        val filter = createHostInfoFilter("192.168.1.100", 50)
 
         assertTrue(filter.filter(HostInfo(50, "192.168.1.100")))
         assertFalse(filter.filter(HostInfo(50, "192.168.1.101")))
     }
 
     @Test
-    fun testHostInfoFilterImplEquals() {
-        val filter1 = HostInfoFilterImpl("192.168.1.100", 24)
-        val filter2 = HostInfoFilterImpl("192.168.1.100", 24)
-        val filter3 = HostInfoFilterImpl("192.168.1.101", 24)
-        val filter4 = HostInfoFilterImpl("192.168.1.100", 16)
+    fun testcreateHostInfoFilterEquals() {
+        val filter1 = createHostInfoFilter("192.168.1.100", 24)
+        val filter2 = createHostInfoFilter("192.168.1.100", 24)
+        val filter3 = createHostInfoFilter("192.168.1.101", 24)
+        val filter4 = createHostInfoFilter("192.168.1.100", 16)
 
         assertEquals(filter1, filter1)
         assertEquals(filter1, filter2)
@@ -195,10 +196,10 @@ class HostInfoFilterTest {
     }
 
     @Test
-    fun testHostInfoFilterImplHashCode() {
-        val filter1 = HostInfoFilterImpl("192.168.1.100", 24)
-        val filter2 = HostInfoFilterImpl("192.168.1.100", 24)
-        val filter3 = HostInfoFilterImpl("192.168.1.101", 24)
+    fun testcreateHostInfoFilterHashCode() {
+        val filter1 = createHostInfoFilter("192.168.1.100", 24)
+        val filter2 = createHostInfoFilter("192.168.1.100", 24)
+        val filter3 = createHostInfoFilter("192.168.1.101", 24)
 
         assertEquals(filter1.hashCode(), filter2.hashCode())
         assertTrue(filter1.hashCode() != filter3.hashCode())

@@ -120,11 +120,11 @@ class SyncTest : KoinTest {
                 single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
                     DesktopServerFactory()
                 }
+                single<SyncInfoFactory> { SyncInfoFactory(get(named("serverAppInfo")), get()) }
                 single<ServerModule> {
                     TestServerModule(
                         appInfo = get(named("serverAppInfo")),
                         appTokenApi = get(),
-                        endpointInfoFactory = get(),
                         exceptionHandler = get(),
                         networkInterfaceService = get(),
                         secureKeyPairSerializer = get(),
@@ -132,6 +132,7 @@ class SyncTest : KoinTest {
                         serverEncryptPluginFactory = get(),
                         serverDecryptionPluginFactory = get(),
                         syncApi = get(),
+                        syncInfoFactory = get(),
                         syncRoutingApi = get(),
                     )
                 }

@@ -6,7 +6,9 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
+import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.DecryptFail
@@ -22,9 +24,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SyncResolver(
     private val lazyPasteBonjourService: Lazy<PasteBonjourService>,
+    private val networkInterfaceService: NetworkInterfaceService,
     private val ratingPromptManager: RatingPromptManager,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
+    private val syncInfoFactory: SyncInfoFactory,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val telnetHelper: TelnetHelper,
     private val tokenCache: TokenCache,
@@ -340,6 +344,18 @@ class SyncResolver(
                     }
 
                 if (result is SuccessResult) {
+                    val hostInfoList =
+                        networkInterfaceService
+                            .getCurrentUseNetworkInterfaces()
+                            .map { it.toHostInfo() }
+                            .filter { it.filter(host) }
+                    val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
+                    syncClientApi.heartbeat(
+                        syncInfo = syncInfo,
+                        targetAppInstanceId = appInstanceId,
+                    ) {
+                        buildUrl(HostAndPort(host, port))
+                    }
                     return@trustByTokenCache true
                 }
             }
@@ -357,6 +373,18 @@ class SyncResolver(
                     }
 
                 if (result is SuccessResult) {
+                    val hostInfoList =
+                        networkInterfaceService
+                            .getCurrentUseNetworkInterfaces()
+                            .map { it.toHostInfo() }
+                            .filter { it.filter(host) }
+                    val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
+                    syncClientApi.heartbeat(
+                        syncInfo = syncInfo,
+                        targetAppInstanceId = appInstanceId,
+                    ) {
+                        buildUrl(HostAndPort(host, port))
+                    }
                     syncRuntimeInfoDao.updateConnectInfo(
                         this.copy(
                             connectState = SyncState.CONNECTED,

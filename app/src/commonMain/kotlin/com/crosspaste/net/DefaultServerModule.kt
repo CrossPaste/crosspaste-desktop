@@ -3,7 +3,6 @@ package com.crosspaste.net
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
-import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
@@ -17,6 +16,7 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -32,13 +32,14 @@ open class DefaultServerModule(
     private val appInfo: AppInfo,
     private val appTokenApi: AppTokenApi,
     private val cacheManager: CacheManager,
-    private val endpointInfoFactory: EndpointInfoFactory,
     private val exceptionHandler: ExceptionHandler,
+    private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
     private val pasteboardService: PasteboardService,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
     private val syncApi: SyncApi,
+    private val syncInfoFactory: SyncInfoFactory,
     private val syncRoutingApi: SyncRoutingApi,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
     private val serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
@@ -70,14 +71,16 @@ open class DefaultServerModule(
                 syncRouting(
                     appInfo,
                     appTokenApi,
-                    endpointInfoFactory,
                     exceptionHandler,
                     networkInterfaceService,
                     secureKeyPairSerializer,
                     secureStore,
                     syncApi,
+                    syncInfoFactory,
                     syncRoutingApi,
-                )
+                ) {
+                    updateSyncInfo(it)
+                }
                 pasteRouting(
                     appControl,
                     pasteboardService,
@@ -91,4 +94,13 @@ open class DefaultServerModule(
                 )
             }
         }
+
+    private fun updateSyncInfo(appInstanceId: String) {
+        nearbyDeviceManager.nearbySyncInfos.value
+            .firstOrNull {
+                it.appInfo.appInstanceId == appInstanceId
+            }?.let {
+                syncRoutingApi.updateSyncInfo(it)
+            }
+    }
 }

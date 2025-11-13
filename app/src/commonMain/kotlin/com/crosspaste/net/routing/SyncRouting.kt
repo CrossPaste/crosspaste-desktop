@@ -2,7 +2,6 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
-import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.secure.PairingResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
@@ -10,6 +9,7 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.SyncApi
+import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
@@ -25,13 +25,14 @@ import io.ktor.server.routing.*
 fun Routing.syncRouting(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
-    endpointInfoFactory: EndpointInfoFactory,
     exceptionHandler: ExceptionHandler,
     networkInterfaceService: NetworkInterfaceService,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
     syncApi: SyncApi,
+    syncInfoFactory: SyncInfoFactory,
     syncRoutingApi: SyncRoutingApi,
+    updateSyncInfo: (String) -> Unit,
 ) {
     val logger = KotlinLogging.logger {}
 
@@ -100,8 +101,7 @@ fun Routing.syncRouting(
                 .getCurrentUseNetworkInterfaces()
                 .map { it.toHostInfo() }
                 .filter { it.hostAddress == host }
-        val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
-        val syncInfo = SyncInfo(appInfo, endpointInfo)
+        val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
         successResponse(call, syncInfo)
     }
 
@@ -160,6 +160,7 @@ fun Routing.syncRouting(
                         ),
                 )
             }.onSuccess { trustResponse ->
+                updateSyncInfo(appInstanceId)
                 successResponse(call, trustResponse)
             }.onFailure {
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())

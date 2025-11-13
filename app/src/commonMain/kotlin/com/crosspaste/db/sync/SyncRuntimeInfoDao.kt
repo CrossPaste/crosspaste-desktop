@@ -148,6 +148,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     syncInfo.endpointInfo.platform.version,
                     hostInfoArrayJson,
                     syncInfo.endpointInfo.port.toLong(),
+                    syncInfo.endpointInfo.port.toLong(),
                     now,
                     syncInfo.appInfo.appInstanceId,
                 )

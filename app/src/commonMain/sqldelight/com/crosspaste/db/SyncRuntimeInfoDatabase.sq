@@ -58,7 +58,7 @@ UPDATE SyncRuntimeInfoEntity SET
   platformBitMode = ?,
   platformVersion = ?,
   hostInfo = ?,
-  port = ?,
+  port = CASE WHEN ? != 0 THEN ? ELSE port END,
   modifyTime = ?
 WHERE appInstanceId = ?;
 

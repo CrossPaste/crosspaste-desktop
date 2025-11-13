@@ -5,19 +5,29 @@ import io.ktor.network.sockets.InetSocketAddress
 
 interface HostInfoFilter {
 
+    companion object {
+        fun createHostInfoFilter(
+            hostAddress: String,
+            networkPrefixLength: Short,
+        ): HostInfoFilter = HostInfoFilterImpl(hostAddress, networkPrefixLength)
+    }
+
+    fun filter(host: String): Boolean
+
     fun filter(hostInfo: HostInfo): Boolean
 }
 
 object NoFilter : HostInfoFilter {
+    override fun filter(host: String): Boolean = true
 
     override fun filter(hostInfo: HostInfo): Boolean = true
 
-    override fun equals(other: Any?): Boolean = other == NoFilter
+    override fun equals(other: Any?): Boolean = this === other
 
     override fun hashCode(): Int = 0
 }
 
-class HostInfoFilterImpl(
+private class HostInfoFilterImpl(
     val hostAddress: String,
     val networkPrefixLength: Short,
 ) : HostInfoFilter {
@@ -25,8 +35,8 @@ class HostInfoFilterImpl(
     private val selfBytes: ByteArray? by lazy { resolveIpBytes(hostAddress) }
     private val selfMaxBits: Int by lazy { (selfBytes?.size ?: 0) * 8 }
 
-    override fun filter(hostInfo: HostInfo): Boolean {
-        val otherBytes = resolveIpBytes(hostInfo.hostAddress) ?: return false
+    override fun filter(host: String): Boolean {
+        val otherBytes = resolveIpBytes(host) ?: return false
         val self = selfBytes ?: return false
         if (self.size != otherBytes.size) return false
 
@@ -35,6 +45,8 @@ class HostInfoFilterImpl(
 
         return compareWithMask(self, otherBytes, plen)
     }
+
+    override fun filter(hostInfo: HostInfo): Boolean = filter(hostInfo.hostAddress)
 
     private fun resolveIpBytes(host: String): ByteArray? =
         try {
