@@ -3,30 +3,16 @@ package com.crosspaste.net
 import com.crosspaste.db.sync.HostInfo
 import io.ktor.network.sockets.InetSocketAddress
 
-interface HostInfoFilter {
-
-    fun filter(hostInfo: HostInfo): Boolean
-}
-
-object NoFilter : HostInfoFilter {
-
-    override fun filter(hostInfo: HostInfo): Boolean = true
-
-    override fun equals(other: Any?): Boolean = other == NoFilter
-
-    override fun hashCode(): Int = 0
-}
-
-class HostInfoFilterImpl(
+class HostInfoFilter(
     val hostAddress: String,
     val networkPrefixLength: Short,
-) : HostInfoFilter {
+) {
 
     private val selfBytes: ByteArray? by lazy { resolveIpBytes(hostAddress) }
     private val selfMaxBits: Int by lazy { (selfBytes?.size ?: 0) * 8 }
 
-    override fun filter(hostInfo: HostInfo): Boolean {
-        val otherBytes = resolveIpBytes(hostInfo.hostAddress) ?: return false
+    fun filter(host: String): Boolean {
+        val otherBytes = resolveIpBytes(host) ?: return false
         val self = selfBytes ?: return false
         if (self.size != otherBytes.size) return false
 
@@ -35,6 +21,8 @@ class HostInfoFilterImpl(
 
         return compareWithMask(self, otherBytes, plen)
     }
+
+    fun filter(hostInfo: HostInfo): Boolean = filter(hostInfo.hostAddress)
 
     private fun resolveIpBytes(host: String): ByteArray? =
         try {
@@ -65,7 +53,7 @@ class HostInfoFilterImpl(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is HostInfoFilterImpl) return false
+        if (other !is HostInfoFilter) return false
 
         if (hostAddress != other.hostAddress) return false
         if (networkPrefixLength != other.networkPrefixLength) return false

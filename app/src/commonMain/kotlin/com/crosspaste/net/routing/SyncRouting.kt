@@ -2,7 +2,6 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
-import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.dto.secure.PairingResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
@@ -10,9 +9,12 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.SyncApi
+import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.failResponse
@@ -25,12 +27,14 @@ import io.ktor.server.routing.*
 fun Routing.syncRouting(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
-    endpointInfoFactory: EndpointInfoFactory,
     exceptionHandler: ExceptionHandler,
+    nearbyDeviceManager: NearbyDeviceManager,
     networkInterfaceService: NetworkInterfaceService,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
     syncApi: SyncApi,
+    syncInfoFactory: SyncInfoFactory,
+    syncManager: SyncManager,
     syncRoutingApi: SyncRoutingApi,
 ) {
     val logger = KotlinLogging.logger {}
@@ -100,8 +104,7 @@ fun Routing.syncRouting(
                 .getCurrentUseNetworkInterfaces()
                 .map { it.toHostInfo() }
                 .filter { it.hostAddress == host }
-        val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
-        val syncInfo = SyncInfo(appInfo, endpointInfo)
+        val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
         successResponse(call, syncInfo)
     }
 
@@ -160,6 +163,12 @@ fun Routing.syncRouting(
                         ),
                 )
             }.onSuccess { trustResponse ->
+                nearbyDeviceManager.nearbySyncInfos.value
+                    .firstOrNull {
+                        it.appInfo.appInstanceId == appInstanceId
+                    }?.let {
+                        syncManager.updateSyncInfo(it)
+                    }
                 successResponse(call, trustResponse)
             }.onFailure {
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
