@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-open class AppTokenService : AppTokenApi {
+abstract class AppTokenService : AppTokenApi {
 
     private val lock = createPlatformLock()
 
@@ -33,8 +33,7 @@ open class AppTokenService : AppTokenApi {
 
     override val token: StateFlow<CharArray> = _token.asStateFlow()
 
-    open fun preShowToken() {
-    }
+    abstract fun preShowToken()
 
     override fun sameToken(token: Int): Boolean =
         token ==
