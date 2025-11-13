@@ -2,6 +2,7 @@ package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.DevConfig
+import com.crosspaste.path.PlatformUserDataPathProvider.Companion.CROSSPASTE_DIR_NAME
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
@@ -187,7 +188,7 @@ class WindowsAppPathProvider : AppPathProvider {
 
     private fun getAppExePath(): Path = getAppJarPath().noOptionParent.resolve("bin").normalized()
 
-    private fun getUserPath(): Path = userHome.resolve(".crosspaste")
+    private fun getUserPath(): Path = userHome.resolve(CROSSPASTE_DIR_NAME)
 
     override fun resolve(
         fileName: String?,
@@ -262,6 +263,12 @@ class MacosAppPathProvider : AppPathProvider {
 
 class LinuxAppPathProvider : AppPathProvider {
 
+    companion object {
+
+        const val LOCAL = ".local"
+        const val SHARE = "share"
+    }
+
     private val systemProperty = getSystemProperty()
 
     override val userHome: Path = Paths.get(systemProperty.get("user.home")).toOkioPath()
@@ -293,7 +300,11 @@ class LinuxAppPathProvider : AppPathProvider {
             .resolve("lib")
             .normalized()
 
-    private fun getUserPath(): Path = userHome.resolve(".local").resolve("shard").resolve(".crosspaste")
+    private fun getUserPath(): Path =
+        userHome
+            .resolve(LOCAL)
+            .resolve(SHARE)
+            .resolve(CROSSPASTE_DIR_NAME)
 
     override fun resolve(
         fileName: String?,
