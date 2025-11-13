@@ -2,8 +2,8 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
-import com.crosspaste.app.AppTokenService
 import com.crosspaste.app.EndpointInfoFactory
+import com.crosspaste.app.TestAppTokenService
 import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.db.secure.MemorySecureIO
@@ -156,7 +156,7 @@ class SyncTest : KoinTest {
                 single<SecureIO>(named("clientSecureIO")) { MemorySecureIO() }
 
                 // ui component
-                single<AppTokenApi> { AppTokenService() }
+                single<AppTokenApi> { TestAppTokenService() }
             }
     }
 
