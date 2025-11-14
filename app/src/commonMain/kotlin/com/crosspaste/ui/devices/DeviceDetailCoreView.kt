@@ -255,13 +255,17 @@ fun SyncRuntimeInfo.toTableData(copywriter: GlobalCopywriter): TableData =
                 TableRowImpl(
                     listOf(
                         copywriter.getText("connect_host"),
-                        connectHostAddress ?: "N?A",
+                        connectHostAddress ?: copywriter.getText("unknown"),
                     ),
                 ),
                 TableRowImpl(
                     listOf(
                         copywriter.getText("port"),
-                        port.toString(),
+                        if (port <= 0) {
+                            copywriter.getText("unknown")
+                        } else {
+                            port.toString()
+                        },
                     ),
                 ),
             )
