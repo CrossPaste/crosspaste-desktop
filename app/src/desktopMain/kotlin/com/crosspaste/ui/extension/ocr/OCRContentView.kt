@@ -1,5 +1,6 @@
 package com.crosspaste.ui.extension.ocr
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,9 +18,11 @@ import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -37,8 +41,12 @@ import com.crosspaste.module.DownloadState
 import com.crosspaste.module.ModuleDownloadManager
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.getTrainedDataName
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.splitOcrLanguages
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
+import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.SettingButton
 import com.crosspaste.ui.base.SettingOutlineButton
+import com.crosspaste.ui.base.info
 import com.crosspaste.ui.settings.SettingItemsTitleView
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -48,11 +56,13 @@ import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OCRContentView() {
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val moduleDownloadManager = koinInject<ModuleDownloadManager>()
+    val notificationManager = koinInject<NotificationManager>()
     val ocrModule = koinInject<OCRModule>()
     val languages = copywriter.getAllLanguages()
 
@@ -63,6 +73,16 @@ fun OCRContentView() {
     val downloadState by moduleDownloadManager.getModuleDownloadState(ocrModule.moduleId).collectAsState()
 
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(config.ocrLanguage) {
+        if (config.ocrLanguage.isEmpty()) {
+            notificationManager.sendNotification(
+                title = { it.getText("ocr_no_language_loaded") },
+                messageType = MessageType.Warning,
+                duration = null,
+            )
+        }
+    }
 
     Column(
         modifier =
@@ -76,7 +96,18 @@ fun OCRContentView() {
                     .clip(tinyRoundedCornerShape),
         ) {
             if (ocrLanguageList.isNotEmpty()) {
-                SettingItemsTitleView("language_module_loaded")
+                SettingItemsTitleView(title = "language_module_loaded") {
+                    PasteTooltipAreaView(
+                        modifier = Modifier.size(medium),
+                        text = copywriter.getText("ocr_language_module_order_notice"),
+                    ) {
+                        Icon(
+                            painter = info(),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
             }
             LazyColumn {
                 items(ocrLanguageList.size) { index ->
