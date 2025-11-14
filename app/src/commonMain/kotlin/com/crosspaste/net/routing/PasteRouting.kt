@@ -1,6 +1,7 @@
 package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppControl
+import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
@@ -59,7 +60,11 @@ fun Routing.pasteRouting(
                 successResponse(call)
             }.onFailure { e ->
                 logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }
-                failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+                if (e is PasteException && e.match(StandardErrorCode.DECRYPT_FAIL)) {
+                    failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
+                } else {
+                    failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+                }
             }
         }
     }
