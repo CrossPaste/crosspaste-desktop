@@ -70,7 +70,12 @@ fun NetSettingsContentView() {
     LaunchedEffect(Unit) {
         networkInterfaces = networkInterfaceService.getAllNetworkInterfaceInfo()
         val currentPort = config.port
-        port = if (currentPort == 0) "N/A" else currentPort.toString()
+        port =
+            if (currentPort <= 0) {
+                copywriter.getText("unknown")
+            } else {
+                currentPort.toString()
+            }
     }
 
     Column(
