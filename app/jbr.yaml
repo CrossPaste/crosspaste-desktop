@@ -1,7 +1,7 @@
 jbr:
   osx-x64:
     url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.8-osx-x64-b1163.69.tar.gz
-    sha512: 64c1ca5a618633ec8e81daa37ee2d5a1761f1a81fb44eb819d26044ceb8d87b42e324b1271c75b8c7def45162bca712460f24a0547f320808444c95429da0415
+    sha512: 72df5c81b85b84e28c18997479ef2893d80dd10a150b876a58aff182dc224598e47bafc97b6ec2ccbaf7f43fc9f9653f0ea782fe8163060cfe512273c32a42e5
   osx-aarch64:
     url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.8-osx-aarch64-b1163.69.tar.gz
     sha512: e214c46e45aa6f7e9f5f65f8fde05ef436affeaca56582c594852b727e50f902068dee84716e808764e068bf5e5e8c9d169e7a1febef5a51f30b7a7ff83c70c6
