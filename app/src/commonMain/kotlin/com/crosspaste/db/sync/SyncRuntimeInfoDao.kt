@@ -132,11 +132,12 @@ class SyncRuntimeInfoDao(private val database: Database) {
     fun insertOrUpdateSyncInfo(syncInfo: SyncInfo) {
         database.transactionWithResult {
             val now = nowEpochMilliseconds()
-            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
             syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
                 syncInfo.appInfo.appInstanceId,
                 SyncRuntimeInfo::mapper,
             ).executeAsOneOrNull()?.let {
+                val hostInfoList = (it.hostInfoList + syncInfo.endpointInfo.hostInfoList).distinct()
+                val hostInfoArrayJson = jsonUtils.JSON.encodeToString(hostInfoList)
                 syncRuntimeInfoDatabaseQueries.updateSyncInfo(
                     syncInfo.appInfo.appVersion,
                     syncInfo.appInfo.userName,
@@ -153,6 +154,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     syncInfo.appInfo.appInstanceId,
                 )
             } ?: run {
+                val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
                 syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
                     syncInfo.appInfo.appInstanceId,
                     syncInfo.appInfo.appVersion,
