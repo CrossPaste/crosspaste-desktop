@@ -5,6 +5,7 @@
 .idea
 .kotlin
 development.properties
+generated.conveyor.conf
 local.properties
 local.conveyor.conf
 i18n_key.txt

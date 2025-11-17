@@ -179,6 +179,13 @@ jobs:
             echo "Directory does not exist!"
           fi
 
+      - name: Prepare Dependency
+        run: |
+          ./gradlew -q writeConveyorConfig -PappEnv=PRODUCTION
+          mv app/generated.conveyor.conf generated.conveyor.conf
+          node ./.github/scripts/rewriteConveyorConf.js generated.conveyor.conf
+          node ./.github/scripts/processJarFiles.js "tesseract-.*-macosx-arm64.jar" generated.conveyor.conf
+
       - name: Prepare Conveyor
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
