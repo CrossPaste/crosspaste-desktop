@@ -92,7 +92,7 @@ fun SearchWindow(windowIcon: Painter?) {
         state = windowState,
         title = appWindowManager.searchWindowTitle,
         icon = windowIcon,
-        alwaysOnTop = false,
+        alwaysOnTop = true,
         undecorated = true,
         transparent = false,
         resizable = false,
