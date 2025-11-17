@@ -185,6 +185,7 @@ jobs:
           mv app/generated.conveyor.conf generated.conveyor.conf
           node ./.github/scripts/rewriteConveyorConf.js generated.conveyor.conf
           node ./.github/scripts/processJarFiles.js "tesseract-.*-macosx-arm64.jar" generated.conveyor.conf
+          node ./.github/scripts/processJarFiles.js "tesseract-.*-macosx-x86_64.jar" generated.conveyor.conf
 
       - name: Prepare Conveyor
         run: |
