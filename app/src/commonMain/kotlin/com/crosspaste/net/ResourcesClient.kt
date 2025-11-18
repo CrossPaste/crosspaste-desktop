@@ -2,8 +2,10 @@ package com.crosspaste.net
 
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
+import io.ktor.http.contentType
 import io.ktor.utils.io.*
 import okio.Path
 
@@ -25,6 +27,8 @@ class ClientResponse(
     suspend fun getBody(): ByteReadChannel = response.bodyAsChannel()
 
     fun getContentLength(): Long = response.contentLength() ?: -1L
+
+    fun getContentType(): ContentType? = response.contentType()
 }
 
 interface DownloadProgressListener {
