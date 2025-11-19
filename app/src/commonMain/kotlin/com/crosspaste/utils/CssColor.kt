@@ -190,13 +190,11 @@ enum class CssColor(
             return NAME_MAP.containsKey(key)
         }
 
-        @JvmStatic
         fun fromName(name: String): CssColor? {
             val key = name.trim().lowercase()
             return NAME_MAP[key]
         }
 
-        @JvmStatic
         fun colorOf(
             name: String,
             alpha: Float = 1f,
