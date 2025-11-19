@@ -135,8 +135,6 @@ class SyncResolver(
             logger.info { "${this.appInstanceId} to disconnected" }
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
-                    connectHostAddress = null,
-                    connectNetworkPrefixLength = null,
                     connectState = SyncState.DISCONNECTED,
                     modifyTime = nowEpochMilliseconds(),
                 ),
@@ -209,8 +207,7 @@ class SyncResolver(
     private suspend fun SyncRuntimeInfo.resolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
         logger.info { "Resolve connection ${this.appInstanceId}" }
         if (connectState == SyncState.DISCONNECTED ||
-            connectState == SyncState.INCOMPATIBLE ||
-            connectHostAddress == null
+            connectState == SyncState.INCOMPATIBLE
         ) {
             resolveDisconnected(updateVersionRelation)
         } else {
