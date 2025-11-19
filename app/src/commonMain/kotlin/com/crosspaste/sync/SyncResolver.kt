@@ -104,10 +104,10 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.resolveDisconnected(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Resolve disconnected ${this.appInstanceId}" }
+        logger.info { "Resolve disconnected $appInstanceId" }
         telnetHelper.switchHost(hostInfoList, port)?.let { pair ->
             val (hostInfo, versionRelation) = pair
-            logger.info { "$hostInfo to connecting, versionRelation: $versionRelation" }
+            logger.info { "$appInstanceId $hostInfo to connecting, versionRelation: $versionRelation" }
 
             updateVersionRelation(versionRelation)
             val isEqualVersion = versionRelation == VersionRelation.EQUAL_TO
@@ -132,11 +132,9 @@ class SyncResolver(
                 )
             }
         } ?: run {
-            logger.info { "${this.appInstanceId} to disconnected" }
+            logger.info { "$appInstanceId to disconnected, hostInfoList: $hostInfoList" }
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
-                    connectHostAddress = null,
-                    connectNetworkPrefixLength = null,
                     connectState = SyncState.DISCONNECTED,
                     modifyTime = nowEpochMilliseconds(),
                 ),
@@ -145,14 +143,14 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.resolveConnecting(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Resolve connecting ${this.appInstanceId}" }
+        logger.info { "Resolve connecting $appInstanceId" }
         this.connectHostAddress?.let { host ->
             if (secureStore.existCryptPublicKey(appInstanceId)) {
                 val state = heartbeat(host, port, appInstanceId, updateVersionRelation)
 
                 when (state) {
                     SyncState.CONNECTED -> {
-                        logger.info { "heartbeat success $host $port" }
+                        logger.info { "heartbeat success $appInstanceId $host $port" }
                         syncRuntimeInfoDao.updateConnectInfo(
                             this.copy(
                                 connectState = SyncState.CONNECTED,
@@ -165,14 +163,14 @@ class SyncResolver(
                     }
                     SyncState.UNMATCHED -> {
                         logger.info {
-                            "heartbeat fail and connectState is unmatched, need to re verify $host $port"
+                            "heartbeat fail and connectState is unmatched, need to re verify $appInstanceId $host $port"
                         }
                         secureStore.deleteCryptPublicKey(appInstanceId)
                         tryUseTokenCache(host, port)
                     }
                     SyncState.INCOMPATIBLE -> {
                         logger.info {
-                            "heartbeat success and connectState is incompatible $host $port"
+                            "heartbeat success and connectState is incompatible $appInstanceId $host $port"
                         }
                         syncRuntimeInfoDao.updateConnectInfo(
                             this.copy(
@@ -192,11 +190,11 @@ class SyncResolver(
                     }
                 }
             } else {
-                logger.info { "not exist identity, need to verify $host $port" }
+                logger.info { "not exist $appInstanceId public key, need to verify $host $port" }
                 tryUseTokenCache(host, port)
             }
         } ?: run {
-            logger.info { "${platform.name} to disconnected" }
+            logger.info { "$appInstanceId ${platform.name} to disconnected" }
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
                     connectState = SyncState.DISCONNECTED,
@@ -207,10 +205,9 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.resolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Resolve connection ${this.appInstanceId}" }
+        logger.info { "Resolve connection $appInstanceId" }
         if (connectState == SyncState.DISCONNECTED ||
-            connectState == SyncState.INCOMPATIBLE ||
-            connectHostAddress == null
+            connectState == SyncState.INCOMPATIBLE
         ) {
             resolveDisconnected(updateVersionRelation)
         } else {
@@ -219,7 +216,7 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.forceResolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Force resolve connection ${this.appInstanceId}" }
+        logger.info { "Force resolve connection $appInstanceId" }
         refreshSyncInfo(appInstanceId)
         resolveConnection(updateVersionRelation)
     }
