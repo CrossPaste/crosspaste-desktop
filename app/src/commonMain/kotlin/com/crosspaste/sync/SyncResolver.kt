@@ -104,10 +104,10 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.resolveDisconnected(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Resolve disconnected ${this.appInstanceId}" }
+        logger.info { "Resolve disconnected $appInstanceId" }
         telnetHelper.switchHost(hostInfoList, port)?.let { pair ->
             val (hostInfo, versionRelation) = pair
-            logger.info { "$hostInfo to connecting, versionRelation: $versionRelation" }
+            logger.info { "$appInstanceId $hostInfo to connecting, versionRelation: $versionRelation" }
 
             updateVersionRelation(versionRelation)
             val isEqualVersion = versionRelation == VersionRelation.EQUAL_TO
@@ -132,7 +132,7 @@ class SyncResolver(
                 )
             }
         } ?: run {
-            logger.info { "${this.appInstanceId} to disconnected" }
+            logger.info { "${this.appInstanceId} to disconnected, hostInfoList: $hostInfoList" }
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
                     connectState = SyncState.DISCONNECTED,
@@ -150,7 +150,7 @@ class SyncResolver(
 
                 when (state) {
                     SyncState.CONNECTED -> {
-                        logger.info { "heartbeat success $host $port" }
+                        logger.info { "heartbeat success $appInstanceId $host $port" }
                         syncRuntimeInfoDao.updateConnectInfo(
                             this.copy(
                                 connectState = SyncState.CONNECTED,
@@ -163,14 +163,14 @@ class SyncResolver(
                     }
                     SyncState.UNMATCHED -> {
                         logger.info {
-                            "heartbeat fail and connectState is unmatched, need to re verify $host $port"
+                            "heartbeat fail and connectState is unmatched, need to re verify $appInstanceId $host $port"
                         }
                         secureStore.deleteCryptPublicKey(appInstanceId)
                         tryUseTokenCache(host, port)
                     }
                     SyncState.INCOMPATIBLE -> {
                         logger.info {
-                            "heartbeat success and connectState is incompatible $host $port"
+                            "heartbeat success and connectState is incompatible $appInstanceId $host $port"
                         }
                         syncRuntimeInfoDao.updateConnectInfo(
                             this.copy(
@@ -190,11 +190,11 @@ class SyncResolver(
                     }
                 }
             } else {
-                logger.info { "not exist identity, need to verify $host $port" }
+                logger.info { "not exist $appInstanceId public key, need to verify $host $port" }
                 tryUseTokenCache(host, port)
             }
         } ?: run {
-            logger.info { "${platform.name} to disconnected" }
+            logger.info { "$appInstanceId ${platform.name} to disconnected" }
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
                     connectState = SyncState.DISCONNECTED,
