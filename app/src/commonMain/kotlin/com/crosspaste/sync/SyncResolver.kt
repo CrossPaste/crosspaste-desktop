@@ -132,7 +132,7 @@ class SyncResolver(
                 )
             }
         } ?: run {
-            logger.info { "${this.appInstanceId} to disconnected, hostInfoList: $hostInfoList" }
+            logger.info { "$appInstanceId to disconnected, hostInfoList: $hostInfoList" }
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
                     connectState = SyncState.DISCONNECTED,
@@ -143,7 +143,7 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.resolveConnecting(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Resolve connecting ${this.appInstanceId}" }
+        logger.info { "Resolve connecting $appInstanceId" }
         this.connectHostAddress?.let { host ->
             if (secureStore.existCryptPublicKey(appInstanceId)) {
                 val state = heartbeat(host, port, appInstanceId, updateVersionRelation)
@@ -205,7 +205,7 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.resolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Resolve connection ${this.appInstanceId}" }
+        logger.info { "Resolve connection $appInstanceId" }
         if (connectState == SyncState.DISCONNECTED ||
             connectState == SyncState.INCOMPATIBLE
         ) {
@@ -216,7 +216,7 @@ class SyncResolver(
     }
 
     private suspend fun SyncRuntimeInfo.forceResolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
-        logger.info { "Force resolve connection ${this.appInstanceId}" }
+        logger.info { "Force resolve connection $appInstanceId" }
         refreshSyncInfo(appInstanceId)
         resolveConnection(updateVersionRelation)
     }
