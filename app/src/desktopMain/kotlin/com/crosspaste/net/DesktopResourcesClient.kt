@@ -30,6 +30,7 @@ class DesktopResourcesClient(
             proxyConfig: Proxy? = null,
         ): HttpClient =
             HttpClient(CIO) {
+                followRedirects = true
                 engine {
                     proxyConfig?.let {
                         proxy =
