@@ -5,11 +5,14 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.extension.ProxyType
 import com.crosspaste.utils.getFileUtils
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.ProxyBuilder
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.engine.http
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.onDownload
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.prepareRequest
@@ -30,7 +33,10 @@ class DesktopResourcesClient(
 
         val fileUtils = getFileUtils()
 
-        fun createClient(proxyConfig: Proxy?): HttpClient =
+        fun createClient(
+            clientLogger: KLogger,
+            proxyConfig: Proxy? = null,
+        ): HttpClient =
             HttpClient(CIO) {
                 engine {
                     proxyConfig?.let {
@@ -42,12 +48,20 @@ class DesktopResourcesClient(
                             }
                     }
                 }
+                install(Logging, configure = {
+                    logger =
+                        object : Logger {
+                            override fun log(message: String) {
+                                clientLogger.info { message }
+                            }
+                        }
+                })
             }
     }
 
     private val logger = KotlinLogging.logger {}
 
-    private val noProxyClient = createClient(null)
+    private val noProxyClient = createClient(logger)
 
     private val proxyClientMap: ConcurrentMap<Proxy, HttpClient> = ConcurrentMap()
 
@@ -66,7 +80,7 @@ class DesktopResourcesClient(
         val proxy = getProxy()
         return proxy?.let {
             proxyClientMap.getOrPut(proxy) {
-                createClient(proxy)
+                createClient(logger, proxy)
             }
         } ?: noProxyClient
     }
