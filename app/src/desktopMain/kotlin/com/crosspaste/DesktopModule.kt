@@ -286,7 +286,7 @@ class DesktopModule(
             single<FileExtImageLoader> { DesktopFileExtLoader(get(), get(), get()) }
             single<FilePersist> { FilePersist }
             single<ImageHandler<BufferedImage>> { DesktopImageHandler }
-            single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get(), get()) }
+            single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get()) }
             single<KLogger> { klogger }
             single<LocaleUtils> { DesktopLocaleUtils }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }

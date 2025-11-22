@@ -2,12 +2,13 @@ package com.crosspaste.image.coil
 
 import coil3.ImageLoader
 import coil3.decode.DataSource
+import coil3.decode.ImageSource
 import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
-import coil3.fetch.ImageFetchResult
+import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import com.crosspaste.image.FileExtImageLoader
-import com.crosspaste.utils.getCoilUtils
+import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.isDirectory
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -20,19 +21,28 @@ class FileExtFetcher(
 
     private val logger = KotlinLogging.logger {}
 
-    private val coilUtils = getCoilUtils()
+    private val fileUtils = getFileUtils()
 
     override suspend fun fetch(): FetchResult? =
         withContext(ioDispatcher) {
-            val path = data.path
             runCatching {
-                if (!path.isDirectory) {
-                    fileExtLoader.load(path)?.let {
-                        ImageFetchResult(
-                            dataSource = DataSource.MEMORY_CACHE,
-                            isSampled = false,
-                            image = coilUtils.createImage(it),
-                        )
+                val path = data.path
+
+                if (fileUtils.existFile(path)) {
+                    if (!path.isDirectory) {
+                        fileExtLoader.load(path)?.let {
+                            SourceFetchResult(
+                                source =
+                                    ImageSource(
+                                        file = path,
+                                        fileSystem = fileUtils.fileSystem,
+                                    ),
+                                mimeType = null,
+                                dataSource = DataSource.MEMORY_CACHE,
+                            )
+                        }
+                    } else {
+                        null
                     }
                 } else {
                     null

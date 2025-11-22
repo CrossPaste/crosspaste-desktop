@@ -32,7 +32,6 @@ import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.rendering.RenderingHelper
 import com.crosspaste.ui.base.ImageDisplayStrategy
 import com.crosspaste.ui.base.PasteUrlIcon
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
@@ -51,7 +50,6 @@ fun PasteDataScope.UrlSidePreviewView() {
         val appSize = koinInject<DesktopAppSize>()
         val imageLoaders = koinInject<ImageLoaders>()
         val platformContext = koinInject<PlatformContext>()
-        val renderingHelper = koinInject<RenderingHelper>()
         val smartImageDisplayStrategy = SmartImageDisplayStrategy()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
 
@@ -105,7 +103,7 @@ fun PasteDataScope.UrlSidePreviewView() {
                     model =
                         ImageRequest
                             .Builder(platformContext)
-                            .data(GenerateImageItem(openGraphPath, false, renderingHelper.scale))
+                            .data(GenerateImageItem(openGraphPath))
                             .crossfade(true)
                             .build(),
                     imageLoader = imageLoaders.generateImageLoader,

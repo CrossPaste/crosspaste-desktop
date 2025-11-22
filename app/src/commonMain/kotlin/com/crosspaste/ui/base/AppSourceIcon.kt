@@ -14,8 +14,8 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.image.coil.PasteDataItem
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
@@ -46,7 +46,7 @@ fun PasteDataScope.AppSourceIcon(
             model =
                 ImageRequest
                     .Builder(platformContext)
-                    .data(PasteDataItem(pasteData))
+                    .data(AppSourceItem(pasteData.source))
                     .crossfade(false)
                     .build(),
             imageLoader = imageLoaders.appSourceLoader,
