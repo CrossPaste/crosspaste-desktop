@@ -19,16 +19,11 @@ object MacCropTransformation : Transformation() {
         input: Bitmap,
         size: Size,
     ): Bitmap {
-        val topPct = CROP_TOP.coerceIn(0f, 1f)
-        val bottomPct = CROP_BOTTOM.coerceIn(0f, 1f)
-        val leftPct = CROP_LEFT.coerceIn(0f, 1f)
-        val rightPct = CROP_RIGHT.coerceIn(0f, 1f)
-
         // 2) Calculate pixel coordinates
-        val left = (input.width * leftPct).roundToInt()
-        val top = (input.height * topPct).roundToInt()
-        val right = (input.width - input.width * rightPct).roundToInt()
-        val bottom = (input.height - input.height * bottomPct).roundToInt()
+        val left = (input.width * CROP_LEFT).roundToInt()
+        val top = (input.height * CROP_TOP).roundToInt()
+        val right = (input.width - input.width * CROP_RIGHT).roundToInt()
+        val bottom = (input.height - input.height * CROP_BOTTOM).roundToInt()
 
         val width = (right - left).coerceAtLeast(1)
         val height = (bottom - top).coerceAtLeast(1)
