@@ -13,7 +13,7 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.transformations
-import com.crosspaste.image.coil.CropTransformation
+import com.crosspaste.image.coil.CropTransformationFactory.create
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.PasteDataItem
 import com.crosspaste.platform.Platform
@@ -41,7 +41,7 @@ fun PasteDataScope.SideAppSourceIcon(
             ImageRequest
                 .Builder(platformContext)
                 .data(PasteDataItem(pasteData))
-                .transformations(CropTransformation(platform, syncPlatform))
+                .transformations(create(platform, syncPlatform))
                 .crossfade(false)
                 .build(),
         imageLoader = imageLoaders.appSourceLoader,
