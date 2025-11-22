@@ -2,39 +2,42 @@ package com.crosspaste.image.coil
 
 import coil3.key.Keyer
 import coil3.request.Options
-import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteFileCoordinate
 import okio.Path
 
 data class GenerateImageItem(
     val path: Path,
-    val preview: Boolean,
-    val density: Double,
 )
 
 class GenerateImageKeyer : Keyer<GenerateImageItem> {
     override fun key(
         data: GenerateImageItem,
         options: Options,
-    ): String = "${data.path}_${data.preview}"
+    ): String = data.path.toString()
 }
 
-data class PasteDataItem(
-    val pasteData: PasteData,
+data class AppSourceItem(
+    val source: String?,
 )
 
-class PasteDataKeyer : Keyer<PasteDataItem> {
+data class UrlItem(
+    val url: String,
+    val pasteCoordinate: PasteCoordinate,
+)
+
+class AppSourceKeyer : Keyer<AppSourceItem> {
     override fun key(
-        data: PasteDataItem,
+        data: AppSourceItem,
         options: Options,
-    ): String = data.pasteData.id.toString()
+    ): String = data.source ?: ""
 }
 
-class PasteDataSourceKeyer : Keyer<PasteDataItem> {
+class UrlKeyer : Keyer<UrlItem> {
     override fun key(
-        data: PasteDataItem,
+        data: UrlItem,
         options: Options,
-    ): String = data.pasteData.source ?: ""
+    ): String = data.url
 }
 
 data class FileExtItem(

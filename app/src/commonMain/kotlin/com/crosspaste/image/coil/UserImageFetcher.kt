@@ -5,11 +5,9 @@ import coil3.decode.DataSource
 import coil3.decode.ImageSource
 import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
-import coil3.fetch.ImageFetchResult
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import com.crosspaste.image.ThumbnailLoader
-import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -22,44 +20,55 @@ class UserImageFetcher(
 
     private val logger = KotlinLogging.logger {}
 
-    private val coilUtils = getCoilUtils()
     private val fileUtils = getFileUtils()
 
     override suspend fun fetch(): FetchResult? =
         withContext(ioDispatcher) {
-            val pasteFileCoordinate = data.pasteFileCoordinate
-            val fileName = pasteFileCoordinate.filePath.name
             runCatching {
-                when (fileName.substringAfterLast(".")) {
-                    "svg" -> {
-                        SourceFetchResult(
-                            dataSource = DataSource.MEMORY_CACHE,
-                            source =
-                                ImageSource(
-                                    pasteFileCoordinate.filePath,
-                                    fileUtils.fileSystem,
-                                ),
-                            mimeType = "image/svg+xml",
-                        )
-                    }
-                    else -> {
-                        if (data.useThumbnail) {
-                            thumbnailLoader.load(pasteFileCoordinate)?.let {
-                                ImageFetchResult(
-                                    dataSource = DataSource.MEMORY_CACHE,
-                                    isSampled = false,
-                                    image = coilUtils.createImage(it),
-                                )
-                            }
-                        } else {
-                            val path = pasteFileCoordinate.filePath
-                            ImageFetchResult(
+                val pasteFileCoordinate = data.pasteFileCoordinate
+                val path = pasteFileCoordinate.filePath
+                if (fileUtils.existFile(path)) {
+                    when (path.name.substringAfterLast(".")) {
+                        "svg" -> {
+                            SourceFetchResult(
                                 dataSource = DataSource.MEMORY_CACHE,
-                                isSampled = false,
-                                image = coilUtils.createImage(path),
+                                source =
+                                    ImageSource(
+                                        path,
+                                        fileUtils.fileSystem,
+                                    ),
+                                mimeType = "image/svg+xml",
                             )
                         }
+
+                        else -> {
+                            if (data.useThumbnail) {
+                                thumbnailLoader.load(pasteFileCoordinate)?.let {
+                                    SourceFetchResult(
+                                        dataSource = DataSource.MEMORY_CACHE,
+                                        source =
+                                            ImageSource(
+                                                it,
+                                                fileUtils.fileSystem,
+                                            ),
+                                        mimeType = null,
+                                    )
+                                }
+                            } else {
+                                SourceFetchResult(
+                                    dataSource = DataSource.MEMORY_CACHE,
+                                    source =
+                                        ImageSource(
+                                            path,
+                                            fileUtils.fileSystem,
+                                        ),
+                                    mimeType = null,
+                                )
+                            }
+                        }
                     }
+                } else {
+                    null
                 }
             }.onFailure { e ->
                 logger.error(e) { "Error while fetching user image" }

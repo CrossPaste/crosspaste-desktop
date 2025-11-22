@@ -15,7 +15,8 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.image.coil.PasteDataItem
+import com.crosspaste.image.coil.UrlItem
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
@@ -28,12 +29,14 @@ fun PasteDataScope.PasteUrlIcon(
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
 
+    val urlPasteItem = getPasteItem(UrlPasteItem::class)
+
     SubcomposeAsyncImage(
         modifier = Modifier.size(size),
         model =
             ImageRequest
                 .Builder(platformContext)
-                .data(PasteDataItem(pasteData))
+                .data(UrlItem(urlPasteItem.url, pasteData.getPasteCoordinate()))
                 .crossfade(false)
                 .build(),
         imageLoader = imageLoaders.faviconImageLoader,
