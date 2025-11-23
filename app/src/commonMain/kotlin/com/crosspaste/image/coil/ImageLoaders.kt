@@ -9,6 +9,7 @@ import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class ImageLoaders(
     private val faviconLoader: FaviconLoader,
@@ -21,6 +22,8 @@ class ImageLoaders(
     companion object {
         val fileUtils = getFileUtils()
     }
+
+    private val logger = KotlinLogging.logger {}
 
     private val memoryCache =
         MemoryCache
@@ -80,4 +83,14 @@ class ImageLoaders(
             }.memoryCache {
                 memoryCache
             }.build()
+
+    fun clearMemoryCache() {
+        logger.info { "Clearing memory cache" }
+        memoryCache.clear()
+    }
+
+    fun trimMemoryCache() {
+        logger.info { "Trimming memory cache to half size" }
+        memoryCache.trimToSize(memoryCache.maxSize / 2)
+    }
 }

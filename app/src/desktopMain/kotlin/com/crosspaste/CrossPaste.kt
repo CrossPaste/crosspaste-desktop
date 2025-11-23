@@ -20,6 +20,7 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
+import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.net.PasteBonjourService
@@ -128,6 +129,18 @@ class CrossPaste {
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
                     koin.get<GuidePasteDataService>().initData()
+
+                    val desktopAppWindowManager = koin.get<DesktopAppWindowManager>()
+                    val imageLoaders = koin.get<ImageLoaders>()
+
+                    desktopAppWindowManager.registerHideSearchWindowCallback(
+                        delayMillis = 5000L,
+                    ) { imageLoaders.trimMemoryCache() }
+
+                    desktopAppWindowManager.registerHideSearchWindowCallback(
+                        delayMillis = 5000L * 6,
+                    ) { imageLoaders.clearMemoryCache() }
+
                     FileKit.init(appId = AppName)
 
                     ioCoroutineDispatcher.launch {
