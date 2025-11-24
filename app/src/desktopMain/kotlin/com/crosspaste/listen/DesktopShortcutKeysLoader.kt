@@ -12,7 +12,6 @@ import okio.Path
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.Properties
-import java.util.TreeMap
 
 class DesktopShortcutKeysLoader(
     platform: Platform,
@@ -44,7 +43,7 @@ class DesktopShortcutKeysLoader(
         return ShortcutKeysCore(consumer, keys)
     }
 
-    private fun toConsumer(keys: TreeMap<String, List<KeyboardKey>>): EventConsumer<NativeKeyEvent> {
+    private fun toConsumer(keys: LinkedHashMap<String, List<KeyboardKey>>): EventConsumer<NativeKeyEvent> {
         val keyboardKeySet: Set<KeyboardKey> = keys.values.flatten().toSet()
 
         val matchMap: Map<Int, (NativeKeyEvent) -> Boolean> =
@@ -75,11 +74,12 @@ class DesktopShortcutKeysLoader(
         }
     }
 
-    private fun loadKeys(properties: Properties): TreeMap<String, List<KeyboardKey>> =
+    private fun loadKeys(properties: Properties): LinkedHashMap<String, List<KeyboardKey>> =
         properties
             .map { it.key.toString() to parseKeys(it.value.toString()) }
             .filter { it.second.isNotEmpty() }
-            .toMap(TreeMap())
+            .sortedByDescending { it.second.size }
+            .toMap(LinkedHashMap())
 
     private fun parseKeys(define: String): List<KeyboardKey> =
         define
