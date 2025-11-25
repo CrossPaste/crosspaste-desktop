@@ -2,6 +2,237 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.2.3] - 2025-11-25
+# Highlights 🌟
+
+- 🖼️ **Optical Character Recognition (OCR)**
+  Extract text directly from images in your clipboard. This new module supports asynchronous processing and includes guidance for first-time usage (#3302 #3306 #3321).
+
+- 🧩 **Extensions Framework**
+  Added the foundation for the upcoming extension system, including a new management UI, download module, and configurable proxy support (#3291 #3295 #3296).
+
+- 🔎 **Enhanced Search Experience**
+  You can now edit text content directly in the search window and use multi-select to paste multiple items in sequence based on your selection order (#3277 #3279).
+
+- 📂 **File & Folder Visualization**
+  The clipboard history now visually renders file and folder items, making it easier to distinguish and manage file-based content (#3262).
+
+- 🧹 **Smarter Memory Management**
+  The app now proactively clears loaded image memory when the window is hidden, reducing the memory footprint during background operation (#3368).
+
+# Bug Fixes 🐛
+
+- Fix search window pasteboard type selection not resetting (#3226)
+- Disable gzip encoding to restore expected decryption behavior (#3242)
+- Resolve `zh_hant.properties` not being updated in i18n batch script (#3245)
+- Correct middle ellipsis logic for URL text display (#3249)
+- Fix NPE in `writePasteboard` when no PasteText item exists (#3256)
+- Fix client interface version recognition (#3283)
+- Fix settings UI width and scrollbar position (#3293)
+- Fix typo in Linux log path (`~/.local/share`) (#3309)
+- Bring main window to front when displaying token (#3311)
+- Establish bidirectional connection automatically when connecting devices (#3313)
+- Resolve secret key loss or mismatch issues (#3316)
+- Improve display text when network info is unavailable (#3315)
+- Fix incorrect sha512 hash for JBR SDK (#3328)
+- Fix macOS app signing, notarization, and runtime compatibility issues (#3332 #3338 #3342)
+- Ensure search window displays on top (#3348)
+- Restrict URL preview to `text/html` and `application/xml` only (#3350)
+- Fix connection address overwrite after failed host connection attempt (#3354)
+- Prevent duplicate cropping in `CropTransformation` (#3364)
+- Prioritize longer key combinations to prevent prefix misfires (#3371)
+
+# New Features ✨
+
+- :sparkles: Support editing text pasteboard in search window (#3277)
+- :sparkles: Support multi-select paste based on selection order (#3279)
+- :sparkles: Support rendering files and folders for file pasteboard (#3262)
+- :sparkles: Add OCR Module for text extraction (#3302)
+- :sparkles: Add extension UI and download module (#3291 #3296)
+- :sparkles: Support configurable extension proxy (#3295)
+- :sparkles: Support automatic redirect in HttpClient (#3360)
+
+# UI Improvements 💄
+
+- :lipstick: Add extension management UI (#3291)
+- :lipstick: Add guidance for first-time OCR usage (#3321)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Remove Debug UI, enable debugging via hot reload (#3228)
+- :hammer: Migrate navigation to event-driven architecture (#3230 #3238)
+- :hammer: Clean up `libs.versions.toml` (#3234)
+- :hammer: Update `UrlBottomSolid` implementation for multi-platform reuse (#3251)
+- :hammer: Rename native target to `nativeApp` to avoid template conflicts (#3264)
+- :hammer: Extract `SidePasteTitleView` to separate file (#3281)
+- :hammer: Modify sync address update strategy to use merge instead of overwrite (#3322)
+- :hammer: Remove `JvmStatic` annotation from `commonMain` (#3352)
+- :hammer: Abstract `ResourcesClient` implementation for multiplatform reuse (#3356 #3358)
+- :hammer: Improve Coil3 fetch implementation (#3366)
+
+# Performance ⚡
+
+- :zap: Make text extraction and related operations asynchronous (#3306)
+- :zap: Clear loaded image memory proactively when window is hidden (#3368)
+- :zap: Improve image generation service with proper cancellation handling (#3247)
+
+# Dependencies ⬆️
+
+- ⬆️ **Kotlin** 2.2.10 → 2.2.21 (#3257 #3287)
+- ⬆️ **Compose Plugin** 1.9.0-rc01 → 1.9.3 (#3232 #3203 #3297)
+- ⬆️ **Compose Hot Reload** 1.0.0-beta06 → 1.0.0-rc02 (#3254 #3285)
+- ⬆️ **Navigation Compose** 2.9.0-rc02 → 2.9.1 (#3253 #3275)
+- ⬆️ **Ktor** 3.2.3 → 3.3.2 (#3236 #3268 #3303)
+- ⬆️ **Jewel** 0.30.0 → 0.31.0 (#3273 #3304)
+- ⬆️ **Lifecycle** 2.9.3 → 2.9.6 (#3265 #3284)
+- ⬆️ **JNA** 5.17.0 → 5.18.1 (#3259 #3267)
+- ⬆️ **Logback** 1.5.18 → 1.5.20 (#3266 #3274)
+- ⬆️ **Guava** 33.4.8-jre → 33.5.0-jre (#3269)
+- ⬆️ **Okio** 3.16.0 → 3.16.2 (#3286)
+- ⬆️ **ICU4J** 77.1 → 78.1 (#3299)
+- ⬆️ **Ph-css** 8.0.0 → 8.0.1 (#3298)
+- ⬆️ **FileKit Dialogs** 0.11.0 → 0.12.0 (#3369)
+- ⬆️ **Mockk** 1.14.5 → 1.14.6 (#3344)
+
+# Build & Tooling 👷
+
+- :wrench: Upgrade minimum macOS version to 14.0.0 (#3336)
+- :arrow_up: Upgrade JBR version to 21.0.8b1163.69 (#3320 #3330)
+- :arrow_up: Upgrade conveyor action version to 20.0 and compatibility level to 19 (#3334 #3340)
+- :bug: Fix sign native libraries in tesseract JAR for macOS x86_64 notarization (#3342)
+
+---
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.2.1640...1.2.3.1718
+
+# [1.2.2] - 2025-9-11
+# Highlights 🌟
+
+- 🚀 **Database Performance Boost**  
+  SQLite is now tuned for better concurrency and responsiveness, improving overall app performance (#3102).
+
+- 🌐 **Network Interface Selection**  
+  Choose which network interface CrossPaste uses for discovery and sync, giving you more control in multi-network environments (#3142).
+
+- 📱 **Smarter Device Management**  
+  Preview device details before adding, and enjoy a fully reactive sync service with dynamic polling intervals for faster, more reliable connections (#3148 #3166 #3171).
+
+- 📝 **Rich Text Everywhere**  
+  HTML clipboard rendering now uses rich text (no Chrome dependency) and RTF is also rendered via RichText (#3193 #3198).
+
+- 🍏 **Native macOS Status Bar**  
+  CrossPaste now integrates with the macOS system status bar, offering a more seamless and intuitive interaction experience(#3222).
+
+# Bug Fixes 🐛
+
+- Handle invalid filename characters when syncing files from other systems to Windows (#3074)
+- Fix FileNameNormalizer extension preservation and dot-only files (#3076)
+- Fix PasteDataScopeImpl implementation (#3132)
+- Fix PasteShimmer UI in side window (#3139)
+- Fix UI recomposition for `AsyncImagePainter` state changes (#3189)
+- Fix infinite sync update loop by checking for actual changes (#3175)
+- Integrate Swift dylib compilation with resources pipeline to work with atomicfu (#3181)
+- Fix murmurhash3 compilation warnings (#3183)
+- Fix issue where scrolling clipboard doesn’t load more items (#3200)
+- Normalize HSL inputs for `hslToColor` in `getAdaptiveColor` (#3207)
+- Improve error handling in paste data deserialization (#3213)
+- Ensure `PasteItem.fromJson` catches exceptions (#3217)
+- Remove locale-dependent format directives for cross-platform compatibility (#3221)
+
+
+# New Features ✨
+
+- :sparkles: Native app menu support (#3053)
+- :sparkles: Reintroduce “Clear All Paste” button (#3114)
+- :sparkles: Dynamic polling interval adjustment in sync manager (#3171)
+- :sparkles: Use rich text rendering for HTML clipboard content (#3193)
+- :sparkles: Use RichText to render RTF clipboard content (#3198)
+- :sparkles: Smart contrast colour utility for colour palette (#3219)
+- :sparkles: Network interface selection (#3142)
+- :sparkles: View device details before adding nearby devices (#3148)
+- :sparkles: Multi-language support for date/time formatting (#3096)
+
+
+# UI Improvements 💄
+
+- :lipstick: Newly added clipboard items are displayed at the top (#3073)
+
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Make `toRGBString` compatible with iOS (#3069)
+- :hammer: Move `JsonUtils` to `commonMain` for cross-platform reuse (#3085)
+- :hammer: Refactor `build.gradle.kts` and reorder dependencies (#3087)
+- :hammer: Migrate shared code to `shared` module in preparation for CLI module creation (#3089)
+- :hammer: Rewrite all `toByteArray` calls to `encodeToByteArray` (#3112)
+- :hammer: Remove `PasteboardViewProvider` interface to simplify implementation (#3124)
+- :hammer: Add `PasteDataScope` and refactor preview views structure (#3130)
+- :hammer: Refactor pasteboard-related UI using `PasteDataScope` to avoid repeatedly passing `PasteData` between UI functions (#3136)
+- :hammer: Optimize `PasteDataScope` related code (#3138)
+- :hammer: Abstract `ResourcesClient` to support multi-platform resource reading (#3150)
+- :hammer: Rename `ImageWriter` to `imageHandler` and add read methods (#3152)
+- :hammer: Standardize image resource file naming convention (#3154)
+- :hammer: Make the device sync service fully reactive (#3166)
+- :hammer: Extract independent connection maintenance logic for connected and pending devices (#3168)
+- :hammer: Resolve multiplatform support issues for network components (#3177)
+- :hammer: Rewrite `SyncPollingManager` to use atomic instead of `@Volatile` for multiplatform support (#3179)
+- :hammer: Implement screen navigation and switching in base class for multi-platform reuse (#3185)
+- :hammer: Rewrite `ColorUtils` based on ph-css source code (#3191)
+- :hammer: Make `border` parameter optional in `HighlightedCard` component (#3187)
+- :hammer: Update theme definitions to use non-deprecated `JewelTheme` API (#3215)
+
+
+# Performance ⚡
+
+- :zap: Configure SQLite for better concurrency and performance (#3102)
+- :zap: Optimize search state management and add throttling for pagination (#3211)
+
+
+# Dependencies ⬆️
+
+- ⬆️ **Compose** 1.8.3 → 1.9.0 (#3118)
+- ⬆️ **Compose-plugin** 1.8.2 → 1.9.0-rc01 (#3161)
+- ⬆️ **Compose-hot-reload** 1.0.0-beta04 → 1.0.0-beta06 (#3119 #3162)
+- ⬆️ **Kotlin** 2.2.0 → 2.2.10 (#3122)
+- ⬆️ **Ktor** 3.2.2 → 3.2.3 (#3079)
+- ⬆️ **Okio** 3.15.0 → 3.16.0 (#3083)
+- ⬆️ **Ksoup** 0.2.4 → 0.2.5 (#3077)
+- ⬆️ **Coil** 3.2.0 → 3.3.0 (#3057)
+- ⬆️ **Jewel** 0.28.0-252.15920 → 0.30.0-252.26252 (#3056 #3195)
+- ⬆️ **Lifecycle** 2.9.1 → 2.9.3 (#3121 #3159)
+- ⬆️ **Koin** 4.1.0 → 4.1.1 (#3194)
+- ⬆️ **kotlin-logging** 7.0.7 → 7.0.13 (#3080 #3099 #3145)
+- ⬆️ **filekit-dialogs** 0.10.0-beta04 → 0.11.0 (#3078 #3205)
+- ⬆️ **ktlint-gradle** 13.0.0 → 13.1.0 (#3144)
+- ⬆️ **snakeyaml** 2.4 → 2.5 (#3158)
+- ⬆️ **jmdns** 3.6.1 → 3.6.2 (#3160)
+
+
+# Documentation 📝
+
+- :memo: Update product images in README (#3055)
+- :memo: Update main image in README (#3065)
+- :memo: Add missing `alt` text to Chinese ad images (#3060)
+- :memo: Update project documentation (#3116)
+
+
+# Build & Tooling 👷
+
+- :construction_worker: Switch Claude review to comment-triggered workflow (#3062)
+- :construction_worker: Reject dependencies with “dev” versions in Gradle resolution strategy (#3202)
+
+
+# Tests ✅
+
+- :white_check_mark: Enhance `SecureMessageProcessor` unit tests (#3106)
+- :white_check_mark: Add comprehensive unit tests for `DefaultPasteSync` `ProcessManager` and `PasteSingleProcessImpl` (#3108)
+- :white_check_mark: Enhance `GeneralSyncManager` unit tests with scope updates (#3110)
+
+
+---
+
+**Full Changelog**: <https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.1.1551...1.2.2.1640>
+
 # [1.2.1] - 2025-7-26
 # Highlights 🌟
 
