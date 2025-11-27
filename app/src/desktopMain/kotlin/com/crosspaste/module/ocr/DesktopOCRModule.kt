@@ -170,14 +170,14 @@ class DesktopOCRModule(
             val ocrLanguageList = splitOcrLanguages(ocrLanguage)
             if (ocrLanguageList.isEmpty()) {
                 navigateManager.navigate(OCR)
-                appWindowManager.showMainWindow(recordInfo = false)
+                appWindowManager.showMainWindow()
                 return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
             } else {
                 val existLanguages = existLanguages(ocrLanguageList)
                 if (existLanguages.isEmpty()) {
                     updateOrCreateApi("")
                     navigateManager.navigate(OCR)
-                    appWindowManager.showMainWindow(recordInfo = false)
+                    appWindowManager.showMainWindow()
                     return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
                 } else if (existLanguages.size != ocrLanguageList.size || api == null) {
                     val newOcrLanguages = existLanguages.joinToString("+")

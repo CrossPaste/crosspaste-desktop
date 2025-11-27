@@ -369,7 +369,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }.getOrNull()
         }
 
-        fun getForegroundWindowAppInfoAndThreadId(useShortcutKeys: Boolean): Pair<WinAppInfo, Int>? {
+        fun getForegroundWindowAppInfoAndThreadId(useShortcutKeys: Boolean): WinAppInfo? {
             val hwnd =
                 if (useShortcutKeys) {
                     getForegroundWindow()
@@ -403,7 +403,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                         ) > 0
                     ) {
                         val filePath = memory.getWideString(0)
-                        Pair(WinAppInfo(previousHwnd, filePath), threadId)
+                        WinAppInfo(previousHwnd, filePath, threadId)
                     } else {
                         null
                     }
@@ -498,40 +498,46 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
         @Synchronized
         fun bringToFront(
-            prevThreadId: Int,
+            prevThreadId: Int?,
             searchWindow: HWND?,
         ) {
-            searchWindow?.let { searchHWND ->
-                val targetProcessId = IntByReference()
-                val targetThreadId =
-                    INSTANCE.GetWindowThreadProcessId(
-                        searchHWND,
-                        targetProcessId,
-                    )
+            val handle = searchWindow ?: return
 
-                if (INSTANCE.AttachThreadInput(
+            val targetThreadId =
+                if (prevThreadId != null) {
+                    INSTANCE.GetWindowThreadProcessId(handle, IntByReference())
+                } else {
+                    0
+                }
+
+            val shouldAttach = prevThreadId != null
+            if (shouldAttach) {
+                val success =
+                    INSTANCE.AttachThreadInput(
                         DWORD(prevThreadId.toLong()),
                         DWORD(targetThreadId.toLong()),
                         true,
                     )
-                ) {
-                    INSTANCE.ShowWindow(searchHWND, SW_RESTORE)
+                if (!success) {
+                    logger.error { "AttachThreadInput failed: ${Kernel32.INSTANCE.GetLastError()}" }
+                    return
+                }
+            }
 
-                    val result = INSTANCE.SetForegroundWindow(searchHWND)
-
+            try {
+                INSTANCE.ShowWindow(handle, SW_RESTORE)
+                if (INSTANCE.SetForegroundWindow(handle)) {
+                    logger.info { "Foreground window set successfully" }
+                } else {
+                    logger.info { "Failed to set foreground window. Please switch manually" }
+                }
+            } finally {
+                if (shouldAttach) {
                     INSTANCE.AttachThreadInput(
                         DWORD(prevThreadId.toLong()),
                         DWORD(targetThreadId.toLong()),
                         false,
                     )
-
-                    if (!result) {
-                        logger.info { "Failed to set foreground window. Please switch manually" }
-                    } else {
-                        logger.info { "Foreground window set successfully" }
-                    }
-                } else {
-                    logger.error { "AttachThreadInput failed: ${Kernel32.INSTANCE.GetLastError()}" }
                 }
             }
         }

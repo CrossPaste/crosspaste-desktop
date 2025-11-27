@@ -22,8 +22,8 @@ import com.crosspaste.paste.item.PasteText
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DesktopShortKeysAction(
     private val appFileChooser: AppFileChooser,
@@ -36,6 +36,9 @@ class DesktopShortKeysAction(
 ) : ShortcutKeysAction {
 
     private val logger = KotlinLogging.logger {}
+
+    @Volatile
+    override var actioning: Boolean = false
 
     override val action: (String) -> Unit = { actionName ->
         when (actionName) {
@@ -51,23 +54,49 @@ class DesktopShortKeysAction(
         }
     }
 
+    private fun mainRunAction(
+        actionName: String,
+        actionLogMessage: String,
+        action: suspend () -> Unit,
+    ) {
+        mainCoroutineDispatcher.launch {
+            runCatching {
+                actioning = true
+                logger.info { actionLogMessage }
+                action()
+            }.onFailure { e ->
+                logger.error(e) { "Failed to run shortcut key action $actionName" }
+            }.also {
+                actioning = false
+            }
+        }
+    }
+
     private fun showMainWindow() {
-        logger.info { "Open main window" }
-        mainCoroutineDispatcher.launch(CoroutineName("OpenMainWindow")) {
-            appWindowManager.showMainWindow(useShortcutKeys = true)
+        mainRunAction(
+            actionName = "OpenMainWindow",
+            actionLogMessage = "Open main window",
+        ) {
+            appWindowManager.saveCurrentActiveAppInfo()
+            appWindowManager.showMainWindow()
         }
     }
 
     private fun showSearchWindow() {
-        logger.info { "Open search window" }
-        mainCoroutineDispatcher.launch(CoroutineName("OpenSearchWindow")) {
-            appWindowManager.showSearchWindow(useShortcutKeys = true)
+        mainRunAction(
+            actionName = "OpenSearchWindow",
+            actionLogMessage = "Open search window",
+        ) {
+            appWindowManager.saveCurrentActiveAppInfo()
+            appWindowManager.showSearchWindow()
         }
     }
 
     private fun hideWindow() {
-        logger.info { "Hide window" }
-        mainCoroutineDispatcher.launch(CoroutineName("HideWindow")) {
+        mainRunAction(
+            actionName = "HideWindow",
+            actionLogMessage = "Hide window",
+        ) {
             if (appWindowManager.showMainWindow.value &&
                 !appWindowManager.showMainDialog.value &&
                 !appFileChooser.showFileDialog.value
@@ -82,10 +111,12 @@ class DesktopShortKeysAction(
     }
 
     private fun pastePlainText() {
-        logger.info { "Paste Plain Text" }
-        mainCoroutineDispatcher.launch(CoroutineName("PastePlainText")) {
+        mainRunAction(
+            actionName = "PastePlainText",
+            actionLogMessage = "Paste plain text",
+        ) {
             currentPaste.getCurrentPaste()?.let { pasteData ->
-                mainCoroutineDispatcher.launch(ioDispatcher) {
+                withContext(ioDispatcher) {
                     pasteData.getPasteAppearItems().firstOrNull { it is PasteText }?.let {
                         handleCopyResult(
                             result =
@@ -103,10 +134,12 @@ class DesktopShortKeysAction(
     }
 
     private fun pastePrimaryType() {
-        logger.info { "Paste Primary Type" }
-        mainCoroutineDispatcher.launch(CoroutineName("PastePrimaryType")) {
+        mainRunAction(
+            actionName = "PastePrimaryType",
+            actionLogMessage = "Paste primary type",
+        ) {
             currentPaste.getCurrentPaste()?.let {
-                mainCoroutineDispatcher.launch(ioDispatcher) {
+                withContext(ioDispatcher) {
                     handleCopyResult(
                         result =
                             pasteboardService.tryWritePasteboard(
@@ -121,8 +154,10 @@ class DesktopShortKeysAction(
     }
 
     private fun pasteLast(local: Boolean) {
-        logger.info { "paste ${if (local) "Local" else "Remote"} Last" }
-        mainCoroutineDispatcher.launch(CoroutineName("Paste")) {
+        mainRunAction(
+            actionName = "PasteLast",
+            actionLogMessage = "Paste ${if (local) "Local" else "Remote"} Last",
+        ) {
             val result =
                 pasteDao.searchPasteData(
                     searchTerms = listOf(),
@@ -132,7 +167,7 @@ class DesktopShortKeysAction(
                 )
 
             if (result.isNotEmpty()) {
-                mainCoroutineDispatcher.launch(ioDispatcher) {
+                withContext(ioDispatcher) {
                     handleCopyResult(
                         result =
                             pasteboardService.tryWritePasteboard(
@@ -152,23 +187,27 @@ class DesktopShortKeysAction(
                 appWindowManager.toPaste()
             }.onFailure {
                 notificationManager.sendNotification(
-                    title = { it.getText("copy_failed") },
-                    message = it.message?.let { message -> { it -> message } },
+                    title = { copyWriter -> copyWriter.getText("copy_failed") },
+                    message = it.message?.let { message -> { message } },
                     messageType = MessageType.Error,
                 )
             }
     }
 
     private fun togglePasteboardMonitoring() {
-        logger.info { "Toggle Pasteboard Monitoring" }
-        mainCoroutineDispatcher.launch(CoroutineName("ToggleMonitorPasteboard")) {
+        mainRunAction(
+            actionName = "TogglePasteboardMonitoring",
+            actionLogMessage = "Toggle Pasteboard Monitoring",
+        ) {
             pasteboardService.toggle()
         }
     }
 
     private fun toggleEncrypt() {
-        logger.info { "Toggle Encrypt ${!configManager.getCurrentConfig().enableEncryptSync}" }
-        mainCoroutineDispatcher.launch(CoroutineName("ToggleEncrypt")) {
+        mainRunAction(
+            actionName = "ToggleEncrypt",
+            actionLogMessage = "Toggle Encrypt",
+        ) {
             configManager.updateConfig(
                 "isEncryptSync",
                 !configManager.getCurrentConfig().enableEncryptSync,

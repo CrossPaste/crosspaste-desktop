@@ -82,6 +82,12 @@ fun MainWindow(windowIcon: Painter?) {
             }
         }
 
+        LaunchedEffect(showMainWindow) {
+            if (showMainWindow) {
+                appWindowManager.focusMainWindow()
+            }
+        }
+
         TitleBar {
             WindowDraggableArea {
                 Row(
@@ -113,13 +119,13 @@ fun MainWindow(windowIcon: Painter?) {
                     Item(copywriter.getText("devices")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Devices)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                     Item(copywriter.getText("scan")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(QrCode)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                 }
@@ -127,25 +133,25 @@ fun MainWindow(windowIcon: Painter?) {
                     Item(copywriter.getText("settings")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Settings)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                     Item(copywriter.getText("extension")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Extension)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                     Item(copywriter.getText("import")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Import)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                     Item(copywriter.getText("export")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Export)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                 }
@@ -153,13 +159,13 @@ fun MainWindow(windowIcon: Painter?) {
                     Item(copywriter.getText("shortcut_keys")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(ShortcutKeys)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                     Item(copywriter.getText("about")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(About)
-                            appWindowManager.showMainWindow(recordInfo = false)
+                            appWindowManager.showMainWindow()
                         }
                     }
                     Item(copywriter.getText("check_for_updates")) {

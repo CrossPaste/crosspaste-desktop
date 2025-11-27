@@ -121,7 +121,7 @@ fun SearchWindow(windowIcon: Painter?) {
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
                         scope.launch {
-                            appWindowManager.showSearchWindow(recordInfo = false)
+                            appWindowManager.showSearchWindow()
                         }
                     }
 
@@ -136,6 +136,12 @@ fun SearchWindow(windowIcon: Painter?) {
 
             onDispose {
                 window.removeWindowFocusListener(windowListener)
+            }
+        }
+
+        LaunchedEffect(showSearchWindow) {
+            if (showSearchWindow) {
+                appWindowManager.focusSearchWindow()
             }
         }
 

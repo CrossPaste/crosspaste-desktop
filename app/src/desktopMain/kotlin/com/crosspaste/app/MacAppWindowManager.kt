@@ -66,7 +66,7 @@ class MacAppWindowManager(
         }
     }
 
-    private fun saveCurrentActiveAppInfo() {
+    override fun saveCurrentActiveAppInfo() {
         MacAppUtils.getCurrentActiveAppInfo()?.let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
@@ -77,16 +77,19 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun showMainWindow(
-        recordInfo: Boolean,
-        useShortcutKeys: Boolean,
-    ) {
-        logger.info { "active main window" }
-        if (recordInfo) {
-            saveCurrentActiveAppInfo()
-        }
+//    override suspend fun showMainWindow(
+//        recordInfo: Boolean,
+//        useShortcutKeys: Boolean,
+//    ) {
+//        logger.info { "active main window" }
+//        if (recordInfo) {
+//            saveCurrentActiveAppInfo()
+//        }
+//
+//        showMainWindow()
+//    }
 
-        showMainWindow()
+    override fun focusMainWindow() {
         MacAppUtils.bringToFront(mainWindowTitle)
     }
 
@@ -107,16 +110,18 @@ class MacAppWindowManager(
         hideMainWindow()
     }
 
-    override suspend fun showSearchWindow(
-        recordInfo: Boolean,
-        useShortcutKeys: Boolean,
-    ) {
-        logger.info { "active search window" }
-        if (recordInfo) {
-            saveCurrentActiveAppInfo()
-        }
-        showSearchWindow()
-        setSearchWindowState(appSize.getSearchWindowState())
+//    override suspend fun showSearchWindow(
+//        recordInfo: Boolean,
+//        useShortcutKeys: Boolean,
+//    ) {
+//        logger.info { "active search window" }
+//        if (recordInfo) {
+//            saveCurrentActiveAppInfo()
+//        }
+//        showSearchWindow()
+//    }
+
+    override fun focusSearchWindow() {
         MacAppUtils.bringToFront(searchWindowTitle)
     }
 

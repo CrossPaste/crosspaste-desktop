@@ -65,15 +65,11 @@ class LinuxAppWindowManager(
         }
     }
 
-    override suspend fun showMainWindow(
-        recordInfo: Boolean,
-        useShortcutKeys: Boolean,
-    ) {
-        logger.info { "active main window" }
-        showMainWindow()
-        if (recordInfo) {
-            prevLinuxAppInfo.value = X11Api.getActiveWindow()
-        }
+    override fun saveCurrentActiveAppInfo() {
+        prevLinuxAppInfo.value = X11Api.getActiveWindow()
+    }
+
+    override fun focusMainWindow() {
         X11Api.bringToFront(mainWindow)
     }
 
@@ -83,16 +79,7 @@ class LinuxAppWindowManager(
         hideMainWindow()
     }
 
-    override suspend fun showSearchWindow(
-        recordInfo: Boolean,
-        useShortcutKeys: Boolean,
-    ) {
-        logger.info { "active search window" }
-        showSearchWindow()
-        setSearchWindowState(appSize.getSearchWindowState())
-        if (recordInfo) {
-            prevLinuxAppInfo.value = X11Api.getActiveWindow()
-        }
+    override fun focusSearchWindow() {
         X11Api.bringToFront(searchWindow)
     }
 

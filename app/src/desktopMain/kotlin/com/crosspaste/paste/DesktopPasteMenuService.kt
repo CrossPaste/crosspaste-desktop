@@ -90,7 +90,7 @@ class DesktopPasteMenuService(
             if (!pasteType.isText() && !pasteType.isColor()) {
                 desktopAppWindowManager.hideMainWindow()
             } else {
-                desktopAppWindowManager.showMainWindow(recordInfo = false)
+                desktopAppWindowManager.showMainWindow()
             }
         }
     }

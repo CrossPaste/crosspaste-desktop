@@ -93,7 +93,8 @@ class NativeTrayManager(
                 appWindowManager.hideSearchWindow()
             } else {
                 menuScope.launch {
-                    appWindowManager.showSearchWindow(recordInfo = true)
+                    appWindowManager.saveCurrentActiveAppInfo()
+                    appWindowManager.showSearchWindow()
                 }
             }
         }

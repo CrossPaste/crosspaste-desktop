@@ -525,7 +525,7 @@ class DesktopModule(
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
             single<DesktopAppSize> { DesktopAppSize(get(), lazy { get() }, get()) }
             single<DesktopAppWindowManager> {
-                getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
+                getDesktopAppWindowManager(get(), get(), lazy { get() }, lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
             single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get()) }

@@ -6,6 +6,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
+import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.ioDispatcher
@@ -25,6 +26,7 @@ fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
+    lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     platform: Platform,
     userDataPathProvider: UserDataPathProvider,
 ): DesktopAppWindowManager =
@@ -40,6 +42,7 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
+            lazyShortcutKeysAction,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {
@@ -152,7 +155,7 @@ abstract class DesktopAppWindowManager(
         _showMainWindow.value = false
     }
 
-    protected fun showMainWindow() {
+    fun showMainWindow() {
         _mainWindowState.value =
             WindowState(
                 isMinimized = false,
@@ -162,37 +165,40 @@ abstract class DesktopAppWindowManager(
         _showMainWindow.value = true
     }
 
+    abstract fun saveCurrentActiveAppInfo()
+
+    abstract fun focusMainWindow()
+
     fun hideSearchWindow() {
         _showSearchWindow.value = false
     }
 
-    protected fun showSearchWindow() {
+    fun showSearchWindow() {
         _showSearchWindow.value = true
+        _searchWindowState.value = appSize.getSearchWindowState()
     }
+
+    abstract fun focusSearchWindow()
 
     fun switchAlwaysOnTopMainWindow() {
         _alwaysOnTopMainWindow.value = !_alwaysOnTopMainWindow.value
-    }
-
-    fun setSearchWindowState(windowState: WindowState) {
-        _searchWindowState.value = windowState
     }
 
     fun getSearchWindowState(): WindowState = searchWindowState.value
 
     abstract fun getCurrentActiveAppName(): String?
 
-    abstract suspend fun showMainWindow(
-        recordInfo: Boolean = true,
-        useShortcutKeys: Boolean = false,
-    )
+//    abstract suspend fun showMainWindow(
+//        recordInfo: Boolean = true,
+//        useShortcutKeys: Boolean = false,
+//    )
 
     abstract suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 
-    abstract suspend fun showSearchWindow(
-        recordInfo: Boolean = true,
-        useShortcutKeys: Boolean = false,
-    )
+//    abstract suspend fun showSearchWindow(
+//        recordInfo: Boolean = true,
+//        useShortcutKeys: Boolean = false,
+//    )
 
     abstract suspend fun hideSearchWindowAndPaste(
         size: Int,

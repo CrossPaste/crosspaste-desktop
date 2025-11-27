@@ -110,7 +110,8 @@ object WindowsTrayView {
                             if (showSearchWindow) {
                                 appWindowManager.hideSearchWindow()
                             } else {
-                                appWindowManager.showSearchWindow(recordInfo = true)
+                                appWindowManager.saveCurrentActiveAppInfo()
+                                appWindowManager.showSearchWindow()
                             }
                         }
                     } else {

@@ -161,7 +161,7 @@ fun SideSearchInputView() {
             ) {
                 scope.launch {
                     navigationManager.navigateAndClearStack(Settings)
-                    appWindowManager.showMainWindow(recordInfo = false)
+                    appWindowManager.showMainWindow()
                     appWindowManager.hideSearchWindow()
                 }
             }
