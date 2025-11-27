@@ -1,4 +1,4 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import androidx.compose.ui.window.WindowState
 import java.awt.GraphicsDevice

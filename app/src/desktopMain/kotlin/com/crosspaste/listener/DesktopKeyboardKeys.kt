@@ -1,4 +1,4 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import com.crosspaste.platform.Platform
 

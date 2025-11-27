@@ -1,19 +1,18 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.HIDE_WINDOW
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_MAIN
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
-import com.crosspaste.listener.ShortcutKeysAction
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.HIDE_WINDOW
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_MAIN
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_SEARCH
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.CurrentPaste
@@ -21,6 +20,7 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
+import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,7 +40,11 @@ class DesktopShortKeysAction(
     @Volatile
     override var actioning: Boolean = false
 
-    override val action: (String) -> Unit = { actionName ->
+    @Volatile
+    override var event: NativeKeyEvent? = null
+
+    override val action: (String, NativeKeyEvent) -> Unit = { actionName, event ->
+        this.event = event
         when (actionName) {
             PASTE_PLAIN_TEXT -> pastePlainText()
             PASTE_PRIMARY_TYPE -> pastePrimaryType()

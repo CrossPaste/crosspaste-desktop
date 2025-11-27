@@ -47,22 +47,28 @@ interface X11Api : X11 {
             }
         }
 
-        fun bringToFront(window: Window?) {
+        fun bringToFront(
+            window: Window?,
+            xServerTime: Long?,
+        ) {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 window?.let { window ->
-                    WMCtrl.activeWindow(display, window)
+                    WMCtrl.activeWindow(display, window, xServerTime)
                 }
             } finally {
                 INSTANCE.XCloseDisplay(display)
             }
         }
 
-        fun bringToBack(prevLinuxAppInfo: LinuxAppInfo?) {
+        fun bringToBack(
+            prevLinuxAppInfo: LinuxAppInfo?,
+            xServerTime: Long?,
+        ) {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 prevLinuxAppInfo?.let {
-                    WMCtrl.activeWindow(display, it.window)
+                    WMCtrl.activeWindow(display, it.window, xServerTime)
                 }
             } finally {
                 INSTANCE.XCloseDisplay(display)
@@ -71,12 +77,13 @@ interface X11Api : X11 {
 
         suspend fun bringToBack(
             prevLinuxAppInfo: LinuxAppInfo?,
+            xServerTime: Long?,
             keyCodes: List<Int>,
         ) {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 prevLinuxAppInfo?.let {
-                    WMCtrl.activeWindow(display, it.window)
+                    WMCtrl.activeWindow(display, it.window, xServerTime)
                     toPaste(display, keyCodes)
                 }
             } finally {

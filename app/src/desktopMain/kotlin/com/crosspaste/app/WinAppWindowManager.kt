@@ -1,7 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider

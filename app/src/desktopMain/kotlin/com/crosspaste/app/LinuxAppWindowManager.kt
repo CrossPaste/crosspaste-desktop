@@ -1,8 +1,9 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
+import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
 import com.sun.jna.platform.unix.X11.Window
@@ -16,6 +17,7 @@ class LinuxAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
@@ -70,7 +72,8 @@ class LinuxAppWindowManager(
     }
 
     override fun focusMainWindow() {
-        X11Api.bringToFront(mainWindow)
+        val xServerTime = lazyShortcutKeysAction.value.event?.`when`
+        X11Api.bringToFront(mainWindow, xServerTime)
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -80,7 +83,8 @@ class LinuxAppWindowManager(
     }
 
     override fun focusSearchWindow() {
-        X11Api.bringToFront(searchWindow)
+        val xServerTime = lazyShortcutKeysAction.value.event?.`when`
+        X11Api.bringToFront(searchWindow, xServerTime)
     }
 
     override suspend fun hideSearchWindowAndPaste(
@@ -99,14 +103,15 @@ class LinuxAppWindowManager(
     }
 
     private suspend fun bringToBack(toPaste: Boolean) {
+        val xServerTime = lazyShortcutKeysAction.value.event?.`when`
         if (toPaste) {
             val keyCodes =
                 lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                     it.map { key -> key.rawCode }
                 } ?: listOf()
-            X11Api.bringToBack(prevLinuxAppInfo.value, keyCodes)
+            X11Api.bringToBack(prevLinuxAppInfo.value, xServerTime, keyCodes)
         } else {
-            X11Api.bringToBack(prevLinuxAppInfo.value)
+            X11Api.bringToBack(prevLinuxAppInfo.value, xServerTime)
         }
     }
 

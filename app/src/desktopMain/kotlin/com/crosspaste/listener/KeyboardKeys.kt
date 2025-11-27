@@ -1,4 +1,4 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import kotlin.reflect.full.memberProperties
 
@@ -191,7 +191,7 @@ interface KeyboardKeys {
     fun initAllMap(): Map<Int, KeyboardKeyDefine> =
         this::class
             .memberProperties
-            .filter { it.returnType.toString() == "com.crosspaste.listen.KeyboardKeyDefine" }
+            .filter { it.returnType.toString() == "com.crosspaste.listener.KeyboardKeyDefine" }
             .map { it.getter.call(this) as KeyboardKeyDefine }
             .associateBy { it.code }
 

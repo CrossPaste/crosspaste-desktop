@@ -158,12 +158,28 @@ object WMCtrl {
     fun activeWindow(
         display: X11.Display,
         win: X11.Window,
+        xServerTime: Long? = null,
     ): Boolean {
         INSTANCE.XMapRaised(display, win)
 
         INSTANCE.XFlush(display)
 
-        clientMsg(display, win, "_NET_ACTIVE_WINDOW", data0 = NativeLong(2))
+        clientMsg(
+            display,
+            win,
+            "_NET_ACTIVE_WINDOW",
+            data0 = NativeLong(2),
+            data1 = xServerTime?.let { NativeLong(it) } ?: NativeLong(X11.CurrentTime.toLong()),
+        )
+
+        INSTANCE.XFlush(display)
+
+        X11Ext.INSTANCE.XSetInputFocus(
+            display,
+            win,
+            X11.RevertToParent,
+            X11.CurrentTime,
+        )
 
         INSTANCE.XFlush(display)
         return true

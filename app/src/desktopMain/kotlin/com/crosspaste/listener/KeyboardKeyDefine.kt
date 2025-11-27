@@ -1,6 +1,5 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
-import com.crosspaste.listener.KeyboardKey
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 
 data class KeyboardKeyDefine(

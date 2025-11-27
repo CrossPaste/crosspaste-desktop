@@ -1,7 +1,6 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import com.crosspaste.app.DesktopAppLaunchState
-import com.crosspaste.listener.GlobalListener
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.utils.getSystemProperty

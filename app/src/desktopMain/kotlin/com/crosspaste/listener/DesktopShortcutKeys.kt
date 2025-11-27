@@ -1,9 +1,6 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.listener.KeyboardKey
-import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.listener.ShortcutKeysCore
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.DesktopResourceUtils

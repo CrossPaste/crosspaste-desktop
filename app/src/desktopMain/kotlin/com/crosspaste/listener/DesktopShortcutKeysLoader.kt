@@ -1,10 +1,6 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import androidx.compose.ui.util.fastAll
-import com.crosspaste.listener.EventConsumer
-import com.crosspaste.listener.KeyboardKey
-import com.crosspaste.listener.ShortcutKeysAction
-import com.crosspaste.listener.ShortcutKeysCore
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.DesktopResourceUtils
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
@@ -12,6 +8,7 @@ import okio.Path
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.Properties
+import kotlin.collections.iterator
 
 class DesktopShortcutKeysLoader(
     platform: Platform,
@@ -66,7 +63,7 @@ class DesktopShortcutKeysLoader(
                         eventCheck(event)
                     }.let { match ->
                         if (match) {
-                            shortcutKeysAction.action(entry.key)
+                            shortcutKeysAction.action(entry.key, event)
                             return@EventConsumer
                         }
                     }
