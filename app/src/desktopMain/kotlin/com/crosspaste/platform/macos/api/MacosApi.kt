@@ -40,7 +40,7 @@ interface MacosApi : Library {
 
     fun getHardwareUUID(): Pointer?
 
-    fun getCurrentActiveApp(): Pointer?
+    fun getCurrentActiveAppInfo(): Pointer?
 
     fun saveAppIcon(
         bundleIdentifier: String,
@@ -65,7 +65,7 @@ interface MacosApi : Library {
 
     fun setWindowLevelScreenSaver(windowPtr: Pointer?)
 
-    fun bringToFront(windowTitle: String): Pointer
+    fun bringToFront(windowTitle: String)
 
     fun simulatePasteCommand(
         array: Pointer,

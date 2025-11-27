@@ -32,7 +32,7 @@ class MacAppWindowManager(
 
     override fun getCurrentActiveAppName(): String? =
         runCatching {
-            MacAppUtils.getCurrentActiveApp()?.let {
+            MacAppUtils.getCurrentActiveAppInfo()?.let {
                 createMacAppInfo(info = it)?.let { macAppInfo ->
                     ioScope.launch {
                         saveImagePathByApp(macAppInfo.bundleIdentifier, macAppInfo.localizedName)
@@ -66,10 +66,8 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
-        logger.info { "active main window" }
-        showMainWindow()
-        MacAppUtils.bringToFront(mainWindowTitle).let {
+    private fun saveCurrentActiveAppInfo() {
+        MacAppUtils.getCurrentActiveAppInfo()?.let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo.value = macAppInfo
@@ -77,6 +75,20 @@ class MacAppWindowManager(
                 }
             }
         }
+    }
+
+    override suspend fun showMainWindow(
+        recordInfo: Boolean,
+        useShortcutKeys: Boolean,
+    ) {
+        logger.info { "active main window" }
+        if (recordInfo) {
+            saveCurrentActiveAppInfo()
+        }
+
+        showMainWindow()
+        MacAppUtils.bringToFront(mainWindowTitle)
+        requestForeground()
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -96,20 +108,18 @@ class MacAppWindowManager(
         hideMainWindow()
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
+    override suspend fun showSearchWindow(
+        recordInfo: Boolean,
+        useShortcutKeys: Boolean,
+    ) {
         logger.info { "active search window" }
-        showSearchWindow()
-
-        setSearchWindowState(appSize.getSearchWindowState())
-
-        MacAppUtils.bringToFront(searchWindowTitle).let {
-            createMacAppInfo(it)?.let { macAppInfo ->
-                if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
-                    prevMacAppInfo.value = macAppInfo
-                    logger.info { "save prevAppName $macAppInfo" }
-                }
-            }
+        if (recordInfo) {
+            saveCurrentActiveAppInfo()
         }
+        showSearchWindow()
+        setSearchWindowState(appSize.getSearchWindowState())
+        MacAppUtils.bringToFront(searchWindowTitle)
+        requestForeground()
     }
 
     override suspend fun hideSearchWindowAndPaste(

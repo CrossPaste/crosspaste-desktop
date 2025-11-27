@@ -52,7 +52,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
                     navigationManager.navigateAndClearStack(About)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    appWindowManager.showMainWindow(recordInfo = true)
                 }
             },
         )
@@ -71,7 +71,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
                     navigationManager.navigateAndClearStack(Devices)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    appWindowManager.showMainWindow(recordInfo = true)
                 }
             },
         )
@@ -82,7 +82,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Export")) {
                     navigationManager.navigateAndClearStack(Export)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    appWindowManager.showMainWindow(recordInfo = true)
                 }
             },
         )
@@ -93,7 +93,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Extension")) {
                     navigationManager.navigateAndClearStack(Extension)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    appWindowManager.showMainWindow(recordInfo = true)
                 }
             },
         )
@@ -104,7 +104,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Import")) {
                     navigationManager.navigateAndClearStack(Import)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    appWindowManager.showMainWindow(recordInfo = true)
                 }
             },
         )
@@ -115,7 +115,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
                     navigationManager.navigateAndClearStack(Settings)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    appWindowManager.showMainWindow(recordInfo = true)
                 }
             },
         )
@@ -126,7 +126,7 @@ class MenuHelper(
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
                     navigationManager.navigateAndClearStack(ShortcutKeys)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    appWindowManager.showMainWindow(recordInfo = true)
                 }
             },
         )
@@ -159,7 +159,8 @@ class MenuHelper(
             ) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open search window")) {
                     delay(200) // wait for force to prev window
-                    appWindowManager.recordActiveInfoAndShowSearchWindow(
+                    appWindowManager.showSearchWindow(
+                        recordInfo = true,
                         useShortcutKeys = false,
                     )
                 }

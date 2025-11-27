@@ -9,7 +9,10 @@ class DesktopAppTokenService(
 
     override fun preShowToken() {
         mainCoroutineDispatcher.launch {
-            appWindowManager.showMainWindow()
+            appWindowManager.showMainWindow(
+                recordInfo = false,
+                useShortcutKeys = false,
+            )
         }
     }
 }

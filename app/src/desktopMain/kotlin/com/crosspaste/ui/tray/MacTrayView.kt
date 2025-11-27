@@ -93,9 +93,7 @@ class NativeTrayManager(
                 appWindowManager.hideSearchWindow()
             } else {
                 menuScope.launch {
-                    appWindowManager.recordActiveInfoAndShowSearchWindow(
-                        useShortcutKeys = false,
-                    )
+                    appWindowManager.showSearchWindow(recordInfo = true)
                 }
             }
         }

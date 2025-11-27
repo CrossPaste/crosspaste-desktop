@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +29,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
+import kotlinx.coroutines.launch
 import org.jetbrains.jewel.window.DecoratedWindow
 import org.jetbrains.jewel.window.TitleBar
 import org.koin.compose.koinInject
@@ -51,6 +53,8 @@ fun MainWindow(windowIcon: Painter?) {
     }
 
     val applicationExit = LocalExitApplication.current
+
+    val scope = rememberCoroutineScope()
 
     // Initialize global listener only once
     LaunchedEffect(Unit) {
@@ -107,40 +111,56 @@ fun MainWindow(windowIcon: Painter?) {
             MenuBar {
                 Menu(copywriter.getText("sync")) {
                     Item(copywriter.getText("devices")) {
-                        navigateManage.navigateAndClearStack(Devices)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(Devices)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                     Item(copywriter.getText("scan")) {
-                        navigateManage.navigateAndClearStack(QrCode)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(QrCode)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                 }
                 Menu(copywriter.getText("action")) {
                     Item(copywriter.getText("settings")) {
-                        navigateManage.navigateAndClearStack(Settings)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(Settings)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                     Item(copywriter.getText("extension")) {
-                        navigateManage.navigateAndClearStack(Extension)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(Extension)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                     Item(copywriter.getText("import")) {
-                        navigateManage.navigateAndClearStack(Import)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(Import)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                     Item(copywriter.getText("export")) {
-                        navigateManage.navigateAndClearStack(Export)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(Export)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                 }
                 Menu(copywriter.getText("help")) {
                     Item(copywriter.getText("shortcut_keys")) {
-                        navigateManage.navigateAndClearStack(ShortcutKeys)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(ShortcutKeys)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                     Item(copywriter.getText("about")) {
-                        navigateManage.navigateAndClearStack(About)
-                        appWindowManager.showMainWindow()
+                        scope.launch {
+                            navigateManage.navigateAndClearStack(About)
+                            appWindowManager.showMainWindow(recordInfo = false)
+                        }
                     }
                     Item(copywriter.getText("check_for_updates")) {
                         appUpdateService.tryTriggerUpdate()

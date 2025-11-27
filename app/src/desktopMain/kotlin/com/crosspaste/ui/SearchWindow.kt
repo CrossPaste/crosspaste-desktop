@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
@@ -24,6 +25,7 @@ import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.sun.jna.Pointer
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -84,6 +86,8 @@ fun SearchWindow(windowIcon: Painter?) {
             }
         }
 
+    val scope = rememberCoroutineScope()
+
     Window(
         onCloseRequest = {
             appWindowManager.hideSearchWindow()
@@ -116,7 +120,9 @@ fun SearchWindow(windowIcon: Painter?) {
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
-                        appWindowManager.showSearchWindow()
+                        scope.launch {
+                            appWindowManager.showSearchWindow(recordInfo = false)
+                        }
                     }
 
                     override fun windowLostFocus(e: WindowEvent?) {

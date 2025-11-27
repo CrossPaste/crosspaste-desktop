@@ -143,16 +143,6 @@ private func IOPlatformUUID() -> String? {
     return serialNumberAsCFString
 }
 
-@_cdecl("getCurrentActiveApp")
-public func getCurrentActiveApp() -> UnsafePointer<CChar>? {
-    if let currentApp = NSWorkspace.shared.frontmostApplication {
-        if let bundleIdentifier = currentApp.bundleIdentifier, let localizedName = currentApp.localizedName {
-            return UnsafePointer<CChar>(strdup("\(bundleIdentifier)\n\(localizedName)"))
-        }
-    }
-    return nil
-}
-
 @_cdecl("saveAppIcon")
 public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePointer<CChar>) {
     let bundleIdentifierString = String(cString: bundleIdentifier)
@@ -254,12 +244,18 @@ public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
     }
 }
 
+@_cdecl("getCurrentActiveAppInfo")
+public func getCurrentActiveAppInfo() -> UnsafePointer<CChar>? {
+    if let currentApp = NSWorkspace.shared.frontmostApplication {
+        if let bundleIdentifier = currentApp.bundleIdentifier, let localizedName = currentApp.localizedName {
+            return UnsafePointer<CChar>(strdup("\(bundleIdentifier)\n\(localizedName)"))
+        }
+    }
+    return nil
+}
+
 @_cdecl("bringToFront")
-public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
-
-    let currentApp = NSWorkspace.shared.frontmostApplication
-    let currentAppInfo = "\(currentApp?.bundleIdentifier ?? "")\n\(currentApp?.localizedName ?? "")"
-
+public func bringToFront(windowTitle: UnsafePointer<CChar>) {
     DispatchQueue.main.async {
         let title = String(cString: windowTitle)
         let windows = NSApplication.shared.windows
@@ -276,7 +272,6 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CCh
             }
         }
     }
-    return UnsafePointer<CChar>(strdup(currentAppInfo))
 }
 
 @_cdecl("simulatePasteCommand")

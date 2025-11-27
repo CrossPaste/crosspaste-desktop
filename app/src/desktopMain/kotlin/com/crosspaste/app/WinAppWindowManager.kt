@@ -73,16 +73,22 @@ class WinAppWindowManager(
             fileDescriptorCache[it].ifEmpty { null }
         }
 
-    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
+    override suspend fun showMainWindow(
+        recordInfo: Boolean,
+        useShortcutKeys: Boolean,
+    ) {
         logger.info { "active main window" }
 
-        val pair = User32.getForegroundWindowAppInfoAndThreadId(useShortcutKeys)
+        if (recordInfo) {
+            val pair = User32.getForegroundWindowAppInfoAndThreadId(useShortcutKeys)
 
-        pair?.let {
-            prevWinAppInfo.value = it.first
+            pair?.let {
+                prevWinAppInfo.value = it.first
+            }
         }
 
         showMainWindow()
+        requestForeground()
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -91,17 +97,22 @@ class WinAppWindowManager(
         this@WinAppWindowManager.hideMainWindow()
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
+    override suspend fun showSearchWindow(
+        recordInfo: Boolean,
+        useShortcutKeys: Boolean,
+    ) {
         logger.info { "active search window" }
 
         val pair = User32.getForegroundWindowAppInfoAndThreadId(!useShortcutKeys)
 
-        pair?.let {
-            prevWinAppInfo.value = it.first
+        if (recordInfo) {
+            pair?.let {
+                prevWinAppInfo.value = it.first
+            }
         }
 
-        setSearchWindowState(appSize.getSearchWindowState())
         showSearchWindow()
+        setSearchWindowState(appSize.getSearchWindowState())
 
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
@@ -109,6 +120,7 @@ class WinAppWindowManager(
         pair?.let {
             User32.bringToFront(pair.second, searchHWND)
         }
+        requestForeground()
     }
 
     override suspend fun hideSearchWindowAndPaste(

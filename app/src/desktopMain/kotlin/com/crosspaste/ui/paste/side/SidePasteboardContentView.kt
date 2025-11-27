@@ -40,11 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import com.crosspaste.app.DesktopAppWindowManager
@@ -243,23 +240,8 @@ fun SidePasteboardContentView() {
                     .focusRequester(pasteListFocusRequester)
                     .focusable()
                     .onKeyEvent { keyEvent ->
-                        when {
-                            keyEvent.type == KeyEventType.KeyDown &&
-                                keyEvent.key == Key.ShiftLeft ||
-                                keyEvent.key == Key.ShiftRight -> {
-                                println("Shift Key Down")
-                                isShiftPressed = true
-                                true
-                            }
-                            keyEvent.type == KeyEventType.KeyUp &&
-                                keyEvent.key == Key.ShiftLeft ||
-                                keyEvent.key == Key.ShiftRight -> {
-                                println("Shift Key Up")
-                                isShiftPressed = false
-                                true
-                            }
-                            else -> false
-                        }
+                        isShiftPressed = keyEvent.isShiftPressed
+                        false
                     },
             contentAlignment = Alignment.CenterStart,
         ) {

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.awt.Desktop
 import kotlin.coroutines.cancellation.CancellationException
 
 fun getDesktopAppWindowManager(
@@ -152,7 +153,7 @@ abstract class DesktopAppWindowManager(
         _showMainWindow.value = false
     }
 
-    fun showMainWindow() {
+    protected fun showMainWindow() {
         _mainWindowState.value =
             WindowState(
                 isMinimized = false,
@@ -166,7 +167,7 @@ abstract class DesktopAppWindowManager(
         _showSearchWindow.value = false
     }
 
-    fun showSearchWindow() {
+    protected fun showSearchWindow() {
         _showSearchWindow.value = true
     }
 
@@ -182,11 +183,17 @@ abstract class DesktopAppWindowManager(
 
     abstract fun getCurrentActiveAppName(): String?
 
-    abstract suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean)
+    abstract suspend fun showMainWindow(
+        recordInfo: Boolean = true,
+        useShortcutKeys: Boolean = false,
+    )
 
     abstract suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 
-    abstract suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean)
+    abstract suspend fun showSearchWindow(
+        recordInfo: Boolean = true,
+        useShortcutKeys: Boolean = false,
+    )
 
     abstract suspend fun hideSearchWindowAndPaste(
         size: Int,
@@ -202,6 +209,12 @@ abstract class DesktopAppWindowManager(
         synchronized(hideSearchWindowCallbacks) {
             hideSearchWindowCallbacks.add(WindowScheduledTask(delayMillis, action))
             hideSearchWindowCallbacks.sortBy { it.delayMillis }
+        }
+    }
+
+    protected fun requestForeground() {
+        if (Desktop.isDesktopSupported()) {
+            Desktop.getDesktop().requestForeground(true)
         }
     }
 }

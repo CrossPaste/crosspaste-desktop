@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class DesktopPasteMenuService(
-    private val appWindowManager: AppWindowManager,
+    appWindowManager: AppWindowManager,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
@@ -38,82 +38,73 @@ class DesktopPasteMenuService(
         id: Long,
         pasteItem: PasteItem,
     ) {
-        appWindowManager.doLongTaskInMain(
-            scope = menuScope,
-            task = {
-                pasteboardService.tryWritePasteboard(
+        menuScope.launch {
+            pasteboardService
+                .tryWritePasteboard(
                     id = id,
                     pasteItem = pasteItem,
                     localOnly = true,
-                )
-            },
-            success = {
-                notificationManager.sendNotification(
-                    title = { it.getText("copy_successful") },
-                    messageType = MessageType.Success,
-                )
-            },
-            fail = { e ->
-                notificationManager.sendNotification(
-                    title = { it.getText("copy_failed") },
-                    message = e.message?.let { message -> { message } },
-                    messageType = MessageType.Error,
-                )
-            },
-        )
+                ).onSuccess {
+                    notificationManager.sendNotification(
+                        title = { it.getText("copy_successful") },
+                        messageType = MessageType.Success,
+                    )
+                }.onFailure { e ->
+                    notificationManager.sendNotification(
+                        title = { it.getText("copy_failed") },
+                        message = e.message?.let { message -> { message } },
+                        messageType = MessageType.Error,
+                    )
+                }
+        }
     }
 
     override fun copyPasteData(pasteData: PasteData) {
-        appWindowManager.doLongTaskInMain(
-            scope = menuScope,
-            task = {
-                pasteboardService.tryWritePasteboard(
+        menuScope.launch {
+            pasteboardService
+                .tryWritePasteboard(
                     pasteData = pasteData,
                     localOnly = true,
-                )
-            },
-            success = {
-                notificationManager.sendNotification(
-                    title = { it.getText("copy_successful") },
-                    messageType = MessageType.Success,
-                )
-            },
-            fail = { e ->
-                notificationManager.sendNotification(
-                    title = { it.getText("copy_failed") },
-                    message = e.message?.let { message -> { message } },
-                    messageType = MessageType.Error,
-                )
-            },
-        )
+                ).onSuccess {
+                    notificationManager.sendNotification(
+                        title = { it.getText("copy_successful") },
+                        messageType = MessageType.Success,
+                    )
+                }.onFailure { e ->
+                    notificationManager.sendNotification(
+                        title = { it.getText("copy_failed") },
+                        message = e.message?.let { message -> { message } },
+                        messageType = MessageType.Error,
+                    )
+                }
+        }
     }
 
     override fun openPasteData(
         pasteData: PasteData,
         index: Int,
     ) {
-        uiSupport.openPasteData(pasteData, index)
-        val pasteType = pasteData.getType()
-        if (!pasteType.isText() && !pasteType.isColor()) {
-            desktopAppWindowManager.hideMainWindow()
-        } else {
-            desktopAppWindowManager.showMainWindow()
+        menuScope.launch {
+            uiSupport.openPasteData(pasteData, index)
+            val pasteType = pasteData.getType()
+            if (!pasteType.isText() && !pasteType.isColor()) {
+                desktopAppWindowManager.hideMainWindow()
+            } else {
+                desktopAppWindowManager.showMainWindow(recordInfo = false)
+            }
         }
     }
 
     override fun deletePasteData(pasteData: PasteData) {
-        appWindowManager.doLongTaskInMain(
-            scope = menuScope,
-            task = {
-                pasteDao.markDeletePasteData(pasteData.id)
-            },
-        )
+        menuScope.launch {
+            pasteDao.markDeletePasteData(pasteData.id)
+        }
     }
 
     override fun quickPasteFromMainWindow(pasteData: PasteData) {
         menuScope.launch {
             desktopAppWindowManager.hideMainWindowAndPaste {
-                withContext(ioDispatcher) {
+                withContext(menuScope.coroutineContext) {
                     pasteboardService
                         .tryWritePasteboard(
                             pasteData = pasteData,
@@ -128,7 +119,7 @@ class DesktopPasteMenuService(
     override fun quickPasteFromSearchWindow(pasteData: PasteData) {
         menuScope.launch {
             desktopAppWindowManager.hideSearchWindowAndPaste(0) {
-                withContext(ioDispatcher) {
+                withContext(menuScope.coroutineContext) {
                     pasteboardService
                         .tryWritePasteboard(
                             pasteData = pasteData,
