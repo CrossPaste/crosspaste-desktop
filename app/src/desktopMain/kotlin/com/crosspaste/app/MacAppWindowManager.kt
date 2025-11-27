@@ -88,7 +88,6 @@ class MacAppWindowManager(
 
         showMainWindow()
         MacAppUtils.bringToFront(mainWindowTitle)
-        requestForeground()
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -119,7 +118,6 @@ class MacAppWindowManager(
         showSearchWindow()
         setSearchWindowState(appSize.getSearchWindowState())
         MacAppUtils.bringToFront(searchWindowTitle)
-        requestForeground()
     }
 
     override suspend fun hideSearchWindowAndPaste(

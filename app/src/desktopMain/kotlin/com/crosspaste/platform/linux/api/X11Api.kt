@@ -47,20 +47,12 @@ interface X11Api : X11 {
             }
         }
 
-        fun bringToFront(window: Window?): LinuxAppInfo? {
-            val display = INSTANCE.XOpenDisplay(null) ?: return null
-            return try {
-                val linuxAppInfo: LinuxAppInfo? =
-                    getActiveWindow(display)?.let { previousWindow ->
-                        WMCtrl.getWindowClass(display, previousWindow)?.let {
-                            LinuxAppInfo(previousWindow, it.second)
-                        }
-                    }
-
+        fun bringToFront(window: Window?) {
+            val display = INSTANCE.XOpenDisplay(null) ?: return
+            try {
                 window?.let { window ->
                     WMCtrl.activeWindow(display, window)
                 }
-                linuxAppInfo
             } finally {
                 INSTANCE.XCloseDisplay(display)
             }

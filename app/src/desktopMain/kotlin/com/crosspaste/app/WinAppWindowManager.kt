@@ -88,7 +88,6 @@ class WinAppWindowManager(
         }
 
         showMainWindow()
-        requestForeground()
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -120,7 +119,6 @@ class WinAppWindowManager(
         pair?.let {
             User32.bringToFront(pair.second, searchHWND)
         }
-        requestForeground()
     }
 
     override suspend fun hideSearchWindowAndPaste(

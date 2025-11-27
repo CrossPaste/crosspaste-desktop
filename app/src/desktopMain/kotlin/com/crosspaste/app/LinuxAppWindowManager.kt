@@ -74,7 +74,7 @@ class LinuxAppWindowManager(
         if (recordInfo) {
             prevLinuxAppInfo.value = X11Api.getActiveWindow()
         }
-        requestForeground()
+        X11Api.bringToFront(mainWindow)
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -93,7 +93,7 @@ class LinuxAppWindowManager(
         if (recordInfo) {
             prevLinuxAppInfo.value = X11Api.getActiveWindow()
         }
-        requestForeground()
+        X11Api.bringToFront(searchWindow)
     }
 
     override suspend fun hideSearchWindowAndPaste(

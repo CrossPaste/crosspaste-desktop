@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.awt.Desktop
 import kotlin.coroutines.cancellation.CancellationException
 
 fun getDesktopAppWindowManager(
@@ -209,12 +208,6 @@ abstract class DesktopAppWindowManager(
         synchronized(hideSearchWindowCallbacks) {
             hideSearchWindowCallbacks.add(WindowScheduledTask(delayMillis, action))
             hideSearchWindowCallbacks.sortBy { it.delayMillis }
-        }
-    }
-
-    protected fun requestForeground() {
-        if (Desktop.isDesktopSupported()) {
-            Desktop.getDesktop().requestForeground(true)
         }
     }
 }
