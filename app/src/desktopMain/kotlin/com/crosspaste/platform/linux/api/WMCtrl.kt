@@ -174,14 +174,6 @@ object WMCtrl {
 
         INSTANCE.XFlush(display)
 
-        X11Ext.INSTANCE.XSetInputFocus(
-            display,
-            win,
-            X11.RevertToParent,
-            X11.CurrentTime,
-        )
-
-        INSTANCE.XFlush(display)
         return true
     }
 

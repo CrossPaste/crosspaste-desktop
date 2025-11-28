@@ -9,7 +9,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
@@ -21,11 +20,12 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.sun.jna.Pointer
-import kotlinx.coroutines.launch
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -35,6 +35,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
+    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
     val navController = LocalNavHostController.current
@@ -86,7 +87,13 @@ fun SearchWindow(windowIcon: Painter?) {
             }
         }
 
-    val scope = rememberCoroutineScope()
+    val logger = remember { KotlinLogging.logger("SearchWindow") }
+
+    LaunchedEffect(showSearchWindow) {
+        if (showSearchWindow) {
+            appWindowManager.focusSearchWindow()
+        }
+    }
 
     Window(
         onCloseRequest = {
@@ -120,12 +127,12 @@ fun SearchWindow(windowIcon: Painter?) {
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
-                        scope.launch {
-                            appWindowManager.showSearchWindow()
-                        }
+                        logger.debug { "Search window gained focus" }
+                        pasteSelectionViewModel.requestPasteListFocus()
                     }
 
                     override fun windowLostFocus(e: WindowEvent?) {
+                        logger.debug { "Search window lost focus" }
                         if (backStackEntry?.let { getRouteName(it.destination) } != PasteTextEdit.NAME) {
                             appWindowManager.hideSearchWindow()
                         }
@@ -136,12 +143,6 @@ fun SearchWindow(windowIcon: Painter?) {
 
             onDispose {
                 window.removeWindowFocusListener(windowListener)
-            }
-        }
-
-        LaunchedEffect(showSearchWindow) {
-            if (showSearchWindow) {
-                appWindowManager.focusSearchWindow()
             }
         }
 
