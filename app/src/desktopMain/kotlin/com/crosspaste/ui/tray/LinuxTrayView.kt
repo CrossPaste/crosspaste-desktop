@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalExitApplication
@@ -81,7 +82,7 @@ object LinuxTrayView {
 
         LaunchedEffect(Unit) {
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                appWindowManager.showMainWindow()
+                appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
                 appLaunch.setFirstLaunchCompleted(true)
             }
         }

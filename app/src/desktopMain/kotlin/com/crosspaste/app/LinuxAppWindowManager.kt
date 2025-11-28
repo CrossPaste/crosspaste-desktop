@@ -6,6 +6,8 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
+import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
+import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11.Window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -71,9 +73,13 @@ class LinuxAppWindowManager(
         prevLinuxAppInfo.value = X11Api.getActiveWindow()
     }
 
-    override fun focusMainWindow() {
-        val xServerTime = lazyShortcutKeysAction.value.event?.`when`
-        X11Api.bringToFront(mainWindow, xServerTime)
+    override fun focusMainWindow(windowTrigger: WindowTrigger) {
+        if (windowTrigger == WindowTrigger.SHORTCUT) {
+            val xServerTime = lazyShortcutKeysAction.value.event?.`when`
+            X11Api.bringToFront(mainWindow, source = NativeLong(2), xServerTime?.let { NativeLong(it) })
+        } else {
+            X11Api.bringToFront(mainWindow, source = NativeLong(1))
+        }
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -82,9 +88,13 @@ class LinuxAppWindowManager(
         hideMainWindow()
     }
 
-    override fun focusSearchWindow() {
-        val xServerTime = lazyShortcutKeysAction.value.event?.`when`
-        X11Api.bringToFront(searchWindow, xServerTime)
+    override fun focusSearchWindow(windowTrigger: WindowTrigger) {
+        if (windowTrigger == WindowTrigger.SHORTCUT) {
+            val xServerTime = lazyShortcutKeysAction.value.event?.`when`
+            X11Api.bringToFront(searchWindow, source = NativeLong(2), xServerTime?.let { NativeLong(it) })
+        } else {
+            X11Api.bringToFront(searchWindow, source = NativeLong(1))
+        }
     }
 
     override suspend fun hideSearchWindowAndPaste(
@@ -103,15 +113,14 @@ class LinuxAppWindowManager(
     }
 
     private suspend fun bringToBack(toPaste: Boolean) {
-        val xServerTime = lazyShortcutKeysAction.value.event?.`when`
         if (toPaste) {
             val keyCodes =
                 lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                     it.map { key -> key.rawCode }
                 } ?: listOf()
-            X11Api.bringToBack(prevLinuxAppInfo.value, xServerTime, keyCodes)
+            bringToBack(prevLinuxAppInfo.value, keyCodes)
         } else {
-            X11Api.bringToBack(prevLinuxAppInfo.value, xServerTime)
+            bringToBack(prevLinuxAppInfo.value)
         }
     }
 

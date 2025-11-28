@@ -43,8 +43,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val backStackEntry by navController.currentBackStackEntryAsState()
 
     val config by configManager.config.collectAsState()
-    val currentSearchWindowState by appWindowManager.searchWindowState.collectAsState()
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val isMac by remember { mutableStateOf(platform.isMacos()) }
 
@@ -57,7 +56,7 @@ fun SearchWindow(windowIcon: Painter?) {
     }
 
     val animationProgress by animateFloatAsState(
-        targetValue = if (showSearchWindow && !isCenterStyle) 0f else 1f,
+        targetValue = if (searchWindowInfo.show && !isCenterStyle) 0f else 1f,
         animationSpec =
             tween(
                 durationMillis = 150,
@@ -66,32 +65,30 @@ fun SearchWindow(windowIcon: Painter?) {
     )
 
     val windowState =
-        remember(showSearchWindow, animationProgress, isCenterStyle) {
+        remember(searchWindowInfo, animationProgress, isCenterStyle) {
             if (isCenterStyle) {
-                currentSearchWindowState
+                searchWindowInfo.state
             } else {
-                currentSearchWindowState.position
-
                 val position =
                     WindowPosition(
-                        x = currentSearchWindowState.position.x,
+                        x = searchWindowInfo.state.position.x,
                         y =
-                            currentSearchWindowState.position.y +
+                            searchWindowInfo.state.position.y +
                                 appSize.sideSearchWindowHeight * animationProgress,
                     )
                 WindowState(
-                    placement = currentSearchWindowState.placement,
+                    placement = searchWindowInfo.state.placement,
                     position = position,
-                    size = currentSearchWindowState.size,
+                    size = searchWindowInfo.state.size,
                 )
             }
         }
 
     val logger = remember { KotlinLogging.logger("SearchWindow") }
 
-    LaunchedEffect(showSearchWindow) {
-        if (showSearchWindow) {
-            appWindowManager.focusSearchWindow()
+    LaunchedEffect(searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
+            appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
         }
     }
 
@@ -99,7 +96,7 @@ fun SearchWindow(windowIcon: Painter?) {
         onCloseRequest = {
             appWindowManager.hideSearchWindow()
         },
-        visible = showSearchWindow,
+        visible = searchWindowInfo.show,
         state = windowState,
         title = appWindowManager.searchWindowTitle,
         icon = windowIcon,

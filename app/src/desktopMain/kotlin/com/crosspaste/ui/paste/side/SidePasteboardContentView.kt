@@ -88,7 +88,7 @@ fun SidePasteboardContentView() {
 
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
 
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val latestSearchResult = rememberUpdatedState(searchResult)
 
@@ -99,13 +99,13 @@ fun SidePasteboardContentView() {
     var isShiftPressed by remember { mutableStateOf(false) }
 
     LaunchedEffect(
-        showSearchWindow,
+        searchWindowInfo.show,
         inputSearch,
         searchBaseParams.favorite,
         searchBaseParams.sort,
         searchBaseParams.pasteType,
     ) {
-        if (showSearchWindow) {
+        if (searchWindowInfo.show) {
             pasteSelectionViewModel.initSelectIndex()
             delay(32)
             searchListState.animateScrollToItem(0)
@@ -113,8 +113,8 @@ fun SidePasteboardContentView() {
         }
     }
 
-    LaunchedEffect(selectedIndexes, showSearchWindow) {
-        if (showSearchWindow) {
+    LaunchedEffect(selectedIndexes, searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             val viewportStartOffset = searchListState.layoutInfo.viewportStartOffset
             val viewportEndOffset = searchListState.layoutInfo.viewportEndOffset

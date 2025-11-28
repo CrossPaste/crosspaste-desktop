@@ -77,19 +77,7 @@ class MacAppWindowManager(
         }
     }
 
-//    override suspend fun showMainWindow(
-//        recordInfo: Boolean,
-//        useShortcutKeys: Boolean,
-//    ) {
-//        logger.info { "active main window" }
-//        if (recordInfo) {
-//            saveCurrentActiveAppInfo()
-//        }
-//
-//        showMainWindow()
-//    }
-
-    override fun focusMainWindow() {
+    override fun focusMainWindow(windowTrigger: WindowTrigger) {
         MacAppUtils.bringToFront(mainWindowTitle)
     }
 
@@ -110,18 +98,7 @@ class MacAppWindowManager(
         hideMainWindow()
     }
 
-//    override suspend fun showSearchWindow(
-//        recordInfo: Boolean,
-//        useShortcutKeys: Boolean,
-//    ) {
-//        logger.info { "active search window" }
-//        if (recordInfo) {
-//            saveCurrentActiveAppInfo()
-//        }
-//        showSearchWindow()
-//    }
-
-    override fun focusSearchWindow() {
+    override fun focusSearchWindow(windowTrigger: WindowTrigger) {
         MacAppUtils.bringToFront(searchWindowTitle)
     }
 

@@ -23,6 +23,7 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.PasteTooltipIconView
@@ -43,8 +44,7 @@ fun MainWindow(windowIcon: Painter?) {
     val navigateManage = koinInject<NavigationManager>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
-    val mainWindowState by appWindowManager.mainWindowState.collectAsState()
-    val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+    val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
 
     val pushpinPadding by remember {
         mutableStateOf(appSize.getPinPushEndPadding())
@@ -54,9 +54,9 @@ fun MainWindow(windowIcon: Painter?) {
 
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(showMainWindow) {
-        if (showMainWindow) {
-            appWindowManager.focusMainWindow()
+    LaunchedEffect(mainWindowInfo.show) {
+        if (mainWindowInfo.show) {
+            appWindowManager.focusMainWindow(mainWindowInfo.trigger)
         }
     }
 
@@ -64,8 +64,8 @@ fun MainWindow(windowIcon: Painter?) {
         onCloseRequest = {
             appWindowManager.hideMainWindow()
         },
-        visible = showMainWindow,
-        state = mainWindowState,
+        visible = mainWindowInfo.show,
+        state = mainWindowInfo.state,
         title = appWindowManager.mainWindowTitle,
         icon = windowIcon,
         alwaysOnTop = alwaysOnTop,
@@ -112,13 +112,13 @@ fun MainWindow(windowIcon: Painter?) {
                     Item(copywriter.getText("devices")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Devices)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                     Item(copywriter.getText("scan")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(QrCode)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                 }
@@ -126,25 +126,25 @@ fun MainWindow(windowIcon: Painter?) {
                     Item(copywriter.getText("settings")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Settings)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                     Item(copywriter.getText("extension")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Extension)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                     Item(copywriter.getText("import")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Import)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                     Item(copywriter.getText("export")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(Export)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                 }
@@ -152,13 +152,13 @@ fun MainWindow(windowIcon: Painter?) {
                     Item(copywriter.getText("shortcut_keys")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(ShortcutKeys)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                     Item(copywriter.getText("about")) {
                         scope.launch {
                             navigateManage.navigateAndClearStack(About)
-                            appWindowManager.showMainWindow()
+                            appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
                     Item(copywriter.getText("check_for_updates")) {

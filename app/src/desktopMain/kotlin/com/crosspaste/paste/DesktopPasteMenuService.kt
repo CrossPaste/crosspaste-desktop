@@ -3,6 +3,7 @@ package com.crosspaste.paste
 import androidx.compose.foundation.ContextMenuItem
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.OCRModule
@@ -90,7 +91,7 @@ class DesktopPasteMenuService(
             if (!pasteType.isText() && !pasteType.isColor()) {
                 desktopAppWindowManager.hideMainWindow()
             } else {
-                desktopAppWindowManager.showMainWindow()
+                desktopAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
             }
         }
     }

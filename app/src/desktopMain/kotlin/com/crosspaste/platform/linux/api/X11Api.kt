@@ -49,12 +49,13 @@ interface X11Api : X11 {
 
         fun bringToFront(
             window: Window?,
-            xServerTime: Long?,
+            source: NativeLong = NativeLong(1),
+            xServerTime: NativeLong? = null,
         ) {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 window?.let { window ->
-                    WMCtrl.activeWindow(display, window, xServerTime)
+                    WMCtrl.activeWindow(display, window, source, xServerTime ?: NativeLong(X11.CurrentTime.toLong()))
                 }
             } finally {
                 INSTANCE.XCloseDisplay(display)
@@ -63,12 +64,13 @@ interface X11Api : X11 {
 
         fun bringToBack(
             prevLinuxAppInfo: LinuxAppInfo?,
-            xServerTime: Long?,
+            source: NativeLong = NativeLong(1),
+            xServerTime: NativeLong? = null,
         ) {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 prevLinuxAppInfo?.let {
-                    WMCtrl.activeWindow(display, it.window, xServerTime)
+                    WMCtrl.activeWindow(display, it.window, source, xServerTime ?: NativeLong(X11.CurrentTime.toLong()))
                 }
             } finally {
                 INSTANCE.XCloseDisplay(display)
@@ -77,13 +79,14 @@ interface X11Api : X11 {
 
         suspend fun bringToBack(
             prevLinuxAppInfo: LinuxAppInfo?,
-            xServerTime: Long?,
             keyCodes: List<Int>,
+            source: NativeLong = NativeLong(1),
+            xServerTime: NativeLong? = null,
         ) {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 prevLinuxAppInfo?.let {
-                    WMCtrl.activeWindow(display, it.window, xServerTime)
+                    WMCtrl.activeWindow(display, it.window, source, xServerTime ?: NativeLong(X11.CurrentTime.toLong()))
                     toPaste(display, keyCodes)
                 }
             } finally {

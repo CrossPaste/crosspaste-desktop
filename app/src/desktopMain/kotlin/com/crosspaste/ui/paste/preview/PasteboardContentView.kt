@@ -63,7 +63,7 @@ fun PasteboardContentView() {
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
     val rememberPasteDataList by pasteDataViewModel.pasteDataList.collectAsState()
-    val showMainWindow by appWindowManager.showMainWindow.collectAsState()
+    val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
 
     var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
 
@@ -87,8 +87,8 @@ fun PasteboardContentView() {
         }
     }
 
-    LaunchedEffect(showMainWindow) {
-        if (showMainWindow) {
+    LaunchedEffect(mainWindowInfo.show) {
+        if (mainWindowInfo.show) {
             pasteDataViewModel.resume()
             if (rememberPasteDataList.isNotEmpty()) {
                 listState.scrollToItem(0)

@@ -2,6 +2,7 @@ package com.crosspaste.listener
 
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.HIDE_WINDOW
@@ -82,7 +83,7 @@ class DesktopShortKeysAction(
             actionLogMessage = "Open main window",
         ) {
             appWindowManager.saveCurrentActiveAppInfo()
-            appWindowManager.showMainWindow()
+            appWindowManager.showMainWindow(WindowTrigger.SHORTCUT)
         }
     }
 
@@ -92,7 +93,7 @@ class DesktopShortKeysAction(
             actionLogMessage = "Open search window",
         ) {
             appWindowManager.saveCurrentActiveAppInfo()
-            appWindowManager.showSearchWindow()
+            appWindowManager.showSearchWindow(WindowTrigger.SHORTCUT)
         }
     }
 
@@ -101,14 +102,14 @@ class DesktopShortKeysAction(
             actionName = "HideWindow",
             actionLogMessage = "Hide window",
         ) {
-            if (appWindowManager.showMainWindow.value &&
+            if (appWindowManager.mainWindowInfo.value.show &&
                 !appWindowManager.showMainDialog.value &&
                 !appFileChooser.showFileDialog.value
             ) {
                 appWindowManager.hideMainWindow()
             }
 
-            if (appWindowManager.showSearchWindow.value) {
+            if (appWindowManager.searchWindowInfo.value.show) {
                 appWindowManager.hideSearchWindow()
             }
         }

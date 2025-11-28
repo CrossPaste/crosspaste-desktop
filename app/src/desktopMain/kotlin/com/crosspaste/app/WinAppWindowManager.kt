@@ -79,7 +79,7 @@ class WinAppWindowManager(
         prevWinAppInfo.value = User32.getForegroundWindowAppInfoAndThreadId(lazyShortcutKeysAction.value.actioning)
     }
 
-    override fun focusMainWindow() {
+    override fun focusMainWindow(windowTrigger: WindowTrigger) {
         User32.bringToFront(prevWinAppInfo.value?.threadId, mainHWND)
     }
 
@@ -89,7 +89,7 @@ class WinAppWindowManager(
         hideMainWindow()
     }
 
-    override fun focusSearchWindow() {
+    override fun focusSearchWindow(windowTrigger: WindowTrigger) {
         User32.bringToFront(prevWinAppInfo.value?.threadId, searchHWND)
     }
 

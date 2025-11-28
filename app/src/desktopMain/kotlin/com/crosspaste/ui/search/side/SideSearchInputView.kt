@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.NavigationManager
@@ -84,14 +85,14 @@ fun SideSearchInputView() {
 
     val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
 
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(showSearchWindow) {
-        if (showSearchWindow) {
+    LaunchedEffect(searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
             pasteSearchViewModel.resetSearch()
         }
     }
@@ -161,7 +162,7 @@ fun SideSearchInputView() {
             ) {
                 scope.launch {
                     navigationManager.navigateAndClearStack(Settings)
-                    appWindowManager.showMainWindow()
+                    appWindowManager.showMainWindow(WindowTrigger.MENU)
                     appWindowManager.hideSearchWindow()
                 }
             }

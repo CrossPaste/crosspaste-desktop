@@ -158,7 +158,8 @@ object WMCtrl {
     fun activeWindow(
         display: X11.Display,
         win: X11.Window,
-        xServerTime: Long? = null,
+        source: NativeLong,
+        xServerTime: NativeLong,
     ): Boolean {
         INSTANCE.XMapRaised(display, win)
 
@@ -168,8 +169,8 @@ object WMCtrl {
             display,
             win,
             "_NET_ACTIVE_WINDOW",
-            data0 = NativeLong(2),
-            data1 = xServerTime?.let { NativeLong(it) } ?: NativeLong(X11.CurrentTime.toLong()),
+            data0 = source, // NativeLong(2),
+            data1 = xServerTime, // xServerTime?.let { NativeLong(it) } ?: NativeLong(X11.CurrentTime.toLong()),
         )
 
         INSTANCE.XFlush(display)

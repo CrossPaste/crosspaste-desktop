@@ -33,13 +33,14 @@ fun SideSearchWindowContent() {
 
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(showSearchWindow) {
+    // todo remove
+    LaunchedEffect(searchWindowInfo.show) {
         appWindowManager.searchComposeWindow?.let {
-            if (showSearchWindow) {
+            if (searchWindowInfo.show) {
                 it.toFront()
                 it.requestFocus()
                 delay(160)

@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.platform.macos.api.LeftClickCallback
 import com.crosspaste.platform.macos.api.MacosApi
@@ -89,13 +90,11 @@ class NativeTrayManager(
     private val leftClickCallback =
         LeftClickCallback {
             appWindowManager.hideMainWindow()
-            if (appWindowManager.showSearchWindow.value) {
+            if (appWindowManager.searchWindowInfo.value.show) {
                 appWindowManager.hideSearchWindow()
             } else {
-                menuScope.launch {
-                    appWindowManager.saveCurrentActiveAppInfo()
-                    appWindowManager.showSearchWindow()
-                }
+                appWindowManager.saveCurrentActiveAppInfo()
+                appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
             }
         }
 
@@ -111,7 +110,7 @@ class NativeTrayManager(
                 .map { it.language }
                 .distinctUntilChanged()
                 .collect {
-                    menuHelper.createMacMenu(this@NativeTrayManager, applicationExit, !isFirst)
+                    menuHelper.createMacTrayMenu(this@NativeTrayManager, applicationExit, !isFirst)
                     isFirst = false
                 }
         }

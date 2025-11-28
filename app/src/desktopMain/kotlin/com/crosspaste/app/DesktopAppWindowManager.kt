@@ -62,6 +62,20 @@ private data class WindowScheduledTask(
     val action: suspend () -> Unit,
 )
 
+enum class WindowTrigger {
+    MENU,
+    SHORTCUT,
+    TRAY_ICON,
+    INIT,
+    SYSTEM,
+}
+
+data class WindowInfo(
+    val show: Boolean,
+    val state: WindowState,
+    val trigger: WindowTrigger,
+)
+
 abstract class DesktopAppWindowManager(
     val appSize: DesktopAppSize,
     val configManager: DesktopConfigManager,
@@ -84,41 +98,44 @@ abstract class DesktopAppWindowManager(
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val _showMainWindow = MutableStateFlow(false)
-    val showMainWindow: StateFlow<Boolean> = _showMainWindow
+    private val _mainWindowInfo =
+        MutableStateFlow(
+            WindowInfo(
+                show = false,
+                state =
+                    WindowState(
+                        isMinimized = false,
+                        size = appSize.mainWindowSize,
+                        position = WindowPosition(Alignment.Center),
+                    ),
+                trigger = WindowTrigger.INIT,
+            ),
+        )
+    val mainWindowInfo: StateFlow<WindowInfo> = _mainWindowInfo
 
     private val _alwaysOnTopMainWindow = MutableStateFlow(false)
     val alwaysOnTopMainWindow: StateFlow<Boolean> = _alwaysOnTopMainWindow
 
     var mainComposeWindow: ComposeWindow? = null
 
-    private val _showSearchWindow = MutableStateFlow(false)
-    var showSearchWindow: StateFlow<Boolean> = _showSearchWindow
-
-    private val hideSearchWindowCallbacks = mutableListOf<WindowScheduledTask>()
-
-    private val _mainWindowState =
+    private val _searchWindowInfo =
         MutableStateFlow(
-            WindowState(
-                isMinimized = false,
-                size = appSize.mainWindowSize,
-                position = WindowPosition(Alignment.Center),
+            WindowInfo(
+                show = false,
+                state = appSize.getSearchWindowState(),
+                trigger = WindowTrigger.INIT,
             ),
         )
-    val mainWindowState: StateFlow<WindowState> = _mainWindowState
+    var searchWindowInfo: StateFlow<WindowInfo> = _searchWindowInfo
 
-    private val _searchWindowState =
-        MutableStateFlow(
-            appSize.getSearchWindowState(),
-        )
-    val searchWindowState: StateFlow<WindowState> = _searchWindowState
+    private val hideSearchWindowCallbacks = mutableListOf<WindowScheduledTask>()
 
     var searchComposeWindow: ComposeWindow? = null
 
     init {
         ioScope.launch {
-            showSearchWindow.collectLatest { isShown ->
-                if (!isShown) {
+            searchWindowInfo.collectLatest { info ->
+                if (!info.show) {
                     hideSearchCallback()
                 }
             }
@@ -153,53 +170,46 @@ abstract class DesktopAppWindowManager(
     }
 
     fun hideMainWindow() {
-        _showMainWindow.value = false
+        _mainWindowInfo.value =
+            _mainWindowInfo.value.copy(
+                show = false,
+            )
     }
 
-    fun showMainWindow() {
-        _mainWindowState.value =
-            WindowState(
-                isMinimized = false,
-                size = appSize.mainWindowSize,
-                position = _mainWindowState.value.position,
+    fun showMainWindow(windowTrigger: WindowTrigger) {
+        _mainWindowInfo.value =
+            _mainWindowInfo.value.copy(
+                show = true,
+                trigger = windowTrigger,
             )
-        _showMainWindow.value = true
     }
 
     abstract fun saveCurrentActiveAppInfo()
 
-    abstract fun focusMainWindow()
+    abstract fun focusMainWindow(windowTrigger: WindowTrigger)
 
     fun hideSearchWindow() {
-        _showSearchWindow.value = false
+        _searchWindowInfo.value = _searchWindowInfo.value.copy(show = false)
     }
 
-    fun showSearchWindow() {
-        _showSearchWindow.value = true
-        _searchWindowState.value = appSize.getSearchWindowState()
+    fun showSearchWindow(windowTrigger: WindowTrigger) {
+        _searchWindowInfo.value =
+            _searchWindowInfo.value.copy(
+                show = true,
+                state = appSize.getSearchWindowState(),
+                trigger = windowTrigger,
+            )
     }
 
-    abstract fun focusSearchWindow()
+    abstract fun focusSearchWindow(windowTrigger: WindowTrigger)
 
     fun switchAlwaysOnTopMainWindow() {
         _alwaysOnTopMainWindow.value = !_alwaysOnTopMainWindow.value
     }
 
-    fun getSearchWindowState(): WindowState = searchWindowState.value
-
     abstract fun getCurrentActiveAppName(): String?
 
-//    abstract suspend fun showMainWindow(
-//        recordInfo: Boolean = true,
-//        useShortcutKeys: Boolean = false,
-//    )
-
     abstract suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
-
-//    abstract suspend fun showSearchWindow(
-//        recordInfo: Boolean = true,
-//        useShortcutKeys: Boolean = false,
-//    )
 
     abstract suspend fun hideSearchWindowAndPaste(
         size: Int,
