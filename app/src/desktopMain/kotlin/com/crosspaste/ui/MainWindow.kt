@@ -24,7 +24,6 @@ import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.listener.GlobalListener
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
@@ -40,7 +39,6 @@ fun MainWindow(windowIcon: Painter?) {
     val appUpdateService = koinInject<AppUpdateService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val globalListener = koinInject<GlobalListener>()
     val platform = koinInject<Platform>()
     val navigateManage = koinInject<NavigationManager>()
 
@@ -56,9 +54,10 @@ fun MainWindow(windowIcon: Painter?) {
 
     val scope = rememberCoroutineScope()
 
-    // Initialize global listener only once
-    LaunchedEffect(Unit) {
-        globalListener.start()
+    LaunchedEffect(showMainWindow) {
+        if (showMainWindow) {
+            appWindowManager.focusMainWindow()
+        }
     }
 
     DecoratedWindow(
@@ -79,12 +78,6 @@ fun MainWindow(windowIcon: Painter?) {
             onDispose {
                 // Clean up window reference and listener
                 appWindowManager.mainComposeWindow = null
-            }
-        }
-
-        LaunchedEffect(showMainWindow) {
-            if (showMainWindow) {
-                appWindowManager.focusMainWindow()
             }
         }
 
