@@ -22,16 +22,16 @@ class TestWindowManager(
     override fun saveCurrentActiveAppInfo() {
     }
 
+    override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {}
+
+    override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {}
+
     fun saveActiveAppInfo(appName: String?) {
         if (mockOS.currentApp != "CrossPaste") {
             prevApp.value = mockOS.currentApp
         }
         mockOS.currentApp = appName
     }
-
-    override fun focusMainWindow() {}
-
-    override fun focusSearchWindow() {}
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()

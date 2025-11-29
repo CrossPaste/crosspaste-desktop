@@ -55,7 +55,7 @@ class AppWindowManagerTest {
         assertEquals(1, testAppWindowManager.pasterId)
         assertNull(testAppWindowManager.getCurrentActiveAppName())
         runBlocking {
-            testAppWindowManager.showMainWindow()
+            testAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
             testAppWindowManager.saveActiveAppInfo("CrossPaste")
         }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
@@ -65,7 +65,7 @@ class AppWindowManagerTest {
         assertNull(testAppWindowManager.getCurrentActiveAppName())
         runBlocking {
             testAppWindowManager.saveActiveAppInfo("Chrome")
-            testAppWindowManager.showSearchWindow()
+            testAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
             testAppWindowManager.saveActiveAppInfo("CrossPaste")
         }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
@@ -74,11 +74,11 @@ class AppWindowManagerTest {
         assertEquals(2, testAppWindowManager.pasterId)
         assertEquals("Chrome", testAppWindowManager.getCurrentActiveAppName())
         runBlocking {
-            testAppWindowManager.showMainWindow()
+            testAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
             testAppWindowManager.saveActiveAppInfo("CrossPaste")
         }
         runBlocking {
-            testAppWindowManager.showSearchWindow()
+            testAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
             testAppWindowManager.saveActiveAppInfo("CrossPaste")
         }
         assertEquals("CrossPaste", testAppWindowManager.getCurrentActiveAppName())
