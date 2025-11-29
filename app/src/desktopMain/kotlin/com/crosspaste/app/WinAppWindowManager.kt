@@ -5,6 +5,7 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.windows.WindowFocusRecorder
 import com.crosspaste.platform.windows.api.User32
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
@@ -33,7 +34,9 @@ class WinAppWindowManager(
         User32.findPasteWindow(searchWindowTitle)
     }
 
-    private val fileDescriptorCache: LoadingCache<String, String?> =
+    private val windowFocusRecorder = WindowFocusRecorder(this)
+
+    private val fileDescriptorCache: LoadingCache<String, String> =
         Caffeine
             .newBuilder()
             .maximumSize(20)

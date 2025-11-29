@@ -132,6 +132,12 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         cchMaxCount: Int,
     ): Int
 
+    fun GetClassNameW(
+        hWnd: HWND,
+        lpClassName: CharArray,
+        nMaxCount: Int,
+    ): Int
+
     companion object {
         val INSTANCE =
             Native.load(
@@ -169,6 +175,9 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             QS_INPUT or QS_POSTMESSAGE or QS_TIMER or QS_PAINT
                 or QS_HOTKEY or QS_SENDMESSAGE
         )
+
+        const val EVENT_SYSTEM_FOREGROUND = 0x0003
+        const val WINEVENT_OUTOFCONTEXT = 0x0000
 
         private val logger = KotlinLogging.logger {}
 

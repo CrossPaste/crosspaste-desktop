@@ -66,6 +66,14 @@ class MacAppWindowManager(
         }
     }
 
+    override fun startWindowService() {
+        // do nothing
+    }
+
+    override fun stopWindowService() {
+        // do nothing
+    }
+
     override fun saveCurrentActiveAppInfo() {
         MacAppUtils.getCurrentActiveAppInfo()?.let {
             createMacAppInfo(it)?.let { macAppInfo ->

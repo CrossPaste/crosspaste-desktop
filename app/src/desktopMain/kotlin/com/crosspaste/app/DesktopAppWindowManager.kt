@@ -142,6 +142,10 @@ abstract class DesktopAppWindowManager(
         }
     }
 
+    abstract fun startWindowService()
+
+    abstract fun stopWindowService()
+
     private suspend fun hideSearchCallback() {
         runCatching {
             val tasksSnapshot =
