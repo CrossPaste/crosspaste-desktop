@@ -526,6 +526,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
             try {
                 INSTANCE.ShowWindow(handle, SW_RESTORE)
+                INSTANCE.BringWindowToTop(handle)
                 if (INSTANCE.SetForegroundWindow(handle)) {
                     logger.info { "Foreground window set successfully" }
                 } else {

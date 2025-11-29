@@ -77,7 +77,7 @@ class MacAppWindowManager(
         }
     }
 
-    override fun focusMainWindow(windowTrigger: WindowTrigger) {
+    override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
         MacAppUtils.bringToFront(mainWindowTitle)
     }
 
@@ -98,7 +98,7 @@ class MacAppWindowManager(
         hideMainWindow()
     }
 
-    override fun focusSearchWindow(windowTrigger: WindowTrigger) {
+    override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
         MacAppUtils.bringToFront(searchWindowTitle)
     }
 

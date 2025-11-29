@@ -73,7 +73,7 @@ class LinuxAppWindowManager(
         prevLinuxAppInfo.value = X11Api.getActiveWindow()
     }
 
-    override fun focusMainWindow(windowTrigger: WindowTrigger) {
+    override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
         if (windowTrigger == WindowTrigger.SHORTCUT) {
             val xServerTime = lazyShortcutKeysAction.value.event?.`when`
             X11Api.bringToFront(mainWindow, source = NativeLong(2), xServerTime?.let { NativeLong(it) })
@@ -88,7 +88,7 @@ class LinuxAppWindowManager(
         hideMainWindow()
     }
 
-    override fun focusSearchWindow(windowTrigger: WindowTrigger) {
+    override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
         if (windowTrigger == WindowTrigger.SHORTCUT) {
             val xServerTime = lazyShortcutKeysAction.value.event?.`when`
             X11Api.bringToFront(searchWindow, source = NativeLong(2), xServerTime?.let { NativeLong(it) })

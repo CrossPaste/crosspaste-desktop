@@ -186,7 +186,7 @@ abstract class DesktopAppWindowManager(
 
     abstract fun saveCurrentActiveAppInfo()
 
-    abstract fun focusMainWindow(windowTrigger: WindowTrigger)
+    abstract suspend fun focusMainWindow(windowTrigger: WindowTrigger)
 
     fun hideSearchWindow() {
         _searchWindowInfo.value = _searchWindowInfo.value.copy(show = false)
@@ -201,7 +201,7 @@ abstract class DesktopAppWindowManager(
             )
     }
 
-    abstract fun focusSearchWindow(windowTrigger: WindowTrigger)
+    abstract suspend fun focusSearchWindow(windowTrigger: WindowTrigger)
 
     fun switchAlwaysOnTopMainWindow() {
         _alwaysOnTopMainWindow.value = !_alwaysOnTopMainWindow.value
