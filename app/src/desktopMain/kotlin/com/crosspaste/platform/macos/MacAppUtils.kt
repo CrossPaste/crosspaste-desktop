@@ -6,8 +6,6 @@ import com.sun.jna.Pointer
 
 object MacAppUtils {
 
-    fun getCurrentActiveApp(): String? = MacosApi.getString(INSTANCE.getCurrentActiveApp())
-
     fun saveAppIcon(
         bundleIdentifier: String,
         path: String,
@@ -43,7 +41,11 @@ object MacAppUtils {
         INSTANCE.setWindowLevelScreenSaver(windowPtr)
     }
 
-    fun bringToFront(appName: String): String = MacosApi.getString(INSTANCE.bringToFront(appName))!!
+    fun bringToFront(appName: String) {
+        INSTANCE.bringToFront(appName)
+    }
+
+    fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())
 
     fun checkAccessibilityPermissions(): Boolean = INSTANCE.checkAccessibilityPermissions()
 

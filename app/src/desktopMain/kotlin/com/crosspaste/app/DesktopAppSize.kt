@@ -10,7 +10,7 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.ActiveGraphicsDevice
+import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.theme.AppUISize.huge

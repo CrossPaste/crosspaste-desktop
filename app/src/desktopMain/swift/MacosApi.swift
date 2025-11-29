@@ -143,16 +143,6 @@ private func IOPlatformUUID() -> String? {
     return serialNumberAsCFString
 }
 
-@_cdecl("getCurrentActiveApp")
-public func getCurrentActiveApp() -> UnsafePointer<CChar>? {
-    if let currentApp = NSWorkspace.shared.frontmostApplication {
-        if let bundleIdentifier = currentApp.bundleIdentifier, let localizedName = currentApp.localizedName {
-            return UnsafePointer<CChar>(strdup("\(bundleIdentifier)\n\(localizedName)"))
-        }
-    }
-    return nil
-}
-
 @_cdecl("saveAppIcon")
 public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePointer<CChar>) {
     let bundleIdentifierString = String(cString: bundleIdentifier)
@@ -254,29 +244,43 @@ public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
     }
 }
 
+@_cdecl("getCurrentActiveAppInfo")
+public func getCurrentActiveAppInfo() -> UnsafePointer<CChar>? {
+    if let currentApp = NSWorkspace.shared.frontmostApplication {
+        if let bundleIdentifier = currentApp.bundleIdentifier, let localizedName = currentApp.localizedName {
+            return UnsafePointer<CChar>(strdup("\(bundleIdentifier)\n\(localizedName)"))
+        }
+    }
+    return nil
+}
+
 @_cdecl("bringToFront")
-public func bringToFront(windowTitle: UnsafePointer<CChar>) -> UnsafePointer<CChar> {
-
-    let currentApp = NSWorkspace.shared.frontmostApplication
-    let currentAppInfo = "\(currentApp?.bundleIdentifier ?? "")\n\(currentApp?.localizedName ?? "")"
-
+public func bringToFront(windowTitle: UnsafePointer<CChar>) {
+    let title = String(cString: windowTitle)
     DispatchQueue.main.async {
-        let title = String(cString: windowTitle)
-        let windows = NSApplication.shared.windows
+        let app = NSApplication.shared
+        app.activate(ignoringOtherApps: true)
+        let windows = app.windows
         for window in windows {
             if window.title == title {
                 window.makeKeyAndOrderFront(nil)
                 if title == "CrossPaste" {
-                    NSApp.setActivationPolicy(.regular)
+                    if app.activationPolicy() != .regular {
+                        app.setActivationPolicy(.regular)
+                        app.activate(ignoringOtherApps: true)
+                    }
                 } else if title == "CrossPaste Search" {
-                    NSApp.setActivationPolicy(.accessory)
+                    if app.activationPolicy() != .accessory {
+                        app.setActivationPolicy(.accessory)
+                        app.activate(ignoringOtherApps: true)
+                    }
                 }
-                NSApp.activate(ignoringOtherApps: true)
+                window.orderFrontRegardless()
+                window.makeKey()
                 break
             }
         }
     }
-    return UnsafePointer<CChar>(strdup(currentAppInfo))
 }
 
 @_cdecl("simulatePasteCommand")

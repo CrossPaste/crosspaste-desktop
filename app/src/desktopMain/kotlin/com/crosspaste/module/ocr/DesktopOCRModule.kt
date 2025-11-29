@@ -2,6 +2,7 @@ package com.crosspaste.module.ocr
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.DE
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
@@ -170,14 +171,14 @@ class DesktopOCRModule(
             val ocrLanguageList = splitOcrLanguages(ocrLanguage)
             if (ocrLanguageList.isEmpty()) {
                 navigateManager.navigate(OCR)
-                appWindowManager.showMainWindow()
+                appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
                 return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
             } else {
                 val existLanguages = existLanguages(ocrLanguageList)
                 if (existLanguages.isEmpty()) {
                     updateOrCreateApi("")
                     navigateManager.navigate(OCR)
-                    appWindowManager.showMainWindow()
+                    appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
                     return@withLock Result.failure(IllegalStateException("OCR languages are not ready"))
                 } else if (existLanguages.size != ocrLanguageList.size || api == null) {
                     val newOcrLanguages = existLanguages.joinToString("+")

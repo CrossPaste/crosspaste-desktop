@@ -51,12 +51,12 @@ fun SearchInputView() {
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(showSearchWindow) {
-        if (showSearchWindow) {
+    LaunchedEffect(searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
             pasteSearchViewModel.resetSearch()
         }
     }

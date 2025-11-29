@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,9 +22,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.platform.LocalFocusManager
 import com.crosspaste.app.DesktopAppSize
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.theme.AppUIColors
@@ -35,7 +30,6 @@ import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.DesktopAppUIColors
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -43,32 +37,10 @@ import org.koin.compose.koinInject
 @Composable
 fun CenterSearchWindowContent() {
     val appSize = koinInject<DesktopAppSize>()
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
     val isLinux by remember { mutableStateOf(platform.isLinux()) }
-
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
-
-    val focusManager = LocalFocusManager.current
-
-    LaunchedEffect(showSearchWindow) {
-        appWindowManager.searchComposeWindow?.let {
-            if (showSearchWindow) {
-                it.toFront()
-                it.requestFocus()
-                delay(160)
-                pasteSelectionViewModel.requestSearchInputFocus()
-            }
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            focusManager.clearFocus()
-        }
-    }
 
     val modifier =
         Modifier

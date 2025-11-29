@@ -28,6 +28,7 @@ import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WinAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.i18n.GlobalCopywriter
@@ -76,12 +77,12 @@ object WindowsTrayView {
 
         val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
         val menuWidth by appSize.menuWindowWidth.collectAsState()
-        val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+        val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
         LaunchedEffect(Unit) {
             delay(1000)
             if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                appWindowManager.showMainWindow()
+                appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
                 appLaunch.setFirstLaunchCompleted(true)
             }
         }
@@ -107,10 +108,11 @@ object WindowsTrayView {
                     if (event.button == MouseEvent.BUTTON1) {
                         mainCoroutineDispatcher.launch(CoroutineName("Switch CrossPaste")) {
                             appWindowManager.hideMainWindow()
-                            if (showSearchWindow) {
+                            if (searchWindowInfo.show) {
                                 appWindowManager.hideSearchWindow()
                             } else {
-                                appWindowManager.recordActiveInfoAndShowSearchWindow(false)
+                                appWindowManager.saveCurrentActiveAppInfo()
+                                appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
                             }
                         }
                     } else {

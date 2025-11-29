@@ -129,6 +129,7 @@ class CrossPaste {
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
                     koin.get<GuidePasteDataService>().initData()
+                    koin.get<GlobalListener>().start()
 
                     val desktopAppWindowManager = koin.get<DesktopAppWindowManager>()
                     val imageLoaders = koin.get<ImageLoaders>()

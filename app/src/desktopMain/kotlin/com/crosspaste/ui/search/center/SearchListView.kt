@@ -78,28 +78,28 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
 
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val latestSearchResult = rememberUpdatedState(searchResult)
 
     val pasteListFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(
-        showSearchWindow,
+        searchWindowInfo.show,
         inputSearch,
         searchBaseParams.favorite,
         searchBaseParams.sort,
         searchBaseParams.pasteType,
     ) {
-        if (showSearchWindow) {
+        if (searchWindowInfo.show) {
             pasteSelectionViewModel.initSelectIndex()
             delay(32)
             searchListState.animateScrollToItem(0, 0)
         }
     }
 
-    LaunchedEffect(selectedIndexes, showSearchWindow) {
-        if (showSearchWindow) {
+    LaunchedEffect(selectedIndexes, searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
             val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             if (visibleItems.isNotEmpty()) {
                 val lastIndex = visibleItems.last().index

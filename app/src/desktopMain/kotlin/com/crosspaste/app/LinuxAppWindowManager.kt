@@ -1,10 +1,13 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
+import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
+import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
+import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11.Window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +19,7 @@ class LinuxAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
@@ -65,10 +69,17 @@ class LinuxAppWindowManager(
         }
     }
 
-    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
-        logger.info { "active main window" }
-        showMainWindow()
-        prevLinuxAppInfo.value = X11Api.bringToFront(mainWindow)
+    override fun saveCurrentActiveAppInfo() {
+        prevLinuxAppInfo.value = X11Api.getActiveWindow()
+    }
+
+    override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
+        if (windowTrigger == WindowTrigger.SHORTCUT) {
+            val xServerTime = lazyShortcutKeysAction.value.event?.`when`
+            X11Api.bringToFront(mainWindow, source = NativeLong(2), xServerTime?.let { NativeLong(it) })
+        } else {
+            X11Api.bringToFront(mainWindow, source = NativeLong(1))
+        }
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -77,14 +88,13 @@ class LinuxAppWindowManager(
         hideMainWindow()
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
-        logger.info { "active search window" }
-
-        showSearchWindow()
-
-        setSearchWindowState(appSize.getSearchWindowState())
-
-        prevLinuxAppInfo.value = X11Api.bringToFront(searchWindow)
+    override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
+        if (windowTrigger == WindowTrigger.SHORTCUT) {
+            val xServerTime = lazyShortcutKeysAction.value.event?.`when`
+            X11Api.bringToFront(searchWindow, source = NativeLong(2), xServerTime?.let { NativeLong(it) })
+        } else {
+            X11Api.bringToFront(searchWindow, source = NativeLong(1))
+        }
     }
 
     override suspend fun hideSearchWindowAndPaste(
@@ -108,9 +118,9 @@ class LinuxAppWindowManager(
                 lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                     it.map { key -> key.rawCode }
                 } ?: listOf()
-            X11Api.bringToBack(prevLinuxAppInfo.value, keyCodes)
+            bringToBack(prevLinuxAppInfo.value, keyCodes)
         } else {
-            X11Api.bringToBack(prevLinuxAppInfo.value)
+            bringToBack(prevLinuxAppInfo.value)
         }
     }
 

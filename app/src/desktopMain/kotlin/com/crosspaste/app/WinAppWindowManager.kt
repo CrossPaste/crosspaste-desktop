@@ -1,8 +1,9 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
+import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.windows.api.User32
 import com.google.common.cache.CacheBuilder
@@ -19,6 +20,7 @@ class WinAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
@@ -73,42 +75,26 @@ class WinAppWindowManager(
             fileDescriptorCache[it].ifEmpty { null }
         }
 
-    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
-        logger.info { "active main window" }
+    override fun saveCurrentActiveAppInfo() {
+        prevWinAppInfo.value = User32.getForegroundWindowAppInfoAndThreadId(lazyShortcutKeysAction.value.actioning)
+    }
 
-        val pair = User32.getForegroundWindowAppInfoAndThreadId(useShortcutKeys)
-
-        pair?.let {
-            prevWinAppInfo.value = it.first
-        }
-
-        showMainWindow()
+    override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
+        // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
+        delay(500)
+        User32.bringToFront(prevWinAppInfo.value?.threadId, mainHWND)
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         bringToBack(preparePaste(), mainHWND)
-        this@WinAppWindowManager.hideMainWindow()
+        hideMainWindow()
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
-        logger.info { "active search window" }
-
-        val pair = User32.getForegroundWindowAppInfoAndThreadId(!useShortcutKeys)
-
-        pair?.let {
-            prevWinAppInfo.value = it.first
-        }
-
-        setSearchWindowState(appSize.getSearchWindowState())
-        showSearchWindow()
-
+    override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
-
-        pair?.let {
-            User32.bringToFront(pair.second, searchHWND)
-        }
+        User32.bringToFront(prevWinAppInfo.value?.threadId, searchHWND)
     }
 
     override suspend fun hideSearchWindowAndPaste(
@@ -160,7 +146,5 @@ class WinAppWindowManager(
 data class WinAppInfo(
     val hwnd: HWND,
     val filePath: String,
-) {
-
-    override fun toString(): String = "WinAppInfo(hwnd=$hwnd, filePath='$filePath')"
-}
+    val threadId: Int,
+)

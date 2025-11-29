@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.About
@@ -27,6 +28,7 @@ import com.crosspaste.ui.Export
 import com.crosspaste.ui.Extension
 import com.crosspaste.ui.Import
 import com.crosspaste.ui.NavigationManager
+import com.crosspaste.ui.Route
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.ShortcutKeys
 import com.crosspaste.ui.theme.AppUIColors
@@ -51,8 +53,7 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("about") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open about")) {
-                    navigationManager.navigateAndClearStack(About)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    trayMenuAction(About)
                 }
             },
         )
@@ -70,8 +71,7 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("devices") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open devices")) {
-                    navigationManager.navigateAndClearStack(Devices)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    trayMenuAction(Devices)
                 }
             },
         )
@@ -81,8 +81,7 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("export") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Export")) {
-                    navigationManager.navigateAndClearStack(Export)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    trayMenuAction(Export)
                 }
             },
         )
@@ -92,8 +91,7 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("extension") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Extension")) {
-                    navigationManager.navigateAndClearStack(Extension)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    trayMenuAction(Extension)
                 }
             },
         )
@@ -103,8 +101,7 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("import") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Import")) {
-                    navigationManager.navigateAndClearStack(Import)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    trayMenuAction(Import)
                 }
             },
         )
@@ -114,8 +111,7 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("settings") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open settings")) {
-                    navigationManager.navigateAndClearStack(Settings)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    trayMenuAction(Settings)
                 }
             },
         )
@@ -125,8 +121,7 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("shortcut_keys") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
-                    navigationManager.navigateAndClearStack(ShortcutKeys)
-                    appWindowManager.recordActiveInfoAndShowMainWindow(false)
+                    trayMenuAction(ShortcutKeys)
                 }
             },
         )
@@ -152,6 +147,11 @@ class MenuHelper(
             faq,
         )
 
+    private fun trayMenuAction(route: Route) {
+        navigationManager.navigateAndClearStack(route)
+        appWindowManager.showMainWindow(WindowTrigger.MENU)
+    }
+
     fun createLinuxTrayMenu(applicationExit: (ExitMode) -> Unit): List<dorkbox.systemTray.MenuItem> {
         val openSearchWindow =
             dorkbox.systemTray.MenuItem(
@@ -159,9 +159,8 @@ class MenuHelper(
             ) {
                 mainCoroutineDispatcher.launch(CoroutineName("Open search window")) {
                     delay(200) // wait for force to prev window
-                    appWindowManager.recordActiveInfoAndShowSearchWindow(
-                        useShortcutKeys = false,
-                    )
+                    appWindowManager.saveCurrentActiveAppInfo()
+                    appWindowManager.showSearchWindow(WindowTrigger.MENU)
                 }
             }
 
@@ -183,7 +182,7 @@ class MenuHelper(
             }
     }
 
-    fun createMacMenu(
+    fun createMacTrayMenu(
         trayManager: NativeTrayManager,
         applicationExit: (ExitMode) -> Unit,
         update: Boolean = false,

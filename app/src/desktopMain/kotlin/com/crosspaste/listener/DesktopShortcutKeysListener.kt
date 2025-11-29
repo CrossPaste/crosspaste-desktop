@@ -1,9 +1,6 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import androidx.compose.runtime.mutableStateListOf
-import com.crosspaste.listener.KeyboardKey
-import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.platform.Platform
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener

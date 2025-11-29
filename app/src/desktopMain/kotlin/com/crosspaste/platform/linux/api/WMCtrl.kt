@@ -94,11 +94,7 @@ object WMCtrl {
                 display,
                 INSTANCE.XDefaultRootWindow(display),
                 "_NET_CURRENT_DESKTOP",
-                target,
-                0,
-                0,
-                0,
-                0,
+                data0 = NativeLong(target),
             )
         ) {
             INSTANCE.XFlush(display)
@@ -110,12 +106,12 @@ object WMCtrl {
     fun windowToDesktop(
         display: X11.Display,
         win: X11.Window,
-    ): Boolean = windowToDesktop(display, win, -1)
+    ): Boolean = windowToDesktop(display, win)
 
     private fun windowToDesktop(
         display: X11.Display,
         win: X11.Window,
-        desktop: Int,
+        desktop: Int = -1,
     ): Boolean {
         var currentDesktop = desktop
         if (currentDesktop < 0) {
@@ -128,7 +124,7 @@ object WMCtrl {
             }
         }
 
-        return clientMsg(display, win, "_NET_WM_DESKTOP", currentDesktop.toLong(), 0, 0, 0, 0)
+        return clientMsg(display, win, "_NET_WM_DESKTOP", data0 = NativeLong(currentDesktop.toLong()))
     }
 
     private fun getCurrentDesktop(display: X11.Display): Int {
@@ -162,20 +158,19 @@ object WMCtrl {
     fun activeWindow(
         display: X11.Display,
         win: X11.Window,
+        source: NativeLong,
+        xServerTime: NativeLong,
     ): Boolean {
         INSTANCE.XMapRaised(display, win)
 
         INSTANCE.XFlush(display)
 
-        clientMsg(display, win, "_NET_ACTIVE_WINDOW", 1, 0, 0, 0, 0)
-
-        INSTANCE.XFlush(display)
-
-        X11Ext.INSTANCE.XSetInputFocus(
+        clientMsg(
             display,
             win,
-            X11.RevertToParent,
-            X11.CurrentTime,
+            "_NET_ACTIVE_WINDOW",
+            data0 = source, // NativeLong(2),
+            data1 = xServerTime, // xServerTime?.let { NativeLong(it) } ?: NativeLong(X11.CurrentTime.toLong()),
         )
 
         INSTANCE.XFlush(display)
@@ -191,7 +186,7 @@ object WMCtrl {
     fun closeWindow(
         display: X11.Display?,
         win: X11.Window?,
-    ): Boolean = clientMsg(display, win, "_NET_CLOSE_WINDOW", 0, 0, 0, 0, 0)
+    ): Boolean = clientMsg(display, win, "_NET_CLOSE_WINDOW")
 
     fun getWindowIconName(
         display: X11.Display,
@@ -438,20 +433,12 @@ object WMCtrl {
         display: X11.Display?,
         win: X11.Window?,
         msg: String?,
-        data0: Long,
-        data1: Long,
-        data2: Long,
-        data3: Long,
-        data4: Long,
+        data0: NativeLong = NativeLong(2),
+        data1: NativeLong = NativeLong(X11.CurrentTime.toLong()),
+        data2: NativeLong = NativeLong(0),
+        data3: NativeLong = NativeLong(0),
+        data4: NativeLong = NativeLong(0),
     ): Boolean {
-        val mask =
-            NativeLong(
-                (
-                    X11.SubstructureRedirectMask
-                        or X11.SubstructureNotifyMask
-                ).toLong(),
-            )
-
         val xclient = XClientMessageEvent()
         xclient.type = X11.ClientMessage
         xclient.serial = NativeLong(0)
@@ -460,14 +447,22 @@ object WMCtrl {
         xclient.window = win
         xclient.format = 32
         xclient.data.setType(Array<NativeLong>::class.java)
-        xclient.data.l[0] = NativeLong(data0)
-        xclient.data.l[1] = NativeLong(data1)
-        xclient.data.l[2] = NativeLong(data2)
-        xclient.data.l[3] = NativeLong(data3)
-        xclient.data.l[4] = NativeLong(data4)
+        xclient.data.l[0] = data0
+        xclient.data.l[1] = data1
+        xclient.data.l[2] = data2
+        xclient.data.l[3] = data3
+        xclient.data.l[4] = data4
 
         val event = XEvent()
         event.setTypedValue(xclient)
+
+        val mask =
+            NativeLong(
+                (
+                    X11.SubstructureRedirectMask
+                        or X11.SubstructureNotifyMask
+                ).toLong(),
+            )
 
         return if (INSTANCE.XSendEvent(
                 display,
@@ -477,6 +472,7 @@ object WMCtrl {
                 event,
             ) != FALSE
         ) {
+            INSTANCE.XFlush(display)
             true
         } else {
             logger.error { "Cannot send $msg event." }

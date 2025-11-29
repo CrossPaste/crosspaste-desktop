@@ -1,8 +1,5 @@
 package com.crosspaste.app
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.crosspaste.config.DesktopConfigManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -18,26 +15,28 @@ class TestWindowManager(
 
     var pasterId: Int = 0
 
-    private var currentTitle: String? by mutableStateOf(null)
-
     override fun getPrevAppName(): Flow<String?> = prevApp
 
     override fun getCurrentActiveAppName(): String? = mockOS.currentApp
 
-    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
-        showMainWindow()
-        bringToFront(mainWindowTitle)
+    override fun saveCurrentActiveAppInfo() {
+    }
+
+    override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {}
+
+    override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {}
+
+    fun saveActiveAppInfo(appName: String?) {
+        if (mockOS.currentApp != "CrossPaste") {
+            prevApp.value = mockOS.currentApp
+        }
+        mockOS.currentApp = appName
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         val toPaste = preparePaste()
-        bringToBack(mainWindowTitle, toPaste)
+        bringToBack(toPaste)
         this@TestWindowManager.hideMainWindow()
-    }
-
-    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
-        showSearchWindow()
-        bringToFront(searchWindowTitle)
     }
 
     override suspend fun hideSearchWindowAndPaste(
@@ -45,7 +44,7 @@ class TestWindowManager(
         preparePaste: suspend (Int) -> Boolean,
     ) {
         val toPaste = preparePaste(0)
-        bringToBack(searchWindowTitle, toPaste)
+        bringToBack(toPaste)
         for (i in 1 until size) {
             delay(1000)
             if (preparePaste(i)) {
@@ -55,19 +54,7 @@ class TestWindowManager(
         hideSearchWindow()
     }
 
-    private fun bringToFront(windowTitle: String) {
-        currentTitle = windowTitle
-        if (mockOS.currentApp != "CrossPaste") {
-            prevApp.value = mockOS.currentApp
-        }
-        mockOS.currentApp = "CrossPaste"
-    }
-
-    private suspend fun bringToBack(
-        windowTitle: String,
-        toPaste: Boolean,
-    ) {
-        currentTitle = windowTitle
+    private suspend fun bringToBack(toPaste: Boolean) {
         mockOS.currentApp = prevApp.value
         if (toPaste) {
             toPaste()

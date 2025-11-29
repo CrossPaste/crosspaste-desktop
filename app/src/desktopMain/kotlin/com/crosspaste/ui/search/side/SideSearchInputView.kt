@@ -24,10 +24,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -39,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.NavigationManager
@@ -59,6 +62,7 @@ import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -81,17 +85,19 @@ fun SideSearchInputView() {
 
     val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(showSearchWindow) {
-        if (showSearchWindow) {
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
             pasteSearchViewModel.resetSearch()
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(appWindowManager) {
         pasteSelectionViewModel.uiEvent.collect { event ->
             when (event) {
                 RequestSearchInputFocus -> {
@@ -154,9 +160,11 @@ fun SideSearchInputView() {
                 tint = MaterialTheme.colorScheme.primary,
                 text = copywriter.getText("settings"),
             ) {
-                navigationManager.navigateAndClearStack(Settings)
-                appWindowManager.showMainWindow()
-                appWindowManager.hideSearchWindow()
+                scope.launch {
+                    navigationManager.navigateAndClearStack(Settings)
+                    appWindowManager.showMainWindow(WindowTrigger.MENU)
+                    appWindowManager.hideSearchWindow()
+                }
             }
         }
 
@@ -166,7 +174,13 @@ fun SideSearchInputView() {
                     .fillMaxHeight()
                     .widthIn(min = 800.dp)
                     .focusRequester(searchFocusRequester)
-                    .onPreviewKeyEvent { e ->
+                    .onFocusEvent {
+                        if (it.isFocused) {
+                            pasteSelectionViewModel.setFocusedElement(
+                                FocusedElement.SEARCH_INPUT,
+                            )
+                        }
+                    }.onPreviewKeyEvent { e ->
                         if (e.type == KeyEventType.KeyDown && e.key == Key.DirectionDown) {
                             pasteSelectionViewModel.requestPasteListFocus()
                             true

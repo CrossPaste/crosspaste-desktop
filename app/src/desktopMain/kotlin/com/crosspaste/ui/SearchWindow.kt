@@ -20,10 +20,12 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.sun.jna.Pointer
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -33,6 +35,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
+    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
     val navController = LocalNavHostController.current
@@ -40,8 +43,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val backStackEntry by navController.currentBackStackEntryAsState()
 
     val config by configManager.config.collectAsState()
-    val currentSearchWindowState by appWindowManager.searchWindowState.collectAsState()
-    val showSearchWindow by appWindowManager.showSearchWindow.collectAsState()
+    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val isMac by remember { mutableStateOf(platform.isMacos()) }
 
@@ -54,7 +56,7 @@ fun SearchWindow(windowIcon: Painter?) {
     }
 
     val animationProgress by animateFloatAsState(
-        targetValue = if (showSearchWindow && !isCenterStyle) 0f else 1f,
+        targetValue = if (searchWindowInfo.show && !isCenterStyle) 0f else 1f,
         animationSpec =
             tween(
                 durationMillis = 150,
@@ -63,32 +65,38 @@ fun SearchWindow(windowIcon: Painter?) {
     )
 
     val windowState =
-        remember(showSearchWindow, animationProgress, isCenterStyle) {
+        remember(searchWindowInfo, animationProgress, isCenterStyle) {
             if (isCenterStyle) {
-                currentSearchWindowState
+                searchWindowInfo.state
             } else {
-                currentSearchWindowState.position
-
                 val position =
                     WindowPosition(
-                        x = currentSearchWindowState.position.x,
+                        x = searchWindowInfo.state.position.x,
                         y =
-                            currentSearchWindowState.position.y +
+                            searchWindowInfo.state.position.y +
                                 appSize.sideSearchWindowHeight * animationProgress,
                     )
                 WindowState(
-                    placement = currentSearchWindowState.placement,
+                    placement = searchWindowInfo.state.placement,
                     position = position,
-                    size = currentSearchWindowState.size,
+                    size = searchWindowInfo.state.size,
                 )
             }
         }
+
+    val logger = remember { KotlinLogging.logger("SearchWindow") }
+
+    LaunchedEffect(searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
+            appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
+        }
+    }
 
     Window(
         onCloseRequest = {
             appWindowManager.hideSearchWindow()
         },
-        visible = showSearchWindow,
+        visible = searchWindowInfo.show,
         state = windowState,
         title = appWindowManager.searchWindowTitle,
         icon = windowIcon,
@@ -116,10 +124,12 @@ fun SearchWindow(windowIcon: Painter?) {
             val windowListener =
                 object : WindowAdapter() {
                     override fun windowGainedFocus(e: WindowEvent?) {
-                        appWindowManager.showSearchWindow()
+                        logger.debug { "Search window gained focus" }
+                        pasteSelectionViewModel.requestPasteListFocus()
                     }
 
                     override fun windowLostFocus(e: WindowEvent?) {
+                        logger.debug { "Search window lost focus" }
                         if (backStackEntry?.let { getRouteName(it.destination) } != PasteTextEdit.NAME) {
                             appWindowManager.hideSearchWindow()
                         }

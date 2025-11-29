@@ -32,7 +32,7 @@ class MacAppWindowManager(
 
     override fun getCurrentActiveAppName(): String? =
         runCatching {
-            MacAppUtils.getCurrentActiveApp()?.let {
+            MacAppUtils.getCurrentActiveAppInfo()?.let {
                 createMacAppInfo(info = it)?.let { macAppInfo ->
                     ioScope.launch {
                         saveImagePathByApp(macAppInfo.bundleIdentifier, macAppInfo.localizedName)
@@ -66,10 +66,8 @@ class MacAppWindowManager(
         }
     }
 
-    override suspend fun recordActiveInfoAndShowMainWindow(useShortcutKeys: Boolean) {
-        logger.info { "active main window" }
-        showMainWindow()
-        MacAppUtils.bringToFront(mainWindowTitle).let {
+    override fun saveCurrentActiveAppInfo() {
+        MacAppUtils.getCurrentActiveAppInfo()?.let {
             createMacAppInfo(it)?.let { macAppInfo ->
                 if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
                     prevMacAppInfo.value = macAppInfo
@@ -77,6 +75,10 @@ class MacAppWindowManager(
                 }
             }
         }
+    }
+
+    override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
+        MacAppUtils.bringToFront(mainWindowTitle)
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -96,20 +98,8 @@ class MacAppWindowManager(
         hideMainWindow()
     }
 
-    override suspend fun recordActiveInfoAndShowSearchWindow(useShortcutKeys: Boolean) {
-        logger.info { "active search window" }
-        showSearchWindow()
-
-        setSearchWindowState(appSize.getSearchWindowState())
-
-        MacAppUtils.bringToFront(searchWindowTitle).let {
-            createMacAppInfo(it)?.let { macAppInfo ->
-                if (macAppInfo.bundleIdentifier != crosspasteBundleID) {
-                    prevMacAppInfo.value = macAppInfo
-                    logger.info { "save prevAppName $macAppInfo" }
-                }
-            }
-        }
+    override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
+        MacAppUtils.bringToFront(searchWindowTitle)
     }
 
     override suspend fun hideSearchWindowAndPaste(

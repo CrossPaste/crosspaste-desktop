@@ -1,19 +1,19 @@
-package com.crosspaste.listen
+package com.crosspaste.listener
 
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.HIDE_WINDOW
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_MAIN
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.SHOW_SEARCH
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
-import com.crosspaste.listen.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
-import com.crosspaste.listener.ShortcutKeysAction
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.HIDE_WINDOW
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_MAIN
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_SEARCH
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.CurrentPaste
@@ -21,9 +21,10 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
+import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DesktopShortKeysAction(
     private val appFileChooser: AppFileChooser,
@@ -37,7 +38,14 @@ class DesktopShortKeysAction(
 
     private val logger = KotlinLogging.logger {}
 
-    override val action: (String) -> Unit = { actionName ->
+    @Volatile
+    override var actioning: Boolean = false
+
+    @Volatile
+    override var event: NativeKeyEvent? = null
+
+    override val action: (String, NativeKeyEvent) -> Unit = { actionName, event ->
+        this.event = event
         when (actionName) {
             PASTE_PLAIN_TEXT -> pastePlainText()
             PASTE_PRIMARY_TYPE -> pastePrimaryType()
@@ -51,41 +59,69 @@ class DesktopShortKeysAction(
         }
     }
 
+    private fun mainRunAction(
+        actionName: String,
+        actionLogMessage: String,
+        action: suspend () -> Unit,
+    ) {
+        mainCoroutineDispatcher.launch {
+            runCatching {
+                actioning = true
+                logger.info { actionLogMessage }
+                action()
+            }.onFailure { e ->
+                logger.error(e) { "Failed to run shortcut key action $actionName" }
+            }.also {
+                actioning = false
+            }
+        }
+    }
+
     private fun showMainWindow() {
-        logger.info { "Open main window" }
-        mainCoroutineDispatcher.launch(CoroutineName("OpenMainWindow")) {
-            appWindowManager.recordActiveInfoAndShowMainWindow(true)
+        mainRunAction(
+            actionName = "OpenMainWindow",
+            actionLogMessage = "Open main window",
+        ) {
+            appWindowManager.saveCurrentActiveAppInfo()
+            appWindowManager.showMainWindow(WindowTrigger.SHORTCUT)
         }
     }
 
     private fun showSearchWindow() {
-        logger.info { "Open search window" }
-        mainCoroutineDispatcher.launch(CoroutineName("OpenSearchWindow")) {
-            appWindowManager.recordActiveInfoAndShowSearchWindow(true)
+        mainRunAction(
+            actionName = "OpenSearchWindow",
+            actionLogMessage = "Open search window",
+        ) {
+            appWindowManager.saveCurrentActiveAppInfo()
+            appWindowManager.showSearchWindow(WindowTrigger.SHORTCUT)
         }
     }
 
     private fun hideWindow() {
-        logger.info { "Hide window" }
-        mainCoroutineDispatcher.launch(CoroutineName("HideWindow")) {
-            if (appWindowManager.showMainWindow.value &&
+        mainRunAction(
+            actionName = "HideWindow",
+            actionLogMessage = "Hide window",
+        ) {
+            if (appWindowManager.mainWindowInfo.value.show &&
                 !appWindowManager.showMainDialog.value &&
                 !appFileChooser.showFileDialog.value
             ) {
                 appWindowManager.hideMainWindow()
             }
 
-            if (appWindowManager.showSearchWindow.value) {
+            if (appWindowManager.searchWindowInfo.value.show) {
                 appWindowManager.hideSearchWindow()
             }
         }
     }
 
     private fun pastePlainText() {
-        logger.info { "Paste Plain Text" }
-        mainCoroutineDispatcher.launch(CoroutineName("PastePlainText")) {
+        mainRunAction(
+            actionName = "PastePlainText",
+            actionLogMessage = "Paste plain text",
+        ) {
             currentPaste.getCurrentPaste()?.let { pasteData ->
-                mainCoroutineDispatcher.launch(ioDispatcher) {
+                withContext(ioDispatcher) {
                     pasteData.getPasteAppearItems().firstOrNull { it is PasteText }?.let {
                         handleCopyResult(
                             result =
@@ -103,10 +139,12 @@ class DesktopShortKeysAction(
     }
 
     private fun pastePrimaryType() {
-        logger.info { "Paste Primary Type" }
-        mainCoroutineDispatcher.launch(CoroutineName("PastePrimaryType")) {
+        mainRunAction(
+            actionName = "PastePrimaryType",
+            actionLogMessage = "Paste primary type",
+        ) {
             currentPaste.getCurrentPaste()?.let {
-                mainCoroutineDispatcher.launch(ioDispatcher) {
+                withContext(ioDispatcher) {
                     handleCopyResult(
                         result =
                             pasteboardService.tryWritePasteboard(
@@ -121,8 +159,10 @@ class DesktopShortKeysAction(
     }
 
     private fun pasteLast(local: Boolean) {
-        logger.info { "paste ${if (local) "Local" else "Remote"} Last" }
-        mainCoroutineDispatcher.launch(CoroutineName("Paste")) {
+        mainRunAction(
+            actionName = "PasteLast",
+            actionLogMessage = "Paste ${if (local) "Local" else "Remote"} Last",
+        ) {
             val result =
                 pasteDao.searchPasteData(
                     searchTerms = listOf(),
@@ -132,7 +172,7 @@ class DesktopShortKeysAction(
                 )
 
             if (result.isNotEmpty()) {
-                mainCoroutineDispatcher.launch(ioDispatcher) {
+                withContext(ioDispatcher) {
                     handleCopyResult(
                         result =
                             pasteboardService.tryWritePasteboard(
@@ -152,23 +192,27 @@ class DesktopShortKeysAction(
                 appWindowManager.toPaste()
             }.onFailure {
                 notificationManager.sendNotification(
-                    title = { it.getText("copy_failed") },
-                    message = it.message?.let { message -> { it -> message } },
+                    title = { copyWriter -> copyWriter.getText("copy_failed") },
+                    message = it.message?.let { message -> { message } },
                     messageType = MessageType.Error,
                 )
             }
     }
 
     private fun togglePasteboardMonitoring() {
-        logger.info { "Toggle Pasteboard Monitoring" }
-        mainCoroutineDispatcher.launch(CoroutineName("ToggleMonitorPasteboard")) {
+        mainRunAction(
+            actionName = "TogglePasteboardMonitoring",
+            actionLogMessage = "Toggle Pasteboard Monitoring",
+        ) {
             pasteboardService.toggle()
         }
     }
 
     private fun toggleEncrypt() {
-        logger.info { "Toggle Encrypt ${!configManager.getCurrentConfig().enableEncryptSync}" }
-        mainCoroutineDispatcher.launch(CoroutineName("ToggleEncrypt")) {
+        mainRunAction(
+            actionName = "ToggleEncrypt",
+            actionLogMessage = "Toggle Encrypt",
+        ) {
             configManager.updateConfig(
                 "isEncryptSync",
                 !configManager.getCurrentConfig().enableEncryptSync,

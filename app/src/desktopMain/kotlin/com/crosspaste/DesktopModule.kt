@@ -63,17 +63,17 @@ import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.OCRModule
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.listen.ActiveGraphicsDevice
-import com.crosspaste.listen.DesktopGlobalListener
-import com.crosspaste.listen.DesktopShortKeysAction
-import com.crosspaste.listen.DesktopShortcutKeys
-import com.crosspaste.listen.DesktopShortcutKeysListener
-import com.crosspaste.listen.DesktopShortcutKeysLoader
-import com.crosspaste.listen.ShortcutKeysLoader
+import com.crosspaste.listener.ActiveGraphicsDevice
+import com.crosspaste.listener.DesktopGlobalListener
+import com.crosspaste.listener.DesktopShortKeysAction
+import com.crosspaste.listener.DesktopShortcutKeys
+import com.crosspaste.listener.DesktopShortcutKeysListener
+import com.crosspaste.listener.DesktopShortcutKeysLoader
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.listener.ShortcutKeysLoader
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.module.ModuleDownloadManager
 import com.crosspaste.module.ModuleManager
@@ -525,7 +525,7 @@ class DesktopModule(
             single<AppWindowManager> { get<DesktopAppWindowManager>() }
             single<DesktopAppSize> { DesktopAppSize(get(), lazy { get() }, get()) }
             single<DesktopAppWindowManager> {
-                getDesktopAppWindowManager(get(), get(), lazy { get() }, get(), get())
+                getDesktopAppWindowManager(get(), get(), lazy { get() }, lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
             single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get()) }
