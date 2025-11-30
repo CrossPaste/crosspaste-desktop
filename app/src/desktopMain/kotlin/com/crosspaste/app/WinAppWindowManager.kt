@@ -12,7 +12,6 @@ import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
 import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
 class WinAppWindowManager(
@@ -21,8 +20,6 @@ class WinAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
-
-    private var prevWinAppInfo: MutableStateFlow<WinAppInfo?> = MutableStateFlow(null)
 
     val mainHWND: HWND? by lazy {
         User32.findPasteWindow(mainWindowTitle)
@@ -106,11 +103,11 @@ class WinAppWindowManager(
                 } ?: listOf()
             User32.bringToBackAndPaste(
                 backHWND,
-                prevWinAppInfo.value?.hwnd,
+                windowFocusRecorder.lastWinAppInfo.value?.hwnd,
                 keyCodes,
             )
         } else {
-            User32.backToBack(backHWND, prevWinAppInfo.value?.hwnd)
+            User32.backToBack(backHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
         }
     }
 
