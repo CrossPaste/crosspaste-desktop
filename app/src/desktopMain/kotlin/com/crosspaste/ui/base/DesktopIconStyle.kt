@@ -7,9 +7,8 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getCoilUtils
 import com.crosspaste.utils.getFileUtils
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
-import com.google.common.cache.LoadingCache
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.LoadingCache
 
 class DesktopIconStyle(
     userDataPathProvider: UserDataPathProvider,
@@ -19,25 +18,21 @@ class DesktopIconStyle(
     private val fileUtils = getFileUtils()
 
     private val iconStyleCache: LoadingCache<String, Boolean> =
-        CacheBuilder
+        Caffeine
             .newBuilder()
             .maximumSize(1000)
-            .build(
-                object : CacheLoader<String, Boolean>() {
-                    override fun load(key: String): Boolean {
-                        val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
-                        if (fileUtils.existFile(iconPath)) {
-                            val imageBitmap =
-                                coilUtils
-                                    .createBitmap(iconPath)
-                                    .asComposeImageBitmap()
-                            return checkMacStyleIcon(imageBitmap)
-                        } else {
-                            return false
-                        }
-                    }
-                },
-            )
+            .build { key ->
+                val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
+                if (fileUtils.existFile(iconPath)) {
+                    val imageBitmap =
+                        coilUtils
+                            .createBitmap(iconPath)
+                            .asComposeImageBitmap()
+                    checkMacStyleIcon(imageBitmap)
+                } else {
+                    false
+                }
+            }
 
     override fun isMacStyleIcon(source: String): Boolean = iconStyleCache.get(source)
 

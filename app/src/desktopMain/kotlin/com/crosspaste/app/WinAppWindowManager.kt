@@ -6,9 +6,8 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.windows.api.User32
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
-import com.google.common.cache.LoadingCache
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.LoadingCache
 import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -34,23 +33,18 @@ class WinAppWindowManager(
         User32.findPasteWindow(searchWindowTitle)
     }
 
-    private val fileDescriptorCache: LoadingCache<String, String> =
-        CacheBuilder
+    private val fileDescriptorCache: LoadingCache<String, String?> =
+        Caffeine
             .newBuilder()
             .maximumSize(20)
-            .build(
-                object : CacheLoader<String, String>() {
-                    override fun load(filePath: String): String {
-                        User32.getFileDescription(filePath)?.let {
-                            ioScope.launch {
-                                saveAppImage(filePath, it)
-                            }
-                            return it
-                        }
-                        return ""
+            .build { key ->
+                User32.getFileDescription(key)?.let {
+                    ioScope.launch {
+                        saveAppImage(key, it)
                     }
-                },
-            )
+                    it
+                }
+            }
 
     @Synchronized
     private fun saveAppImage(
@@ -66,13 +60,13 @@ class WinAppWindowManager(
     override fun getPrevAppName(): Flow<String?> =
         prevWinAppInfo.map { appInfo ->
             appInfo?.filePath?.let {
-                fileDescriptorCache[it].ifEmpty { null }
+                fileDescriptorCache[it]
             }
         }
 
     override fun getCurrentActiveAppName(): String? =
         User32.getActiveWindowProcessFilePath()?.let {
-            fileDescriptorCache[it].ifEmpty { null }
+            fileDescriptorCache[it]
         }
 
     override fun saveCurrentActiveAppInfo() {

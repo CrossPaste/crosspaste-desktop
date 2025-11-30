@@ -18,7 +18,7 @@ interface CacheManager {
 
     suspend fun getFilesIndex(id: Long): FilesIndex?
 
-    fun loadKey(id: Long): FilesIndex {
+    fun loadKey(id: Long): FilesIndex? =
         pasteDao.getLoadedPasteData(id)?.let { pasteData ->
             val dateString =
                 dateUtils.getYMD(
@@ -32,8 +32,6 @@ interface CacheManager {
                 val pasteFiles = pasteAppearItem as PasteFiles
                 userDataPathProvider.resolve(appInstanceId, dateString, id, pasteFiles, false, filesIndexBuilder)
             }
-            return filesIndexBuilder.build()
+            filesIndexBuilder.build()
         }
-        throw IllegalStateException("paste data not found: $id")
-    }
 }
