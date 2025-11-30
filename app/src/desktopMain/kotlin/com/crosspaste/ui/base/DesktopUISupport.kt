@@ -24,7 +24,6 @@ import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
-import com.google.common.io.Files
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 import java.awt.Color
@@ -97,12 +96,13 @@ class DesktopUISupport(
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             val fileName = "$id.html"
             val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
-            val file = filePath.toFile()
-            if (!file.exists()) {
+            if (!fileUtils.existFile(filePath)) {
                 val utf8Html = htmlUtils.ensureHtmlCharsetUtf8(html)
-                Files.write(utf8Html.encodeToByteArray(), file)
+                fileUtils.writeFile(filePath) { sink ->
+                    sink.writeUtf8(utf8Html)
+                }
             }
-            Desktop.getDesktop().browse(file.toURI())
+            Desktop.getDesktop().browse(filePath.toFile().toURI())
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("failed_to_open_html_pasteboard") },
@@ -203,13 +203,14 @@ class DesktopUISupport(
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             val fileName = "${pasteData.id}.rtf"
             val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
-            val file = filePath.toFile()
-            if (!file.exists()) {
+            if (!fileUtils.existFile(filePath)) {
                 pasteData.getPasteItem(PasteRtf::class)?.let {
-                    Files.write(it.rtf.encodeToByteArray(), file)
+                    fileUtils.writeFile(filePath) { sink ->
+                        sink.writeUtf8(it.rtf)
+                    }
                 }
             }
-            Desktop.getDesktop().browse(file.toURI())
+            Desktop.getDesktop().browse(filePath.toFile().toURI())
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("failed_to_open_rtf_pasteboard") },

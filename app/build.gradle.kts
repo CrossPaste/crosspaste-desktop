@@ -125,10 +125,10 @@ kotlin {
 
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.caffeine)
             implementation(libs.compose.shimmer)
             implementation(libs.conveyor.control)
             implementation(libs.cryptography.provider.jdk)
-            implementation(libs.guava)
             implementation(libs.icu4j)
             implementation(libs.imageio.core)
             implementation(libs.imageio.jpeg)
@@ -152,7 +152,6 @@ kotlin {
             }
             implementation(libs.webp.imageio)
             implementation(libs.zxing.core)
-            implementation(libs.zxing.javase)
         }
 
         commonTest.dependencies {
