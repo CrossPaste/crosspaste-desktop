@@ -1,6 +1,5 @@
 package com.crosspaste.platform.windows.api
 
-import com.crosspaste.app.WinAppInfo
 import com.crosspaste.platform.windows.JIconExtract
 import com.sun.jna.Memory
 import com.sun.jna.Native
@@ -32,6 +31,7 @@ import com.sun.jna.ptr.PointerByReference
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 import io.github.oshai.kotlinlogging.KotlinLogging
+import okio.Path.Companion.toOkioPath
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Path
@@ -211,7 +211,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 }.getOrNull()
             }
 
-        fun getFileDescription(filePath: String): String? {
+        fun getFileDescription(path: okio.Path): String? {
+            val filePath = path.normalized().toString()
             val intByReference = IntByReference()
             val versionLength: Int =
                 Version.INSTANCE.GetFileVersionInfoSize(filePath, intByReference)
@@ -280,11 +281,13 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         }
 
         fun extractAndSaveIcon(
-            filePath: String,
-            outputPath: String,
+            filePath: okio.Path,
+            outputPath: okio.Path,
         ) {
-            JIconExtract.getIconForFile(filePath)?.let { icon ->
-                ImageIO.write(icon, "png", File(outputPath))
+            val filePathString = filePath.normalized().toString()
+            val outputFile = outputPath.toFile()
+            JIconExtract.getIconForFile(filePathString)?.let { icon ->
+                ImageIO.write(icon, "png", outputFile)
                 return@extractAndSaveIcon
             }
 
@@ -292,7 +295,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             val smallIcons = arrayOfNulls<HICON>(1)
             val iconCount =
                 Shell32.INSTANCE.ExtractIconEx(
-                    filePath,
+                    filePathString,
                     0,
                     largeIcons,
                     smallIcons,
@@ -303,7 +306,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 val icon = largeIcons[0]!!
 
                 hiconToImage(icon)?.let { image ->
-                    ImageIO.write(image, "png", File(outputPath))
+                    ImageIO.write(image, "png", outputFile)
                 }
             }
         }
@@ -378,129 +381,43 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             }.getOrNull()
         }
 
-        fun getForegroundWindowAppInfoAndThreadId(useShortcutKeys: Boolean): WinAppInfo? {
-            val hwnd =
-                if (useShortcutKeys) {
-                    getForegroundWindow()
-                } else {
-                    getForegroundWindowByEnumWindows()
-                }
-
-            return hwnd?.let { previousHwnd ->
-                val processIdRef = IntByReference()
-                val threadId =
-                    INSTANCE.GetWindowThreadProcessId(
-                        previousHwnd,
-                        processIdRef,
-                    )
-
-                val processHandle =
-                    Kernel32.INSTANCE.OpenProcess(
-                        WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
-                        false,
-                        processIdRef.value,
-                    )
-
-                runCatching {
-                    val bufferSize = 1024
-                    val memory = Memory((bufferSize * 2).toLong())
-                    if (Psapi.INSTANCE.GetModuleFileNameEx(
-                            processHandle,
-                            null,
-                            memory,
-                            bufferSize,
-                        ) > 0
-                    ) {
-                        val filePath = memory.getWideString(0)
-                        WinAppInfo(previousHwnd, filePath, threadId)
-                    } else {
-                        null
-                    }
-                }.apply {
-                    Kernel32.INSTANCE.CloseHandle(processHandle)
-                }.getOrNull()
-            }
+        fun getThreadId(hwnd: HWND): Int {
+            val processIdRef = IntByReference()
+            return INSTANCE.GetWindowThreadProcessId(
+                hwnd,
+                processIdRef,
+            )
         }
 
-        private fun getForegroundWindowByEnumWindows(): HWND? {
-            var foregroundHwnd: HWND? = null
-            INSTANCE.EnumWindows(
-                object : WndEnumProc {
-                    override fun callback(
-                        hWnd: HWND,
-                        lParam: Pointer?,
-                    ): Boolean {
-                        // Check if the window is visible
-                        if (!INSTANCE.IsWindowVisible(hWnd)) {
-                            return true
-                        }
-
-                        // Check if the window is minimized (iconic)
-                        if (INSTANCE.IsIconic(hWnd)) {
-                            return true
-                        }
-
-                        // Check if it is a top-level window (no parent or parent is the desktop)
-                        val parent = INSTANCE.GetParent(hWnd)
-                        if (parent != null && parent != INSTANCE.GetDesktopWindow()) {
-                            return true
-                        }
-
-                        // Get the window title
-                        val titleLength = INSTANCE.GetWindowTextLengthW(hWnd)
-                        if (titleLength == 0) {
-                            return true
-                        }
-
-                        val buffer = CharArray(titleLength + 1)
-                        INSTANCE.GetWindowTextW(hWnd, buffer, titleLength + 1)
-                        val title = Native.toString(buffer).trim()
-
-                        if (title.isEmpty()) {
-                            return true
-                        }
-
-                        // Retrieve process information to filter out Explorer
-                        val processIdRef = IntByReference()
-                        INSTANCE.GetWindowThreadProcessId(hWnd, processIdRef)
-
-                        val processHandle =
-                            Kernel32.INSTANCE.OpenProcess(
-                                WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
-                                false,
-                                processIdRef.value,
-                            )
-
-                        if (processHandle != null) {
-                            try {
-                                val bufferSize = 1024
-                                val memory = Memory((bufferSize * 2).toLong())
-                                if (Psapi.INSTANCE.GetModuleFileNameEx(
-                                        processHandle,
-                                        null,
-                                        memory,
-                                        bufferSize,
-                                    ) > 0
-                                ) {
-                                    val filePath = memory.getWideString(0)
-                                    // Check if the process is Explorer.exe
-                                    if (filePath.lowercase().endsWith("explorer.exe")) {
-                                        return true
-                                    }
-                                }
-                            } finally {
-                                Kernel32.INSTANCE.CloseHandle(processHandle)
-                            }
-                        }
-
-                        // Found the first window that meets all conditions
-                        foregroundHwnd = hWnd
-                        return false
-                    }
-                },
-                null,
+        fun getExeFilePath(hwnd: HWND): okio.Path? {
+            val processIdRef = IntByReference()
+            INSTANCE.GetWindowThreadProcessId(
+                hwnd,
+                processIdRef,
             )
-            return foregroundHwnd
+            val processHandle =
+                Kernel32.INSTANCE.OpenProcess(
+                    WinNT.PROCESS_QUERY_INFORMATION or WinNT.PROCESS_VM_READ,
+                    false,
+                    processIdRef.value,
+                )
+            return try {
+                val bufferSize = 1024
+                val memory = Memory((bufferSize * 2).toLong())
+                if (Psapi.INSTANCE.GetModuleFileNameEx(
+                        processHandle,
+                        null,
+                        memory,
+                        bufferSize,
+                    ) > 0
+                ) {
+                    File(memory.getWideString(0)).toOkioPath()
+                } else {
+                    null
+                }
+            } finally {
+                Kernel32.INSTANCE.CloseHandle(processHandle)
+            }
         }
 
         private fun getForegroundWindow(): HWND? = INSTANCE.GetForegroundWindow()

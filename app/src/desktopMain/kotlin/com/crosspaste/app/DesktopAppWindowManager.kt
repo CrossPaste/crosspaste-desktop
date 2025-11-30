@@ -42,7 +42,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            lazyShortcutKeysAction,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {

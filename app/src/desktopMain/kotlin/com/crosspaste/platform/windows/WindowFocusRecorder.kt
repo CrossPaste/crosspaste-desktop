@@ -9,18 +9,25 @@ import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinUser
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class WindowFocusRecorder(
     private val appWindowManager: DesktopAppWindowManager,
 ) {
+    private val logger = KotlinLogging.logger {}
+
     private var hookHandle: WinNT.HANDLE? = null
 
     private lateinit var eventProc: WinUser.WinEventProc
 
-    private var lastActiveWindow: HWND? = null
+    private val _lastWinAppInfo: MutableStateFlow<WinAppInfo?> = MutableStateFlow(null)
+
+    val lastWinAppInfo: StateFlow<WinAppInfo?> = _lastWinAppInfo
 
     private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
@@ -40,7 +47,7 @@ class WindowFocusRecorder(
                         dwmsEventTime: WinDef.DWORD?,
                     ) {
                         if (hwnd != null && isValidWindow(hwnd)) {
-                            lastActiveWindow = hwnd
+                            _lastWinAppInfo.value = WinAppInfo.createWinAppInfo(hwnd)
                         }
                     }
                 }
@@ -75,10 +82,13 @@ class WindowFocusRecorder(
         if (!INSTANCE.IsWindowVisible(hwnd)) return false
 
         val titleLength = INSTANCE.GetWindowTextLengthW(hwnd)
+
+        var title: String? = null
+
         if (titleLength != 0) {
             val buffer = CharArray(titleLength + 1)
             INSTANCE.GetWindowTextW(hwnd, buffer, titleLength + 1)
-            val title = Native.toString(buffer).trim()
+            title = Native.toString(buffer).trim()
 
             if (title == appWindowManager.mainWindowTitle ||
                 title == appWindowManager.searchWindowTitle
@@ -97,6 +107,12 @@ class WindowFocusRecorder(
                 "Shell_SecondaryTrayWnd",
             )
 
-        return className !in ignoredClasses
+        val isValidWindow = className !in ignoredClasses
+
+        if (isValidWindow) {
+            logger.debug { "Active window changed: title=${title ?: ""}, className=$className" }
+        }
+
+        return isValidWindow
     }
 }
