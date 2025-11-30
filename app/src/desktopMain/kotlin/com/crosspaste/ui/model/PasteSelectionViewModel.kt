@@ -127,4 +127,17 @@ class PasteSelectionViewModel(
         }
         _selectedIndexes.value = listOf(0)
     }
+
+    suspend fun toPaste(pasteData: PasteData) {
+        appWindowManager.hideSearchWindowAndPaste(1) {
+            withContext(ioDispatcher) {
+                pasteboardService
+                    .tryWritePasteboard(
+                        pasteData = pasteData,
+                        localOnly = true,
+                        updateCreateTime = true,
+                    ).isSuccess
+            }
+        }
+    }
 }

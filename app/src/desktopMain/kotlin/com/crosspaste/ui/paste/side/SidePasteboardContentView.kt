@@ -40,8 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import com.crosspaste.app.DesktopAppWindowManager
@@ -57,6 +62,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -64,6 +70,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import java.awt.event.KeyEvent.VK_1
+import java.awt.event.KeyEvent.VK_9
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -97,6 +105,8 @@ fun SidePasteboardContentView() {
     var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
 
     var isShiftPressed by remember { mutableStateOf(false) }
+
+    var isCtrlPressed by remember { mutableStateOf(false) }
 
     LaunchedEffect(
         searchWindowInfo.show,
@@ -241,6 +251,21 @@ fun SidePasteboardContentView() {
                     .focusable()
                     .onKeyEvent { keyEvent ->
                         isShiftPressed = keyEvent.isShiftPressed
+                        isCtrlPressed = keyEvent.isCtrlPressed
+
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            if (keyEvent.key.nativeKeyCode in VK_1..VK_9) {
+                                if (isCtrlPressed) {
+                                    mainCoroutineDispatcher.launch {
+                                        val index = keyEvent.key.nativeKeyCode - VK_1
+                                        if (searchResult.size > index) {
+                                            pasteSelectionViewModel.toPaste(searchResult[index])
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         false
                     },
             contentAlignment = Alignment.CenterStart,
@@ -288,7 +313,10 @@ fun SidePasteboardContentView() {
                                 }
                             },
                         ) {
-                            scope.SidePreviewView()
+                            scope.SidePreviewView(
+                                showTop9 = isCtrlPressed && currentIndex < 9,
+                                index = currentIndex,
+                            )
                         }
                     }
 
