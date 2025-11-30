@@ -39,7 +39,7 @@ class WinAppInfoCaches(
             .maximumSize(100)
             .build { hwnd ->
                 runCatching {
-                    getThreadId(hwnd)
+                    User32.getThreadId(hwnd)
                 }.getOrNull()
             }
 
@@ -49,7 +49,7 @@ class WinAppInfoCaches(
             .maximumSize(100)
             .build { hwnd ->
                 runCatching {
-                    getExeFilePath(hwnd)
+                    User32.getExeFilePath(hwnd)
                 }.getOrNull()
             }
 
