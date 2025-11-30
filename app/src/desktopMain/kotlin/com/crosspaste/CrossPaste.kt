@@ -142,6 +142,8 @@ class CrossPaste {
                         delayMillis = 5000L * 6,
                     ) { imageLoaders.clearMemoryCache() }
 
+                    desktopAppWindowManager.startWindowService()
+
                     FileKit.init(appId = AppName)
 
                     ioCoroutineDispatcher.launch {
@@ -207,6 +209,11 @@ class CrossPaste {
                         async { stopService<Server>("PasteServer") { it.stop() } },
                         async { stopService<SyncManager>("SyncManager") { it.stop() } },
                         async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },
+                        async {
+                            stopService<DesktopAppWindowManager>("DesktopAppWindowManager") {
+                                it.stopWindowService()
+                            }
+                        },
                         async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                         async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
                     )

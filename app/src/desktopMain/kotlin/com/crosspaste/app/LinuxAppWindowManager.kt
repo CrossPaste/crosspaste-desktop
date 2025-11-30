@@ -69,6 +69,14 @@ class LinuxAppWindowManager(
         }
     }
 
+    override fun startWindowService() {
+        // do nothing
+    }
+
+    override fun stopWindowService() {
+        // do nothing
+    }
+
     override fun saveCurrentActiveAppInfo() {
         prevLinuxAppInfo.value = X11Api.getActiveWindow()
     }

@@ -42,7 +42,6 @@ fun getDesktopAppWindowManager(
             appSize,
             configManager,
             lazyShortcutKeys,
-            lazyShortcutKeysAction,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {
@@ -141,6 +140,10 @@ abstract class DesktopAppWindowManager(
             }
         }
     }
+
+    abstract fun startWindowService()
+
+    abstract fun stopWindowService()
 
     private suspend fun hideSearchCallback() {
         runCatching {

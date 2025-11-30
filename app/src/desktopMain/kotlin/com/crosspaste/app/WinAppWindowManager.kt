@@ -3,27 +3,23 @@ package com.crosspaste.app
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.windows.WinAppInfo
+import com.crosspaste.platform.windows.WinAppInfoCaches
+import com.crosspaste.platform.windows.WindowFocusRecorder
 import com.crosspaste.platform.windows.api.User32
-import com.github.benmanes.caffeine.cache.Caffeine
-import com.github.benmanes.caffeine.cache.LoadingCache
+import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
 import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 
 class WinAppWindowManager(
     appSize: DesktopAppSize,
     configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
-    private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
-    private val userDataPathProvider: UserDataPathProvider,
+    userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
-
-    private var prevWinAppInfo: MutableStateFlow<WinAppInfo?> = MutableStateFlow(null)
 
     val mainHWND: HWND? by lazy {
         User32.findPasteWindow(mainWindowTitle)
@@ -33,50 +29,37 @@ class WinAppWindowManager(
         User32.findPasteWindow(searchWindowTitle)
     }
 
-    private val fileDescriptorCache: LoadingCache<String, String?> =
-        Caffeine
-            .newBuilder()
-            .maximumSize(20)
-            .build { key ->
-                User32.getFileDescription(key)?.let {
-                    ioScope.launch {
-                        saveAppImage(key, it)
-                    }
-                    it
-                }
-            }
+    private val winAppInfoCaches = WinAppInfoCaches(userDataPathProvider, ioScope)
 
-    @Synchronized
-    private fun saveAppImage(
-        exeFilePath: String,
-        fileDescription: String,
-    ) {
-        val iconPath = userDataPathProvider.resolve("$fileDescription.png", AppFileType.ICON)
-        if (!iconPath.toFile().exists()) {
-            User32.extractAndSaveIcon(exeFilePath, iconPath.toString())
-        }
-    }
+    private val windowFocusRecorder = WindowFocusRecorder(this)
 
     override fun getPrevAppName(): Flow<String?> =
-        prevWinAppInfo.map { appInfo ->
-            appInfo?.filePath?.let {
-                fileDescriptorCache[it]
-            }
+        windowFocusRecorder.lastWinAppInfo.map { appInfo ->
+            appInfo?.getAppName(winAppInfoCaches)
         }
 
     override fun getCurrentActiveAppName(): String? =
-        User32.getActiveWindowProcessFilePath()?.let {
-            fileDescriptorCache[it]
-        }
+        WinAppInfo(INSTANCE.GetForegroundWindow()).getAppName(winAppInfoCaches)
+
+    override fun startWindowService() {
+        windowFocusRecorder.start()
+    }
+
+    override fun stopWindowService() {
+        windowFocusRecorder.stop()
+    }
 
     override fun saveCurrentActiveAppInfo() {
-        prevWinAppInfo.value = User32.getForegroundWindowAppInfoAndThreadId(lazyShortcutKeysAction.value.actioning)
+        // do nothing, the WindowFocusRecorder will update the lastWinAppInfo automatically
     }
 
     override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
-        User32.bringToFront(prevWinAppInfo.value?.threadId, mainHWND)
+        User32.bringToFront(
+            windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
+            mainHWND,
+        )
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -88,7 +71,10 @@ class WinAppWindowManager(
     override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
-        User32.bringToFront(prevWinAppInfo.value?.threadId, searchHWND)
+        User32.bringToFront(
+            windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
+            searchHWND,
+        )
     }
 
     override suspend fun hideSearchWindowAndPaste(
@@ -117,11 +103,11 @@ class WinAppWindowManager(
                 } ?: listOf()
             User32.bringToBackAndPaste(
                 backHWND,
-                prevWinAppInfo.value?.hwnd,
+                windowFocusRecorder.lastWinAppInfo.value?.hwnd,
                 keyCodes,
             )
         } else {
-            User32.backToBack(backHWND, prevWinAppInfo.value?.hwnd)
+            User32.backToBack(backHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
         }
     }
 
@@ -136,9 +122,3 @@ class WinAppWindowManager(
 
     fun initMenuHWND(): HWND? = User32.findPasteWindow(MENU_WINDOW_TITLE)
 }
-
-data class WinAppInfo(
-    val hwnd: HWND,
-    val filePath: String,
-    val threadId: Int,
-)
