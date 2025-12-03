@@ -143,6 +143,7 @@ kotlin {
             implementation(libs.jnativehook)
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.classic)
+            implementation(libs.material.menu)
             implementation(libs.ph.css)
             implementation(libs.sqlite.driver)
             implementation(libs.system.tray)

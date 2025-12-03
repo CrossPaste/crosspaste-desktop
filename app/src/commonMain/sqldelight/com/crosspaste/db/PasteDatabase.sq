@@ -93,7 +93,12 @@ SELECT id
 FROM PasteDataEntity
 WHERE createTime < :cleanTime
   AND pasteState != -1
+  AND favorite = 0
   AND (:pasteType IS NULL OR pasteType = :pasteType)
+  AND NOT EXISTS (
+      SELECT 1 FROM PasteTagEntity
+      WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+  )
 ORDER BY createTime ASC
 LIMIT :limit;
 
@@ -143,6 +148,14 @@ WHERE
         CASE WHEN :pasteType IS NOT NULL
           THEN pasteType = :pasteType
           ELSE TRUE
+        END AND
+        CASE WHEN :tagId IS NOT NULL
+            THEN EXISTS (
+                SELECT 1 FROM PasteTagEntity
+                WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+                AND PasteTagEntity.tagId = :tagId
+            )
+            ELSE TRUE
         END
     ORDER BY CASE WHEN :sort THEN createTime ELSE -createTime END DESC
     LIMIT :number;
@@ -167,6 +180,14 @@ SELECT PasteDataEntity.*
         END AND
         CASE WHEN :pasteType IS NOT NULL
             THEN pasteType = :pasteType
+            ELSE TRUE
+        END AND
+        CASE WHEN :tagId IS NOT NULL
+            THEN EXISTS (
+                SELECT 1 FROM PasteTagEntity
+                WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+                AND PasteTagEntity.tagId = :tagId
+            )
             ELSE TRUE
         END
     ORDER BY CASE WHEN :sort THEN createTime ELSE -createTime END DESC

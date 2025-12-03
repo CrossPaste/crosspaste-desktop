@@ -115,6 +115,7 @@ import com.crosspaste.paste.DesktopGuidePasteDataService
 import com.crosspaste.paste.DesktopPasteExportParamFactory
 import com.crosspaste.paste.DesktopPasteImportParamFactory
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.paste.DesktopPasteTagMenuService
 import com.crosspaste.paste.DesktopSearchContentService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
@@ -455,7 +456,10 @@ class DesktopModule(
                 OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
             }
             single<DesktopPasteMenuService> {
-                DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get())
+                DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get(), get())
+            }
+            single<DesktopPasteTagMenuService> {
+                DesktopPasteTagMenuService(get(), get())
             }
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }

@@ -143,8 +143,7 @@ fun SidePasteboardContentView() {
 
                 val isPartiallyVisibleAtTop = itemStart < 0 && itemEnd > 0
                 val isPartiallyVisibleAtBottom =
-                    itemStart < (viewportEndOffset - viewportStartOffset) &&
-                        itemEnd > (viewportEndOffset - viewportStartOffset)
+                    viewportEndOffset - viewportStartOffset in (itemStart + 1)..<itemEnd
 
                 when {
                     isFullyVisible -> {

@@ -3,6 +3,7 @@ package com.crosspaste.ui.model
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.SearchContentService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +23,15 @@ class GeneralPasteSearchViewModel(
 
     override val convertTerm: (String) -> List<String> = searchContentService::createSearchTerms
 
+    override val tagList: StateFlow<List<PasteTag>> =
+        pasteDao
+            .getAllTagsFlow()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = listOf(),
+            )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override val searchResults: StateFlow<List<PasteData>> =
         searchParams
@@ -34,6 +44,7 @@ class GeneralPasteSearchViewModel(
                         favorite = if (params.favorite) true else null,
                         sort = params.sort,
                         pasteType = params.pasteType,
+                        tag = params.tag,
                         limit = params.limit,
                     ).map { pasteDataList ->
                         checkLoadAll(pasteDataList.size)

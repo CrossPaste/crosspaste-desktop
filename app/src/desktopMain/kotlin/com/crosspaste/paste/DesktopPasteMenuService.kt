@@ -1,6 +1,13 @@
 package com.crosspaste.paste
 
 import androidx.compose.foundation.ContextMenuItem
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Icon
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
@@ -14,8 +21,15 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.base.check
+import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.utils.ioDispatcher
+import com.dzirbel.contextmenu.ContextMenuDivider
+import com.dzirbel.contextmenu.ContextMenuGroup
+import com.dzirbel.contextmenu.MaterialContextMenuItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -27,6 +41,7 @@ class DesktopPasteMenuService(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
+    private val pasteSearchViewModel: PasteSearchViewModel,
     private val ocrModule: OCRModule,
     private val uiSupport: UISupport,
     private val userDataPathProvider: UserDataPathProvider,
@@ -166,6 +181,45 @@ class DesktopPasteMenuService(
             openPasteData(pasteData)
         }
 
+    private fun createPinTagMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuGroup(copywriter.getText("pin")) {
+            val tagList = pasteSearchViewModel.tagList.value
+            if (tagList.isEmpty()) {
+                listOf(
+                    ContextMenuItem(copywriter.getText("empty")) {
+                    },
+                )
+            } else {
+                val tagIdList = pasteDao.getPasteTags(pasteData.id)
+
+                tagList.map { tag ->
+                    MaterialContextMenuItem(
+                        label = tag.name,
+                        onClick = {
+                            pasteDao.switchPinPasteTag(pasteData.id, tag.id)
+                        },
+                        leadingIcon = {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(small)
+                                        .background(color = Color(tag.color.toInt()), shape = CircleShape),
+                            )
+                        },
+                        trailingIcon = {
+                            if (tagIdList.contains(tag.id)) {
+                                Icon(
+                                    painter = check(),
+                                    contentDescription = "Checked",
+                                    tint = AppUIColors.importantColor,
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
     private fun createExtractTextContextMenuItem(pasteData: PasteData): ContextMenuItem =
         ContextMenuItem(copywriter.getText("extract_text")) {
             menuScope.launch {
@@ -194,6 +248,7 @@ class DesktopPasteMenuService(
     private fun createLoadingMenuItems(pasteData: PasteData): List<ContextMenuItem> =
         listOf(
             createCopyContextMenuItem(pasteData),
+            ContextMenuDivider,
             createDeleteContextMenuItem(pasteData),
         )
 
@@ -201,6 +256,8 @@ class DesktopPasteMenuService(
         listOf(
             createCopyContextMenuItem(pasteData),
             createOpenContextMenuItem(pasteData),
+            createPinTagMenuItem(pasteData),
+            ContextMenuDivider,
             createDeleteContextMenuItem(pasteData),
         )
 
@@ -208,6 +265,8 @@ class DesktopPasteMenuService(
         listOf(
             createCopyContextMenuItem(pasteData),
             createEditContextMenuItem(pasteData),
+            createPinTagMenuItem(pasteData),
+            ContextMenuDivider,
             createDeleteContextMenuItem(pasteData),
         )
 
@@ -216,6 +275,8 @@ class DesktopPasteMenuService(
             createCopyContextMenuItem(pasteData),
             createEditContextMenuItem(pasteData),
             createExtractTextContextMenuItem(pasteData),
+            createPinTagMenuItem(pasteData),
+            ContextMenuDivider,
             createDeleteContextMenuItem(pasteData),
         )
 
