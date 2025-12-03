@@ -15,6 +15,8 @@ import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.PasteState
+import com.crosspaste.paste.PasteTag
+import com.crosspaste.paste.PasteTag.Companion.getColor
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteFiles
@@ -50,6 +52,8 @@ class PasteDao(
     val logger = KotlinLogging.logger {}
 
     private val pasteDatabaseQueries = database.pasteDatabaseQueries
+
+    private val tagDatabaseQueries = database.tagDatabaseQueries
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -184,6 +188,64 @@ class PasteDao(
             }
     }
 
+    fun getAllTagsFlow(): Flow<List<PasteTag>> {
+        return tagDatabaseQueries.getAllTags(PasteTag::mapper)
+            .asFlow()
+            .map { it.executeAsList() }
+            .catch { e ->
+                logger.error(e) { "Error executing getAllTagsFlow query: ${e.message}" }
+                emit(listOf())
+            }
+    }
+
+    fun getMaxSortOrder(): Long {
+        return tagDatabaseQueries.maxSortOrder().executeAsOne()
+    }
+
+    fun createPasteTag(name: String, color: Long): Long {
+        return database.transactionWithResult {
+            val maxSortOrder = tagDatabaseQueries.maxSortOrder().executeAsOne()
+            val newSortOrder = maxSortOrder + 1
+            tagDatabaseQueries.createTag(name, color, newSortOrder)
+            tagDatabaseQueries.getLastId().executeAsOne()
+        }
+    }
+
+    fun updatePasteTagName(id: Long, name: String) {
+        tagDatabaseQueries.updateTagName(name, id)
+    }
+
+    fun updatePasteTagColor(id: Long, color: Long) {
+        tagDatabaseQueries.updateTagColor(color, id)
+    }
+
+    private fun pinPasteTag(pasteDataId: Long, pasteTagId: Long) {
+        tagDatabaseQueries.pinPasteTag(pasteDataId, pasteTagId)
+    }
+
+    private fun unPinPasteTag(pasteDataId: Long, pasteTagId: Long) {
+        tagDatabaseQueries.unPinPasteTag(pasteDataId, pasteTagId)
+    }
+
+    fun switchPinPasteTag(pasteDataId: Long, pasteTagId: Long) {
+        database.transaction {
+            val pinned = tagDatabaseQueries.isPinnedPasteTag(pasteDataId, pasteTagId).executeAsOne()
+            if (pinned) {
+                unPinPasteTag(pasteDataId, pasteTagId)
+            } else {
+                pinPasteTag(pasteDataId, pasteTagId)
+            }
+        }
+    }
+
+    fun getPasteTags(pasteDataId: Long): List<Long> {
+        return tagDatabaseQueries.getPasteTags(pasteDataId).executeAsList()
+    }
+
+    fun deletePasteTag(id: Long) {
+        tagDatabaseQueries.deleteTag(id)
+    }
+
     @OptIn(ExperimentalTime::class)
     private fun markDeleteSameHash(
         newPasteDataId: Long,
@@ -270,6 +332,7 @@ class PasteDao(
         favorite: Boolean? = null,
         pasteType: Int? = null,
         sort: Boolean = true,
+        tagId: Long? = null,
         limit: Int,
     ): Query<PasteData> {
         val appInstanceId: String? = local?.let { appInfo.appInstanceId }
@@ -285,6 +348,7 @@ class PasteDao(
                 pasteType = pasteType?.toLong(),
                 searchQuery = searchQuery,
                 sort = sort,
+                tagId = tagId,
                 number = limit.toLong(),
                 mapper = PasteData::mapper,
             )
@@ -297,6 +361,7 @@ class PasteDao(
                 favorite = favorite,
                 pasteType = pasteType?.toLong(),
                 sort = sort,
+                tagId = tagId,
                 number = limit.toLong(),
                 mapper = PasteData::mapper,
             )
@@ -309,11 +374,12 @@ class PasteDao(
         favorite: Boolean? = null,
         pasteType: Int? = null,
         sort: Boolean = true,
+        tag: Long? = null,
         limit: Int,
     ): List<PasteData> {
         return logExecutionTime(logger, "searchPasteData") {
             logger.info { "Performing search for: $searchTerms" }
-            createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, limit).executeAsList()
+            createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, tag, limit).executeAsList()
         }
     }
 
@@ -323,18 +389,19 @@ class PasteDao(
         favorite: Boolean? = null,
         pasteType: Int? = null,
         sort: Boolean = true,
+        tag: Long? = null,
         limit: Int,
     ): Flow<List<PasteData>> {
         return logExecutionTime(logger, "searchPasteData") {
             logger.info { "Performing search for: $searchTerms" }
-            createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, limit)
+            createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, tag, limit)
                 .asFlow()
                 .map { it.executeAsList() }
                 .catch { e ->
                     logger.error(e) { "Error executing search query: ${e.message}\n" +
                             "searchTerms=$searchTerms local=$local favorite=$favorite " +
                             "pasteType=$pasteType sort=$sort" }
-                    emit(searchPasteData(listOf(), local, favorite, pasteType, sort, limit))
+                    emit(searchPasteData(listOf(), local, favorite, pasteType, sort, tag, limit))
                 }
         }
     }

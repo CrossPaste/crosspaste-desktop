@@ -1,11 +1,12 @@
 package com.crosspaste
 
-import androidx.compose.foundation.LocalContextMenuRepresentation
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.application
 import androidx.navigation.compose.rememberNavController
 import com.crosspaste.app.AppExitService
@@ -40,7 +41,6 @@ import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.CrossPasteWindows
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.LocalNavHostController
-import com.crosspaste.ui.base.PasteContextMenuRepresentation
 import com.crosspaste.ui.theme.DesktopTheme
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
@@ -239,6 +239,7 @@ class CrossPaste {
             }
         }
 
+        @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
         @JvmStatic
         fun main(args: Array<String>) {
             Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -264,13 +265,10 @@ class CrossPaste {
                     }
                 }
 
-                val contextMenuRepresentation = remember { PasteContextMenuRepresentation() }
-
                 val navController = rememberNavController()
 
                 CompositionLocalProvider(
                     LocalExitApplication provides exitApplication,
-                    LocalContextMenuRepresentation provides contextMenuRepresentation,
                     LocalNavHostController provides navController,
                 ) {
                     DesktopTheme {

@@ -26,6 +26,7 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.base.DesktopMenu.ProvidesMenuContext
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
@@ -172,6 +173,8 @@ fun MainWindow(windowIcon: Painter?) {
             }
         }
 
-        CrossPasteMainWindowContent()
+        ProvidesMenuContext {
+            CrossPasteMainWindowContent()
+        }
     }
 }

@@ -1,0 +1,49 @@
+CREATE TABLE IF NOT EXISTS TagEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    color INTEGER NOT NULL,
+    sortOrder INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS PasteTagEntity (
+    pasteId INTEGER NOT NULL,
+    tagId INTEGER NOT NULL,
+    PRIMARY KEY (pasteId, tagId),
+    FOREIGN KEY (pasteId) REFERENCES PasteDataEntity(id) ON DELETE CASCADE,
+    FOREIGN KEY (tagId) REFERENCES TagEntity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS IdxPasteTagTagId ON PasteTagEntity(tagId);
+
+createTag:
+INSERT INTO TagEntity(name, color, sortOrder) VALUES (?, ?, ?);
+
+pinPasteTag:
+INSERT INTO PasteTagEntity(pasteId, tagId) VALUES (?, ?);
+
+unPinPasteTag:
+DELETE FROM PasteTagEntity WHERE pasteId = ? AND tagId = ?;
+
+getPasteTags:
+SELECT tagId FROM PasteTagEntity WHERE pasteId = ?;
+
+isPinnedPasteTag:
+SELECT EXISTS(SELECT 1 FROM PasteTagEntity WHERE pasteId = ? AND tagId = ?);
+
+getAllTags:
+SELECT * FROM TagEntity ORDER BY sortOrder ASC;
+
+updateTagName:
+UPDATE TagEntity SET name = ? WHERE id = ?;
+
+updateTagColor:
+UPDATE TagEntity SET color = ? WHERE id = ?;
+
+deleteTag:
+DELETE FROM TagEntity WHERE id = ?;
+
+maxSortOrder:
+SELECT IFNULL(MAX(sortOrder), 0) FROM TagEntity;
+
+getLastId:
+SELECT last_insert_rowid();

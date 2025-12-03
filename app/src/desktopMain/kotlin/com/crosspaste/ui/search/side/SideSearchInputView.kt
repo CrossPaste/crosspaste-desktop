@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -39,6 +38,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImagePainter.State.Empty.painter
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
@@ -59,6 +59,8 @@ import com.crosspaste.ui.search.QuickPasteView
 import com.crosspaste.ui.search.SearchTrailingIcon
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
@@ -111,17 +113,18 @@ fun SideSearchInputView() {
         }
     }
 
-    Box(
+    Row(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .height(xxxxLarge),
-        contentAlignment = Alignment.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxHeight()
                     .padding(start = xxLarge),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
@@ -140,31 +143,12 @@ fun SideSearchInputView() {
                 Spacer(modifier = Modifier.width(tiny))
                 QuickPasteView()
             }
-        }
 
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(end = xxLarge),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
             if (firstLaunchCompleted && config.showTutorial) {
-                TutorialButton()
-                Spacer(modifier = Modifier.width(tiny))
-            }
-
-            PasteTooltipIconView(
-                painter = settings(),
-                tint = MaterialTheme.colorScheme.primary,
-                text = copywriter.getText("settings"),
-            ) {
-                scope.launch {
-                    navigationManager.navigateAndClearStack(Settings)
-                    appWindowManager.showMainWindow(WindowTrigger.MENU)
-                    appWindowManager.hideSearchWindow()
+                if (prevAppName != null) {
+                    Spacer(modifier = Modifier.width(large))
                 }
+                TutorialButton()
             }
         }
 
@@ -172,7 +156,7 @@ fun SideSearchInputView() {
             modifier =
                 Modifier
                     .fillMaxHeight()
-                    .widthIn(min = 800.dp)
+                    .widthIn(min = 600.dp, max = 800.dp)
                     .focusRequester(searchFocusRequester)
                     .onFocusEvent {
                         if (it.isFocused) {
@@ -237,5 +221,40 @@ fun SideSearchInputView() {
                 ),
             textStyle = MaterialTheme.typography.bodyMedium,
         )
+
+        Row(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(end = xxLarge),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(modifier = Modifier.width(small))
+
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                SearchTagsView()
+            }
+
+            Spacer(modifier = Modifier.width(small))
+
+            PasteTooltipIconView(
+                painter = settings(),
+                tint = MaterialTheme.colorScheme.primary,
+                text = copywriter.getText("settings"),
+            ) {
+                scope.launch {
+                    navigationManager.navigateAndClearStack(Settings)
+                    appWindowManager.showMainWindow(WindowTrigger.MENU)
+                    appWindowManager.hideSearchWindow()
+                }
+            }
+        }
     }
 }

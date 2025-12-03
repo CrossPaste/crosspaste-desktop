@@ -3,6 +3,7 @@ package com.crosspaste.ui.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteTag
 import com.crosspaste.utils.getDateUtils
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,8 +29,9 @@ abstract class PasteSearchViewModel : ViewModel() {
         MutableStateFlow(
             SearchBaseParams(
                 favorite = false,
-                sort = true,
                 pasteType = null,
+                sort = true,
+                tag = null,
                 limit = QUERY_BATCH_SIZE,
             ),
         )
@@ -56,11 +58,14 @@ abstract class PasteSearchViewModel : ViewModel() {
             SearchParams(
                 searchTerms = searchTerms,
                 favorite = searchBaseParams.favorite,
-                sort = searchBaseParams.sort,
                 pasteType = searchBaseParams.pasteType,
+                sort = searchBaseParams.sort,
+                tag = searchBaseParams.tag,
                 limit = searchBaseParams.limit,
             )
         }
+
+    abstract val tagList: StateFlow<List<PasteTag>>
 
     abstract val searchResults: StateFlow<List<PasteData>>
 
@@ -95,6 +100,22 @@ abstract class PasteSearchViewModel : ViewModel() {
                 pasteType = pasteType,
                 limit = QUERY_BATCH_SIZE,
             )
+        _loadAll.value = false
+    }
+
+    fun updateTag(tag: Long?) {
+        _searchBaseParams.value =
+            if (_searchBaseParams.value.tag != tag) {
+                _searchBaseParams.value.copy(
+                    tag = tag,
+                    limit = QUERY_BATCH_SIZE,
+                )
+            } else {
+                _searchBaseParams.value.copy(
+                    tag = null,
+                    limit = QUERY_BATCH_SIZE,
+                )
+            }
         _loadAll.value = false
     }
 
