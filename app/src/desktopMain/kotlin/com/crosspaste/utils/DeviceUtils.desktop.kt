@@ -7,6 +7,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.net.InetAddress
 import java.util.UUID
 
 class DesktopDeviceUtils(
@@ -84,10 +85,30 @@ object LinuxDeviceUtils : DeviceUtils {
     override fun getDeviceId(): String = getMachineId() ?: "Unknown"
 
     override fun getDeviceName(): String {
-        val process = ProcessBuilder("hostname").start()
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        val hostName = reader.readLine()
-        reader.close()
-        return hostName
+        val hostnameFile = File("/etc/hostname")
+        if (hostnameFile.exists() && hostnameFile.canRead()) {
+            try {
+                val name = hostnameFile.readText().trim()
+                if (name.isNotEmpty() && name != "localhost") {
+                    return name
+                }
+            } catch (_: Exception) {
+            }
+        }
+
+        val envName = System.getenv("HOSTNAME") ?: System.getenv("COMPUTERNAME")
+        if (!envName.isNullOrBlank()) {
+            return envName
+        }
+
+        try {
+            val netName = InetAddress.getLocalHost().hostName
+            if (!netName.isNullOrBlank() && netName != "localhost") {
+                return netName
+            }
+        } catch (_: Exception) {
+        }
+
+        return "Linux Device"
     }
 }
