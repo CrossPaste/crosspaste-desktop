@@ -42,7 +42,6 @@ import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
-import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -204,24 +203,22 @@ object WindowsTrayView {
             appSize.updateMenuWindowWidth(maxWidth)
         }
 
-        Theme {
-            Box(
-                modifier =
-                    Modifier
-                        .width(maxWidth)
-                        .clip(appSize.menuRoundedCornerShape)
-                        .border(
-                            appSize.appBorderSize,
-                            AppUIColors.lightBorderColor,
-                            tiny2XRoundedCornerShape,
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                menuHelper.createWindowsMenu(
-                    applicationExit = applicationExit,
-                    closeWindowMenu = hideMenu,
-                )
-            }
+        Box(
+            modifier =
+                Modifier
+                    .width(maxWidth)
+                    .clip(appSize.menuRoundedCornerShape)
+                    .border(
+                        appSize.appBorderSize,
+                        AppUIColors.lightBorderColor,
+                        tiny2XRoundedCornerShape,
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            menuHelper.createWindowsMenu(
+                applicationExit = applicationExit,
+                closeWindowMenu = hideMenu,
+            )
         }
     }
 

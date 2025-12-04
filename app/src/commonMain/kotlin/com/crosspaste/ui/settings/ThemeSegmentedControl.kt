@@ -16,13 +16,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.check
 import com.crosspaste.ui.base.contrastHigh
 import com.crosspaste.ui.base.contrastMedium
@@ -137,6 +136,10 @@ private fun ThemeStyle() {
     val copywriter = koinInject<GlobalCopywriter>()
     val themeDetector = koinInject<ThemeDetector>()
 
+    val themeState = LocalThemeState.current
+    val isCurrentThemeDark = themeState.isCurrentThemeDark
+    val isFollowSystem = themeState.isFollowSystem
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         // Light Button
         LeftThemeButton(
@@ -150,13 +153,13 @@ private fun ThemeStyle() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) {
+                        if (!isFollowSystem && !isCurrentThemeDark) {
                             MaterialTheme.colorScheme.primaryContainer
                         } else {
                             Color.White
                         },
                     contentColor =
-                        if (!themeDetector.isFollowSystem() && !themeDetector.isCurrentThemeDark()) {
+                        if (!isFollowSystem && !isCurrentThemeDark) {
                             MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.primaryContainer)
                         } else {
                             MaterialTheme.colorScheme.contentColorFor(Color.White)
@@ -175,13 +178,13 @@ private fun ThemeStyle() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isFollowSystem()) {
+                        if (isFollowSystem) {
                             MaterialTheme.colorScheme.primaryContainer
                         } else {
                             Color.White
                         },
                     contentColor =
-                        if (themeDetector.isFollowSystem()) {
+                        if (isFollowSystem) {
                             MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.primaryContainer)
                         } else {
                             MaterialTheme.colorScheme.contentColorFor(Color.White)
@@ -206,13 +209,13 @@ private fun ThemeStyle() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) {
+                        if (!isFollowSystem && isCurrentThemeDark) {
                             MaterialTheme.colorScheme.primaryContainer
                         } else {
                             Color.White
                         },
                     contentColor =
-                        if (!themeDetector.isFollowSystem() && themeDetector.isCurrentThemeDark()) {
+                        if (!isFollowSystem && isCurrentThemeDark) {
                             MaterialTheme.colorScheme.contentColorFor(MaterialTheme.colorScheme.primaryContainer)
                         } else {
                             MaterialTheme.colorScheme.contentColorFor(Color.White)
@@ -231,7 +234,9 @@ private fun ThemeStyle() {
 private fun ThemeColor() {
     val themeDetector = koinInject<ThemeDetector>()
 
-    val themeColor by themeDetector.currentThemeColor.collectAsState()
+    val themeState = LocalThemeState.current
+    val isCurrentThemeDark = themeState.isCurrentThemeDark
+    val themeColor = themeState.themeColor
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         // CoralColor
@@ -242,7 +247,7 @@ private fun ThemeColor() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (isCurrentThemeDark) {
                             CoralColor.darkColorScheme.primary
                         } else {
                             CoralColor.lightColorScheme.primary
@@ -266,7 +271,7 @@ private fun ThemeColor() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (isCurrentThemeDark) {
                             GrassColor.darkColorScheme.primary
                         } else {
                             GrassColor.lightColorScheme.primary
@@ -290,7 +295,7 @@ private fun ThemeColor() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (isCurrentThemeDark) {
                             SeaColor.darkColorScheme.primary
                         } else {
                             SeaColor.lightColorScheme.primary
@@ -314,7 +319,7 @@ private fun ThemeColor() {
             buttonColors =
                 ButtonDefaults.buttonColors(
                     containerColor =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (isCurrentThemeDark) {
                             HoneyColor.darkColorScheme.primary
                         } else {
                             HoneyColor.lightColorScheme.primary
@@ -336,9 +341,9 @@ private fun ThemeColor() {
 private fun ContrastColor() {
     val themeDetector = koinInject<ThemeDetector>()
 
-    val themeColor by themeDetector.currentThemeColor.collectAsState()
-
-    val colorContrast by themeDetector.colorContrast.collectAsState()
+    val themeState = LocalThemeState.current
+    val themeColor = themeState.themeColor
+    val colorContrast = themeState.colorContrast
 
     val leftContainerColor =
         if (colorContrast == ColorContrast.Standard) {

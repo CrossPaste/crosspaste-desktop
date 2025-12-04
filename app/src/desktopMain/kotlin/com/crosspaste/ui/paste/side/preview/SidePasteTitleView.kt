@@ -25,6 +25,7 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
@@ -36,7 +37,6 @@ import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.DesktopAppUIFont
-import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.ColorUtils.getBestTextColor
 import com.crosspaste.utils.DateUtils
 import kotlinx.coroutines.delay
@@ -48,9 +48,8 @@ fun PasteDataScope.SidePasteTitleView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
     val pasteDao = koinInject<PasteDao>()
-    val themeDetector = koinInject<ThemeDetector>()
 
-    val isCurrentThemeDark = themeDetector.isCurrentThemeDark()
+    val isCurrentThemeDark = LocalThemeState.current.isCurrentThemeDark
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
     var background by remember(type, isCurrentThemeDark) {
         mutableStateOf(

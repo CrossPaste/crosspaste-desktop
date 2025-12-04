@@ -2,9 +2,11 @@ package com.crosspaste.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.base.withCustomFonts
@@ -16,14 +18,19 @@ object CrossPasteTheme {
     @Composable
     fun Theme(content: @Composable () -> Unit) {
         val themeDetector = koinInject<ThemeDetector>()
+        val themeState by themeDetector.themeState.collectAsState()
 
-        val colorScheme by themeDetector.getCurrentColorScheme().collectAsState()
         val userSelectedFont by rememberUserSelectedFont()
         MaterialTheme(
-            colorScheme = colorScheme,
-            content = content,
+            colorScheme = themeState.colorScheme,
             typography = MaterialTheme.typography.withCustomFonts(userSelectedFont),
-        )
+        ) {
+            CompositionLocalProvider(
+                LocalThemeState provides themeState,
+            ) {
+                content()
+            }
+        }
     }
 
     fun getThemeColor(name: String): ThemeColor =

@@ -22,10 +22,10 @@ import com.crosspaste.info.PasteInfos.REMOTE
 import com.crosspaste.info.PasteInfos.SIZE
 import com.crosspaste.info.PasteInfos.TYPE
 import com.crosspaste.paste.item.RtfPasteItem
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getColorUtils
 import com.crosspaste.utils.getFileUtils
@@ -36,7 +36,6 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteDataScope.RtfDetailView(onDoubleClick: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val themeDetector = koinInject<ThemeDetector>()
     val uiSupport = koinInject<UISupport>()
     val rtfPasteItem = getPasteItem(RtfPasteItem::class)
 
@@ -55,7 +54,7 @@ fun PasteDataScope.RtfDetailView(onDoubleClick: () -> Unit) {
         }
     val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(rtfBackground)) }
     val richTextColor =
-        if (isDark == themeDetector.isCurrentThemeDark()) {
+        if (isDark == LocalThemeState.current.isCurrentThemeDark) {
             MaterialTheme.colorScheme.onBackground
         } else {
             MaterialTheme.colorScheme.background
