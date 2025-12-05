@@ -12,17 +12,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.getColorUtils
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
-import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.HtmlPreviewView() {
-    val themeDetector = koinInject<ThemeDetector>()
     val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
 
     val colorUtils = getColorUtils()
@@ -39,7 +37,7 @@ fun PasteDataScope.HtmlPreviewView() {
         }
     val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(htmlBackground)) }
     val richTextColor =
-        if (isDark == themeDetector.isCurrentThemeDark()) {
+        if (isDark == LocalThemeState.current.isCurrentThemeDark) {
             MaterialTheme.colorScheme.onBackground
         } else {
             MaterialTheme.colorScheme.background

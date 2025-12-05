@@ -2,6 +2,7 @@ package com.crosspaste.ui.theme
 
 import androidx.compose.runtime.Composable
 import com.crosspaste.app.DesktopAppSize
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import org.jetbrains.jewel.foundation.DisabledAppearanceValues
 import org.jetbrains.jewel.foundation.GlobalColors
@@ -31,12 +32,11 @@ import org.koin.compose.koinInject
 @Composable
 fun DesktopTheme(content: @Composable () -> Unit) {
     val appSize = koinInject<DesktopAppSize>()
-    val themeDetector = koinInject<ThemeDetector>()
 
     Theme {
         IntUiTheme(
             theme =
-                if (themeDetector.isCurrentThemeDark()) {
+                if (LocalThemeState.current.isCurrentThemeDark) {
                     JewelTheme.darkThemeDefinition(
                         colors = GlobalColors.dark(),
                         metrics = GlobalMetrics.defaults(),
@@ -64,7 +64,7 @@ fun DesktopTheme(content: @Composable () -> Unit) {
             styling =
                 ComponentStyling.default().decoratedWindow(
                     titleBarStyle =
-                        if (themeDetector.isCurrentThemeDark()) {
+                        if (LocalThemeState.current.isCurrentThemeDark) {
                             TitleBarStyle.dark(
                                 colors =
                                     TitleBarColors.dark(
