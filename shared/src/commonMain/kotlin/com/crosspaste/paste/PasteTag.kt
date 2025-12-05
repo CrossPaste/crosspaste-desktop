@@ -1,8 +1,10 @@
 package com.crosspaste.paste
 
+import androidx.compose.runtime.Stable
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Stable
 data class PasteTag(
     val id: Long,
     val name: String,

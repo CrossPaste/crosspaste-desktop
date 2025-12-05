@@ -1,5 +1,6 @@
 package com.crosspaste.paste
 
+import androidx.compose.runtime.Stable
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
@@ -11,6 +12,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
+@Stable
 data class PasteCollection(
     val pasteItems: List<PasteItem>,
 ) {

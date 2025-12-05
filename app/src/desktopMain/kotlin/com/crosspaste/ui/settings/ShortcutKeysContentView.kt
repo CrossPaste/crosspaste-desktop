@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -155,6 +156,8 @@ fun ShortcutKeyRow(name: String) {
     val pasteDialogFactory = koinInject<PasteDialogFactory>()
     val shortcutKeys = koinInject<ShortcutKeys>()
 
+    val shortcutKeysCore by shortcutKeys.shortcutKeysCore.collectAsState()
+
     var hover by remember { mutableStateOf(false) }
 
     Row(
@@ -264,7 +267,7 @@ fun ShortcutKeyRow(name: String) {
 
         Spacer(modifier = Modifier.width(small3X))
 
-        shortcutKeys.shortcutKeysCore.value.keys[name]?.let { keys ->
+        shortcutKeysCore.keys[name]?.let { keys ->
             ShortcutKeyItemView(keys)
         } ?: run {
             Text(

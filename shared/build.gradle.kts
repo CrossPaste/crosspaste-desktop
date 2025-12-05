@@ -16,6 +16,8 @@ group = "com.crosspaste"
 version = versionProperties.getProperty("version")
 
 plugins {
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ktlint)
@@ -45,6 +47,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(compose.runtime)
             implementation(libs.cryptography.core)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)

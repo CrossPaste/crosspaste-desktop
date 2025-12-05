@@ -1,5 +1,6 @@
 package com.crosspaste.paste
 
+import androidx.compose.runtime.Stable
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteFiles
@@ -26,6 +27,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
 @Serializable(with = PasteDataSerializer::class)
+@Stable
 data class PasteData(
     val id: Long = -1L,
     val appInstanceId: String,
