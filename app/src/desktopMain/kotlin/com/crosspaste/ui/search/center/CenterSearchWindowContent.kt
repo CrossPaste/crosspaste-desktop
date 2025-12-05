@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -40,7 +38,7 @@ fun CenterSearchWindowContent() {
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
-    val isLinux by remember { mutableStateOf(platform.isLinux()) }
+    val isLinux = remember { platform.isLinux() }
 
     val modifier =
         Modifier

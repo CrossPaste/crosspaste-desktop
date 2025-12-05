@@ -7,9 +7,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
@@ -46,15 +44,12 @@ fun SearchWindow(windowIcon: Painter?) {
     val config by configManager.config.collectAsState()
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
-    val isMac by remember { mutableStateOf(platform.isMacos()) }
+    val isMac = remember { platform.isMacos() }
 
-    var currentStyle by remember { mutableStateOf(config.searchWindowStyle) }
-
-    val isCenterStyle by remember(currentStyle) {
-        mutableStateOf(
-            config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style,
-        )
-    }
+    val isCenterStyle =
+        remember(config.searchWindowStyle) {
+            config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style
+        }
 
     val animationProgress by animateFloatAsState(
         targetValue = if (searchWindowInfo.show && !isCenterStyle) 0f else 1f,
@@ -106,12 +101,6 @@ fun SearchWindow(windowIcon: Painter?) {
         transparent = false,
         resizable = false,
     ) {
-        LaunchedEffect(config.searchWindowStyle) {
-            if (currentStyle != config.searchWindowStyle) {
-                currentStyle = config.searchWindowStyle
-            }
-        }
-
         DisposableEffect(Unit) {
             if (isMac) {
                 runCatching {

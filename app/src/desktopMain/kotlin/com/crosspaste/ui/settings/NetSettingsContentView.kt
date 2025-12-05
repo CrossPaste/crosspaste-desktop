@@ -55,17 +55,13 @@ fun NetSettingsContentView() {
     val syncScopeFactory = koinInject<SyncScopeFactory>()
     val jsonUtils = getJsonUtils()
 
-    var port: String? by remember { mutableStateOf(null) }
+    var port by remember { mutableStateOf<String?>(null) }
 
     val config by configManager.config.collectAsState()
 
     var networkInterfaces by remember { mutableStateOf(listOf<NetworkInterfaceInfo>()) }
 
-    var useNetworkInterfaces by remember { mutableStateOf(listOf<String>()) }
-
-    LaunchedEffect(config.useNetworkInterfaces) {
-        useNetworkInterfaces = jsonUtils.JSON.decodeFromString(config.useNetworkInterfaces)
-    }
+    val useNetworkInterfaces: List<String> = jsonUtils.JSON.decodeFromString(config.useNetworkInterfaces)
 
     LaunchedEffect(Unit) {
         networkInterfaces = networkInterfaceService.getAllNetworkInterfaceInfo()
@@ -99,12 +95,12 @@ fun NetSettingsContentView() {
                 onCheckedChange = { enableDiscovery ->
                     if (enableDiscovery) {
                         networkInterfaceService.getPreferredNetworkInterface()?.let {
-                            useNetworkInterfaces = listOf(it.name)
-                            val newUseNetworkInterfaces =
-                                jsonUtils.JSON.encodeToString(useNetworkInterfaces)
+                            val newUseNetworkInterfaces = listOf(it.name)
+                            val newUseNetworkInterfacesJson =
+                                jsonUtils.JSON.encodeToString(newUseNetworkInterfaces)
                             configManager.updateConfig(
                                 listOf("useNetworkInterfaces", "enableDiscovery"),
-                                listOf(newUseNetworkInterfaces, true),
+                                listOf(newUseNetworkInterfacesJson, true),
                             )
                         }
                     } else {
@@ -126,16 +122,16 @@ fun NetSettingsContentView() {
             },
             onChange = { index, isChecked ->
                 val currentInterface = networkInterfaces.map { it.name }[index]
-                useNetworkInterfaces =
+                val newUseNetworkInterfaces =
                     if (isChecked) {
                         useNetworkInterfaces + currentInterface
                     } else {
                         useNetworkInterfaces - currentInterface
                     }
-                val newUseNetworkInterfaces = jsonUtils.JSON.encodeToString(useNetworkInterfaces)
+                val newUseNetworkInterfacesJson = jsonUtils.JSON.encodeToString(newUseNetworkInterfaces)
                 configManager.updateConfig(
                     listOf("useNetworkInterfaces", "enableDiscovery"),
-                    listOf(newUseNetworkInterfaces, useNetworkInterfaces.isNotEmpty()),
+                    listOf(newUseNetworkInterfacesJson, useNetworkInterfaces.isNotEmpty()),
                 )
             },
         )

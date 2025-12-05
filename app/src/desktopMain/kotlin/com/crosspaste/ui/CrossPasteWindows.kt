@@ -1,8 +1,6 @@
 package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.app.generated.resources.Res
@@ -18,14 +16,14 @@ import org.koin.compose.koinInject
 @Composable
 fun CrossPasteWindows(exiting: Boolean) {
     val platform = koinInject<Platform>()
-    val isMacos by remember { mutableStateOf(platform.isMacos()) }
-    val isWindows by remember { mutableStateOf(platform.isWindows()) }
-    val isLinux by remember { mutableStateOf(platform.isLinux()) }
+    val isMacos = remember { platform.isMacos() }
+    val isWindows = remember { platform.isWindows() }
+    val isLinux = remember { platform.isLinux() }
 
     val windowIcon: Painter? =
-        if (platform.isMacos()) {
+        if (isMacos) {
             painterResource(Res.drawable.crosspaste_mac)
-        } else if (platform.isWindows() || platform.isLinux()) {
+        } else if (isWindows || isLinux) {
             painterResource(Res.drawable.crosspaste)
         } else {
             null

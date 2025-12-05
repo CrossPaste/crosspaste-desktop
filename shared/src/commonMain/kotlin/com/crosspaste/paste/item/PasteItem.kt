@@ -1,5 +1,6 @@
 package com.crosspaste.paste.item
 
+import androidx.compose.runtime.Stable
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteItemProperties.MARKETING_PATH
 import com.crosspaste.path.UserDataPathProvider
@@ -15,6 +16,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
 
 @Serializable
+@Stable
 sealed interface PasteItem {
 
     companion object {
