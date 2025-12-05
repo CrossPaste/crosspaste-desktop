@@ -1,10 +1,10 @@
 package com.crosspaste.ui.theme
 
-import androidx.compose.material3.ColorScheme
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.ui.theme.ThemeState.Companion.createThemeState
+import com.crosspaste.utils.mainDispatcher
 import com.jthemedetecor.OsThemeDetector
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 
 class DesktopThemeDetector(
     private val configManager: CommonConfigManager,
-    scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+    scope: CoroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher),
 ) : ThemeDetector {
 
     private val detector = OsThemeDetector.getDetector()
@@ -65,30 +65,6 @@ class DesktopThemeDetector(
         }
     }
 
-    private fun createThemeState(
-        themeColor: ThemeColor,
-        colorContrast: ColorContrast,
-        isFollowSystem: Boolean,
-        isUserInDark: Boolean,
-        isSystemInDark: Boolean,
-    ): ThemeState {
-        val isCurrentThemeDark = if (isFollowSystem) isSystemInDark else isUserInDark
-        val currentColorScheme =
-            if (isCurrentThemeDark) {
-                getDarkColorSchema(themeColor, colorContrast)
-            } else {
-                getLightColorSchema(themeColor, colorContrast)
-            }
-        return ThemeState(
-            themeColor = themeColor,
-            colorContrast = colorContrast,
-            isFollowSystem = isFollowSystem,
-            isUserInDark = isUserInDark,
-            isSystemInDark = isSystemInDark,
-            colorScheme = currentColorScheme,
-        )
-    }
-
     override fun setThemeConfig(
         isFollowSystem: Boolean,
         isUserInDark: Boolean,
@@ -111,24 +87,4 @@ class DesktopThemeDetector(
         _colorContrast.value = colorContrast
         configManager.updateConfig("colorContrast", colorContrast.name)
     }
-
-    private fun getLightColorSchema(
-        themeColor: ThemeColor,
-        contrast: ColorContrast,
-    ): ColorScheme =
-        when (contrast) {
-            ColorContrast.Standard -> themeColor.lightColorScheme
-            ColorContrast.Medium -> themeColor.lightMediumContrastColorScheme
-            ColorContrast.High -> themeColor.lightHighContrastColorScheme
-        }
-
-    private fun getDarkColorSchema(
-        themeColor: ThemeColor,
-        contrast: ColorContrast,
-    ): ColorScheme =
-        when (contrast) {
-            ColorContrast.Standard -> themeColor.darkColorScheme
-            ColorContrast.Medium -> themeColor.darkMediumContrastColorScheme
-            ColorContrast.High -> themeColor.darkHighContrastColorScheme
-        }
 }
