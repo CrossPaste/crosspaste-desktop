@@ -1,6 +1,5 @@
 package com.crosspaste.ui.paste.preview
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,8 +22,7 @@ fun PasteEmptyScreenView() {
         contentAlignment = Alignment.Center,
         modifier =
             Modifier
-                .fillMaxSize()
-                .background(AppUIColors.generalBackground),
+                .fillMaxSize(),
     ) {
         Box(
             modifier = Modifier.wrapContentSize(),

@@ -244,6 +244,76 @@ public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
     }
 }
 
+@_cdecl("applyAcrylicBackground")
+public func applyAcrylicBackground(_ rawPtr: UnsafeRawPointer?, _ colorArgb: Int32) {
+    guard let rawPtr = rawPtr else {
+        return
+    }
+
+    let alpha = CGFloat((colorArgb >> 24) & 0xFF) / 255.0
+    let red = CGFloat((colorArgb >> 16) & 0xFF) / 255.0
+    let green = CGFloat((colorArgb >> 8) & 0xFF) / 255.0
+    let blue = CGFloat(colorArgb & 0xFF) / 255.0
+    let tintColor = NSColor(red: red, green: green, blue: blue, alpha: alpha)
+
+    DispatchQueue.main.async {
+        let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+
+        window.isOpaque = false
+        window.backgroundColor = .clear
+
+        guard let contentView = window.contentView,
+              let containerView = contentView.superview
+        else {
+            return
+        }
+
+        contentView.wantsLayer = true
+        contentView.layer?.backgroundColor = NSColor.clear.cgColor
+
+        let kBlurId = NSUserInterfaceItemIdentifier("CrossPasteBlurLayer")
+        let kTintId = NSUserInterfaceItemIdentifier("CrossPasteTintLayer")
+
+        var blurView = containerView.subviews.first {
+            $0.identifier == kBlurId
+        } as? NSVisualEffectView
+        var tintView = containerView.subviews.first {
+            $0.identifier == kTintId
+        }
+
+        if blurView == nil {
+            let newBlur = NSVisualEffectView(frame: containerView.bounds)
+            newBlur.autoresizingMask = [.width, .height]
+            newBlur.blendingMode = .behindWindow
+            newBlur.state = .active
+
+            newBlur.identifier = kBlurId
+
+            if let specificMaterial = NSVisualEffectView.Material(rawValue: 26) {
+                newBlur.material = specificMaterial
+            } else {
+                newBlur.material = .hudWindow
+            }
+
+            containerView.addSubview(newBlur, positioned: .below, relativeTo: contentView)
+            blurView = newBlur
+        }
+
+        if tintView == nil {
+            let newTint = NSView(frame: containerView.bounds)
+            newTint.autoresizingMask = [.width, .height]
+            newTint.wantsLayer = true
+
+            newTint.identifier = kTintId
+
+            containerView.addSubview(newTint, positioned: .above, relativeTo: blurView)
+            tintView = newTint
+        }
+
+        tintView?.layer?.backgroundColor = tintColor.cgColor
+    }
+}
+
 @_cdecl("getCurrentActiveAppInfo")
 public func getCurrentActiveAppInfo() -> UnsafePointer<CChar>? {
     if let currentApp = NSWorkspace.shared.frontmostApplication {

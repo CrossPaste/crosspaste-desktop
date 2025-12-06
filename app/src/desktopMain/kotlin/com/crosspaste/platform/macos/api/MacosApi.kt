@@ -65,6 +65,11 @@ interface MacosApi : Library {
 
     fun setWindowLevelScreenSaver(windowPtr: Pointer?)
 
+    fun applyAcrylicBackground(
+        windowPtr: Pointer?,
+        colorArgb: Int,
+    )
+
     fun bringToFront(windowTitle: String)
 
     fun simulatePasteCommand(

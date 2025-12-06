@@ -41,6 +41,13 @@ object MacAppUtils {
         INSTANCE.setWindowLevelScreenSaver(windowPtr)
     }
 
+    fun applyAcrylicBackground(
+        windowPtr: Pointer?,
+        colorArgb: Int,
+    ) {
+        INSTANCE.applyAcrylicBackground(windowPtr, colorArgb)
+    }
+
     fun bringToFront(appName: String) {
         INSTANCE.bringToFront(appName)
     }
