@@ -18,7 +18,6 @@ import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.draganddrop.DragAndDropTransferable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
@@ -37,7 +36,6 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.preview.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
-import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -62,17 +60,7 @@ fun PasteDataScope.SidePasteItemView(
             Modifier
                 .dragAndDropSource(
                     drawDragDecoration = {
-                        runBlocking {
-                            runCatching {
-                                graphicsLayer.toImageBitmap()
-                            }.getOrNull()
-                        }?.let { bitmap ->
-                            drawImage(
-                                image = bitmap,
-                                topLeft = Offset.Zero,
-                                alpha = 0.9f,
-                            )
-                        }
+                        drawLayer(graphicsLayer)
                     },
                 ) { offset ->
                     DragAndDropTransferData(
@@ -100,6 +88,7 @@ fun PasteDataScope.SidePasteItemView(
                     detectTapGestures(
                         onPress = {
                             onPress()
+                            tryAwaitRelease()
                         },
                         onDoubleTap = {
                             onDoubleTap()
