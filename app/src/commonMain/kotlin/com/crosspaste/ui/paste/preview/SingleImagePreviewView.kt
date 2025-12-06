@@ -21,12 +21,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import coil3.PlatformContext
@@ -35,12 +37,15 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.size.Precision
+import coil3.size.Scale
 import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageInfoBuilder
 import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.info.PasteInfo
 import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.MISSING_FILE
 import com.crosspaste.paste.item.PasteFileCoordinate
@@ -52,6 +57,8 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
@@ -76,6 +83,8 @@ fun SingleImagePreviewView(
         )
     }
 
+    val density = LocalDensity.current
+
     Row(
         modifier =
             Modifier
@@ -90,14 +99,33 @@ fun SingleImagePreviewView(
                     )
                 },
     ) {
-        SubcomposeAsyncImage(
-            modifier = Modifier.fillMaxSize(),
-            model =
+        val imageDimensionsText by produceState<PasteInfo?>(initialValue = null, pasteFileCoordinate) {
+            value =
+                withContext(ioDispatcher) {
+                    val builder = ImageInfoBuilder()
+                    thumbnailLoader.readOriginMeta(pasteFileCoordinate, builder)
+                    val imageInfo = builder.build()
+                    imageInfo.map[DIMENSIONS]
+                }
+        }
+
+        val sizePx = with(density) { appSize.mainPasteSize.height.roundToPx() }
+
+        val model =
+            remember(pasteFileCoordinate, sizePx) {
                 ImageRequest
                     .Builder(platformContext)
                     .data(ImageItem(pasteFileCoordinate, true))
+                    .size(sizePx)
+                    .precision(Precision.EXACT)
+                    .scale(Scale.FILL)
                     .crossfade(true)
-                    .build(),
+                    .build()
+            }
+
+        SubcomposeAsyncImage(
+            modifier = Modifier.fillMaxSize(),
+            model = model,
             imageLoader = imageLoaders.userImageLoader,
             contentDescription = "imageType",
             content = {
@@ -161,13 +189,10 @@ fun SingleImagePreviewView(
                         )
 
                         if (state is AsyncImagePainter.State.Success) {
-                            val builder = ImageInfoBuilder()
-                            thumbnailLoader.readOriginMeta(pasteFileCoordinate, builder)
-                            val imageInfo = builder.build()
-                            imageInfo.map[DIMENSIONS]?.let {
+                            imageDimensionsText?.let { info ->
                                 Spacer(modifier = Modifier.height(tiny3X))
                                 Text(
-                                    text = it.getTextByCopyWriter(copywriter),
+                                    text = info.getTextByCopyWriter(copywriter),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     color = MaterialTheme.colorScheme.onSurface,

@@ -29,12 +29,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.size.Precision
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.FileExtItem
 import com.crosspaste.image.coil.ImageLoaders
@@ -77,6 +79,8 @@ fun PasteDataScope.FilesDetailView(onDoubleClick: () -> Unit) {
         val platformContext = koinInject<PlatformContext>()
 
         val fileUtils = getFileUtils()
+
+        val density = LocalDensity.current
 
         var index by remember(pasteData.id) { mutableStateOf(0) }
 
@@ -139,18 +143,25 @@ fun PasteDataScope.FilesDetailView(onDoubleClick: () -> Unit) {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    val model =
+                        remember {
+                            val sizePx = with(density) { gigantic.roundToPx() }
+                            ImageRequest
+                                .Builder(platformContext)
+                                .data(FileExtItem(filePath))
+                                .size(sizePx)
+                                .precision(Precision.INEXACT)
+                                .crossfade(true)
+                                .build()
+                        }
+
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
                         SubcomposeAsyncImage(
                             modifier = Modifier.size(gigantic),
-                            model =
-                                ImageRequest
-                                    .Builder(platformContext)
-                                    .data(FileExtItem(filePath))
-                                    .crossfade(true)
-                                    .build(),
+                            model = model,
                             imageLoader = imageLoaders.fileExtImageLoader,
                             contentDescription = "fileType",
                             content = {
