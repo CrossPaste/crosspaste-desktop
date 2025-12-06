@@ -7,7 +7,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.window.Window
@@ -85,10 +87,15 @@ fun SearchWindow(windowIcon: Painter?) {
 
     val logger = remember { KotlinLogging.logger("SearchWindow") }
 
+    var ignoreFocusLoss by remember { mutableStateOf(true) }
+
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
+            ignoreFocusLoss = true
             appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
+            delay(1000)
         }
+        ignoreFocusLoss = false
     }
 
     Window(
@@ -107,7 +114,6 @@ fun SearchWindow(windowIcon: Painter?) {
         val color = AppUIColors.generalBackground.copy(alpha = 0.5f).toArgb()
         LaunchedEffect(color) {
             if (isMac) {
-                delay(100)
                 runCatching {
                     val pointer = Pointer(window.windowHandle)
                     MacAppUtils.setWindowLevelScreenSaver(pointer)
@@ -121,13 +127,18 @@ fun SearchWindow(windowIcon: Painter?) {
 
             val windowListener =
                 object : WindowAdapter() {
-                    override fun windowGainedFocus(e: WindowEvent?) {
-                        logger.debug { "Search window gained focus" }
+                    override fun windowGainedFocus(e: WindowEvent) {
+                        logger.info { "Search window gained focus" }
                         pasteSelectionViewModel.requestPasteListFocus()
                     }
 
-                    override fun windowLostFocus(e: WindowEvent?) {
-                        logger.debug { "Search window lost focus" }
+                    override fun windowLostFocus(e: WindowEvent) {
+                        if (ignoreFocusLoss) {
+                            logger.info { "Ignored focus loss during startup grace period" }
+                            return
+                        }
+
+                        logger.info { "Search window lost focus" }
                         if (backStackEntry?.let { getRouteName(it.destination) } != PasteTextEdit.NAME) {
                             appWindowManager.hideSearchWindow()
                         }
