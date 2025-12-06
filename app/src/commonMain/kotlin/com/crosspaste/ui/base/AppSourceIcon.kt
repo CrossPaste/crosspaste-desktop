@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
@@ -13,6 +14,8 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.size.Precision
+import coil3.size.Scale
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.ui.paste.PasteDataScope
@@ -36,6 +39,8 @@ fun PasteDataScope.AppSourceIcon(
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
 
+    val density = LocalDensity.current
+
     val finalSize =
         remember(source, size) {
             if (iconStyle.isMacStyleIcon(source)) {
@@ -47,11 +52,16 @@ fun PasteDataScope.AppSourceIcon(
             }
         }
 
+    val sizePx = with(density) { finalSize.roundToPx() }
+
     val model =
         remember(source, platformContext) {
             ImageRequest
                 .Builder(platformContext)
                 .data(AppSourceItem(source))
+                .size(sizePx)
+                .precision(Precision.INEXACT)
+                .scale(Scale.FILL)
                 .crossfade(false)
                 .build()
         }
