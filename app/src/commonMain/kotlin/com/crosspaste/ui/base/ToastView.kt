@@ -26,10 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.AppSize
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessagePainter
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.theme.AppUIFont.toastBodyTextStyle
 import com.crosspaste.ui.theme.AppUIFont.toastTitleTextStyle
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -39,14 +39,13 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.utils.ColorUtils
-import org.koin.compose.koinInject
 
 @Composable
 fun ToastView(
     toast: Message,
     onCancelTapped: () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
+    val appSizeValue = LocalAppSizeValueState.current
 
     val messageStyle by remember {
         mutableStateOf(toast.messageType.getMessageStyle())
@@ -77,7 +76,7 @@ fun ToastView(
                 Modifier
                     .background(background, shape = tinyRoundedCornerShape)
                     .padding(tiny)
-                    .width(appSize.toastViewWidth),
+                    .width(appSizeValue.toastViewWidth),
         ) {
             Row(
                 modifier =
@@ -97,7 +96,7 @@ fun ToastView(
                 Column(
                     modifier =
                         Modifier
-                            .width(appSize.toastViewWidth - (small2X * 4 + large2X * 2))
+                            .width(appSizeValue.toastViewWidth - (small2X * 4 + large2X * 2))
                             .wrapContentHeight(),
                     verticalArrangement = Arrangement.Center,
                 ) {

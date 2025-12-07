@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
@@ -48,6 +47,7 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_M
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.DialogButtonsView
 import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.KeyboardView
@@ -150,11 +150,12 @@ fun ShortcutKeysContentView() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ShortcutKeyRow(name: String) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
     val pasteDialogFactory = koinInject<PasteDialogFactory>()
     val shortcutKeys = koinInject<ShortcutKeys>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val shortcutKeysCore by shortcutKeys.shortcutKeysCore.collectAsState()
 
@@ -164,7 +165,7 @@ fun ShortcutKeyRow(name: String) {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(appSize.settingsItemHeight)
+                .height(appSizeValue.settingsItemHeight)
                 .onPointerEvent(
                     eventType = PointerEventType.Enter,
                     onEvent = {
@@ -211,7 +212,7 @@ fun ShortcutKeyRow(name: String) {
                                         modifier =
                                             Modifier
                                                 .fillMaxWidth()
-                                                .height(appSize.settingsItemHeight)
+                                                .height(appSizeValue.settingsItemHeight)
                                                 .border(
                                                     tiny5X,
                                                     MaterialTheme.colorScheme.onSurface,

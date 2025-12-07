@@ -33,6 +33,7 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.MenuHelper
@@ -178,6 +179,7 @@ object WindowsTrayView {
         val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
         val applicationExit = LocalExitApplication.current
+        val appSizeValue = LocalDesktopAppSizeValueState.current
 
         val menuTexts by remember(copywriter.language()) {
             mutableStateOf(menuHelper.menuItems.map { it.title(copywriter) })
@@ -207,9 +209,9 @@ object WindowsTrayView {
             modifier =
                 Modifier
                     .width(maxWidth)
-                    .clip(appSize.menuRoundedCornerShape)
+                    .clip(tiny2XRoundedCornerShape)
                     .border(
-                        appSize.appBorderSize,
+                        appSizeValue.appBorderSize,
                         AppUIColors.lightBorderColor,
                         tiny2XRoundedCornerShape,
                     ),

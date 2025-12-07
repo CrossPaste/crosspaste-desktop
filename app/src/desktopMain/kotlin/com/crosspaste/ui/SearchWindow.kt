@@ -16,7 +16,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
@@ -36,12 +35,12 @@ import java.awt.event.WindowEvent
 
 @Composable
 fun SearchWindow(windowIcon: Painter?) {
-    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
+    val appSizeValue = LocalDesktopAppSizeValueState.current
     val navController = LocalNavHostController.current
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -75,7 +74,7 @@ fun SearchWindow(windowIcon: Painter?) {
                         x = searchWindowInfo.state.position.x,
                         y =
                             searchWindowInfo.state.position.y +
-                                appSize.sideSearchWindowHeight * animationProgress,
+                                appSizeValue.sideSearchWindowHeight * animationProgress,
                     )
                 WindowState(
                     placement = searchWindowInfo.state.placement,

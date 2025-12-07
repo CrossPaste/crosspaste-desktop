@@ -12,15 +12,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.ui.base.DialogView
 import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
 @Composable
 fun CrossPasteMainWindowContent() {
-    val appSize = koinInject<DesktopAppSize>()
     val screenProvider = koinInject<DesktopScreenProvider>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -39,7 +39,7 @@ fun CrossPasteMainWindowContent() {
                 Row(
                     modifier =
                         Modifier
-                            .width(appSize.mainMenuSize.width)
+                            .width(appSizeValue.mainMenuSize.width)
                             .fillMaxHeight()
                             .background(AppUIColors.generalBackground),
                 ) {
@@ -51,8 +51,8 @@ fun CrossPasteMainWindowContent() {
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .height(appSize.windowDecorationHeight)
-                                    .offset(y = -appSize.windowDecorationHeight)
+                                    .height(appSizeValue.windowDecorationHeight)
+                                    .offset(y = -appSizeValue.windowDecorationHeight)
                                     .background(AppUIColors.generalBackground),
                         ) {}
 
@@ -62,7 +62,7 @@ fun CrossPasteMainWindowContent() {
                 Box(
                     modifier =
                         Modifier
-                            .width(appSize.mainContentSize.width)
+                            .width(appSizeValue.mainContentSize.width)
                             .fillMaxHeight()
                             .background(AppUIColors.appBackground),
                 ) {

@@ -1,7 +1,7 @@
 package com.crosspaste.ui.theme
 
 import androidx.compose.runtime.Composable
-import com.crosspaste.app.DesktopAppSize
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import org.jetbrains.jewel.foundation.DisabledAppearanceValues
@@ -27,11 +27,10 @@ import org.jetbrains.jewel.ui.ComponentStyling
 import org.jetbrains.jewel.window.styling.TitleBarColors
 import org.jetbrains.jewel.window.styling.TitleBarMetrics
 import org.jetbrains.jewel.window.styling.TitleBarStyle
-import org.koin.compose.koinInject
 
 @Composable
 fun DesktopTheme(content: @Composable () -> Unit) {
-    val appSize = koinInject<DesktopAppSize>()
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     Theme {
         IntUiTheme(
@@ -73,7 +72,7 @@ fun DesktopTheme(content: @Composable () -> Unit) {
                                         borderColor = AppUIColors.appBackground,
                                     ),
                                 metrics =
-                                    TitleBarMetrics.defaults(height = appSize.windowDecorationHeight),
+                                    TitleBarMetrics.defaults(height = appSizeValue.windowDecorationHeight),
                             )
                         } else {
                             TitleBarStyle.light(
@@ -84,7 +83,7 @@ fun DesktopTheme(content: @Composable () -> Unit) {
                                         borderColor = AppUIColors.appBackground,
                                     ),
                                 metrics =
-                                    TitleBarMetrics.defaults(height = appSize.windowDecorationHeight),
+                                    TitleBarMetrics.defaults(height = appSizeValue.windowDecorationHeight),
                             )
                         },
                 ),

@@ -1,7 +1,9 @@
 package com.crosspaste.app
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DividerDefaults
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -38,97 +40,132 @@ class DesktopAppSize(
     NativeMouseListener,
     ActiveGraphicsDevice {
 
-    val mainMenuSize: DpSize = DpSize(width = 160.dp, height = 700.dp)
+    companion object {
 
-    val mainContentSize: DpSize = DpSize(width = 440.dp, height = 700.dp)
+        private fun createAppSizeValue(): DesktopAppSizeValue {
+            // --- Basic Constants ---
+            val deviceHeight: Dp = huge
+            val settingsItemHeight: Dp = 40.dp
+            val toastViewWidth: Dp = 280.dp
+            val tokenViewWidth: Dp = 320.dp
+            val appBorderSize: Dp = tiny5X
 
-    override val mainWindowSize: DpSize =
-        DpSize(
-            width = mainMenuSize.width + mainContentSize.width,
-            height = 700.dp,
-        )
+            // --- Main Window Calculation ---
+            val mainMenuSize = DpSize(width = 160.dp, height = 700.dp)
+            val mainContentSize = DpSize(width = 440.dp, height = 700.dp)
 
-    override val mainPasteSize: DpSize = DpSize(width = 408.dp, height = 100.dp)
+            val mainWindowSize =
+                DpSize(
+                    width = mainMenuSize.width + mainContentSize.width,
+                    height = 700.dp,
+                )
 
-    override val qrCodeSize: DpSize = DpSize(width = 275.dp, height = 275.dp)
+            val windowDecorationHeight: Dp = 48.dp
 
-    val centerSearchInputHeight: Dp = huge
+            // --- Paste & QRCode ---
+            val mainPasteSize = DpSize(width = 408.dp, height = 100.dp)
+            val qrCodeSize = DpSize(width = 275.dp, height = 275.dp)
 
-    val centerSearchFooterHeight: Dp = 40.dp
+            // --- Center Search Calculation ---
+            val centerSearchInputHeight: Dp = huge
+            val centerSearchFooterHeight: Dp = 40.dp
+            val centerSearchPasteSummaryHeight: Dp = 40.dp
+            val showSearchPasteSummaryNum = 10
+            val showSearchPasteSummaryVertical: Dp = small3X
 
-    val centerSearchPasteSummaryHeight = 40.dp
+            // Calculate List View size
+            val centerSearchListViewSize =
+                DpSize(
+                    width = 280.dp,
+                    height =
+                        (centerSearchPasteSummaryHeight * showSearchPasteSummaryNum) +
+                            (showSearchPasteSummaryVertical * 2),
+                )
 
-    val showSearchPasteSummaryNum = 10
+            val centerSearchWindowDetailViewDpSize = DpSize(width = 500.dp, height = 240.dp)
 
-    val showSearchPasteSummaryVertical = small3X
+            // Calculate total Center Window size
+            val centerSearchWindowSize =
+                DpSize(
+                    width = centerSearchListViewSize.width + centerSearchWindowDetailViewDpSize.width,
+                    height = centerSearchInputHeight + centerSearchListViewSize.height + centerSearchFooterHeight,
+                )
 
-    val centerSearchListViewSize: DpSize =
-        DpSize(
-            width = 280.dp,
-            height =
-                showSearchPasteSummaryNum * centerSearchPasteSummaryHeight +
-                    2 * showSearchPasteSummaryVertical,
-        )
+            // Calculate Core Content Size (exclude padding)
+            val searchCorePaddingDpSize = DpSize(width = zero, height = 100.dp)
+            val centerSearchCoreContentSize = centerSearchWindowSize - searchCorePaddingDpSize
 
-    val centerSearchWindowDetailViewDpSize: DpSize = DpSize(width = 500.dp, height = 240.dp)
+            val centerSearchDetailRoundedCornerShape = tiny2XRoundedCornerShape
+            val centerSearchDetailPaddingValues = PaddingValues(small3X)
+            val centerSearchInfoPaddingValues = PaddingValues(small3X)
 
-    val centerSearchWindowSize: DpSize =
-        DpSize(
-            width = centerSearchListViewSize.width + centerSearchWindowDetailViewDpSize.width,
-            height = centerSearchInputHeight + centerSearchListViewSize.height + centerSearchFooterHeight,
-        )
+            // --- Side Search Calculation ---
+            val sideSearchWindowHeight: Dp = 332.dp
+            val sideSearchInputHeight: Dp = 48.dp
+            val sideSearchPaddingSize: Dp = 16.dp
+            val sideTitleHeight: Dp = huge
 
-    val sideSearchWindowHeight: Dp = 332.dp
+            // Use 'run' block logic to calculate sidePasteSize
+            val sidePasteSize =
+                run {
+                    val size = sideSearchWindowHeight - sideSearchInputHeight - (sideSearchPaddingSize * 2)
+                    DpSize(width = size, height = size)
+                }
 
-    val sideSearchInputHeight: Dp = 48.dp
+            val sidePasteContentSize =
+                DpSize(
+                    width = sidePasteSize.width,
+                    height = sidePasteSize.height - sideTitleHeight,
+                )
 
-    val sideSearchPaddingSize: Dp = 16.dp
-
-    val sideTitleHeight: Dp = huge
-
-    val sidePasteSize: DpSize =
-        run {
-            val size = sideSearchWindowHeight - sideSearchInputHeight - (2 * sideSearchPaddingSize)
-            DpSize(width = size, height = size)
+            // --- Build and return the object ---
+            return DesktopAppSizeValue(
+                // Base properties
+                mainWindowSize = mainWindowSize,
+                mainPasteSize = mainPasteSize,
+                qrCodeSize = qrCodeSize,
+                deviceHeight = deviceHeight,
+                settingsItemHeight = settingsItemHeight,
+                toastViewWidth = toastViewWidth,
+                tokenViewWidth = tokenViewWidth,
+                // Desktop specific properties
+                appBorderSize = appBorderSize,
+                mainMenuSize = mainMenuSize,
+                mainContentSize = mainContentSize,
+                windowDecorationHeight = windowDecorationHeight,
+                centerSearchCoreContentSize = centerSearchCoreContentSize,
+                centerSearchDetailRoundedCornerShape = centerSearchDetailRoundedCornerShape,
+                centerSearchDetailPaddingValues = centerSearchDetailPaddingValues,
+                centerSearchInfoPaddingValues = centerSearchInfoPaddingValues,
+                centerSearchInputHeight = centerSearchInputHeight,
+                centerSearchFooterHeight = centerSearchFooterHeight,
+                centerSearchListViewSize = centerSearchListViewSize,
+                centerSearchPasteSummaryHeight = centerSearchPasteSummaryHeight,
+                centerSearchWindowDetailViewDpSize = centerSearchWindowDetailViewDpSize,
+                centerSearchWindowSize = centerSearchWindowSize,
+                sidePasteContentSize = sidePasteContentSize,
+                sidePasteSize = sidePasteSize,
+                sideSearchInputHeight = sideSearchInputHeight,
+                sideSearchPaddingSize = sideSearchPaddingSize,
+                sideSearchWindowHeight = sideSearchWindowHeight,
+                sideTitleHeight = sideTitleHeight,
+            )
         }
+    }
 
-    val sidePasteContentSize: DpSize =
-        DpSize(width = sidePasteSize.width, height = sidePasteSize.height - sideTitleHeight)
+    private val initAppSizeValue = createAppSizeValue()
 
-    override val deviceHeight: Dp = huge
+    private val _appSizeValue: MutableStateFlow<DesktopAppSizeValue> = MutableStateFlow(initAppSizeValue)
 
-    override val settingsItemHeight: Dp = 40.dp
-
-    override val toastViewWidth: Dp = 280.dp
-
-    override val tokenViewWidth: Dp = 320.dp
-
-    val windowDecorationHeight: Dp = 48.dp
-
-    val appBorderSize = tiny5X
-
-    // Windows OS start
-
-    val menuRoundedCornerShape = tiny2XRoundedCornerShape
+    override val appSizeValue: StateFlow<DesktopAppSizeValue> = _appSizeValue
 
     val menuWindowXOffset = 32.dp
-    // Windows OS end
-
-    private val searchCorePaddingDpSize = DpSize(zero, 100.dp)
-
-    val centerSearchCoreContentSize = centerSearchWindowSize.minus(searchCorePaddingDpSize)
-
-    val searchDetailRoundedCornerShape = tiny2XRoundedCornerShape
-
-    val searchDetailPaddingValues = PaddingValues(small3X)
-
-    val searchInfoPaddingValues = PaddingValues(small3X)
 
     private var point: Point? = null
 
     private val calCenterPosition: (Rectangle) -> WindowPosition =
         Memoize.memoize { bounds ->
-            val windowSize = centerSearchWindowSize
+            val windowSize = _appSizeValue.value.centerSearchWindowSize
             WindowPosition(
                 x = (bounds.x.dp + ((bounds.width.dp - windowSize.width) / 2)),
                 y = (bounds.y.dp + ((bounds.height.dp - windowSize.height) / 2)),
@@ -164,6 +201,13 @@ class DesktopAppSize(
         } ?: ge.defaultScreenDevice
     }
 
+    override fun getMainWindowState(): WindowState =
+        WindowState(
+            isMinimized = false,
+            size = _appSizeValue.value.mainWindowSize,
+            position = WindowPosition(Alignment.Center),
+        )
+
     override fun getSearchWindowState(): WindowState {
         val graphicsDevice = getGraphicsDevice()
         val bounds = graphicsDevice.defaultConfiguration.bounds
@@ -173,9 +217,10 @@ class DesktopAppSize(
             WindowState(
                 placement = WindowPlacement.Floating,
                 position = calCenterPosition(bounds),
-                size = centerSearchWindowSize,
+                size = _appSizeValue.value.centerSearchWindowSize,
             )
         } else {
+            val sideSearchWindowHeight = _appSizeValue.value.sideSearchWindowHeight
             WindowState(
                 placement = WindowPlacement.Floating,
                 position =
@@ -197,3 +242,41 @@ class DesktopAppSize(
             small3X
         }
 }
+
+class DesktopAppSizeValue(
+    override val mainWindowSize: DpSize,
+    override val mainPasteSize: DpSize,
+    override val qrCodeSize: DpSize,
+    override val deviceHeight: Dp,
+    override val settingsItemHeight: Dp,
+    override val toastViewWidth: Dp,
+    override val tokenViewWidth: Dp,
+    val appBorderSize: Dp,
+    val mainMenuSize: DpSize,
+    val mainContentSize: DpSize,
+    val windowDecorationHeight: Dp,
+    val centerSearchCoreContentSize: DpSize,
+    val centerSearchDetailRoundedCornerShape: RoundedCornerShape,
+    val centerSearchDetailPaddingValues: PaddingValues,
+    val centerSearchInfoPaddingValues: PaddingValues,
+    val centerSearchInputHeight: Dp,
+    val centerSearchFooterHeight: Dp,
+    val centerSearchListViewSize: DpSize,
+    val centerSearchPasteSummaryHeight: Dp,
+    val centerSearchWindowDetailViewDpSize: DpSize,
+    val centerSearchWindowSize: DpSize,
+    val sidePasteContentSize: DpSize,
+    val sidePasteSize: DpSize,
+    val sideSearchInputHeight: Dp,
+    val sideSearchPaddingSize: Dp,
+    val sideSearchWindowHeight: Dp,
+    val sideTitleHeight: Dp,
+) : AppSizeValue(
+        mainWindowSize,
+        mainPasteSize,
+        qrCodeSize,
+        deviceHeight,
+        settingsItemHeight,
+        toastViewWidth,
+        tokenViewWidth,
+    )

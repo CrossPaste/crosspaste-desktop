@@ -32,7 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
-import com.crosspaste.app.AppSize
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.i18n.Language
@@ -43,6 +42,7 @@ import com.crosspaste.module.ocr.DesktopOCRModule.Companion.getTrainedDataName
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.splitOcrLanguages
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.SettingButton
 import com.crosspaste.ui.base.SettingOutlineButton
@@ -181,14 +181,15 @@ fun LoadedLanguageItem(
     language: Language,
     onRemoveClick: () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     Card(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(appSize.settingsItemHeight),
+                .height(appSizeValue.settingsItemHeight),
         shape = RectangleShape,
         elevation = CardDefaults.cardElevation(defaultElevation = tiny4X),
     ) {
@@ -231,13 +232,15 @@ fun LanguageItem(
     onDeleteClick: () -> Unit,
     onLoadClick: () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
+
     Card(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(appSize.settingsItemHeight),
+                .height(appSizeValue.settingsItemHeight),
         shape = RectangleShape,
         elevation = CardDefaults.cardElevation(defaultElevation = tiny4X),
     ) {

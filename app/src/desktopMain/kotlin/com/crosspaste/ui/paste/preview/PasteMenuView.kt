@@ -43,11 +43,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppControl
-import com.crosspaste.app.AppSize
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.PasteTypeIconView
@@ -234,14 +234,15 @@ fun MoreMenuItem(
     hoverMenu: (Boolean) -> Unit,
     switchPopup: () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val menuText = copywriter.getText("menu")
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     PasteTooltipAreaView(
         Modifier
             .fillMaxWidth()
-            .height(appSize.mainPasteSize.height / 4),
+            .height(appSizeValue.mainPasteSize.height / 4),
         text = menuText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(menuText, DesktopAppUIFont.tipsTextStyle)
@@ -305,14 +306,15 @@ fun CopyMenuItem(
     hoverCopy: (Boolean) -> Unit,
     copyPasteDataAction: () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val copyText = copywriter.getText("copy")
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     PasteTooltipAreaView(
         Modifier
             .fillMaxWidth()
-            .height(appSize.mainPasteSize.height / 4),
+            .height(appSizeValue.mainPasteSize.height / 4),
         text = copyText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(copyText, DesktopAppUIFont.tipsTextStyle)
@@ -377,14 +379,15 @@ fun FavoriteMenuItem(
     hoverFavorite: (Boolean) -> Unit,
     setFavorite: () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val favoriteText = copywriter.getText(if (currentFavorite) "remove_from_favorites" else "favorite")
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     PasteTooltipAreaView(
         Modifier
             .fillMaxWidth()
-            .height(appSize.mainPasteSize.height / 4),
+            .height(appSizeValue.mainPasteSize.height / 4),
         text = favoriteText,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(favoriteText, DesktopAppUIFont.tipsTextStyle)
@@ -447,13 +450,15 @@ fun PasteDataScope.DetailMenuItem(
     background: Color,
     hoverSource: (Boolean) -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val detailInfo = getDetailInfo(copywriter)
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
+
     PasteTooltipAreaView(
         Modifier
             .fillMaxWidth()
-            .height(appSize.mainPasteSize.height / 4),
+            .height(appSizeValue.mainPasteSize.height / 4),
         text = detailInfo,
         computeTooltipPlacement = {
             val textWidth = measureTextWidth(detailInfo, DesktopAppUIFont.tipsTextStyle)

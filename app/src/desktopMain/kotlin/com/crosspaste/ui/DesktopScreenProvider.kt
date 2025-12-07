@@ -25,7 +25,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.paste.PasteData
 import com.crosspaste.sync.SyncManager
@@ -54,7 +53,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlin.reflect.typeOf
 
 class DesktopScreenProvider(
-    private val appSize: DesktopAppSize,
     private val deviceScopeFactory: DeviceScopeFactory,
     private val syncManager: SyncManager,
     private val syncScopeFactory: SyncScopeFactory,
@@ -375,10 +373,11 @@ class DesktopScreenProvider(
 
     @Composable
     fun ToastView() {
+        val appSizeValue = LocalDesktopAppSizeValueState.current
         val density = LocalDensity.current
 
         val yOffset by remember {
-            mutableStateOf(-appSize.windowDecorationHeight + tiny3X)
+            mutableStateOf(-appSizeValue.windowDecorationHeight + tiny3X)
         }
 
         ToastListView(

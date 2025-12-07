@@ -39,7 +39,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import coil3.size.Scale
-import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageInfoBuilder
 import com.crosspaste.image.ThumbnailLoader
@@ -49,6 +48,7 @@ import com.crosspaste.info.PasteInfo
 import com.crosspaste.info.PasteInfos.DIMENSIONS
 import com.crosspaste.info.PasteInfos.MISSING_FILE
 import com.crosspaste.paste.item.PasteFileCoordinate
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.imageSlash
@@ -66,7 +66,6 @@ fun SingleImagePreviewView(
     pasteFileCoordinate: PasteFileCoordinate,
     width: Dp,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
@@ -83,6 +82,7 @@ fun SingleImagePreviewView(
         )
     }
 
+    val appSizeValue = LocalAppSizeValueState.current
     val density = LocalDensity.current
 
     Row(
@@ -109,7 +109,7 @@ fun SingleImagePreviewView(
                 }
         }
 
-        val sizePx = with(density) { appSize.mainPasteSize.height.roundToPx() }
+        val sizePx = with(density) { appSizeValue.mainPasteSize.height.roundToPx() }
 
         val model =
             remember(pasteFileCoordinate, sizePx) {
@@ -135,23 +135,23 @@ fun SingleImagePreviewView(
                     Box(
                         modifier =
                             Modifier
-                                .size(appSize.mainPasteSize.height)
+                                .size(appSizeValue.mainPasteSize.height)
                                 .clip(tiny2XRoundedCornerShape),
                     ) {
                         TransparentBackground(
-                            modifier = Modifier.size(appSize.mainPasteSize.height),
+                            modifier = Modifier.size(appSizeValue.mainPasteSize.height),
                         )
                         when (state) {
                             is AsyncImagePainter.State.Loading -> {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(appSize.mainPasteSize.height),
+                                    modifier = Modifier.size(appSizeValue.mainPasteSize.height),
                                 )
                             }
 
                             is AsyncImagePainter.State.Error,
                             -> {
                                 Icon(
-                                    modifier = Modifier.size(appSize.mainPasteSize.height),
+                                    modifier = Modifier.size(appSizeValue.mainPasteSize.height),
                                     painter = imageSlash(),
                                     contentDescription = filePath.name,
                                     tint = MaterialTheme.colorScheme.onSurface,

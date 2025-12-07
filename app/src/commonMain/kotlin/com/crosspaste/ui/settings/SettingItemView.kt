@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
-import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -52,15 +52,16 @@ fun SettingItemView(
         ),
     content: @Composable () -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val backgroundColor = AppUIColors.generalBackground
+
+    val appSizeValue = LocalAppSizeValueState.current
 
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(height ?: appSize.settingsItemHeight)
+                .height(height ?: appSizeValue.settingsItemHeight)
                 .padding(horizontal = small2X),
         verticalAlignment = Alignment.CenterVertically,
     ) {

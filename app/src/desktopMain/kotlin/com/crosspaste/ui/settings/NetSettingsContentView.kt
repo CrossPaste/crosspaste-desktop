@@ -27,12 +27,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.AppSize
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.wifi
@@ -48,11 +48,13 @@ import org.koin.compose.koinInject
 
 @Composable
 fun NetSettingsContentView() {
-    val appSize = koinInject<AppSize>()
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val networkInterfaceService = koinInject<NetworkInterfaceService>()
     val syncScopeFactory = koinInject<SyncScopeFactory>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
+
     val jsonUtils = getJsonUtils()
 
     var port by remember { mutableStateOf<String?>(null) }
@@ -176,7 +178,7 @@ fun NetSettingsContentView() {
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(appSize.deviceHeight)
+                            .height(appSizeValue.deviceHeight)
                             .padding(start = small2X),
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -187,7 +189,7 @@ fun NetSettingsContentView() {
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .heightIn(max = appSize.deviceHeight * 3),
+                            .heightIn(max = appSizeValue.deviceHeight * 3),
                     verticalArrangement = Arrangement.Top,
                 ) {
                     itemsIndexed(blacklist) { index, syncInfo ->

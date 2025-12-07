@@ -51,6 +51,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -80,6 +81,8 @@ fun SidePasteboardContentView() {
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
@@ -240,7 +243,7 @@ fun SidePasteboardContentView() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(vertical = medium),
+                .padding(vertical = appSizeValue.sideSearchPaddingSize),
     ) {
         Box(
             modifier =
@@ -300,7 +303,7 @@ fun SidePasteboardContentView() {
                         }
 
                     scope?.let {
-                        Spacer(modifier = Modifier.width(medium))
+                        Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
                         scope.SidePasteItemView(
                             selected = currentIndex in selectedIndexes,
                             onPress = {
@@ -320,7 +323,7 @@ fun SidePasteboardContentView() {
                     }
 
                     if (index == searchResult.size - 1) {
-                        Spacer(modifier = Modifier.width(medium))
+                        Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
                     }
                 }
             }

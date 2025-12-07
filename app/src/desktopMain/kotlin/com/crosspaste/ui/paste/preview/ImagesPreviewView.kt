@@ -3,12 +3,13 @@ package com.crosspaste.ui.paste.preview
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.AppSize
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
@@ -16,11 +17,12 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteDataScope.ImagesPreviewView() {
     getPasteItem(ImagesPasteItem::class).let { pasteFiles ->
-        val appSize = koinInject<AppSize>()
         val pasteMenuService = koinInject<DesktopPasteMenuService>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
-        val imagePaths = pasteFiles.getFilePaths(userDataPathProvider)
-        val pasteCoordinate = pasteData.getPasteCoordinate()
+        val imagePaths = remember(pasteData.id) { pasteFiles.getFilePaths(userDataPathProvider) }
+        val pasteCoordinate = remember(pasteData.id) { pasteData.getPasteCoordinate() }
+
+        val appSizeValue = LocalDesktopAppSizeValueState.current
 
         ComplexPreviewContentView {
             items(imagePaths.size) { index ->
@@ -28,9 +30,9 @@ fun PasteDataScope.ImagesPreviewView() {
                     if (imagePaths.size >
                         1
                     ) {
-                        appSize.mainPasteSize.width / 2
+                        appSizeValue.mainPasteSize.width / 2
                     } else {
-                        appSize.mainPasteSize.width
+                        appSizeValue.mainPasteSize.width
                     }
                 val pasteFileCoordinate = PasteFileCoordinate(pasteCoordinate, imagePaths[index])
                 PasteContextMenuView(
