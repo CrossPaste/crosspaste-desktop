@@ -17,9 +17,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.AppSize
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.DesktopRadioButton
 import com.crosspaste.ui.base.HighlightedCard
@@ -42,11 +42,12 @@ object ProxyType {
 
 @Composable
 fun ProxyView() {
-    val appSize = koinInject<AppSize>()
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
     val config by configManager.config.collectAsState()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     HighlightedCard(
         modifier =
@@ -70,7 +71,7 @@ fun ProxyView() {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(appSize.settingsItemHeight)
+                        .height(appSizeValue.settingsItemHeight)
                         .padding(horizontal = small2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -95,7 +96,7 @@ fun ProxyView() {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(appSize.settingsItemHeight)
+                        .height(appSizeValue.settingsItemHeight)
                         .padding(horizontal = small2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -120,7 +121,7 @@ fun ProxyView() {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(appSize.settingsItemHeight * 3)
+                        .height(appSizeValue.settingsItemHeight * 3)
                         .padding(start = xxxxLarge, end = small2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -129,7 +130,7 @@ fun ProxyView() {
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .height(appSize.settingsItemHeight),
+                                .height(appSizeValue.settingsItemHeight),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -175,7 +176,7 @@ fun ProxyView() {
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .height(appSize.settingsItemHeight),
+                                .height(appSizeValue.settingsItemHeight),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         SettingsText(text = copywriter.getText("host"))
@@ -195,7 +196,7 @@ fun ProxyView() {
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .height(appSize.settingsItemHeight),
+                                .height(appSizeValue.settingsItemHeight),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         // Port number

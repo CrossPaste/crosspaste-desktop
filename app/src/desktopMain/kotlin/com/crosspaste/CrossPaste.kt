@@ -2,6 +2,7 @@ package com.crosspaste
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,7 @@ import com.crosspaste.app.AppLock
 import com.crosspaste.app.AppName
 import com.crosspaste.app.AppStartUpService
 import com.crosspaste.app.AppUpdateService
+import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.clean.CleanScheduler
@@ -39,6 +41,8 @@ import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.ui.CrossPasteWindows
+import com.crosspaste.ui.LocalAppSizeValueState
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.theme.DesktopTheme
@@ -252,6 +256,10 @@ class CrossPaste {
 
             application {
                 val appWindowManager = koinInject<DesktopAppWindowManager>()
+                val appSize = koinInject<DesktopAppSize>()
+
+                val appSizeValue by appSize.appSizeValue.collectAsState()
+
                 var exiting by remember { mutableStateOf(false) }
 
                 val exitApplication: (ExitMode) -> Unit = { mode ->
@@ -268,6 +276,8 @@ class CrossPaste {
                 val navController = rememberNavController()
 
                 CompositionLocalProvider(
+                    LocalAppSizeValueState provides appSizeValue,
+                    LocalDesktopAppSizeValueState provides appSizeValue,
                     LocalExitApplication provides exitApplication,
                     LocalNavHostController provides navController,
                 ) {

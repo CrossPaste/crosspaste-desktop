@@ -17,8 +17,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.AppSize
 import com.crosspaste.paste.PasteSingleProcess
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.NumberTextStyle
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -26,11 +26,10 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.valentinilk.shimmer.shimmer
-import org.koin.compose.koinInject
 
 @Composable
 fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
-    val appSize = koinInject<AppSize>()
+    val appSizeValue = LocalDesktopAppSizeValueState.current
     val process = singleProcess?.process?.collectAsState()
 
     Row(
@@ -44,7 +43,7 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
         Box(
             modifier =
                 Modifier
-                    .size(appSize.mainPasteSize.height)
+                    .size(appSizeValue.mainPasteSize.height)
                     .padding(small3X)
                     .background(AppUIColors.pasteShimmerColor),
             contentAlignment = Alignment.Center,
@@ -57,12 +56,12 @@ fun PasteShimmerContentView(singleProcess: PasteSingleProcess?) {
             }
         }
 
-        val width = appSize.mainPasteSize.width - appSize.mainPasteSize.height - small3X
+        val width = appSizeValue.mainPasteSize.width - appSizeValue.mainPasteSize.height - small3X
 
         Column(
             modifier =
                 Modifier
-                    .height(appSize.mainPasteSize.height)
+                    .height(appSizeValue.mainPasteSize.height)
                     .width(width)
                     .background(Color.Transparent)
                     .padding(vertical = small3X)

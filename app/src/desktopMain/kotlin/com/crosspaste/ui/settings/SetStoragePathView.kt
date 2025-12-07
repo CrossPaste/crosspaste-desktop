@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.AppRestartService
-import com.crosspaste.app.AppSize
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.FileSelectionMode
 import com.crosspaste.config.CommonConfigManager
@@ -36,6 +35,7 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.DesktopMigration
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.CustomSwitch
 import com.crosspaste.ui.base.CustomTextField
@@ -58,7 +58,6 @@ import org.koin.compose.koinInject
 @Composable
 fun SetStoragePathView() {
     val appFileChooser = koinInject<AppFileChooser>()
-    val appSize = koinInject<AppSize>()
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val dialogService = koinInject<DialogService>()
@@ -66,6 +65,8 @@ fun SetStoragePathView() {
     val notificationManager = koinInject<NotificationManager>()
     val pasteDialogFactory = koinInject<PasteDialogFactory>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val config by configManager.config.collectAsState()
 
@@ -107,7 +108,7 @@ fun SetStoragePathView() {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(appSize.settingsItemHeight)
+                    .height(appSizeValue.settingsItemHeight)
                     .padding(horizontal = small2X, vertical = tiny2X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -167,9 +168,6 @@ fun SetStoragePathView() {
 
 @Composable
 fun SetStoragePathDialogView(path: Path) {
-    val exitApplication = LocalExitApplication.current
-
-    val appSize = koinInject<AppSize>()
     val dialogService = koinInject<DialogService>()
     val desktopMigration = koinInject<DesktopMigration>()
     val appExitService = koinInject<AppExitService>()
@@ -177,6 +175,9 @@ fun SetStoragePathDialogView(path: Path) {
     var isMigration by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0.0f) }
     val coroutineScope = rememberCoroutineScope()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
+    val exitApplication = LocalExitApplication.current
 
     val confirmAction = {
         appExitService.beforeExitList.clear()
@@ -219,7 +220,7 @@ fun SetStoragePathDialogView(path: Path) {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(appSize.settingsItemHeight),
+                    .height(appSizeValue.settingsItemHeight),
         ) {
             CustomTextField(
                 modifier = Modifier.fillMaxWidth().wrapContentHeight(),

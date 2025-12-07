@@ -24,10 +24,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import com.crosspaste.app.AppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.info.PasteInfos.MISSING_FILE
 import com.crosspaste.paste.item.PasteFileInfoTreeCoordinate
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.SingleFileIcon
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.theme.AppUIFont.propertyTextStyle
@@ -42,9 +42,10 @@ fun SingleFilePreviewView(
     pasteFileInfoTreeCoordinate: PasteFileInfoTreeCoordinate,
     width: Dp,
 ) {
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val uiSupport = koinInject<UISupport>()
+
+    val appSizeValue = LocalAppSizeValueState.current
 
     val fileUtils = getFileUtils()
 
@@ -68,10 +69,10 @@ fun SingleFilePreviewView(
                     )
                 },
     ) {
-        Box(modifier = Modifier.size(appSize.mainPasteSize.height)) {
+        Box(modifier = Modifier.size(appSizeValue.mainPasteSize.height)) {
             SingleFileIcon(
                 filePath = filePath,
-                size = appSize.mainPasteSize.height,
+                size = appSizeValue.mainPasteSize.height,
             )
         }
 

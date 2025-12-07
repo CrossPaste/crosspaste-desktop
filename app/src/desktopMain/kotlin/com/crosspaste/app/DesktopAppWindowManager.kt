@@ -104,7 +104,7 @@ abstract class DesktopAppWindowManager(
                 state =
                     WindowState(
                         isMinimized = false,
-                        size = appSize.mainWindowSize,
+                        size = appSize.appSizeValue.value.mainWindowSize,
                         position = WindowPosition(Alignment.Center),
                     ),
                 trigger = WindowTrigger.INIT,

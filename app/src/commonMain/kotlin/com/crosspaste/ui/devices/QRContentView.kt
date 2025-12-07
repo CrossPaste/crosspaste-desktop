@@ -37,10 +37,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
-import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.base.scan
@@ -61,14 +61,14 @@ import org.koin.compose.koinInject
 @Composable
 fun QRContentView() {
     val appTokenApi = koinInject<AppTokenApi>()
-    val appSize = koinInject<AppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
     val qrCodeGenerator = koinInject<QRCodeGenerator>()
 
+    val appSizeValue = LocalAppSizeValueState.current
     val density = LocalDensity.current
 
-    val width = with(density) { appSize.qrCodeSize.width.roundToPx() }
-    val height = with(density) { appSize.qrCodeSize.height.roundToPx() }
+    val width = with(density) { appSizeValue.qrCodeSize.width.roundToPx() }
+    val height = with(density) { appSizeValue.qrCodeSize.height.roundToPx() }
 
     var qrImage: ImageBitmap? by remember { mutableStateOf(null) }
 
@@ -113,7 +113,7 @@ fun QRContentView() {
                     modifier =
                         Modifier
                             .align(Alignment.CenterHorizontally)
-                            .width(appSize.qrCodeSize.width)
+                            .width(appSizeValue.qrCodeSize.width)
                             .clip(small3XRoundedCornerShape)
                             .background(Color.White)
                             .padding(horizontal = medium, vertical = tiny2X),
@@ -144,7 +144,7 @@ fun QRContentView() {
                     Image(
                         modifier =
                             Modifier
-                                .size(appSize.qrCodeSize)
+                                .size(appSizeValue.qrCodeSize)
                                 .clip(small3XRoundedCornerShape),
                         bitmap = it,
                         contentDescription = "QR Code",
@@ -162,13 +162,13 @@ fun QRContentView() {
                     )
 
                     Box(
-                        modifier = Modifier.size(appSize.qrCodeSize),
+                        modifier = Modifier.size(appSizeValue.qrCodeSize),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             modifier =
                                 Modifier
-                                    .size(appSize.qrCodeSize / 2)
+                                    .size(appSizeValue.qrCodeSize / 2)
                                     .graphicsLayer(rotationZ = rotation),
                             painter = autoRenew(),
                             contentDescription = "QR Code",

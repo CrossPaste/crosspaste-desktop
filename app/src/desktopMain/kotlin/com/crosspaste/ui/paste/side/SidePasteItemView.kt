@@ -23,12 +23,12 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopWriteTransferable
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.TransferableProducer
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -46,12 +46,13 @@ fun PasteDataScope.SidePasteItemView(
     onDoubleTap: () -> Unit,
     pasteContent: @Composable PasteData.() -> Unit,
 ) {
-    val appSize = koinInject<DesktopAppSize>()
     val configManager = koinInject<CommonConfigManager>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteProducer = koinInject<TransferableProducer>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val graphicsLayer = rememberGraphicsLayer()
 
@@ -82,7 +83,7 @@ fun PasteDataScope.SidePasteItemView(
                         dragDecorationOffset = offset,
                         onTransferCompleted = {},
                     )
-                }.size(appSize.sidePasteSize)
+                }.size(appSizeValue.sidePasteSize)
                 .clip(small3XRoundedCornerShape)
                 .pointerInput(Unit) {
                     detectTapGestures(

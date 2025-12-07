@@ -7,5 +7,7 @@ interface ActiveGraphicsDevice {
 
     fun getGraphicsDevice(): GraphicsDevice
 
+    fun getMainWindowState(): WindowState
+
     fun getSearchWindowState(): WindowState
 }

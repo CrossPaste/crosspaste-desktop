@@ -32,9 +32,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.app.AppSize
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.close
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.generalTitleTextStyle
@@ -53,9 +53,10 @@ import org.koin.compose.koinInject
 
 @Composable
 fun TokenView(intOffset: IntOffset) {
-    val appSize = koinInject<AppSize>()
     val appTokenApi = koinInject<AppTokenApi>()
     val copywriter = koinInject<GlobalCopywriter>()
+
+    val appSizeValue = LocalAppSizeValueState.current
 
     val showToken by appTokenApi.showToken.collectAsState()
 
@@ -76,7 +77,7 @@ fun TokenView(intOffset: IntOffset) {
             Box(
                 modifier =
                     Modifier
-                        .width(appSize.tokenViewWidth)
+                        .width(appSizeValue.tokenViewWidth)
                         .wrapContentHeight()
                         .background(Color.Transparent)
                         .shadow(small),

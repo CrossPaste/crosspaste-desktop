@@ -9,25 +9,24 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.crosspaste.app.DesktopAppSize
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.tiny5X
-import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.PasteDetailView(
     detailView: @Composable PasteDataScope.() -> Unit,
     detailInfoView: @Composable PasteDataScope.() -> Unit,
 ) {
-    val appSize = koinInject<DesktopAppSize>()
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier =
                 Modifier
-                    .size(appSize.centerSearchWindowDetailViewDpSize)
-                    .padding(appSize.searchDetailPaddingValues)
-                    .clip(appSize.searchDetailRoundedCornerShape),
+                    .size(appSizeValue.centerSearchWindowDetailViewDpSize)
+                    .padding(appSizeValue.centerSearchDetailPaddingValues)
+                    .clip(appSizeValue.centerSearchDetailRoundedCornerShape),
         ) {
             detailView()
         }
@@ -38,7 +37,7 @@ fun PasteDataScope.PasteDetailView(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(appSize.searchInfoPaddingValues),
+                    .padding(appSizeValue.centerSearchInfoPaddingValues),
         ) {
             detailInfoView()
         }

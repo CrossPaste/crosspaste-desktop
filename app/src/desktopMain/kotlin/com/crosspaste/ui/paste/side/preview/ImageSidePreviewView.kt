@@ -27,12 +27,12 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.imageSlash
@@ -43,7 +43,6 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.ImageSidePreviewView() {
-    val appSize = koinInject<DesktopAppSize>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
@@ -67,8 +66,9 @@ fun PasteDataScope.ImageSidePreviewView() {
             PasteFileCoordinate(pasteData.getPasteCoordinate(), imagePath)
         }
 
+    val appSizeValue = LocalDesktopAppSizeValueState.current
     val density = LocalDensity.current
-    val targetUiSize = appSize.sidePasteContentSize
+    val targetUiSize = appSizeValue.sidePasteContentSize
     val targetSizePx =
         with(density) {
             Size(targetUiSize.width.toPx(), targetUiSize.height.toPx())

@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -24,9 +23,9 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun WindowDecoration() {
-    val appSize = koinInject<DesktopAppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
 
+    val appSizeValue = LocalDesktopAppSizeValueState.current
     val navController = LocalNavHostController.current
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -38,8 +37,8 @@ fun WindowDecoration() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(appSize.windowDecorationHeight)
-                .offset(y = -appSize.windowDecorationHeight)
+                .height(appSizeValue.windowDecorationHeight)
+                .offset(y = -appSizeValue.windowDecorationHeight)
                 .padding(start = medium)
                 .padding(bottom = tiny),
         verticalAlignment = Alignment.Bottom,

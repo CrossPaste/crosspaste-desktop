@@ -20,8 +20,8 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
@@ -34,9 +34,10 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun CenterSearchWindowContent() {
-    val appSize = koinInject<DesktopAppSize>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val isLinux = remember { platform.isLinux() }
 
@@ -48,7 +49,7 @@ fun CenterSearchWindowContent() {
                 } else {
                     Color.Transparent
                 },
-            ).size(appSize.centerSearchWindowSize)
+            ).size(appSizeValue.centerSearchWindowSize)
             .onKeyEvent {
                 when (it.key) {
                     Key.Enter -> {
@@ -105,7 +106,7 @@ fun CenterSearchWindowContent() {
             Column {
                 SearchInputView()
 
-                Row(modifier = Modifier.size(appSize.centerSearchCoreContentSize)) {
+                Row(modifier = Modifier.size(appSizeValue.centerSearchCoreContentSize)) {
                     SearchListView {
                         pasteSelectionViewModel.clickSelectedIndex(it)
                     }

@@ -36,11 +36,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.crosspaste.app.AppSize
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.CustomTextSwitch
 import com.crosspaste.ui.base.SettingButton
 import com.crosspaste.ui.base.anglesUpDown
@@ -83,8 +83,8 @@ import org.koin.compose.koinInject
 
 @Composable
 fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
+    val appSizeValue = LocalAppSizeValueState.current
     val density = LocalDensity.current
-    val appSize = koinInject<AppSize>()
     val configManager = koinInject<CommonConfigManager>()
     val pasteDao = koinInject<PasteDao>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -192,7 +192,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(appSize.settingsItemHeight)
+                    .height(appSizeValue.settingsItemHeight)
                     .padding(horizontal = small2X, vertical = tiny2X),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -237,7 +237,7 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(appSize.settingsItemHeight)
+                        .height(appSizeValue.settingsItemHeight)
                         .padding(horizontal = small2X, vertical = tiny2X),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

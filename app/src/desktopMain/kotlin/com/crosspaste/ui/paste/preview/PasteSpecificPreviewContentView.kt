@@ -20,13 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.AppSize
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
-import org.koin.compose.koinInject
 
 @Composable
 fun PasteSpecificPreviewContentView(
@@ -34,16 +33,16 @@ fun PasteSpecificPreviewContentView(
     pasteMainContent: @Composable () -> Unit,
     pasteRightInfo: @Composable ((Boolean) -> Unit) -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     var showMenu by remember { mutableStateOf(false) }
     val width =
         animateDpAsState(
             targetValue =
                 if (showMenu) {
-                    appSize.mainPasteSize.width - xxxLarge
+                    appSizeValue.mainPasteSize.width - xxxLarge
                 } else {
-                    appSize.mainPasteSize.width
+                    appSizeValue.mainPasteSize.width
                 },
         )
 

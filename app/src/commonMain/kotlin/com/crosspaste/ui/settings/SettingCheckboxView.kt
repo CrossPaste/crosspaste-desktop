@@ -16,13 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import com.crosspaste.app.AppSize
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.checkboxChecked
 import com.crosspaste.ui.base.checkboxUnchecked
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
-import org.koin.compose.koinInject
 
 @Composable
 fun SettingCheckboxView(
@@ -51,13 +50,13 @@ fun SettingCheckboxItemView(
     getCurrentCheckboxValue: () -> Boolean,
     onChange: (Boolean) -> Unit,
 ) {
-    val appSize = koinInject<AppSize>()
+    val appSizeValue = LocalAppSizeValueState.current
 
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(height ?: appSize.settingsItemHeight)
+                .height(height ?: appSizeValue.settingsItemHeight)
                 .clickable {
                     val state = getCurrentCheckboxValue()
                     onChange(!state)

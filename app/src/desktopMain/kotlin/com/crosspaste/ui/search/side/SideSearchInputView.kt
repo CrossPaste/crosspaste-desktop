@@ -38,12 +38,12 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImagePainter.State.Empty.painter
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
@@ -63,7 +63,6 @@ import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -74,10 +73,10 @@ fun SideSearchInputView() {
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val navigationManager = koinInject<NavigationManager>()
-
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
-
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
@@ -117,7 +116,7 @@ fun SideSearchInputView() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(xxxxLarge),
+                .height(appSizeValue.sideSearchInputHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(

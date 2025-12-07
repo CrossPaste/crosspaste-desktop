@@ -162,9 +162,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.recommend.DesktopRecommendationService
 import com.crosspaste.recommend.RecommendationService
-import com.crosspaste.rendering.DesktopRenderingHelper
 import com.crosspaste.rendering.OpenGraphService
-import com.crosspaste.rendering.RenderingHelper
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.secure.DesktopSecureStoreFactory
 import com.crosspaste.secure.SecureKeyPairSerializer
@@ -451,7 +449,6 @@ class DesktopModule(
         module {
             single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
-            single<RenderingHelper> { DesktopRenderingHelper(get()) }
             single<RenderingService<String>>(named("urlRendering")) {
                 OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
             }
@@ -532,7 +529,7 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), get(), lazy { get() }, lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
             single<DialogService> { DialogService }

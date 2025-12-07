@@ -26,8 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -40,10 +40,11 @@ fun PasteDataScope.PasteSummaryView(
     onPress: () -> Unit,
     onDoubleTap: () -> Unit,
 ) {
-    val appSize = koinInject<DesktopAppSize>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val loading = copywriter.getText("loading")
-    val unknown = copywriter.getText("unknown")
+    val loading = remember { copywriter.getText("loading") }
+    val unknown = remember { copywriter.getText("unknown") }
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     var summary by remember { mutableStateOf(loading) }
 
@@ -62,7 +63,7 @@ fun PasteDataScope.PasteSummaryView(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(appSize.centerSearchPasteSummaryHeight),
+                .height(appSizeValue.centerSearchPasteSummaryHeight),
         contentAlignment = Alignment.Center,
     ) {
         Row(

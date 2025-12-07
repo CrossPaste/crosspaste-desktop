@@ -17,9 +17,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.AppSize
 import com.crosspaste.platform.Platform
-import org.koin.compose.koinInject
+import com.crosspaste.ui.LocalAppSizeValueState
 
 interface PlatformScope {
 
@@ -37,7 +36,7 @@ interface PlatformScope {
 
     @Composable
     fun HoverableDeviceBarView(content: @Composable (Color) -> Unit) {
-        val appSize = koinInject<AppSize>()
+        val appSizeValue = LocalAppSizeValueState.current
 
         var hover by remember { mutableStateOf(false) }
 
@@ -54,7 +53,7 @@ interface PlatformScope {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(appSize.deviceHeight)
+                    .height(appSizeValue.deviceHeight)
                     .background(background)
                     .then(
                         hoverModifier(
@@ -88,12 +87,12 @@ interface PlatformScope {
 
     @Composable
     fun StaticDeviceBarView(content: @Composable (Color) -> Unit) {
-        val appSize = koinInject<AppSize>()
+        val appSizeValue = LocalAppSizeValueState.current
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(appSize.deviceHeight)
+                    .height(appSizeValue.deviceHeight)
                     .background(platformBackground),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,

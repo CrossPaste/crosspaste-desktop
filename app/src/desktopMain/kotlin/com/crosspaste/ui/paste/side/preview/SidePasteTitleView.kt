@@ -25,6 +25,7 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.SidePasteTypeIconView
@@ -33,7 +34,6 @@ import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.lightSideBarColors
 import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.DesktopAppUIFont
@@ -49,6 +49,7 @@ fun PasteDataScope.SidePasteTitleView() {
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
     val pasteDao = koinInject<PasteDao>()
 
+    val sideTitleHeight = LocalDesktopAppSizeValueState.current.sideTitleHeight
     val isCurrentThemeDark = LocalThemeState.current.isCurrentThemeDark
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
     var background by remember(type, isCurrentThemeDark) {
@@ -94,7 +95,7 @@ fun PasteDataScope.SidePasteTitleView() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(huge)
+                .height(sideTitleHeight)
                 .background(background)
                 .padding(start = medium),
         verticalAlignment = Alignment.CenterVertically,

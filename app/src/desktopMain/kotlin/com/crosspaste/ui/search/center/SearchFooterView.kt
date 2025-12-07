@@ -18,9 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUpdateService
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.NewVersionButton
 import com.crosspaste.ui.search.QuickPasteView
@@ -34,10 +34,11 @@ import org.koin.compose.koinInject
 @Composable
 fun SearchFooterView() {
     val appInfo = koinInject<AppInfo>()
-    val appSize = koinInject<DesktopAppSize>()
     val appUpdateService = koinInject<AppUpdateService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
 
@@ -46,7 +47,7 @@ fun SearchFooterView() {
     Row(
         modifier =
             Modifier
-                .height(appSize.centerSearchFooterHeight)
+                .height(appSizeValue.centerSearchFooterHeight)
                 .fillMaxWidth()
                 .background(AppUIColors.generalBackground)
                 .padding(horizontal = small3X),

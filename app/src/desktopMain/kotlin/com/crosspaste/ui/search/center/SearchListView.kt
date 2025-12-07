@@ -34,9 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.DesktopPasteMenuService
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteSummaryView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -58,11 +58,13 @@ import org.koin.compose.koinInject
 @OptIn(FlowPreview::class)
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
-    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+
+    val appSizeValue = LocalDesktopAppSizeValueState.current
+
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
@@ -145,7 +147,7 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     Box(
         modifier =
             Modifier
-                .size(appSize.centerSearchListViewSize)
+                .size(appSizeValue.centerSearchListViewSize)
                 .focusRequester(pasteListFocusRequester)
                 .focusable(),
     ) {
