@@ -1,11 +1,16 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import coil3.PlatformContext
@@ -30,58 +35,65 @@ fun PasteDataScope.AppSourceIcon(
 ) {
     val source = pasteData.source
 
-    if (source == null) {
-        defaultIcon()
-        return
-    }
-
-    val iconStyle = koinInject<IconStyle>()
-    val imageLoaders = koinInject<ImageLoaders>()
-    val platformContext = koinInject<PlatformContext>()
-
-    val density = LocalDensity.current
-
-    val finalSize =
-        remember(source, size) {
-            if (iconStyle.isMacStyleIcon(source)) {
-                val paddingRatio = 0.075f
-                val contentRatio = 1f - (paddingRatio * 2)
-                size / contentRatio
-            } else {
-                size
-            }
-        }
-
-    val sizePx = with(density) { finalSize.roundToPx() }
-
-    val model =
-        remember(source, platformContext) {
-            ImageRequest
-                .Builder(platformContext)
-                .data(AppSourceItem(source))
-                .size(sizePx)
-                .precision(Precision.INEXACT)
-                .scale(Scale.FILL)
-                .crossfade(false)
-                .build()
-        }
-
-    SubcomposeAsyncImage(
-        modifier = modifier.size(finalSize),
-        model = model,
-        imageLoader = imageLoaders.appSourceLoader,
-        contentDescription = "Paste Icon",
+    Box(
+        modifier = modifier.size(size),
+        contentAlignment = Alignment.Center,
     ) {
-        val state by painter.state.collectAsState()
+        if (source == null) {
+            defaultIcon()
+            return@Box
+        }
 
-        when (state) {
-            is AsyncImagePainter.State.Loading,
-            is AsyncImagePainter.State.Error,
-            -> {
-                defaultIcon()
+        val iconStyle = koinInject<IconStyle>()
+        val imageLoaders = koinInject<ImageLoaders>()
+        val platformContext = koinInject<PlatformContext>()
+        val density = LocalDensity.current
+
+        val visualScale =
+            remember(source) {
+                if (iconStyle.isMacStyleIcon(source)) {
+                    val paddingRatio = 0.075f
+                    val contentRatio = 1f - (paddingRatio * 2)
+                    1f / contentRatio
+                } else {
+                    1f
+                }
             }
-            else -> {
-                SubcomposeAsyncImageContent()
+
+        val sizePx = with(density) { size.roundToPx() }
+
+        val model =
+            remember(source, platformContext, sizePx) {
+                ImageRequest
+                    .Builder(platformContext)
+                    .data(AppSourceItem(source))
+                    .size(sizePx)
+                    .precision(Precision.INEXACT)
+                    .scale(Scale.FILL)
+                    .crossfade(true)
+                    .build()
+            }
+
+        SubcomposeAsyncImage(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .scale(visualScale),
+            model = model,
+            imageLoader = imageLoaders.appSourceLoader,
+            contentDescription = "App Source Icon",
+            contentScale = ContentScale.Fit,
+        ) {
+            val state by painter.state.collectAsState()
+            when (state) {
+                is AsyncImagePainter.State.Loading,
+                is AsyncImagePainter.State.Error,
+                -> {
+                    defaultIcon()
+                }
+                else -> {
+                    SubcomposeAsyncImageContent()
+                }
             }
         }
     }
