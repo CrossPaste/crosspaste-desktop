@@ -13,8 +13,6 @@ import com.sun.jna.platform.unix.X11.XEvent
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import com.sun.jna.ptr.PointerByReference
-import dorkbox.jna.linux.Gtk.FALSE
-import dorkbox.jna.linux.Gtk.TRUE
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.image.BufferedImage
 
@@ -181,7 +179,7 @@ object WMCtrl {
     fun iconifyWindow(
         display: X11.Display?,
         win: X11.Window?,
-    ): Boolean = X11Ext.INSTANCE.XIconifyWindow(display, win, INSTANCE.XDefaultScreen(display)) == TRUE
+    ): Boolean = X11Ext.INSTANCE.XIconifyWindow(display, win, INSTANCE.XDefaultScreen(display)) == 1
 
     fun closeWindow(
         display: X11.Display?,
@@ -442,7 +440,7 @@ object WMCtrl {
         val xclient = XClientMessageEvent()
         xclient.type = X11.ClientMessage
         xclient.serial = NativeLong(0)
-        xclient.send_event = TRUE
+        xclient.send_event = 1
         xclient.message_type = INSTANCE.XInternAtom(display, msg, false)
         xclient.window = win
         xclient.format = 32
@@ -467,10 +465,10 @@ object WMCtrl {
         return if (INSTANCE.XSendEvent(
                 display,
                 INSTANCE.XDefaultRootWindow(display),
-                FALSE,
+                0,
                 mask,
                 event,
-            ) != FALSE
+            ) != 0
         ) {
             INSTANCE.XFlush(display)
             true
