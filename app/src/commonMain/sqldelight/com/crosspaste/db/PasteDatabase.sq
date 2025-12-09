@@ -137,7 +137,7 @@ WHERE hash = :hash AND
     id != :id AND
     NOT EXISTS (
         SELECT 1 FROM PasteTagEntity
-        WHERE PasteTagEntity.pasteId = id
+        WHERE PasteTagEntity.pasteId = PasteDataEntity.id
     );
 
 simpleSearch:
