@@ -21,12 +21,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteTagMenuService
 import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteTag.Companion.createDefaultPasteTag
+import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.base.add
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteTagScope
@@ -40,13 +40,12 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SearchTagsView() {
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val tagMenuService = koinInject<DesktopPasteTagMenuService>()
 
-    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
+    val searchWindowInfo = LocalSearchWindowInfoState.current
 
     val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
 

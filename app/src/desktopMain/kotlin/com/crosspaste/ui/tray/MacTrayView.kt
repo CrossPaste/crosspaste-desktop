@@ -102,7 +102,7 @@ class NativeTrayManager(
     private val leftClickCallback =
         LeftClickCallback {
             appWindowManager.hideMainWindow()
-            if (appWindowManager.searchWindowInfo.value.show) {
+            if (appWindowManager.getCurrentSearchWindowInfo().show) {
                 appWindowManager.hideSearchWindow()
             } else {
                 appWindowManager.saveCurrentActiveAppInfo()

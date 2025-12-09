@@ -102,14 +102,14 @@ class DesktopShortKeysAction(
             actionName = "HideWindow",
             actionLogMessage = "Hide window",
         ) {
-            if (appWindowManager.mainWindowInfo.value.show &&
+            if (appWindowManager.getCurrentMainWindowInfo().show &&
                 !appWindowManager.showMainDialog.value &&
                 !appFileChooser.showFileDialog.value
             ) {
                 appWindowManager.hideMainWindow()
             }
 
-            if (appWindowManager.searchWindowInfo.value.show) {
+            if (appWindowManager.getCurrentSearchWindowInfo().show) {
                 appWindowManager.hideSearchWindow()
             }
         }

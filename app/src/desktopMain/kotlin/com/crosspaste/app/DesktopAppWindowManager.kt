@@ -145,6 +145,10 @@ abstract class DesktopAppWindowManager(
 
     abstract fun stopWindowService()
 
+    fun getCurrentMainWindowInfo(): WindowInfo = _mainWindowInfo.value
+
+    fun getCurrentSearchWindowInfo(): WindowInfo = _searchWindowInfo.value
+
     private suspend fun hideSearchCallback() {
         runCatching {
             val tasksSnapshot =

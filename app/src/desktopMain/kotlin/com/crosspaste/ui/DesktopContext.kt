@@ -1,4 +1,4 @@
-package com.crosspaste.ui.base
+package com.crosspaste.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalContextMenuRepresentation
@@ -8,32 +8,29 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ExperimentalComposeUiApi
-import com.crosspaste.ui.theme.AppUISize.giant
-import com.crosspaste.ui.theme.AppUISize.gigantic
-import com.crosspaste.ui.theme.AppUISize.large2X
-import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.app.WindowInfo
+import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 import com.dzirbel.contextmenu.ContextMenuColors
 import com.dzirbel.contextmenu.ContextMenuMeasurements
 import com.dzirbel.contextmenu.MaterialContextMenuRepresentation
 import com.dzirbel.contextmenu.MaterialTextContextMenu
 
-object DesktopMenu {
+object DesktopContext {
 
     @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
     @Composable
-    fun ProvidesMenuContext(content: @Composable () -> Unit) {
+    private fun BaseContext(content: @Composable () -> Unit) {
         Theme {
             CompositionLocalProvider(
                 LocalContextMenuRepresentation provides
                     MaterialContextMenuRepresentation(
                         measurements =
                             ContextMenuMeasurements(
-                                minWidth = giant,
-                                maxWidth = gigantic,
-                                itemMinHeight = large2X,
-                                itemPadding = PaddingValues(medium, tiny2X),
+                                minWidth = AppUISize.giant,
+                                maxWidth = AppUISize.gigantic,
+                                itemMinHeight = AppUISize.large2X,
+                                itemPadding = PaddingValues(AppUISize.medium, AppUISize.tiny2X),
                             ),
                         colors =
                             ContextMenuColors(
@@ -42,6 +39,36 @@ object DesktopMenu {
                             ),
                     ),
                 LocalTextContextMenu provides MaterialTextContextMenu,
+            ) {
+                content()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+    @Composable
+    fun MainWindowContext(
+        windowInfo: WindowInfo,
+        content: @Composable () -> Unit,
+    ) {
+        BaseContext {
+            CompositionLocalProvider(
+                LocalMainWindowInfoState provides windowInfo,
+            ) {
+                content()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+    @Composable
+    fun SearchWindowContext(
+        windowInfo: WindowInfo,
+        content: @Composable () -> Unit,
+    ) {
+        BaseContext {
+            CompositionLocalProvider(
+                LocalSearchWindowInfoState provides windowInfo,
             ) {
                 content()
             }

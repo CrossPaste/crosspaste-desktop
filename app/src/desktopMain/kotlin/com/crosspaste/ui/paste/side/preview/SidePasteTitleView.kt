@@ -26,6 +26,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.SidePasteTypeIconView
@@ -39,7 +40,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.ColorUtils.getBestTextColor
 import com.crosspaste.utils.DateUtils
-import kotlinx.coroutines.delay
+import com.crosspaste.utils.RelativeTime
 import org.koin.compose.koinInject
 
 @Composable
@@ -50,6 +51,7 @@ fun PasteDataScope.SidePasteTitleView() {
     val pasteDao = koinInject<PasteDao>()
 
     val sideTitleHeight = LocalDesktopAppSizeValueState.current.sideTitleHeight
+    val showWindow = LocalSearchWindowInfoState.current.show
     val isCurrentThemeDark = LocalThemeState.current.isCurrentThemeDark
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
     var background by remember(type, isCurrentThemeDark) {
@@ -71,7 +73,7 @@ fun PasteDataScope.SidePasteTitleView() {
     }
 
     var relativeTime by remember(pasteData.id) {
-        mutableStateOf(DateUtils.getRelativeTime(pasteData.createTime))
+        mutableStateOf<RelativeTime?>(null)
     }
 
     LaunchedEffect(isCurrentThemeDark, pasteData.source) {
@@ -80,15 +82,13 @@ fun PasteDataScope.SidePasteTitleView() {
         }
     }
 
-    LaunchedEffect(Unit) {
-        while (relativeTime.withInHourUnit()) {
-            relativeTime.getUpdateDelay()?.let {
-                delay(it)
-            } ?: run {
-                break
+    LaunchedEffect(pasteData.id, showWindow) {
+        relativeTime =
+            if (showWindow) {
+                DateUtils.getRelativeTime(pasteData.createTime)
+            } else {
+                null
             }
-            relativeTime = DateUtils.getRelativeTime(pasteData.createTime)
-        }
     }
 
     Row(
@@ -133,13 +133,16 @@ fun PasteDataScope.SidePasteTitleView() {
                     }
                 }
             }
-            Text(
-                text = copywriter.getText(relativeTime.unit, relativeTime.value?.toString() ?: ""),
-                style =
-                    DesktopAppUIFont.sidePasteTimeTextStyle.copy(
-                        color = onBackground,
-                    ),
-            )
+
+            relativeTime?.let {
+                Text(
+                    text = copywriter.getText(it.unit, it.value?.toString() ?: ""),
+                    style =
+                        DesktopAppUIFont.sidePasteTimeTextStyle.copy(
+                            color = onBackground,
+                        ),
+                )
+            }
         }
         Spacer(Modifier.weight(1f))
         SidePasteTypeIconView(

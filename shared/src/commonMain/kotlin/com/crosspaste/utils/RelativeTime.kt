@@ -1,27 +1,12 @@
 package com.crosspaste.utils
 
-import com.crosspaste.utils.RelativeTimeKey.HOURS
-import com.crosspaste.utils.RelativeTimeKey.MINUTES
-import com.crosspaste.utils.RelativeTimeKey.NOW
-import com.crosspaste.utils.RelativeTimeKey.SECONDS
-
 data class RelativeTime(
     val value: Int? = null,
     val unit: String,
-) {
-    fun getUpdateDelay(): Long? =
-        when (unit) {
-            NOW -> 10_000L // 10s instead of 1s
-            SECONDS -> 30_000L // 30s instead of 5s
-            MINUTES -> 60_000L // Keep 1min
-            else -> null // No updates
-        }
+)
 
-    fun withInHourUnit(): Boolean = unit == HOURS || unit == MINUTES || unit == SECONDS || unit == NOW
-}
-
+@Suppress("Unused")
 object RelativeTimeKey {
-
     const val NOW = "relative_now"
     const val SECONDS = "relative_seconds_ago"
     const val MINUTES = "relative_minutes_ago"

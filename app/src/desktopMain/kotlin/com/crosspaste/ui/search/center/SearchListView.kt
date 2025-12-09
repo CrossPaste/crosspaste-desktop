@@ -34,9 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.base.PasteSummaryView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -58,7 +58,6 @@ import org.koin.compose.koinInject
 @OptIn(FlowPreview::class)
 @Composable
 fun SearchListView(setSelectedIndex: (Int) -> Unit) {
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
@@ -72,6 +71,8 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
 
     val coroutineScope = rememberCoroutineScope()
 
+    val searchWindowInfo = LocalSearchWindowInfoState.current
+
     val inputSearch by pasteSearchViewModel.inputSearch.debounce(500).collectAsState("")
 
     val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
@@ -79,8 +80,6 @@ fun SearchListView(setSelectedIndex: (Int) -> Unit) {
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
-
-    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val latestSearchResult = rememberUpdatedState(searchResult)
 

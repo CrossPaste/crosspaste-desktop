@@ -26,7 +26,7 @@ class DesktopNotificationManager(
     override fun getMessageId(): Int = idGenerator.incrementAndGet()
 
     override fun doSendNotification(message: Message) {
-        if (appWindowManager.mainWindowInfo.value.show) {
+        if (appWindowManager.getCurrentMainWindowInfo().show) {
             notifyToast(message)
         } else if (platform.isLinux()) {
             sendNotification(message)

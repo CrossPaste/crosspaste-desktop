@@ -20,7 +20,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
-import com.crosspaste.ui.base.DesktopMenu.ProvidesMenuContext
+import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
@@ -151,7 +151,7 @@ fun SearchWindow(windowIcon: Painter?) {
             }
         }
 
-        ProvidesMenuContext {
+        SearchWindowContext(searchWindowInfo) {
             if (isCenterStyle) {
                 CenterSearchWindowContent()
             } else {

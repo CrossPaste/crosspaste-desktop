@@ -49,9 +49,9 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -77,7 +77,6 @@ import java.awt.event.KeyEvent.VK_9
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SidePasteboardContentView() {
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
@@ -91,6 +90,8 @@ fun SidePasteboardContentView() {
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
 
+    val searchWindowInfo = LocalSearchWindowInfoState.current
+
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
     val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
@@ -98,8 +99,6 @@ fun SidePasteboardContentView() {
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
 
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
-
-    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val latestSearchResult = rememberUpdatedState(searchResult)
 
