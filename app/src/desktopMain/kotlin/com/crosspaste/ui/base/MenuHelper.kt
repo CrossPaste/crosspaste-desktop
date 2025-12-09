@@ -1,21 +1,5 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
@@ -31,13 +15,9 @@ import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Route
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.ShortcutKeys
-import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.tray.NativeTrayManager
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MenuHelper(
@@ -152,36 +132,6 @@ class MenuHelper(
         appWindowManager.showMainWindow(WindowTrigger.MENU)
     }
 
-    fun createLinuxTrayMenu(applicationExit: (ExitMode) -> Unit): List<dorkbox.systemTray.MenuItem> {
-        val openSearchWindow =
-            dorkbox.systemTray.MenuItem(
-                copywriter.getText("open_search_window"),
-            ) {
-                mainCoroutineDispatcher.launch(CoroutineName("Open search window")) {
-                    delay(200) // wait for force to prev window
-                    appWindowManager.saveCurrentActiveAppInfo()
-                    appWindowManager.showSearchWindow(WindowTrigger.MENU)
-                }
-            }
-
-        val items =
-            listOf(openSearchWindow) +
-                menuItems.map { item ->
-                    dorkbox.systemTray.MenuItem(
-                        item.title(copywriter),
-                    ) {
-                        item.action()
-                    }
-                }
-
-        return items +
-            dorkbox.systemTray.MenuItem(
-                copywriter.getText("quit"),
-            ) {
-                applicationExit(ExitMode.EXIT)
-            }
-    }
-
     fun createMacTrayMenu(
         trayManager: NativeTrayManager,
         applicationExit: (ExitMode) -> Unit,
@@ -214,62 +164,6 @@ class MenuHelper(
                 itemId = menuItems.size + 1,
                 title = copywriter.getText("quit"),
             )
-        }
-    }
-
-    @Composable
-    fun createWindowsMenu(
-        applicationExit: (ExitMode) -> Unit,
-        closeWindowMenu: () -> Unit,
-    ) {
-        val existNewVersion by appUpdateService.existNewVersion().collectAsState(false)
-
-        Box(
-            modifier =
-                Modifier
-                    .wrapContentSize()
-                    .background(Color.Transparent),
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .clip(tiny2XRoundedCornerShape)
-                        .background(MaterialTheme.colorScheme.surfaceBright),
-            ) {
-                menuItems.forEachIndexed { _, item ->
-                    MenuItemView(
-                        text = item.title(copywriter),
-                        background = AppUIColors.menuBackground,
-                        extendContent =
-                            if (item == checkUpdate) {
-                                if (existNewVersion) {
-                                    {
-                                        Spacer(modifier = Modifier.width(tiny))
-                                        NewVersionButton()
-                                    }
-                                } else {
-                                    null
-                                }
-                            } else {
-                                null
-                            },
-                        onClick = {
-                            item.action()
-                            closeWindowMenu()
-                        },
-                    )
-                }
-                HorizontalDivider()
-                MenuItemView(
-                    text = copywriter.getText("quit"),
-                    background = MaterialTheme.colorScheme.surfaceBright,
-                ) {
-                    closeWindowMenu()
-                    applicationExit(ExitMode.EXIT)
-                }
-            }
         }
     }
 }
