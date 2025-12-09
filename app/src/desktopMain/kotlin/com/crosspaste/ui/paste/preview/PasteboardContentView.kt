@@ -35,7 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.ui.LocalMainWindowInfoState
 import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
@@ -55,15 +55,16 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteboardContentView() {
     val pasteDataViewModel = koinInject<PasteDataViewModel>()
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val listState = rememberLazyListState()
     var isScrolling by remember { mutableStateOf(false) }
     var showToTop by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
+
+    val mainWindowInfo = LocalMainWindowInfoState.current
+
     val rememberPasteDataList by pasteDataViewModel.pasteDataList.collectAsState()
-    val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
 
     var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
 

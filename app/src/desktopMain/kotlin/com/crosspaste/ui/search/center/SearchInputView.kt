@@ -29,9 +29,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.base.search
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
@@ -43,16 +43,15 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun SearchInputView() {
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
-    val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
+    val searchWindowInfo = LocalSearchWindowInfoState.current
 
-    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
+    val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
 

@@ -44,6 +44,7 @@ import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
@@ -77,6 +78,7 @@ fun SideSearchInputView() {
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
+    val searchWindowInfo = LocalSearchWindowInfoState.current
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
@@ -85,8 +87,6 @@ fun SideSearchInputView() {
     val config by configManager.config.collectAsState()
 
     val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
-
-    val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
 
@@ -98,7 +98,7 @@ fun SideSearchInputView() {
         }
     }
 
-    LaunchedEffect(appWindowManager) {
+    LaunchedEffect(Unit) {
         pasteSelectionViewModel.uiEvent.collect { event ->
             when (event) {
                 RequestSearchInputFocus -> {
