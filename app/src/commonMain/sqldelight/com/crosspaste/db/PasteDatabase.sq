@@ -129,7 +129,16 @@ WHERE createTime < :time AND pasteState != -1;
 
 getSameHashPasteDataIds:
 SELECT id FROM PasteDataEntity
-WHERE hash = :hash AND pasteType = :pasteType AND pasteState != -1 AND createTime > :createTime AND id != :id;
+WHERE hash = :hash AND
+    pasteType = :pasteType AND
+    favorite = 0 AND
+    pasteState != -1 AND
+    createTime > :createTime AND
+    id != :id AND
+    NOT EXISTS (
+        SELECT 1 FROM PasteTagEntity
+        WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+    );
 
 simpleSearch:
 SELECT * FROM PasteDataEntity
