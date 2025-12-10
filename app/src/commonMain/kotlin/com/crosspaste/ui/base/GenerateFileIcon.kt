@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.theme.AppUISize.giant
-import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.ColorUtils.lighten
 import com.crosspaste.utils.FileColors
 import com.crosspaste.utils.extension
@@ -44,7 +43,7 @@ private val PaperWhite = Color(0xFFF5F5F5)
 fun SingleFileIcon(
     filePath: okio.Path,
     size: Dp = giant,
-    cornerRadius: Dp = tiny,
+    cornerRadius: Dp = size / 12f,
     foldSize: Dp = size / 3.5f,
     shadowColor: Color = Color.Black.copy(alpha = 0.2f),
     textColor: Color = Color.White,
