@@ -30,17 +30,19 @@ jobs:
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
             '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
 
-      - name: Cache Chrome Driver And Headless Shell
-        uses: actions/cache@v4
-        with:
-          path: ./app/resources
-          key: chrome-driver-headless-shell-${{ hashFiles('**/webDriver.properties') }}
-
-      - name: Cache Jetbrains Runtime JDK
+      - name: Cache JetBrains Runtime JDK
         uses: actions/cache@v4
         with:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
+
+      - name: Cache Kotlin Native dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-    
 
       - name: Build with Gradle
         run: ./gradlew build
