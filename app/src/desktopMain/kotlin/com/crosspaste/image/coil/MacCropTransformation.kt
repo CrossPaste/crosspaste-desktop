@@ -15,6 +15,8 @@ object MacCropTransformation : Transformation() {
 
     override val cacheKey: String = "mac"
 
+    fun requestSize(sizePx: Int): Int = (sizePx / (1f - CROP_TOP - CROP_BOTTOM)).roundToInt()
+
     override suspend fun transform(
         input: Bitmap,
         size: Size,
