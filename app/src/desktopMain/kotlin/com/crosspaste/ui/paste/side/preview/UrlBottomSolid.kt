@@ -19,9 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.dp
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
+import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.DesktopUrlUtils.removeUrlScheme
 import com.crosspaste.utils.getUrlUtils
@@ -53,7 +53,7 @@ fun UrlBottomSolid(
                         DesktopAppUIFont.sideTitleTextStyle.copy(color = contentColor),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(bottom = 2.dp),
+                    modifier = Modifier.padding(bottom = tiny4X),
                 )
             }
 
