@@ -82,6 +82,11 @@ object AppUIFont {
         get() =
             MaterialTheme.typography.labelLarge.copy(
                 lineHeight = 1.em,
+                lineHeightStyle =
+                    LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.Both,
+                    ),
             )
 
     val dialogButtonTextStyle: TextStyle
@@ -123,6 +128,11 @@ object AppUIFont {
             MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.Light,
                 lineHeight = 1.em,
+                lineHeightStyle =
+                    LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.Both,
+                    ),
             )
 
     val noteNameTextStyle: TextStyle =
@@ -130,6 +140,11 @@ object AppUIFont {
             fontWeight = FontWeight.Light,
             fontSize = 16.sp,
             lineHeight = 1.em,
+            lineHeightStyle =
+                LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.Both,
+                ),
         )
 
     val pasteTextStyle: TextStyle
@@ -177,6 +192,11 @@ object AppUIFont {
             MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Light,
                 lineHeight = 1.em,
+                lineHeightStyle =
+                    LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.Both,
+                    ),
             )
 
     val previewAutoSize: TextAutoSize =
@@ -227,6 +247,11 @@ object AppUIFont {
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 lineHeight = 1.em,
+                lineHeightStyle =
+                    LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.Both,
+                    ),
             )
 
     val settingItemsTitleTextStyle: TextStyle
@@ -245,6 +270,11 @@ object AppUIFont {
             MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.Bold,
                 lineHeight = 1.em,
+                lineHeightStyle =
+                    LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.Both,
+                    ),
             )
 
     val toastTitleTextStyle: TextStyle
@@ -297,6 +327,11 @@ object AppUIFont {
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
             lineHeight = 1.em,
+            lineHeightStyle =
+                LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.Both,
+                ),
             textAlign = textAlign,
         )
 
@@ -313,5 +348,10 @@ object AppUIFont {
             textAlign = TextAlign.Start,
             color = color,
             lineHeight = 1.em,
+            lineHeightStyle =
+                LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.Both,
+                ),
         )
 }

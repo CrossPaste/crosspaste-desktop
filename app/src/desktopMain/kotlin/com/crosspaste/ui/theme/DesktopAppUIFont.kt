@@ -67,7 +67,7 @@ object DesktopAppUIFont {
             lineHeight = 14.sp,
         )
 
-    val tipsTextStyle: TextStyle
+    val tooltipTextStyle: TextStyle
         @Composable
         get() =
             MaterialTheme.typography.bodySmall
