@@ -20,8 +20,8 @@ import com.crosspaste.image.coil.CropTransformationFactory.create
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.AppUISize.huge
 import org.koin.compose.koinInject
 
 @Composable
@@ -34,23 +34,31 @@ fun PasteDataScope.SideAppSourceIcon(
     val platform = koinInject<Platform>()
     val platformContext = koinInject<PlatformContext>()
 
+    val appSizeValue = LocalDesktopAppSizeValueState.current
+
+    val density = LocalDensity.current
+
     val syncPlatform by remember(pasteData.appInstanceId) {
         mutableStateOf(syncManager.getSyncPlatform(pasteData.appInstanceId))
     }
 
-    val density = LocalDensity.current
-
-    val sizePx = with(density) { huge.roundToPx() }
+    val sizePx = with(density) { appSizeValue.sideTitleHeight.roundToPx() }
 
     val model =
         remember(pasteData.source, sizePx, platform, syncPlatform) {
+            val transformation = create(platform, syncPlatform)
+
+            val requestSizePx = transformation?.requestSize(sizePx) ?: sizePx
+
+            val transformations = transformation?.let { listOf(it) } ?: listOf()
+
             ImageRequest
                 .Builder(platformContext)
                 .data(AppSourceItem(pasteData.source))
-                .transformations(create(platform, syncPlatform))
-                .size(sizePx)
-                .precision(Precision.EXACT)
-                .crossfade(false)
+                .transformations(transformations)
+                .size(requestSizePx)
+                .precision(Precision.INEXACT)
+                .crossfade(true)
                 .build()
         }
 
