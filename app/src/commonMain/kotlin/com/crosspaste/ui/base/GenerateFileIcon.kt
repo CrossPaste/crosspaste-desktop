@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.utils.ColorUtils.lighten
 import com.crosspaste.utils.FileColors
@@ -57,7 +56,6 @@ fun SingleFileIcon(
     }
 
     val density = LocalDensity.current
-    val themeState = LocalThemeState.current
     val cornerRadiusPx = with(density) { cornerRadius.toPx() }
     val foldSizePx = with(density) { foldSize.toPx() }
     val ext = filePath.extension
@@ -101,7 +99,6 @@ fun SingleFileIcon(
                         foldSize = foldSizePx,
                         cornerRadius = cornerRadiusPx,
                         baseColor = baseColor,
-                        isDark = themeState.isCurrentThemeDark,
                     )
                 },
     ) {
@@ -317,83 +314,54 @@ private fun createFileShapePath(
         close()
     }
 
-// Replacement for the original drawFold function
 private fun DrawScope.drawFold(
     width: Float,
     foldSize: Float,
     cornerRadius: Float,
     baseColor: Color,
-    isDark: Boolean,
 ) {
-    // 1. Draw shadow behind the fold (enhanced version)
-    // Offset the shadow slightly to the lower left and darken it to create a floating effect
-    val shadowPath =
+    val foldPath =
         Path().apply {
             moveTo(width - foldSize, 0f)
             lineTo(width, foldSize)
-            lineTo(width - foldSize * 1.1f, foldSize * 1.1f) // Extend slightly for blur effect
-            close()
-        }
-
-    // Use dark semi-transparent color as shadow, darker near the fold crease
-    drawPath(
-        path = shadowPath,
-        brush =
-            Brush.radialGradient(
-                colors =
-                    listOf(
-                        Color.Black.copy(alpha = 0.35f), // Deeper core shadow
-                        Color.Transparent,
-                    ),
-                center = Offset(width - foldSize, foldSize), // Shadow center at the inner corner of the fold
-                radius = foldSize * 1.5f,
-            ),
-    )
-
-    // 2. Draw the fold itself (the flap)
-    val flapPath =
-        Path().apply {
-            moveTo(width - foldSize, 0f)
-            lineTo(width, foldSize)
+            lineTo(width - foldSize + cornerRadius, foldSize)
             quadraticTo(
                 width - foldSize,
                 foldSize,
                 width - foldSize,
                 foldSize - cornerRadius,
             )
-            lineTo(width - foldSize, 0f)
+            close()
         }
 
-    // [Key improvement] Fold color strategy:
-    // Instead of relying on similar colors, mix with a lot of white.
-    // Simulate the back of paper: mostly white with a hint of the file color reflection.
+    val foldColor =
+        Color(
+            red = (baseColor.red * 0.7f).coerceIn(0f, 1f),
+            green = (baseColor.green * 0.7f).coerceIn(0f, 1f),
+            blue = (baseColor.blue * 0.7f).coerceIn(0f, 1f),
+            alpha = 1f,
+        )
 
-    val paperBackColor =
-        if (isDark) {
-            baseColor.copy(alpha = 0.85f)
-        } else {
-            baseColor.copy(alpha = 0.15f)
-        }
-    val tintColor = baseColor.lighten(0.8f) // Very light base color
+    val foldColorDark =
+        Color(
+            red = (baseColor.red * 0.55f).coerceIn(0f, 1f),
+            green = (baseColor.green * 0.55f).coerceIn(0f, 1f),
+            blue = (baseColor.blue * 0.55f).coerceIn(0f, 1f),
+            alpha = 1f,
+        )
 
     drawPath(
-        path = flapPath,
+        path = foldPath,
         brush =
             Brush.linearGradient(
-                // Transition from pure white to slightly tinted white, creating a paper bend light effect
-                colors = listOf(paperBackColor, tintColor),
-                start = Offset(width - foldSize, 0f), // Top left
-                end = Offset(width, foldSize), // Bottom right
+                colors = listOf(foldColor, foldColorDark),
+                start = Offset(width - foldSize, 0f),
+                end = Offset(width, foldSize),
             ),
     )
 
-    // 3. [New] Add a subtle edge highlight line
-    // This draws a very thin bright line on the diagonal cut face of the fold, separating it from the file body
     drawLine(
-        brush =
-            Brush.linearGradient(
-                colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.6f), Color.Transparent),
-            ),
+        color = Color.Black.copy(alpha = 0.2f),
         start = Offset(width - foldSize, 0f),
         end = Offset(width, foldSize),
         strokeWidth = 1.5f,
