@@ -32,12 +32,10 @@ import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteUrlIcon
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.paste.preview.UrlBottomSolid
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
-import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
-import com.crosspaste.ui.theme.DesktopAppUIFont
 import org.koin.compose.koinInject
 
 @Composable
@@ -77,11 +75,7 @@ fun PasteDataScope.UrlSidePreviewView() {
                         .fillMaxWidth()
                         .height(huge)
                         .background(AppUIColors.topBackground)
-                        .padding(small3X),
-                titleStyle =
-                    DesktopAppUIFont.sideUrlTitleTextStyle.copy(
-                        color = MaterialTheme.colorScheme.contentColorFor(AppUIColors.topBackground),
-                    ),
+                        .padding(horizontal = tiny),
                 title = urlPasteItem.getTitle(),
                 url = urlPasteItem.url,
                 maxLines = 2,
