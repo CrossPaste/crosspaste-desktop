@@ -13,7 +13,6 @@ import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.CountBadgeAuto
 import com.crosspaste.ui.base.MultiFileIcon
-import com.crosspaste.ui.base.SingleFileIcon
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -42,17 +41,10 @@ fun PasteDataScope.FilesSidePreviewView() {
                     .padding(bottom = xxxLarge),
             contentAlignment = Alignment.Center,
         ) {
-            if (fileCount == 1L) {
-                SingleFileIcon(
-                    filePath = firstFilePath,
-                    size = AppUISize.massive,
-                )
-            } else if (fileCount > 1L) {
-                MultiFileIcon(
-                    fileList = filesPasteItem.getFilePaths(userDataPathProvider),
-                    size = AppUISize.massive,
-                )
-            }
+            MultiFileIcon(
+                fileList = filesPasteItem.getFilePaths(userDataPathProvider),
+                size = AppUISize.massive,
+            )
 
             if (fileCount > 1L) {
                 Box(
