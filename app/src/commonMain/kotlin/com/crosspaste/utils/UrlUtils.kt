@@ -206,4 +206,14 @@ interface UrlUtils {
 
         return bestFit
     }
+
+    fun String.removeUrlScheme(): String {
+        val delimiter = "://"
+        val index = this.indexOf(delimiter)
+        return if (index != -1) {
+            this.substring(index + delimiter.length)
+        } else {
+            this
+        }
+    }
 }
