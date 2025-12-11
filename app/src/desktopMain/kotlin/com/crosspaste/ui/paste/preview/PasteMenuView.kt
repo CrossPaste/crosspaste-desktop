@@ -245,7 +245,7 @@ fun MoreMenuItem(
             .height(appSizeValue.mainPasteSize.height / 4),
         text = menuText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(menuText, DesktopAppUIFont.tipsTextStyle)
+            val textWidth = measureTextWidth(menuText, DesktopAppUIFont.tooltipTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -317,7 +317,7 @@ fun CopyMenuItem(
             .height(appSizeValue.mainPasteSize.height / 4),
         text = copyText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(copyText, DesktopAppUIFont.tipsTextStyle)
+            val textWidth = measureTextWidth(copyText, DesktopAppUIFont.tooltipTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -390,7 +390,7 @@ fun FavoriteMenuItem(
             .height(appSizeValue.mainPasteSize.height / 4),
         text = favoriteText,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(favoriteText, DesktopAppUIFont.tipsTextStyle)
+            val textWidth = measureTextWidth(favoriteText, DesktopAppUIFont.tooltipTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
@@ -461,7 +461,7 @@ fun PasteDataScope.DetailMenuItem(
             .height(appSizeValue.mainPasteSize.height / 4),
         text = detailInfo,
         computeTooltipPlacement = {
-            val textWidth = measureTextWidth(detailInfo, DesktopAppUIFont.tipsTextStyle)
+            val textWidth = measureTextWidth(detailInfo, DesktopAppUIFont.tooltipTextStyle)
             TooltipPlacement.ComponentRect(
                 anchor = Alignment.BottomStart,
                 alignment = Alignment.BottomEnd,
