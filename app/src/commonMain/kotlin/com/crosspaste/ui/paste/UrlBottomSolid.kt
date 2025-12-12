@@ -1,4 +1,4 @@
-package com.crosspaste.ui.paste.side.preview
+package com.crosspaste.ui.paste
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,9 +21,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
+import com.crosspaste.ui.theme.AppUIFont.bottomSolidTitleTextStyle
 import com.crosspaste.ui.theme.AppUISize.tiny4X
-import com.crosspaste.ui.theme.DesktopAppUIFont
-import com.crosspaste.utils.DesktopUrlUtils.removeUrlScheme
 import com.crosspaste.utils.getUrlUtils
 
 @Composable
@@ -50,7 +49,7 @@ fun UrlBottomSolid(
                 Text(
                     text = title,
                     style =
-                        DesktopAppUIFont.sideTitleTextStyle.copy(color = contentColor),
+                        bottomSolidTitleTextStyle.copy(color = contentColor),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(bottom = tiny4X),
@@ -83,7 +82,7 @@ fun UrlBottomSolid(
                 val displayText =
                     remember(url, title, constraints) {
                         urlUtils.createMiddleEllipsisText(
-                            text = url.removeUrlScheme(),
+                            url = url,
                             maxLines = displayMaxLines,
                             textMeasurer = textMeasurer,
                             constraints = constraints,

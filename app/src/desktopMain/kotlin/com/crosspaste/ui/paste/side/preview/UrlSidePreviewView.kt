@@ -32,6 +32,7 @@ import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteUrlIcon
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.paste.UrlBottomSolid
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.tiny

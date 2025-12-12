@@ -43,14 +43,6 @@ object DesktopAppUIFont {
                 fontSize = 12.sp,
             )
 
-    val sideTitleTextStyle
-        @Composable @ReadOnlyComposable
-        get() =
-            MaterialTheme.typography.titleSmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-            )
-
     @Composable
     fun StorePathTextStyle(useDefaultStoragePath: Boolean): TextStyle =
         TextStyle(

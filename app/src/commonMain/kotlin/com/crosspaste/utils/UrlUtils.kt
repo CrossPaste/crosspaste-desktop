@@ -10,13 +10,14 @@ interface UrlUtils {
     fun isValidUrl(string: String): Boolean
 
     fun createMiddleEllipsisText(
-        text: String,
+        url: String,
         maxLines: Int,
         textMeasurer: TextMeasurer,
         constraints: Constraints,
         style: androidx.compose.ui.text.TextStyle,
         ellipsisPosition: Float = 0.6f,
     ): String {
+        val text = removeUrlScheme(url)
         // First, measure the full text
         val fullTextLayout =
             textMeasurer.measure(
@@ -207,13 +208,13 @@ interface UrlUtils {
         return bestFit
     }
 
-    fun String.removeUrlScheme(): String {
+    fun removeUrlScheme(url: String): String {
         val delimiter = "://"
-        val index = this.indexOf(delimiter)
+        val index = url.indexOf(delimiter)
         return if (index != -1) {
-            this.substring(index + delimiter.length)
+            url.substring(index + delimiter.length)
         } else {
-            this
+            url
         }
     }
 }

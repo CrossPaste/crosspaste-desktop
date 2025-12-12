@@ -264,6 +264,14 @@ object AppUIFont {
                     ),
             )
 
+    val bottomSolidTitleTextStyle
+        @Composable @ReadOnlyComposable
+        get() =
+            MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+
     val tipsTextStyle: TextStyle
         @Composable
         get() =
