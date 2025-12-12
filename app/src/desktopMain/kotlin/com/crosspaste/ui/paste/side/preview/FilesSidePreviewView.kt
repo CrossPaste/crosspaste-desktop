@@ -18,6 +18,7 @@ import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.CountBadgeAuto
 import com.crosspaste.ui.base.MultiFileIcon
+import com.crosspaste.ui.paste.FileBottomSolid
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize
