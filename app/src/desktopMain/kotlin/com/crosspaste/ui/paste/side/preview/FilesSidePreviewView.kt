@@ -19,6 +19,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.CountBadgeAuto
 import com.crosspaste.ui.base.MultiFileIcon
 import com.crosspaste.ui.paste.FileBottomSolid
+import com.crosspaste.ui.paste.FileDisplayInfo
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize
@@ -96,11 +97,6 @@ fun PasteDataScope.FilesSidePreviewView() {
         }
     }
 }
-
-private data class FileDisplayInfo(
-    val title: String?,
-    val subtitle: String,
-)
 
 private fun getFileDisplayInfo(
     files: List<Path>,

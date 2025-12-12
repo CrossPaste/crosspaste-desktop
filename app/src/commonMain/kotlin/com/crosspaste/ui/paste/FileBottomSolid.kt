@@ -18,6 +18,11 @@ import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUIFont.bottomSolidTitleTextStyle
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 
+data class FileDisplayInfo(
+    val title: String?,
+    val subtitle: String,
+)
+
 @Composable
 fun FileBottomSolid(
     modifier: Modifier = Modifier,
