@@ -35,8 +35,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.ui.base.close
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.theme.AppUISize.large2X
-import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -72,7 +72,7 @@ fun PasteTagScope.TagChip(
             Box(
                 modifier =
                     Modifier
-                        .size(medium)
+                        .size(small2X)
                         .background(color = Color(tag.color.toInt()), shape = CircleShape),
             )
         },
@@ -94,7 +94,7 @@ fun PasteTagScope.TagChip(
         colors =
             FilterChipDefaults.filterChipColors(
                 containerColor = Color.Transparent,
-                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                selectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 labelColor = MaterialTheme.colorScheme.onSurface,
                 selectedLabelColor = MaterialTheme.colorScheme.primary,
             ),
@@ -122,7 +122,7 @@ fun PasteTagScope.EditableTagChip(onEditDone: (String) -> Unit) {
             Box(
                 modifier =
                     Modifier
-                        .size(small)
+                        .size(small2X)
                         .background(color = Color(tag.color.toInt()), shape = CircleShape),
             )
         },
@@ -174,7 +174,7 @@ fun PasteTagScope.EditableTagChip(onEditDone: (String) -> Unit) {
         colors =
             FilterChipDefaults.filterChipColors(
                 containerColor = Color.Transparent,
-                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                selectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 labelColor = MaterialTheme.colorScheme.onSurface,
                 selectedLabelColor = MaterialTheme.colorScheme.primary,
             ),
