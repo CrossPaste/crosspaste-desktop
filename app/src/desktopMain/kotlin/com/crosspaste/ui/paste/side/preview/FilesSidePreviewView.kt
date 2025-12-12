@@ -21,16 +21,14 @@ import com.crosspaste.ui.base.MultiFileIcon
 import com.crosspaste.ui.paste.FileBottomSolid
 import com.crosspaste.ui.paste.FileDisplayInfo
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.paste.getFileDisplayInfo
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.safeIsDirectory
 import kotlinx.coroutines.withContext
-import okio.Path
 import org.koin.compose.koinInject
 
 @Composable
@@ -96,26 +94,4 @@ fun PasteDataScope.FilesSidePreviewView() {
             }
         }
     }
-}
-
-private fun getFileDisplayInfo(
-    files: List<Path>,
-    copywriter: GlobalCopywriter,
-): FileDisplayInfo? {
-    if (files.isEmpty()) return null
-
-    if (files.size > 1) {
-        val subtitle = files.joinToString(", ") { it.name }
-        return FileDisplayInfo(null, subtitle)
-    }
-
-    val file = files[0]
-    val title = file.name
-
-    if (file.safeIsDirectory) {
-        return FileDisplayInfo(title, copywriter.getText("folder"))
-    }
-
-    val subtitle = getFileUtils().formatBytes(file.toFile().length())
-    return FileDisplayInfo(title, subtitle)
 }
