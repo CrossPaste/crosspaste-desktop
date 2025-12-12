@@ -27,6 +27,7 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,33 +83,29 @@ fun SidePasteboardContentView() {
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
+    val searchWindowInfo = LocalSearchWindowInfoState.current
+    val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
+    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
+    val searchResult by pasteSearchViewModel.searchResults.collectAsState()
+    val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
 
     val searchListState = rememberLazyListState()
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
-    var showToStart by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
     val coroutineScope = rememberCoroutineScope()
-
-    val searchWindowInfo = LocalSearchWindowInfoState.current
-
-    val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
-
-    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
-
-    val searchResult by pasteSearchViewModel.searchResults.collectAsState()
-
-    val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
-
     val latestSearchResult = rememberUpdatedState(searchResult)
-
     val pasteListFocusRequester = remember { FocusRequester() }
-
     var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
-
     var isShiftPressed by remember { mutableStateOf(false) }
-
     var isCtrlPressed by remember { mutableStateOf(false) }
+
+    val showToStart by remember {
+        derivedStateOf {
+            // Show "to start" button when scrolled beyond three screens
+            searchListState.firstVisibleItemIndex >= searchListState.layoutInfo.visibleItemsInfo.size * 3
+        }
+    }
 
     LaunchedEffect(
         searchWindowInfo.show,
@@ -117,61 +114,60 @@ fun SidePasteboardContentView() {
         searchBaseParams.sort,
         searchBaseParams.pasteType,
     ) {
+        pasteSelectionViewModel.initSelectIndex()
+        delay(32)
+        searchListState.animateScrollToItem(0)
         if (searchWindowInfo.show) {
-            pasteSelectionViewModel.initSelectIndex()
-            delay(32)
-            searchListState.animateScrollToItem(0)
-            showToStart = false
+            isCtrlPressed = false
+            isShiftPressed = false
         }
     }
 
-    LaunchedEffect(selectedIndexes, searchWindowInfo.show) {
-        if (searchWindowInfo.show) {
-            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
-            val viewportStartOffset = searchListState.layoutInfo.viewportStartOffset
-            val viewportEndOffset = searchListState.layoutInfo.viewportEndOffset
+    LaunchedEffect(selectedIndexes) {
+        val visibleItems = searchListState.layoutInfo.visibleItemsInfo
+        val viewportStartOffset = searchListState.layoutInfo.viewportStartOffset
+        val viewportEndOffset = searchListState.layoutInfo.viewportEndOffset
 
-            if (visibleItems.isEmpty()) return@LaunchedEffect
+        if (visibleItems.isEmpty()) return@LaunchedEffect
 
-            val itemSpacing = visibleItems[0].size
+        val itemSpacing = visibleItems[0].size
 
-            val selectedIndex = selectedIndexes.firstOrNull() ?: return@LaunchedEffect
+        val selectedIndex = selectedIndexes.firstOrNull() ?: return@LaunchedEffect
 
-            visibleItems.find { it.index == selectedIndex }?.let { selectedItem ->
-                val itemStart = selectedItem.offset
-                val itemEnd = selectedItem.offset + selectedItem.size
+        visibleItems.find { it.index == selectedIndex }?.let { selectedItem ->
+            val itemStart = selectedItem.offset
+            val itemEnd = selectedItem.offset + selectedItem.size
 
-                val isFullyVisible = itemStart >= 0 && itemEnd <= (viewportEndOffset - viewportStartOffset)
+            val isFullyVisible = itemStart >= 0 && itemEnd <= (viewportEndOffset - viewportStartOffset)
 
-                val isPartiallyVisibleAtTop = itemStart < 0 && itemEnd > 0
-                val isPartiallyVisibleAtBottom =
-                    viewportEndOffset - viewportStartOffset in (itemStart + 1)..<itemEnd
+            val isPartiallyVisibleAtTop = itemStart < 0 && itemEnd > 0
+            val isPartiallyVisibleAtBottom =
+                viewportEndOffset - viewportStartOffset in (itemStart + 1)..<itemEnd
 
-                when {
-                    isFullyVisible -> {
-                    }
-                    isPartiallyVisibleAtTop -> {
-                        searchListState.animateScrollBy(-itemSpacing.toFloat())
-                    }
-                    isPartiallyVisibleAtBottom -> {
-                        searchListState.animateScrollBy(itemSpacing.toFloat())
-                    }
+            when {
+                isFullyVisible -> {
                 }
-            } ?: run {
-                val lastVisibleIndex = visibleItems.lastOrNull()?.index ?: 0
-                val firstVisibleIndex = visibleItems.firstOrNull()?.index ?: 0
+                isPartiallyVisibleAtTop -> {
+                    searchListState.animateScrollBy(-itemSpacing.toFloat())
+                }
+                isPartiallyVisibleAtBottom -> {
+                    searchListState.animateScrollBy(itemSpacing.toFloat())
+                }
+            }
+        } ?: run {
+            val lastVisibleIndex = visibleItems.lastOrNull()?.index ?: 0
+            val firstVisibleIndex = visibleItems.firstOrNull()?.index ?: 0
 
-                when {
-                    selectedIndex > lastVisibleIndex -> {
-                        searchListState.animateScrollBy(
-                            (selectedIndex - lastVisibleIndex) * itemSpacing.toFloat(),
-                        )
-                    }
-                    selectedIndex < firstVisibleIndex -> {
-                        searchListState.animateScrollBy(
-                            (selectedIndex - firstVisibleIndex) * itemSpacing.toFloat(),
-                        )
-                    }
+            when {
+                selectedIndex > lastVisibleIndex -> {
+                    searchListState.animateScrollBy(
+                        (selectedIndex - lastVisibleIndex) * itemSpacing.toFloat(),
+                    )
+                }
+                selectedIndex < firstVisibleIndex -> {
+                    searchListState.animateScrollBy(
+                        (selectedIndex - firstVisibleIndex) * itemSpacing.toFloat(),
+                    )
                 }
             }
         }
@@ -179,25 +175,24 @@ fun SidePasteboardContentView() {
 
     LaunchedEffect(searchListState) {
         snapshotFlow {
-            searchListState.firstVisibleItemIndex to searchListState.layoutInfo.visibleItemsInfo
-        }.distinctUntilChanged().collect { (_, visibleItems) ->
+            searchListState.layoutInfo.visibleItemsInfo
+        }.distinctUntilChanged().collect { visibleItems ->
             if (visibleItems.isNotEmpty()) {
-                if (latestSearchResult.value.size - visibleItems.last().index <= 10) {
+                // Prepare content within 2 times the screen
+                if (latestSearchResult.value.size - visibleItems.last().index < visibleItems.size) {
                     pasteSearchViewModel.tryAddLimit()
                 }
-                showToStart = visibleItems.last().index >= 30
             }
 
-            val shouldShowScrollbar = latestSearchResult.value.size > 10
-            if (shouldShowScrollbar) {
+            showScrollbar = latestSearchResult.value.size > visibleItems.size
+            if (showScrollbar) {
                 scrollJob?.cancel()
                 scrollJob =
-                    coroutineScope.launch(CoroutineName("HiddenScroll")) {
-                        delay(500)
+                    coroutineScope.launch {
+                        delay(1000)
                         showScrollbar = false
                     }
             }
-            showScrollbar = shouldShowScrollbar
         }
     }
 
@@ -216,7 +211,6 @@ fun SidePasteboardContentView() {
 
                         if (searchListState.firstVisibleItemIndex <= 1) {
                             searchListState.animateScrollToItem(0)
-                            showToStart = false
                         }
                     }
             }
