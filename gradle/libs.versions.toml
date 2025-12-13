@@ -30,6 +30,7 @@ ktor = "3.3.3"
 lifecycle = "2.9.6"
 logback = "1.5.20"
 menu = "0.3.1"
+metadata-extractor = "2.19.0"
 mockk = "1.14.6"
 navigation = "2.9.1"
 okio = "3.16.4"
@@ -96,6 +97,7 @@ lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifec
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
 material-menu = { module = "io.github.dzirbel:compose-material-context-menu", version.ref = "menu" }
+metadata-extractor = { module = "com.drewnoakes:metadata-extractor", version.ref = "metadata-extractor" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 ph-css = { module = "com.helger:ph-css", version.ref = "ph-css" }

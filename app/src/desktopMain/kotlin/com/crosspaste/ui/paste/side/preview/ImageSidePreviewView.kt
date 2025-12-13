@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -27,12 +29,14 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
+import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.base.ImageResolution
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.imageSlash
@@ -40,10 +44,12 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
+import java.awt.image.BufferedImage
 
 @Composable
 fun PasteDataScope.ImageSidePreviewView() {
     val imageLoaders = koinInject<ImageLoaders>()
+    val imageHandler = koinInject<ImageHandler<BufferedImage>>()
     val platformContext = koinInject<PlatformContext>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
@@ -73,6 +79,13 @@ fun PasteDataScope.ImageSidePreviewView() {
         with(density) {
             Size(targetUiSize.width.toPx(), targetUiSize.height.toPx())
         }
+
+    val intSize by produceState<IntSize?>(
+        initialValue = null,
+        key1 = imagePath,
+    ) {
+        value = imageHandler.readSize(imagePath)
+    }
 
     SidePasteLayoutView(
         pasteBottomContent = {},
@@ -140,6 +153,12 @@ fun PasteDataScope.ImageSidePreviewView() {
                     }
                 },
             )
+
+            intSize?.let {
+                if (it.width > 0 && it.height > 0) {
+                    ImageResolution(it)
+                }
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.crosspaste.image
 
+import androidx.compose.ui.unit.IntSize
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.io.Source
 import okio.Path
@@ -11,4 +12,6 @@ interface ImageHandler<Image> : ImageWriter<Image> {
     fun readImage(source: Source): Image?
 
     fun readImage(byteReadChannel: ByteReadChannel): Image?
+
+    fun readSize(imagePath: Path): IntSize?
 }
