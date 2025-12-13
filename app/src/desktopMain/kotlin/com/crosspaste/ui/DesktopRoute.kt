@@ -21,3 +21,22 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<ShortcutKeys>() -> ShortcutKeys.NAME
         else -> null
     }
+
+fun getRootRouteName(dest: NavDestination): String? =
+    when {
+        dest.hasRoute<About>() -> About.NAME
+        dest.hasRoute<DeviceDetail>() -> Devices.NAME
+        dest.hasRoute<Devices>() -> Devices.NAME
+        dest.hasRoute<Export>() -> Export.NAME
+        dest.hasRoute<Extension>() -> Extension.NAME
+        dest.hasRoute<Import>() -> Import.NAME
+        dest.hasRoute<NearbyDeviceDetail>() -> Devices.NAME
+        dest.hasRoute<OCR>() -> Extension.NAME
+        dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
+        dest.hasRoute<PasteTextEdit>() -> Pasteboard.NAME
+        dest.hasRoute<QrCode>() -> QrCode.NAME
+        dest.hasRoute<Recommend>() -> Recommend.NAME
+        dest.hasRoute<Settings>() -> Settings.NAME
+        dest.hasRoute<ShortcutKeys>() -> ShortcutKeys.NAME
+        else -> null
+    }

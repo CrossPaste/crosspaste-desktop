@@ -21,6 +21,11 @@ object About : Route {
 }
 
 @Serializable
+object ExtensionGraph : Route {
+    override val name = "extension_graph"
+}
+
+@Serializable
 object Extension : Route {
     const val NAME: String = "extension"
     override val name: String = NAME
@@ -50,6 +55,11 @@ data class DeviceDetail(
 }
 
 @Serializable
+object DevicesGraph : Route {
+    override val name = "devices_graph"
+}
+
+@Serializable
 object Import : Route {
     const val NAME: String = "import"
     override val name: String = NAME
@@ -70,6 +80,11 @@ data class NearbyDeviceDetail(
 object OCR : Route {
     const val NAME: String = "ocr"
     override val name: String = NAME
+}
+
+@Serializable
+object PasteboardGraph : Route {
+    override val name = "pasteboard_graph"
 }
 
 @Serializable

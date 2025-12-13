@@ -83,12 +83,12 @@ fun MainMenuView() {
 
     val backStackEntry by navController.currentBackStackEntryAsState()
 
-    val routeName = backStackEntry?.let { getRouteName(it.destination) }
+    val rootRouteName = backStackEntry?.let { getRootRouteName(it.destination) }
 
-    val selectedIndex by remember(routeName) {
+    val selectedIndex by remember(rootRouteName) {
         mutableStateOf(
             (prevMenuList + nextMenuList).indexOfFirst {
-                it.route.name == routeName
+                it.route.name == rootRouteName
             },
         )
     }

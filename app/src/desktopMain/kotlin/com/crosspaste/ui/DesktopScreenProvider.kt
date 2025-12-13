@@ -24,6 +24,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.paste.PasteData
@@ -82,7 +83,11 @@ class DesktopScreenProvider(
             }
             is NavigationEvent.NavigateAndClearStack -> {
                 navController.navigate(event.route) {
-                    popUpTo(0) { inclusive = true }
+                    popUpTo(0) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
             }
             is NavigationEvent.NavigateUp -> {
@@ -103,43 +108,50 @@ class DesktopScreenProvider(
 
         NavHost(
             navController = navController,
-            startDestination = Pasteboard,
+            startDestination = PasteboardGraph,
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None },
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None },
         ) {
             composable<About> { AboutScreen() }
-            composable<Devices> {
-                DevicesScreen()
-            }
-            composable<DeviceDetail> { backStackEntry ->
-                backStackEntry.DeviceDetailScreen()
+
+            navigation<DevicesGraph>(startDestination = Devices) {
+                composable<Devices> {
+                    DevicesScreen()
+                }
+                composable<DeviceDetail> { backStackEntry ->
+                    backStackEntry.DeviceDetailScreen()
+                }
+                composable<NearbyDeviceDetail>(
+                    typeMap =
+                        mapOf(
+                            typeOf<SyncInfo>() to JsonNavType(SyncInfo.serializer()),
+                        ),
+                ) { backStackEntry ->
+                    backStackEntry.NearbyDeviceDetailScreen()
+                }
             }
             composable<Export> { ExportScreen() }
-            composable<Extension> { ExtensionScreen() }
+            navigation<ExtensionGraph>(startDestination = Extension) {
+                composable<Extension> { ExtensionScreen() }
+                composable<OCR> {
+                    OCRScreen()
+                }
+            }
             composable<Import> { ImportScreen() }
-            composable<NearbyDeviceDetail>(
-                typeMap =
-                    mapOf(
-                        typeOf<SyncInfo>() to JsonNavType(SyncInfo.serializer()),
-                    ),
-            ) { backStackEntry ->
-                backStackEntry.NearbyDeviceDetailScreen()
-            }
-            composable<OCR> {
-                OCRScreen()
-            }
-            composable<Pasteboard> {
-                PasteboardScreen()
-            }
-            composable<PasteTextEdit>(
-                typeMap =
-                    mapOf(
-                        typeOf<PasteData>() to JsonNavType(PasteData.serializer()),
-                    ),
-            ) { backStackEntry ->
-                backStackEntry.PasteTextEditScreen()
+            navigation<PasteboardGraph>(startDestination = Pasteboard) {
+                composable<Pasteboard> {
+                    PasteboardScreen()
+                }
+                composable<PasteTextEdit>(
+                    typeMap =
+                        mapOf(
+                            typeOf<PasteData>() to JsonNavType(PasteData.serializer()),
+                        ),
+                ) { backStackEntry ->
+                    backStackEntry.PasteTextEditScreen()
+                }
             }
             composable<QrCode> { QRScreen() }
             composable<Recommend> { RecommendScreen() }
