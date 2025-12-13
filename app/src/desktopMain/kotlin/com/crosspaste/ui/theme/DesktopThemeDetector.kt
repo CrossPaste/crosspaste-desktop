@@ -3,7 +3,6 @@ package com.crosspaste.ui.theme
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.ui.theme.ThemeState.Companion.createThemeState
 import com.crosspaste.utils.mainDispatcher
-import com.jthemedetecor.OsThemeDetector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,8 +16,6 @@ class DesktopThemeDetector(
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher),
 ) : ThemeDetector {
 
-    private val detector = OsThemeDetector.getDetector()
-
     private val initialThemeColor = CrossPasteTheme.getThemeColor(configManager.getCurrentConfig().themeColor)
     private val initialColorContrast = ColorContrast.valueOf(configManager.getCurrentConfig().colorContrast)
     private val initialFollowSystem = configManager.getCurrentConfig().isFollowSystemTheme
@@ -28,7 +25,7 @@ class DesktopThemeDetector(
     private val _colorContrast = MutableStateFlow(initialColorContrast)
     private val _isFollowSystem = MutableStateFlow(initialFollowSystem)
     private val _isUserInDark = MutableStateFlow(initialIsDarkTheme)
-    private val _isSystemInDark = MutableStateFlow(detector.isDark)
+    private val _isSystemInDark = MutableStateFlow(false)
 
     override val themeState: StateFlow<ThemeState> =
         combine(
@@ -55,14 +52,12 @@ class DesktopThemeDetector(
                     colorContrast = initialColorContrast,
                     isFollowSystem = initialFollowSystem,
                     isUserInDark = initialIsDarkTheme,
-                    isSystemInDark = detector.isDark,
+                    isSystemInDark = false,
                 ),
         )
 
-    init {
-        detector.registerListener { isDark: Boolean ->
-            _isSystemInDark.value = isDark
-        }
+    override fun setSystemInDark(isSystemInDark: Boolean) {
+        _isSystemInDark.value = isSystemInDark
     }
 
     override fun setThemeConfig(
