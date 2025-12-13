@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -69,7 +70,11 @@ fun SettingsContentView() {
     CompositionLocalProvider(LocalSettingsScrollState provides scrollState) {
         Box(
             modifier =
-                Modifier.fillMaxSize(),
+                Modifier
+                    .fillMaxSize()
+                    .background(AppUIColors.appBackground)
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
         ) {
             Column(
                 modifier =

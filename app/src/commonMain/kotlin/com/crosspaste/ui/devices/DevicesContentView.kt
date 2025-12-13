@@ -1,10 +1,12 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.rememberExpandableState
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.zero
@@ -33,6 +37,9 @@ fun DevicesContentView() {
         modifier =
             Modifier
                 .fillMaxSize()
+                .background(AppUIColors.appBackground)
+                .padding(horizontal = medium)
+                .padding(bottom = medium)
                 .clip(tinyRoundedCornerShape),
         contentAlignment = Alignment.TopCenter,
     ) {

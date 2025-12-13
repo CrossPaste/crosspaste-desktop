@@ -32,6 +32,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.arrowLeft
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -59,6 +60,7 @@ fun WindowDecoration() {
             Modifier
                 .fillMaxWidth()
                 .height(appSizeValue.windowDecorationHeight)
+                .padding(horizontal = medium)
                 .offset(y = -appSizeValue.windowDecorationHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {

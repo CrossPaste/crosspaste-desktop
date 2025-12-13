@@ -1,5 +1,6 @@
 package com.crosspaste.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
@@ -8,16 +9,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
@@ -47,7 +44,6 @@ import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.ui.paste.preview.PasteboardContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
-import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.channels.Channel
@@ -58,6 +54,20 @@ class DesktopScreenProvider(
     private val syncManager: SyncManager,
     private val syncScopeFactory: SyncScopeFactory,
 ) : ScreenProvider {
+
+    companion object {
+        fun AnimatedContentTransitionScope<NavBackStackEntry>.slideOutRight(): ExitTransition =
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(300),
+            )
+
+        fun AnimatedContentTransitionScope<NavBackStackEntry>.slideInLeft(): EnterTransition =
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(300),
+            )
+    }
 
     private val navigationEvents = Channel<NavigationEvent>(Channel.UNLIMITED)
 
@@ -120,10 +130,15 @@ class DesktopScreenProvider(
                 composable<Devices> {
                     DevicesScreen()
                 }
-                composable<DeviceDetail> { backStackEntry ->
+                composable<DeviceDetail>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) { backStackEntry ->
                     backStackEntry.DeviceDetailScreen()
                 }
                 composable<NearbyDeviceDetail>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
                     typeMap =
                         mapOf(
                             typeOf<SyncInfo>() to JsonNavType(SyncInfo.serializer()),
@@ -135,7 +150,10 @@ class DesktopScreenProvider(
             composable<Export> { ExportScreen() }
             navigation<ExtensionGraph>(startDestination = Extension) {
                 composable<Extension> { ExtensionScreen() }
-                composable<OCR> {
+                composable<OCR>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
                     OCRScreen()
                 }
             }
@@ -145,6 +163,8 @@ class DesktopScreenProvider(
                     PasteboardScreen()
                 }
                 composable<PasteTextEdit>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
                     typeMap =
                         mapOf(
                             typeOf<PasteData>() to JsonNavType(PasteData.serializer()),
@@ -162,16 +182,7 @@ class DesktopScreenProvider(
 
     @Composable
     private fun AboutScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            AboutContentView()
-        }
+        AboutContentView()
     }
 
     @Composable
@@ -194,73 +205,28 @@ class DesktopScreenProvider(
                 remember(currentSyncRuntimeInfo) {
                     deviceScopeFactory.createDeviceScope(currentSyncRuntimeInfo)
                 }
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = medium)
-                        .padding(bottom = medium),
-            ) {
-                WindowDecoration()
-                scope.DeviceDetailContentView()
-            }
+            scope.DeviceDetailContentView()
         }
     }
 
     @Composable
     private fun DevicesScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            DevicesContentView()
-        }
+        DevicesContentView()
     }
 
     @Composable
     private fun ExportScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            PasteExportContentView()
-        }
+        PasteExportContentView()
     }
 
     @Composable
     private fun ExtensionScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            ExtensionContentView()
-        }
+        ExtensionContentView()
     }
 
     @Composable
     private fun ImportScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            PasteImportContentView()
-        }
+        PasteImportContentView()
     }
 
     @Composable
@@ -270,29 +236,12 @@ class DesktopScreenProvider(
             remember(nearbyDeviceDetail) {
                 syncScopeFactory.createSyncScope(nearbyDeviceDetail.syncInfo)
             }
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            scope.NearbyDeviceDetailContentView()
-        }
+        scope.NearbyDeviceDetailContentView()
     }
 
     @Composable
     private fun PasteboardScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(start = medium, bottom = medium),
-        ) {
-            WindowDecoration()
-            PasteboardContentView()
-        }
+        PasteboardContentView()
     }
 
     @Composable
@@ -310,72 +259,27 @@ class DesktopScreenProvider(
             }
         }
 
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            scope?.PasteTextEditContentView()
-        }
+        scope?.PasteTextEditContentView()
     }
 
     @Composable
     private fun QRScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            QRContentView()
-        }
+        QRContentView()
     }
 
     @Composable
     private fun ShortcutKeysScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            ShortcutKeysContentView()
-        }
+        ShortcutKeysContentView()
     }
 
     @Composable
     private fun SettingsScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            SettingsContentView()
-        }
+        SettingsContentView()
     }
 
     @Composable
     private fun RecommendScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
-            WindowDecoration()
-            RecommendContentView()
-        }
+        RecommendContentView()
     }
 
     @Composable

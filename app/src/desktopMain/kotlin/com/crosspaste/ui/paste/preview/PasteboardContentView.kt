@@ -125,7 +125,10 @@ fun PasteboardContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize(),
+            Modifier
+                .fillMaxSize()
+                .background(AppUIColors.appBackground)
+                .padding(start = medium, bottom = medium),
     ) {
         Box(
             modifier =

@@ -1,10 +1,13 @@
 package com.crosspaste.ui.extension
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,6 +31,7 @@ import com.crosspaste.ui.OCR
 import com.crosspaste.ui.Route
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.arrowRight
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -41,26 +45,34 @@ import org.koin.compose.koinInject
 fun ExtensionContentView() {
     val expandViewProvider = koinInject<ExpandViewProvider>()
     val navigateManager = koinInject<NavigationManager>()
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(AppUIColors.appBackground)
+                .padding(horizontal = medium)
+                .padding(bottom = medium),
+    ) {
+        Column {
+            expandViewProvider.ExpandView(
+                barContent = {
+                    expandViewProvider.ExpandBarView(
+                        state = this.state,
+                        title = "proxy",
+                    )
+                },
+            ) {
+                ProxyView()
+            }
 
-    Column {
-        expandViewProvider.ExpandView(
-            barContent = {
-                expandViewProvider.ExpandBarView(
-                    state = this.state,
-                    title = "proxy",
-                )
-            },
-        ) {
-            ProxyView()
+            Spacer(modifier = Modifier.height(medium))
+
+            ExtensionSettingsList(
+                onNavigate = { destination ->
+                    navigateManager.navigate(destination)
+                },
+            )
         }
-
-        Spacer(modifier = Modifier.height(medium))
-
-        ExtensionSettingsList(
-            onNavigate = { destination ->
-                navigateManager.navigate(destination)
-            },
-        )
     }
 }
 

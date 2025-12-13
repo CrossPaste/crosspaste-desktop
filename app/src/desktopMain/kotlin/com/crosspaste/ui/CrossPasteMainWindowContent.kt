@@ -66,6 +66,7 @@ fun CrossPasteMainWindowContent() {
                             .fillMaxHeight()
                             .background(AppUIColors.appBackground),
                 ) {
+                    WindowDecoration()
                     screenProvider.screen()
                 }
             }
