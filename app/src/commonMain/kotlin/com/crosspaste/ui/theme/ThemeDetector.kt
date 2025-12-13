@@ -7,6 +7,8 @@ interface ThemeDetector {
 
     val themeState: StateFlow<ThemeState>
 
+    fun setSystemInDark(isSystemInDark: Boolean)
+
     fun setThemeConfig(
         isFollowSystem: Boolean,
         isUserInDark: Boolean = false,

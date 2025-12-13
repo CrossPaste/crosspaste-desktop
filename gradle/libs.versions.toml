@@ -39,7 +39,6 @@ semver = "3.0.0"
 sqldelight = "2.2.1"
 native-tray = "1.0.4"
 tesseract-platform = "5.5.1-1.5.12"
-theme-detector = "3.9.1"
 turbine = "1.2.1"
 webp-imageio = "0.10.2"
 yaml = "2.5"
@@ -105,7 +104,6 @@ sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "s
 sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 native-tray = { module = "io.github.kdroidfilter:composenativetray-jvm", version.ref = "native-tray" }
 tesseract-platform = { module = "org.bytedeco:tesseract-platform", version.ref = "tesseract-platform" }
-theme-detector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "theme-detector" }
 webp-imageio = { module = "com.github.usefulness:webp-imageio", version.ref = "webp-imageio" }
 yaml = { module = "org.yaml:snakeyaml", version.ref = "yaml" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }

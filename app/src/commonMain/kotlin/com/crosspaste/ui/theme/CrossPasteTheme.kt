@@ -1,8 +1,10 @@
 package com.crosspaste.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
@@ -18,9 +20,17 @@ object CrossPasteTheme {
     @Composable
     fun Theme(content: @Composable () -> Unit) {
         val themeDetector = koinInject<ThemeDetector>()
+
+        val isSystemInDark = isSystemInDarkTheme()
+
         val themeState by themeDetector.themeState.collectAsState()
 
         val userSelectedFont by rememberUserSelectedFont()
+
+        LaunchedEffect(isSystemInDark) {
+            themeDetector.setSystemInDark(isSystemInDark)
+        }
+
         MaterialTheme(
             colorScheme = themeState.colorScheme,
             typography = MaterialTheme.typography.withCustomFonts(userSelectedFont),

@@ -148,9 +148,6 @@ kotlin {
             implementation(libs.ph.css)
             implementation(libs.sqlite.driver)
             implementation(libs.tesseract.platform)
-            implementation("com.github.Dansoftowner:jSystemThemeDetector:3.9.1") {
-                exclude(group = "net.java.dev.jna")
-            }
             implementation(libs.webp.imageio)
             implementation(libs.zxing.core)
         }
