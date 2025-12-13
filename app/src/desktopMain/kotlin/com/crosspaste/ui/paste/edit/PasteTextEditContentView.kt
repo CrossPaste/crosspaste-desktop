@@ -2,6 +2,7 @@ package com.crosspaste.ui.paste.edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,7 +31,9 @@ import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.refresh
 import com.crosspaste.ui.base.save
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
+import com.crosspaste.ui.theme.AppUISize.medium
 import org.koin.compose.koinInject
 
 @Composable
@@ -40,95 +43,104 @@ fun PasteDataScope.PasteTextEditContentView() {
     val pasteDao = koinInject<PasteDao>()
     val textUpdater = koinInject<TextTypePlugin>()
 
-    Column(
+    Box(
         modifier =
             Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(8.dp)),
+                .background(AppUIColors.appBackground)
+                .padding(horizontal = medium)
+                .padding(bottom = medium),
     ) {
-        val textPasteItem = getPasteItem(TextPasteItem::class)
-        var originText by remember { mutableStateOf(textPasteItem.text) }
-        var text by remember { mutableStateOf(textPasteItem.text) }
-
-        val hasChanges by remember(originText, text) {
-            mutableStateOf(text != originText && text.isNotEmpty())
-        }
-
-        Row(
+        Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp)),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                PasteTooltipIconView(
-                    painter = refresh(),
-                    text = copywriter.getText("reset"),
-                    contentDescription = "reset text",
-                    tint =
-                        if (text != originText && text.isNotEmpty()) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                        },
-                ) {
-                    if (hasChanges) {
-                        text = originText
-                    }
-                }
+            val textPasteItem = getPasteItem(TextPasteItem::class)
+            var originText by remember { mutableStateOf(textPasteItem.text) }
+            var text by remember { mutableStateOf(textPasteItem.text) }
+
+            val hasChanges by remember(originText, text) {
+                mutableStateOf(text != originText && text.isNotEmpty())
             }
 
             Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                PasteTooltipIconView(
-                    painter = save(),
-                    text = copywriter.getText("save"),
-                    contentDescription = "save text",
-                    tint =
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    PasteTooltipIconView(
+                        painter = refresh(),
+                        text = copywriter.getText("reset"),
+                        contentDescription = "reset text",
+                        tint =
+                            if (text != originText && text.isNotEmpty()) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                            },
+                    ) {
                         if (hasChanges) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                        },
+                            text = originText
+                        }
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (hasChanges) {
-                        textUpdater
-                            .updateText(pasteData, text, textPasteItem, pasteDao)
-                            .onSuccess {
-                                originText = text
-                                notificationManager.sendNotification(
-                                    title = { copywriter.getText("save_successful") },
-                                    messageType = MessageType.Success,
-                                )
-                            }.onFailure { error ->
-                                notificationManager.sendNotification(
-                                    title = { copywriter.getText("save_failed") },
-                                    message = { error.message ?: "" },
-                                    messageType = MessageType.Error,
-                                )
-                            }
+                    PasteTooltipIconView(
+                        painter = save(),
+                        text = copywriter.getText("save"),
+                        contentDescription = "save text",
+                        tint =
+                            if (hasChanges) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                            },
+                    ) {
+                        if (hasChanges) {
+                            textUpdater
+                                .updateText(pasteData, text, textPasteItem, pasteDao)
+                                .onSuccess {
+                                    originText = text
+                                    notificationManager.sendNotification(
+                                        title = { copywriter.getText("save_successful") },
+                                        messageType = MessageType.Success,
+                                    )
+                                }.onFailure { error ->
+                                    notificationManager.sendNotification(
+                                        title = { copywriter.getText("save_failed") },
+                                        message = { error.message ?: "" },
+                                        messageType = MessageType.Error,
+                                    )
+                                }
+                        }
                     }
                 }
             }
-        }
 
-        CustomTextField(
-            modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp),
-            value = text,
-            onValueChange = {
-                text = it
-            },
-            textStyle = pasteTextStyle,
-        )
+            CustomTextField(
+                modifier = Modifier.fillMaxSize(),
+                shape = RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp),
+                value = text,
+                onValueChange = {
+                    text = it
+                },
+                textStyle = pasteTextStyle,
+            )
+        }
     }
 }

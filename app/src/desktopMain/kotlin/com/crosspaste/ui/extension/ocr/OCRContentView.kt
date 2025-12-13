@@ -1,6 +1,7 @@
 package com.crosspaste.ui.extension.ocr
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import com.crosspaste.ui.base.SettingButton
 import com.crosspaste.ui.base.SettingOutlineButton
 import com.crosspaste.ui.base.info
 import com.crosspaste.ui.settings.SettingItemsTitleView
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -84,90 +86,99 @@ fun OCRContentView() {
         }
     }
 
-    Column(
+    Box(
         modifier =
             Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(AppUIColors.appBackground)
+                .padding(horizontal = medium)
+                .padding(bottom = medium),
     ) {
         Column(
             modifier =
                 Modifier
-                    .wrapContentSize()
-                    .clip(tinyRoundedCornerShape),
+                    .fillMaxSize(),
         ) {
-            if (ocrLanguageList.isNotEmpty()) {
-                SettingItemsTitleView(title = "language_module_loaded") {
-                    PasteTooltipAreaView(
-                        modifier = Modifier.size(medium),
-                        text = copywriter.getText("ocr_language_module_order_notice"),
-                    ) {
-                        Icon(
-                            painter = info(),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
+            Column(
+                modifier =
+                    Modifier
+                        .wrapContentSize()
+                        .clip(tinyRoundedCornerShape),
+            ) {
+                if (ocrLanguageList.isNotEmpty()) {
+                    SettingItemsTitleView(title = "language_module_loaded") {
+                        PasteTooltipAreaView(
+                            modifier = Modifier.size(medium),
+                            text = copywriter.getText("ocr_language_module_order_notice"),
+                        ) {
+                            Icon(
+                                painter = info(),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
-            }
-            LazyColumn {
-                items(ocrLanguageList.size) { index ->
-                    val ocrLanguage = ocrLanguageList[index]
-                    val language = languages.find { getTrainedDataName(it.abridge) == ocrLanguage }
-                    if (language != null) {
-                        LoadedLanguageItem(
-                            index = index + 1,
-                            language = language,
-                        ) {
-                            scope.launch {
-                                ocrModule.removeLanguage(language.abridge)
+                LazyColumn {
+                    items(ocrLanguageList.size) { index ->
+                        val ocrLanguage = ocrLanguageList[index]
+                        val language = languages.find { getTrainedDataName(it.abridge) == ocrLanguage }
+                        if (language != null) {
+                            LoadedLanguageItem(
+                                index = index + 1,
+                                language = language,
+                            ) {
+                                scope.launch {
+                                    ocrModule.removeLanguage(language.abridge)
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        if (ocrLanguageList.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(medium))
-        }
+            if (ocrLanguageList.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(medium))
+            }
 
-        Column(
-            modifier =
-                Modifier
-                    .wrapContentSize()
-                    .clip(tinyRoundedCornerShape),
-        ) {
-            SettingItemsTitleView("language_module_not_loaded")
+            Column(
+                modifier =
+                    Modifier
+                        .wrapContentSize()
+                        .clip(tinyRoundedCornerShape),
+            ) {
+                SettingItemsTitleView("language_module_not_loaded")
 
-            LazyColumn {
-                items(languages.size) { index ->
-                    val language = languages[index]
-                    val ocrLanguage = ocrLanguageList.find { it == getTrainedDataName(language.abridge) }
-                    if (ocrLanguage == null) {
-                        val downloadState = downloadState.fileStates[language.abridge]
-                        LanguageItem(
-                            language = language,
-                            state = downloadState,
-                            onDownloadClick = {
-                                ocrModule.createDownloadTask(language.abridge)?.let { task ->
-                                    moduleDownloadManager.downloadFile(task)
-                                }
-                            },
-                            onCancelClick = {
-                                moduleDownloadManager.cancelDownload(language.abridge)
-                            },
-                            onDeleteClick = {
-                                moduleDownloadManager.removeDownload(
-                                    moduleId = "OCR",
-                                    taskId = language.abridge,
-                                )
-                            },
-                            onLoadClick = {
-                                scope.launch {
-                                    ocrModule.addLanguage(language.abridge)
-                                }
-                            },
-                        )
+                LazyColumn {
+                    items(languages.size) { index ->
+                        val language = languages[index]
+                        val ocrLanguage = ocrLanguageList.find { it == getTrainedDataName(language.abridge) }
+                        if (ocrLanguage == null) {
+                            val downloadState = downloadState.fileStates[language.abridge]
+                            LanguageItem(
+                                language = language,
+                                state = downloadState,
+                                onDownloadClick = {
+                                    ocrModule.createDownloadTask(language.abridge)?.let { task ->
+                                        moduleDownloadManager.downloadFile(task)
+                                    }
+                                },
+                                onCancelClick = {
+                                    moduleDownloadManager.cancelDownload(language.abridge)
+                                },
+                                onDeleteClick = {
+                                    moduleDownloadManager.removeDownload(
+                                        moduleId = "OCR",
+                                        taskId = language.abridge,
+                                    )
+                                },
+                                onLoadClick = {
+                                    scope.launch {
+                                        ocrModule.addLanguage(language.abridge)
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }

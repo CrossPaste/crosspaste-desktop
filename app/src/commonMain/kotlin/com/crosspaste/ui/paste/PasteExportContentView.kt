@@ -106,6 +106,9 @@ fun PasteExportContentView() {
         modifier =
             Modifier
                 .fillMaxSize()
+                .background(AppUIColors.appBackground)
+                .padding(horizontal = medium)
+                .padding(bottom = medium)
                 .clip(tinyRoundedCornerShape)
                 .background(AppUIColors.generalBackground),
         contentAlignment = Alignment.Center,

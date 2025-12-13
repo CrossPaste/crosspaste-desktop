@@ -70,7 +70,11 @@ fun ShortcutKeysContentView() {
 
     Box(
         modifier =
-            Modifier.fillMaxSize(),
+            Modifier
+                .fillMaxSize()
+                .background(AppUIColors.appBackground)
+                .padding(horizontal = medium)
+                .padding(bottom = medium),
     ) {
         Column(
             modifier =
