@@ -122,6 +122,15 @@ object AppUIFont {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.typography.titleLarge
 
+    val imageResolutionTextStyle: TextStyle
+        @Composable @ReadOnlyComposable
+        get() =
+            MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.sp,
+                letterSpacing = 0.5.sp,
+            )
+
     val menuItemTextStyle: TextStyle
         @Composable @ReadOnlyComposable
         get() =
