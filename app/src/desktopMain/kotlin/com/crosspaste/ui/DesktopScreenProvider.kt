@@ -72,15 +72,15 @@ class DesktopScreenProvider(
     private val navigationEvents = Channel<NavigationEvent>(Channel.UNLIMITED)
 
     override fun navigate(route: Route) {
-        navigationEvents.trySend(NavigationEvent.Navigate(route))
+        navigationEvents.trySend(Navigate(route))
     }
 
     override fun navigateAndClearStack(route: Route) {
-        navigationEvents.trySend(NavigationEvent.NavigateAndClearStack(route))
+        navigationEvents.trySend(NavigateAndClearStack(route))
     }
 
     override fun navigateUp() {
-        navigationEvents.trySend(NavigationEvent.NavigateUp)
+        navigationEvents.trySend(NavigateUp)
     }
 
     override fun navigateAction(
@@ -88,10 +88,10 @@ class DesktopScreenProvider(
         navController: NavHostController,
     ) {
         when (event) {
-            is NavigationEvent.Navigate -> {
+            is Navigate -> {
                 navController.navigate(event.route)
             }
-            is NavigationEvent.NavigateAndClearStack -> {
+            is NavigateAndClearStack -> {
                 navController.navigate(event.route) {
                     popUpTo(0) {
                         saveState = true
@@ -100,7 +100,7 @@ class DesktopScreenProvider(
                     restoreState = true
                 }
             }
-            is NavigationEvent.NavigateUp -> {
+            is NavigateUp -> {
                 navController.navigateUp()
             }
         }
