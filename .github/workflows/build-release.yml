@@ -128,6 +128,16 @@ jobs:
           java-version: '21'
           check-latest: true
 
+      - name: Install FUSE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 file
+
+      - name: Set up AppImageTool
+        run: |
+          wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool.AppImage
+          chmod +x appimagetool.AppImage
+
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
         with:
@@ -199,6 +209,11 @@ jobs:
           extra_flags: -f build.conveyor.conf
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
+
+      - name: Package AppImage
+        run: |
+          chmod +x ./.github/scripts/package_appimage.sh
+          ./.github/scripts/package_appimage.sh    
 
       - name: CheckSum
         run: |
