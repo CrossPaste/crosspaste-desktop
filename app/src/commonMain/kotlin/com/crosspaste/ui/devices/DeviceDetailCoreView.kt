@@ -139,10 +139,10 @@ fun DeviceScope.DeviceDetailCoreView() {
                     text = "${copywriter.getText("allow_send_to")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                     isFinalText = true,
                     getCurrentSwitchValue = {
-                        !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowSend
+                        !appControl.isSyncControlEnabled() || syncRuntimeInfo.allowSend
                     },
                 ) { allowSend ->
-                    if (appControl.isSyncControlEnabled()) {
+                    if (appControl.isSyncControlEnabled(true)) {
                         syncManager.updateAllowSend(syncRuntimeInfo.appInstanceId, allowSend)
                     }
                 }
@@ -153,10 +153,10 @@ fun DeviceScope.DeviceDetailCoreView() {
                     text = "${copywriter.getText("allow_receive_from")} ${syncRuntimeInfo.getDeviceDisplayName()}",
                     isFinalText = true,
                     getCurrentSwitchValue = {
-                        !appControl.isSyncControlEnabled(false) || syncRuntimeInfo.allowReceive
+                        !appControl.isSyncControlEnabled() || syncRuntimeInfo.allowReceive
                     },
                 ) { allowReceive ->
-                    if (appControl.isSyncControlEnabled()) {
+                    if (appControl.isSyncControlEnabled(true)) {
                         syncManager.updateAllowReceive(syncRuntimeInfo.appInstanceId, allowReceive)
                     }
                 }
