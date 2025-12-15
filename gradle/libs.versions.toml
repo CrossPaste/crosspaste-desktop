@@ -43,7 +43,7 @@ tesseract-platform = "5.5.1-1.5.12"
 turbine = "1.2.1"
 webp-imageio = "0.10.2"
 yaml = "2.5"
-zxing = "3.5.3"
+zxing = "3.5.4"
 
 [libraries]
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
