@@ -35,7 +35,6 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.DesktopPlatformProvider
-import com.crosspaste.platform.linux.patchDecoratedWindowIcons
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.QRCodeGenerator
@@ -116,10 +115,6 @@ class CrossPaste {
             runCatching {
                 if (appEnvUtils.isProduction()) {
                     System.setProperty("jna.library.path", appPathProvider.pasteAppExePath.toString())
-                }
-
-                if (platform.isLinux()) {
-                    patchDecoratedWindowIcons()
                 }
 
                 val koin = koinApplication.koin

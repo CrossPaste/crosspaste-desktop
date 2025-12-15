@@ -30,9 +30,20 @@ import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
 import kotlinx.coroutines.launch
+import org.jetbrains.jewel.foundation.theme.JewelTheme
+import org.jetbrains.jewel.intui.window.DecoratedWindowIconKeys
+import org.jetbrains.jewel.ui.icon.PathIconKey
 import org.jetbrains.jewel.window.DecoratedWindow
 import org.jetbrains.jewel.window.TitleBar
+import org.jetbrains.jewel.window.defaultTitleBarStyle
+import org.jetbrains.jewel.window.styling.TitleBarIcons
+import org.jetbrains.jewel.window.styling.TitleBarStyle
 import org.koin.compose.koinInject
+
+val CorrectMinimizeIcon = PathIconKey("window/minimize.svg", DecoratedWindowIconKeys::class.java)
+val CorrectMaximizeIcon = PathIconKey("window/maximize.svg", DecoratedWindowIconKeys::class.java)
+val CorrectRestoreIcon = PathIconKey("window/restore.svg", DecoratedWindowIconKeys::class.java)
+val CorrectCloseIcon = PathIconKey("window/close.svg", DecoratedWindowIconKeys::class.java)
 
 @Composable
 fun MainWindow(windowIcon: Painter?) {
@@ -81,7 +92,34 @@ fun MainWindow(windowIcon: Painter?) {
             }
         }
 
-        TitleBar {
+        val style =
+            if (platform.isLinux()) {
+                val defaultStyle = JewelTheme.defaultTitleBarStyle
+
+                val patchedIcons =
+                    TitleBarIcons(
+                        minimizeButton = CorrectMinimizeIcon,
+                        maximizeButton = CorrectMaximizeIcon,
+                        restoreButton = CorrectRestoreIcon,
+                        closeButton = CorrectCloseIcon,
+                    )
+
+                TitleBarStyle(
+                    colors = defaultStyle.colors,
+                    metrics = defaultStyle.metrics,
+                    icons = patchedIcons,
+                    dropdownStyle = defaultStyle.dropdownStyle,
+                    iconButtonStyle = defaultStyle.iconButtonStyle,
+                    paneButtonStyle = defaultStyle.paneButtonStyle,
+                    paneCloseButtonStyle = defaultStyle.paneCloseButtonStyle,
+                )
+            } else {
+                JewelTheme.defaultTitleBarStyle
+            }
+
+        TitleBar(
+            style = style,
+        ) {
             WindowDraggableArea {
                 Row(
                     modifier =
