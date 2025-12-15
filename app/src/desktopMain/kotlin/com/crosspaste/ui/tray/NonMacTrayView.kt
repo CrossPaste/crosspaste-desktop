@@ -42,7 +42,7 @@ fun ApplicationScope.NonMacTrayView(windowIcon: Painter) {
             Item(label = copywriter.getText("open_search_window")) {
                 mainCoroutineDispatcher.launch {
                     appWindowManager.saveCurrentActiveAppInfo()
-                    appWindowManager.showMainWindow(WindowTrigger.MENU)
+                    appWindowManager.showSearchWindow(WindowTrigger.MENU)
                 }
             }
 
