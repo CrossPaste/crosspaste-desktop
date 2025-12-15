@@ -79,17 +79,25 @@ class DesktopFilesTypePlugin(
                 return
             }
 
-            val parentPath = files[0].toOkioPath().noOptionParent
+            val paths = files.map { it.toOkioPath(normalize = true) }
+
+            val parentPath = paths[0].noOptionParent
 
             val fileInfoTrees = mutableMapOf<String, FileInfoTree>()
             val relativePathList = mutableListOf<String>()
 
-            val sumFileSize = files.sumOf { it.length() }
-
-            val copySizeExceeding =
+            val maxBackupFileSize =
                 fileUtils.bytesSize(
                     configManager.getCurrentConfig().maxBackupFileSize,
-                ) < sumFileSize
+                )
+
+            val sumFileSize =
+                fileUtils.calculateTotalSizeWithLimit(
+                    paths,
+                    maxBackupFileSize,
+                )
+
+            val copySizeExceeding = maxBackupFileSize < sumFileSize
 
             val copyFromCrossPaste =
                 files.any {
@@ -102,14 +110,13 @@ class DesktopFilesTypePlugin(
             // Instead, record the file path
             val useRefCopyFiles = copySizeExceeding || copyFromCrossPaste
 
-            for (file in files) {
-                val path = file.toOkioPath(normalize = true)
-                val fileName = FileNameNormalizer.normalize(file.name)
+            for (path in paths) {
+                val originFileName = path.name
+                val fileName = FileNameNormalizer.normalize(originFileName)
 
                 if (useRefCopyFiles) {
-                    val relativePath = path.name
-                    relativePathList.add(relativePath)
-                    fileInfoTrees[file.name] = fileUtils.getFileInfoTree(path)
+                    relativePathList.add(originFileName)
+                    fileInfoTrees[originFileName] = fileUtils.getFileInfoTree(path)
                 } else {
                     val relativePath =
                         fileUtils.createPasteRelativePath(
@@ -129,14 +136,14 @@ class DesktopFilesTypePlugin(
                             userDataPathProvider,
                         )
                     if (fileUtils.copyPath(path, filePath).isSuccess) {
-                        fileInfoTrees[file.name] = fileUtils.getFileInfoTree(filePath)
+                        fileInfoTrees[originFileName] = fileUtils.getFileInfoTree(filePath)
                     } else {
                         throw IllegalStateException("Failed to copy file")
                     }
                 }
             }
 
-            val hash = codecsUtils.hashByArray(files.mapNotNull { fileInfoTrees[it.name]?.hash }.toTypedArray())
+            val hash = codecsUtils.hashByArray(paths.mapNotNull { fileInfoTrees[it.name]?.hash }.toTypedArray())
             val count = fileInfoTrees.map { it.value.getCount() }.sum()
             val size = fileInfoTrees.map { it.value.size }.sum()
 
