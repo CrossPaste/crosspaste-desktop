@@ -12,7 +12,6 @@ import okio.BufferedSink
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
-import okio.SYSTEM
 import okio.buffer
 import okio.use
 import kotlin.uuid.ExperimentalUuidApi
@@ -165,8 +164,45 @@ interface FileUtils {
 
     fun getFileSize(path: Path): Long =
         runCatching {
-            FileSystem.SYSTEM.metadata(path).size ?: 0L
+            fileSystem.metadata(path).size ?: 0L
         }.getOrDefault(0L)
+
+    fun calculateTotalSizeWithLimit(
+        paths: List<Path>,
+        limit: Long,
+    ): Long {
+        var total: Long = 0
+
+        fun processPath(path: Path) {
+            if (total > limit) return
+
+            val metadata =
+                runCatching {
+                    fileSystem.metadataOrNull(path)
+                }.getOrNull() ?: return
+
+            if (metadata.isDirectory) {
+                val children =
+                    runCatching {
+                        fileSystem.list(path)
+                    }.getOrDefault(listOf())
+
+                for (child in children) {
+                    processPath(child)
+                    if (total > limit) return
+                }
+            } else {
+                total += metadata.size ?: 0L
+            }
+        }
+
+        for (path in paths) {
+            processPath(path)
+            if (total > limit) break
+        }
+
+        return total
+    }
 
     fun getFileHash(path: Path): String {
         val streamingMurmurHash3 = StreamingMurmurHash3(CROSS_PASTE_SEED)
