@@ -113,6 +113,10 @@ class CrossPaste {
         @Throws(Exception::class)
         private fun startApplication() {
             runCatching {
+                if (appEnvUtils.isProduction()) {
+                    System.setProperty("jna.library.path", appPathProvider.pasteAppExePath.toString())
+                }
+
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<AppLaunchState>()
                 if (appLaunchState.acquireLock) {
