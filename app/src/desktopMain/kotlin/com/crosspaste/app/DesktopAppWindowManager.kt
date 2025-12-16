@@ -15,13 +15,10 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
 
 fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
@@ -56,11 +53,6 @@ fun getDesktopAppWindowManager(
     } else {
         throw IllegalStateException("Unsupported platform: $platform")
     }
-
-private data class WindowScheduledTask(
-    val delayMillis: Long,
-    val action: suspend () -> Unit,
-)
 
 enum class WindowTrigger {
     MENU,
@@ -131,8 +123,6 @@ abstract class DesktopAppWindowManager(
         )
     var searchWindowInfo: StateFlow<WindowInfo> = _searchWindowInfo
 
-    private val hideSearchWindowCallbacks = mutableListOf<WindowScheduledTask>()
-
     var searchComposeWindow: ComposeWindow? = null
         set(value) {
             if (field != value) {
@@ -141,16 +131,6 @@ abstract class DesktopAppWindowManager(
             }
         }
 
-    init {
-        ioScope.launch {
-            searchWindowInfo.collectLatest { info ->
-                if (!info.show) {
-                    hideSearchCallback()
-                }
-            }
-        }
-    }
-
     abstract fun startWindowService()
 
     abstract fun stopWindowService()
@@ -158,33 +138,6 @@ abstract class DesktopAppWindowManager(
     fun getCurrentMainWindowInfo(): WindowInfo = _mainWindowInfo.value
 
     fun getCurrentSearchWindowInfo(): WindowInfo = _searchWindowInfo.value
-
-    private suspend fun hideSearchCallback() {
-        runCatching {
-            val tasksSnapshot =
-                synchronized(hideSearchWindowCallbacks) {
-                    hideSearchWindowCallbacks.toList()
-                }
-
-            var accumulatedTime = 0L
-
-            tasksSnapshot.forEach { task ->
-                val waitTime = task.delayMillis - accumulatedTime
-                if (waitTime > 0) {
-                    delay(waitTime)
-                }
-
-                logger.debug { "Executing callback scheduled for ${task.delayMillis}ms" }
-                task.action()
-
-                accumulatedTime = task.delayMillis
-            }
-        }.onFailure { e ->
-            if (e !is CancellationException) {
-                logger.error(e) { "Error in hide search window callback" }
-            }
-        }
-    }
 
     fun hideMainWindow() {
         _mainWindowInfo.value =
@@ -240,16 +193,6 @@ abstract class DesktopAppWindowManager(
     )
 
     abstract fun getPrevAppName(): Flow<String?>
-
-    fun registerHideSearchWindowCallback(
-        delayMillis: Long,
-        action: suspend () -> Unit,
-    ) {
-        synchronized(hideSearchWindowCallbacks) {
-            hideSearchWindowCallbacks.add(WindowScheduledTask(delayMillis, action))
-            hideSearchWindowCallbacks.sortBy { it.delayMillis }
-        }
-    }
 
     protected open fun onMainComposeWindowChanged(window: ComposeWindow?) {}
 
