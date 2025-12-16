@@ -85,9 +85,6 @@ abstract class DesktopAppWindowManager(
         private const val MAIN_WINDOW_TITLE: String = "CrossPaste"
 
         private const val SEARCH_WINDOW_TITLE = "CrossPaste Search"
-
-        // only use in Windows
-        const val MENU_WINDOW_TITLE: String = "CrossPaste Menu"
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -117,6 +114,12 @@ abstract class DesktopAppWindowManager(
     val alwaysOnTopMainWindow: StateFlow<Boolean> = _alwaysOnTopMainWindow
 
     var mainComposeWindow: ComposeWindow? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                onMainComposeWindowChanged(value)
+            }
+        }
 
     private val _searchWindowInfo =
         MutableStateFlow(
@@ -131,6 +134,12 @@ abstract class DesktopAppWindowManager(
     private val hideSearchWindowCallbacks = mutableListOf<WindowScheduledTask>()
 
     var searchComposeWindow: ComposeWindow? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                onSearchComposeWindowChanged(value)
+            }
+        }
 
     init {
         ioScope.launch {
@@ -241,4 +250,8 @@ abstract class DesktopAppWindowManager(
             hideSearchWindowCallbacks.sortBy { it.delayMillis }
         }
     }
+
+    protected open fun onMainComposeWindowChanged(window: ComposeWindow?) {}
+
+    protected open fun onSearchComposeWindowChanged(window: ComposeWindow?) {}
 }

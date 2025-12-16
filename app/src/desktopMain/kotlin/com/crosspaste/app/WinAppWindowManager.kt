@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -21,13 +22,24 @@ class WinAppWindowManager(
     userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize, configManager) {
 
-    val mainHWND: HWND? by lazy {
-        User32.findPasteWindow(mainWindowTitle)
-    }
+    private var _cachedMainHWND: HWND? = null
+    private var _cachedSearchHWND: HWND? = null
 
-    val searchHWND: HWND? by lazy {
-        User32.findPasteWindow(searchWindowTitle)
-    }
+    val mainHWND: HWND?
+        get() {
+            if (_cachedMainHWND == null) {
+                _cachedMainHWND = User32.findPasteWindow(mainWindowTitle)
+            }
+            return _cachedMainHWND
+        }
+
+    val searchHWND: HWND?
+        get() {
+            if (_cachedSearchHWND == null) {
+                _cachedSearchHWND = User32.findPasteWindow(searchWindowTitle)
+            }
+            return _cachedSearchHWND
+        }
 
     private val winAppInfoCaches = WinAppInfoCaches(userDataPathProvider, ioScope)
 
@@ -120,5 +132,13 @@ class WinAppWindowManager(
         User32.paste(keyCodes)
     }
 
-    fun initMenuHWND(): HWND? = User32.findPasteWindow(MENU_WINDOW_TITLE)
+    override fun onMainComposeWindowChanged(window: ComposeWindow?) {
+        logger.debug { "Main ComposeWindow changed, invalidating HWND cache" }
+        _cachedMainHWND = null
+    }
+
+    override fun onSearchComposeWindowChanged(window: ComposeWindow?) {
+        logger.debug { "Search ComposeWindow changed, invalidating HWND cache" }
+        _cachedSearchHWND = null
+    }
 }
