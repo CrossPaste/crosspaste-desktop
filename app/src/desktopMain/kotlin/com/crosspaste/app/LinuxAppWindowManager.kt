@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -27,13 +28,24 @@ class LinuxAppWindowManager(
 
     private val classNameSet: MutableSet<String> = mutableSetOf()
 
-    val mainWindow: Window? by lazy {
-        X11Api.getWindow(mainWindowTitle)
-    }
+    private var _cachedMainWindow: Window? = null
+    private var _cachedSearchWindow: Window? = null
 
-    val searchWindow: Window? by lazy {
-        X11Api.getWindow(searchWindowTitle)
-    }
+    val mainWindow: Window?
+        get() {
+            if (_cachedMainWindow == null) {
+                _cachedMainWindow = X11Api.getWindow(mainWindowTitle)
+            }
+            return _cachedMainWindow
+        }
+
+    val searchWindow: Window?
+        get() {
+            if (_cachedSearchWindow == null) {
+                _cachedSearchWindow = X11Api.getWindow(searchWindowTitle)
+            }
+            return _cachedSearchWindow
+        }
 
     override fun getCurrentActiveAppName(): String? =
         X11Api.getActiveWindow()?.let { linuxAppInfo ->
@@ -138,6 +150,16 @@ class LinuxAppWindowManager(
                 it.map { key -> key.rawCode }
             } ?: listOf()
         X11Api.toPaste(keyCodes)
+    }
+
+    override fun onMainComposeWindowChanged(window: ComposeWindow?) {
+        logger.debug { "Main ComposeWindow changed (Linux), invalidating X11 Window cache" }
+        _cachedMainWindow = null
+    }
+
+    override fun onSearchComposeWindowChanged(window: ComposeWindow?) {
+        logger.debug { "Search ComposeWindow changed (Linux), invalidating X11 Window cache" }
+        _cachedSearchWindow = null
     }
 }
 
