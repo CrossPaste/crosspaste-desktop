@@ -10,6 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.window.Window
@@ -26,9 +28,12 @@ import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.DesktopSearchWindowStyle
+import com.crosspaste.utils.cpuDispatcher
 import com.sun.jna.Pointer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -111,14 +116,12 @@ fun SearchWindow(windowIcon: Painter?) {
         resizable = false,
     ) {
         val color = AppUIColors.generalBackground.copy(alpha = 0.5f).toArgb()
-        LaunchedEffect(color) {
-            if (isMac) {
-                runCatching {
-                    val pointer = Pointer(window.windowHandle)
-                    MacAppUtils.setWindowLevelScreenSaver(pointer)
-                    MacAppUtils.applyAcrylicBackground(pointer, color)
-                }
-            }
+
+        if (isMac) {
+            WindowAcrylicEffect(
+                window = this.window,
+                currentArgb = color,
+            )
         }
 
         DisposableEffect(Unit) {
@@ -156,6 +159,25 @@ fun SearchWindow(windowIcon: Painter?) {
                 CenterSearchWindowContent()
             } else {
                 SideSearchWindowContent()
+            }
+        }
+    }
+}
+
+@Composable
+fun WindowAcrylicEffect(
+    window: ComposeWindow,
+    currentArgb: Int,
+) {
+    LaunchedEffect(window, currentArgb) {
+        snapshotFlow { window.isDisplayable }
+            .first { it }
+
+        withContext(cpuDispatcher) {
+            runCatching {
+                val pointer = Pointer(window.windowHandle)
+                MacAppUtils.setWindowLevelScreenSaver(pointer)
+                MacAppUtils.applyAcrylicBackground(pointer, currentArgb)
             }
         }
     }
