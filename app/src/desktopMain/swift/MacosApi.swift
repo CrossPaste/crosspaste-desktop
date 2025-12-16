@@ -236,8 +236,13 @@ private func hideWindowAndActivateApp(hideTitle: String, appName: String) {
 public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
     guard let rawPtr = rawPtr else { return }
 
+    let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+
     DispatchQueue.main.async {
-        let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+        if window.windowNumber <= 0 {
+            return
+        }
+
         let screenSaverLevel = CGWindowLevelForKey(.screenSaverWindow)
         window.level = NSWindow.Level(rawValue: Int(screenSaverLevel))
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -250,6 +255,8 @@ public func applyAcrylicBackground(_ rawPtr: UnsafeRawPointer?, _ colorArgb: Int
         return
     }
 
+    let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+
     let alpha = CGFloat((colorArgb >> 24) & 0xFF) / 255.0
     let red = CGFloat((colorArgb >> 16) & 0xFF) / 255.0
     let green = CGFloat((colorArgb >> 8) & 0xFF) / 255.0
@@ -257,7 +264,9 @@ public func applyAcrylicBackground(_ rawPtr: UnsafeRawPointer?, _ colorArgb: Int
     let tintColor = NSColor(red: red, green: green, blue: blue, alpha: alpha)
 
     DispatchQueue.main.async {
-        let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+        if window.windowNumber <= 0 {
+            return
+        }
 
         window.isOpaque = false
         window.backgroundColor = .clear
