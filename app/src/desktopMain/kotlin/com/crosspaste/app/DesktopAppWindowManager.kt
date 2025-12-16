@@ -9,6 +9,7 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -184,11 +185,17 @@ abstract class DesktopAppWindowManager(
     }
 
     fun showMainWindow(windowTrigger: WindowTrigger) {
-        _mainWindowInfo.value =
-            _mainWindowInfo.value.copy(
-                show = true,
-                trigger = windowTrigger,
-            )
+        if (!_mainWindowInfo.value.show) {
+            _mainWindowInfo.value =
+                _mainWindowInfo.value.copy(
+                    show = true,
+                    trigger = windowTrigger,
+                )
+        } else {
+            mainCoroutineDispatcher.launch {
+                focusMainWindow(windowTrigger)
+            }
+        }
     }
 
     abstract fun saveCurrentActiveAppInfo()
