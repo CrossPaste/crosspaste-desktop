@@ -40,6 +40,7 @@ import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
+import com.crosspaste.ui.AwtExceptionHandler
 import com.crosspaste.ui.CrossPasteWindows
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
@@ -62,6 +63,7 @@ import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
+import kotlin.jvm.java
 import kotlin.system.exitProcess
 
 class CrossPaste {
@@ -250,6 +252,8 @@ class CrossPaste {
         @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
         @JvmStatic
         fun main(args: Array<String>) {
+            System.setProperty("sun.awt.exception.handler", AwtExceptionHandler::class.java.name)
+
             Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
                 logger.error(throwable) { "Uncaught exception in thread: $thread" }
             }
