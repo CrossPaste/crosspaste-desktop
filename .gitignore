@@ -4,6 +4,7 @@
 .gradle
 .idea
 .kotlin
+build_windows_misx.sh
 development.properties
 generated.conveyor.conf
 local.properties
