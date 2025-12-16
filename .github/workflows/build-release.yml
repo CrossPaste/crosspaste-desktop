@@ -203,7 +203,7 @@ jobs:
           echo "${{ secrets.AUTH_KEY }}" | base64 --decode > AuthKey.p8
 
       - name: Conveyor build
-        uses: hydraulic-software/conveyor/actions/build@v20.0
+        uses: hydraulic-software/conveyor/actions/build@v21.0
         with:
           command: make site
           extra_flags: -f build.conveyor.conf
