@@ -2,6 +2,108 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.2.4] - 2025-12-16
+# Highlights 🌟
+
+- 🏷️ **Clipboard Item Tagging**
+  Organize your clipboard history more effectively with the new tagging system. You can now add custom tags to items, complete with a refined UI for easier management (#3389 #3392 #3415 #3442).
+
+- 📥 **Native System Tray**
+  Improved desktop integration with native system tray support, now fully implemented for both Windows and Linux environments (#3413 #3471).
+
+- 🎨 **Visual & UX Polish**
+  Introduced macOS acrylic window background effects, overhauled file/folder icons, and added image resolution overlays. Navigation has been smoothed out with consistent back-button behavior (#3404 #3426 #3444 #3448).
+
+- ⌨️ **Smart Shortcuts & Focus**
+  Added support for keyboard shortcuts to quickly access the top 9 clipboard items. Window focus logic has been significantly improved for better stability and automatic monitoring (#3378 #3384 #3385).
+
+- ⚡ **Performance & Stability**
+  Significant under-the-hood optimizations to reduce application size and memory footprint, resulting in a snappier and more responsive experience (#3383 #3399 #3408).
+
+- 🐧 **Linux AppImage Support**
+  Greatly enhanced Linux compatibility with official AppImage packaging support, simplifying installation across different distributions (#3456).
+
+# Bug Fixes 🐛
+
+- Resolve SIGSEGV crash due to unsafe window pointer usage (#3473)
+- Fix crash caused by process-based hostname retrieval (#3393)
+- Fix migration crash for `PasteTagEntity` (#3392)
+- Ensure Settings window automatically appears on first launch (macOS) (#3395)
+- Fix drag-and-drop performance issue in `SidePasteItemView` (#3402)
+- Prevent tagged items from being removed during deduplication (#3415)
+- Fix compilation errors in securedao (#3421)
+- Resolve aliasing in side app source icons due to crop transformation (#3432)
+- Fix sync control parameter inconsistency in device detail view (#3452)
+- Fix incorrect directory size check allowing large folders to bypass limit (#3465)
+- Patch incorrect icon paths in decorated window icon keys via reflection (#3469)
+- Fix tray menu showing search window instead of main window (#3471)
+- Improve main window focus behavior when already visible (#3477)
+- Add cache invalidation for native window handles to prevent stale state (#3479)
+- Reset active image memory reclamation logic (#3483)
+
+
+# New Features ✨
+
+- :sparkles: Support adding tags to clipboard items (#3389)
+- :sparkles: Support keyboard shortcuts for top 9 clipboard items (#3385)
+- :sparkles: Add support for automatic window focus change monitoring (#3384)
+- :sparkles: Implement native tray support for Windows and Linux (#3413)
+- :sparkles: Add AppImage packaging support for Linux builds (#3456)
+- :sparkles: improve window focus logic and display interface (#3378)
+
+# UI Improvements 💄
+
+- :lipstick: Implement acrylic window background (macOS) (#3404)
+- :lipstick: Overhaul file and folder icons with modern aesthetics (#3426)
+- :lipstick: Display image resolution overlay in side panel (#3444)
+- :lipstick: Refine tag chip styling and sizing consistency (#3442)
+- :lipstick: Improve text styling with consistent line height configuration (#3430)
+- :lipstick: Implemented `FileBottomSolid` to display file info in preview (#3436)
+- :lipstick: Refactored `UrlBottomSolid` for layout harmony and readability (#3434)
+- :lipstick: Implement navigation improvements with graph routing (#3448)
+- :lipstick: Enhance UI consistency with unified background styling (#3450)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Replace Guava with Caffeine to reduce dependency size (#3383)
+- :hammer: Consolidate theme logic into unified reactive `ThemeState` (#3397)
+- :hammer: Migrate to centralized reactive `AppSizeValue` architecture (#3410)
+- :hammer: Refactor UI context management and optimize window state access (#3419)
+- :hammer: Refactor bottom solid components to support multiplatform usage (#3440)
+- :hammer: Replace `jSystemThemeDetector` with native Compose API (#3446)
+- :hammer: Refactor `NavigationEvent` from sealed class to interface pattern (#3454)
+
+# Performance ⚡
+
+- :zap: Optimize UI performance by eliminating unnecessary state (#3399)
+- :zap: Add `@Stable` annotation to `PasteDetailInfoItem` (#3406)
+- :zap: Optimize image loading and UI performance across multiple components (#3408)
+- :zap: Optimize `AppSourceIcon` layout stability and scaling logic (#3417)
+- :zap: Optimize scroll performance in `SidePasteboardContentView` (#3438)
+
+# Dependencies ⬆️
+
+- ⬆️ **Jewel** 0.31.0 → 0.32.1 (#3373 #3458)
+- ⬆️ **Ktor** 3.3.2 → 3.3.3 (#3386)
+- ⬆️ **SQLDelight** 2.0.2 → 2.2.1 (#3343 #3346)
+- ⬆️ **Okio** 3.16.2 → 3.16.4 (#3411)
+- ⬆️ **Ktlint** 13.1.0 → 14.0.1 (#3457)
+- ⬆️ **Ph-css** 8.0.1 → 8.1.1 (#3459)
+- ⬆️ **ZXing Core** 3.5.3 → 3.5.4 (#3463)
+- ⬆️ **Mockk** 1.14.6 → 1.14.7 (#3462)
+
+# Build & Tooling 👷
+
+- :arrow_up: Upgrade Gradle to 8.14 (#3428)
+- :arrow_up: Update Conveyor build action to v21.0 (#3481)
+- :construction_worker: Cache Kotlin Native dependencies to speed up build (#3423)
+- :package: Set JNA library path for production builds (#3467)
+- :loud_sound: Add AWT exception handler for better crash logging (#3475)
+
+---
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.3.1718...1.2.4.1778
+
 # [1.2.3] - 2025-11-25
 # Highlights 🌟
 
