@@ -54,7 +54,6 @@ fun MainMenuView() {
     val prevMenuList by remember {
         mutableStateOf(
             listOf(
-                MainMenuItem("pasteboard", Pasteboard),
                 MainMenuItem("devices", Devices),
                 MainMenuItem("scan", QrCode),
                 MainMenuItem("settings", Settings),

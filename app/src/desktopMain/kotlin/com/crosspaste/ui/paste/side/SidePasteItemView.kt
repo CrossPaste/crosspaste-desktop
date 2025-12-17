@@ -30,10 +30,10 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.HighlightedCard
+import com.crosspaste.ui.base.PasteContextMenuView
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.paste.preview.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
 import kotlinx.coroutines.runBlocking
