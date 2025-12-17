@@ -1,6 +1,5 @@
 package com.crosspaste.app
 
-import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
@@ -14,10 +13,9 @@ import kotlinx.coroutines.launch
 
 class MacAppWindowManager(
     appSize: DesktopAppSize,
-    configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager(appSize, configManager) {
+) : DesktopAppWindowManager(appSize) {
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 
