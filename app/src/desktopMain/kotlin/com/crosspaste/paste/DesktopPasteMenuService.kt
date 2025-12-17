@@ -33,7 +33,6 @@ import com.dzirbel.contextmenu.MaterialContextMenuItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class DesktopPasteMenuService(
     appWindowManager: AppWindowManager,
@@ -120,14 +119,12 @@ class DesktopPasteMenuService(
     override fun quickPasteFromMainWindow(pasteData: PasteData) {
         menuScope.launch {
             desktopAppWindowManager.hideMainWindowAndPaste {
-                withContext(menuScope.coroutineContext) {
-                    pasteboardService
-                        .tryWritePasteboard(
-                            pasteData = pasteData,
-                            localOnly = true,
-                            updateCreateTime = true,
-                        ).isSuccess
-                }
+                pasteboardService
+                    .tryWritePasteboard(
+                        pasteData = pasteData,
+                        localOnly = true,
+                        updateCreateTime = true,
+                    ).isSuccess
             }
         }
     }
@@ -135,14 +132,12 @@ class DesktopPasteMenuService(
     override fun quickPasteFromSearchWindow(pasteData: PasteData) {
         menuScope.launch {
             desktopAppWindowManager.hideSearchWindowAndPaste(0) {
-                withContext(menuScope.coroutineContext) {
-                    pasteboardService
-                        .tryWritePasteboard(
-                            pasteData = pasteData,
-                            localOnly = true,
-                            updateCreateTime = true,
-                        ).isSuccess
-                }
+                pasteboardService
+                    .tryWritePasteboard(
+                        pasteData = pasteData,
+                        localOnly = true,
+                        updateCreateTime = true,
+                    ).isSuccess
             }
         }
     }
@@ -190,13 +185,13 @@ class DesktopPasteMenuService(
                     },
                 )
             } else {
-                val tagIdList = pasteDao.getPasteTags(pasteData.id)
+                val tagIdList = pasteDao.getPasteTagsBlock(pasteData.id)
 
                 tagList.map { tag ->
                     MaterialContextMenuItem(
                         label = tag.name,
                         onClick = {
-                            pasteDao.switchPinPasteTag(pasteData.id, tag.id)
+                            pasteDao.switchPinPasteTagBlock(pasteData.id, tag.id)
                         },
                         leadingIcon = {
                             Box(

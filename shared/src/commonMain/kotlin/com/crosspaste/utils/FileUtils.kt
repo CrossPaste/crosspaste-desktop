@@ -8,6 +8,9 @@ import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
 import io.ktor.utils.io.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import okio.BufferedSink
 import okio.FileSystem
 import okio.Path
@@ -304,11 +307,15 @@ interface FileUtils {
         length: Long,
     ): Result<Unit>
 
-    fun writeFile(
+    suspend fun writeFile(
         path: Path,
-        writeSink: (BufferedSink) -> Unit,
+        writeSink: suspend (BufferedSink) -> Unit,
     ) {
-        fileSystem.sink(path).buffer().use(writeSink)
+        withContext(Dispatchers.IO) {
+            fileSystem.sink(path).buffer().use { sink ->
+                writeSink(sink)
+            }
+        }
     }
 
     suspend fun writeFile(
@@ -321,14 +328,16 @@ interface FileUtils {
         byteReadChannel: ByteReadChannel,
     )
 
-    fun readByLines(
+    suspend fun readByLines(
         path: Path,
-        readLine: (String) -> Unit,
+        readLine: suspend (String) -> Unit,
     ) {
-        fileSystem.source(path).buffer().use { bufferedSource ->
-            while (true) {
-                val line = bufferedSource.readUtf8Line() ?: break
-                readLine(line)
+        withContext(Dispatchers.IO) {
+            fileSystem.source(path).buffer().use { bufferedSource ->
+                while (true) {
+                    val line = bufferedSource.readUtf8Line() ?: break
+                    readLine(line)
+                }
             }
         }
     }

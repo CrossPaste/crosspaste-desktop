@@ -79,7 +79,7 @@ class DesktopTextTypePlugin(
             extraInfo = pasteItem.extraInfo,
         )
 
-    override fun updateText(
+    override suspend fun updateText(
         pasteData: PasteData,
         newText: String,
         pasteItem: PasteItem,

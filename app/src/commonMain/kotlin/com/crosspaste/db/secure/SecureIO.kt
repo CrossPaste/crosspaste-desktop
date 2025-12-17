@@ -1,14 +1,14 @@
 package com.crosspaste.db.secure
 
 interface SecureIO {
-    fun saveCryptPublicKey(
+    suspend fun saveCryptPublicKey(
         appInstanceId: String,
         serialized: ByteArray,
     ): Boolean
 
-    fun existCryptPublicKey(appInstanceId: String): Boolean
+    suspend fun existCryptPublicKey(appInstanceId: String): Boolean
 
-    fun deleteCryptPublicKey(appInstanceId: String)
+    suspend fun deleteCryptPublicKey(appInstanceId: String)
 
-    fun serializedPublicKey(appInstanceId: String): ByteArray?
+    suspend fun serializedPublicKey(appInstanceId: String): ByteArray?
 }

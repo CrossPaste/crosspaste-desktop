@@ -19,7 +19,7 @@ interface CacheManager {
     suspend fun getFilesIndex(id: Long): FilesIndex?
 
     fun loadKey(id: Long): FilesIndex? =
-        pasteDao.getLoadedPasteData(id)?.let { pasteData ->
+        pasteDao.getLoadedPasteDataBlock(id)?.let { pasteData ->
             val dateString =
                 dateUtils.getYMD(
                     dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),

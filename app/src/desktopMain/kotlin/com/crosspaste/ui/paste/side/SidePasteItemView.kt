@@ -36,6 +36,7 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.preview.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
+import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -67,14 +68,16 @@ fun PasteDataScope.SidePasteItemView(
                     DragAndDropTransferData(
                         transferable =
                             DragAndDropTransferable(
-                                pasteProducer
-                                    .produce(
-                                        pasteData = pasteData,
-                                        localOnly = true,
-                                        primary = configManager.getCurrentConfig().pastePrimaryTypeOnly,
-                                    )?.let {
-                                        it as DesktopWriteTransferable
-                                    } ?: DesktopWriteTransferable(LinkedHashMap()),
+                                runBlocking {
+                                    pasteProducer
+                                        .produce(
+                                            pasteData = pasteData,
+                                            localOnly = true,
+                                            primary = configManager.getCurrentConfig().pastePrimaryTypeOnly,
+                                        )?.let {
+                                            it as DesktopWriteTransferable
+                                        } ?: DesktopWriteTransferable(LinkedHashMap())
+                                },
                             ),
                         supportedActions =
                             listOf(

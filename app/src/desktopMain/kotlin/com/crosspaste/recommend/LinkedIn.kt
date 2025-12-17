@@ -34,7 +34,7 @@ class LinkedIn(
         }
     }
 
-    override fun action(recommendationService: RecommendationService) {
+    override suspend fun action(recommendationService: RecommendationService) {
         pasteboardService.tryWritePasteboard(
             pasteItem = createTextPasteItem(text = recommendationService.getRecommendText()),
             localOnly = true,

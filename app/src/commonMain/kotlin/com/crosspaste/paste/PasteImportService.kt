@@ -51,7 +51,7 @@ class PasteImportService(
         }
     }
 
-    private fun doImport(
+    private suspend fun doImport(
         pasteImportParam: PasteImportParam,
         updateProgress: (Float) -> Unit,
     ) {
@@ -117,7 +117,7 @@ class PasteImportService(
         }
     }
 
-    private fun importPasteData(
+    private suspend fun importPasteData(
         basePath: Path,
         index: Long,
         pasteData: PasteData,

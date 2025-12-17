@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,12 +37,16 @@ import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
 fun RecommendContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val recommendationService = koinInject<RecommendationService>()
+
+    val scope = rememberCoroutineScope()
+
     var recommendText by remember {
         mutableStateOf(recommendationService.getRecommendText())
     }
@@ -98,7 +103,9 @@ fun RecommendContentView() {
             ) {
                 items(recommendationService.recommendPlatformList) { platform ->
                     platform.ButtonPlatform {
-                        platform.action(recommendationService)
+                        scope.launch {
+                            platform.action(recommendationService)
+                        }
                     }
                 }
             }

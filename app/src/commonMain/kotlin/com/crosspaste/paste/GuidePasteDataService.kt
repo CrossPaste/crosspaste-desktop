@@ -8,6 +8,7 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.utils.getCodecsUtils
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
@@ -32,7 +33,7 @@ abstract class GuidePasteDataService(
 
     fun isFirstLaunch(): Boolean = appLaunchState.firstLaunch
 
-    fun saveData() {
+    suspend fun saveData() {
         for (i in 5 downTo 0) {
             val pasteData = getGuidePasteData(i)
             pasteDao.createPasteData(pasteData)
@@ -46,7 +47,7 @@ abstract class GuidePasteDataService(
 
     private fun getGuideIndexFromJson(jsonObject: JsonObject): Int? = jsonObject["guideIndex"]?.jsonPrimitive?.int
 
-    fun updateData() {
+    suspend fun updateData() {
         val pasteDataList = pasteDao.searchBySource(CROSSPASTE_GUIDE)
         if (pasteDataList.isNotEmpty()) {
             pasteDataList.forEach { pasteData ->
@@ -138,11 +139,12 @@ abstract class GuidePasteDataService(
             )
         }
 
-    fun initData() {
-        if (isFirstLaunch()) {
-            if (pasteDao.getSize(allOrFavorite = true) == 0L) {
-                saveData()
+    fun initData() =
+        runBlocking {
+            if (isFirstLaunch()) {
+                if (pasteDao.getSize(allOrFavorite = true) == 0L) {
+                    saveData()
+                }
             }
         }
-    }
 }

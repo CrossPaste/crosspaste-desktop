@@ -25,7 +25,7 @@ class Reddit(
         }
     }
 
-    override fun action(recommendationService: RecommendationService) {
+    override suspend fun action(recommendationService: RecommendationService) {
         val encodedTitle = URLEncoder.encode(recommendationService.getRecommendTitle(), "UTF-8")
         val appUrl = recommendationService.getRecommendUrl()
         val url = "https://www.reddit.com/submit?title=$encodedTitle&url=$appUrl"

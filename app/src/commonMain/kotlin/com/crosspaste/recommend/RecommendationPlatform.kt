@@ -53,5 +53,5 @@ interface RecommendationPlatform {
         }
     }
 
-    fun action(recommendationService: RecommendationService)
+    suspend fun action(recommendationService: RecommendationService)
 }

@@ -25,7 +25,7 @@ class Telegram(
         }
     }
 
-    override fun action(recommendationService: RecommendationService) {
+    override suspend fun action(recommendationService: RecommendationService) {
         val encodedText = URLEncoder.encode(recommendationService.getRecommendText(), "UTF-8")
         val url = "https://t.me/share/url?text=$encodedText"
         uiSupport.openUrlInBrowser(url)

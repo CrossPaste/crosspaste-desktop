@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +27,7 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.dzirbel.contextmenu.ContextMenuDivider
 import com.dzirbel.contextmenu.ContextMenuParams
 import com.dzirbel.contextmenu.GenericContextMenuItem
+import kotlinx.coroutines.launch
 
 class DesktopPasteTagMenuService(
     private val copywriter: GlobalCopywriter,
@@ -41,7 +43,7 @@ class DesktopPasteTagMenuService(
                 TagColorsMenuItem(tagScope, pasteDao),
                 ContextMenuDivider,
                 ContextMenuItem(copywriter.getText("delete")) {
-                    pasteDao.deletePasteTag(tagScope.tag.id)
+                    pasteDao.deletePasteTagBlock(tagScope.tag.id)
                 },
             )
         }
@@ -59,6 +61,7 @@ class TagColorsMenuItem(
     ) {
         val colors: List<Long> = PasteTag.colors
         val tagColor = tagScope.tag.color
+        val scope = rememberCoroutineScope()
         Row(
             modifier = modifier.padding(params.measurements.itemPadding),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -72,7 +75,9 @@ class TagColorsMenuItem(
                     color = color,
                     isSelected = isSelected,
                     onClick = {
-                        pasteDao.updatePasteTagColor(tagScope.tag.id, colorVal)
+                        scope.launch {
+                            pasteDao.updatePasteTagColor(tagScope.tag.id, colorVal)
+                        }
                         onDismissRequest()
                     },
                 )

@@ -11,9 +11,7 @@ import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.facebook
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.net.URLEncoder
 
 class Facebook(
@@ -34,7 +32,7 @@ class Facebook(
         }
     }
 
-    override fun action(recommendationService: RecommendationService) {
+    override suspend fun action(recommendationService: RecommendationService) {
         pasteboardService.tryWritePasteboard(
             pasteItem = createTextPasteItem(text = recommendationService.getRecommendText()),
             localOnly = true,
@@ -46,9 +44,7 @@ class Facebook(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,
         )
-        mainCoroutineDispatcher.launch {
-            delay(2000)
-            uiSupport.openUrlInBrowser(facebookUrl)
-        }
+        delay(2000)
+        uiSupport.openUrlInBrowser(facebookUrl)
     }
 }

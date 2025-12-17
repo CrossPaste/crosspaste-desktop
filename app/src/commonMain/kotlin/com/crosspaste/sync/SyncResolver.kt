@@ -398,19 +398,19 @@ class SyncResolver(
         lazyPasteBonjourService.value.request(appInstanceId)
     }
 
-    private fun updateSyncInfo(syncInfo: SyncInfo) {
+    private suspend fun updateSyncInfo(syncInfo: SyncInfo) {
         syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
     }
 
-    private fun SyncRuntimeInfo.updateAllowSend(allowSend: Boolean) {
+    private suspend fun SyncRuntimeInfo.updateAllowSend(allowSend: Boolean) {
         syncRuntimeInfoDao.updateAllowSend(this.copy(allowSend = allowSend))
     }
 
-    private fun SyncRuntimeInfo.updateAllowReceive(allowReceive: Boolean) {
+    private suspend fun SyncRuntimeInfo.updateAllowReceive(allowReceive: Boolean) {
         syncRuntimeInfoDao.updateAllowReceive(this.copy(allowReceive = allowReceive))
     }
 
-    private fun SyncRuntimeInfo.updateNoteName(noteName: String) {
+    private suspend fun SyncRuntimeInfo.updateNoteName(noteName: String) {
         syncRuntimeInfoDao.updateNoteName(this.copy(noteName = noteName))
     }
 
@@ -447,7 +447,7 @@ class SyncResolver(
         }
     }
 
-    private fun SyncRuntimeInfo.markExit() {
+    private suspend fun SyncRuntimeInfo.markExit() {
         logger.info { "markExit $appInstanceId" }
         syncRuntimeInfoDao.updateConnectInfo(
             this.copy(

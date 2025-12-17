@@ -16,7 +16,6 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteTag
-import com.crosspaste.paste.PasteTag.Companion.getColor
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteFiles
@@ -27,10 +26,13 @@ import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlin.time.ExperimentalTime
 
 class PasteDao(
@@ -59,7 +61,7 @@ class PasteDao(
 
     private val markDeleteBatchNum = 50L
 
-    fun getNoDeletePasteData(id: Long): PasteData? {
+    private fun getNoDeletePasteDataBlock(id: Long): PasteData? {
         return pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.LOADING.toLong(), PasteState.LOADED.toLong()),
@@ -67,15 +69,19 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
-    fun getLoadingPasteData(id: Long): PasteData? {
-        return pasteDatabaseQueries.getPasteData(
+    suspend fun getNoDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
+        getNoDeletePasteDataBlock(id)
+    }
+
+    suspend fun getLoadingPasteData(id: Long): PasteData? = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.LOADING.toLong()),
             PasteData::mapper,
         ).executeAsOneOrNull()
     }
 
-    fun getLoadedPasteData(id: Long): PasteData? {
+    fun getLoadedPasteDataBlock(id: Long): PasteData? {
         return pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.LOADED.toLong()),
@@ -83,23 +89,23 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
-    fun getDeletePasteData(id: Long): PasteData? {
-        return pasteDatabaseQueries.getPasteData(
+    suspend fun getDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.DELETED.toLong()),
             PasteData::mapper,
         ).executeAsOneOrNull()
     }
 
-    fun setFavorite(
+    suspend fun setFavorite(
         pasteId: Long,
         favorite: Boolean,
-    ) {
+    ): Unit = withContext(ioDispatcher) {
         pasteDatabaseQueries.updateFavorite(favorite, pasteId)
     }
 
-    fun createPasteData(pasteData: PasteData, pasteState: Int? = null): Long {
-        return database.transactionWithResult {
+    suspend fun createPasteData(pasteData: PasteData, pasteState: Int? = null): Long = withContext(ioDispatcher) {
+        database.transactionWithResult {
             pasteDatabaseQueries.createPasteDataEntity(
                 pasteData.appInstanceId,
                 pasteData.favorite,
@@ -121,7 +127,7 @@ class PasteDao(
         }
     }
 
-    fun updateFilePath(pasteData: PasteData) {
+    suspend fun updateFilePath(pasteData: PasteData) = withContext(ioDispatcher) {
         pasteDatabaseQueries.updateRemotePasteDataWithFile(
             pasteData.pasteAppearItem?.toJson(),
             pasteData.pasteCollection.toJson(),
@@ -133,7 +139,7 @@ class PasteDao(
         )
     }
 
-    private suspend fun batchMarkDelete(doQuery: () -> Query<Long>) {
+    private suspend fun batchMarkDelete(doQuery: () -> Query<Long>) = withContext(ioDispatcher) {
         val tasks = mutableListOf<Long>()
         var idList: List<Long>
 
@@ -142,7 +148,7 @@ class PasteDao(
                 val ids = doQuery().executeAsList()
                 if (ids.isNotEmpty()) {
                     pasteDatabaseQueries.markDeletePasteData(ids)
-                    tasks.addAll(ids.map { id -> taskDao.createTask(id, TaskType.DELETE_PASTE_TASK) })
+                    tasks.addAll(ids.map { id -> taskDao.createTaskBlock(id, TaskType.DELETE_PASTE_TASK) })
                 }
                 ids
             }
@@ -161,11 +167,11 @@ class PasteDao(
         }
     }
 
-    suspend fun markDeletePasteData(id: Long): Result<Unit> {
-        return runCatching {
+    suspend fun markDeletePasteData(id: Long): Result<Unit> = withContext(ioDispatcher) {
+        runCatching {
             val taskId = database.transactionWithResult {
                 pasteDatabaseQueries.markDeletePasteData(listOf(id))
-                taskDao.createTask(id, TaskType.DELETE_PASTE_TASK)
+                taskDao.createTaskBlock(id, TaskType.DELETE_PASTE_TASK)
             }
             taskExecutor.submitTask(taskId)
         }.onFailure { e ->
@@ -173,7 +179,7 @@ class PasteDao(
         }
     }
 
-    fun deletePasteData(id: Long) {
+    suspend fun deletePasteData(id: Long) = withContext(ioDispatcher) {
         getDeletePasteData(id)?.clear(userDataPathProvider)
         pasteDatabaseQueries.deletePasteData(listOf(id))
     }
@@ -186,6 +192,7 @@ class PasteDao(
                 logger.error(e) { "Error executing getPasteDataFlow query: ${e.message}" }
                 emit(listOf())
             }
+            .flowOn(ioDispatcher)
     }
 
     fun getAllTagsFlow(): Flow<List<PasteTag>> {
@@ -196,14 +203,15 @@ class PasteDao(
                 logger.error(e) { "Error executing getAllTagsFlow query: ${e.message}" }
                 emit(listOf())
             }
+            .flowOn(ioDispatcher)
     }
 
-    fun getMaxSortOrder(): Long {
-        return tagDatabaseQueries.maxSortOrder().executeAsOne()
+    suspend fun getMaxSortOrder(): Long = withContext(ioDispatcher) {
+        tagDatabaseQueries.maxSortOrder().executeAsOne()
     }
 
-    fun createPasteTag(name: String, color: Long): Long {
-        return database.transactionWithResult {
+    suspend fun createPasteTag(name: String, color: Long): Long = withContext(ioDispatcher) {
+        database.transactionWithResult {
             val maxSortOrder = tagDatabaseQueries.maxSortOrder().executeAsOne()
             val newSortOrder = maxSortOrder + 1
             tagDatabaseQueries.createTag(name, color, newSortOrder)
@@ -211,11 +219,11 @@ class PasteDao(
         }
     }
 
-    fun updatePasteTagName(id: Long, name: String) {
+    suspend fun updatePasteTagName(id: Long, name: String) = withContext(ioDispatcher) {
         tagDatabaseQueries.updateTagName(name, id)
     }
 
-    fun updatePasteTagColor(id: Long, color: Long) {
+    suspend fun updatePasteTagColor(id: Long, color: Long) = withContext(ioDispatcher) {
         tagDatabaseQueries.updateTagColor(color, id)
     }
 
@@ -227,7 +235,7 @@ class PasteDao(
         tagDatabaseQueries.unPinPasteTag(pasteDataId, pasteTagId)
     }
 
-    fun switchPinPasteTag(pasteDataId: Long, pasteTagId: Long) {
+    fun switchPinPasteTagBlock(pasteDataId: Long, pasteTagId: Long) {
         database.transaction {
             val pinned = tagDatabaseQueries.isPinnedPasteTag(pasteDataId, pasteTagId).executeAsOne()
             if (pinned) {
@@ -238,11 +246,11 @@ class PasteDao(
         }
     }
 
-    fun getPasteTags(pasteDataId: Long): List<Long> {
+    fun getPasteTagsBlock(pasteDataId: Long): List<Long>  {
         return tagDatabaseQueries.getPasteTags(pasteDataId).executeAsList()
     }
 
-    fun deletePasteTag(id: Long) {
+    fun deletePasteTagBlock(id: Long) {
         tagDatabaseQueries.deleteTag(id)
     }
 
@@ -265,7 +273,7 @@ class PasteDao(
 
         return database.transactionWithResult {
             pasteDatabaseQueries.markDeletePasteData(idList)
-            idList.map { id -> taskDao.createTask(id, TaskType.DELETE_PASTE_TASK) }
+            idList.map { id -> taskDao.createTaskBlock(id, TaskType.DELETE_PASTE_TASK) }
         }
     }
 
@@ -278,28 +286,28 @@ class PasteDao(
         }
     }
 
-    fun getSize(allOrFavorite: Boolean = false): Long {
-        return if (allOrFavorite) {
+    suspend fun getSize(allOrFavorite: Boolean = false): Long = withContext(ioDispatcher) {
+        if (allOrFavorite) {
             pasteDatabaseQueries.getSize().executeAsOne().SUM ?: 0L
         } else {
             pasteDatabaseQueries.getFavoriteSize().executeAsOne().SUM ?: 0L
         }
     }
 
-    fun getMinPasteDataCreateTime(): Long? {
-        return pasteDatabaseQueries.getMinCreateTime().executeAsOneOrNull()?.MIN
+    suspend fun getMinPasteDataCreateTime(): Long? = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getMinCreateTime().executeAsOneOrNull()?.MIN
     }
 
-    fun updateCreateTime(id: Long) {
+    suspend fun updateCreateTime(id: Long): Unit = withContext(ioDispatcher) {
         pasteDatabaseQueries.updateCreateTime(id = id, time = DateUtils.nowEpochMilliseconds())
     }
 
-    fun updatePasteAppearItem(
+    suspend fun updatePasteAppearItem(
         id: Long,
         pasteItem: PasteItem,
         pasteSearchContent: String,
         addedSize: Long = 0L,
-    ): Result<Unit> {
+    ): Result<Unit> = withContext(ioDispatcher) {
         database.transactionWithResult {
             pasteDatabaseQueries.updatePasteAppearItem(
                 id = id,
@@ -310,7 +318,7 @@ class PasteDao(
             )
             pasteDatabaseQueries.change().executeAsOne() > 0
         }.let { changed ->
-            return if (changed) {
+            if (changed) {
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Update paste appear item failed for id=$id"))
@@ -318,12 +326,12 @@ class PasteDao(
         }
     }
 
-    fun updatePasteState(id: Long, pasteState: Int) {
+    suspend fun updatePasteState(id: Long, pasteState: Int) = withContext(ioDispatcher) {
         pasteDatabaseQueries.updatePasteDataState(pasteState.toLong(), id)
     }
 
-    fun getSizeByTimeLessThan(time: Long): Long {
-        return pasteDatabaseQueries.getSizeByTimeLessThan(time).executeAsOne().SUM ?: 0L
+    suspend fun getSizeByTimeLessThan(time: Long): Long = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getSizeByTimeLessThan(time).executeAsOne().SUM ?: 0L
     }
 
     private fun createSearchPasteQuery(
@@ -368,7 +376,7 @@ class PasteDao(
         }
     }
 
-    fun searchPasteData(
+    suspend fun searchPasteData(
         searchTerms: List<String>,
         local: Boolean? = null,
         favorite: Boolean? = null,
@@ -376,8 +384,8 @@ class PasteDao(
         sort: Boolean = true,
         tag: Long? = null,
         limit: Int,
-    ): List<PasteData> {
-        return logExecutionTime(logger, "searchPasteData") {
+    ): List<PasteData> = withContext(ioDispatcher) {
+        logExecutionTime(logger, "searchPasteData") {
             logger.info { "Performing search for: $searchTerms" }
             createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, tag, limit).executeAsList()
         }
@@ -403,11 +411,12 @@ class PasteDao(
                             "pasteType=$pasteType sort=$sort" }
                     emit(searchPasteData(listOf(), local, favorite, pasteType, sort, tag, limit))
                 }
+                .flowOn(ioDispatcher)
         }
     }
 
-    fun searchBySource(source: String): List<PasteData> {
-        return pasteDatabaseQueries.searchBySource(source, mapper = PasteData::mapper)
+    suspend fun searchBySource(source: String): List<PasteData> = withContext(ioDispatcher) {
+        pasteDatabaseQueries.searchBySource(source, mapper = PasteData::mapper)
             .executeAsList()
     }
 
@@ -480,12 +489,12 @@ class PasteDao(
     suspend fun releaseRemotePasteDataWithFile(
         id: Long,
         tryWritePasteboard: (PasteData) -> Unit,
-    ): Result<Unit> {
-        return runCatching {
+    ): Result<Unit> = withContext(ioDispatcher) {
+        runCatching {
             val tasks = mutableListOf<Long>()
             database.transactionWithResult {
-                updatePasteState(id, PasteState.LOADED)
-                getNoDeletePasteData(id)
+                pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
+                getNoDeletePasteDataBlock(id)
             }?.let { pasteData ->
                 tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
                 tryWritePasteboard(pasteData)
@@ -496,7 +505,7 @@ class PasteDao(
         }
     }
 
-    suspend fun releaseLocalPasteData(id: Long, pasteItems: List<PasteItem>) {
+    suspend fun releaseLocalPasteData(id: Long, pasteItems: List<PasteItem>) = withContext(ioDispatcher) {
         getLoadingPasteData(id)?.let { pasteData ->
             var pasteAppearItems = pasteItems
             for (pastePlugin in pasteProcessPlugins) {
@@ -569,11 +578,11 @@ class PasteDao(
 
     private fun addRenderingTask(id: Long, pasteType: PasteType, addTask: (Long) -> Unit) {
         if (pasteType.isUrl()) {
-            addTask(taskDao.createTask(id, TaskType.OPEN_GRAPH_TASK))
+            addTask(taskDao.createTaskBlock(id, TaskType.OPEN_GRAPH_TASK))
         }
     }
 
-    fun getPasteResourceInfo(favorite: Boolean? = null): PasteResourceInfo {
+    suspend fun getPasteResourceInfo(favorite: Boolean? = null): PasteResourceInfo = withContext(ioDispatcher) {
         val builder = PasteResourceInfoBuilder()
         val doAdd: (PasteData) -> Unit = { pasteData ->
             if (favorite == null || favorite == pasteData.favorite) {
@@ -591,13 +600,13 @@ class PasteDao(
                     .executeAsList()
             },
             dealPasteData = doAdd)
-        return builder.build()
+        builder.build()
     }
 
-    fun batchReadPasteData(
+    suspend fun batchReadPasteData(
         batchNum: Long = 1000L,
-        readPasteDataList: (Long, Long) -> List<PasteData>,
-        dealPasteData: (PasteData) -> Unit): Long {
+        readPasteDataList: suspend (Long, Long) -> List<PasteData>,
+        dealPasteData: (PasteData) -> Unit): Long = withContext(ioDispatcher) {
         var id = -1L
         var count = 0L
         do {
@@ -608,15 +617,15 @@ class PasteDao(
             count += pasteDataList.size
             pasteDataList.lastOrNull()?.id?.let { id = it }
         } while (pasteDataList.isNotEmpty())
-        return count
+        count
     }
 
-    fun getExportPasteData(
+    suspend fun getExportPasteData(
         id: Long,
         limit: Long,
         pasteExportParam: PasteExportParam,
-    ): List<PasteData>  {
-        return pasteDatabaseQueries.getBatchExportPasteData(
+    ): List<PasteData> = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getBatchExportPasteData(
             id,
             pasteExportParam.types,
             pasteExportParam.onlyFavorite,
@@ -625,8 +634,8 @@ class PasteDao(
         ).executeAsList()
     }
 
-    fun getExportNum(pasteExportParam: PasteExportParam): Long {
-        return pasteDatabaseQueries.getExportNum(
+    suspend fun getExportNum(pasteExportParam: PasteExportParam): Long = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getExportNum(
             pasteExportParam.types,
             pasteExportParam.onlyFavorite,
         ).executeAsOne()

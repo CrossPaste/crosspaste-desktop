@@ -3,6 +3,8 @@ package com.crosspaste.db.task
 import com.crosspaste.Database
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.withContext
 
 class TaskDao(private val database: Database) {
 
@@ -10,7 +12,7 @@ class TaskDao(private val database: Database) {
 
     private val pasteTaskDatabaseQueries = database.pasteTaskDatabaseQueries
 
-    fun createTask(
+    fun createTaskBlock(
         pasteDataId: Long?,
         taskType: Int,
         extraInfo: PasteTaskExtraInfo = BaseExtraInfo(),
@@ -29,7 +31,19 @@ class TaskDao(private val database: Database) {
         }
     }
 
-    fun executingTask(taskId: Long) {
+    suspend fun createTask(
+        pasteDataId: Long?,
+        taskType: Int,
+        extraInfo: PasteTaskExtraInfo = BaseExtraInfo(),
+    ): Long = withContext(ioDispatcher) {
+        createTaskBlock(
+            pasteDataId,
+            taskType,
+            extraInfo,
+        )
+    }
+
+    suspend fun executingTask(taskId: Long) = withContext(ioDispatcher) {
         pasteTaskDatabaseQueries.executingTask(
             TaskStatus.EXECUTING,
             nowEpochMilliseconds(),
@@ -37,7 +51,7 @@ class TaskDao(private val database: Database) {
         )
     }
 
-    fun successTask(taskId: Long, newExtraInfo: String?) {
+    suspend fun successTask(taskId: Long, newExtraInfo: String?) = withContext(ioDispatcher) {
         newExtraInfo?.let {
             pasteTaskDatabaseQueries.finishTaskWithExtraInfo(
                 TaskStatus.SUCCESS,
@@ -54,7 +68,7 @@ class TaskDao(private val database: Database) {
         }
     }
 
-    fun failureTask(taskId: Long, needRetry: Boolean, newExtraInfo: String?) {
+    suspend fun failureTask(taskId: Long, needRetry: Boolean, newExtraInfo: String?) = withContext(ioDispatcher) {
         newExtraInfo?.let {
             pasteTaskDatabaseQueries.finishTaskWithExtraInfo(
                 if (needRetry) TaskStatus.PREPARING else TaskStatus.FAILURE,
@@ -71,8 +85,8 @@ class TaskDao(private val database: Database) {
         }
     }
 
-    fun getTask(taskId: Long): PasteTask? {
-        return pasteTaskDatabaseQueries.getTask(taskId).executeAsOneOrNull()?.let {
+    suspend fun getTask(taskId: Long): PasteTask? = withContext(ioDispatcher) {
+        pasteTaskDatabaseQueries.getTask(taskId).executeAsOneOrNull()?.let {
             PasteTask(
                 taskId = it.taskId,
                 pasteDataId = it.pasteDataId,
@@ -85,11 +99,11 @@ class TaskDao(private val database: Database) {
         }
     }
 
-    fun cleanSuccessTask(time: Long) {
+    suspend fun cleanSuccessTask(time: Long) = withContext(ioDispatcher) {
         pasteTaskDatabaseQueries.cleanSuccess(time)
     }
 
-    fun cleanFailureTask(time: Long) {
+    suspend fun cleanFailureTask(time: Long) = withContext(ioDispatcher) {
         pasteTaskDatabaseQueries.cleanFail(time)
     }
 }

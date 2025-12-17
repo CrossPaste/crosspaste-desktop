@@ -9,14 +9,14 @@ abstract class CurrentPaste {
 
     abstract val pasteDao: PasteDao
 
-    abstract fun setPasteId(
+    abstract suspend fun setPasteId(
         id: Long,
         updateCreateTime: Boolean = false,
     )
 
     abstract fun getPasteId(): Long?
 
-    fun getCurrentPaste(): PasteData? =
+    suspend fun getCurrentPaste(): PasteData? =
         getPasteId()?.let { id ->
             logger.info { "Getting current paste with id $id" }
             pasteDao.getNoDeletePasteData(id)

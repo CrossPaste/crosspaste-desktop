@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import com.crosspaste.ui.paste.preview.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -55,6 +57,8 @@ fun SearchTagsView() {
 
     val editingMap by PasteTagScope.isEditingMap
 
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(searchWindowInfo.show) {
         newTag = null
         PasteTagScope.resetEditing()
@@ -70,7 +74,7 @@ fun SearchTagsView() {
 
             val isSelected = currentTag.id == searchBaseParams.tag
 
-            val scope =
+            val tagScope =
                 remember(
                     currentTag.id,
                     currentTag.name,
@@ -80,25 +84,25 @@ fun SearchTagsView() {
                 }
 
             if (editingMap[tag.id] == true) {
-                scope.EditableTagChip { name ->
+                tagScope.EditableTagChip { name ->
                     if (name.isBlank()) {
-                        pasteDao.deletePasteTag(tag.id)
+                        pasteDao.deletePasteTagBlock(tag.id)
                     } else {
                         pasteDao.updatePasteTagName(tag.id, name)
                     }
-                    scope.stopEditing()
+                    tagScope.stopEditing()
                 }
             } else {
                 PasteContextMenuView(
-                    items = tagMenuService.menuItemsProvider(scope),
+                    items = tagMenuService.menuItemsProvider(tagScope),
                 ) {
-                    scope.TagChip(
+                    tagScope.TagChip(
                         isSelected = isSelected,
                         onEdit = {
                             pasteSearchViewModel.updateTag(tag.id)
                         },
                     ) {
-                        scope.startEditing()
+                        tagScope.startEditing()
                     }
                 }
             }
@@ -121,12 +125,14 @@ fun SearchTagsView() {
         item {
             AssistChip(
                 onClick = {
-                    newTag =
-                        createDefaultPasteTag(
-                            name = copywriter.getText("unnamed"),
-                            maxSortOrder = pasteDao.getMaxSortOrder(),
-                        )
-                    PasteTagScope.resetEditing()
+                    scope.launch {
+                        newTag =
+                            createDefaultPasteTag(
+                                name = copywriter.getText("unnamed"),
+                                maxSortOrder = pasteDao.getMaxSortOrder(),
+                            )
+                        PasteTagScope.resetEditing()
+                    }
                 },
                 label = {
                     Icon(
