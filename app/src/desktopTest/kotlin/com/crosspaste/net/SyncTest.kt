@@ -191,14 +191,26 @@ class SyncTest : KoinTest {
 
         assertTrue(result is SuccessResult)
 
-        assertTrue(serverSecureIO.existCryptPublicKey(clientAppInfo.appInstanceId))
-        assertTrue(clientSecureIO.existCryptPublicKey(serverAppInfo.appInstanceId))
+        assertTrue(
+            runBlocking {
+                serverSecureIO.existCryptPublicKey(clientAppInfo.appInstanceId)
+            },
+        )
+        assertTrue(
+            runBlocking {
+                clientSecureIO.existCryptPublicKey(serverAppInfo.appInstanceId)
+            },
+        )
         assertContentEquals(
-            serverSecureIO.serializedPublicKey(clientAppInfo.appInstanceId),
+            runBlocking {
+                serverSecureIO.serializedPublicKey(clientAppInfo.appInstanceId)
+            },
             secureKeyPairSerializer.encodeCryptPublicKey(clientSecureKeyPair.cryptKeyPair.publicKey),
         )
         assertContentEquals(
-            clientSecureIO.serializedPublicKey(serverAppInfo.appInstanceId),
+            runBlocking {
+                clientSecureIO.serializedPublicKey(serverAppInfo.appInstanceId)
+            },
             secureKeyPairSerializer.encodeCryptPublicKey(serverSecureKeyPair.cryptKeyPair.publicKey),
         )
 
