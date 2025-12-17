@@ -1,4 +1,4 @@
-package com.crosspaste.ui.paste.preview
+package com.crosspaste.ui.base
 
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem

@@ -28,11 +28,11 @@ import com.crosspaste.paste.DesktopPasteTagMenuService
 import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteTag.Companion.createDefaultPasteTag
 import com.crosspaste.ui.LocalSearchWindowInfoState
+import com.crosspaste.ui.base.PasteContextMenuView
 import com.crosspaste.ui.base.add
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.paste.createPasteTagScope
-import com.crosspaste.ui.paste.preview.PasteContextMenuView
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge

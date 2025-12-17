@@ -41,7 +41,6 @@ import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
-import com.crosspaste.ui.paste.preview.PasteboardContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -118,7 +117,7 @@ class DesktopScreenProvider(
 
         NavHost(
             navController = navController,
-            startDestination = PasteboardGraph,
+            startDestination = DevicesGraph,
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None },
             popEnterTransition = { EnterTransition.None },
@@ -158,20 +157,15 @@ class DesktopScreenProvider(
                 }
             }
             composable<Import> { ImportScreen() }
-            navigation<PasteboardGraph>(startDestination = Pasteboard) {
-                composable<Pasteboard> {
-                    PasteboardScreen()
-                }
-                composable<PasteTextEdit>(
-                    exitTransition = { slideOutRight() },
-                    enterTransition = { slideInLeft() },
-                    typeMap =
-                        mapOf(
-                            typeOf<PasteData>() to JsonNavType(PasteData.serializer()),
-                        ),
-                ) { backStackEntry ->
-                    backStackEntry.PasteTextEditScreen()
-                }
+            composable<PasteTextEdit>(
+                exitTransition = { slideOutRight() },
+                enterTransition = { slideInLeft() },
+                typeMap =
+                    mapOf(
+                        typeOf<PasteData>() to JsonNavType(PasteData.serializer()),
+                    ),
+            ) { backStackEntry ->
+                backStackEntry.PasteTextEditScreen()
             }
             composable<QrCode> { QRScreen() }
             composable<Recommend> { RecommendScreen() }
@@ -237,11 +231,6 @@ class DesktopScreenProvider(
                 syncScopeFactory.createSyncScope(nearbyDeviceDetail.syncInfo)
             }
         scope.NearbyDeviceDetailContentView()
-    }
-
-    @Composable
-    private fun PasteboardScreen() {
-        PasteboardContentView()
     }
 
     @Composable

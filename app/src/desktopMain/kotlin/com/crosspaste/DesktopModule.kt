@@ -210,12 +210,9 @@ import com.crosspaste.ui.devices.DesktopDeviceScopeFactory
 import com.crosspaste.ui.devices.DesktopSyncScopeFactory
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.SyncScopeFactory
-import com.crosspaste.ui.model.GeneralPasteDataViewModel
 import com.crosspaste.ui.model.GeneralPasteSearchViewModel
 import com.crosspaste.ui.model.MarketingPasteData
-import com.crosspaste.ui.model.MarketingPasteDataViewModel
 import com.crosspaste.ui.model.MarketingPasteSearchViewModel
-import com.crosspaste.ui.model.PasteDataViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.settings.DesktopSettingsViewProvider
@@ -566,13 +563,6 @@ class DesktopModule(
     override fun viewModelModule() =
         module {
             single<MarketingPasteData> { MarketingPasteData(get(), get()) }
-            single<PasteDataViewModel> {
-                if (marketingMode) {
-                    MarketingPasteDataViewModel(get())
-                } else {
-                    GeneralPasteDataViewModel(get())
-                }
-            }
             single<PasteSearchViewModel> {
                 if (marketingMode) {
                     MarketingPasteSearchViewModel(get())
