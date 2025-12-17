@@ -1,7 +1,6 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
-import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.path.UserDataPathProvider
@@ -17,10 +16,9 @@ import kotlinx.coroutines.flow.map
 
 class WinAppWindowManager(
     appSize: DesktopAppSize,
-    configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager(appSize, configManager) {
+) : DesktopAppWindowManager(appSize) {
 
     private var _cachedMainHWND: HWND? = null
     private var _cachedSearchHWND: HWND? = null

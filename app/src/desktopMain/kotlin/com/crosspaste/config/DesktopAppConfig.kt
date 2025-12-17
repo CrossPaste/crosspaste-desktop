@@ -6,7 +6,6 @@ import com.crosspaste.config.AppConfig.Companion.toLong
 import com.crosspaste.config.AppConfig.Companion.toString
 import com.crosspaste.ui.extension.ProxyType
 import com.crosspaste.ui.theme.ColorContrast
-import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.ui.theme.SeaColor
 import kotlinx.serialization.Serializable
 
@@ -43,7 +42,6 @@ data class DesktopAppConfig(
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = true,
-    val searchWindowStyle: String = DesktopSearchWindowStyle.SIDE_STYLE.style,
     val legacySoftwareCompatibility: Boolean = false,
     override val pastePrimaryTypeOnly: Boolean = true,
     override val useNetworkInterfaces: String = "[]",
@@ -126,7 +124,6 @@ data class DesktopAppConfig(
             useDefaultStoragePath = if (key == "useDefaultStoragePath") toBoolean(value) else useDefaultStoragePath,
             storagePath = if (key == "storagePath") toString(value) else storagePath,
             enableSoundEffect = if (key == "enableSoundEffect") toBoolean(value) else enableSoundEffect,
-            searchWindowStyle = if (key == "searchWindowStyle") toString(value) else searchWindowStyle,
             legacySoftwareCompatibility =
                 if (key == "legacySoftwareCompatibility") {
                     toBoolean(value)

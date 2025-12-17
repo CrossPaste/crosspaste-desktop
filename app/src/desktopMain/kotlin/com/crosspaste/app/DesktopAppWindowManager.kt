@@ -4,7 +4,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.path.UserDataPathProvider
@@ -22,7 +21,6 @@ import kotlinx.coroutines.launch
 
 fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
-    configManager: DesktopConfigManager,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     platform: Platform,
@@ -31,21 +29,18 @@ fun getDesktopAppWindowManager(
     if (platform.isMacos()) {
         MacAppWindowManager(
             appSize,
-            configManager,
             lazyShortcutKeys,
             userDataPathProvider,
         )
     } else if (platform.isWindows()) {
         WinAppWindowManager(
             appSize,
-            configManager,
             lazyShortcutKeys,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {
         LinuxAppWindowManager(
             appSize,
-            configManager,
             lazyShortcutKeys,
             lazyShortcutKeysAction,
             userDataPathProvider,
@@ -70,7 +65,6 @@ data class WindowInfo(
 
 abstract class DesktopAppWindowManager(
     val appSize: DesktopAppSize,
-    val configManager: DesktopConfigManager,
 ) : AppWindowManager() {
 
     companion object {

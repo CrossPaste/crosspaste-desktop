@@ -20,7 +20,6 @@ import com.crosspaste.ui.base.bell
 import com.crosspaste.ui.base.bolt
 import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.base.debug
-import com.crosspaste.ui.base.layout
 import com.crosspaste.ui.base.palette
 import com.crosspaste.ui.base.shield
 import com.crosspaste.ui.theme.AppUIColors
@@ -29,7 +28,6 @@ import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
-import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import org.koin.compose.koinInject
 
 @Composable
@@ -103,23 +101,6 @@ fun MainSettingsContentView() {
             getCurrentSwitchValue = { config.enableSoundEffect },
         ) {
             configManager.updateConfig("enableSoundEffect", it)
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        SettingSingleChoiceItemView(
-            text = "window_style",
-            painter = layout(),
-            modes =
-                listOf(
-                    DesktopSearchWindowStyle.SIDE_STYLE.style,
-                    DesktopSearchWindowStyle.CENTER_STYLE.style,
-                ),
-            getCurrentSingleChoiceValue = {
-                config.searchWindowStyle
-            },
-        ) {
-            configManager.updateConfig("searchWindowStyle", it)
         }
 
         HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))

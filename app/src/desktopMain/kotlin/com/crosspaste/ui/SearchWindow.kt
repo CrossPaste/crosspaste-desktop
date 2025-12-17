@@ -19,15 +19,12 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.search.center.CenterSearchWindowContent
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.DesktopSearchWindowStyle
 import com.crosspaste.utils.cpuDispatcher
 import com.sun.jna.Pointer
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -41,7 +38,6 @@ import java.awt.event.WindowEvent
 @Composable
 fun SearchWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val configManager = koinInject<DesktopConfigManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
@@ -50,18 +46,12 @@ fun SearchWindow(windowIcon: Painter?) {
 
     val backStackEntry by navController.currentBackStackEntryAsState()
 
-    val config by configManager.config.collectAsState()
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val isMac = remember { platform.isMacos() }
 
-    val isCenterStyle =
-        remember(config.searchWindowStyle) {
-            config.searchWindowStyle == DesktopSearchWindowStyle.CENTER_STYLE.style
-        }
-
     val animationProgress by animateFloatAsState(
-        targetValue = if (searchWindowInfo.show && !isCenterStyle) 0f else 1f,
+        targetValue = if (searchWindowInfo.show) 0f else 1f,
         animationSpec =
             tween(
                 durationMillis = 150,
@@ -70,23 +60,19 @@ fun SearchWindow(windowIcon: Painter?) {
     )
 
     val windowState =
-        remember(searchWindowInfo, animationProgress, isCenterStyle) {
-            if (isCenterStyle) {
-                searchWindowInfo.state
-            } else {
-                val position =
-                    WindowPosition(
-                        x = searchWindowInfo.state.position.x,
-                        y =
-                            searchWindowInfo.state.position.y +
-                                appSizeValue.sideSearchWindowHeight * animationProgress,
-                    )
-                WindowState(
-                    placement = searchWindowInfo.state.placement,
-                    position = position,
-                    size = searchWindowInfo.state.size,
+        remember(searchWindowInfo, animationProgress) {
+            val position =
+                WindowPosition(
+                    x = searchWindowInfo.state.position.x,
+                    y =
+                        searchWindowInfo.state.position.y +
+                            appSizeValue.sideSearchWindowHeight * animationProgress,
                 )
-            }
+            WindowState(
+                placement = searchWindowInfo.state.placement,
+                position = position,
+                size = searchWindowInfo.state.size,
+            )
         }
 
     val logger = remember { KotlinLogging.logger("SearchWindow") }
@@ -155,11 +141,7 @@ fun SearchWindow(windowIcon: Painter?) {
         }
 
         SearchWindowContext(searchWindowInfo) {
-            if (isCenterStyle) {
-                CenterSearchWindowContent()
-            } else {
-                SideSearchWindowContent()
-            }
+            SideSearchWindowContent()
         }
     }
 }

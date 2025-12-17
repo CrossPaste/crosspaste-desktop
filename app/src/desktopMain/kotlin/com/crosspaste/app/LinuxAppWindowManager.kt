@@ -1,7 +1,6 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
-import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
@@ -18,11 +17,10 @@ import kotlinx.coroutines.launch
 
 class LinuxAppWindowManager(
     appSize: DesktopAppSize,
-    configManager: DesktopConfigManager,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     private val userDataPathProvider: UserDataPathProvider,
-) : DesktopAppWindowManager(appSize, configManager) {
+) : DesktopAppWindowManager(appSize) {
 
     private val prevLinuxAppInfo: MutableStateFlow<LinuxAppInfo?> = MutableStateFlow(null)
 
