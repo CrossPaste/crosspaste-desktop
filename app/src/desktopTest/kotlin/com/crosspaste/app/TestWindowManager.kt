@@ -1,15 +1,13 @@
 package com.crosspaste.app
 
-import com.crosspaste.config.DesktopConfigManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class TestWindowManager(
     appSize: DesktopAppSize,
-    configManager: DesktopConfigManager,
     private val mockOS: MockOS,
-) : DesktopAppWindowManager(appSize, configManager) {
+) : DesktopAppWindowManager(appSize) {
 
     private var prevApp: MutableStateFlow<String?> = MutableStateFlow(null)
 
