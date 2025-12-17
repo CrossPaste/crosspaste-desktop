@@ -129,6 +129,7 @@ kotlin {
             implementation(libs.compose.shimmer)
             implementation(libs.conveyor.control)
             implementation(libs.cryptography.provider.jdk)
+            implementation(libs.hikaricp)
             implementation(libs.icu4j)
             implementation(libs.imageio.core)
             implementation(libs.imageio.jpeg)

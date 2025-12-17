@@ -1,11 +1,11 @@
 package com.crosspaste.db
 
 import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.crosspaste.Database
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
-import java.util.Properties
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 
 class DesktopDriverFactory(
     private val userDataPathProvider: UserDataPathProvider
@@ -14,16 +14,28 @@ class DesktopDriverFactory(
 
     override var sqlDriver: SqlDriver? = null
 
+    private var dataSource: HikariDataSource? = null
+
     override fun createDriver(): SqlDriver {
         val path = userDataPathProvider.resolve(dbName, appFileType = AppFileType.DATA)
 
-        val properties = Properties().apply {
-            put("busy_timeout", "30000")
-            put("journal_mode", "WAL")
-            put("synchronous", "NORMAL")
+        val config = HikariConfig().apply {
+            jdbcUrl = "jdbc:sqlite:$path"
+
+            driverClassName = "org.sqlite.JDBC"
+            maximumPoolSize = 10
+            minimumIdle = 2
+            isAutoCommit = true
+            poolName = "CrossPastePool"
+
+            addDataSourceProperty("busy_timeout", "10000")
+            connectionInitSql = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"
         }
 
-        val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:$path", properties)
+        val hikariDataSource = HikariDataSource(config)
+        this.dataSource = hikariDataSource
+
+        val driver = HikariSqliteDriver(hikariDataSource)
         Database.Schema.create(driver)
         sqlDriver = driver
         return driver
@@ -31,6 +43,8 @@ class DesktopDriverFactory(
 
     override fun closeDriver() {
         sqlDriver?.close()
+        dataSource?.close()
         sqlDriver = null
+        dataSource = null
     }
 }
