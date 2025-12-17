@@ -10,6 +10,7 @@ cryptography = "0.5.0"
 download = "5.6.0"
 filekit = "0.12.0"
 foojay-resolver = "1.0.0"
+hikaricp = "7.0.2"
 hot-reload = "1.0.0-rc02"
 icu4j = "78.1"
 imageio = "3.12.0"
@@ -54,6 +55,7 @@ conveyor-control = { module = "dev.hydraulic.conveyor:conveyor-control", version
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
 filekit = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "imageio" }
 imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "imageio" }
