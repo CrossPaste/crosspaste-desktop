@@ -7,7 +7,7 @@ import com.crosspaste.paste.item.PasteItem
 
 interface ColorTypePlugin : PasteTypePlugin {
 
-    fun updateColor(
+    suspend fun updateColor(
         pasteData: PasteData,
         newColor: Long,
         pasteItem: PasteItem,

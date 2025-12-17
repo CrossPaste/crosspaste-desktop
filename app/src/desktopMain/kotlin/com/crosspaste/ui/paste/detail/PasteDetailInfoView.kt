@@ -79,6 +79,8 @@ fun PasteDataScope.PasteDetailInfoView(
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
 
+    val scope = rememberCoroutineScope()
+
     var favorite by remember(pasteData.id) {
         mutableStateOf(pasteData.favorite)
     }
@@ -104,8 +106,10 @@ fun PasteDataScope.PasteDetailInfoView(
             text = copywriter.getText("whether_to_search_only_favorites"),
         ) {
             if (appControl.isFavoriteEnabled()) {
-                pasteDao.setFavorite(pasteData.id, !favorite)
-                favorite = !favorite
+                scope.launch {
+                    pasteDao.setFavorite(pasteData.id, !favorite)
+                    favorite = !favorite
+                }
             }
         }
         Spacer(modifier = Modifier.weight(1f))

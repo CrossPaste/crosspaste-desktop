@@ -25,7 +25,7 @@ class Weibo(
         }
     }
 
-    override fun action(recommendationService: RecommendationService) {
+    override suspend fun action(recommendationService: RecommendationService) {
         val encodedText = URLEncoder.encode(recommendationService.getRecommendText(), "UTF-8")
         val url = "https://service.weibo.com/share/share.php?title=$encodedText"
         uiSupport.openUrlInBrowser(url)

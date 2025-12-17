@@ -104,8 +104,10 @@ fun PasteTagScope.TagChip(
 }
 
 @Composable
-fun PasteTagScope.EditableTagChip(onEditDone: (String) -> Unit) {
+fun PasteTagScope.EditableTagChip(onEditDone: suspend (String) -> Unit) {
     var name by remember(tag.id) { mutableStateOf(tag.name) }
+
+    val scope = rememberCoroutineScope()
 
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
@@ -145,7 +147,9 @@ fun PasteTagScope.EditableTagChip(onEditDone: (String) -> Unit) {
                 keyboardActions =
                     KeyboardActions(
                         onDone = {
-                            onEditDone(name)
+                            scope.launch {
+                                onEditDone(name)
+                            }
                         },
                     ),
                 interactionSource = interactionSource,
@@ -159,7 +163,9 @@ fun PasteTagScope.EditableTagChip(onEditDone: (String) -> Unit) {
                     Modifier
                         .size(small)
                         .clickable {
-                            onEditDone(name)
+                            scope.launch {
+                                onEditDone(name)
+                            }
                         },
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             )

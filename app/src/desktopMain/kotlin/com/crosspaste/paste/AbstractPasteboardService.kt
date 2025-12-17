@@ -47,7 +47,7 @@ abstract class AbstractPasteboardService :
             logger.error(e) { "getContentsBySafe error" }
         }.getOrNull()
 
-    override fun tryWritePasteboard(
+    override suspend fun tryWritePasteboard(
         id: Long?,
         pasteItem: PasteItem,
         localOnly: Boolean,
@@ -67,7 +67,7 @@ abstract class AbstractPasteboardService :
             logger.error(e) { "tryWritePasteboard error" }
         }
 
-    override fun tryWritePasteboard(
+    override suspend fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean,
         primary: Boolean,

@@ -14,7 +14,7 @@ class DesktopColorTypePlugin(
     private val searchContentService: SearchContentService,
 ) : ColorTypePlugin {
 
-    override fun updateColor(
+    override suspend fun updateColor(
         pasteData: PasteData,
         newColor: Long,
         pasteItem: PasteItem,

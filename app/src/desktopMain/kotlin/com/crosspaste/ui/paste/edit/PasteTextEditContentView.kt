@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,7 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -42,6 +44,8 @@ fun PasteDataScope.PasteTextEditContentView() {
     val notificationManager = koinInject<NotificationManager>()
     val pasteDao = koinInject<PasteDao>()
     val textUpdater = koinInject<TextTypePlugin>()
+
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier =
@@ -112,21 +116,23 @@ fun PasteDataScope.PasteTextEditContentView() {
                             },
                     ) {
                         if (hasChanges) {
-                            textUpdater
-                                .updateText(pasteData, text, textPasteItem, pasteDao)
-                                .onSuccess {
-                                    originText = text
-                                    notificationManager.sendNotification(
-                                        title = { copywriter.getText("save_successful") },
-                                        messageType = MessageType.Success,
-                                    )
-                                }.onFailure { error ->
-                                    notificationManager.sendNotification(
-                                        title = { copywriter.getText("save_failed") },
-                                        message = { error.message ?: "" },
-                                        messageType = MessageType.Error,
-                                    )
-                                }
+                            scope.launch {
+                                textUpdater
+                                    .updateText(pasteData, text, textPasteItem, pasteDao)
+                                    .onSuccess {
+                                        originText = text
+                                        notificationManager.sendNotification(
+                                            title = { copywriter.getText("save_successful") },
+                                            messageType = MessageType.Success,
+                                        )
+                                    }.onFailure { error ->
+                                        notificationManager.sendNotification(
+                                            title = { copywriter.getText("save_failed") },
+                                            message = { error.message ?: "" },
+                                            messageType = MessageType.Error,
+                                        )
+                                    }
+                            }
                         }
                     }
                 }

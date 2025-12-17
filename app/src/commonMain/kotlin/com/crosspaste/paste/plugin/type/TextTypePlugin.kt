@@ -7,7 +7,7 @@ import com.crosspaste.paste.item.TextPasteItem
 
 interface TextTypePlugin : PasteTypePlugin {
 
-    fun updateText(
+    suspend fun updateText(
         pasteData: PasteData,
         newText: String,
         pasteItem: PasteItem,

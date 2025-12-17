@@ -4,12 +4,12 @@ import com.crosspaste.paste.item.PasteItem
 
 interface TransferableProducer {
 
-    fun produce(
+    suspend fun produce(
         pasteItem: PasteItem,
         localOnly: Boolean,
     ): PasteTransferable?
 
-    fun produce(
+    suspend fun produce(
         pasteData: PasteData,
         localOnly: Boolean,
         primary: Boolean,

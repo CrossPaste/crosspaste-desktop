@@ -12,7 +12,7 @@ class DesktopTransferableProducer(
     private val pasteTypePluginMap: Map<PasteType, PasteTypePlugin> =
         pasteTypePlugins.associateBy { it.getPasteType() }
 
-    override fun produce(
+    override suspend fun produce(
         pasteItem: PasteItem,
         localOnly: Boolean,
     ): DesktopWriteTransferable? {
@@ -32,7 +32,7 @@ class DesktopTransferableProducer(
         }
     }
 
-    override fun produce(
+    override suspend fun produce(
         pasteData: PasteData,
         localOnly: Boolean,
         primary: Boolean,
@@ -41,11 +41,7 @@ class DesktopTransferableProducer(
 
         val pasteAppearItems = pasteData.getPasteAppearItems()
 
-        val pasteAppearItem = pasteAppearItems.firstOrNull()
-
-        if (pasteAppearItem == null) {
-            return null
-        }
+        val pasteAppearItem = pasteAppearItems.firstOrNull() ?: return null
 
         val isFileCategory = pasteAppearItem is PasteFiles
 

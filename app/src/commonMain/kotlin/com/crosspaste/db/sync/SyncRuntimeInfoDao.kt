@@ -5,10 +5,13 @@ import com.crosspaste.Database
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.withContext
 
 class SyncRuntimeInfoDao(private val database: Database) {
 
@@ -48,21 +51,21 @@ class SyncRuntimeInfoDao(private val database: Database) {
 
                 emit(currentMap.values.toList())
             }
-        }
+        }.flowOn(ioDispatcher)
     }
 
-    fun getAllSyncRuntimeInfos(): List<SyncRuntimeInfo> {
-        return createGetAllSyncRuntimeInfosQuery().executeAsList()
+    suspend fun getAllSyncRuntimeInfos(): List<SyncRuntimeInfo> = withContext(ioDispatcher) {
+        createGetAllSyncRuntimeInfosQuery().executeAsList()
     }
 
-    private fun updateTemplate(
+    private suspend fun updateTemplate(
         syncRuntimeInfo: SyncRuntimeInfo,
         updateAction: (SyncRuntimeInfo) -> Boolean,
-    ): String? {
+    ): String? = withContext(ioDispatcher) {
         val change = database.transactionWithResult {
             updateAction(syncRuntimeInfo)
         }
-        return if (change) {
+        if (change) {
             updateNotifier.trySend(syncRuntimeInfo.appInstanceId)
             syncRuntimeInfo.appInstanceId
         } else {
@@ -70,7 +73,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo): String? {
+    suspend fun updateConnectInfo(syncRuntimeInfo: SyncRuntimeInfo): String? {
         return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateConnectInfo(
                 syncRuntimeInfo.port.toLong(),
@@ -84,7 +87,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo): String? {
+    suspend fun updateAllowReceive(syncRuntimeInfo: SyncRuntimeInfo): String? {
         return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateAllowReceive(
                 syncRuntimeInfo.allowReceive,
@@ -95,7 +98,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo): String? {
+    suspend fun updateAllowSend(syncRuntimeInfo: SyncRuntimeInfo): String? {
         return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateAllowSend(
                 syncRuntimeInfo.allowSend,
@@ -106,7 +109,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo): String? {
+    suspend fun updateNoteName(syncRuntimeInfo: SyncRuntimeInfo): String? {
         return updateTemplate(syncRuntimeInfo) {
             syncRuntimeInfoDatabaseQueries.updateNoteName(
                 syncRuntimeInfo.noteName,
@@ -117,7 +120,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
         }
     }
 
-    fun deleteSyncRuntimeInfo(appInstanceId: String) {
+    suspend fun deleteSyncRuntimeInfo(appInstanceId: String) = withContext(ioDispatcher) {
         val deleted = database.transactionWithResult {
             syncRuntimeInfoDatabaseQueries.deleteSyncRuntimeInfo(appInstanceId)
             syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
@@ -129,7 +132,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
 
     // only use in GeneralSyncManager，if want to insertOrUpdateSyncInfo SyncRuntimeInfo
     // use SyncManager.updateSyncInfo，it will refresh connect state
-    fun insertOrUpdateSyncInfo(syncInfo: SyncInfo) {
+    suspend fun insertOrUpdateSyncInfo(syncInfo: SyncInfo) = withContext(ioDispatcher) {
         database.transactionWithResult {
             val now = nowEpochMilliseconds()
             syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(

@@ -25,7 +25,7 @@ class X(
         }
     }
 
-    override fun action(recommendationService: RecommendationService) {
+    override suspend fun action(recommendationService: RecommendationService) {
         val encodedText = URLEncoder.encode(recommendationService.getRecommendText(), "UTF-8")
         val url = "https://x.com/intent/post?text=$encodedText"
         uiSupport.openUrlInBrowser(url)

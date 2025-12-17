@@ -9,9 +9,7 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.mail
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class Mail(
     private val notificationManager: NotificationManager,
@@ -30,14 +28,12 @@ class Mail(
         }
     }
 
-    override fun action(recommendationService: RecommendationService) {
+    override suspend fun action(recommendationService: RecommendationService) {
         notificationManager.sendNotification(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,
         )
-        mainCoroutineDispatcher.launch {
-            delay(2000)
-            uiSupport.openEmailClient(null)
-        }
+        delay(2000)
+        uiSupport.openEmailClient(null)
     }
 }

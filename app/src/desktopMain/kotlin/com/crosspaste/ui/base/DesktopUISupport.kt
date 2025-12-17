@@ -24,7 +24,11 @@ import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okio.Path
 import java.awt.Color
 import java.awt.Desktop
@@ -42,6 +46,7 @@ class DesktopUISupport(
     private val pasteDao: PasteDao,
     private val platform: Platform,
     private val userDataPathProvider: UserDataPathProvider,
+    private val actionScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : UISupport {
 
     private val logger = KotlinLogging.logger {}
@@ -94,15 +99,17 @@ class DesktopUISupport(
         html: String,
     ) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            val fileName = "$id.html"
-            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
-            if (!fileUtils.existFile(filePath)) {
-                val utf8Html = htmlUtils.ensureHtmlCharsetUtf8(html)
-                fileUtils.writeFile(filePath) { sink ->
-                    sink.writeUtf8(utf8Html)
+            actionScope.launch {
+                val fileName = "$id.html"
+                val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
+                if (!fileUtils.existFile(filePath)) {
+                    val utf8Html = htmlUtils.ensureHtmlCharsetUtf8(html)
+                    fileUtils.writeFile(filePath) { sink ->
+                        sink.writeUtf8(utf8Html)
+                    }
                 }
+                Desktop.getDesktop().browse(filePath.toFile().toURI())
             }
-            Desktop.getDesktop().browse(filePath.toFile().toURI())
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("failed_to_open_html_pasteboard") },
@@ -156,12 +163,14 @@ class DesktopUISupport(
                             (result.blue.toLong() and 0xFF)
 
                     logger.info { "Selected color: $rgbColor" }
-                    colorTypePlugin.updateColor(
-                        pasteData,
-                        newColor,
-                        (pasteColor as ColorPasteItem),
-                        pasteDao,
-                    )
+                    actionScope.launch {
+                        colorTypePlugin.updateColor(
+                            pasteData,
+                            newColor,
+                            (pasteColor as ColorPasteItem),
+                            pasteDao,
+                        )
+                    }
                 }
             }
         }
@@ -201,16 +210,18 @@ class DesktopUISupport(
 
     override fun openRtf(pasteData: PasteData) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            val fileName = "${pasteData.id}.rtf"
-            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
-            if (!fileUtils.existFile(filePath)) {
-                pasteData.getPasteItem(PasteRtf::class)?.let {
-                    fileUtils.writeFile(filePath) { sink ->
-                        sink.writeUtf8(it.rtf)
+            actionScope.launch {
+                val fileName = "${pasteData.id}.rtf"
+                val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
+                if (!fileUtils.existFile(filePath)) {
+                    pasteData.getPasteItem(PasteRtf::class)?.let {
+                        fileUtils.writeFile(filePath) { sink ->
+                            sink.writeUtf8(it.rtf)
+                        }
                     }
                 }
+                Desktop.getDesktop().browse(filePath.toFile().toURI())
             }
-            Desktop.getDesktop().browse(filePath.toFile().toURI())
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("failed_to_open_rtf_pasteboard") },

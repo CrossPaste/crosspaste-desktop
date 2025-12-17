@@ -149,6 +149,8 @@ fun PasteDataScope.PasteMenuView(toShow: (Boolean) -> Unit) {
         }
 
         if (showMenu) {
+            val scope = rememberCoroutineScope()
+
             CopyMenuItem(
                 tint = AppUIColors.importantColor,
                 background =
@@ -174,11 +176,13 @@ fun PasteDataScope.PasteMenuView(toShow: (Boolean) -> Unit) {
                 hoverFavorite = { hoverFavorite = it },
             ) {
                 if (appControl.isFavoriteEnabled()) {
-                    pasteDao.setFavorite(
-                        pasteData.id,
-                        !currentFavorite,
-                    )
-                    currentFavorite = !currentFavorite
+                    scope.launch {
+                        pasteDao.setFavorite(
+                            pasteData.id,
+                            !currentFavorite,
+                        )
+                        currentFavorite = !currentFavorite
+                    }
                 }
             }
 

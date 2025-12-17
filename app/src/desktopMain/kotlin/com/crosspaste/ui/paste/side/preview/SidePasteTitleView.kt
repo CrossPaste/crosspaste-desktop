@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +42,7 @@ import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.ColorUtils.getBestTextColor
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.RelativeTime
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -53,6 +55,9 @@ fun PasteDataScope.SidePasteTitleView() {
     val sideTitleHeight = LocalDesktopAppSizeValueState.current.sideTitleHeight
     val showWindow = LocalSearchWindowInfoState.current.show
     val isCurrentThemeDark = LocalThemeState.current.isCurrentThemeDark
+
+    val scope = rememberCoroutineScope()
+
     val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
     var background by remember(type, isCurrentThemeDark) {
         mutableStateOf(
@@ -128,8 +133,10 @@ fun PasteDataScope.SidePasteTitleView() {
                     text = copywriter.getText(if (favorite) "remove_from_favorites" else "favorite"),
                 ) {
                     if (appControl.isFavoriteEnabled()) {
-                        pasteDao.setFavorite(pasteData.id, !favorite)
-                        favorite = !favorite
+                        scope.launch {
+                            pasteDao.setFavorite(pasteData.id, !favorite)
+                            favorite = !favorite
+                        }
                     }
                 }
             }

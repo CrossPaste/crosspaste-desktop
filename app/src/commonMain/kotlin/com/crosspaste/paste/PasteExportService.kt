@@ -50,7 +50,7 @@ class PasteExportService(
         }
     }
 
-    private fun doExport(
+    private suspend fun doExport(
         pasteExportParam: PasteExportParam,
         updateProgress: (Float) -> Unit,
     ) {

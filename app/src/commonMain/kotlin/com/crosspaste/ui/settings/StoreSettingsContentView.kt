@@ -27,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -117,7 +118,9 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
 
     var allOrFavorite by remember { mutableStateOf(true) }
 
-    val refresh: (Boolean) -> Unit = {
+    val scope = rememberCoroutineScope()
+
+    val refresh: suspend (Boolean) -> Unit = {
         val pasteResourceInfo =
             pasteDao.getPasteResourceInfo(
                 if (it) {
@@ -207,8 +210,10 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 CustomTextSwitch(
                     checked = allOrFavorite,
                     onCheckedChange = { newAllOrFavorite ->
-                        allOrFavorite = newAllOrFavorite
-                        refresh(allOrFavorite)
+                        scope.launch {
+                            allOrFavorite = newAllOrFavorite
+                            refresh(allOrFavorite)
+                        }
                     },
                     checkedText = copywriter.getText("all"),
                     uncheckedText = copywriter.getText("favorite"),
