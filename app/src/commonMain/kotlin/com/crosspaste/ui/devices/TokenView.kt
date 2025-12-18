@@ -21,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -59,14 +58,6 @@ fun TokenView(intOffset: IntOffset) {
     val appSizeValue = LocalAppSizeValueState.current
 
     val showToken by appTokenApi.showToken.collectAsState()
-
-    DisposableEffect(Unit) {
-        appTokenApi.startRefreshToken()
-
-        onDispose {
-            appTokenApi.stopRefreshToken()
-        }
-    }
 
     if (showToken) {
         Popup(
@@ -123,7 +114,7 @@ fun TokenView(intOffset: IntOffset) {
                                         .size(medium * 2)
                                         .clip(mediumRoundedCornerShape)
                                         .clickable {
-                                            appTokenApi.toHideToken()
+                                            appTokenApi.stopRefresh(hideToken = true)
                                         },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -157,6 +148,7 @@ fun TokenView(intOffset: IntOffset) {
 @Composable
 private fun OTPCodeBox() {
     val appTokenApi = koinInject<AppTokenApi>()
+    val progress by appTokenApi.refreshProgress.collectAsState()
     val token by appTokenApi.token.collectAsState()
 
     Column(
@@ -192,7 +184,6 @@ private fun OTPCodeBox() {
                     .wrapContentHeight()
                     .padding(horizontal = small3X),
         ) {
-            val progress by appTokenApi.showTokenProgression.collectAsState()
             LinearProgressIndicator(
                 modifier =
                     Modifier

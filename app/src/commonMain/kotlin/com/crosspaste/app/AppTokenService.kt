@@ -1,29 +1,34 @@
 package com.crosspaste.app
 
-import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
 
 abstract class AppTokenService : AppTokenApi {
 
-    private val lock = createPlatformLock()
+    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val scope = CoroutineScope(ioDispatcher)
+    private val lock = Mutex()
 
-    private var enableRefresh = false
+    private val _refreshProgress = MutableStateFlow(0f)
 
-    private var refreshTokenJob: Job? = null
+    override val refreshProgress: StateFlow<Float> = _refreshProgress.asStateFlow()
 
-    private val _showTokenProgress = MutableStateFlow(0f)
+    private val _refresh = MutableStateFlow(false)
 
-    override val showTokenProgression: StateFlow<Float> = _showTokenProgress.asStateFlow()
+    override val refresh: StateFlow<Boolean> = _refresh.asStateFlow()
+
+    private var refreshCounter = 0
 
     private val _showToken = MutableStateFlow(false)
 
@@ -33,6 +38,25 @@ abstract class AppTokenService : AppTokenApi {
 
     override val token: StateFlow<CharArray> = _token.asStateFlow()
 
+    init {
+        scope.launch {
+            refresh.collectLatest { isShowing ->
+                if (isShowing) {
+                    while (isActive) {
+                        refreshToken()
+                        val totalSteps = 100
+                        for (i in 0..totalSteps) {
+                            _refreshProgress.value = i / totalSteps.toFloat()
+                            delay(300)
+                        }
+                    }
+                } else {
+                    _refreshProgress.value = 0f
+                }
+            }
+        }
+    }
+
     abstract fun preShowToken()
 
     override fun sameToken(token: Int): Boolean =
@@ -41,42 +65,38 @@ abstract class AppTokenService : AppTokenApi {
                 .concatToString()
                 .toInt()
 
-    override fun toShowToken() {
-        preShowToken()
-        _showToken.value = true
+    override fun startRefresh(showToken: Boolean) {
+        scope.launch {
+            lock.withLock {
+                if (showToken) {
+                    _showToken.value = true
+                    preShowToken()
+                }
+                _refresh.value = true
+                refreshCounter += 1
+            }
+        }
     }
 
-    override fun toHideToken() {
-        _showToken.value = false
+    override fun stopRefresh(hideToken: Boolean) {
+        scope.launch {
+            lock.withLock {
+                if (hideToken) {
+                    _showToken.value = false
+                }
+                if (refreshCounter > 0) {
+                    refreshCounter -= 1
+                }
+                if (refreshCounter == 0) {
+                    _refresh.value = false
+                    _showToken.value = false
+                }
+            }
+        }
     }
 
     private fun refreshToken() {
         _token.value = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
-        _showTokenProgress.value = 0.0f
-    }
-
-    override fun startRefreshToken() {
-        lock.withLock {
-            if (enableRefresh) return@withLock
-            enableRefresh = true
-            refreshTokenJob =
-                scope.launch {
-                    while (true) {
-                        refreshToken()
-                        while (_showTokenProgress.value < 0.99f) {
-                            _showTokenProgress.value += 0.01f
-                            delay(300)
-                        }
-                    }
-                }
-        }
-    }
-
-    override fun stopRefreshToken() {
-        lock.withLock {
-            if (!enableRefresh) return@withLock
-            enableRefresh = false
-            refreshTokenJob?.cancel()
-        }
+        _refreshProgress.value = 0.0f
     }
 }
