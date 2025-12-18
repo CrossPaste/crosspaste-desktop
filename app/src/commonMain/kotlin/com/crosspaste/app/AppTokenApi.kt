@@ -12,11 +12,7 @@ interface AppTokenApi {
 
     fun sameToken(token: Int): Boolean
 
-    fun toShowToken()
+    fun toShowToken(showView: Boolean = false)
 
     fun toHideToken()
-
-    fun startRefreshToken()
-
-    fun stopRefreshToken()
 }

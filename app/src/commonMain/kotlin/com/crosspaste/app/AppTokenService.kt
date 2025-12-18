@@ -1,25 +1,20 @@
 package com.crosspaste.app
 
-import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 abstract class AppTokenService : AppTokenApi {
 
-    private val lock = createPlatformLock()
-
-    private val scope = CoroutineScope(ioDispatcher)
-
-    private var enableRefresh = false
-
-    private var refreshTokenJob: Job? = null
+    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
 
     private val _showTokenProgress = MutableStateFlow(0f)
 
@@ -33,6 +28,25 @@ abstract class AppTokenService : AppTokenApi {
 
     override val token: StateFlow<CharArray> = _token.asStateFlow()
 
+    init {
+        scope.launch {
+            showToken.collectLatest { isShowing ->
+                if (isShowing) {
+                    while (isActive) {
+                        refreshToken()
+                        val totalSteps = 100
+                        for (i in 0..totalSteps) {
+                            _showTokenProgress.value = i / totalSteps.toFloat()
+                            delay(300)
+                        }
+                    }
+                } else {
+                    _showTokenProgress.value = 0f
+                }
+            }
+        }
+    }
+
     abstract fun preShowToken()
 
     override fun sameToken(token: Int): Boolean =
@@ -41,8 +55,10 @@ abstract class AppTokenService : AppTokenApi {
                 .concatToString()
                 .toInt()
 
-    override fun toShowToken() {
-        preShowToken()
+    override fun toShowToken(showView: Boolean) {
+        if (showView) {
+            preShowToken()
+        }
         _showToken.value = true
     }
 
@@ -53,32 +69,5 @@ abstract class AppTokenService : AppTokenApi {
     private fun refreshToken() {
         _token.value = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
         _showTokenProgress.value = 0.0f
-    }
-
-    override fun startRefreshToken() {
-        lock.withLock {
-            if (enableRefresh) return@withLock
-            enableRefresh = true
-            refreshTokenJob =
-                scope.launch {
-                    while (true) {
-                        refreshToken()
-                        val totalSteps = 100
-                        for (i in 0..totalSteps) {
-                            if (!enableRefresh) break
-                            _showTokenProgress.value = i / totalSteps.toFloat()
-                            delay(300)
-                        }
-                    }
-                }
-        }
-    }
-
-    override fun stopRefreshToken() {
-        lock.withLock {
-            if (!enableRefresh) return@withLock
-            enableRefresh = false
-            refreshTokenJob?.cancel()
-        }
     }
 }

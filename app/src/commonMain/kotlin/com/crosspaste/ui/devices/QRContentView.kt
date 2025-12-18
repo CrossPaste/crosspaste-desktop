@@ -85,9 +85,9 @@ fun QRContentView() {
     }
 
     DisposableEffect(Unit) {
-        appTokenApi.startRefreshToken()
+        appTokenApi.toShowToken()
         onDispose {
-            appTokenApi.stopRefreshToken()
+            appTokenApi.toHideToken()
         }
     }
 

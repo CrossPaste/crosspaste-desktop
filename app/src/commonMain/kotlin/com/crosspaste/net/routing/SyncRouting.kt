@@ -94,7 +94,7 @@ fun Routing.syncRouting(
     }
 
     get("/sync/showToken") {
-        appTokenApi.toShowToken()
+        appTokenApi.toShowToken(showView = true)
         logger.debug { "show token" }
         successResponse(call)
     }

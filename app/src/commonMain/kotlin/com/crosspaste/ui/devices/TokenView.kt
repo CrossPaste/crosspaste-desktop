@@ -21,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -59,15 +58,6 @@ fun TokenView(intOffset: IntOffset) {
     val appSizeValue = LocalAppSizeValueState.current
 
     val showToken by appTokenApi.showToken.collectAsState()
-
-    DisposableEffect(showToken) {
-        if (showToken) {
-            appTokenApi.startRefreshToken()
-        }
-        onDispose {
-            appTokenApi.stopRefreshToken()
-        }
-    }
 
     if (showToken) {
         Popup(
