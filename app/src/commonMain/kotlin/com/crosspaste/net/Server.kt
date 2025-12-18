@@ -2,9 +2,9 @@ package com.crosspaste.net
 
 interface Server {
 
-    fun start()
+    suspend fun start()
 
-    fun stop()
+    suspend fun stop()
 
     fun port(): Int
 }

@@ -6,7 +6,7 @@ import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.netty.NettyApplicationEngine
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 
 class DesktopPasteServer(
@@ -21,29 +21,28 @@ class DesktopPasteServer(
 
     private val logger = KotlinLogging.logger {}
 
-    override fun start() {
-        runCatching {
-            server = createServer(port = readWritePort.getValue())
-            server?.start(wait = false)
-        }.onFailure { e ->
-            if (exceptionHandler.isPortAlreadyInUse(e)) {
-                logger.warn { "Port ${readWritePort.getValue()} is already in use" }
-                server = createServer(port = 0)
+    override suspend fun start() =
+        withContext(ioDispatcher) {
+            runCatching {
+                server = createServer(port = readWritePort.getValue())
                 server?.start(wait = false)
+            }.onFailure { e ->
+                if (exceptionHandler.isPortAlreadyInUse(e)) {
+                    logger.warn { "Port ${readWritePort.getValue()} is already in use" }
+                    server = createServer(port = 0)
+                    server?.start(wait = false)
+                }
             }
-        }
-        runBlocking {
             server?.application?.engine?.resolvedConnectors()?.first()?.port?.let {
                 port = it
             }
+            if (port != readWritePort.getValue()) {
+                readWritePort.setValue(port)
+            }
+            logger.info { "Server started at port $port" }
         }
-        if (port != readWritePort.getValue()) {
-            readWritePort.setValue(port)
-        }
-        logger.info { "Server started at port $port" }
-    }
 
-    override fun stop() {
+    override suspend fun stop() {
         server?.stop()
         server = null
     }

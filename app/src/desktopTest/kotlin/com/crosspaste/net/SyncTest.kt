@@ -175,10 +175,10 @@ class SyncTest : KoinTest {
 
     @Test
     fun testTrustAndHeartbeat() {
-        pasteServer.start()
-
         var result =
             runBlocking {
+                pasteServer.start()
+
                 syncClientApi.trust(
                     serverAppInfo.appInstanceId,
                     appTokenApi.token.value
@@ -249,6 +249,6 @@ class SyncTest : KoinTest {
 
         assertTrue(result is SuccessResult)
 
-        pasteServer.stop()
+        runBlocking { pasteServer.stop() }
     }
 }

@@ -57,7 +57,9 @@ import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
@@ -112,7 +114,7 @@ class CrossPaste {
         val koinApplication: KoinApplication = module.initKoinApplication()
 
         @Throws(Exception::class)
-        private fun startApplication() {
+        private suspend fun startApplication() {
             runCatching {
                 if (appEnvUtils.isProduction()) {
                     System.setProperty("jna.library.path", appPathProvider.pasteAppExePath.toString())
@@ -186,37 +188,41 @@ class CrossPaste {
         }
 
         private suspend fun shutdownAllServices() {
-            supervisorScope {
-                val jobs =
-                    listOf(
-                        async {
-                            stopService<AppUpdateService>("AppUpdateService") { it.stop() }
-                        },
-                        async {
-                            stopService<TaskExecutor>("TaskExecutor") { it.shutdown() }
-                        },
-                        async {
-                            stopService<RenderingService<String>>(
-                                qualifier = named("urlRendering"),
-                                serviceName = "RenderingService",
-                            ) { it.stop() }
-                        },
-                        async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
-                        async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } },
-                        async { stopService<Server>("PasteServer") { it.stop() } },
-                        async { stopService<SyncManager>("SyncManager") { it.stop() } },
-                        async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },
-                        async {
-                            stopService<DesktopAppWindowManager>("DesktopAppWindowManager") {
-                                it.stopWindowService()
-                            }
-                        },
-                        async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
-                        async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
-                    )
+            withTimeoutOrNull(5000L) {
+                supervisorScope {
+                    val jobs =
+                        listOf(
+                            async {
+                                stopService<AppUpdateService>("AppUpdateService") { it.stop() }
+                            },
+                            async {
+                                stopService<TaskExecutor>("TaskExecutor") { it.shutdown() }
+                            },
+                            async {
+                                stopService<RenderingService<String>>(
+                                    qualifier = named("urlRendering"),
+                                    serviceName = "RenderingService",
+                                ) { it.stop() }
+                            },
+                            async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
+                            async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } },
+                            async { stopService<Server>("PasteServer") { it.stop() } },
+                            async { stopService<SyncManager>("SyncManager") { it.stop() } },
+                            async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },
+                            async {
+                                stopService<DesktopAppWindowManager>("DesktopAppWindowManager") {
+                                    it.stopWindowService()
+                                }
+                            },
+                            async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
+                            async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
+                        )
 
-                jobs.awaitAll()
+                    jobs.awaitAll()
+                }
+            }
 
+            runCatching {
                 stopService<DriverFactory>("DriverFactory") { it.closeDriver() }
             }
         }
@@ -246,7 +252,7 @@ class CrossPaste {
             }
 
             logger.info { "Starting CrossPaste" }
-            startApplication()
+            runBlocking { startApplication() }
             logger.info { "CrossPaste started" }
 
             application {
