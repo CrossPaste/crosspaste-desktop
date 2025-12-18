@@ -114,7 +114,7 @@ fun TokenView(intOffset: IntOffset) {
                                         .size(medium * 2)
                                         .clip(mediumRoundedCornerShape)
                                         .clickable {
-                                            appTokenApi.toHideToken()
+                                            appTokenApi.stopRefresh(hideToken = true)
                                         },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -148,7 +148,7 @@ fun TokenView(intOffset: IntOffset) {
 @Composable
 private fun OTPCodeBox() {
     val appTokenApi = koinInject<AppTokenApi>()
-    val progress by appTokenApi.showTokenProgression.collectAsState()
+    val progress by appTokenApi.refreshProgress.collectAsState()
     val token by appTokenApi.token.collectAsState()
 
     Column(

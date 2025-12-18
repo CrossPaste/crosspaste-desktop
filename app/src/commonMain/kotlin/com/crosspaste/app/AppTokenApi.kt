@@ -6,13 +6,15 @@ interface AppTokenApi {
 
     val token: StateFlow<CharArray>
 
-    val showTokenProgression: StateFlow<Float>
-
     val showToken: StateFlow<Boolean>
+
+    val refreshProgress: StateFlow<Float>
+
+    val refresh: StateFlow<Boolean>
 
     fun sameToken(token: Int): Boolean
 
-    fun toShowToken(showView: Boolean = false)
+    fun startRefresh(showToken: Boolean)
 
-    fun toHideToken()
+    fun stopRefresh(hideToken: Boolean)
 }
