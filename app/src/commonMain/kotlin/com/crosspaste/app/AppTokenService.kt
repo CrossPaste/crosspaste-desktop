@@ -63,8 +63,10 @@ abstract class AppTokenService : AppTokenApi {
                 scope.launch {
                     while (true) {
                         refreshToken()
-                        while (_showTokenProgress.value < 0.99f) {
-                            _showTokenProgress.value += 0.01f
+                        val totalSteps = 100
+                        for (i in 0..totalSteps) {
+                            if (!enableRefresh) break
+                            _showTokenProgress.value = i / totalSteps.toFloat()
                             delay(300)
                         }
                     }
