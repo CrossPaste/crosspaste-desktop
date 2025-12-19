@@ -111,7 +111,7 @@ abstract class DesktopAppWindowManager(
         MutableStateFlow(
             WindowInfo(
                 show = false,
-                state = appSize.getSearchWindowState(),
+                state = appSize.getSearchWindowState(true),
                 trigger = WindowTrigger.INIT,
             ),
         )
@@ -166,7 +166,7 @@ abstract class DesktopAppWindowManager(
         _searchWindowInfo.value =
             _searchWindowInfo.value.copy(
                 show = true,
-                state = appSize.getSearchWindowState(),
+                state = appSize.getSearchWindowState(false),
                 trigger = windowTrigger,
             )
     }

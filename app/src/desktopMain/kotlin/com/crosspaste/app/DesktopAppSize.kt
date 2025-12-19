@@ -125,17 +125,20 @@ class DesktopAppSize(
             position = WindowPosition(Alignment.Center),
         )
 
-    override fun getSearchWindowState(): WindowState {
+    override fun getSearchWindowState(init: Boolean): WindowState {
         val graphicsDevice = getGraphicsDevice()
         val bounds = graphicsDevice.defaultConfiguration.bounds
         val sideSearchWindowHeight = _appSizeValue.value.sideSearchWindowHeight
+        val x = bounds.x.dp
+        val y =
+            if (init) {
+                bounds.y.dp + bounds.height.dp
+            } else {
+                bounds.y.dp + bounds.height.dp - sideSearchWindowHeight
+            }
         return WindowState(
             placement = WindowPlacement.Floating,
-            position =
-                WindowPosition(
-                    x = bounds.x.dp,
-                    y = bounds.y.dp + bounds.height.dp - sideSearchWindowHeight,
-                ),
+            position = WindowPosition(x, y),
             size = DpSize(width = bounds.width.dp, height = sideSearchWindowHeight),
         )
     }

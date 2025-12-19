@@ -52,25 +52,14 @@ fun SearchWindow(windowIcon: Painter?) {
 
     val animationProgress by animateFloatAsState(
         targetValue = if (searchWindowInfo.show) 0f else 1f,
-        animationSpec =
-            tween(
-                durationMillis = 150,
-                delayMillis = 0,
-            ),
+        animationSpec = tween(durationMillis = 150, delayMillis = 0),
     )
 
     val windowState =
-        remember(searchWindowInfo, animationProgress) {
-            val position =
-                WindowPosition(
-                    x = searchWindowInfo.state.position.x,
-                    y =
-                        searchWindowInfo.state.position.y +
-                            appSizeValue.sideSearchWindowHeight * animationProgress,
-                )
+        remember {
             WindowState(
                 placement = searchWindowInfo.state.placement,
-                position = position,
+                position = searchWindowInfo.state.position,
                 size = searchWindowInfo.state.size,
             )
         }
@@ -78,6 +67,22 @@ fun SearchWindow(windowIcon: Painter?) {
     val logger = remember { KotlinLogging.logger("SearchWindow") }
 
     var ignoreFocusLoss by remember { mutableStateOf(true) }
+
+    LaunchedEffect(searchWindowInfo, animationProgress, appSizeValue) {
+        // Update size and placement if they change
+        windowState.placement = searchWindowInfo.state.placement
+        windowState.size = searchWindowInfo.state.size
+
+        // Calculate the dynamic Y position based on animation
+        // Assume the target position is the 'visible' state (progress = 0f)
+        val targetX = searchWindowInfo.state.position.x
+        val targetY =
+            searchWindowInfo.state.position.y +
+                (appSizeValue.sideSearchWindowHeight * animationProgress)
+
+        // Apply the position update to the stable state object
+        windowState.position = WindowPosition(x = targetX, y = targetY)
+    }
 
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
