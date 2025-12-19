@@ -1,146 +1,115 @@
 #!/bin/bash
 
-# ==============================================================================
-# Configuration
-# ==============================================================================
+# ==========================================
+# CONFIGURATION
+# ==========================================
+# Default i18n directory (restored to your specified path)
+I18N_DIR="app/src/desktopMain/resources/i18n"
 
-# Default path to the i18n resources directory
-DEFAULT_I18N_DIR="app/src/desktopMain/resources/i18n"
-
-# ==============================================================================
-# Helper Functions
-# ==============================================================================
-
-# Display usage instructions
+# ==========================================
+# USAGE
+# ==========================================
 show_usage() {
-    echo "Usage: $0 <input_file> [i18n_directory_path]"
+    echo "Usage:"
+    echo "  1. Add/Update keys:  $0 <input_file> [i18n_directory_path]"
+    echo "  2. Delete a key:     $0 -d <key_name> [i18n_directory_path]"
     echo ""
-    echo "Description:"
-    echo "  1. Updates i18n key-value pairs from the input file."
-    echo "  2. Sorts all properties files in the directory alphabetically."
-    echo ""
-    echo "Input file format example:"
-    echo "  key=myNewKey"
-    echo "  en=English Text"
-    echo "  zh=Chinese Text"
+    echo "Default directory: $I18N_DIR"
     exit 1
 }
-
-# Normalize language code (e.g., convert 'zh-hant' to 'zh_hant')
-normalize_lang_code() {
-    local lang="$1"
-    # Convert hyphen to underscore for consistency
-    echo "$lang" | sed 's/-/_/g'
-}
-
-# Update or add a key-value pair in a specific properties file
-update_properties_file() {
-    local file_path="$1"
-    local key="$2"
-    local value="$3"
-    local file_name=$(basename "$file_path")
-
-    # If file doesn't exist, create it
-    if [ ! -f "$file_path" ]; then
-        echo "  [Create] $file_name (New file created)"
-        touch "$file_path"
-    fi
-
-    # Check if key already exists
-    if grep -q "^${key}=" "$file_path"; then
-        # Update existing key
-        # Using a temp file is safer for cross-platform compatibility (macOS/Linux)
-        # Using '|' as delimiter to avoid issues if the value contains slashes
-        if sed "s|^${key}=.*|${key}=${value}|" "$file_path" > "${file_path}.tmp" && mv "${file_path}.tmp" "$file_path"; then
-            echo "  [Update] $file_name: $key"
-            return 0
-        else
-            echo "  [Error] Failed to update $file_name"
-            return 1
-        fi
-    else
-        # Append new key
-        if echo "${key}=${value}" >> "$file_path"; then
-            echo "  [Add]    $file_name: $key"
-            return 0
-        else
-            echo "  [Error] Failed to append to $file_name"
-            return 1
-        fi
-    fi
-}
-
-# Sort a single properties file alphabetically
-# Preserves comments and empty lines at the top of the file
-sort_properties_file() {
-    local file_path="$1"
-    local file_name=$(basename "$file_path")
-    local temp_header="${file_path}.header"
-    local temp_content="${file_path}.content"
-
-    # Step 1: Extract header (comments starting with # and empty lines at the top)
-    grep -E '^[[:space:]]*#|^[[:space:]]*$' "$file_path" > "$temp_header" 2>/dev/null || true
-
-    # Step 2: Extract content (actual key-value pairs) and sort them
-    grep -v -E '^[[:space:]]*#|^[[:space:]]*$' "$file_path" | sort > "$temp_content" 2>/dev/null || true
-
-    # Step 3: Combine header and sorted content
-    if [ -s "$temp_header" ] && [ -s "$temp_content" ]; then
-        # Both header and content exist
-        cat "$temp_header" "$temp_content" > "${file_path}.new"
-    elif [ -s "$temp_content" ]; then
-        # Only content exists
-        cat "$temp_content" > "${file_path}.new"
-    elif [ -s "$temp_header" ]; then
-        # Only header exists
-        cat "$temp_header" > "${file_path}.new"
-    else
-        # File is empty
-        touch "${file_path}.new"
-    fi
-
-    # Step 4: Overwrite the original file with the sorted version
-    if mv "${file_path}.new" "$file_path"; then
-        rm -f "$temp_header" "$temp_content"
-        return 0
-    else
-        echo "  [Error] Failed to sort $file_name"
-        rm -f "$temp_header" "$temp_content" "${file_path}.new"
-        return 1
-    fi
-}
-
-# ==============================================================================
-# Main Execution Logic
-# ==============================================================================
 
 # Check parameters
 if [ $# -lt 1 ]; then
     show_usage
 fi
 
-INPUT_FILE="$1"
+# ==========================================
+# MODE SELECTION & ARGUMENT PARSING
+# ==========================================
 
-# Use provided directory or default
-if [ $# -ge 2 ]; then
-    I18N_DIR="$2"
+MODE="add"
+INPUT_FILE=""
+KEY_TO_DELETE=""
+CUSTOM_DIR=""
+
+if [ "$1" == "-d" ]; then
+    # --- DELETE MODE ---
+    MODE="delete"
+    KEY_TO_DELETE="$2"
+    if [ -z "$KEY_TO_DELETE" ]; then
+        echo "Error: Key name is required for delete mode."
+        exit 1
+    fi
+    # If 3rd parameter exists, it's the custom directory
+    if [ -n "$3" ]; then
+        CUSTOM_DIR="$3"
+    fi
 else
-    I18N_DIR="$DEFAULT_I18N_DIR"
+    # --- ADD MODE ---
+    MODE="add"
+    INPUT_FILE="$1"
+    # If 2nd parameter exists, it's the custom directory
+    if [ -n "$2" ]; then
+        CUSTOM_DIR="$2"
+    fi
 fi
 
-# Validation: Check if input file exists
-if [ ! -f "$INPUT_FILE" ]; then
-    echo "Error: Input file '$INPUT_FILE' does not exist"
-    exit 1
+# Apply custom directory if provided
+if [ -n "$CUSTOM_DIR" ]; then
+    I18N_DIR="$CUSTOM_DIR"
 fi
 
-# Validation: Check if i18n directory exists
+# Check if i18n directory exists
 if [ ! -d "$I18N_DIR" ]; then
     echo "Error: i18n directory '$I18N_DIR' does not exist"
     exit 1
 fi
 
-# Extract the key name from the input file
+# ==========================================
+# LOGIC: DELETE KEY
+# ==========================================
+if [ "$MODE" == "delete" ]; then
+    echo ""
+    echo "Target Key: $KEY_TO_DELETE"
+    echo "Directory:  $I18N_DIR"
+    echo "-----------------------------------------"
+
+    DELETED_COUNT=0
+
+    shopt -s nullglob
+    for file in "$I18N_DIR"/*.properties; do
+        filename=$(basename "$file")
+
+        # Check if key exists
+        if grep -q "^${KEY_TO_DELETE}=" "$file"; then
+            # Delete line using grep -v (Preserves order of other keys)
+            if grep -v "^${KEY_TO_DELETE}=" "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"; then
+                echo "  [DELETED] Removed from: $filename"
+                ((DELETED_COUNT++))
+            else
+                echo "  [ERROR] Failed to update: $filename"
+                rm -f "${file}.tmp"
+            fi
+        fi
+    done
+    shopt -u nullglob
+
+    echo "-----------------------------------------"
+    echo "Done. Removed key from $DELETED_COUNT files."
+    exit 0
+fi
+
+# ==========================================
+# LOGIC: ADD/UPDATE KEY
+# ==========================================
+
+# Check if input file exists
+if [ ! -f "$INPUT_FILE" ]; then
+    echo "Error: Input file '$INPUT_FILE' does not exist"
+    exit 1
+fi
+
+# Read key name
 KEY_NAME=$(grep "^key=" "$INPUT_FILE" | cut -d'=' -f2-)
 
 if [ -z "$KEY_NAME" ]; then
@@ -148,69 +117,75 @@ if [ -z "$KEY_NAME" ]; then
     exit 1
 fi
 
-echo "========================================="
-echo "Task: Update Key '$KEY_NAME' & Sort Files"
-echo "Directory: $I18N_DIR"
-echo "========================================="
+echo ""
+echo "Preparing to add/update key: $KEY_NAME"
+echo "i18n directory: $I18N_DIR"
 echo ""
 
-# Counters
-UPDATE_SUCCESS_COUNT=0
-SORT_SUCCESS_COUNT=0
-TOTAL_SORT_FILES=0
+SUCCESS_COUNT=0
+TOTAL_COUNT=0
+SKIPPED_COUNT=0
 
-# ------------------------------------------------------------------------------
-# Phase 1: Update Translations
-# ------------------------------------------------------------------------------
-echo ">>> Phase 1: Updating Translations..."
+# Function to update property file
+update_properties_file() {
+    local file_path="$1"
+    local key="$2"
+    local value="$3"
+    local file_name=$(basename "$file_path")
 
+    # Create file if missing
+    if [ ! -f "$file_path" ]; then
+        echo "  Warning: Creating new file $file_name"
+        touch "$file_path"
+    fi
+
+    # 1. Check if Key exists (UPDATE Logic)
+    if grep -q "^${key}=" "$file_path"; then
+        # If Key exists, use sed for in-place replacement
+        # This preserves the original line number and position, keeping file order intact
+        if sed "s|^${key}=.*|${key}=${value}|" "$file_path" > "${file_path}.tmp" && mv "${file_path}.tmp" "$file_path"; then
+            echo "  Updated (In-Place): $file_name"
+            ((SUCCESS_COUNT++))
+        fi
+    else
+        # 2. If Key does not exist (ADD Logic)
+        # Append to the end of the file first
+        if echo "${key}=${value}" >> "$file_path"; then
+            # [Critical Change] After appending, sort the file content
+            # This ensures the new Key is placed in alphabetical order
+            sort "$file_path" -o "$file_path"
+            echo "  Added & Sorted: $file_name"
+            ((SUCCESS_COUNT++))
+        fi
+    fi
+}
+
+normalize_lang_code() {
+    echo "$1" | sed 's/-/_/g'
+}
+
+# Process input file
 while IFS='=' read -r lang value; do
-    # Skip empty lines, comments, and the 'key' definition line
     [ -z "$lang" ] && continue
     [[ "$lang" =~ ^[[:space:]]*# ]] && continue
-    [ "$lang" = "key" ] && continue
 
-    # Trim whitespace
     lang=$(echo "$lang" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-    # Skip if value is empty
+    [ "$lang" = "key" ] && continue
+
     if [ -z "$value" ]; then
+        ((SKIPPED_COUNT++))
         continue
     fi
 
-    # Normalize language code and build file path
     normalized_lang=$(normalize_lang_code "$lang")
     PROP_FILE="${I18N_DIR}/${normalized_lang}.properties"
 
-    # Perform update
-    if update_properties_file "$PROP_FILE" "$KEY_NAME" "$value"; then
-        ((UPDATE_SUCCESS_COUNT++))
-    fi
+    update_properties_file "$PROP_FILE" "$KEY_NAME" "$value"
+    ((TOTAL_COUNT++))
 
 done < "$INPUT_FILE"
 
 echo ""
-
-# ------------------------------------------------------------------------------
-# Phase 2: Sort All Property Files
-# ------------------------------------------------------------------------------
-echo ">>> Phase 2: Sorting All Property Files..."
-
-# Loop through all .properties files in the directory
-for prop_file in "$I18N_DIR"/*.properties; do
-    if [ -f "$prop_file" ]; then
-        ((TOTAL_SORT_FILES++))
-        if sort_properties_file "$prop_file"; then
-             ((SORT_SUCCESS_COUNT++))
-        fi
-    fi
-done
-
-echo ""
-echo "========================================="
-echo "Summary:"
-echo "  Key Updated:       $KEY_NAME"
-echo "  Languages Updated: $UPDATE_SUCCESS_COUNT"
-echo "  Files Sorted:      $SORT_SUCCESS_COUNT / $TOTAL_SORT_FILES"
-echo "========================================="
+echo "Summary: Processed $TOTAL_COUNT, Updated $SUCCESS_COUNT."
