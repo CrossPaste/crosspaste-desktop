@@ -9,5 +9,5 @@ interface ActiveGraphicsDevice {
 
     fun getMainWindowState(): WindowState
 
-    fun getSearchWindowState(): WindowState
+    fun getSearchWindowState(init: Boolean): WindowState
 }
