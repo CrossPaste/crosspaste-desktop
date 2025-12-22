@@ -20,7 +20,7 @@ class AppWindowManagerTest {
 
         val mockDesktopAppSize =
             spyk(DesktopAppSize(platform)) {
-                every { getSearchWindowState(false) } returns WindowState()
+                every { getSearchWindowState(any()) } returns WindowState()
             }
 
         val testAppWindowManager =
