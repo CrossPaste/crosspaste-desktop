@@ -115,6 +115,30 @@ object LinuxKeyboardKeys : KeyboardKeys {
     override val F12: KeyboardKeyDefine =
         KeyboardKeyDefine("F12", NativeKeyEvent.VC_F12, 96) { it.keyCode == NativeKeyEvent.VC_F12 }
 
+    override val F13: KeyboardKeyDefine =
+        KeyboardKeyDefine("F13", NativeKeyEvent.VC_F13, 191) { it.keyCode == NativeKeyEvent.VC_F13 }
+
+    override val F14: KeyboardKeyDefine =
+        KeyboardKeyDefine("F14", NativeKeyEvent.VC_F14, 192) { it.keyCode == NativeKeyEvent.VC_F14 }
+
+    override val F15: KeyboardKeyDefine =
+        KeyboardKeyDefine("F15", NativeKeyEvent.VC_F15, 193) { it.keyCode == NativeKeyEvent.VC_F15 }
+
+    override val F16: KeyboardKeyDefine =
+        KeyboardKeyDefine("F16", NativeKeyEvent.VC_F16, 194) { it.keyCode == NativeKeyEvent.VC_F16 }
+
+    override val F17: KeyboardKeyDefine =
+        KeyboardKeyDefine("F17", NativeKeyEvent.VC_F17, 195) { it.keyCode == NativeKeyEvent.VC_F17 }
+
+    override val F18: KeyboardKeyDefine =
+        KeyboardKeyDefine("F18", NativeKeyEvent.VC_F18, 196) { it.keyCode == NativeKeyEvent.VC_F18 }
+
+    override val F19: KeyboardKeyDefine =
+        KeyboardKeyDefine("F19", NativeKeyEvent.VC_F19, 197) { it.keyCode == NativeKeyEvent.VC_F19 }
+
+    override val F20: KeyboardKeyDefine =
+        KeyboardKeyDefine("F20", NativeKeyEvent.VC_F20, 198) { it.keyCode == NativeKeyEvent.VC_F20 }
+
     override val _1: KeyboardKeyDefine =
         KeyboardKeyDefine("1", NativeKeyEvent.VC_1, 10) { it.keyCode == NativeKeyEvent.VC_1 }
 

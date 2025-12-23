@@ -78,6 +78,22 @@ interface KeyboardKeys {
 
     val F12: KeyboardKeyDefine
 
+    val F13: KeyboardKeyDefine
+
+    val F14: KeyboardKeyDefine
+
+    val F15: KeyboardKeyDefine
+
+    val F16: KeyboardKeyDefine
+
+    val F17: KeyboardKeyDefine
+
+    val F18: KeyboardKeyDefine
+
+    val F19: KeyboardKeyDefine
+
+    val F20: KeyboardKeyDefine
+
     val _1: KeyboardKeyDefine
 
     val _2: KeyboardKeyDefine

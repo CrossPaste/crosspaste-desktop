@@ -116,6 +116,30 @@ object MacKeyboardKeys : KeyboardKeys {
     override val F12: KeyboardKeyDefine =
         KeyboardKeyDefine("F12", NativeKeyEvent.VC_F12, 0x6F) { it.keyCode == NativeKeyEvent.VC_F12 }
 
+    override val F13: KeyboardKeyDefine =
+        KeyboardKeyDefine("F13", NativeKeyEvent.VC_F13, 0x69) { it.keyCode == NativeKeyEvent.VC_F13 }
+
+    override val F14: KeyboardKeyDefine =
+        KeyboardKeyDefine("F14", NativeKeyEvent.VC_F14, 0x6B) { it.keyCode == NativeKeyEvent.VC_F14 }
+
+    override val F15: KeyboardKeyDefine =
+        KeyboardKeyDefine("F15", NativeKeyEvent.VC_F15, 0x71) { it.keyCode == NativeKeyEvent.VC_F15 }
+
+    override val F16: KeyboardKeyDefine =
+        KeyboardKeyDefine("F16", NativeKeyEvent.VC_F16, 0x6A) { it.keyCode == NativeKeyEvent.VC_F16 }
+
+    override val F17: KeyboardKeyDefine =
+        KeyboardKeyDefine("F17", NativeKeyEvent.VC_F17, 0x40) { it.keyCode == NativeKeyEvent.VC_F17 }
+
+    override val F18: KeyboardKeyDefine =
+        KeyboardKeyDefine("F18", NativeKeyEvent.VC_F18, 0x4F) { it.keyCode == NativeKeyEvent.VC_F18 }
+
+    override val F19: KeyboardKeyDefine =
+        KeyboardKeyDefine("F19", NativeKeyEvent.VC_F19, 0x50) { it.keyCode == NativeKeyEvent.VC_F19 }
+
+    override val F20: KeyboardKeyDefine =
+        KeyboardKeyDefine("F20", NativeKeyEvent.VC_F20, 0x5A) { it.keyCode == NativeKeyEvent.VC_F20 }
+
     override val _1: KeyboardKeyDefine =
         KeyboardKeyDefine("1", NativeKeyEvent.VC_1, 0x12) { it.keyCode == NativeKeyEvent.VC_1 }
 
