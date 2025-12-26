@@ -14,6 +14,7 @@ open class AppSizeValue(
     open val mainPasteSize: DpSize,
     open val qrCodeSize: DpSize,
     open val deviceHeight: Dp,
+    open val dialogWidth: Dp,
     open val settingsItemHeight: Dp,
     open val toastViewWidth: Dp,
     open val tokenViewWidth: Dp,

@@ -1,90 +1,147 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.base.ExpandViewProvider
-import com.crosspaste.ui.base.rememberExpandableState
-import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.base.SectionHeader
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.zero
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import org.koin.compose.koinInject
 
 @Composable
 fun DevicesContentView() {
-    val expandViewProvider = koinInject<ExpandViewProvider>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val syncManager = koinInject<SyncManager>()
+    val syncScopeFactory = koinInject<SyncScopeFactory>()
+
+    val nearbyDevicesList by nearbyDeviceManager.nearbySyncInfos.collectAsState()
+
+    val searching by nearbyDeviceManager.searching.collectAsState()
+
+    val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
+
+    var showAddDeviceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         syncManager.refresh { }
     }
 
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(AppUIColors.appBackground)
-                .padding(horizontal = medium)
-                .padding(bottom = medium)
-                .clip(tinyRoundedCornerShape),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
+    Scaffold(
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = {
+                    showAddDeviceDialog = true
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(copywriter.getText("add_device_manually")) },
+            )
+        },
+    ) { innerPadding ->
 
+        if (showAddDeviceDialog) {
+            AddDeviceDialog {
+                showAddDeviceDialog = false
+            }
+        }
+
+        LazyColumn(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = medium),
+            verticalArrangement = Arrangement.spacedBy(small2X),
+        ) {
             if (syncRuntimeInfos.isNotEmpty()) {
-                expandViewProvider.ExpandView(
-                    state = rememberExpandableState(true),
-                    horizontalPadding = zero,
-                    barContent = {
-                        expandViewProvider.ExpandBarView(
-                            state = this.state,
-                            title = "my_devices",
-                        )
-                    },
-                ) {
-                    MyDevicesView(syncRuntimeInfos)
+                stickyHeader {
+                    SectionHeader(copywriter.getText("my_devices"))
                 }
-                Spacer(modifier = Modifier.height(small3X))
             }
 
-            expandViewProvider.ExpandView(
-                horizontalPadding = zero,
-                barContent = {
-                    expandViewProvider.ExpandBarView(
-                        state = this.state,
-                        title = "add_device_manually",
-                    )
-                },
-            ) {
-                AddDeviceManuallyView()
+            items(syncRuntimeInfos) { syncRuntimeInfo ->
+                val deviceScopeFactory = koinInject<DeviceScopeFactory>()
+                val scope =
+                    remember(syncRuntimeInfo) {
+                        deviceScopeFactory.createDeviceScope(syncRuntimeInfo)
+                    }
+
+                scope.DeviceConnectView()
             }
-            Spacer(modifier = Modifier.height(small3X))
-            expandViewProvider.ExpandView(
-                state = rememberExpandableState(true),
-                horizontalPadding = zero,
-                barContent = {
-                    expandViewProvider.ExpandBarView(
-                        state = this.state,
-                        title = "nearby_devices",
-                    )
-                },
-            ) {
-                NearbyDevicesView()
+
+            stickyHeader {
+                if (syncRuntimeInfos.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(tiny))
+                }
+                SectionHeader(
+                    text = copywriter.getText("nearby_devices"),
+                    backgroundColor = MaterialTheme.colorScheme.surface,
+                    trailingContent = {
+                        IconButton(
+                            onClick = {
+                                nearbyDeviceManager.searching
+                            },
+                            modifier = Modifier.size(xxLarge),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "refresh",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(large2X),
+                            )
+                        }
+                    },
+                )
+            }
+
+            if (searching) {
+                item {
+                    SearchingNearbyDevices()
+                }
+            } else if (nearbyDevicesList.isNotEmpty()) {
+                items(nearbyDevicesList, key = { item -> item.appInfo.appInstanceId }) { syncInfo ->
+                    val currentSyncInfo by rememberUpdatedState(syncInfo)
+                    val scope =
+                        remember(currentSyncInfo) {
+                            syncScopeFactory.createSyncScope(currentSyncInfo)
+                        }
+                    scope.NearbyDeviceView()
+                }
+            } else {
+                item(key = "empty_nearby_devices") {
+                    NotFoundNearByDevices()
+                }
             }
         }
     }

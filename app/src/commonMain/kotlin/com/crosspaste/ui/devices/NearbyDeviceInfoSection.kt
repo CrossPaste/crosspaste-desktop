@@ -1,38 +1,30 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.HighlightedCard
+import com.crosspaste.ui.base.InfoItem
+import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.base.TableData
 import com.crosspaste.ui.base.TableRow
 import com.crosspaste.ui.base.TableRowImpl
-import com.crosspaste.ui.settings.SettingItemsTitleView
-import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUIFont.SettingsTextStyle
-import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
 
 @Composable
-fun SyncScope.NearbyDeviceDetailCoreView() {
+fun SyncScope.NearbyDeviceInfoSection() {
     val copywriter = koinInject<GlobalCopywriter>()
 
     val tableData =
@@ -40,55 +32,26 @@ fun SyncScope.NearbyDeviceDetailCoreView() {
             syncInfo.toTableData(copywriter)
         }
 
-    val settingsTextStyle = SettingsTextStyle()
+    Column(verticalArrangement = Arrangement.spacedBy(small2X)) {
+        SectionHeader(text = copywriter.getText("base_info"))
 
-    HighlightedCard(
-        modifier =
-            Modifier.wrapContentSize(),
-        shape = tinyRoundedCornerShape,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = AppUIColors.generalBackground,
-            ),
-    ) {
-        SettingItemsTitleView("base_info")
-
-        val width = tableData.measureColumnWidth(0, settingsTextStyle)
-
-        Column(
-            modifier = Modifier.wrapContentSize(),
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            colors =
+                CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
         ) {
             val data = tableData.getData()
-            data.forEachIndexed { index, row ->
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(small2X),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+
+            Column(modifier = Modifier.padding(horizontal = large2X, vertical = tiny)) {
+                data.forEachIndexed { index, row ->
                     val columns = row.getColumns()
-                    Text(
-                        modifier = Modifier.width(width),
-                        text = columns[0],
-                        style = settingsTextStyle,
-                        color =
-                            MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.generalBackground,
-                            ),
-                    )
-                    Spacer(modifier = Modifier.width(medium))
-                    Text(
-                        text = columns[1],
-                        style = MaterialTheme.typography.bodyMedium,
-                        color =
-                            MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.generalBackground,
-                            ),
-                    )
-                }
-                if (index < data.size - 1) {
-                    HorizontalDivider(modifier = Modifier.padding(start = small))
+                    InfoItem(columns[0], columns[1])
+                    if (index < data.size - 1) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    }
                 }
             }
         }

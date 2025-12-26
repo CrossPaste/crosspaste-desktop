@@ -23,13 +23,14 @@ object AppUISize {
     val large = 18.dp
     val large2X = 20.dp
     val xLarge = 24.dp
-    val xxLarge = 30.dp
+    val xxLarge = 32.dp
     val xxxLarge = 36.dp
     val xxxxLarge = 48.dp
     val huge = 60.dp
+    val enormous = 64.dp
     val giant = 72.dp
+    val titanic = 80.dp
     val massive = 96.dp
-    val colossal = 120.dp
     val gigantic = 144.dp
 
     val zeroRoundedCornerShape = RoundedCornerShape(zero)
@@ -41,6 +42,7 @@ object AppUISize {
     val small2XRoundedCornerShape = RoundedCornerShape(small2X)
     val smallRoundedCornerShape = RoundedCornerShape(small)
     val mediumRoundedCornerShape = RoundedCornerShape(medium)
+    val xLargeRoundedCornerShape = RoundedCornerShape(xLarge)
 
     val highlightedCardElevation: CardElevation
         @Composable
