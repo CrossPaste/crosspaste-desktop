@@ -31,6 +31,7 @@ object AppUISize {
     val giant = 72.dp
     val titanic = 80.dp
     val massive = 96.dp
+    val colossal = 120.dp
     val gigantic = 144.dp
 
     val zeroRoundedCornerShape = RoundedCornerShape(zero)
