@@ -45,6 +45,8 @@ class DesktopAppSize(
                     height = 700.dp,
                 )
 
+            val dialogWidth = 360.dp
+
             val windowDecorationHeight: Dp = 48.dp
 
             // --- Paste & QRCode ---
@@ -77,6 +79,7 @@ class DesktopAppSize(
                 mainPasteSize = mainPasteSize,
                 qrCodeSize = qrCodeSize,
                 deviceHeight = deviceHeight,
+                dialogWidth = dialogWidth,
                 settingsItemHeight = settingsItemHeight,
                 toastViewWidth = toastViewWidth,
                 tokenViewWidth = tokenViewWidth,
@@ -158,6 +161,7 @@ class DesktopAppSizeValue(
     override val mainPasteSize: DpSize,
     override val qrCodeSize: DpSize,
     override val deviceHeight: Dp,
+    override val dialogWidth: Dp,
     override val settingsItemHeight: Dp,
     override val toastViewWidth: Dp,
     override val tokenViewWidth: Dp,
@@ -175,6 +179,7 @@ class DesktopAppSizeValue(
         mainPasteSize,
         qrCodeSize,
         deviceHeight,
+        dialogWidth,
         settingsItemHeight,
         toastViewWidth,
         tokenViewWidth,

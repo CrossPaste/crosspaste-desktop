@@ -1,56 +1,44 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import com.crosspaste.db.sync.SyncRuntimeInfo
-import com.crosspaste.db.sync.SyncState
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.DeviceDetail
 import com.crosspaste.ui.NavigationManager
+import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
 
 class DesktopDeviceScope(
     override var syncRuntimeInfo: SyncRuntimeInfo,
 ) : DeviceScope {
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    @Composable
-    override fun hoverModifier(
-        modifier: Modifier,
-        onHover: () -> Unit,
-        onExitHover: () -> Unit,
-    ): Modifier {
-        val syncManager = koinInject<SyncManager>()
-        val navigationManager = koinInject<NavigationManager>()
-        return modifier
-            .onPointerEvent(
-                eventType = PointerEventType.Enter,
-                onEvent = {
-                    onHover()
-                },
-            ).onPointerEvent(
-                eventType = PointerEventType.Exit,
-                onEvent = {
-                    onExitHover()
-                },
-            ).clickable {
-                if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
-                    syncManager.toVerify(syncRuntimeInfo.appInstanceId)
-                } else {
-                    navigationManager.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
-                }
-            }
-    }
+    override var refreshing: Boolean by mutableStateOf(false)
 
     @Composable
     override fun DeviceConnectView() {
-        HoverableDeviceBarView { background ->
-            DeviceConnectStateView(background)
-            DeviceMenuButton(background)
-        }
+        val navigationManager = koinInject<NavigationManager>()
+        DeviceRowContent(
+            onClick = {
+                navigationManager.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
+            },
+            style = myDeviceStyle,
+            tagContent = {
+                SyncStateTag()
+            },
+            trailingContent = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(tiny),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DeviceActionButton()
+                    MyDeviceMenuButton()
+                }
+            },
+        )
     }
 }

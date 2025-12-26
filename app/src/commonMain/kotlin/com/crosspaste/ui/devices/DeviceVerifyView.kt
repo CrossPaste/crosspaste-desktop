@@ -19,7 +19,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -131,16 +130,18 @@ fun DeviceScope.VerificationContent(
 
 @Composable
 fun DeviceScope.DeviceTokenHeader() {
-    StaticDeviceBarView { background ->
-        Row(horizontalArrangement = Arrangement.End) {
-            Text(
-                text = syncRuntimeInfo.connectHostAddress ?: "unknown",
-                style = generalBodyTextStyle,
-                color = MaterialTheme.colorScheme.contentColorFor(background),
-            )
-            Spacer(modifier = Modifier.width(small2X))
-        }
-    }
+    DeviceRowContent(
+        style = tokenDeviceStyle,
+        trailingContent = {
+            Row(horizontalArrangement = Arrangement.End) {
+                Text(
+                    text = syncRuntimeInfo.connectHostAddress ?: "unknown",
+                    style = generalBodyTextStyle,
+                )
+                Spacer(modifier = Modifier.width(small2X))
+            }
+        },
+    )
 }
 
 @Composable

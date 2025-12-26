@@ -1,16 +1,7 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.foundation.clickable
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.NavigationManager
-import com.crosspaste.ui.NearbyDeviceDetail
-import org.koin.compose.koinInject
 
 class DesktopSyncScope(
     override val syncInfo: SyncInfo,
@@ -20,28 +11,4 @@ class DesktopSyncScope(
         get() = syncInfo.endpointInfo.platform
 
     override fun getDeviceDisplayName(): String = syncInfo.endpointInfo.deviceName
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    @Composable
-    override fun hoverModifier(
-        modifier: Modifier,
-        onHover: () -> Unit,
-        onExitHover: () -> Unit,
-    ): Modifier {
-        val navigationManager = koinInject<NavigationManager>()
-        return modifier
-            .onPointerEvent(
-                eventType = PointerEventType.Enter,
-                onEvent = {
-                    onHover()
-                },
-            ).onPointerEvent(
-                eventType = PointerEventType.Exit,
-                onEvent = {
-                    onExitHover()
-                },
-            ).clickable {
-                navigationManager.navigate(NearbyDeviceDetail(syncInfo))
-            }
-    }
 }

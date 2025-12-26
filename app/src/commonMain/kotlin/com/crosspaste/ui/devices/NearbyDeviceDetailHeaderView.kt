@@ -4,5 +4,7 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun SyncScope.NearbyDeviceDetailHeaderView() {
-    StaticDeviceBarView { }
+    DeviceRowContent(
+        style = nearbyDeviceStyle,
+    )
 }
