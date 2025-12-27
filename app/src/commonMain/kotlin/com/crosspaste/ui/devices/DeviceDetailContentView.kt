@@ -34,6 +34,7 @@ fun DeviceScope.DeviceDetailContentView() {
             verticalArrangement = Arrangement.spacedBy(xLarge),
         ) {
             DeviceDetailHeaderView()
+            IncompatibleSection()
             SyncControlSection()
             DeviceInfoSection()
         }
