@@ -107,4 +107,12 @@ class GeneralNearbyDeviceManager(
             ratingPromptManager.trackSignificantAction()
         }
     }
+
+    override fun startSearching() {
+        _searching.value = true
+    }
+
+    override fun stopSearching() {
+        _searching.value = false
+    }
 }

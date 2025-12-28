@@ -87,9 +87,10 @@ class MacosPasteboardService(
                                     logger.debug { "Ignoring crosspaste change" }
                                 } else {
                                     var source: String? =
-                                        controlUtils.ensureMinExecutionTime(delayTime = 20) {
-                                            appWindowManager.getCurrentActiveAppName()
-                                        }
+                                        controlUtils
+                                            .ensureMinExecutionTime(delayTime = 20) {
+                                                appWindowManager.getCurrentActiveAppName()
+                                            }.getOrNull()
 
                                     // https://github.com/CrossPaste/crosspaste-desktop/issues/1874
                                     // If it is the first time to read the pasteboard content and the source is CrossPaste

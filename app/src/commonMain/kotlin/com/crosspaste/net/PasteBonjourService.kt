@@ -4,7 +4,9 @@ import com.crosspaste.db.sync.HostInfo
 
 interface PasteBonjourService {
 
-    fun request(
+    fun refreshAll()
+
+    fun refreshTarget(
         appInstanceId: String,
         hostInfoList: List<HostInfo>,
     )
