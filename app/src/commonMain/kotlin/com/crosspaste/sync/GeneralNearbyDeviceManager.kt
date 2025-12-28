@@ -12,7 +12,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -31,7 +30,7 @@ class GeneralNearbyDeviceManager(
 
     private val _searching = MutableStateFlow(false)
 
-    override val searching: StateFlow<Boolean> = _searching.asStateFlow()
+    override val searching: StateFlow<Boolean> = _searching
 
     private val syncInfos = MutableStateFlow<Map<String, SyncInfo>>(mapOf())
 

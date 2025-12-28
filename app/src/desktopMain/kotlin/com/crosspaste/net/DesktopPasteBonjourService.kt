@@ -2,9 +2,11 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.utils.TxtRecordUtils
+import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
@@ -31,6 +33,12 @@ class DesktopPasteBonjourService(
 
     companion object {
         private const val SERVICE_TYPE = "_crosspasteService._tcp.local."
+
+        private const val ACTIVE_SCAN_TIMEOUT = 3000L // jmdns.list blocking time
+        private const val INTERFACE_SCAN_INTERVAL = 5000L // Throttle for heavy scan per interface
+        private const val DEVICE_RESOLVE_INTERVAL = 2000L // Throttle for specific device resolution
+
+        private val dateUtils = getDateUtils()
     }
 
     private val logger = KotlinLogging.logger {}
@@ -44,6 +52,10 @@ class DesktopPasteBonjourService(
     private val serviceListener = DesktopServiceListener(nearbyDeviceManager)
 
     private val jmdnsMap: MutableMap<String, JmDNS> = ConcurrentMap()
+
+    private val interfaceScanThrottle: MutableMap<String, Long> = ConcurrentMap()
+
+    private val deviceResolveThrottle: MutableMap<String, Long> = ConcurrentMap()
 
     init {
         scope.launch {
@@ -102,12 +114,71 @@ class DesktopPasteBonjourService(
         runBlocking { deferred.await() }
     }
 
-    override fun request(appInstanceId: String) {
-        jmdnsMap[appInstanceId]?.let { jmdns ->
-            for (serviceInfo in jmdns.list(SERVICE_TYPE)) {
-                if (serviceInfo.name.contains(appInstanceId)) {
-                    jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+    override fun request(
+        appInstanceId: String,
+        hostInfoList: List<HostInfo>,
+    ) {
+        // Use the existing scope to avoid blocking the caller
+        scope.launch {
+            val currentTime = dateUtils.nowEpochMilliseconds()
+
+            // Run scans in parallel across all interfaces
+            jmdnsMap
+                .map { (hostAddress, jmdns) ->
+                    async {
+                        processRequestOnInterface(hostAddress, jmdns, appInstanceId, currentTime)
+                    }
+                }.awaitAll()
+        }
+    }
+
+    private fun processRequestOnInterface(
+        hostAddress: String,
+        jmdns: JmDNS,
+        appInstanceId: String,
+        currentTime: Long,
+    ) {
+        val servicePrefix = "crosspaste@$appInstanceId@"
+
+        // 1. Try to find from local cache first
+        var targetService = jmdns.list(SERVICE_TYPE).find { it.name.startsWith(servicePrefix) }
+
+        // 2. Atomic check for heavy scan (Interface-level)
+        if (targetService == null) {
+            var performedScan = false
+            interfaceScanThrottle.compute(hostAddress) { _, lastTime ->
+                if (lastTime == null || currentTime - lastTime > INTERFACE_SCAN_INTERVAL) {
+                    performedScan = true
+                    currentTime // Update with current time
+                } else {
+                    lastTime // Keep the old timestamp
                 }
+            }
+
+            if (performedScan) {
+                logger.info { "Performing active scan for $appInstanceId on $hostAddress" }
+                // list(type, timeout) is blocking
+                val freshServices = jmdns.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
+                targetService = freshServices.find { it.name.startsWith(servicePrefix) }
+            }
+        }
+
+        // 3. Atomic check for device resolution (Device-level)
+        if (targetService != null) {
+            val deviceKey = "${hostAddress}_$appInstanceId"
+            var shouldResolve = false
+            deviceResolveThrottle.compute(deviceKey) { _, lastTime ->
+                if (lastTime == null || currentTime - lastTime > DEVICE_RESOLVE_INTERVAL) {
+                    shouldResolve = true
+                    currentTime
+                } else {
+                    lastTime
+                }
+            }
+
+            if (shouldResolve) {
+                logger.info { "Requesting service info for $appInstanceId via $hostAddress" }
+                jmdns.requestServiceInfo(SERVICE_TYPE, targetService.name)
             }
         }
     }
@@ -126,6 +197,8 @@ class DesktopPasteBonjourService(
                 }
             runBlocking { deferred.await() }
             jmdnsMap.clear()
+            interfaceScanThrottle.clear()
+            deviceResolveThrottle.clear()
         }
     }
 }
