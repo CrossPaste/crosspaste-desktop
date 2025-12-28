@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.VersionRelation
@@ -92,8 +93,9 @@ sealed interface SyncEvent {
 
     data class RefreshSyncInfo(
         val appInstanceId: String,
+        val hostInfoList: List<HostInfo>,
     ) : SyncEvent {
-        override fun toString(): String = "RefreshSyncInfo $appInstanceId"
+        override fun toString(): String = "RefreshSyncInfo $appInstanceId $hostInfoList"
     }
 
     data class UpdateSyncInfo(

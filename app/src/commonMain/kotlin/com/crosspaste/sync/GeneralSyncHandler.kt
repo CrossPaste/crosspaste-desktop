@@ -108,7 +108,7 @@ class GeneralSyncHandler(
                 SyncState.UNVERIFIED,
                 -> {
                     syncPollingManager.fail()
-                    emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId))
+                    emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId, current.hostInfoList))
                 }
                 SyncState.CONNECTING -> {
                     emitEvent(SyncEvent.ResolveConnecting(current, ::updateVersionRelation))

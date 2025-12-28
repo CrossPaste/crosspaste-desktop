@@ -1,6 +1,7 @@
 package com.crosspaste.sync
 
 import com.crosspaste.app.RatingPromptManager
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
@@ -61,7 +62,7 @@ class SyncResolver(
                 }
 
                 is SyncEvent.RefreshSyncInfo -> {
-                    refreshSyncInfo(event.appInstanceId)
+                    refreshSyncInfo(event.appInstanceId, event.hostInfoList)
                 }
 
                 is SyncEvent.UpdateSyncInfo -> {
@@ -217,7 +218,7 @@ class SyncResolver(
 
     private suspend fun SyncRuntimeInfo.forceResolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
         logger.info { "Force resolve connection $appInstanceId" }
-        refreshSyncInfo(appInstanceId)
+        refreshSyncInfo(appInstanceId, hostInfoList)
         resolveConnection(updateVersionRelation)
     }
 
@@ -394,8 +395,11 @@ class SyncResolver(
         }
     }
 
-    private fun refreshSyncInfo(appInstanceId: String) {
-        lazyPasteBonjourService.value.request(appInstanceId)
+    private fun refreshSyncInfo(
+        appInstanceId: String,
+        hostInfoList: List<HostInfo>,
+    ) {
+        lazyPasteBonjourService.value.request(appInstanceId, hostInfoList)
     }
 
     private suspend fun updateSyncInfo(syncInfo: SyncInfo) {
