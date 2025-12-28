@@ -15,7 +15,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +29,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -58,7 +58,7 @@ fun DevicesContentView() {
         syncManager.refresh { }
     }
 
-    Scaffold(
+    InnerScaffold(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
