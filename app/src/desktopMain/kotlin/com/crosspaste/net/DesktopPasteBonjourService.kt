@@ -5,6 +5,7 @@ import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
 import com.crosspaste.utils.TxtRecordUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.ioDispatcher
@@ -27,8 +28,9 @@ import javax.jmdns.impl.util.ByteWrangler
 class DesktopPasteBonjourService(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
-    nearbyDeviceManager: NearbyDeviceManager,
+    private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
+    private val scope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : PasteBonjourService {
 
     companion object {
@@ -37,6 +39,7 @@ class DesktopPasteBonjourService(
         private const val ACTIVE_SCAN_TIMEOUT = 3000L // jmdns.list blocking time
         private const val INTERFACE_SCAN_INTERVAL = 5000L // Throttle for heavy scan per interface
         private const val DEVICE_RESOLVE_INTERVAL = 2000L // Throttle for specific device resolution
+        private const val MIN_SEARCH_DURATION = 2000L // Minimum duration for searching
 
         private val dateUtils = getDateUtils()
     }
@@ -44,10 +47,6 @@ class DesktopPasteBonjourService(
     private val logger = KotlinLogging.logger {}
 
     private val actionChannel = Channel<List<NetworkInterfaceInfo>>(Channel.UNLIMITED)
-
-    private val supervisorJob = SupervisorJob()
-
-    private val scope = CoroutineScope(ioDispatcher + supervisorJob)
 
     private val serviceListener = DesktopServiceListener(nearbyDeviceManager)
 
@@ -114,7 +113,32 @@ class DesktopPasteBonjourService(
         runBlocking { deferred.await() }
     }
 
-    override fun request(
+    override fun refreshAll() {
+        scope.launch {
+            nearbyDeviceManager.startSearching()
+            ensureMinExecutionTime(MIN_SEARCH_DURATION) {
+                logger.info { "Manual refresh started..." }
+
+                jmdnsMap
+                    .map { (hostAddress, jmdns) ->
+                        async {
+                            val services = jmdns.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
+                            logger.debug { "Interface $hostAddress found ${services.size} services" }
+
+                            services.forEach { serviceInfo ->
+                                jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+                            }
+                        }
+                    }.awaitAll()
+            }.onFailure { e ->
+                logger.error(e) { "Error during manual refreshAll" }
+            }
+            nearbyDeviceManager.stopSearching()
+            logger.info { "Manual refresh completed." }
+        }
+    }
+
+    override fun refreshTarget(
         appInstanceId: String,
         hostInfoList: List<HostInfo>,
     ) {
@@ -126,13 +150,13 @@ class DesktopPasteBonjourService(
             jmdnsMap
                 .map { (hostAddress, jmdns) ->
                     async {
-                        processRequestOnInterface(hostAddress, jmdns, appInstanceId, currentTime)
+                        refreshTargetOnInterface(hostAddress, jmdns, appInstanceId, currentTime)
                     }
                 }.awaitAll()
         }
     }
 
-    private fun processRequestOnInterface(
+    private fun refreshTargetOnInterface(
         hostAddress: String,
         jmdns: JmDNS,
         appInstanceId: String,

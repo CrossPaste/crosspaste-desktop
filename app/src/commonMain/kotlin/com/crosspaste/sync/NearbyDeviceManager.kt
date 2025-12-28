@@ -15,4 +15,8 @@ interface NearbyDeviceManager {
     fun addDevice(syncInfo: SyncInfo)
 
     fun removeDevice(syncInfo: SyncInfo)
+
+    fun startSearching()
+
+    fun stopSearching()
 }

@@ -129,9 +129,10 @@ class LinuxPasteboardService(
             if (firstChange) {
                 null
             } else {
-                controlUtils.ensureMinExecutionTime(delayTime = 20) {
-                    appWindowManager.getCurrentActiveAppName()
-                }
+                controlUtils
+                    .ensureMinExecutionTime(delayTime = 20) {
+                        appWindowManager.getCurrentActiveAppName()
+                    }.getOrNull()
             }
 
         val contents =

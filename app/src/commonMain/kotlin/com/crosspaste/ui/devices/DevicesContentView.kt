@@ -27,6 +27,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.SectionHeader
@@ -41,6 +42,7 @@ import org.koin.compose.koinInject
 fun DevicesContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
+    val pasteBonjourService = koinInject<PasteBonjourService>()
     val syncManager = koinInject<SyncManager>()
     val syncScopeFactory = koinInject<SyncScopeFactory>()
 
@@ -110,7 +112,7 @@ fun DevicesContentView() {
                     trailingContent = {
                         IconButton(
                             onClick = {
-                                nearbyDeviceManager.searching
+                                pasteBonjourService.refreshAll()
                             },
                             modifier = Modifier.size(xxLarge),
                         ) {

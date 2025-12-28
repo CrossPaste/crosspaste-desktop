@@ -12,12 +12,12 @@ interface ControlUtils {
     suspend fun <T> ensureMinExecutionTime(
         delayTime: Long = 20L,
         action: suspend () -> T,
-    ): T? {
+    ): Result<T> {
         val start = nowEpochMilliseconds()
         val result =
             runCatching {
                 action()
-            }.getOrNull()
+            }
         val end = nowEpochMilliseconds()
 
         val remainingDelay = delayTime + start - end

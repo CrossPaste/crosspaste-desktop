@@ -15,7 +15,7 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
 
     override val nearbyDeviceScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    override val searching: StateFlow<Boolean> = MutableStateFlow(false)
+    override val searching: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     override val nearbySyncInfos: StateFlow<List<SyncInfo>> =
         MutableStateFlow(
@@ -50,5 +50,13 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
     }
 
     override fun removeDevice(syncInfo: SyncInfo) {
+    }
+
+    override fun startSearching() {
+        searching.value = true
+    }
+
+    override fun stopSearching() {
+        searching.value = false
     }
 }

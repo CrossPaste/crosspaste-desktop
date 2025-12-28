@@ -399,7 +399,7 @@ class SyncResolver(
         appInstanceId: String,
         hostInfoList: List<HostInfo>,
     ) {
-        lazyPasteBonjourService.value.request(appInstanceId, hostInfoList)
+        lazyPasteBonjourService.value.refreshTarget(appInstanceId, hostInfoList)
     }
 
     private suspend fun updateSyncInfo(syncInfo: SyncInfo) {
