@@ -35,6 +35,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.path.DesktopMigration
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.LocalExitApplication
+import com.crosspaste.ui.base.DialogActionButton
+import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -128,41 +130,40 @@ fun MigrationStorageDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    appExitService.beforeExitList.clear()
-                    appExitService.beforeReleaseLockList.clear()
-
-                    appExitService.beforeExitList.add {
-                        isMigration = true
-                        coroutineScope.launch {
-                            while (progress < 0.99f && isMigration) {
-                                progress += 0.01f
-                                delay(100)
-                            }
-                        }
-                    }
-
-                    appExitService.beforeReleaseLockList.add {
-                        runCatching {
-                            desktopMigration.migration(path)
-                            coroutineScope.launch {
-                                progress = 1f
-                                delay(500)
-                                isMigration = false
-                            }
-                            isMigration = false
-                        }.onFailure {
-                            coroutineScope.launch {
-                                isMigration = false
-                            }
-                        }
-                    }
-                    appRestartService.restart { exitApplication(ExitMode.MIGRATION) }
-                },
+            DialogActionButton(
+                text = copywriter.getText("confirm"),
+                type = DialogButtonType.TONAL,
                 enabled = !isMigration,
             ) {
-                Text(copywriter.getText("confirm"))
+                appExitService.beforeExitList.clear()
+                appExitService.beforeReleaseLockList.clear()
+
+                appExitService.beforeExitList.add {
+                    isMigration = true
+                    coroutineScope.launch {
+                        while (progress < 0.99f && isMigration) {
+                            progress += 0.01f
+                            delay(100)
+                        }
+                    }
+                }
+
+                appExitService.beforeReleaseLockList.add {
+                    runCatching {
+                        desktopMigration.migration(path)
+                        coroutineScope.launch {
+                            progress = 1f
+                            delay(500)
+                            isMigration = false
+                        }
+                        isMigration = false
+                    }.onFailure {
+                        coroutineScope.launch {
+                            isMigration = false
+                        }
+                    }
+                }
+                appRestartService.restart { exitApplication(ExitMode.MIGRATION) }
             }
         },
         dismissButton = {
