@@ -70,7 +70,6 @@ class GeneralSyncManager(
     private var started = false
 
     private var syncRuntimeInfosJob: Job? = null
-    private var pasteDialogJob: Job? = null
 
     override fun start() {
         if (started) return
@@ -93,9 +92,6 @@ class GeneralSyncManager(
 
         syncRuntimeInfosJob?.cancel()
         syncRuntimeInfosJob = null
-
-        pasteDialogJob?.cancel()
-        pasteDialogJob = null
 
         realTimeSyncScope.cancel()
     }

@@ -77,7 +77,8 @@ class GeneralSyncManagerTest {
     fun testInitialState() =
         runTest {
             val mocks = createMocks()
-            val syncManager = createSyncManager(mocks, this)
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
 
             assertTrue(syncManager.realTimeSyncRuntimeInfos.value.isEmpty())
             assertTrue(syncManager.getSyncHandlers().isEmpty())
@@ -147,7 +148,8 @@ class GeneralSyncManagerTest {
     fun testTrustByTokenWithNonExistentHandler() =
         runTest {
             val mocks = createMocks()
-            val syncManager = createSyncManager(mocks, this)
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
 
             // Should not throw exception when handler doesn't exist
             syncManager.trustByToken("non-existent", 123456)
