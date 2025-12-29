@@ -40,6 +40,8 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
+import com.crosspaste.ui.base.DialogActionButton
+import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
@@ -180,34 +182,33 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    // Logic inside click stays simple because button is only enabled when valid
-                    runBlocking {
-                        val hostAndPort = HostAndPort(ip, port.toInt())
-                        val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
-
-                        if (result is SuccessResult) {
-                            val syncInfo = result.getResult<SyncInfo>()
-                            syncManager.updateSyncInfo(syncInfo)
-                            onDismiss() // Close dialog after success
-                        } else {
-                            notificationManager.sendNotification(
-                                title = { it.getText("addition_failed") },
-                                message = {
-                                    "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
-                                        "2. ${it.getText(
-                                            "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
-                                        )}"
-                                },
-                                messageType = MessageType.Error,
-                            )
-                        }
-                    }
-                },
+            DialogActionButton(
+                text = copywriter.getText("confirm"),
+                type = DialogButtonType.FILLED,
                 enabled = isInputValid,
             ) {
-                Text(copywriter.getText("confirm"))
+                // Logic inside click stays simple because button is only enabled when valid
+                runBlocking {
+                    val hostAndPort = HostAndPort(ip, port.toInt())
+                    val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
+
+                    if (result is SuccessResult) {
+                        val syncInfo = result.getResult<SyncInfo>()
+                        syncManager.updateSyncInfo(syncInfo)
+                        onDismiss() // Close dialog after success
+                    } else {
+                        notificationManager.sendNotification(
+                            title = { it.getText("addition_failed") },
+                            message = {
+                                "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
+                                    "2. ${it.getText(
+                                        "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
+                                    )}"
+                            },
+                            messageType = MessageType.Error,
+                        )
+                    }
+                }
             }
         },
         dismissButton = {

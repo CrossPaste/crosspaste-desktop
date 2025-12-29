@@ -55,6 +55,8 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
+import com.crosspaste.ui.base.DialogActionButton
+import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.theme.AppUIFont.generalBodyTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -155,12 +157,11 @@ fun DeviceScope.TrustDeviceDialog() {
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    confirmAction()
-                },
+            DialogActionButton(
+                text = copywriter.getText("confirm"),
+                type = DialogButtonType.FILLED,
             ) {
-                Text(copywriter.getText("confirm"))
+                confirmAction()
             }
         },
         dismissButton = {

@@ -27,6 +27,8 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.ui.LocalAppSizeValueState
+import com.crosspaste.ui.base.DialogActionButton
+import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.base.edit
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -126,16 +128,15 @@ fun SetShortcutKeysDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    if (name != PASTE || shortcutKeysListener.currentKeys.isNotEmpty()) {
-                        shortcutKeys.update(name, shortcutKeysListener.currentKeys)
-                    }
-                    shortcutKeysListener.currentKeys.clear()
-                    onDismiss()
-                },
+            DialogActionButton(
+                text = copywriter.getText("confirm"),
+                type = DialogButtonType.TONAL,
             ) {
-                Text(copywriter.getText("confirm"))
+                if (name != PASTE || shortcutKeysListener.currentKeys.isNotEmpty()) {
+                    shortcutKeys.update(name, shortcutKeysListener.currentKeys)
+                }
+                shortcutKeysListener.currentKeys.clear()
+                onDismiss()
             }
         },
         dismissButton = {
