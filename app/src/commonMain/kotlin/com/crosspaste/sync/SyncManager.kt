@@ -8,6 +8,8 @@ interface SyncManager : SyncRoutingApi {
 
     val realTimeSyncRuntimeInfos: StateFlow<List<SyncRuntimeInfo>>
 
+    val unverifiedSyncRuntimeInfo: StateFlow<SyncRuntimeInfo?>
+
     fun start()
 
     fun stop()

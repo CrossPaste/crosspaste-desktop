@@ -54,6 +54,9 @@ class MarketingSyncManager : SyncManager {
     override val realTimeSyncRuntimeInfos: StateFlow<List<SyncRuntimeInfo>> =
         MutableStateFlow(syncRuntimeInfos)
 
+    override val unverifiedSyncRuntimeInfo: StateFlow<SyncRuntimeInfo?> =
+        MutableStateFlow(null)
+
     override fun start() {
         internalSyncHandlers.putAll(
             syncRuntimeInfos.map { syncRuntimeInfo ->

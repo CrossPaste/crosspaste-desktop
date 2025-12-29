@@ -1,7 +1,6 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,12 +43,8 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
-import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
-import com.crosspaste.ui.base.DialogButtonsView
-import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.KeyboardView
-import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.edit
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -60,7 +53,6 @@ import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
-import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import org.koin.compose.koinInject
 
@@ -155,8 +147,6 @@ fun ShortcutKeysContentView() {
 @Composable
 fun ShortcutKeyRow(name: String) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val dialogService = koinInject<DialogService>()
-    val pasteDialogFactory = koinInject<PasteDialogFactory>()
     val shortcutKeys = koinInject<ShortcutKeys>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
@@ -164,6 +154,14 @@ fun ShortcutKeyRow(name: String) {
     val shortcutKeysCore by shortcutKeys.shortcutKeysCore.collectAsState()
 
     var hover by remember { mutableStateOf(false) }
+
+    var showSetShortcutKeysDialog by remember { mutableStateOf(false) }
+
+    if (showSetShortcutKeysDialog) {
+        SetShortcutKeysDialog(name) {
+            showSetShortcutKeysDialog = false
+        }
+    }
 
     Row(
         modifier =
@@ -186,79 +184,12 @@ fun ShortcutKeyRow(name: String) {
         SettingsText(text = copywriter.getText(name))
         Spacer(modifier = Modifier.weight(1f))
 
-        val shortcutKeysListener = koinInject<ShortcutKeysListener>()
-
         Icon(
             modifier =
                 Modifier
                     .size(medium)
                     .clickable {
-                        dialogService.pushDialog(
-                            pasteDialogFactory.createDialog(
-                                key = name,
-                                title = "please_directly_enter_the_new_shortcut_key_you_wish_to_set",
-                            ) {
-                                DisposableEffect(Unit) {
-                                    shortcutKeysListener.editShortcutKeysMode = true
-                                    onDispose {
-                                        shortcutKeysListener.currentKeys.clear()
-                                        shortcutKeysListener.editShortcutKeysMode = false
-                                    }
-                                }
-
-                                Column(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight(),
-                                ) {
-                                    Row(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(appSizeValue.settingsItemHeight)
-                                                .border(
-                                                    tiny5X,
-                                                    MaterialTheme.colorScheme.onSurface,
-                                                    tinyRoundedCornerShape,
-                                                ),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Row(
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(horizontal = medium),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Icon(
-                                                modifier =
-                                                    Modifier.size(medium),
-                                                painter = edit(),
-                                                contentDescription = "edit shortcut key",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                            )
-                                            Spacer(modifier = Modifier.weight(1f))
-                                            ShortcutKeyItemView(shortcutKeysListener.currentKeys)
-                                        }
-                                    }
-                                    Row(modifier = Modifier.fillMaxWidth()) {
-                                        DialogButtonsView(
-                                            cancelAction = {
-                                                dialogService.popDialog()
-                                            },
-                                            confirmAction = {
-                                                if (name != PASTE || shortcutKeysListener.currentKeys.isNotEmpty()) {
-                                                    shortcutKeys.update(name, shortcutKeysListener.currentKeys)
-                                                }
-                                                shortcutKeysListener.currentKeys.clear()
-                                                dialogService.popDialog()
-                                            },
-                                        )
-                                    }
-                                }
-                            },
-                        )
+                        showSetShortcutKeysDialog = true
                     },
             painter = edit(),
             contentDescription = "edit shortcut key",

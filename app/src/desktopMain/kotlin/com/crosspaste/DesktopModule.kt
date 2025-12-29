@@ -196,14 +196,11 @@ import com.crosspaste.ui.ScreenProvider
 import com.crosspaste.ui.base.DesktopExpandViewProvider
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
-import com.crosspaste.ui.base.DesktopPasteDialogFactory
 import com.crosspaste.ui.base.DesktopUISupport
-import com.crosspaste.ui.base.DialogService
 import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.FontManager
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.MenuHelper
-import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.devices.DesktopDeviceScopeFactory
@@ -392,9 +389,6 @@ class DesktopModule(
                     MarketingSyncManager()
                 } else {
                     GeneralSyncManager(
-                        deviceScopeFactory = get(),
-                        dialogService = get(),
-                        pasteDialogFactory = get(),
                         syncResolver = get(),
                         syncRuntimeInfoDao = get(),
                     )
@@ -529,7 +523,6 @@ class DesktopModule(
             single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
-            single<DialogService> { DialogService }
             single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
             single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
@@ -539,7 +532,6 @@ class DesktopModule(
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
             single<NativeMouseListener> { get<DesktopAppSize>() }
             single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get(), get()) }
-            single<PasteDialogFactory> { DesktopPasteDialogFactory() }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { get<DesktopScreenProvider>() }

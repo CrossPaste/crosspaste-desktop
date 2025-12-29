@@ -1,14 +1,9 @@
 package com.crosspaste.sync
 
-import androidx.compose.runtime.remember
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.ui.base.DialogService
-import com.crosspaste.ui.base.PasteDialogFactory
-import com.crosspaste.ui.devices.DeviceScopeFactory
-import com.crosspaste.ui.devices.DeviceVerifyView
 import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
@@ -23,22 +18,18 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
-    private val deviceScopeFactory: DeviceScopeFactory,
-    private val dialogService: DialogService,
-    private val pasteDialogFactory: PasteDialogFactory,
     override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
     private val syncResolver: SyncResolver,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -56,6 +47,22 @@ class GeneralSyncManager(
 
     private val ignoreVerifySet: StateFlow<Set<String>> = _ignoreVerifySet.asStateFlow()
 
+    override val unverifiedSyncRuntimeInfo =
+        combine(
+            realTimeSyncRuntimeInfos,
+            ignoreVerifySet,
+        ) { syncInfos, ignoreSet ->
+            syncInfos to ignoreSet
+        }.map { (syncInfos, ignoreSet) ->
+            syncInfos
+                .filter { !ignoreSet.contains(it.appInstanceId) }
+                .firstOrNull { it.connectState == SyncState.UNVERIFIED }
+        }.stateIn(
+            scope = realTimeSyncScope,
+            started = WhileSubscribed(5000),
+            initialValue = null,
+        )
+
     private val internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
     private val eventBus = MutableSharedFlow<SyncEvent>()
@@ -63,7 +70,6 @@ class GeneralSyncManager(
     private var started = false
 
     private var syncRuntimeInfosJob: Job? = null
-    private var pasteDialogJob: Job? = null
 
     override fun start() {
         if (started) return
@@ -76,8 +82,6 @@ class GeneralSyncManager(
         }
 
         startCollectingSyncRuntimeInfosFlow()
-
-        startCollectingPasteDialog()
     }
 
     override fun stop() {
@@ -88,9 +92,6 @@ class GeneralSyncManager(
 
         syncRuntimeInfosJob?.cancel()
         syncRuntimeInfosJob = null
-
-        pasteDialogJob?.cancel()
-        pasteDialogJob = null
 
         realTimeSyncScope.cancel()
     }
@@ -128,33 +129,6 @@ class GeneralSyncManager(
                             }.toSet()
                 }
             }
-    }
-
-    private fun startCollectingPasteDialog() {
-        pasteDialogJob =
-            combine(
-                realTimeSyncRuntimeInfos,
-                ignoreVerifySet,
-            ) { syncInfos, ignoreSet ->
-                syncInfos to ignoreSet
-            }.map { (syncInfos, ignoreSet) ->
-                syncInfos
-                    .filter { !ignoreSet.contains(it.appInstanceId) }
-                    .firstOrNull { it.connectState == SyncState.UNVERIFIED }
-            }.filterNotNull()
-                .onEach { info ->
-                    val dialog =
-                        pasteDialogFactory.createDialog(
-                            key = info.deviceId,
-                            title = "do_you_trust_this_device?",
-                            onDismissRequest = { dialogService.popDialog() },
-                        ) {
-                            val scope = remember(info) { deviceScopeFactory.createDeviceScope(info) }
-
-                            scope.DeviceVerifyView()
-                        }
-                    dialogService.pushDialog(dialog)
-                }.launchIn(realTimeSyncScope)
     }
 
     private suspend fun emitEvent(event: SyncEvent) {
