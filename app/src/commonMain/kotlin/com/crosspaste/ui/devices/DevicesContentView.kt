@@ -41,6 +41,7 @@ import org.koin.compose.koinInject
 @Composable
 fun DevicesContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
+    val deviceScopeFactory = koinInject<DeviceScopeFactory>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
     val pasteBonjourService = koinInject<PasteBonjourService>()
     val syncManager = koinInject<SyncManager>()
@@ -52,10 +53,20 @@ fun DevicesContentView() {
 
     val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
 
+    val unverifiedSyncRuntimeInfo by syncManager.unverifiedSyncRuntimeInfo.collectAsState()
+
     var showAddDeviceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         syncManager.refresh { }
+    }
+
+    unverifiedSyncRuntimeInfo?.let {
+        val scope =
+            remember(it) {
+                deviceScopeFactory.createDeviceScope(it)
+            }
+        scope.TrustDeviceDialog()
     }
 
     InnerScaffold(

@@ -121,37 +121,39 @@ fun StoreSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val scope = rememberCoroutineScope()
 
     val refresh: suspend (Boolean) -> Unit = {
-        val pasteResourceInfo =
-            pasteDao.getPasteResourceInfo(
-                if (it) {
-                    null
-                } else {
-                    true
-                },
-            )
-        pasteCount = pasteResourceInfo.pasteCount
-        pasteFormatSize = fileUtils.formatBytes(pasteResourceInfo.pasteSize)
+        runCatching {
+            val pasteResourceInfo =
+                pasteDao.getPasteResourceInfo(
+                    if (it) {
+                        null
+                    } else {
+                        true
+                    },
+                )
+            pasteCount = pasteResourceInfo.pasteCount
+            pasteFormatSize = fileUtils.formatBytes(pasteResourceInfo.pasteSize)
 
-        textCount = pasteResourceInfo.textCount
-        textFormatSize = fileUtils.formatBytes(pasteResourceInfo.textSize)
+            textCount = pasteResourceInfo.textCount
+            textFormatSize = fileUtils.formatBytes(pasteResourceInfo.textSize)
 
-        colorCount = pasteResourceInfo.colorCount
-        colorFormatSize = fileUtils.formatBytes(pasteResourceInfo.colorSize)
+            colorCount = pasteResourceInfo.colorCount
+            colorFormatSize = fileUtils.formatBytes(pasteResourceInfo.colorSize)
 
-        urlCount = pasteResourceInfo.urlCount
-        urlFormatSize = fileUtils.formatBytes(pasteResourceInfo.urlSize)
+            urlCount = pasteResourceInfo.urlCount
+            urlFormatSize = fileUtils.formatBytes(pasteResourceInfo.urlSize)
 
-        htmlCount = pasteResourceInfo.htmlCount
-        htmlFormatSize = fileUtils.formatBytes(pasteResourceInfo.htmlSize)
+            htmlCount = pasteResourceInfo.htmlCount
+            htmlFormatSize = fileUtils.formatBytes(pasteResourceInfo.htmlSize)
 
-        rtfCount = pasteResourceInfo.rtfCount
-        rtfFormatSize = fileUtils.formatBytes(pasteResourceInfo.rtfSize)
+            rtfCount = pasteResourceInfo.rtfCount
+            rtfFormatSize = fileUtils.formatBytes(pasteResourceInfo.rtfSize)
 
-        imageCount = pasteResourceInfo.imageCount
-        imageFormatSize = fileUtils.formatBytes(pasteResourceInfo.imageSize)
+            imageCount = pasteResourceInfo.imageCount
+            imageFormatSize = fileUtils.formatBytes(pasteResourceInfo.imageSize)
 
-        fileCount = pasteResourceInfo.fileCount
-        fileFormatSize = fileUtils.formatBytes(pasteResourceInfo.fileSize)
+            fileCount = pasteResourceInfo.fileCount
+            fileFormatSize = fileUtils.formatBytes(pasteResourceInfo.fileSize)
+        }
     }
 
     LaunchedEffect(Unit) {

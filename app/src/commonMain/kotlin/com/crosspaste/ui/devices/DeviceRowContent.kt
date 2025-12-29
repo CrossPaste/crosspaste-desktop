@@ -4,23 +4,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import com.crosspaste.ui.base.PlatformIcon
+import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
@@ -58,27 +58,35 @@ fun PlatformScope.DeviceRowContent(
         colors = colors,
         interactionSource = onClick?.let { interactionSource },
     ) {
-        ListItem(
-            leadingContent = {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(xxxxLarge)
-                            .background(
-                                style.iconContentColor,
-                                small2XRoundedCornerShape,
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = PlatformIcon(platform),
-                        contentDescription = null,
-                        modifier = Modifier.size(xLarge),
-                        tint = style.contentColor,
-                    )
-                }
-            },
-            headlineContent = {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(style.paddingValues),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppUISize.medium),
+        ) {
+            // Leading Icon
+            Box(
+                modifier =
+                    Modifier
+                        .size(xxxxLarge)
+                        .background(style.iconContentColor, small2XRoundedCornerShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = PlatformIcon(platform),
+                    contentDescription = null,
+                    modifier = Modifier.size(xLarge),
+                    tint = style.contentColor,
+                )
+            }
+
+            // Main Content (Weight 1 helps it take available space)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(tiny),
                     verticalAlignment = Alignment.CenterVertically,
@@ -86,25 +94,25 @@ fun PlatformScope.DeviceRowContent(
                     Text(
                         text = "${platform.name} ${platform.version}",
                         style = MaterialTheme.typography.bodyMedium,
+                        color = style.contentColor,
                     )
-
-                    tagContent?.let { it() }
+                    tagContent?.invoke()
                 }
-            },
-            supportingContent = {
+
                 Text(
                     text = getDeviceDisplayName(),
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = FontFamily.SansSerif,
+                    color = style.contentColor.copy(alpha = 0.7f),
                 )
-            },
-            trailingContent = trailingContent,
-            colors =
-                ListItemDefaults.colors(
-                    containerColor = Color.Transparent,
-                    headlineColor = style.contentColor,
-                    supportingColor = style.contentColor.copy(alpha = 0.7f),
-                ),
-        )
+            }
+
+            // Trailing Content
+            trailingContent?.let {
+                Box(contentAlignment = Alignment.Center) {
+                    it()
+                }
+            }
+        }
     }
 }

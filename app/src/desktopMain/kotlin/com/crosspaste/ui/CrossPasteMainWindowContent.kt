@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.ui.base.DialogView
 import com.crosspaste.ui.theme.AppUIColors
 import org.koin.compose.koinInject
 
@@ -71,8 +70,6 @@ fun CrossPasteMainWindowContent() {
                 }
             }
         }
-
-        DialogView()
 
         screenProvider.ToastView()
 

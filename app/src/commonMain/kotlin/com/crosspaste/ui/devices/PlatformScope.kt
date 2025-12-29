@@ -1,11 +1,14 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 
 interface PlatformScope {
@@ -19,6 +22,7 @@ data class DeviceStyle(
     val containerColor: Color,
     val contentColor: Color,
     val iconContentColor: Color,
+    val paddingValues: PaddingValues = PaddingValues(medium),
     val shape: Shape = mediumRoundedCornerShape,
     val isClickable: Boolean = true,
 )
@@ -46,9 +50,11 @@ val tokenDeviceStyle: DeviceStyle
     @Composable @ReadOnlyComposable
     get() =
         DeviceStyle(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            iconContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
+            paddingValues = PaddingValues(),
+            shape = RectangleShape,
             isClickable = false,
         )
 

@@ -5,8 +5,6 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.base.DialogService
-import com.crosspaste.ui.base.PasteDialogFactory
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -32,8 +30,6 @@ class GeneralSyncManagerTest {
     private fun createMocks(): Mocks =
         Mocks(
             deviceScopeFactory = mockk(relaxed = true),
-            dialogService = mockk(relaxed = true),
-            pasteDialogFactory = mockk(relaxed = true),
             syncResolver = mockk(relaxed = true),
             syncRuntimeInfoDao = mockk(relaxed = true),
         )
@@ -43,9 +39,6 @@ class GeneralSyncManagerTest {
         scope: CoroutineScope,
     ): GeneralSyncManager =
         GeneralSyncManager(
-            deviceScopeFactory = mocks.deviceScopeFactory,
-            dialogService = mocks.dialogService,
-            pasteDialogFactory = mocks.pasteDialogFactory,
             realTimeSyncScope = scope,
             syncResolver = mocks.syncResolver,
             syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
@@ -76,8 +69,6 @@ class GeneralSyncManagerTest {
 
     data class Mocks(
         val deviceScopeFactory: DeviceScopeFactory,
-        val dialogService: DialogService,
-        val pasteDialogFactory: PasteDialogFactory,
         val syncResolver: SyncResolver,
         val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     )
