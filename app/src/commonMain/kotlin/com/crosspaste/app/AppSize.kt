@@ -16,6 +16,7 @@ open class AppSizeValue(
     open val deviceHeight: Dp,
     open val dialogWidth: Dp,
     open val settingsItemHeight: Dp,
-    open val toastViewWidth: Dp,
+    open val notificationViewMinWidth: Dp,
+    open val notificationViewMaxWidth: Dp,
     open val tokenViewWidth: Dp,
 )

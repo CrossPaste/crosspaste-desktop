@@ -5,6 +5,8 @@ import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.equalDebounce
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -13,6 +15,18 @@ abstract class NotificationManager(
     private val copywriter: GlobalCopywriter,
 ) {
     private val notificationChannel = Channel<Message>()
+
+    private val _notificationList: MutableStateFlow<List<Message>> = MutableStateFlow(listOf())
+
+    val notificationList: StateFlow<List<Message>> = _notificationList
+
+    fun pushNotification(toast: Message) {
+        this._notificationList.value = listOf(toast) + this._notificationList.value
+    }
+
+    fun removeNotification(messageId: Int) {
+        this._notificationList.value = this._notificationList.value.filter { it.messageId != messageId }
+    }
 
     init {
         ioCoroutineDispatcher.launch {

@@ -105,7 +105,6 @@ import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.notification.ToastManager
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
@@ -531,7 +530,7 @@ class DesktopModule(
             single<NavigationManager> { get<DesktopScreenProvider>() }
             single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
             single<NativeMouseListener> { get<DesktopAppSize>() }
-            single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get(), get()) }
+            single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get()) }
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { get<DesktopScreenProvider>() }
@@ -546,7 +545,6 @@ class DesktopModule(
             single<SoundService> { DesktopSoundService(get()) }
             single<SyncScopeFactory> { DesktopSyncScopeFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
-            single<ToastManager> { ToastManager() }
             single<TokenCache> { TokenCache }
             single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get(), get()) }
         }

@@ -6,7 +6,6 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.notification.ToastManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.sound.SoundService
 import java.util.concurrent.atomic.AtomicInteger
@@ -16,7 +15,6 @@ class DesktopNotificationManager(
     copywriter: GlobalCopywriter,
     private val platform: Platform,
     private val soundService: SoundService,
-    private val toastManager: ToastManager,
 ) : NotificationManager(copywriter) {
 
     val idGenerator = AtomicInteger(0)
@@ -27,7 +25,7 @@ class DesktopNotificationManager(
 
     override fun doSendNotification(message: Message) {
         if (appWindowManager.getCurrentMainWindowInfo().show) {
-            notifyToast(message)
+            pushNotification(message)
         } else if (platform.isLinux()) {
             sendNotification(message)
         } else {
@@ -38,10 +36,6 @@ class DesktopNotificationManager(
         } else if (message.messageType == MessageType.Success) {
             soundService.successSound()
         }
-    }
-
-    private fun notifyToast(message: Message) {
-        toastManager.pushToast(message)
     }
 
     private fun notifyTray(message: Message) {
