@@ -14,8 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessageImageVector
@@ -26,42 +26,48 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 
 @Composable
 fun NotificationCard(
-    toast: Message,
+    notification: Message,
     onCancelTapped: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val appSizeValue = LocalAppSizeValueState.current
 
     val containerColor =
-        when (toast.messageType) {
+        when (notification.messageType) {
             MessageType.Error -> MaterialTheme.colorScheme.errorContainer
             MessageType.Info -> MaterialTheme.colorScheme.secondaryContainer
             else -> MaterialTheme.colorScheme.surfaceContainerHigh
         }
 
     val contentColor = contentColorFor(containerColor)
+    val shape = MaterialTheme.shapes.medium
 
     Surface(
         modifier =
             modifier
-                .shadow(elevation = tiny2X, shape = MaterialTheme.shapes.medium)
                 .widthIn(
                     min = appSizeValue.notificationViewMinWidth,
                     max = appSizeValue.notificationViewMaxWidth,
-                ),
-        shape = MaterialTheme.shapes.medium,
+                ).graphicsLayer {
+                    this.shape = shape
+                    this.clip = true
+                    this.shadowElevation = 8f * density
+                    this.ambientShadowColor = Color.Black.copy(alpha = 0.1f)
+                    this.spotShadowColor = Color.Black.copy(alpha = 0.2f)
+                },
+        shape = shape,
         color = containerColor,
-        tonalElevation = tiny2X / 2,
+        tonalElevation = tiny2X,
     ) {
         ListItem(
             headlineContent = {
                 Text(
-                    text = toast.title,
+                    text = notification.title,
                     style = MaterialTheme.typography.labelLarge,
                 )
             },
             supportingContent =
-                toast.message?.takeIf { it.isNotBlank() }?.let {
+                notification.message?.takeIf { it.isNotBlank() }?.let {
                     {
                         Text(
                             text = it,
@@ -71,7 +77,7 @@ fun NotificationCard(
                 },
             leadingContent = {
                 Icon(
-                    imageVector = getMessageImageVector(toast.messageType.getMessageStyle()),
+                    imageVector = getMessageImageVector(notification.messageType.getMessageStyle()),
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
                     tint = contentColor.copy(alpha = 0.8f),

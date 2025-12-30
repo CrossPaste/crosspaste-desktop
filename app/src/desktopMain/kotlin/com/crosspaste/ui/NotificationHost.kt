@@ -8,14 +8,15 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +25,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.Message
-import com.crosspaste.notification.ToastManager
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.NotificationCard
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -33,8 +34,8 @@ import org.koin.compose.koinInject
 
 @Composable
 fun NotificationHost() {
-    val toastManager = koinInject<ToastManager>()
-    val toastList by toastManager.toastList.collectAsState()
+    val notificationManager = koinInject<NotificationManager>()
+    val notificationList by notificationManager.notificationList.collectAsState()
 
     // Calculate the top offset based on window insets or decoration
     val appSizeValue = LocalDesktopAppSizeValueState.current
@@ -48,21 +49,24 @@ fun NotificationHost() {
         offset = IntOffset(0, topPadding),
         properties = PopupProperties(clippingEnabled = false),
     ) {
-        Column(
+        LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(tiny),
+            userScrollEnabled = false,
         ) {
-            toastList.forEach { toast ->
-                key(toast.messageId) {
-                    NotificationItemWrapper(
-                        toast = toast,
-                        onDismiss = { toastManager.removeToast(toast.messageId) },
-                    )
-                }
+            items(
+                items = notificationList,
+                key = { it.messageId },
+            ) { notification ->
+                NotificationItemWrapper(
+                    modifier = Modifier.animateItem(),
+                    notification = notification,
+                    onDismiss = { notificationManager.removeNotification(it) },
+                )
             }
         }
     }
@@ -70,34 +74,38 @@ fun NotificationHost() {
 
 @Composable
 private fun NotificationItemWrapper(
-    toast: Message,
-    onDismiss: () -> Unit,
+    notification: Message,
+    onDismiss: (Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+    val visibleState =
+        remember {
+            MutableTransitionState(false).apply { targetState = true }
+        }
 
-    // Auto-dismiss logic moved here for cleaner management
-    LaunchedEffect(toast.messageId, toast.duration) {
-        toast.duration?.let {
-            delay(it)
+    LaunchedEffect(visibleState.isIdle, visibleState.targetState) {
+        if (visibleState.isIdle && !visibleState.targetState) {
+            onDismiss(notification.messageId)
+        }
+    }
+
+    notification.duration?.let { duration ->
+        LaunchedEffect(notification.messageId) {
+            delay(duration)
             visibleState.targetState = false
-            delay(300) // Wait for exit animation
-            onDismiss()
         }
     }
 
     AnimatedVisibility(
+        modifier = modifier,
         visibleState = visibleState,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut() + shrinkVertically(),
     ) {
         NotificationCard(
-            toast = toast,
-            onCancelTapped = {
-                visibleState.targetState = false
-                // Note: The actual removal should happen after animation
-                // In a production app, consider using a callback to the manager
-                // after visibleState.isIdle && !targetState
-            },
+            notification = notification,
+            onCancelTapped = { visibleState.targetState = false },
+            modifier = Modifier.padding(bottom = tiny),
         )
     }
 }
