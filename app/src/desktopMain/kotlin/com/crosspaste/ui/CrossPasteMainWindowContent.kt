@@ -71,7 +71,7 @@ fun CrossPasteMainWindowContent() {
             }
         }
 
-        screenProvider.ToastView()
+        NotificationHost()
 
         screenProvider.TokenView()
 

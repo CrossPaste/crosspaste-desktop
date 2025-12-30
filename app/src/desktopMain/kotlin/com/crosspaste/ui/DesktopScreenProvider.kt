@@ -4,18 +4,12 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -27,7 +21,6 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.paste.PasteData
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.RecommendContentView
-import com.crosspaste.ui.base.ToastListView
 import com.crosspaste.ui.devices.DeviceDetailContentView
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.DevicesContentView
@@ -43,8 +36,6 @@ import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
-import com.crosspaste.ui.theme.AppUISize.tiny3X
-import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.channels.Channel
 import kotlin.reflect.typeOf
 
@@ -274,43 +265,6 @@ class DesktopScreenProvider(
     @Composable
     fun TokenView() {
         TokenView(IntOffset(0, 0))
-    }
-
-    @Composable
-    fun ToastView() {
-        val appSizeValue = LocalDesktopAppSizeValueState.current
-        val density = LocalDensity.current
-
-        val yOffset by remember {
-            mutableStateOf(-appSizeValue.windowDecorationHeight + tiny3X)
-        }
-
-        ToastListView(
-            IntOffset(
-                with(density) { zero.roundToPx() },
-                with(density) { yOffset.roundToPx() },
-            ),
-            enter =
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(300),
-                ) +
-                    fadeIn(
-                        initialAlpha = 0f,
-                        animationSpec = tween(150),
-                    ),
-            exit =
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(300),
-                ) +
-                    fadeOut(
-                        animationSpec = tween(300),
-                    ) +
-                    shrinkVertically(
-                        animationSpec = tween(300),
-                    ),
-        )
     }
 
     @Composable

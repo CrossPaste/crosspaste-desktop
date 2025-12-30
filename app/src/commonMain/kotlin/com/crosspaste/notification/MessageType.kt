@@ -1,12 +1,12 @@
 package com.crosspaste.notification
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.painter.Painter
-import com.crosspaste.ui.base.BaseColor
-import com.crosspaste.ui.base.error
-import com.crosspaste.ui.base.info
-import com.crosspaste.ui.base.success
-import com.crosspaste.ui.base.warning
+import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class MessageType {
     Error,
@@ -24,20 +24,18 @@ enum class MessageType {
         }
 }
 
-enum class MessageStyle(
-    val baseColor: BaseColor,
-) {
-    Error(BaseColor.Red),
-    Info(BaseColor.Blue),
-    Success(BaseColor.Green),
-    Warning(BaseColor.Yellow),
+enum class MessageStyle {
+    Error,
+    Info,
+    Success,
+    Warning,
 }
 
 @Composable
-fun getMessagePainter(messageStyle: MessageStyle): Painter =
+fun getMessageImageVector(messageStyle: MessageStyle): ImageVector =
     when (messageStyle) {
-        MessageStyle.Error -> error()
-        MessageStyle.Info -> info()
-        MessageStyle.Success -> success()
-        MessageStyle.Warning -> warning()
+        MessageStyle.Error -> Icons.Default.Error
+        MessageStyle.Info -> Icons.Default.Info
+        MessageStyle.Success -> Icons.Default.CheckCircle
+        MessageStyle.Warning -> Icons.Default.Warning
     }
