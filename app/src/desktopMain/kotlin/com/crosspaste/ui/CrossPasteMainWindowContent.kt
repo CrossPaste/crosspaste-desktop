@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +41,7 @@ fun CrossPasteMainWindowContent() {
                         Modifier
                             .width(appSizeValue.mainMenuSize.width)
                             .fillMaxHeight()
-                            .background(AppUIColors.generalBackground),
+                            .background(MaterialTheme.colorScheme.surfaceContainer),
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -52,7 +53,7 @@ fun CrossPasteMainWindowContent() {
                                     .fillMaxWidth()
                                     .height(appSizeValue.windowDecorationHeight)
                                     .offset(y = -appSizeValue.windowDecorationHeight)
-                                    .background(AppUIColors.generalBackground),
+                                    .background(MaterialTheme.colorScheme.surfaceContainer),
                         ) {}
 
                         MainMenuView()
