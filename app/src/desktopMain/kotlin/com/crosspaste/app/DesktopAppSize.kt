@@ -32,7 +32,8 @@ class DesktopAppSize(
             // --- Basic Constants ---
             val deviceHeight: Dp = huge
             val settingsItemHeight: Dp = 40.dp
-            val toastViewWidth: Dp = 280.dp
+            val notificationViewMinWidth: Dp = 280.dp
+            val notificationViewMaxWidth: Dp = 400.dp
             val tokenViewWidth: Dp = 320.dp
 
             // --- Main Window Calculation ---
@@ -81,7 +82,8 @@ class DesktopAppSize(
                 deviceHeight = deviceHeight,
                 dialogWidth = dialogWidth,
                 settingsItemHeight = settingsItemHeight,
-                toastViewWidth = toastViewWidth,
+                notificationViewMinWidth = notificationViewMinWidth,
+                notificationViewMaxWidth = notificationViewMaxWidth,
                 tokenViewWidth = tokenViewWidth,
                 // Desktop specific properties
                 mainMenuSize = mainMenuSize,
@@ -163,7 +165,8 @@ class DesktopAppSizeValue(
     override val deviceHeight: Dp,
     override val dialogWidth: Dp,
     override val settingsItemHeight: Dp,
-    override val toastViewWidth: Dp,
+    override val notificationViewMinWidth: Dp,
+    override val notificationViewMaxWidth: Dp,
     override val tokenViewWidth: Dp,
     val mainMenuSize: DpSize,
     val mainContentSize: DpSize,
@@ -181,6 +184,7 @@ class DesktopAppSizeValue(
         deviceHeight,
         dialogWidth,
         settingsItemHeight,
-        toastViewWidth,
+        notificationViewMinWidth,
+        notificationViewMaxWidth,
         tokenViewWidth,
     )

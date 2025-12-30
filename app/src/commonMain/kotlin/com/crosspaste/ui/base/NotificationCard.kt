@@ -16,10 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessageImageVector
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.xLarge
@@ -30,6 +30,8 @@ fun NotificationCard(
     onCancelTapped: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val appSizeValue = LocalAppSizeValueState.current
+
     val containerColor =
         when (toast.messageType) {
             MessageType.Error -> MaterialTheme.colorScheme.errorContainer
@@ -43,7 +45,10 @@ fun NotificationCard(
         modifier =
             modifier
                 .shadow(elevation = tiny2X, shape = MaterialTheme.shapes.medium)
-                .widthIn(min = 280.dp, max = 400.dp),
+                .widthIn(
+                    min = appSizeValue.notificationViewMinWidth,
+                    max = appSizeValue.notificationViewMaxWidth,
+                ),
         shape = MaterialTheme.shapes.medium,
         color = containerColor,
         tonalElevation = tiny2X / 2,
