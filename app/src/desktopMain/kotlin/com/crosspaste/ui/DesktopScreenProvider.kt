@@ -175,7 +175,16 @@ class DesktopScreenProvider(
 
     @Composable
     private fun AboutScreen() {
-        AboutContentView()
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(start = xLarge, end = xLarge, bottom = xLarge),
+            contentAlignment = Alignment.Center,
+        ) {
+            AboutContentView()
+        }
     }
 
     @Composable

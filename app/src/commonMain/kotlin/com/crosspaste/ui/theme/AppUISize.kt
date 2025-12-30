@@ -44,6 +44,7 @@ object AppUISize {
     val smallRoundedCornerShape = RoundedCornerShape(small)
     val mediumRoundedCornerShape = RoundedCornerShape(medium)
     val xLargeRoundedCornerShape = RoundedCornerShape(xLarge)
+    val xxLargeRoundedCornerShape = RoundedCornerShape(xxLarge)
 
     val highlightedCardElevation: CardElevation
         @Composable
