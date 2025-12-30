@@ -131,7 +131,7 @@ fun QRContentView() {
         Spacer(modifier = Modifier.height(medium))
 
         Text(
-            text = copywriter.getText("please_scan_the_binding_device"),
+            text = copywriter.getText("qr_scan_title"),
             style =
                 MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
