@@ -246,7 +246,7 @@ fun TokenInputBox(
         MaterialTheme.typography.headlineMedium.copy(
             color = textColor,
             textAlign = TextAlign.Center,
-            lineHeight = 0.8.em,
+            lineHeight = 1.em,
             fontFamily = FontFamily.Monospace,
             lineHeightStyle =
                 LineHeightStyle(
