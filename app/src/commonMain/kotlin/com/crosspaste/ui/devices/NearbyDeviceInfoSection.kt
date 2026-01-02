@@ -33,7 +33,7 @@ fun SyncScope.NearbyDeviceInfoSection() {
         }
 
     Column(verticalArrangement = Arrangement.spacedBy(small2X)) {
-        SectionHeader(text = copywriter.getText("base_info"))
+        SectionHeader(text = "base_info")
 
         Card(
             modifier = Modifier.fillMaxWidth(),

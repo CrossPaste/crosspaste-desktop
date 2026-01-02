@@ -50,6 +50,7 @@ data class DesktopAppConfig(
     val proxyType: String = ProxyType.HTTP,
     val proxyHost: String = "127.0.0.1",
     val proxyPort: String = "7890",
+    val showGrantAccessibility: Boolean = true,
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -137,5 +138,6 @@ data class DesktopAppConfig(
             proxyType = if (key == "proxyType") toString(value) else proxyType,
             proxyHost = if (key == "proxyHost") toString(value) else proxyHost,
             proxyPort = if (key == "proxyPort") toString(value) else proxyPort,
+            showGrantAccessibility = if (key == "showGrantAccessibility") toBoolean(value) else showGrantAccessibility,
         )
 }

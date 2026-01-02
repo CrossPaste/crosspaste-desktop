@@ -1,51 +1,40 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
-import com.crosspaste.ui.theme.DesktopAppUIFont.keyboardCharTextStyle
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 
 const val enter: String = "↵"
 
 @Composable
-fun KeyboardView(
-    keyboardValue: String,
-    background: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
-) {
-    val textMeasurer = rememberTextMeasurer()
-    val size = textMeasurer.measure(keyboardValue, keyboardCharTextStyle).size
-    val dpSize =
-        with(LocalDensity.current) {
-            DpSize(size.width.toDp(), size.height.toDp())
-        }
-
-    Row(
+fun KeyboardView(key: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        shape = tinyRoundedCornerShape,
         modifier =
-            Modifier
-                .size(dpSize.plus(DpSize(small3X, small3X)))
-                .clip(tiny4XRoundedCornerShape)
-                .background(background),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+            Modifier.border(
+                width = tiny5X,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = tinyRoundedCornerShape,
+            ),
     ) {
         Text(
-            text = keyboardValue,
-            style = keyboardCharTextStyle,
-            color = MaterialTheme.colorScheme.contentColorFor(background),
+            text = key,
+            modifier = Modifier.padding(horizontal = small3X, vertical = tiny2X),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

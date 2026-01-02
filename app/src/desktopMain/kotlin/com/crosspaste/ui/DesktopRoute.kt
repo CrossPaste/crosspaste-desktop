@@ -18,6 +18,9 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<QrCode>() -> QrCode.NAME
         dest.hasRoute<Recommend>() -> Recommend.NAME
         dest.hasRoute<Settings>() -> Settings.NAME
+        dest.hasRoute<PasteboardSettings>() -> PasteboardSettings.NAME
+        dest.hasRoute<NetworkSettings>() -> NetworkSettings.NAME
+        dest.hasRoute<StorageSettings>() -> StorageSettings.NAME
         dest.hasRoute<ShortcutKeys>() -> ShortcutKeys.NAME
         else -> null
     }
@@ -37,6 +40,9 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<QrCode>() -> QrCode.NAME
         dest.hasRoute<Recommend>() -> Recommend.NAME
         dest.hasRoute<Settings>() -> Settings.NAME
+        dest.hasRoute<PasteboardSettings>() -> Settings.NAME
+        dest.hasRoute<NetworkSettings>() -> Settings.NAME
+        dest.hasRoute<StorageSettings>() -> Settings.NAME
         dest.hasRoute<ShortcutKeys>() -> ShortcutKeys.NAME
         else -> null
     }

@@ -26,6 +26,7 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.paste.PasteData
+import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.RecommendContentView
 import com.crosspaste.ui.devices.DeviceDetailContentView
@@ -41,14 +42,23 @@ import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
+import com.crosspaste.ui.settings.NetworkSettingsContentView
+import com.crosspaste.ui.settings.PasteboardSettingsContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
+import com.crosspaste.ui.settings.StoragePathManager
+import com.crosspaste.ui.settings.StorageSettingsContentView
+import com.crosspaste.ui.settings.WindowsPasteboardSettingsContentView
+import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlinx.coroutines.channels.Channel
 import kotlin.reflect.typeOf
 
 class DesktopScreenProvider(
     private val deviceScopeFactory: DeviceScopeFactory,
+    private val platform: Platform,
+    private val storagePathManager: StoragePathManager,
     private val syncManager: SyncManager,
     private val syncScopeFactory: SyncScopeFactory,
 ) : ScreenProvider {
@@ -168,7 +178,27 @@ class DesktopScreenProvider(
             }
             composable<QrCode> { QRScreen() }
             composable<Recommend> { RecommendScreen() }
-            composable<Settings> { SettingsScreen() }
+            navigation<SettingsGraph>(startDestination = Settings) {
+                composable<Settings> { SettingsScreen() }
+                composable<PasteboardSettings>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    PasteboardSettingsScreen()
+                }
+                composable<NetworkSettings>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    NetworkSettingsScreen()
+                }
+                composable<StorageSettings>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    StorageSettingsScreen()
+                }
+            }
             composable<ShortcutKeys> { ShortcutKeysScreen() }
         }
     }
@@ -275,12 +305,77 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ShortcutKeysScreen() {
-        ShortcutKeysContentView()
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(AppUIColors.appBackground)
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            ShortcutKeysContentView()
+        }
     }
 
     @Composable
     private fun SettingsScreen() {
-        SettingsContentView()
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(AppUIColors.appBackground)
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            SettingsContentView()
+        }
+    }
+
+    @Composable
+    private fun PasteboardSettingsScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(AppUIColors.appBackground)
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            PasteboardSettingsContentView {
+                val isWindows = remember { platform.isWindows() }
+                if (isWindows) {
+                    WindowsPasteboardSettingsContentView()
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun NetworkSettingsScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(AppUIColors.appBackground)
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            NetworkSettingsContentView()
+        }
+    }
+
+    @Composable
+    private fun StorageSettingsScreen() {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(AppUIColors.appBackground)
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            StorageSettingsContentView(storagePathManager)
+        }
     }
 
     @Composable

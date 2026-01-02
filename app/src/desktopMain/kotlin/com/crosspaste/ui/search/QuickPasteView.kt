@@ -38,7 +38,7 @@ fun QuickPasteView() {
                         }
                     },
         ) {
-            KeyboardView(keyboardValue = enter)
+            KeyboardView(key = enter)
         }
         Spacer(modifier = Modifier.width(tiny))
         Text("/")
@@ -53,7 +53,7 @@ fun QuickPasteView() {
                         }
                     },
         ) {
-            KeyboardView(keyboardValue = copywriter.getText("double_click"))
+            KeyboardView(key = copywriter.getText("double_click"))
         }
     }
 }
