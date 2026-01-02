@@ -42,7 +42,7 @@ fun DeviceScope.SyncControlSection() {
     val syncManager = koinInject<SyncManager>()
 
     Column(verticalArrangement = Arrangement.spacedBy(small2X)) {
-        SectionHeader(text = copywriter.getText("sync_control"))
+        SectionHeader("sync_control")
 
         Card(
             modifier = Modifier.fillMaxWidth(),

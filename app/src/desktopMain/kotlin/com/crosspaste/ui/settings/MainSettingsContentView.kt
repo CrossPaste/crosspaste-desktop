@@ -1,132 +1,96 @@
 package com.crosspaste.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.AppControl
-import com.crosspaste.app.DesktopAppLaunchState
+import androidx.compose.ui.unit.dp
+import com.crosspaste.app.AppInfo
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.log.CrossPasteLogger
-import com.crosspaste.paste.PasteboardService
-import com.crosspaste.ui.base.HighlightedCard
-import com.crosspaste.ui.base.bell
-import com.crosspaste.ui.base.bolt
-import com.crosspaste.ui.base.clipboard
-import com.crosspaste.ui.base.debug
-import com.crosspaste.ui.base.palette
-import com.crosspaste.ui.base.shield
-import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.About
+import com.crosspaste.ui.NavigationManager
+import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.tiny2X
-import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @Composable
 fun MainSettingsContentView() {
-    val appLaunchState = koinInject<DesktopAppLaunchState>()
-    val appControl = koinInject<AppControl>()
+    val appInfo = koinInject<AppInfo>()
     val configManager = koinInject<DesktopConfigManager>()
-    val crossPasteLogger = koinInject<CrossPasteLogger>()
-    val pasteboardService = koinInject<PasteboardService>()
-    val settingsViewProvider = koinInject<SettingsViewProvider>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val navigationManager = koinInject<NavigationManager>()
 
     val config by configManager.config.collectAsState()
 
-    if (!appLaunchState.accessibilityPermissions) {
-        GrantAccessibilityView()
-        Spacer(modifier = Modifier.height(medium))
-    }
-
-    HighlightedCard(
-        modifier =
-            Modifier.wrapContentSize(),
-        shape = tinyRoundedCornerShape,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = AppUIColors.generalBackground,
-            ),
-    ) {
+    SettingSectionCard {
         LanguageSettingItemView()
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         FontSettingItemView()
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
 
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        SettingItemView(
-            painter = palette(),
-            height = xxLarge * 3 + tiny2X * 4,
-            text = "theme",
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(huge)
+                    .padding(horizontal = medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            ThemeSegmentedControl()
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        SettingSwitchItemView(
-            text = "pasteboard_listening",
-            painter = clipboard(),
-            getCurrentSwitchValue = { config.enablePasteboardListening },
-        ) {
-            pasteboardService.toggle()
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        SettingSwitchItemView(
-            text = "encrypted_sync",
-            painter = shield(),
-            getCurrentSwitchValue = { config.enableEncryptSync },
-        ) {
-            if (appControl.isEncryptionEnabled()) {
-                configManager.updateConfig("enableEncryptSync", it)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    Icons.Default.Palette,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(medium))
+                Text(
+                    copywriter.getText("theme"),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
+
+            ThemeSegmentedPicker(modifier = Modifier.widthIn(max = 280.dp).height(xxxxLarge))
         }
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        SettingSwitchItemView(
-            text = "sound_effect",
-            painter = bell(),
-            getCurrentSwitchValue = { config.enableSoundEffect },
-        ) {
-            configManager.updateConfig("enableSoundEffect", it)
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        SettingSwitchItemView(
-            text = "launch_at_startup",
-            painter = bolt(),
-            getCurrentSwitchValue = { config.enableAutoStartUp },
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+        SettingListSwitchItem(
+            title = "launch_at_startup",
+            icon = Icons.Default.RocketLaunch,
+            checked = config.enablePasteboardListening,
         ) {
             configManager.updateConfig("enableAutoStartUp", it)
         }
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        SettingSwitchItemView(
-            text = "debug_mode",
-            painter = debug(),
-            getCurrentSwitchValue = { config.enableDebugMode },
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+        SettingListItem(
+            title = "about",
+            subtitleContent = {
+                Text("v${appInfo.displayVersion()}")
+            },
+            icon = Icons.Default.Info,
         ) {
-            crossPasteLogger.updateRootLogLevel(
-                if (it) "debug" else "info",
-            )
+            navigationManager.navigate(About)
         }
-
-        HorizontalDivider(modifier = Modifier.padding(start = xxxLarge))
-
-        settingsViewProvider.AboutItemView()
     }
 }

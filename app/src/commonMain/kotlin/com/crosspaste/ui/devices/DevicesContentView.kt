@@ -1,9 +1,7 @@
 package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,8 +32,8 @@ import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
@@ -99,7 +97,7 @@ fun DevicesContentView() {
         ) {
             if (syncRuntimeInfos.isNotEmpty()) {
                 stickyHeader {
-                    SectionHeader(copywriter.getText("my_devices"))
+                    SectionHeader("my_devices")
                 }
             }
 
@@ -114,12 +112,15 @@ fun DevicesContentView() {
             }
 
             stickyHeader {
-                if (syncRuntimeInfos.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(tiny))
-                }
                 SectionHeader(
-                    text = copywriter.getText("nearby_devices"),
+                    text = "nearby_devices",
                     backgroundColor = MaterialTheme.colorScheme.surface,
+                    topPadding =
+                        if (syncRuntimeInfos.isNotEmpty()) {
+                            medium
+                        } else {
+                            zero
+                        },
                     trailingContent = {
                         IconButton(
                             onClick = {

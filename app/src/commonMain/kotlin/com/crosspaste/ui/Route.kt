@@ -117,8 +117,31 @@ object Recommend : Route {
 }
 
 @Serializable
+object SettingsGraph : Route {
+    override val name = "settings_graph"
+}
+
+@Serializable
 object Settings : Route {
     const val NAME: String = "settings"
+    override val name: String = NAME
+}
+
+@Serializable
+object PasteboardSettings : Route {
+    const val NAME: String = "pasteboard_settings"
+    override val name: String = NAME
+}
+
+@Serializable
+object NetworkSettings : Route {
+    const val NAME: String = "network_settings"
+    override val name: String = NAME
+}
+
+@Serializable
+object StorageSettings : Route {
+    const val NAME: String = "storage_settings"
     override val name: String = NAME
 }
 

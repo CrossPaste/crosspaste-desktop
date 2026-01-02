@@ -19,16 +19,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.MenuBar
 import com.crosspaste.app.AppUpdateService
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.WindowTrigger
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.DesktopContext.MainWindowContext
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
+import com.crosspaste.ui.settings.GrantAccessibilityDialog
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.intui.window.DecoratedWindowIconKeys
@@ -47,9 +50,11 @@ val CorrectCloseIcon = PathIconKey("window/close.svg", DecoratedWindowIconKeys::
 
 @Composable
 fun MainWindow(windowIcon: Painter?) {
+    val appLaunchState = koinInject<DesktopAppLaunchState>()
     val appSize = koinInject<DesktopAppSize>()
     val appUpdateService = koinInject<AppUpdateService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val platform = koinInject<Platform>()
     val navigateManage = koinInject<NavigationManager>()
@@ -62,6 +67,8 @@ fun MainWindow(windowIcon: Painter?) {
     }
 
     val applicationExit = LocalExitApplication.current
+
+    val config by configManager.config.collectAsState()
 
     val scope = rememberCoroutineScope()
 
@@ -212,6 +219,9 @@ fun MainWindow(windowIcon: Painter?) {
 
         MainWindowContext(mainWindowInfo) {
             CrossPasteMainWindowContent()
+            if (config.showGrantAccessibility && appLaunchState.accessibilityPermissions) {
+                GrantAccessibilityDialog()
+            }
         }
     }
 }

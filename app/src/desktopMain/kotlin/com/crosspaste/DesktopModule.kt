@@ -211,8 +211,8 @@ import com.crosspaste.ui.model.MarketingPasteData
 import com.crosspaste.ui.model.MarketingPasteSearchViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.settings.DesktopSettingsViewProvider
-import com.crosspaste.ui.settings.SettingsViewProvider
+import com.crosspaste.ui.settings.DesktopStoragePathManager
+import com.crosspaste.ui.settings.StoragePathManager
 import com.crosspaste.ui.theme.DesktopThemeDetector
 import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.DesktopLocaleUtils
@@ -519,7 +519,7 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), lazy { get() }, lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
             single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
@@ -534,7 +534,6 @@ class DesktopModule(
             single<PlatformContext> { PlatformContext.INSTANCE }
             single<RatingPromptManager> { DesktopRatingPromptManager() }
             single<ScreenProvider> { get<DesktopScreenProvider>() }
-            single<SettingsViewProvider> { DesktopSettingsViewProvider(get(), get(), get()) }
             single<ShortcutKeys> { DesktopShortcutKeys(get(), get(), get()) }
             single<ShortcutKeysAction> {
                 DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get())
@@ -543,6 +542,7 @@ class DesktopModule(
             single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get(), get()) }
             single<SmartImageDisplayStrategy> { SmartImageDisplayStrategy() }
             single<SoundService> { DesktopSoundService(get()) }
+            single<StoragePathManager> { DesktopStoragePathManager() }
             single<SyncScopeFactory> { DesktopSyncScopeFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<TokenCache> { TokenCache }

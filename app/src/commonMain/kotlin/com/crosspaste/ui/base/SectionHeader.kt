@@ -12,16 +12,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
+import org.koin.compose.koinInject
 
 @Composable
 fun SectionHeader(
     text: String,
     backgroundColor: Color = Color.Transparent,
+    topPadding: Dp = 0.dp,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
+    val copywriter = koinInject<GlobalCopywriter>()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = backgroundColor,
@@ -29,16 +35,16 @@ fun SectionHeader(
         Row(
             modifier =
                 Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(start = tiny, top = topPadding, bottom = tiny3X, end = tiny),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = text,
+                text = copywriter.getText(text),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = tiny, bottom = tiny3X),
                 letterSpacing = TextUnit.Unspecified,
             )
             trailingContent?.invoke()
