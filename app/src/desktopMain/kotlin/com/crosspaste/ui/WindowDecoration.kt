@@ -34,10 +34,11 @@ import com.crosspaste.ui.base.arrowLeft
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xLarge
-import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -77,9 +78,9 @@ fun WindowDecoration() {
         Box(
             modifier =
                 Modifier
-                    .height(xxLarge)
+                    .height(xxxxLarge)
                     .wrapContentWidth()
-                    .clip(tiny2XRoundedCornerShape)
+                    .clip(tinyRoundedCornerShape)
                     .background(backgroundColor)
                     .run {
                         if (canNavigateBack) {
@@ -100,6 +101,7 @@ fun WindowDecoration() {
             Row(
                 modifier =
                     Modifier
+                        .padding(vertical = tiny2X)
                         .padding(end = tiny)
                         .wrapContentSize(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -126,7 +128,7 @@ fun WindowDecoration() {
                                 AppUIColors.appBackground,
                             ),
                         style =
-                            MaterialTheme.typography.titleMedium.copy(
+                            MaterialTheme.typography.headlineSmall.copy(
                                 lineHeight = 1.em,
                                 lineHeightStyle =
                                     LineHeightStyle(

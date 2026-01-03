@@ -3,8 +3,8 @@ package com.crosspaste.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -32,6 +32,7 @@ import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.pushpinActive
 import com.crosspaste.ui.base.pushpinInactive
 import com.crosspaste.ui.settings.GrantAccessibilityDialog
+import com.crosspaste.ui.theme.AppUISize.medium
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.intui.window.DecoratedWindowIconKeys
@@ -67,6 +68,7 @@ fun MainWindow(windowIcon: Painter?) {
     }
 
     val applicationExit = LocalExitApplication.current
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val config by configManager.config.collectAsState()
 
@@ -132,9 +134,10 @@ fun MainWindow(windowIcon: Painter?) {
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(horizontal = pushpinPadding),
-                    verticalAlignment = Alignment.CenterVertically,
+                            .height(appSizeValue.windowDecorationHeight)
+                            .padding(top = medium)
+                            .padding(end = pushpinPadding),
+                    verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.End,
                 ) {
                     PasteTooltipIconView(

@@ -31,7 +31,7 @@ import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
@@ -93,7 +93,7 @@ fun DevicesContentView() {
                     .fillMaxSize()
                     .padding(innerPadding)
                     .padding(horizontal = medium),
-            verticalArrangement = Arrangement.spacedBy(small2X),
+            verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             if (syncRuntimeInfos.isNotEmpty()) {
                 stickyHeader {
