@@ -41,7 +41,7 @@ import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 @Composable
-fun GrantAccessibilityDialog() {
+fun GrantAccessibilityDialog(cancelAction: () -> Unit) {
     val appRestartService = koinInject<AppRestartService>()
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -127,7 +127,7 @@ fun GrantAccessibilityDialog() {
         dismissButton = {
             TextButton(
                 onClick = {
-                    configManager.updateConfig("showGrantAccessibility", false)
+                    cancelAction()
                 },
             ) {
                 Text(copywriter.getText("cancel"))

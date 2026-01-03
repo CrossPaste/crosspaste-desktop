@@ -11,6 +11,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
@@ -30,6 +32,7 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
 import com.crosspaste.listener.KeyboardKey
 import com.crosspaste.listener.ShortcutKeys
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -38,6 +41,23 @@ import org.koin.compose.koinInject
 
 @Composable
 fun ShortcutKeysContentView() {
+    val appLaunchState = koinInject<DesktopAppLaunchState>()
+    val platform = koinInject<Platform>()
+
+    var showGrantAccessibilityDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (platform.isMacos() && !appLaunchState.accessibilityPermissions) {
+            showGrantAccessibilityDialog = true
+        }
+    }
+
+    if (showGrantAccessibilityDialog) {
+        GrantAccessibilityDialog {
+            showGrantAccessibilityDialog = false
+        }
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(tiny),
