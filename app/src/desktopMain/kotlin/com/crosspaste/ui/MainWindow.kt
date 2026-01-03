@@ -222,8 +222,10 @@ fun MainWindow(windowIcon: Painter?) {
 
         MainWindowContext(mainWindowInfo) {
             CrossPasteMainWindowContent()
-            if (config.showGrantAccessibility && appLaunchState.accessibilityPermissions) {
-                GrantAccessibilityDialog()
+            if (config.showGrantAccessibility && !appLaunchState.accessibilityPermissions) {
+                GrantAccessibilityDialog {
+                    configManager.updateConfig("showGrantAccessibility", false)
+                }
             }
         }
     }
