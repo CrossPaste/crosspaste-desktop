@@ -11,6 +11,7 @@ import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.contains
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
@@ -48,7 +49,7 @@ class DesktopAppSize(
 
             val dialogWidth = 360.dp
 
-            val windowDecorationHeight: Dp = 48.dp
+            val windowDecorationHeight: Dp = 64.dp
 
             // --- Paste & QRCode ---
             val mainPasteSize = DpSize(width = 408.dp, height = 100.dp)
@@ -150,7 +151,7 @@ class DesktopAppSize(
 
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
-            huge
+            huge + tiny
         } else if (platform.isWindows()) {
             80.dp
         } else {
