@@ -248,7 +248,16 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ExportScreen() {
-        PasteExportContentView()
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(start = xLarge, end = xLarge, bottom = xLarge),
+            contentAlignment = Alignment.Center,
+        ) {
+            PasteExportContentView()
+        }
     }
 
     @Composable

@@ -39,7 +39,9 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportService
 import com.crosspaste.ui.base.AlertCard
+import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.theme.AppUISize.enormous
+import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -62,9 +64,83 @@ fun PasteImportContentView() {
     var progressing by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
 
-    Column {
+    InnerScaffold(
+        bottomBar = {
+            Column {
+                if (progressing) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(medium),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        LinearProgressIndicator(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(tiny3X)
+                                    .padding(horizontal = tiny)
+                                    .clip(tiny4XRoundedCornerShape),
+                            progress = { progress },
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !progressing,
+                        onClick = {
+                            importPath?.let {
+                                val importParam = pasteImportParamFactory.createPasteImportParam(it)
+                                progress = 0f
+                                progressing = true
+
+                                pasteImportService.import(importParam) { currentProgress ->
+                                    progress = currentProgress
+                                    if (progress == 1f || progress < 0f) {
+                                        progressing = false
+                                        progress = 0f
+                                    }
+                                }
+                            }
+                        },
+                    ) {
+                        Text(
+                            if (progressing) {
+                                "${(progress * 100).toInt()}%"
+                            } else {
+                                copywriter.getText("import")
+                            },
+                            style =
+                                if (progressing) {
+                                    MaterialTheme.typography.bodyMedium
+                                        .copy(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                        )
+                    }
+                }
+            }
+        },
+    ) {
         LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        bottom =
+                            if (!progressing) {
+                                huge
+                            } else {
+                                huge + medium
+                            },
+                    ),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             item {
@@ -87,7 +163,7 @@ fun PasteImportContentView() {
                                 )
                             },
                     shape = RoundedCornerShape(xLarge),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(medium),
@@ -133,62 +209,6 @@ fun PasteImportContentView() {
                 AlertCard(
                     title = copywriter.getText("import_data_merge_notice"),
                     messageType = MessageType.Info,
-                )
-            }
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        if (progressing) {
-            LinearProgressIndicator(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(tiny3X)
-                        .padding(horizontal = tiny)
-                        .clip(tiny4XRoundedCornerShape),
-                progress = { progress },
-            )
-        }
-
-        Spacer(Modifier.height(medium))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !progressing,
-                onClick = {
-                    importPath?.let {
-                        val importParam = pasteImportParamFactory.createPasteImportParam(it)
-                        progress = 0f
-                        progressing = true
-
-                        pasteImportService.import(importParam) { currentProgress ->
-                            progress = currentProgress
-                            if (progress == 1f || progress < 0f) {
-                                progressing = false
-                                progress = 0f
-                            }
-                        }
-                    }
-                },
-            ) {
-                Text(
-                    if (progressing) {
-                        "${(progress * 100).toInt()}%"
-                    } else {
-                        copywriter.getText("import")
-                    },
-                    style =
-                        if (progressing) {
-                            MaterialTheme.typography.bodyMedium
-                                .copy(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                        } else {
-                            MaterialTheme.typography.bodyMedium
-                        },
                 )
             }
         }
