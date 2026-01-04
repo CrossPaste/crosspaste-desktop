@@ -29,8 +29,8 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.ui.base.MessageContentCard
 import com.crosspaste.ui.base.NotificationCard
-import com.crosspaste.ui.base.NotificationContentCard
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import kotlinx.coroutines.delay
@@ -120,10 +120,12 @@ private fun NotificationItemWrapper(
             modifier = Modifier.padding(bottom = tiny),
             containerColor = containerColor,
         ) {
-            NotificationContentCard(
-                notification = notification,
+            MessageContentCard(
+                title = notification.title,
+                message = notification.message,
+                messageType = notification.messageType,
                 contentColor = contentColor,
-                onCancelTapped = { visibleState.targetState = false },
+                onCancel = { visibleState.targetState = false },
             )
         }
     }

@@ -1,27 +1,23 @@
 package com.crosspaste.ui.extension.ocr
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults.buttonColors
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,8 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import com.crosspaste.config.DesktopConfigManager
@@ -43,18 +38,13 @@ import com.crosspaste.module.ocr.DesktopOCRModule.Companion.getTrainedDataName
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.splitOcrLanguages
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.ui.LocalDesktopAppSizeValueState
-import com.crosspaste.ui.base.PasteTooltipAreaView
-import com.crosspaste.ui.base.SettingButton
-import com.crosspaste.ui.base.SettingOutlineButton
-import com.crosspaste.ui.base.info
-import com.crosspaste.ui.settings.SettingItemsTitleView
-import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.base.AlertCard
+import com.crosspaste.ui.base.SectionHeader
+import com.crosspaste.ui.settings.SettingSectionCard
+import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.tiny4X
-import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -66,7 +56,7 @@ fun OCRContentView() {
     val moduleDownloadManager = koinInject<ModuleDownloadManager>()
     val notificationManager = koinInject<NotificationManager>()
     val ocrModule = koinInject<OCRModule>()
-    val languages = copywriter.getAllLanguages()
+    val allLanguages = copywriter.getAllLanguages()
 
     val config by configManager.config.collectAsState()
 
@@ -86,44 +76,34 @@ fun OCRContentView() {
         }
     }
 
-    Box(
+    LazyColumn(
         modifier =
             Modifier
-                .fillMaxSize()
-                .background(AppUIColors.appBackground)
-                .padding(horizontal = medium)
-                .padding(bottom = medium),
+                .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize(),
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .wrapContentSize()
-                        .clip(tinyRoundedCornerShape),
-            ) {
-                if (ocrLanguageList.isNotEmpty()) {
-                    SettingItemsTitleView(title = "language_module_loaded") {
-                        PasteTooltipAreaView(
-                            modifier = Modifier.size(medium),
-                            text = copywriter.getText("ocr_language_module_order_notice"),
-                        ) {
-                            Icon(
-                                painter = info(),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
+        if (ocrLanguageList.isNotEmpty()) {
+            item {
+                AlertCard(
+                    title = copywriter.getText("ocr_language_module_order_notice"),
+                    messageType = MessageType.Info,
+                )
+            }
+
+            item {
+                SectionHeader("language_module_loaded", topPadding = medium)
+            }
+
+            item {
+                SettingSectionCard {
+                    val languages =
+                        ocrLanguageList.mapNotNull { ocrLanguage ->
+                            allLanguages.find { getTrainedDataName(it.abridge) == ocrLanguage }
                         }
-                    }
-                }
-                LazyColumn {
-                    items(ocrLanguageList.size) { index ->
-                        val ocrLanguage = ocrLanguageList[index]
-                        val language = languages.find { getTrainedDataName(it.abridge) == ocrLanguage }
-                        if (language != null) {
+
+                    languages
+                        .withIndex()
+                        .forEach { (index, language) ->
                             LoadedLanguageItem(
                                 index = index + 1,
                                 language = language,
@@ -132,53 +112,55 @@ fun OCRContentView() {
                                     ocrModule.removeLanguage(language.abridge)
                                 }
                             }
+                            if (index < ocrLanguageList.lastIndex) {
+                                HorizontalDivider()
+                            }
                         }
-                    }
                 }
             }
+        }
 
-            if (ocrLanguageList.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(medium))
-            }
+        item {
+            SectionHeader("language_module_not_loaded", topPadding = medium)
+        }
 
-            Column(
-                modifier =
-                    Modifier
-                        .wrapContentSize()
-                        .clip(tinyRoundedCornerShape),
-            ) {
-                SettingItemsTitleView("language_module_not_loaded")
-
-                LazyColumn {
-                    items(languages.size) { index ->
-                        val language = languages[index]
+        item {
+            SettingSectionCard {
+                val languages =
+                    allLanguages.filter { language ->
                         val ocrLanguage = ocrLanguageList.find { it == getTrainedDataName(language.abridge) }
-                        if (ocrLanguage == null) {
-                            val downloadState = downloadState.fileStates[language.abridge]
-                            LanguageItem(
-                                language = language,
-                                state = downloadState,
-                                onDownloadClick = {
-                                    ocrModule.createDownloadTask(language.abridge)?.let { task ->
-                                        moduleDownloadManager.downloadFile(task)
-                                    }
-                                },
-                                onCancelClick = {
-                                    moduleDownloadManager.cancelDownload(language.abridge)
-                                },
-                                onDeleteClick = {
-                                    moduleDownloadManager.removeDownload(
-                                        moduleId = "OCR",
-                                        taskId = language.abridge,
-                                    )
-                                },
-                                onLoadClick = {
-                                    scope.launch {
-                                        ocrModule.addLanguage(language.abridge)
-                                    }
-                                },
+                        ocrLanguage == null
+                    }
+
+                languages.withIndex().forEach { (index, language) ->
+
+                    val downloadState = downloadState.fileStates[language.abridge]
+                    LanguageItem(
+                        language = language,
+                        state = downloadState,
+                        onDownloadClick = {
+                            ocrModule.createDownloadTask(language.abridge)?.let { task ->
+                                moduleDownloadManager.downloadFile(task)
+                            }
+                        },
+                        onCancelClick = {
+                            moduleDownloadManager.cancelDownload(language.abridge)
+                        },
+                        onDeleteClick = {
+                            moduleDownloadManager.removeDownload(
+                                moduleId = "OCR",
+                                taskId = language.abridge,
                             )
-                        }
+                        },
+                        onLoadClick = {
+                            scope.launch {
+                                ocrModule.addLanguage(language.abridge)
+                            }
+                        },
+                    )
+
+                    if (index < languages.lastIndex) {
+                        HorizontalDivider()
                     }
                 }
             }
@@ -193,45 +175,35 @@ fun LoadedLanguageItem(
     onRemoveClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-
-    val appSizeValue = LocalDesktopAppSizeValueState.current
-
-    Card(
+    ListItem(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(appSizeValue.settingsItemHeight),
-        shape = RectangleShape,
-        elevation = CardDefaults.cardElevation(defaultElevation = tiny4X),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = index.toString(),
-                style = MaterialTheme.typography.labelMedium,
-            )
-            Spacer(Modifier.width(tiny))
+            Modifier.height(huge),
+        headlineContent = {
             Text(
                 text = language.name,
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Spacer(Modifier.weight(1f))
-            SettingOutlineButton(
+        },
+        leadingContent = {
+            Text(
+                text = index.toString(),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        },
+        trailingContent = {
+            Button(
                 onClick = onRemoveClick,
                 colors =
-                    ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
+                    buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
                     ),
             ) {
                 Text(copywriter.getText("remove"))
             }
-        }
-    }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
 }
 
 @Composable
@@ -245,32 +217,14 @@ fun LanguageItem(
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
 
-    val appSizeValue = LocalDesktopAppSizeValueState.current
-
-    Card(
+    ListItem(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(appSizeValue.settingsItemHeight),
-        shape = RectangleShape,
-        elevation = CardDefaults.cardElevation(defaultElevation = tiny4X),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = medium),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = language.name,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-
+            Modifier.height(huge),
+        headlineContent = {
             Box(
                 modifier =
                     Modifier
-                        .weight(1f)
+                        .fillMaxWidth()
                         .padding(horizontal = medium),
                 contentAlignment = Alignment.Center,
             ) {
@@ -296,13 +250,21 @@ fun LanguageItem(
                     }
                 }
             }
-
+        },
+        leadingContent = {
+            Text(
+                text = language.name,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        },
+        trailingContent = {
             Row(
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(tiny),
             ) {
                 when (state) {
                     null, is DownloadState.Idle, is DownloadState.Cancelled -> {
-                        SettingButton(
+                        FilledTonalButton(
                             onClick = onDownloadClick,
                         ) {
                             Text(copywriter.getText("download"))
@@ -310,7 +272,7 @@ fun LanguageItem(
                     }
 
                     is DownloadState.Downloading -> {
-                        SettingOutlineButton(
+                        TextButton(
                             onClick = onCancelClick,
                         ) {
                             Text(copywriter.getText("cancel"))
@@ -318,16 +280,17 @@ fun LanguageItem(
                     }
 
                     is DownloadState.Completed -> {
-                        SettingOutlineButton(
+                        Button(
                             onClick = onDeleteClick,
                             colors =
-                                ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error,
+                                buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError,
                                 ),
                         ) {
                             Text(copywriter.getText("delete"))
                         }
-                        SettingOutlineButton(
+                        Button(
                             onClick = onLoadClick,
                         ) {
                             Text(copywriter.getText("load"))
@@ -335,11 +298,12 @@ fun LanguageItem(
                     }
 
                     is DownloadState.Failed -> {
-                        SettingOutlineButton(
+                        Button(
                             onClick = onDownloadClick,
                             colors =
-                                ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error,
+                                buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError,
                                 ),
                         ) {
                             Text(copywriter.getText("retry"))
@@ -347,6 +311,7 @@ fun LanguageItem(
                     }
                 }
             }
-        }
-    }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
 }
