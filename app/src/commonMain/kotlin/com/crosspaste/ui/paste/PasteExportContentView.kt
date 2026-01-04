@@ -1,23 +1,18 @@
 package com.crosspaste.ui.paste
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,9 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.unit.Dp
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -46,6 +38,8 @@ import com.crosspaste.paste.PasteType.Companion.RTF_TYPE
 import com.crosspaste.paste.PasteType.Companion.TEXT_TYPE
 import com.crosspaste.paste.PasteType.Companion.URL_TYPE
 import com.crosspaste.ui.base.Counter
+import com.crosspaste.ui.base.InnerScaffold
+import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
 import com.crosspaste.ui.base.html
@@ -53,21 +47,17 @@ import com.crosspaste.ui.base.image
 import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.rtf
 import com.crosspaste.ui.base.text
-import com.crosspaste.ui.settings.SettingsText
-import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.settings.SettingListItem
+import com.crosspaste.ui.settings.SettingListSwitchItem
+import com.crosspaste.ui.settings.SettingSectionCard
+import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small
-import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xLarge
-import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
-import com.crosspaste.utils.MB
 import com.crosspaste.utils.getFileUtils
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -76,12 +66,12 @@ import org.koin.compose.koinInject
 fun PasteExportContentView() {
     val appFileChooser = koinInject<AppFileChooser>()
     val configManager = koinInject<CommonConfigManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
     val pasteExportService = koinInject<PasteExportService>()
     val pasteExportParamFactory = koinInject<PasteExportParamFactory>()
     val fileUtils = getFileUtils()
 
     // State for type filters
-    var allTypesSelected by remember { mutableStateOf(true) }
     var textTypeSelected by remember { mutableStateOf(true) }
     var urlTypeSelected by remember { mutableStateOf(true) }
     var htmlTypeSelected by remember { mutableStateOf(true) }
@@ -102,293 +92,250 @@ fun PasteExportContentView() {
     var progressing by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
 
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(AppUIColors.appBackground)
-                .padding(horizontal = medium)
-                .padding(bottom = medium)
-                .clip(tinyRoundedCornerShape)
-                .background(AppUIColors.generalBackground),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(medium),
-            verticalArrangement = Arrangement.spacedBy(tiny),
-        ) {
-            // Top section with checkboxes
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(small2X),
-            ) {
-                // Type filters section
-                TypeFiltersSection(
-                    allTypesSelected = allTypesSelected,
-                    onAllTypesSelectedChange = { allTypesSelected = it },
-                    textTypeSelected = textTypeSelected,
-                    onTextTypeSelectedChange = { textTypeSelected = it },
-                    urlTypeSelected = urlTypeSelected,
-                    onUrlTypeSelectedChange = { urlTypeSelected = it },
-                    htmlTypeSelected = htmlTypeSelected,
-                    onHtmlTypeSelectedChange = { htmlTypeSelected = it },
-                    fileTypeSelected = fileTypeSelected,
-                    onFileTypeSelectedChange = { fileTypeSelected = it },
-                    imageTypeSelected = imageTypeSelected,
-                    onImageTypeSelectedChange = { imageTypeSelected = it },
-                    rtfTypeSelected = rtfTypeSelected,
-                    onRtfTypeSelectedChange = { rtfTypeSelected = it },
-                    colorTypeSelected = colorTypeSelected,
-                    onColorTypeSelectedChange = { colorTypeSelected = it },
-                )
-
-                // Additional filters section
-                AdditionalFiltersSection(
-                    favoritesSelected = favoritesSelected,
-                    onFavoritesSelectedChange = { favoritesSelected = it },
-                    sizeFilterSelected = sizeFilterSelected,
-                    onSizeFilterSelectedChange = { sizeFilterSelected = it },
-                    maxFileSize = maxFileSize,
-                    onMaxFileSizeChange = { maxFileSize = it },
-                )
-            }
-
-            // Progress indicator or divider
-            ProgressSection(progressing, progress)
-
-            // Export button
-            ExportButtonSection(
-                progressing = progressing,
-                progress = progress,
-                enabled = !progressing,
-                onClick = {
-                    handleExportClick(
-                        appFileChooser = appFileChooser,
-                        types =
-                            collectSelectedTypes(
-                                allTypesSelected,
-                                textTypeSelected,
-                                urlTypeSelected,
-                                htmlTypeSelected,
-                                fileTypeSelected,
-                                imageTypeSelected,
-                                rtfTypeSelected,
-                                colorTypeSelected,
-                            ),
-                        favoritesSelected = favoritesSelected,
-                        sizeFilterSelected = sizeFilterSelected,
-                        maxFileSize = maxFileSize,
-                        fileUtils = fileUtils,
-                        pasteExportService = pasteExportService,
-                        pasteExportParamFactory = pasteExportParamFactory,
-                        onProgressChange = {
-                            progress = it
-                            // 1f means export finished
-                            // < 0f means export failed
-                            if (progress == 1f || progress < 0f) {
-                                progressing = false
-                                progress = 0f
-                            }
-                        },
-                        onExportStart = {
-                            progress = 0f
-                            progressing = true
-                        },
-                    )
-                },
-            )
-        }
-    }
-}
-
-/**
- * Section displaying all type filter checkboxes
- */
-@Composable
-private fun TypeFiltersSection(
-    allTypesSelected: Boolean,
-    onAllTypesSelectedChange: (Boolean) -> Unit,
-    textTypeSelected: Boolean,
-    onTextTypeSelectedChange: (Boolean) -> Unit,
-    urlTypeSelected: Boolean,
-    onUrlTypeSelectedChange: (Boolean) -> Unit,
-    htmlTypeSelected: Boolean,
-    onHtmlTypeSelectedChange: (Boolean) -> Unit,
-    fileTypeSelected: Boolean,
-    onFileTypeSelectedChange: (Boolean) -> Unit,
-    imageTypeSelected: Boolean,
-    onImageTypeSelectedChange: (Boolean) -> Unit,
-    rtfTypeSelected: Boolean,
-    onRtfTypeSelectedChange: (Boolean) -> Unit,
-    colorTypeSelected: Boolean,
-    onColorTypeSelectedChange: (Boolean) -> Unit,
-) {
-    PasteTypeCheckbox(
-        type = "all_types",
-        selected = allTypesSelected,
-        onSelectedChange = onAllTypesSelectedChange,
-    )
-
-    if (!allTypesSelected) {
-        PasteTypeWithIconCheckbox(
-            type = "text",
-            icon = text(),
-            selected = textTypeSelected,
-            onSelectedChange = onTextTypeSelectedChange,
-        )
-
-        PasteTypeWithIconCheckbox(
-            type = "link",
-            icon = link(),
-            selected = urlTypeSelected,
-            onSelectedChange = onUrlTypeSelectedChange,
-        )
-
-        PasteTypeWithIconCheckbox(
-            type = "html",
-            icon = html(),
-            selected = htmlTypeSelected,
-            onSelectedChange = onHtmlTypeSelectedChange,
-        )
-
-        PasteTypeWithIconCheckbox(
-            type = "file",
-            icon = file(),
-            selected = fileTypeSelected,
-            onSelectedChange = onFileTypeSelectedChange,
-        )
-
-        PasteTypeWithIconCheckbox(
-            type = "image",
-            icon = image(),
-            selected = imageTypeSelected,
-            onSelectedChange = onImageTypeSelectedChange,
-        )
-
-        PasteTypeWithIconCheckbox(
-            type = "rtf",
-            icon = rtf(),
-            selected = rtfTypeSelected,
-            onSelectedChange = onRtfTypeSelectedChange,
-        )
-
-        PasteTypeWithIconCheckbox(
-            type = "color",
-            icon = color(),
-            selected = colorTypeSelected,
-            onSelectedChange = onColorTypeSelectedChange,
-        )
-    }
-}
-
-/**
- * Convenience function for paste type checkboxes with icons
- */
-@Composable
-private fun PasteTypeWithIconCheckbox(
-    type: String,
-    icon: Painter,
-    selected: Boolean,
-    onSelectedChange: (Boolean) -> Unit,
-) {
-    PasteTypeCheckbox(
-        type = type,
-        icon = icon,
-        selected = selected,
-        startPadding = xxxxLarge,
-        onSelectedChange = onSelectedChange,
-    )
-}
-
-/**
- * Section displaying additional filters (favorites and file size)
- */
-@Composable
-private fun AdditionalFiltersSection(
-    favoritesSelected: Boolean,
-    onFavoritesSelectedChange: (Boolean) -> Unit,
-    sizeFilterSelected: Boolean,
-    onSizeFilterSelectedChange: (Boolean) -> Unit,
-    maxFileSize: Long,
-    onMaxFileSizeChange: (Long) -> Unit,
-) {
-    PasteTypeCheckbox(
-        type = "favorite",
-        selected = favoritesSelected,
-        onSelectedChange = onFavoritesSelectedChange,
-    )
-
-    PasteTypeCheckbox(
-        type = "file_size_filter",
-        selected = sizeFilterSelected,
-        onSelectedChange = onSizeFilterSelectedChange,
-    ) {
-        if (sizeFilterSelected) {
-            Row(
-                modifier = Modifier.wrapContentWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Counter(
-                    defaultValue = maxFileSize,
-                    unit = MB,
-                    rule = { it > 0 },
+    InnerScaffold(
+        bottomBar = {
+            Column {
+                if (progressing) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(medium),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        LinearProgressIndicator(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(tiny3X)
+                                    .padding(horizontal = tiny)
+                                    .clip(tiny4XRoundedCornerShape),
+                            progress = { progress },
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    onMaxFileSizeChange(it)
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !progressing,
+                        onClick = {
+                            handleExportClick(
+                                appFileChooser = appFileChooser,
+                                types =
+                                    collectSelectedTypes(
+                                        textTypeSelected,
+                                        urlTypeSelected,
+                                        htmlTypeSelected,
+                                        fileTypeSelected,
+                                        imageTypeSelected,
+                                        rtfTypeSelected,
+                                        colorTypeSelected,
+                                    ),
+                                favoritesSelected = favoritesSelected,
+                                sizeFilterSelected = sizeFilterSelected,
+                                maxFileSize = maxFileSize,
+                                fileUtils = fileUtils,
+                                pasteExportService = pasteExportService,
+                                pasteExportParamFactory = pasteExportParamFactory,
+                                onProgressChange = {
+                                    progress = it
+                                    // 1f means export finished
+                                    // < 0f means export failed
+                                    if (progress == 1f || progress < 0f) {
+                                        progressing = false
+                                        progress = 0f
+                                    }
+                                },
+                                onExportStart = {
+                                    progress = 0f
+                                    progressing = true
+                                },
+                            )
+                        },
+                    ) {
+                        Text(
+                            if (progressing) {
+                                "${(progress * 100).toInt()}%"
+                            } else {
+                                copywriter.getText("export")
+                            },
+                            style =
+                                if (progressing) {
+                                    MaterialTheme.typography.bodyMedium
+                                        .copy(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                        )
+                    }
                 }
             }
-        }
-    }
-}
-
-/**
- * Progress indicator or divider based on export state
- */
-@Composable
-private fun ProgressSection(
-    progressing: Boolean,
-    progress: Float,
-) {
-    if (progressing) {
-        LinearProgressIndicator(
+        },
+    ) {
+        LazyColumn(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .height(tiny3X)
-                    .clip(tiny4XRoundedCornerShape),
-            progress = { progress },
-        )
-    } else {
-        HorizontalDivider()
-    }
-}
-
-/**
- * Export button section
- */
-@Composable
-private fun ExportButtonSection(
-    progressing: Boolean,
-    progress: Float,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    val copywriter = koinInject<GlobalCopywriter>()
-
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = medium),
-        horizontalArrangement = Arrangement.End,
-    ) {
-        Button(
-            enabled = enabled,
-            onClick = onClick,
+                    .fillMaxSize()
+                    .padding(
+                        bottom =
+                            if (!progressing) {
+                                huge
+                            } else {
+                                huge + medium
+                            },
+                    ),
+            verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
-            Text(
-                if (progressing) {
-                    "${(progress * 100).toInt()}%"
-                } else {
-                    copywriter.getText("export")
-                },
-            )
+            item {
+                SectionHeader("select_export_type")
+            }
+
+            item {
+                SettingSectionCard {
+                    SettingListItem(
+                        title = "text",
+                        painter = text(),
+                        trailingContent = {
+                            Checkbox(
+                                checked = textTypeSelected,
+                                onCheckedChange = { checked ->
+                                    textTypeSelected = checked
+                                },
+                            )
+                        },
+                        onClick = {
+                            textTypeSelected = !textTypeSelected
+                        },
+                    )
+                    HorizontalDivider()
+                    SettingListItem(
+                        title = "link",
+                        painter = link(),
+                        trailingContent = {
+                            Checkbox(
+                                checked = urlTypeSelected,
+                                onCheckedChange = { checked ->
+                                    urlTypeSelected = checked
+                                },
+                            )
+                        },
+                        onClick = {
+                            urlTypeSelected = !urlTypeSelected
+                        },
+                    )
+                    HorizontalDivider()
+                    SettingListItem(
+                        title = "html",
+                        painter = html(),
+                        trailingContent = {
+                            Checkbox(
+                                checked = htmlTypeSelected,
+                                onCheckedChange = { checked ->
+                                    htmlTypeSelected = checked
+                                },
+                            )
+                        },
+                        onClick = {
+                            htmlTypeSelected = !htmlTypeSelected
+                        },
+                    )
+                    HorizontalDivider()
+                    SettingListItem(
+                        title = "file",
+                        painter = file(),
+                        trailingContent = {
+                            Checkbox(
+                                checked = fileTypeSelected,
+                                onCheckedChange = { checked ->
+                                    fileTypeSelected = checked
+                                },
+                            )
+                        },
+                        onClick = {
+                            fileTypeSelected = !fileTypeSelected
+                        },
+                    )
+                    HorizontalDivider()
+                    SettingListItem(
+                        title = "image",
+                        painter = image(),
+                        trailingContent = {
+                            Checkbox(
+                                checked = imageTypeSelected,
+                                onCheckedChange = { checked ->
+                                    imageTypeSelected = checked
+                                },
+                            )
+                        },
+                        onClick = {
+                            imageTypeSelected = !imageTypeSelected
+                        },
+                    )
+                    HorizontalDivider()
+                    SettingListItem(
+                        title = "rtf",
+                        painter = rtf(),
+                        trailingContent = {
+                            Checkbox(
+                                checked = rtfTypeSelected,
+                                onCheckedChange = { checked ->
+                                    rtfTypeSelected = checked
+                                },
+                            )
+                        },
+                        onClick = {
+                            rtfTypeSelected = !rtfTypeSelected
+                        },
+                    )
+                    HorizontalDivider()
+                    SettingListItem(
+                        title = "color",
+                        painter = color(),
+                        trailingContent = {
+                            Checkbox(
+                                checked = colorTypeSelected,
+                                onCheckedChange = { checked ->
+                                    colorTypeSelected = checked
+                                },
+                            )
+                        },
+                        onClick = {
+                            colorTypeSelected = !colorTypeSelected
+                        },
+                    )
+                }
+            }
+
+            item {
+                SectionHeader("advanced_filtering", topPadding = medium)
+            }
+
+            item {
+                SettingSectionCard {
+                    SettingListSwitchItem(
+                        title = "export_favorites_only",
+                        checked = favoritesSelected,
+                        onCheckedChange = { favoritesSelected = it },
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                    SettingListItem(
+                        title = "export_favorites_only",
+                        icon = Icons.Default.Storage,
+                        trailingContent = {
+                            Counter(
+                                defaultValue = maxFileSize,
+                                unit = "MB",
+                                rule = { it >= 0 },
+                            ) {
+                                maxFileSize = it
+                            }
+                        },
+                    )
+                }
+            }
         }
     }
 }
@@ -436,7 +383,6 @@ private fun handleExportClick(
  * Collect all selected paste types
  */
 private fun collectSelectedTypes(
-    allTypesSelected: Boolean,
     textTypeSelected: Boolean,
     urlTypeSelected: Boolean,
     htmlTypeSelected: Boolean,
@@ -447,85 +393,27 @@ private fun collectSelectedTypes(
 ): MutableSet<Long> {
     val types = mutableSetOf<Long>()
 
-    if (allTypesSelected || textTypeSelected) {
+    if (textTypeSelected) {
         types.add(TEXT_TYPE.type.toLong())
     }
-    if (allTypesSelected || urlTypeSelected) {
+    if (urlTypeSelected) {
         types.add(URL_TYPE.type.toLong())
     }
-    if (allTypesSelected || htmlTypeSelected) {
+    if (htmlTypeSelected) {
         types.add(HTML_TYPE.type.toLong())
     }
-    if (allTypesSelected || fileTypeSelected) {
+    if (fileTypeSelected) {
         types.add(FILE_TYPE.type.toLong())
     }
-    if (allTypesSelected || imageTypeSelected) {
+    if (imageTypeSelected) {
         types.add(IMAGE_TYPE.type.toLong())
     }
-    if (allTypesSelected || rtfTypeSelected) {
+    if (rtfTypeSelected) {
         types.add(RTF_TYPE.type.toLong())
     }
-    if (allTypesSelected || colorTypeSelected) {
+    if (colorTypeSelected) {
         types.add(COLOR_TYPE.type.toLong())
     }
 
     return types
-}
-
-@Composable
-fun PasteTypeCheckbox(
-    type: String,
-    icon: Painter? = null,
-    selected: Boolean,
-    height: Dp = xxLarge,
-    startPadding: Dp = medium,
-    onSelectedChange: (Boolean) -> Unit,
-    content: (@Composable () -> Unit)? = null,
-) {
-    val copywriter = koinInject<GlobalCopywriter>()
-
-    val color =
-        if (selected) {
-            MaterialTheme.colorScheme.onSurface
-        } else {
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        }
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(height)
-                .padding(start = startPadding),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(
-            modifier = Modifier.size(small),
-            checked = selected,
-            onCheckedChange = onSelectedChange,
-            colors =
-                CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.primary,
-                    checkmarkColor = Color.White,
-                ),
-        )
-        val padding = icon?.let { medium } ?: xLarge
-        Spacer(modifier = Modifier.width(padding))
-        icon?.let {
-            Icon(
-                modifier = Modifier.size(small),
-                painter = icon,
-                contentDescription = type,
-                tint = color,
-            )
-            Spacer(modifier = Modifier.width(small2X))
-        }
-        SettingsText(
-            text = copywriter.getText(type),
-            color = color,
-        )
-        content?.let {
-            Spacer(modifier = Modifier.width(small2X))
-            it()
-        }
-    }
 }

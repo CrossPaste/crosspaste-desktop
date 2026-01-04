@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
@@ -142,6 +143,7 @@ fun NetworkSettingsContentView() {
                 SettingSectionCard {
                     SettingListItem(
                         title = "empty",
+                        icon = null as ImageVector?,
                         trailingContent = null,
                     )
                 }

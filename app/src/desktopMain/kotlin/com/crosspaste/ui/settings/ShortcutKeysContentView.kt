@@ -121,6 +121,7 @@ fun ShortcutKeyRow(name: String) {
 
     SettingListItem(
         title = name,
+        icon = null,
         trailingContent = {
             shortcutKeysCore.keys[name]?.let { keys ->
                 ShortcutKeyItemView(keys)
