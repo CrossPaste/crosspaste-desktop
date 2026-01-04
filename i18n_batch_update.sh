@@ -23,7 +23,7 @@ show_usage() {
     echo "  3. Check unused:     $0 -u [-f] [src_directory] [i18n_directory_path]"
     echo ""
     echo "Options for -u:"
-    echo "  -f    Force delete unused keys after scanning"
+    echo "  -f    Force delete unused keys from all properties files after scanning"
     echo ""
     echo "Default i18n directory: $I18N_DIR"
     exit 1
@@ -43,7 +43,7 @@ CMD_SRC_DIR=""
 CUSTOM_DIR=""
 FORCE_DELETE=false
 
-# Simple argument parser
+# Simple argument parser loop
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -d)
@@ -54,12 +54,10 @@ while [[ $# -gt 0 ]]; do
         -u)
             MODE="unused"
             shift
-            # Check for -f flag immediately after -u
             if [[ "$1" == "-f" ]]; then
                 FORCE_DELETE=true
                 shift
             fi
-            # Check if next arg is a directory (not starting with -)
             if [[ -n "$1" && ! "$1" == -* ]]; then
                 CMD_SRC_DIR="$1"
                 shift
@@ -89,22 +87,25 @@ fi
 # HELPER FUNCTIONS
 # ==========================================
 
-# Function to perform actual deletion from all .properties files
+# Function to delete a key from all files in the i18n directory
 perform_delete() {
     local target_key="$1"
+    local count=0
     shopt -s nullglob
     for file in "$I18N_DIR"/*.properties; do
         if grep -q "^${target_key}=" "$file"; then
             if grep -v "^${target_key}=" "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"; then
-                echo "    [REMOVED] $target_key from $(basename "$file")"
+                echo "    [DELETED] $target_key from $(basename "$file")"
+                ((count++))
             fi
         fi
     done
     shopt -u nullglob
+    return $count
 }
 
 # ==========================================
-# LOGIC: UNUSED KEYS CHECK
+# LOGIC: UNUSED KEYS CHECK (Mode: -u)
 # ==========================================
 if [ "$MODE" == "unused" ]; then
     ZH_FILE="${I18N_DIR}/zh.properties"
@@ -123,7 +124,7 @@ if [ "$MODE" == "unused" ]; then
     echo ""
     echo "Scanning for unused keys..."
     echo "Target Directories: ${SCAN_TARGETS[*]}"
-    [ "$FORCE_DELETE" = true ] && echo "Mode: SCAN & AUTO-DELETE" || echo "Mode: SCAN ONLY"
+    [ "$FORCE_DELETE" = true ] && echo "Mode: SCAN & AUTO-DELETE (-f enabled)" || echo "Mode: SCAN ONLY"
     echo "-----------------------------------------"
 
     UNUSED_KEYS=()
@@ -136,18 +137,17 @@ if [ "$MODE" == "unused" ]; then
         [ -z "$key" ] && continue
         ((TOTAL_KEYS++))
 
-        # LOGIC: Handle numeric suffix (e.g., key_0, key_1)
-        # If key ends with _[0-9]+, search for the prefix instead
+        # Handle numeric suffix (e.g., guide_0, guide_1 -> search for "guide")
         SEARCH_PATTERN="$key"
         if [[ "$key" =~ _[0-9]+$ ]]; then
             SEARCH_PATTERN=$(echo "$key" | sed -E 's/_[0-9]+$//')
-            # English Note: Strip trailing _0, _1 etc. to support dynamic usage
+            # English Note: Strip trailing numbers to support dynamic key construction in code
         fi
 
         FOUND=false
         for dir in "${SCAN_TARGETS[@]}"; do
             if [ -d "$dir" ]; then
-                # Search for the pattern inside double quotes
+                # Search for pattern inside double quotes
                 if grep -rq "\"$SEARCH_PATTERN" "$dir"; then
                     FOUND=true
                     break
@@ -156,7 +156,7 @@ if [ "$MODE" == "unused" ]; then
         done
 
         if [ "$FOUND" = false ]; then
-            echo "  [UNUSED] $key (Searched for: \"$SEARCH_PATTERN\")"
+            echo "  [UNUSED] $key (Searched: \"$SEARCH_PATTERN\")"
             UNUSED_KEYS+=("$key")
         fi
     done <<< "$ALL_KEYS"
@@ -164,7 +164,6 @@ if [ "$MODE" == "unused" ]; then
     echo "-----------------------------------------"
     echo "Scan complete. Found ${#UNUSED_KEYS[@]} unused keys."
 
-    # AUTO-DELETE LOGIC
     if [ "$FORCE_DELETE" = true ] && [ ${#UNUSED_KEYS[@]} -gt 0 ]; then
         echo "Starting auto-deletion..."
         for uk in "${UNUSED_KEYS[@]}"; do
@@ -172,13 +171,13 @@ if [ "$MODE" == "unused" ]; then
         done
         echo "All unused keys have been removed."
     elif [ ${#UNUSED_KEYS[@]} -gt 0 ]; then
-        echo "Tip: Run with -f to automatically remove these keys."
+        echo "Tip: Run with '-u -f' to automatically remove these keys."
     fi
     exit 0
 fi
 
 # ==========================================
-# LOGIC: INDIVIDUAL DELETE
+# LOGIC: INDIVIDUAL DELETE (Mode: -d)
 # ==========================================
 if [ "$MODE" == "delete" ]; then
     echo "Deleting key: $KEY_TO_DELETE"
@@ -187,7 +186,7 @@ if [ "$MODE" == "delete" ]; then
 fi
 
 # ==========================================
-# LOGIC: ADD/UPDATE KEY
+# LOGIC: ADD/UPDATE KEY (Default Mode)
 # ==========================================
 if [ ! -f "$INPUT_FILE" ]; then
     echo "Error: Input file '$INPUT_FILE' does not exist"
@@ -195,27 +194,57 @@ if [ ! -f "$INPUT_FILE" ]; then
 fi
 
 KEY_NAME=$(grep "^key=" "$INPUT_FILE" | cut -d'=' -f2-)
-[ -z "$KEY_NAME" ] && { echo "Error: No 'key=' found"; exit 1; }
+if [ -z "$KEY_NAME" ]; then
+    echo "Error: No 'key=' definition found in input file"
+    exit 1
+fi
 
-# (The rest of your existing add/update logic)
+echo ""
+echo "Preparing to add/update key: $KEY_NAME"
+echo "i18n directory: $I18N_DIR"
+echo "-----------------------------------------"
+
 SUCCESS_COUNT=0
+TOTAL_COUNT=0
+SKIPPED_COUNT=0
+
 while IFS='=' read -r lang value; do
-    [ -z "$lang" ] || [[ "$lang" =~ ^[[:space:]]*# ]] || [ "$lang" = "key" ] && continue
-    lang=$(echo "$lang" | xargs)
-    value=$(echo "$value" | xargs)
-    [ -z "$value" ] && continue
+    [ -z "$lang" ] && continue
+    [[ "$lang" =~ ^[[:space:]]*# ]] && continue
+
+    # Trim whitespace
+    lang=$(echo "$lang" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    [ "$lang" = "key" ] && continue
+    if [ -z "$value" ]; then
+        ((SKIPPED_COUNT++))
+        continue
+    fi
 
     NORM_LANG=$(echo "$lang" | sed 's/-/_/g')
     PROP_FILE="${I18N_DIR}/${NORM_LANG}.properties"
+    FILE_NAME=$(basename "$PROP_FILE")
 
     [ ! -f "$PROP_FILE" ] && touch "$PROP_FILE"
 
+    # Restoration of detailed logging
     if grep -q "^${KEY_NAME}=" "$PROP_FILE"; then
-        sed "s|^${KEY_NAME}=.*|${KEY_NAME}=${value}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"
+        # UPDATE Logic
+        if sed "s|^${KEY_NAME}=.*|${KEY_NAME}=${value}|" "$PROP_FILE" > "${PROP_FILE}.tmp" && mv "${PROP_FILE}.tmp" "$PROP_FILE"; then
+            echo "  Updated (In-Place): $FILE_NAME"
+            ((SUCCESS_COUNT++))
+        fi
     else
-        echo "${KEY_NAME}=${value}" >> "$PROP_FILE"
-        sort "$PROP_FILE" -o "$PROP_FILE"
+        # ADD Logic
+        if echo "${KEY_NAME}=${value}" >> "$PROP_FILE"; then
+            sort "$PROP_FILE" -o "$PROP_FILE"
+            echo "  Added & Sorted:    $FILE_NAME"
+            ((SUCCESS_COUNT++))
+        fi
     fi
-    ((SUCCESS_COUNT++))
+    ((TOTAL_COUNT++))
 done < "$INPUT_FILE"
-echo "Done. Processed $SUCCESS_COUNT files."
+
+echo "-----------------------------------------"
+echo "Summary: Processed $TOTAL_COUNT, Updated $SUCCESS_COUNT, Skipped $SKIPPED_COUNT."
