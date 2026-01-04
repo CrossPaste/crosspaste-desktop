@@ -105,6 +105,8 @@ fun PlatformScope.DeviceRowContent(
 
                 Text(
                     text = getDeviceDisplayName(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = FontFamily.SansSerif,
                     color = style.contentColor.copy(alpha = 0.7f),
