@@ -258,7 +258,16 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ImportScreen() {
-        PasteImportContentView()
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(start = xLarge, end = xLarge, bottom = xLarge),
+            contentAlignment = Alignment.Center,
+        ) {
+            PasteImportContentView()
+        }
     }
 
     @Composable
