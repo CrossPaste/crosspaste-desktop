@@ -192,11 +192,9 @@ import com.crosspaste.ui.DesktopFontManager
 import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.ScreenProvider
-import com.crosspaste.ui.base.DesktopExpandViewProvider
 import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.DesktopUISupport
-import com.crosspaste.ui.base.ExpandViewProvider
 import com.crosspaste.ui.base.FontManager
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.MenuHelper
@@ -522,7 +520,6 @@ class DesktopModule(
             single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
-            single<ExpandViewProvider> { DesktopExpandViewProvider(get()) }
             single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
             single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
             single<IconStyle> { DesktopIconStyle(get()) }

@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.window.WindowDraggableArea
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -28,11 +31,11 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.DesktopContext.MainWindowContext
-import com.crosspaste.ui.base.PasteTooltipIconView
-import com.crosspaste.ui.base.pushpinActive
-import com.crosspaste.ui.base.pushpinInactive
+import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.settings.GrantAccessibilityDialog
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.intui.window.DecoratedWindowIconKeys
@@ -140,10 +143,16 @@ fun MainWindow(windowIcon: Painter?) {
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    PasteTooltipIconView(
-                        painter = if (alwaysOnTop) pushpinActive() else pushpinInactive(),
-                        text = "CrossPaste",
-                        contentDescription = "alwaysOnTop",
+                    GeneralIconButton(
+                        imageVector =
+                            if (alwaysOnTop) {
+                                Icons.Filled.PushPin
+                            } else {
+                                Icons.Outlined.PushPin
+                            },
+                        desc = "always_on_top",
+                        buttonSize = xxxLarge,
+                        iconSize = xLarge,
                         onClick = {
                             appWindowManager.switchAlwaysOnTopMainWindow()
                         },

@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppWindowManager
@@ -21,7 +23,6 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.check
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
@@ -204,7 +205,7 @@ class DesktopPasteMenuService(
                         trailingIcon = {
                             if (tagIdList.contains(tag.id)) {
                                 Icon(
-                                    painter = check(),
+                                    imageVector = Icons.Default.Check,
                                     contentDescription = "Checked",
                                     tint = AppUIColors.importantColor,
                                 )

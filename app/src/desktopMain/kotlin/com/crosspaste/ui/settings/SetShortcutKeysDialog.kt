@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Shortcut
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +30,6 @@ import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
-import com.crosspaste.ui.base.edit
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny5X
@@ -117,7 +117,7 @@ fun SetShortcutKeysDialog(
                         Icon(
                             modifier =
                                 Modifier.size(medium),
-                            painter = edit(),
+                            imageVector = Icons.Default.Edit,
                             contentDescription = "edit shortcut key",
                             tint = MaterialTheme.colorScheme.primary,
                         )

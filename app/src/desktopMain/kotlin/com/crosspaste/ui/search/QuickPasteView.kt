@@ -10,11 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.enter
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -32,6 +34,7 @@ fun QuickPasteView() {
             modifier =
                 Modifier
                     .wrapContentSize()
+                    .clip(tinyRoundedCornerShape)
                     .clickable {
                         mainCoroutineDispatcher.launch {
                             pasteSelectionViewModel.toPaste()
@@ -47,6 +50,7 @@ fun QuickPasteView() {
             modifier =
                 Modifier
                     .wrapContentSize()
+                    .clip(tinyRoundedCornerShape)
                     .clickable {
                         mainCoroutineDispatcher.launch {
                             pasteSelectionViewModel.toPaste()

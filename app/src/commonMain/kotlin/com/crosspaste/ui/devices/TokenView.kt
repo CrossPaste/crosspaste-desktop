@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -33,7 +35,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalAppSizeValueState
-import com.crosspaste.ui.base.close
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -94,7 +95,7 @@ fun TokenView(intOffset: IntOffset) {
                             modifier = Modifier.align(Alignment.CenterEnd),
                         ) {
                             Icon(
-                                painter = close(),
+                                imageVector = Icons.Default.Close,
                                 contentDescription = "Close",
                                 modifier = Modifier.size(medium),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,

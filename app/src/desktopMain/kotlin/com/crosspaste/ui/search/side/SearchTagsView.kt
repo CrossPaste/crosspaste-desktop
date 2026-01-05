@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +31,6 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteTag.Companion.createDefaultPasteTag
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.base.PasteContextMenuView
-import com.crosspaste.ui.base.add
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.paste.createPasteTagScope
@@ -136,7 +137,7 @@ fun SearchTagsView() {
                 },
                 label = {
                     Icon(
-                        painter = add(),
+                        imageVector = Icons.Default.Add,
                         contentDescription = "Add",
                         modifier = Modifier.size(medium),
                         tint = MaterialTheme.colorScheme.primary,

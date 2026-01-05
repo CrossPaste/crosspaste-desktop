@@ -1,6 +1,8 @@
 package com.crosspaste.share
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -8,7 +10,6 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
-import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 
 class Clipboard(
@@ -20,7 +21,7 @@ class Clipboard(
     @Composable
     override fun ButtonPlatform() {
         Icon(
-            painter = clipboard(),
+            imageVector = Icons.Default.ContentPaste,
             contentDescription = "clipboard",
             modifier = Modifier.size(xxLarge),
         )

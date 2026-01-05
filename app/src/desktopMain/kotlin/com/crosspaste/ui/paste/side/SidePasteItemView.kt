@@ -1,5 +1,6 @@
 package com.crosspaste.ui.paste.side
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -29,13 +31,14 @@ import com.crosspaste.paste.DesktopWriteTransferable
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
-import com.crosspaste.ui.base.HighlightedCard
 import com.crosspaste.ui.base.PasteContextMenuView
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.AppUISize.highlightedCardElevation
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny6X
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
@@ -123,13 +126,19 @@ fun PasteDataScope.SidePasteItemView(
                         drawLayer(graphicsLayer)
                     },
         ) {
-            HighlightedCard(
+            Card(
                 modifier =
                     Modifier.fillMaxSize(),
                 shape = small3XRoundedCornerShape,
+                elevation = highlightedCardElevation,
                 colors =
                     CardDefaults.cardColors(
                         containerColor = AppUIColors.pasteBackground,
+                    ),
+                border =
+                    BorderStroke(
+                        width = tiny6X,
+                        color = AppUIColors.lightBorderColor,
                     ),
             ) {
                 PasteContextMenuView(
