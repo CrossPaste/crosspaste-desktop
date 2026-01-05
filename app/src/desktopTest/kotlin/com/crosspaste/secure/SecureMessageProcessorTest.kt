@@ -308,7 +308,15 @@ class SecureMessageProcessorTest {
     fun testDecryptionWithWrongKeyPair() {
         val aSecureKeyPair = generateSecureKeyPair()
         val bSecureKeyPair = generateSecureKeyPair()
-        val cSecureKeyPair = generateSecureKeyPair()
+        var cSecureKeyPair = generateSecureKeyPair()
+
+        // Ensure that cSecureKeyPair is different from bSecureKeyPair
+        // to avoid accidental derivation of the same shared secret
+        // Although the probability is low with a strong SecureRandom
+        // this guards against seed collision in fast-running tests
+        while (cSecureKeyPair.cryptKeyPair.publicKey == bSecureKeyPair.cryptKeyPair.publicKey) {
+            cSecureKeyPair = generateSecureKeyPair()
+        }
 
         val aProcessor =
             SecureMessageProcessor(
