@@ -111,8 +111,8 @@ object QrCode : Route {
 }
 
 @Serializable
-object Recommend : Route {
-    const val NAME: String = "recommend"
+object Share : Route {
+    const val NAME: String = "share"
     override val name: String = NAME
 }
 

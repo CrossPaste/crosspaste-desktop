@@ -60,7 +60,7 @@ fun MainMenuView() {
                 MainMenuItem("import", Import),
                 MainMenuItem("export", Export),
                 MainMenuItem("shortcut_keys", ShortcutKeys),
-                MainMenuItem("recommend", Recommend),
+                MainMenuItem("share", Share),
                 MainMenuItem("about", About),
             )
         }

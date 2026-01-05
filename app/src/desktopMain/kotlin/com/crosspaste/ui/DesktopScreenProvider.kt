@@ -28,7 +28,7 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.paste.PasteData
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncManager
-import com.crosspaste.ui.base.RecommendContentView
+import com.crosspaste.ui.base.ShareContentView
 import com.crosspaste.ui.devices.DeviceDetailContentView
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.DevicesContentView
@@ -177,7 +177,7 @@ class DesktopScreenProvider(
                 backStackEntry.PasteTextEditScreen()
             }
             composable<QrCode> { QRScreen() }
-            composable<Recommend> { RecommendScreen() }
+            composable<Share> { ShareScreen() }
             navigation<SettingsGraph>(startDestination = Settings) {
                 composable<Settings> { SettingsScreen() }
                 composable<PasteboardSettings>(
@@ -397,8 +397,8 @@ class DesktopScreenProvider(
     }
 
     @Composable
-    private fun RecommendScreen() {
-        RecommendContentView()
+    private fun ShareScreen() {
+        ShareContentView()
     }
 
     @Composable
