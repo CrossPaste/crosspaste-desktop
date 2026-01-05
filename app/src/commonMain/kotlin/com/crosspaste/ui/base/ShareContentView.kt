@@ -124,7 +124,7 @@ fun ShareContentView() {
                             platform.ButtonPlatform()
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(tiny))
 
                         Text(
                             text = platform.platformName,
@@ -137,7 +137,7 @@ fun ShareContentView() {
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(xxLarge))
         }
     }
 }
