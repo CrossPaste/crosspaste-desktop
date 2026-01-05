@@ -28,8 +28,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
@@ -39,13 +41,16 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportService
 import com.crosspaste.ui.base.AlertCard
+import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.theme.AppUISize.enormous
+import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import okio.Path
 import org.koin.compose.koinInject
@@ -62,32 +67,118 @@ fun PasteImportContentView() {
     var progressing by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
 
-    Column {
+    InnerScaffold(
+        bottomBar = {
+            Column {
+                if (progressing) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(medium),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        LinearProgressIndicator(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(tiny3X)
+                                    .padding(horizontal = tiny)
+                                    .clip(tiny4XRoundedCornerShape),
+                            progress = { progress },
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !progressing,
+                        onClick = {
+                            importPath?.let {
+                                val importParam = pasteImportParamFactory.createPasteImportParam(it)
+                                progress = 0f
+                                progressing = true
+
+                                pasteImportService.import(importParam) { currentProgress ->
+                                    progress = currentProgress
+                                    if (progress == 1f || progress < 0f) {
+                                        progressing = false
+                                        progress = 0f
+                                    }
+                                }
+                            }
+                        },
+                    ) {
+                        Text(
+                            if (progressing) {
+                                "${(progress * 100).toInt()}%"
+                            } else {
+                                copywriter.getText("import")
+                            },
+                            style =
+                                if (progressing) {
+                                    MaterialTheme.typography.bodyMedium
+                                        .copy(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                        )
+                    }
+                }
+            }
+        },
+    ) {
         LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        bottom =
+                            if (!progressing) {
+                                huge
+                            } else {
+                                huge + medium
+                            },
+                    ),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             item {
-                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                 Surface(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
-                            .drawBehind {
+                            .drawWithContent {
+                                drawContent()
+
+                                val strokeWidth = tiny4X.toPx()
+                                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                                val borderColor = borderColor
+
+                                val halfStroke = strokeWidth / 2
                                 drawRoundRect(
                                     color = borderColor,
+                                    topLeft = Offset(halfStroke, halfStroke),
+                                    size =
+                                        Size(
+                                            width = size.width - strokeWidth,
+                                            height = size.height - strokeWidth,
+                                        ),
                                     style =
                                         Stroke(
-                                            width = tiny4X.toPx(),
+                                            width = strokeWidth,
                                             pathEffect = dashEffect,
                                         ),
                                     cornerRadius = CornerRadius(xLarge.toPx()),
                                 )
                             },
-                    shape = RoundedCornerShape(xLarge),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = xLargeRoundedCornerShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(medium),
@@ -133,62 +224,6 @@ fun PasteImportContentView() {
                 AlertCard(
                     title = copywriter.getText("import_data_merge_notice"),
                     messageType = MessageType.Info,
-                )
-            }
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        if (progressing) {
-            LinearProgressIndicator(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(tiny3X)
-                        .padding(horizontal = tiny)
-                        .clip(tiny4XRoundedCornerShape),
-                progress = { progress },
-            )
-        }
-
-        Spacer(Modifier.height(medium))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !progressing,
-                onClick = {
-                    importPath?.let {
-                        val importParam = pasteImportParamFactory.createPasteImportParam(it)
-                        progress = 0f
-                        progressing = true
-
-                        pasteImportService.import(importParam) { currentProgress ->
-                            progress = currentProgress
-                            if (progress == 1f || progress < 0f) {
-                                progressing = false
-                                progress = 0f
-                            }
-                        }
-                    }
-                },
-            ) {
-                Text(
-                    if (progressing) {
-                        "${(progress * 100).toInt()}%"
-                    } else {
-                        copywriter.getText("import")
-                    },
-                    style =
-                        if (progressing) {
-                            MaterialTheme.typography.bodyMedium
-                                .copy(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                        } else {
-                            MaterialTheme.typography.bodyMedium
-                        },
                 )
             }
         }

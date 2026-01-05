@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -29,6 +30,17 @@ expect fun SettingListItem(
     title: String,
     subtitle: String? = null,
     icon: ImageVector? = null,
+    trailingContent: @Composable (() -> Unit)? = {
+        Icon(Icons.Default.ChevronRight, null)
+    },
+    onClick: (() -> Unit)? = null,
+)
+
+@Composable
+expect fun SettingListItem(
+    title: String,
+    subtitle: String? = null,
+    painter: Painter? = null,
     trailingContent: @Composable (() -> Unit)? = {
         Icon(Icons.Default.ChevronRight, null)
     },
