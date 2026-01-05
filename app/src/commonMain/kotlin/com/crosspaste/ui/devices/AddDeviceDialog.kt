@@ -5,18 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -28,9 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
@@ -42,7 +36,9 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
+import com.crosspaste.ui.base.PortTextField
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.utils.HostAndPort
@@ -125,58 +121,14 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        shape = small2XRoundedCornerShape,
                     )
 
-                    OutlinedTextField(
+                    PortTextField(
                         value = port,
-                        onValueChange = { newValue ->
-                            if (newValue.all { it.isDigit() } &&
-                                (newValue.isEmpty() || newValue.toIntOrNull() in 0..65535)
-                            ) {
-                                port = newValue
-                            }
-                        },
-                        label = { Text("Port") },
+                        onValueChange = { newValue -> port = newValue },
+                        label = copywriter.getText("port"),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        trailingIcon = {
-                            // Remove .fillMaxHeight() here
-                            Column(
-                                modifier = Modifier.offset(8.dp),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                IconButton(
-                                    shape = RectangleShape,
-                                    onClick = {
-                                        val current = port.toIntOrNull() ?: 0
-                                        if (current < 65535) port = (current + 1).toString()
-                                    },
-                                    modifier = Modifier.size(24.dp), // Constrain the size of buttons
-                                ) {
-                                    Icon(
-                                        Icons.Default.KeyboardArrowUp,
-                                        contentDescription = "Increase",
-                                        modifier = Modifier.size(20.dp), // Make the icon itself smaller
-                                    )
-                                }
-
-                                IconButton(
-                                    shape = RectangleShape,
-                                    onClick = {
-                                        val current = port.toIntOrNull() ?: 0
-                                        if (current > 0) port = (current - 1).toString()
-                                    },
-                                    modifier = Modifier.size(24.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.KeyboardArrowDown,
-                                        contentDescription = "Decrease",
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            }
-                        },
                     )
                 }
             }

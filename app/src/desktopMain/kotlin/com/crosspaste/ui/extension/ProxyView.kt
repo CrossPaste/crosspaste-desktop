@@ -1,38 +1,56 @@
 package com.crosspaste.ui.extension
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeviceHub
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.unit.dp
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.LocalDesktopAppSizeValueState
-import com.crosspaste.ui.base.CustomTextField
-import com.crosspaste.ui.base.DesktopRadioButton
-import com.crosspaste.ui.base.HighlightedCard
-import com.crosspaste.ui.settings.SettingsText
-import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUISize.large2X
+import com.crosspaste.ui.base.PortTextField
+import com.crosspaste.ui.extension.ProxyType.HTTP
+import com.crosspaste.ui.extension.ProxyType.SOCKS
+import com.crosspaste.ui.settings.SettingListItem
+import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xxxxLarge
-import com.crosspaste.ui.theme.AppUISize.zero
+import com.helger.css.ECSSUnit.rem
 import org.koin.compose.koinInject
 
 object ProxyType {
@@ -41,179 +59,183 @@ object ProxyType {
 }
 
 @Composable
-fun ProxyView() {
+fun ProxySection(
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+) {
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-
     val config by configManager.config.collectAsState()
 
-    val appSizeValue = LocalDesktopAppSizeValueState.current
+    val rotation by animateFloatAsState(if (isExpanded) 180f else 0f)
 
-    HighlightedCard(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-        shape = tinyRoundedCornerShape,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = AppUIColors.generalBackground,
-            ),
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(bottom = small2X),
-        ) {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(appSizeValue.settingsItemHeight)
-                        .padding(horizontal = small2X),
-                verticalAlignment = Alignment.CenterVertically,
+    var useManualProxy by remember { mutableStateOf(config.useManualProxy) }
+
+    var protocol by remember { mutableStateOf(config.proxyType) }
+
+    var hostname by remember { mutableStateOf(config.proxyHost) }
+
+    var port by remember { mutableStateOf(config.proxyPort) }
+
+    SettingSectionCard {
+        SettingListItem(
+            title = "proxy",
+            subtitle = "proxy_extension_network_requests",
+            icon = Icons.Default.DeviceHub,
+            trailingContent = {
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.rotate(rotation),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            onClick = onToggle,
+        )
+
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier.padding(start = medium, end = medium, bottom = medium),
+                verticalArrangement = Arrangement.spacedBy(small2X),
             ) {
-                DesktopRadioButton(
-                    modifier = Modifier.size(medium),
-                    selected = !config.useManualProxy,
-                    onClick = {
-                        configManager.updateConfig("useManualProxy", false)
-                    },
-                )
-                Spacer(modifier = Modifier.width(small2X))
-                SettingsText(
-                    modifier =
-                        Modifier.clickable {
-                            configManager.updateConfig("useManualProxy", false)
-                        },
-                    text = copywriter.getText("no_proxy"),
-                )
-            }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(appSizeValue.settingsItemHeight)
-                        .padding(horizontal = small2X),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                DesktopRadioButton(
-                    modifier = Modifier.size(medium),
-                    selected = config.useManualProxy,
-                    onClick = {
-                        configManager.updateConfig("useManualProxy", true)
-                    },
-                )
-                Spacer(modifier = Modifier.width(small2X))
-                SettingsText(
-                    modifier =
-                        Modifier.clickable {
-                            configManager.updateConfig("useManualProxy", true)
-                        },
-                    text = copywriter.getText("manual_proxy_configuration"),
-                )
-            }
-
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(appSizeValue.settingsItemHeight * 3)
-                        .padding(start = xxxxLarge, end = small2X),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(appSizeValue.settingsItemHeight),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            DesktopRadioButton(
-                                modifier = Modifier.size(medium),
-                                selected = config.proxyType == ProxyType.HTTP,
-                                onClick = {
-                                    configManager.updateConfig("proxyType", ProxyType.HTTP)
-                                },
-                            )
-                            Spacer(modifier = Modifier.width(small2X))
-                            SettingsText(
-                                modifier =
-                                    Modifier.clickable {
-                                        configManager.updateConfig("proxyType", ProxyType.HTTP)
-                                    },
-                                text = "HTTP",
-                            )
-                        }
-
-                        Spacer(Modifier.width(large2X))
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            DesktopRadioButton(
-                                modifier = Modifier.size(medium),
-                                selected = config.proxyType == ProxyType.SOCKS,
-                                onClick = {
-                                    configManager.updateConfig("proxyType", ProxyType.SOCKS)
-                                },
-                            )
-                            Spacer(modifier = Modifier.width(small2X))
-                            SettingsText(
-                                modifier =
-                                    Modifier.clickable {
-                                        configManager.updateConfig("proxyType", ProxyType.SOCKS)
-                                    },
-                                text = "SOCKS",
-                            )
-                        }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(tiny3X),
+                ) {
+                    ProxyRadioButton(copywriter.getText("no_proxy"), !useManualProxy) {
+                        useManualProxy = false
                     }
-
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(appSizeValue.settingsItemHeight),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SettingsText(text = copywriter.getText("host"))
-                        Spacer(modifier = Modifier.width(small2X))
-                        CustomTextField(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = tiny3X),
-                            value = config.proxyHost,
-                            onValueChange = {
-                                configManager.updateConfig("proxyHost", it)
-                            },
-                            singleLine = true,
-                            contentPadding = PaddingValues(horizontal = tiny),
-                        )
+                    ProxyRadioButton(copywriter.getText("manual_proxy_configuration"), useManualProxy) {
+                        useManualProxy = true
                     }
+                }
 
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(appSizeValue.settingsItemHeight),
-                        verticalAlignment = Alignment.CenterVertically,
+                if (useManualProxy) {
+                    ManualConfigContent(
+                        protocol = protocol,
+                        onProtocolChange = { protocol = it },
+                        hostname = hostname,
+                        onHostnameChange = {
+                            hostname = it
+                        },
+                        port = port,
+                        onPortChange = {
+                            port = it
+                        },
                     ) {
-                        // Port number
-                        SettingsText(text = copywriter.getText("port"))
-                        Spacer(modifier = Modifier.width(small2X))
-                        CustomTextField(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = tiny3X),
-                            value = config.proxyPort,
-                            onValueChange = {
-                                configManager.updateConfig("proxyPort", it.toIntOrNull()?.toString() ?: "")
-                            },
-                            singleLine = true,
-                            contentPadding = PaddingValues(horizontal = medium, vertical = zero),
+                        configManager.updateConfig(
+                            listOf("useManualProxy", "proxyType", "proxyHost", "proxyPort"),
+                            listOf(
+                                useManualProxy,
+                                protocol,
+                                hostname,
+                                port,
+                            ),
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ManualConfigContent(
+    protocol: String,
+    onProtocolChange: (String) -> Unit,
+    hostname: String,
+    onHostnameChange: (String) -> Unit,
+    port: String,
+    onPortChange: (String) -> Unit,
+    save: () -> Unit,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    Column(
+        modifier = Modifier.padding(start = tiny),
+        verticalArrangement = Arrangement.spacedBy(medium),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, tinyRoundedCornerShape)
+                    .padding(tiny3X),
+        ) {
+            listOf(HTTP, SOCKS).forEach { label ->
+                val selected = label == protocol
+                val color =
+                    if (selected) {
+                        MaterialTheme.colorScheme.surface
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    }
+                val textColor =
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+
+                Box(
+                    modifier =
+                        Modifier
+                            .clip(tiny2XRoundedCornerShape)
+                            .background(color)
+                            .clickable { onProtocolChange(label) }
+                            .padding(horizontal = medium, vertical = tiny2X),
+                ) {
+                    Text(text = label, style = MaterialTheme.typography.labelMedium, color = textColor)
+                }
+            }
+        }
+
+        // Host and Port Fields
+        Row(horizontalArrangement = Arrangement.spacedBy(tiny)) {
+            OutlinedTextField(
+                value = hostname,
+                onValueChange = onHostnameChange,
+                label = { Text("Host") },
+                placeholder = { Text("127.0.0.1") },
+                modifier = Modifier.weight(2f),
+                shape = small2XRoundedCornerShape,
+            )
+            PortTextField(
+                value = port,
+                onValueChange = onPortChange,
+                label = "Port",
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Button(
+            onClick = save,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(12.dp),
+            shape = RoundedCornerShape(100.dp),
+        ) {
+            Text(copywriter.getText("save_proxy_settings"))
+        }
+    }
+}
+
+@Composable
+fun ProxyRadioButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(small2XRoundedCornerShape)
+                .clickable { onClick() }
+                .padding(tiny),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Spacer(modifier = Modifier.width(small2X))
+        Text(text = label, style = MaterialTheme.typography.bodyLarge)
     }
 }
