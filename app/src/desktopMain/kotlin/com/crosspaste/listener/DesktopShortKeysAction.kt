@@ -52,7 +52,7 @@ class DesktopShortKeysAction(
             PASTE_LOCAL_LAST -> pasteLast(true)
             PASTE_REMOTE_LAST -> pasteLast(false)
             SHOW_MAIN -> showMainWindow()
-            SHOW_SEARCH -> showSearchWindow()
+            SHOW_SEARCH -> switchSearchWindow()
             HIDE_WINDOW -> hideWindow()
             TOGGLE_PASTEBOARD_MONITORING -> togglePasteboardMonitoring()
             TOGGLE_ENCRYPT -> toggleEncrypt()
@@ -87,13 +87,14 @@ class DesktopShortKeysAction(
         }
     }
 
-    private fun showSearchWindow() {
+    private fun switchSearchWindow() {
         mainRunAction(
             actionName = "OpenSearchWindow",
             actionLogMessage = "Open search window",
         ) {
-            appWindowManager.saveCurrentActiveAppInfo()
-            appWindowManager.showSearchWindow(WindowTrigger.SHORTCUT)
+            appWindowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {
+                appWindowManager.saveCurrentActiveAppInfo()
+            }
         }
     }
 
