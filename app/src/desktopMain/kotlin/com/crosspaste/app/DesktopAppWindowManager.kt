@@ -162,7 +162,10 @@ abstract class DesktopAppWindowManager(
         _searchWindowInfo.value = _searchWindowInfo.value.copy(show = false)
     }
 
-    fun switchSearchWindow(windowTrigger: WindowTrigger, saveCurrentActiveAppInfo: () -> Unit) {
+    fun switchSearchWindow(
+        windowTrigger: WindowTrigger,
+        saveCurrentActiveAppInfo: () -> Unit,
+    ) {
         val currentShow = _searchWindowInfo.value.show
         if (currentShow) {
             hideSearchWindow()
