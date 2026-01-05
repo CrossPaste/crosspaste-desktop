@@ -28,8 +28,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
@@ -48,6 +50,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import okio.Path
 import org.koin.compose.koinInject
@@ -144,26 +147,38 @@ fun PasteImportContentView() {
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             item {
-                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                 Surface(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
-                            .drawBehind {
+                            .drawWithContent {
+                                drawContent()
+
+                                val strokeWidth = tiny4X.toPx()
+                                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                                val borderColor = borderColor
+
+                                val halfStroke = strokeWidth / 2
                                 drawRoundRect(
                                     color = borderColor,
+                                    topLeft = Offset(halfStroke, halfStroke),
+                                    size =
+                                        Size(
+                                            width = size.width - strokeWidth,
+                                            height = size.height - strokeWidth,
+                                        ),
                                     style =
                                         Stroke(
-                                            width = tiny4X.toPx(),
+                                            width = strokeWidth,
                                             pathEffect = dashEffect,
                                         ),
                                     cornerRadius = CornerRadius(xLarge.toPx()),
                                 )
                             },
-                    shape = RoundedCornerShape(xLarge),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = xLargeRoundedCornerShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(medium),
