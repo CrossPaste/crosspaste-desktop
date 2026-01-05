@@ -262,7 +262,16 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ExtensionScreen() {
-        ExtensionContentView()
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(AppUIColors.appBackground)
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
+        ) {
+            ExtensionContentView()
+        }
     }
 
     @Composable
