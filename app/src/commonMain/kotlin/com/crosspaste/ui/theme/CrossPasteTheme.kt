@@ -7,12 +7,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
 import com.crosspaste.ui.LocalThemeState
-import com.crosspaste.ui.base.BaseColor
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.base.withCustomFonts
-import com.crosspaste.utils.ColorUtils.getAdaptiveColor
 import org.koin.compose.koinInject
 
 object CrossPasteTheme {
@@ -51,14 +48,4 @@ object CrossPasteTheme {
             SeaColor.name -> SeaColor
             else -> GrassColor
         }
-
-    fun connectedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Green.targetHue)
-
-    fun connectingColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Yellow.targetHue)
-
-    fun disconnectedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Red.targetHue)
-
-    fun unmatchedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Purple.targetHue)
-
-    fun unverifiedColor(backgroundColor: Color): Color = getAdaptiveColor(backgroundColor, BaseColor.Blue.targetHue)
 }

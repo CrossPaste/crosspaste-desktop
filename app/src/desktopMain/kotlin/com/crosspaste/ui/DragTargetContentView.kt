@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,7 +41,6 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopReadTransferable
 import com.crosspaste.paste.TransferableConsumer
-import com.crosspaste.ui.base.clipboard
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.massive
@@ -131,7 +132,7 @@ fun DragTargetContentView() {
                 verticalArrangement = Arrangement.Center,
             ) {
                 Icon(
-                    painter = clipboard(),
+                    imageVector = Icons.Default.ContentPaste,
                     contentDescription = "clipboard icon",
                     modifier = Modifier.size(huge),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,

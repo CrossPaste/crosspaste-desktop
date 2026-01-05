@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Icon
@@ -49,7 +50,6 @@ import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.ui.LocalAppSizeValueState
-import com.crosspaste.ui.base.autoRenew
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -228,7 +228,7 @@ fun LoadingSpinner(size: Dp) {
             Modifier
                 .size(size)
                 .graphicsLayer(rotationZ = rotation),
-        painter = autoRenew(),
+        imageVector = Icons.Default.Autorenew,
         contentDescription = "Loading",
         tint = MaterialTheme.colorScheme.primary,
     )

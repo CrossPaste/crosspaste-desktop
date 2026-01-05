@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,7 +52,6 @@ import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.TutorialButton
-import com.crosspaste.ui.base.search
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
@@ -174,8 +175,9 @@ fun SideSearchInputView() {
             value = inputSearch,
             leadingIcon = {
                 Icon(
-                    painter = search(),
+                    imageVector = Icons.Default.Search,
                     contentDescription = "search",
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             },
             trailingIcon = {

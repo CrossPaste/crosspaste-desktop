@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
@@ -30,7 +32,6 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.em
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.base.arrowLeft
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -108,7 +109,7 @@ fun WindowDecoration() {
             ) {
                 if (canNavigateBack) {
                     Icon(
-                        painter = arrowLeft(),
+                        imageVector = Icons.Default.ChevronLeft,
                         contentDescription = "back",
                         modifier = Modifier.size(xLarge),
                         tint = MaterialTheme.colorScheme.onSurface,
