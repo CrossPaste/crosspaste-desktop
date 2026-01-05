@@ -1,4 +1,4 @@
-package com.crosspaste.recommend
+package com.crosspaste.share
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -14,23 +14,21 @@ import com.crosspaste.ui.theme.AppUISize.xxLarge
 class Clipboard(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
-) : RecommendationPlatform {
+) : SharePlatform {
     override val platformName: String = "Clipboard"
 
     @Composable
-    override fun ButtonPlatform(onClick: () -> Unit) {
-        ButtonContentView(onClick) {
-            Icon(
-                painter = clipboard(),
-                contentDescription = "clipboard",
-                modifier = Modifier.size(xxLarge),
-            )
-        }
+    override fun ButtonPlatform() {
+        Icon(
+            painter = clipboard(),
+            contentDescription = "clipboard",
+            modifier = Modifier.size(xxLarge),
+        )
     }
 
-    override suspend fun action(recommendationService: RecommendationService) {
+    override suspend fun action(shareService: ShareService) {
         pasteboardService.tryWritePasteboard(
-            pasteItem = createTextPasteItem(text = recommendationService.getRecommendText()),
+            pasteItem = createTextPasteItem(text = shareService.getShareText()),
             localOnly = true,
         )
         notificationManager.sendNotification(

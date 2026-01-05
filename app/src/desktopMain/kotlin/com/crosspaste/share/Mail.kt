@@ -1,4 +1,4 @@
-package com.crosspaste.recommend
+package com.crosspaste.share
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -14,21 +14,19 @@ import kotlinx.coroutines.delay
 class Mail(
     private val notificationManager: NotificationManager,
     private val uiSupport: UISupport,
-) : RecommendationPlatform {
+) : SharePlatform {
     override val platformName: String = "Mail"
 
     @Composable
-    override fun ButtonPlatform(onClick: () -> Unit) {
-        ButtonContentView(onClick) {
-            Icon(
-                painter = mail(),
-                contentDescription = "mail",
-                modifier = Modifier.size(xxLarge),
-            )
-        }
+    override fun ButtonPlatform() {
+        Icon(
+            painter = mail(),
+            contentDescription = "mail",
+            modifier = Modifier.size(xxLarge),
+        )
     }
 
-    override suspend fun action(recommendationService: RecommendationService) {
+    override suspend fun action(shareService: ShareService) {
         notificationManager.sendNotification(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,

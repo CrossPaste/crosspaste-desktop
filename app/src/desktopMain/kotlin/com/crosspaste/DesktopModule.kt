@@ -159,14 +159,14 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
-import com.crosspaste.recommend.DesktopRecommendationService
-import com.crosspaste.recommend.RecommendationService
 import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.secure.DesktopSecureStoreFactory
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.secure.SecureStoreFactory
+import com.crosspaste.share.DesktopShareService
+import com.crosspaste.share.ShareService
 import com.crosspaste.sound.DesktopSoundService
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
@@ -283,7 +283,7 @@ class DesktopModule(
             single<LocaleUtils> { DesktopLocaleUtils }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
-            single<RecommendationService> { DesktopRecommendationService(get(), get(), get(), get()) }
+            single<ShareService> { DesktopShareService(get(), get(), get(), get()) }
             single<Platform> { platform }
             single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }

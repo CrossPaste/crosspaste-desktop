@@ -1,4 +1,4 @@
-package com.crosspaste.recommend
+package com.crosspaste.share
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
@@ -12,37 +12,40 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.linkedin
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
+import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.URLEncoder
 
 class LinkedIn(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val uiSupport: UISupport,
-) : RecommendationPlatform {
+) : SharePlatform {
     override val platformName: String = "LinkedIn"
 
     @Composable
-    override fun ButtonPlatform(onClick: () -> Unit) {
-        ButtonContentView(onClick) {
-            Image(
-                painter = linkedin(),
-                contentDescription = "LinkedIn",
-                modifier = Modifier.size(xxLarge),
-            )
-        }
+    override fun ButtonPlatform() {
+        Image(
+            painter = linkedin(),
+            contentDescription = "LinkedIn",
+            modifier = Modifier.size(xxLarge),
+        )
     }
 
-    override suspend fun action(recommendationService: RecommendationService) {
+    override suspend fun action(shareService: ShareService) {
         pasteboardService.tryWritePasteboard(
-            pasteItem = createTextPasteItem(text = recommendationService.getRecommendText()),
+            pasteItem = createTextPasteItem(text = shareService.getShareText()),
             localOnly = true,
         )
         var url = "https://www.linkedin.com/sharing/share-offsite/?mini=true"
 
-        val appUrl = recommendationService.getRecommendUrl()
-        val encodedUrl = URLEncoder.encode(appUrl, "UTF-8")
+        val appUrl = shareService.getShareUrl()
+        val encodedUrl =
+            withContext(ioDispatcher) {
+                URLEncoder.encode(appUrl, "UTF-8")
+            }
         url += "&url=$encodedUrl"
 
         notificationManager.sendNotification(
