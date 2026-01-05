@@ -31,6 +31,10 @@ class DesktopShortcutKeys(
         const val PASTE_LOCAL_LAST = "paste_local_last"
         const val PASTE_REMOTE_LAST = "paste_remote_last"
         const val SHOW_MAIN = "show_main"
+
+        // Currently, this action is not only used to show the search window
+        // but also to close the search window. However, this key is used in user configuration
+        // so it remains unchanged
         const val SHOW_SEARCH = "show_search"
         const val HIDE_WINDOW = "hide_window"
         const val TOGGLE_PASTEBOARD_MONITORING = "toggle_pasteboard_monitoring"
