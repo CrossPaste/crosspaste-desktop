@@ -185,13 +185,11 @@ dependencies {
 }
 
 tasks.register<Copy>("copyDevProperties") {
-    val targetPath = "src/desktopMain/resources/development.properties"
-    val targetFile = layout.projectDirectory.file(targetPath).asFile
     from("src/desktopMain/resources/development.properties.template")
     into("src/desktopMain/resources")
     rename { "development.properties" }
-    onlyIf("Target properties file does not exist") {
-        !targetFile.exists()
+    onlyIf {
+        !file("src/desktopMain/resources/development.properties").exists()
     }
 }
 
