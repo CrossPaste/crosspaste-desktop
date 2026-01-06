@@ -1,13 +1,5 @@
 package com.crosspaste.ui
 
-import androidx.navigation.NavType
-import androidx.savedstate.SavedState
-import androidx.savedstate.read
-import androidx.savedstate.write
-import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.paste.PasteData
-import com.crosspaste.utils.getJsonUtils
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
 interface Route {
@@ -67,7 +59,7 @@ object Import : Route {
 
 @Serializable
 data class NearbyDeviceDetail(
-    val syncInfo: SyncInfo,
+    val appInstanceId: String,
 ) : Route {
     companion object {
         const val NAME: String = "nearby_device_detail"
@@ -95,7 +87,7 @@ object Pasteboard : Route {
 
 @Serializable
 data class PasteTextEdit(
-    val pasteData: PasteData,
+    val id: Long,
 ) : Route {
     companion object {
         const val NAME: String = "text_edit"
@@ -149,33 +141,4 @@ object StorageSettings : Route {
 object ShortcutKeys : Route {
     const val NAME: String = "shortcut_keys"
     override val name: String = NAME
-}
-
-class JsonNavType<T : Any>(
-    private val serializer: KSerializer<T>,
-    isNullableAllowed: Boolean = false,
-) : NavType<T>(isNullableAllowed) {
-
-    val jsonUtils = getJsonUtils()
-
-    override fun parseValue(value: String): T = jsonUtils.JSON.decodeFromString(serializer, value)
-
-    override fun serializeAsValue(value: T): String = jsonUtils.JSON.encodeToString(serializer, value)
-
-    override fun get(
-        bundle: SavedState,
-        key: String,
-    ): T {
-        val s: String = bundle.read { getString(key) }
-        return parseValue(s)
-    }
-
-    override fun put(
-        bundle: SavedState,
-        key: String,
-        value: T,
-    ) {
-        val s = serializeAsValue(value)
-        bundle.write { putString(key, s) }
-    }
 }

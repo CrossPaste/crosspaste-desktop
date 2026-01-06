@@ -37,7 +37,7 @@ fun SyncScope.NearbyDeviceView() {
     DeviceRowContent(
         style = nearbyDeviceStyle,
         onClick = {
-            navigationManager.navigate(NearbyDeviceDetail(syncInfo))
+            navigationManager.navigate(NearbyDeviceDetail(syncInfo.appInfo.appInstanceId))
         },
         trailingContent = {
             Row(
