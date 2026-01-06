@@ -14,7 +14,7 @@ import kotlinx.coroutines.delay
 class Mail(
     private val notificationManager: NotificationManager,
     private val uiSupport: UISupport,
-) : SharePlatform {
+) : AppSharePlatform {
     override val platformName: String = "Mail"
 
     @Composable
@@ -26,7 +26,7 @@ class Mail(
         )
     }
 
-    override suspend fun action(shareService: ShareService) {
+    override suspend fun action(appShareService: AppShareService) {
         notificationManager.sendNotification(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,

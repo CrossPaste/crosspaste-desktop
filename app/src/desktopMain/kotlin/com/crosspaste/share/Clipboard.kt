@@ -15,7 +15,7 @@ import com.crosspaste.ui.theme.AppUISize.xxLarge
 class Clipboard(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
-) : SharePlatform {
+) : AppSharePlatform {
     override val platformName: String = "Clipboard"
 
     @Composable
@@ -27,9 +27,9 @@ class Clipboard(
         )
     }
 
-    override suspend fun action(shareService: ShareService) {
+    override suspend fun action(appShareService: AppShareService) {
         pasteboardService.tryWritePasteboard(
-            pasteItem = createTextPasteItem(text = shareService.getShareText()),
+            pasteItem = createTextPasteItem(text = appShareService.getShareText()),
             localOnly = true,
         )
         notificationManager.sendNotification(

@@ -13,7 +13,7 @@ import java.net.URLEncoder
 
 class Weibo(
     private val uiSupport: UISupport,
-) : SharePlatform {
+) : AppSharePlatform {
     override val platformName: String = "Weibo"
 
     @Composable
@@ -25,10 +25,10 @@ class Weibo(
         )
     }
 
-    override suspend fun action(shareService: ShareService) {
+    override suspend fun action(appShareService: AppShareService) {
         val encodedText =
             withContext(ioDispatcher) {
-                URLEncoder.encode(shareService.getShareText(), "UTF-8")
+                URLEncoder.encode(appShareService.getShareText(), "UTF-8")
             }
         val url = "https://service.weibo.com/share/share.php?title=$encodedText"
         uiSupport.openUrlInBrowser(url)

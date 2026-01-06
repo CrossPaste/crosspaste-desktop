@@ -35,7 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.crosspaste.share.ShareService
+import com.crosspaste.share.AppShareService
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
@@ -49,9 +49,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun ShareContentView() {
-    val shareService = koinInject<ShareService>()
+    val appShareService = koinInject<AppShareService>()
     val scope = rememberCoroutineScope()
-    val shareText by remember { mutableStateOf(shareService.getShareText()) }
+    val shareText by remember { mutableStateOf(appShareService.getShareText()) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -101,14 +101,14 @@ fun ShareContentView() {
                         .fillMaxWidth()
                         .heightIn(max = 600.dp),
             ) {
-                items(shareService.sharePlatformList) { platform ->
+                items(appShareService.appSharePlatformList) { platform ->
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier =
                             Modifier
                                 .clip(RoundedCornerShape(small2X))
                                 .clickable {
-                                    scope.launch { platform.action(shareService) }
+                                    scope.launch { platform.action(appShareService) }
                                 }.padding(vertical = tiny),
                     ) {
                         Box(

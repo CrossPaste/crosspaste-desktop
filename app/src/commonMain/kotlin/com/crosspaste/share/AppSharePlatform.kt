@@ -2,11 +2,11 @@ package com.crosspaste.share
 
 import androidx.compose.runtime.Composable
 
-interface SharePlatform {
+interface AppSharePlatform {
     val platformName: String
 
     @Composable
     fun ButtonPlatform()
 
-    suspend fun action(shareService: ShareService)
+    suspend fun action(appShareService: AppShareService)
 }
