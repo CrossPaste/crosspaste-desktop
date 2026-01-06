@@ -1,11 +1,18 @@
 package com.crosspaste.share
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import com.composables.icons.fontawesome.FontAwesome
+import com.composables.icons.fontawesome.brands.Reddit
 import com.crosspaste.ui.base.UISupport
-import com.crosspaste.ui.base.reddit
+import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
@@ -18,11 +25,23 @@ class Reddit(
 
     @Composable
     override fun ButtonPlatform() {
-        Image(
-            painter = reddit(),
-            contentDescription = "reddit",
-            modifier = Modifier.size(xxLarge),
-        )
+        Box(
+            modifier =
+                Modifier
+                    .size(huge)
+                    .background(
+                        Color(0xFFFFE9E0),
+                        mediumRoundedCornerShape,
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = FontAwesome.Brands.Reddit,
+                contentDescription = "reddit",
+                modifier = Modifier.size(xxLarge),
+                tint = Color(0xFFFF4500),
+            )
+        }
     }
 
     override suspend fun action(appShareService: AppShareService) {

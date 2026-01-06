@@ -1,7 +1,6 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +35,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.crosspaste.share.AppShareService
-import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -111,18 +109,7 @@ fun ShareContentView() {
                                     scope.launch { platform.action(appShareService) }
                                 }.padding(vertical = tiny),
                     ) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .size(huge)
-                                    .background(
-                                        MaterialTheme.colorScheme.secondaryContainer,
-                                        mediumRoundedCornerShape,
-                                    ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            platform.ButtonPlatform()
-                        }
+                        platform.ButtonPlatform()
 
                         Spacer(modifier = Modifier.height(tiny))
 
