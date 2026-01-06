@@ -86,6 +86,7 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            implementation(libs.awesome.brans)
             implementation(libs.coil.compose)
             implementation(libs.coil.svg)
             implementation(libs.cryptography.core)
