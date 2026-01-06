@@ -6,6 +6,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
@@ -24,9 +25,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
 import com.crosspaste.platform.Platform
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.ShareContentView
 import com.crosspaste.ui.devices.DeviceDetailContentView
@@ -49,18 +51,17 @@ import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.settings.StoragePathManager
 import com.crosspaste.ui.settings.StorageSettingsContentView
 import com.crosspaste.ui.settings.WindowsPasteboardSettingsContentView
-import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlinx.coroutines.channels.Channel
-import kotlin.reflect.typeOf
 
 class DesktopScreenProvider(
-    private val deviceScopeFactory: DeviceScopeFactory,
     private val platform: Platform,
-    private val storagePathManager: StoragePathManager,
-    private val syncManager: SyncManager,
+    private val deviceScopeFactory: DeviceScopeFactory,
     private val syncScopeFactory: SyncScopeFactory,
+    private val storagePathManager: StoragePathManager,
+    private val pasteDao: PasteDao,
+    private val syncManager: SyncManager,
+    private val nearbyDeviceManager: NearbyDeviceManager,
 ) : ScreenProvider {
 
     companion object {
@@ -147,10 +148,6 @@ class DesktopScreenProvider(
                 composable<NearbyDeviceDetail>(
                     exitTransition = { slideOutRight() },
                     enterTransition = { slideInLeft() },
-                    typeMap =
-                        mapOf(
-                            typeOf<SyncInfo>() to JsonNavType(SyncInfo.serializer()),
-                        ),
                 ) { backStackEntry ->
                     backStackEntry.NearbyDeviceDetailScreen()
                 }
@@ -169,10 +166,6 @@ class DesktopScreenProvider(
             composable<PasteTextEdit>(
                 exitTransition = { slideOutRight() },
                 enterTransition = { slideInLeft() },
-                typeMap =
-                    mapOf(
-                        typeOf<PasteData>() to JsonNavType(PasteData.serializer()),
-                    ),
             ) { backStackEntry ->
                 backStackEntry.PasteTextEditScreen()
             }
@@ -204,15 +197,22 @@ class DesktopScreenProvider(
     }
 
     @Composable
-    private fun AboutScreen() {
+    private fun ScreenLayout(content: @Composable BoxScope.() -> Unit) {
         Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(start = xLarge, end = xLarge, bottom = xLarge),
-            contentAlignment = Alignment.Center,
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
         ) {
+            content()
+        }
+    }
+
+    @Composable
+    private fun AboutScreen() {
+        ScreenLayout {
             AboutContentView()
         }
     }
@@ -248,42 +248,21 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ExportScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(start = xLarge, end = xLarge, bottom = xLarge),
-            contentAlignment = Alignment.Center,
-        ) {
+        ScreenLayout {
             PasteExportContentView()
         }
     }
 
     @Composable
     private fun ExtensionScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(AppUIColors.appBackground)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
+        ScreenLayout {
             ExtensionContentView()
         }
     }
 
     @Composable
     private fun ImportScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(start = xLarge, end = xLarge, bottom = xLarge),
-            contentAlignment = Alignment.Center,
-        ) {
+        ScreenLayout {
             PasteImportContentView()
         }
     }
@@ -291,83 +270,80 @@ class DesktopScreenProvider(
     @Composable
     private fun NavBackStackEntry.NearbyDeviceDetailScreen() {
         val nearbyDeviceDetail = toRoute<NearbyDeviceDetail>()
-        val scope =
-            remember(nearbyDeviceDetail) {
-                syncScopeFactory.createSyncScope(nearbyDeviceDetail.syncInfo)
+
+        val nearbySyncInfos by nearbyDeviceManager.nearbySyncInfos.collectAsState()
+
+        val nearbyDeviceInfo =
+            nearbySyncInfos.find {
+                it.appInfo.appInstanceId == nearbyDeviceDetail.appInstanceId
             }
-        scope.NearbyDeviceDetailContentView()
+
+        LaunchedEffect(nearbyDeviceInfo) {
+            if (nearbyDeviceInfo == null) {
+                navigateAndClearStack(Devices)
+            }
+        }
+
+        nearbyDeviceInfo?.let {
+            val scope =
+                remember(nearbyDeviceDetail) {
+                    syncScopeFactory.createSyncScope(nearbyDeviceInfo)
+                }
+            scope.NearbyDeviceDetailContentView()
+        }
     }
 
     @Composable
     private fun NavBackStackEntry.PasteTextEditScreen() {
         val pasteTextEdit = toRoute<PasteTextEdit>()
-        val currentPasteData = pasteTextEdit.pasteData
-        val scope =
-            remember(currentPasteData.id, currentPasteData.pasteState, currentPasteData.pasteSearchContent) {
-                createPasteDataScope(currentPasteData)
-            }
 
-        LaunchedEffect(scope) {
-            if (scope == null) {
-                navigateAndClearStack(Pasteboard)
+        var currentPaste by remember { mutableStateOf<PasteData?>(null) }
+
+        LaunchedEffect(pasteTextEdit.id) {
+            currentPaste = pasteDao.getNoDeletePasteData(pasteTextEdit.id)
+            if (currentPaste == null) {
+                navigateUp()
             }
         }
 
-        scope?.PasteTextEditContentView()
+        currentPaste?.let {
+            val scope =
+                remember(it.id, it.pasteState, it.pasteSearchContent) {
+                    createPasteDataScope(it)
+                }
+
+            scope?.let {
+                ScreenLayout {
+                    scope.PasteTextEditContentView()
+                }
+            }
+        }
     }
 
     @Composable
     private fun QRScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(start = xLarge, end = xLarge, bottom = xLarge),
-            contentAlignment = Alignment.Center,
-        ) {
+        ScreenLayout {
             QRContentView()
         }
     }
 
     @Composable
     private fun ShortcutKeysScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(AppUIColors.appBackground)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
+        ScreenLayout {
             ShortcutKeysContentView()
         }
     }
 
     @Composable
     private fun SettingsScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(AppUIColors.appBackground)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
+        ScreenLayout {
             SettingsContentView()
         }
     }
 
     @Composable
     private fun PasteboardSettingsScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(AppUIColors.appBackground)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
+        ScreenLayout {
             PasteboardSettingsContentView {
                 val isWindows = remember { platform.isWindows() }
                 if (isWindows) {
@@ -379,28 +355,14 @@ class DesktopScreenProvider(
 
     @Composable
     private fun NetworkSettingsScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(AppUIColors.appBackground)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
+        ScreenLayout {
             NetworkSettingsContentView()
         }
     }
 
     @Composable
     private fun StorageSettingsScreen() {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(AppUIColors.appBackground)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
-        ) {
+        ScreenLayout {
             StorageSettingsContentView(storagePathManager)
         }
     }

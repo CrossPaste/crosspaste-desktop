@@ -517,7 +517,7 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), lazy { get() }, lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
             single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }

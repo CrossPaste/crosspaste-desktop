@@ -205,7 +205,7 @@ class DesktopUISupport(
     }
 
     override fun openText(pasteData: PasteData) {
-        navigationManager.navigate(PasteTextEdit(pasteData))
+        navigationManager.navigate(PasteTextEdit(pasteData.id))
     }
 
     override fun openRtf(pasteData: PasteData) {
