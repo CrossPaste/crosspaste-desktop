@@ -13,7 +13,7 @@ import java.net.URLEncoder
 
 class X(
     private val uiSupport: UISupport,
-) : SharePlatform {
+) : AppSharePlatform {
     override val platformName: String = "X"
 
     @Composable
@@ -25,10 +25,10 @@ class X(
         )
     }
 
-    override suspend fun action(shareService: ShareService) {
+    override suspend fun action(appShareService: AppShareService) {
         val encodedText =
             withContext(ioDispatcher) {
-                URLEncoder.encode(shareService.getShareText(), "UTF-8")
+                URLEncoder.encode(appShareService.getShareText(), "UTF-8")
             }
         val url = "https://x.com/intent/post?text=$encodedText"
         uiSupport.openUrlInBrowser(url)

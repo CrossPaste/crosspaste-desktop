@@ -20,7 +20,7 @@ class Facebook(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val uiSupport: UISupport,
-) : SharePlatform {
+) : AppSharePlatform {
     override val platformName: String = "Facebook"
 
     @Composable
@@ -32,12 +32,12 @@ class Facebook(
         )
     }
 
-    override suspend fun action(shareService: ShareService) {
+    override suspend fun action(appShareService: AppShareService) {
         pasteboardService.tryWritePasteboard(
-            pasteItem = createTextPasteItem(text = shareService.getShareText()),
+            pasteItem = createTextPasteItem(text = appShareService.getShareText()),
             localOnly = true,
         )
-        val appUrl = shareService.getShareUrl()
+        val appUrl = appShareService.getShareUrl()
         val encodedUrl =
             withContext(ioDispatcher) {
                 URLEncoder.encode(appUrl, "UTF-8")

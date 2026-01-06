@@ -13,7 +13,7 @@ import java.net.URLEncoder
 
 class Reddit(
     private val uiSupport: UISupport,
-) : SharePlatform {
+) : AppSharePlatform {
     override val platformName: String = "Reddit"
 
     @Composable
@@ -25,12 +25,12 @@ class Reddit(
         )
     }
 
-    override suspend fun action(shareService: ShareService) {
+    override suspend fun action(appShareService: AppShareService) {
         val encodedTitle =
             withContext(ioDispatcher) {
-                URLEncoder.encode(shareService.getShareTitle(), "UTF-8")
+                URLEncoder.encode(appShareService.getShareTitle(), "UTF-8")
             }
-        val appUrl = shareService.getShareUrl()
+        val appUrl = appShareService.getShareUrl()
         val url = "https://www.reddit.com/submit?title=$encodedTitle&url=$appUrl"
         uiSupport.openUrlInBrowser(url)
     }

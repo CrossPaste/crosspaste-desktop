@@ -5,13 +5,13 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.base.UISupport
 
-class DesktopShareService(
+class DesktopAppShareService(
     private val copywriter: GlobalCopywriter,
     notificationManager: NotificationManager,
     pasteboardService: PasteboardService,
     private val uiSupport: UISupport,
-) : ShareService {
-    override val sharePlatformList: List<SharePlatform> =
+) : AppShareService {
+    override val appSharePlatformList: List<AppSharePlatform> =
         listOf(
             X(uiSupport),
             Weibo(uiSupport),

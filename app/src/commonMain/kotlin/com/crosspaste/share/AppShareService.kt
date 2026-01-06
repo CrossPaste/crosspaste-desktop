@@ -1,8 +1,8 @@
 package com.crosspaste.share
 
-interface ShareService {
+interface AppShareService {
 
-    val sharePlatformList: List<SharePlatform>
+    val appSharePlatformList: List<AppSharePlatform>
 
     val shareContentKey: String
 

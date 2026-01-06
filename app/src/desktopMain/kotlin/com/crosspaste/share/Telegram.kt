@@ -13,7 +13,7 @@ import java.net.URLEncoder
 
 class Telegram(
     private val uiSupport: UISupport,
-) : SharePlatform {
+) : AppSharePlatform {
     override val platformName: String = "Telegram"
 
     @Composable
@@ -25,10 +25,10 @@ class Telegram(
         )
     }
 
-    override suspend fun action(shareService: ShareService) {
+    override suspend fun action(appShareService: AppShareService) {
         val encodedText =
             withContext(ioDispatcher) {
-                URLEncoder.encode(shareService.getShareText(), "UTF-8")
+                URLEncoder.encode(appShareService.getShareText(), "UTF-8")
             }
         val url = "https://t.me/share/url?text=$encodedText"
         uiSupport.openUrlInBrowser(url)

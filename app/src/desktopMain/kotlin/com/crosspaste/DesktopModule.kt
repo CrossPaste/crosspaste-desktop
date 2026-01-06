@@ -165,8 +165,8 @@ import com.crosspaste.secure.DesktopSecureStoreFactory
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.secure.SecureStoreFactory
-import com.crosspaste.share.DesktopShareService
-import com.crosspaste.share.ShareService
+import com.crosspaste.share.AppShareService
+import com.crosspaste.share.DesktopAppShareService
 import com.crosspaste.sound.DesktopSoundService
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
@@ -281,7 +281,7 @@ class DesktopModule(
             single<LocaleUtils> { DesktopLocaleUtils }
             single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
             single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
-            single<ShareService> { DesktopShareService(get(), get(), get(), get()) }
+            single<AppShareService> { DesktopAppShareService(get(), get(), get(), get()) }
             single<Platform> { platform }
             single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
             single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
