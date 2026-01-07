@@ -66,3 +66,14 @@ expect fun SettingListSwitchItem(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 )
+
+@Composable
+expect fun <T> SegmentedControlSettingsRow(
+    title: String,
+    options: List<T>,
+    selectedOptionIndex: Int,
+    onOptionSelected: (Int, T) -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    optionLabel: (T) -> String = { it.toString() },
+)
