@@ -59,7 +59,7 @@ import org.koin.compose.koinInject
 fun PasteImportContentView() {
     val appFileChooser = koinInject<AppFileChooser>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val pasteImportParamFactory = koinInject<PasteImportParamFactory>()
+    val pasteImportParamFactory = koinInject<PasteImportParamFactory<Any>>()
     val pasteImportService = koinInject<PasteImportService>()
 
     var importPath by remember { mutableStateOf<Path?>(null) }

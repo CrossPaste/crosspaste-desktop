@@ -222,6 +222,7 @@ import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.server.netty.*
 import kotlinx.coroutines.runBlocking
+import okio.Path
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
@@ -451,9 +452,9 @@ class DesktopModule(
             single<PasteboardService> {
                 getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
-            single<PasteExportParamFactory> { DesktopPasteExportParamFactory() }
+            single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }
             single<PasteExportService> { PasteExportService(get(), get(), get()) }
-            single<PasteImportParamFactory> { DesktopPasteImportParamFactory() }
+            single<PasteImportParamFactory<Path>> { DesktopPasteImportParamFactory() }
             single<PasteImportService> { PasteImportService(get(), get(), get(), get()) }
             single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
             single<SearchContentService> { DesktopSearchContentService() }
