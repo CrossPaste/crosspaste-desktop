@@ -68,7 +68,7 @@ fun PasteExportContentView() {
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteExportService = koinInject<PasteExportService>()
-    val pasteExportParamFactory = koinInject<PasteExportParamFactory>()
+    val pasteExportParamFactory = koinInject<PasteExportParamFactory<Any>>()
     val fileUtils = getFileUtils()
 
     // State for type filters
@@ -351,7 +351,7 @@ private fun handleExportClick(
     maxFileSize: Long,
     fileUtils: FileUtils,
     pasteExportService: PasteExportService,
-    pasteExportParamFactory: PasteExportParamFactory,
+    pasteExportParamFactory: PasteExportParamFactory<Any>,
     onProgressChange: (Float) -> Unit,
     onExportStart: () -> Unit,
 ) {

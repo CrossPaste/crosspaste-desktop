@@ -1,8 +1,6 @@
 package com.crosspaste.paste
 
-import okio.Path
+interface PasteImportParamFactory<T> {
 
-interface PasteImportParamFactory {
-
-    fun createPasteImportParam(importPath: Path): PasteImportParam
+    fun createPasteImportParam(importPath: T): PasteImportParam
 }
