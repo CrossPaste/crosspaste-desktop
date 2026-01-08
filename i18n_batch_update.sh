@@ -20,7 +20,8 @@ show_usage() {
     echo "Usage:"
     echo "  1. Add/Update keys:  $0 <input_file> [i18n_directory_path]"
     echo "  2. Delete a key:     $0 -d <key_name> [i18n_directory_path]"
-    echo "  3. Check unused:     $0 -u [-f] [src_directory] [i18n_directory_path]"
+    echo "  3. Rename a key:     $0 -r <old_key> <new_key> [i18n_directory_path]"
+    echo "  4. Check unused:     $0 -u [-f] [src_directory] [i18n_directory_path]"
     echo ""
     echo "Options for -u:"
     echo "  -f    Force delete unused keys from all properties files after scanning"
@@ -39,6 +40,8 @@ fi
 MODE="add"
 INPUT_FILE=""
 KEY_TO_DELETE=""
+OLD_KEY=""
+NEW_KEY=""
 CMD_SRC_DIR=""
 CUSTOM_DIR=""
 FORCE_DELETE=false
@@ -50,6 +53,12 @@ while [[ $# -gt 0 ]]; do
             MODE="delete"
             KEY_TO_DELETE="$2"
             shift 2
+            ;;
+        -r)
+            MODE="rename"
+            OLD_KEY="$2"
+            NEW_KEY="$3"
+            shift 3
             ;;
         -u)
             MODE="unused"
@@ -103,6 +112,47 @@ perform_delete() {
     shopt -u nullglob
     return $count
 }
+
+# ==========================================
+# LOGIC: RENAME KEY (Mode: -r)
+# ==========================================
+if [ "$MODE" == "rename" ]; then
+    if [ -z "$OLD_KEY" ] || [ -z "$NEW_KEY" ]; then
+        echo "Error: Rename requires both <old_key> and <new_key>"
+        exit 1
+    fi
+
+    echo "Renaming key: $OLD_KEY -> $NEW_KEY"
+    echo "-----------------------------------------"
+
+    RENAME_COUNT=0
+    shopt -s nullglob
+    for file in "$I18N_DIR"/*.properties; do
+        if grep -q "^${OLD_KEY}=" "$file"; then
+            # Extract the value of the old key
+            # Using sed to extract everything after the first '='
+            VALUE=$(grep "^${OLD_KEY}=" "$file" | sed "s/^${OLD_KEY}=//")
+
+            # Remove the old key line and save to temp
+            grep -v "^${OLD_KEY}=" "$file" > "${file}.tmp"
+
+            # Append the new key with the original value
+            echo "${NEW_KEY}=${VALUE}" >> "${file}.tmp"
+
+            # Sort the file (maintains consistency with 'add' logic)
+            sort "${file}.tmp" -o "$file"
+            rm -f "${file}.tmp"
+
+            echo "  [RENAMED] In $(basename "$file")"
+            ((RENAME_COUNT++))
+        fi
+    done
+    shopt -u nullglob
+
+    echo "-----------------------------------------"
+    echo "Complete. Renamed in $RENAME_COUNT files."
+    exit 0
+fi
 
 # ==========================================
 # LOGIC: UNUSED KEYS CHECK (Mode: -u)
