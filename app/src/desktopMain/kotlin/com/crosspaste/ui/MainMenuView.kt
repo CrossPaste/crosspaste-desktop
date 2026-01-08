@@ -48,7 +48,7 @@ fun MainMenuView() {
         remember {
             listOf(
                 MainMenuItem("devices", Devices),
-                MainMenuItem("scan", QrCode),
+                MainMenuItem("pairing_code", PairingCode),
                 MainMenuItem("settings", Settings),
                 MainMenuItem("extension", Extension),
             )

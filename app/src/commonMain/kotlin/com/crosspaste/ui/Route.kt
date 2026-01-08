@@ -97,8 +97,8 @@ data class PasteTextEdit(
 }
 
 @Serializable
-object QrCode : Route {
-    const val NAME: String = "scan"
+object PairingCode : Route {
+    const val NAME: String = "pairing_code"
     override val name: String = NAME
 }
 
