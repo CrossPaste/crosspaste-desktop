@@ -237,7 +237,9 @@ class DesktopScreenProvider(
                 remember(currentSyncRuntimeInfo) {
                     deviceScopeFactory.createDeviceScope(currentSyncRuntimeInfo)
                 }
-            scope.DeviceDetailContentView()
+            ScreenLayout {
+                scope.DeviceDetailContentView()
+            }
         }
     }
 
@@ -289,7 +291,9 @@ class DesktopScreenProvider(
                 remember(nearbyDeviceDetail) {
                     syncScopeFactory.createSyncScope(nearbyDeviceInfo)
                 }
-            scope.NearbyDeviceDetailContentView()
+            ScreenLayout {
+                scope.NearbyDeviceDetailContentView()
+            }
         }
     }
 

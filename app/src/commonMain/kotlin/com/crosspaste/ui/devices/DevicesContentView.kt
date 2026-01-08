@@ -92,7 +92,8 @@ fun DevicesContentView() {
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = medium),
+                    .padding(horizontal = medium)
+                    .padding(bottom = medium),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             if (syncRuntimeInfos.isNotEmpty()) {
