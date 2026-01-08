@@ -22,9 +22,9 @@ class DesktopAppShareService(
             Mail(notificationManager, uiSupport),
             Clipboard(notificationManager, pasteboardService),
         )
-    override val shareContentKey: String = "recommend_content"
+    override val shareContentKey: String = "share_content"
 
-    override val shareTitleKey: String = "recommend_title"
+    override val shareTitleKey: String = "share_title"
 
     override fun getShareText(): String =
         "${copywriter.getText(shareContentKey)}\n${uiSupport.getCrossPasteWebUrl("download")}"
