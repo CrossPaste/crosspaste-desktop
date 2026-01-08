@@ -172,9 +172,9 @@ fun MainWindow(windowIcon: Painter?) {
                             appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }
-                    Item(copywriter.getText("scan")) {
+                    Item(copywriter.getText("pairing_code")) {
                         scope.launch {
-                            navigateManage.navigateAndClearStack(QrCode)
+                            navigateManage.navigateAndClearStack(PairingCode)
                             appWindowManager.showMainWindow(WindowTrigger.MENU)
                         }
                     }

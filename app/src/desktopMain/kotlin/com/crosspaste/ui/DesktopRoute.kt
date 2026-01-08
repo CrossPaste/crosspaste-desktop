@@ -15,7 +15,7 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<OCR>() -> OCR.NAME
         dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
         dest.hasRoute<PasteTextEdit>() -> PasteTextEdit.NAME
-        dest.hasRoute<QrCode>() -> QrCode.NAME
+        dest.hasRoute<PairingCode>() -> PairingCode.NAME
         dest.hasRoute<Share>() -> Share.NAME
         dest.hasRoute<Settings>() -> Settings.NAME
         dest.hasRoute<PasteboardSettings>() -> PasteboardSettings.NAME
@@ -37,7 +37,7 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<OCR>() -> Extension.NAME
         dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
         dest.hasRoute<PasteTextEdit>() -> Pasteboard.NAME
-        dest.hasRoute<QrCode>() -> QrCode.NAME
+        dest.hasRoute<PairingCode>() -> PairingCode.NAME
         dest.hasRoute<Share>() -> Share.NAME
         dest.hasRoute<Settings>() -> Settings.NAME
         dest.hasRoute<PasteboardSettings>() -> Settings.NAME

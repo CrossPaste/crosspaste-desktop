@@ -35,7 +35,7 @@ import com.crosspaste.ui.devices.DeviceDetailContentView
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.DevicesContentView
 import com.crosspaste.ui.devices.NearbyDeviceDetailContentView
-import com.crosspaste.ui.devices.QRContentView
+import com.crosspaste.ui.devices.PairingCodeContentView
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.extension.ExtensionContentView
@@ -169,7 +169,7 @@ class DesktopScreenProvider(
             ) { backStackEntry ->
                 backStackEntry.PasteTextEditScreen()
             }
-            composable<QrCode> { QRScreen() }
+            composable<PairingCode> { PairingCodeScreen() }
             composable<Share> { ShareScreen() }
             navigation<SettingsGraph>(startDestination = Settings) {
                 composable<Settings> { SettingsScreen() }
@@ -325,9 +325,9 @@ class DesktopScreenProvider(
     }
 
     @Composable
-    private fun QRScreen() {
+    private fun PairingCodeScreen() {
         ScreenLayout {
-            QRContentView()
+            PairingCodeContentView()
         }
     }
 

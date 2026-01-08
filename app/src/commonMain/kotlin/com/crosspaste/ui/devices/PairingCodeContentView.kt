@@ -66,7 +66,7 @@ import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 
 @Composable
-fun QRContentView() {
+fun PairingCodeContentView() {
     val appTokenApi = koinInject<AppTokenApi>()
     val copywriter = koinInject<GlobalCopywriter>()
     val qrCodeGenerator = koinInject<QRCodeGenerator>()
