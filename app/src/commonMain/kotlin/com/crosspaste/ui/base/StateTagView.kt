@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
@@ -25,6 +26,7 @@ import org.koin.compose.koinInject
 
 data class StateTagStyle(
     val label: String,
+    val labelUppercase: Boolean = true,
     val containerColor: Color,
     val contentColor: Color,
     val icon: ImageVector,
@@ -51,8 +53,19 @@ fun StateTagView(style: StateTagStyle) {
                 modifier = Modifier.size(small),
                 tint = style.contentColor,
             )
+
+            val label =
+                if (style.labelUppercase) {
+                    copywriter.getText(style.label).uppercase()
+                } else {
+                    copywriter.getText(style.label)
+                }
+
             Text(
-                text = copywriter.getText(style.label).uppercase(),
+                text = label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = style.contentColor,
             )
