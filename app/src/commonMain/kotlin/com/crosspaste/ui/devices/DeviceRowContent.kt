@@ -26,6 +26,7 @@ import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import org.jetbrains.jewel.intui.standalone.Inter
 
 @Composable
 fun PlatformScope.DeviceRowContent(
@@ -72,14 +73,14 @@ fun PlatformScope.DeviceRowContent(
                 modifier =
                     Modifier
                         .size(xxxxLarge)
-                        .background(style.iconContentColor, small2XRoundedCornerShape),
+                        .background(style.iconContainerColor, small2XRoundedCornerShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = PlatformIcon(platform),
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
-                    tint = style.contentColor,
+                    tint = style.iconContentColor,
                 )
             }
 
@@ -94,21 +95,21 @@ fun PlatformScope.DeviceRowContent(
                 ) {
                     Text(
                         modifier = Modifier.weight(1f, fill = false),
-                        text = "${platform.name} ${platform.version}",
+                        text = getDeviceDisplayName(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = FontFamily.Inter,
                         color = style.contentColor,
                     )
                     tagContent?.invoke()
                 }
 
                 Text(
-                    text = getDeviceDisplayName(),
+                    text = "${platform.name} ${platform.version}",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = FontFamily.SansSerif,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = style.contentColor.copy(alpha = 0.7f),
                 )
             }
