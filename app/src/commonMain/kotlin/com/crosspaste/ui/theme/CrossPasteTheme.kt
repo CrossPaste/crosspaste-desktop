@@ -7,6 +7,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.base.withCustomFonts
@@ -28,14 +29,20 @@ object CrossPasteTheme {
             themeDetector.setSystemInDark(isSystemInDark)
         }
 
-        MaterialTheme(
-            colorScheme = themeState.colorScheme,
-            typography = MaterialTheme.typography.withCustomFonts(userSelectedFont),
-        ) {
-            CompositionLocalProvider(
-                LocalThemeState provides themeState,
+        val primary = themeState.colorScheme.primary
+
+        val themeExt = ThemeExt.buildThemeExt(primary, themeState.isCurrentThemeDark)
+
+        CompositionLocalProvider(LocalThemeExtState provides themeExt) {
+            MaterialTheme(
+                colorScheme = themeState.colorScheme,
+                typography = MaterialTheme.typography.withCustomFonts(userSelectedFont),
             ) {
-                content()
+                CompositionLocalProvider(
+                    LocalThemeState provides themeState,
+                ) {
+                    content()
+                }
             }
         }
     }

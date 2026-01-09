@@ -178,7 +178,7 @@ fun PasteImportContentView() {
                                 )
                             },
                     shape = xLargeRoundedCornerShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize().padding(medium),
@@ -221,6 +221,7 @@ fun PasteImportContentView() {
             }
 
             item {
+                Spacer(modifier = Modifier.height(medium))
                 AlertCard(
                     title = copywriter.getText("import_data_merge_notice"),
                     messageType = MessageType.Info,
