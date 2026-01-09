@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,7 +25,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.Message
-import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.MessageContentCard
 import com.crosspaste.ui.base.NotificationCard
@@ -106,15 +103,7 @@ private fun NotificationItemWrapper(
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut() + shrinkVertically(),
     ) {
-        val containerColor =
-            when (notification.messageType) {
-                MessageType.Error -> MaterialTheme.colorScheme.errorContainer
-                MessageType.Warning -> MaterialTheme.colorScheme.tertiaryContainer
-                MessageType.Success -> MaterialTheme.colorScheme.primaryContainer
-                MessageType.Info -> MaterialTheme.colorScheme.secondaryContainer
-            }
-
-        val contentColor = contentColorFor(containerColor)
+        val (containerColor, contentColor) = notification.messageType.getMessageColor()
 
         NotificationCard(
             modifier = Modifier.padding(bottom = tiny),

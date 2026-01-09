@@ -3,7 +3,6 @@ package com.crosspaste.ui.base
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
@@ -18,15 +17,7 @@ fun AlertCard(
     shape: Shape = MaterialTheme.shapes.large,
     modifier: Modifier = Modifier,
 ) {
-    val containerColor =
-        when (messageType) {
-            MessageType.Error -> MaterialTheme.colorScheme.errorContainer
-            MessageType.Warning -> MaterialTheme.colorScheme.tertiaryContainer
-            MessageType.Success -> MaterialTheme.colorScheme.primaryContainer
-            MessageType.Info -> MaterialTheme.colorScheme.secondaryContainer
-        }
-
-    val contentColor = contentColorFor(containerColor)
+    val (containerColor, contentColor) = messageType.getMessageColor()
 
     Surface(
         modifier = modifier.fillMaxWidth(),
