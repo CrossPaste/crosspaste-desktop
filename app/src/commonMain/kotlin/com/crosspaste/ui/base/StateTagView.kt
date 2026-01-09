@@ -17,11 +17,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import org.koin.compose.koinInject
 
 data class StateTagStyle(
@@ -37,12 +37,12 @@ fun StateTagView(style: StateTagStyle) {
     val copywriter = koinInject<GlobalCopywriter>()
     Surface(
         color = style.containerColor,
-        shape = tiny2XRoundedCornerShape,
+        shape = tinyRoundedCornerShape,
     ) {
         Row(
             modifier =
                 Modifier
-                    .height(large2X)
+                    .height(xLarge)
                     .padding(horizontal = small3X),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(tiny3X),

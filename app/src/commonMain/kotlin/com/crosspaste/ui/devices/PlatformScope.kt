@@ -21,6 +21,7 @@ interface PlatformScope {
 data class DeviceStyle(
     val containerColor: Color,
     val contentColor: Color,
+    val iconContainerColor: Color,
     val iconContentColor: Color,
     val paddingValues: PaddingValues = PaddingValues(medium),
     val shape: Shape = mediumRoundedCornerShape,
@@ -33,7 +34,8 @@ val myDeviceStyle: DeviceStyle
         DeviceStyle(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
+            iconContainerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
+            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         )
 
 val myDeviceDetailStyle: DeviceStyle
@@ -42,7 +44,8 @@ val myDeviceDetailStyle: DeviceStyle
         DeviceStyle(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
+            iconContainerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
+            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             isClickable = false,
         )
 
@@ -52,7 +55,8 @@ val tokenDeviceStyle: DeviceStyle
         DeviceStyle(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
+            iconContainerColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
+            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             paddingValues = PaddingValues(),
             shape = RectangleShape,
             isClickable = false,
@@ -64,5 +68,6 @@ val nearbyDeviceStyle: DeviceStyle
         DeviceStyle(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
+            iconContainerColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
+            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         )
