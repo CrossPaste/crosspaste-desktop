@@ -9,6 +9,7 @@ import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -33,9 +34,9 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.DesktopContext.MainWindowContext
 import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.settings.GrantAccessibilityDialog
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.xLarge
-import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.intui.window.DecoratedWindowIconKeys
@@ -151,8 +152,9 @@ fun MainWindow(windowIcon: Painter?) {
                                 Icons.Outlined.PushPin
                             },
                         desc = "always_on_top",
-                        buttonSize = xxxLarge,
-                        iconSize = xLarge,
+                        iconColor = MaterialTheme.colorScheme.onSurface,
+                        buttonSize = xxLarge,
+                        iconSize = large2X,
                         onClick = {
                             appWindowManager.switchAlwaysOnTopMainWindow()
                         },
