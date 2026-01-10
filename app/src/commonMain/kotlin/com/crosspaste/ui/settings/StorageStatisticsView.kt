@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -19,12 +18,9 @@ import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,13 +28,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.AnimatedSegmentedControl
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
@@ -51,7 +45,6 @@ import com.crosspaste.ui.base.rtf
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
@@ -65,38 +58,25 @@ fun StorageStatisticsScope.StorageStatisticsHeader() {
     val copywriter = koinInject<GlobalCopywriter>()
 
     SectionHeader("storage_statistics") {
-        val text =
+        val all = copywriter.getText("all")
+        val favorite = copywriter.getText("favorite")
+        val selectedItem =
             if (allOrFavorite) {
-                copywriter.getText("all")
+                all
             } else {
-                copywriter.getText("favorite")
+                favorite
             }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = TextUnit.Unspecified,
-            )
-            Spacer(modifier = Modifier.width(tiny))
-            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 24.dp) {
-                Switch(
-                    modifier =
-                        Modifier
-                            .scale(0.6f)
-                            .requiredHeight(24.dp),
-                    checked = allOrFavorite,
-                    onCheckedChange = { newAllOrFavorite ->
-                        scope.launch {
-                            allOrFavorite = newAllOrFavorite
-                            refresh()
-                        }
-                    },
-                )
-            }
-        }
+        AnimatedSegmentedControl(
+            items = listOf(all, favorite),
+            selectedItem = selectedItem,
+            onItemSelected = {
+                scope.launch {
+                    allOrFavorite = it == all
+                    refresh()
+                }
+            },
+        )
     }
 }
 

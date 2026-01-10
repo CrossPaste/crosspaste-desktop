@@ -2,10 +2,8 @@ package com.crosspaste.ui.extension
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -37,6 +35,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.base.AnimatedSegmentedControl
 import com.crosspaste.ui.base.PortTextField
 import com.crosspaste.ui.extension.ProxyType.HTTP
 import com.crosspaste.ui.extension.ProxyType.SOCKS
@@ -46,11 +45,7 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.tiny2X
-import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
-import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.helger.css.ECSSUnit.rem
 import org.koin.compose.koinInject
 
 object ProxyType {
@@ -142,7 +137,7 @@ fun ProxySection(
 }
 
 @Composable
-fun ManualConfigContent(
+private fun ManualConfigContent(
     protocol: String,
     onProtocolChange: (String) -> Unit,
     hostname: String,
@@ -156,39 +151,11 @@ fun ManualConfigContent(
         modifier = Modifier.padding(start = tiny),
         verticalArrangement = Arrangement.spacedBy(medium),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, tinyRoundedCornerShape)
-                    .padding(tiny3X),
-        ) {
-            listOf(HTTP, SOCKS).forEach { label ->
-                val selected = label == protocol
-                val color =
-                    if (selected) {
-                        MaterialTheme.colorScheme.surface
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    }
-                val textColor =
-                    if (selected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-
-                Box(
-                    modifier =
-                        Modifier
-                            .clip(tiny2XRoundedCornerShape)
-                            .background(color)
-                            .clickable { onProtocolChange(label) }
-                            .padding(horizontal = medium, vertical = tiny2X),
-                ) {
-                    Text(text = label, style = MaterialTheme.typography.labelMedium, color = textColor)
-                }
-            }
-        }
+        AnimatedSegmentedControl(
+            items = listOf(HTTP, SOCKS),
+            selectedItem = protocol,
+            onItemSelected = { onProtocolChange(it) },
+        )
 
         // Host and Port Fields
         Row(horizontalArrangement = Arrangement.spacedBy(tiny)) {
@@ -220,7 +187,7 @@ fun ManualConfigContent(
 }
 
 @Composable
-fun ProxyRadioButton(
+private fun ProxyRadioButton(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
