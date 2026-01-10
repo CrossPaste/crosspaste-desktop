@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.ui.base.PlatformIcon
 import com.crosspaste.ui.theme.AppUISize
@@ -26,7 +25,6 @@ import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
-import org.jetbrains.jewel.intui.standalone.Inter
 
 @Composable
 fun PlatformScope.DeviceRowContent(
@@ -99,7 +97,6 @@ fun PlatformScope.DeviceRowContent(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleMedium,
-                        fontFamily = FontFamily.Inter,
                         color = style.contentColor,
                     )
                     tagContent?.invoke()
