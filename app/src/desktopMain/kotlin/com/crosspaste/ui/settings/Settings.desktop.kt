@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUISize.huge
@@ -47,10 +48,24 @@ actual fun SettingListItem(
             Modifier.height(huge).then(
                 if (onClick != null) Modifier.clickable { onClick() } else Modifier,
             ),
-        headlineContent = { Text(copywriter.getText(title), style = MaterialTheme.typography.bodyMedium) },
+        headlineContent = {
+            Text(
+                text = copywriter.getText(title),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
         supportingContent =
             subtitle?.let {
-                { Text(copywriter.getText(it), style = MaterialTheme.typography.bodySmall) }
+                {
+                    Text(
+                        text = copywriter.getText(it),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             },
         leadingContent =
             icon?.let {
@@ -75,10 +90,24 @@ actual fun SettingListItem(
             Modifier.height(huge).then(
                 if (onClick != null) Modifier.clickable { onClick() } else Modifier,
             ),
-        headlineContent = { Text(copywriter.getText(title), style = MaterialTheme.typography.bodyMedium) },
+        headlineContent = {
+            Text(
+                text = copywriter.getText(title),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
         supportingContent =
             subtitle?.let {
-                { Text(copywriter.getText(it), style = MaterialTheme.typography.bodySmall) }
+                {
+                    Text(
+                        text = copywriter.getText(it),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             },
         leadingContent =
             painter?.let {
@@ -113,7 +142,14 @@ actual fun SettingListItem(
         headlineContent = titleContent,
         supportingContent =
             subtitle?.let {
-                { Text(copywriter.getText(it), style = MaterialTheme.typography.bodySmall) }
+                {
+                    Text(
+                        text = copywriter.getText(it),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             },
         leadingContent =
             icon?.let {
@@ -138,7 +174,14 @@ actual fun SettingListItem(
             Modifier.height(huge).then(
                 if (onClick != null) Modifier.clickable { onClick() } else Modifier,
             ),
-        headlineContent = { Text(copywriter.getText(title), style = MaterialTheme.typography.bodyMedium) },
+        headlineContent = {
+            Text(
+                text = copywriter.getText(title),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
         supportingContent = subtitleContent,
         leadingContent =
             icon?.let {
@@ -164,7 +207,14 @@ actual fun SettingListSwitchItem(
         headlineContent = { Text(copywriter.getText(title), style = MaterialTheme.typography.bodyMedium) },
         supportingContent =
             subtitle?.let {
-                { Text(copywriter.getText(it), style = MaterialTheme.typography.bodySmall) }
+                {
+                    Text(
+                        text = copywriter.getText(it),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             },
         leadingContent =
             icon?.let {
