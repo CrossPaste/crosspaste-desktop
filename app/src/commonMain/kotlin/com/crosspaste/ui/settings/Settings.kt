@@ -49,6 +49,17 @@ expect fun SettingListItem(
 
 @Composable
 expect fun SettingListItem(
+    titleContent: @Composable (() -> Unit),
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    trailingContent: @Composable (() -> Unit)? = {
+        Icon(Icons.Default.ChevronRight, null)
+    },
+    onClick: (() -> Unit)? = null,
+)
+
+@Composable
+expect fun SettingListItem(
     title: String,
     subtitleContent: @Composable (() -> Unit),
     icon: ImageVector? = null,

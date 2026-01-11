@@ -98,6 +98,34 @@ actual fun SettingListItem(
 
 @Composable
 actual fun SettingListItem(
+    titleContent: @Composable (() -> Unit),
+    subtitle: String?,
+    icon: ImageVector?,
+    trailingContent: @Composable (() -> Unit)?,
+    onClick: (() -> Unit)?,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    ListItem(
+        modifier =
+            Modifier.height(huge).then(
+                if (onClick != null) Modifier.clickable { onClick() } else Modifier,
+            ),
+        headlineContent = titleContent,
+        supportingContent =
+            subtitle?.let {
+                { Text(copywriter.getText(it), style = MaterialTheme.typography.bodySmall) }
+            },
+        leadingContent =
+            icon?.let {
+                { Icon(it, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+            },
+        trailingContent = trailingContent,
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+@Composable
+actual fun SettingListItem(
     title: String,
     subtitleContent: @Composable (() -> Unit),
     icon: ImageVector?,
