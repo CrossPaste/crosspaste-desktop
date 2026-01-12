@@ -5,7 +5,6 @@ import com.crosspaste.config.AppConfig.Companion.toInt
 import com.crosspaste.config.AppConfig.Companion.toLong
 import com.crosspaste.config.AppConfig.Companion.toString
 import com.crosspaste.ui.extension.ProxyType
-import com.crosspaste.ui.theme.ColorContrast
 import com.crosspaste.ui.theme.SeaColor
 import kotlinx.serialization.Serializable
 
@@ -19,7 +18,6 @@ data class DesktopAppConfig(
     override val isFollowSystemTheme: Boolean = true,
     override val isDarkTheme: Boolean = false,
     override val themeColor: String = SeaColor.name,
-    override val colorContrast: String = ColorContrast.Standard.name,
     override val port: Int = 13129,
     override val enableEncryptSync: Boolean = false,
     override val enableExpirationCleanup: Boolean = true,
@@ -65,7 +63,6 @@ data class DesktopAppConfig(
             isFollowSystemTheme = if (key == "isFollowSystemTheme") toBoolean(value) else isFollowSystemTheme,
             isDarkTheme = if (key == "isDarkTheme") toBoolean(value) else isDarkTheme,
             themeColor = if (key == "themeColor") toString(value) else themeColor,
-            colorContrast = if (key == "colorContrast") toString(value) else colorContrast,
             port = if (key == "port") toInt(value) else port,
             enableEncryptSync = if (key == "enableEncryptSync") toBoolean(value) else enableEncryptSync,
             enableExpirationCleanup =

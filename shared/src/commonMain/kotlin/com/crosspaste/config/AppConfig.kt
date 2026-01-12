@@ -7,7 +7,6 @@ interface AppConfig {
     val isFollowSystemTheme: Boolean
     val isDarkTheme: Boolean
     val themeColor: String
-    val colorContrast: String
     val port: Int
     val enableEncryptSync: Boolean
     val enableExpirationCleanup: Boolean
