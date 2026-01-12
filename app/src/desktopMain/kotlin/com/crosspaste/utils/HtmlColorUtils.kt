@@ -264,7 +264,7 @@ object HtmlColorUtils {
      * Extract color using ph-css's structured approach
      */
     private fun extractColorFromDeclaration(declaration: CSSDeclaration): Color? {
-        val expression = declaration.expression ?: return null
+        val expression = declaration.expression
 
         // For background-color, there's usually only one color value
         if (declaration.property.equals("background-color", ignoreCase = true)) {
