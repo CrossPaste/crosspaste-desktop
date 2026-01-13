@@ -249,27 +249,36 @@ public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
     }
 }
 
+@available(macOS 26.0, *)
+private func setupLiquidGlass(containerView: NSView, contentView: NSView, identifier: NSUserInterfaceItemIdentifier) {
+    let glassContainer = NSGlassEffectContainerView(frame: containerView.bounds)
+    glassContainer.autoresizingMask = [.width, .height]
+    glassContainer.identifier = identifier
+
+    let glassView = NSGlassEffectView(frame: glassContainer.bounds)
+    glassView.autoresizingMask = [.width, .height]
+
+    glassContainer.addSubview(glassView)
+    containerView.addSubview(glassContainer, positioned: .below, relativeTo: contentView)
+}
+
 @_cdecl("applyAcrylicBackground")
-public func applyAcrylicBackground(_ rawPtr: UnsafeRawPointer?, _ colorArgb: Int32) {
-    guard let rawPtr = rawPtr else {
-        return
-    }
-
+public func applyAcrylicBackground(_ rawPtr: UnsafeRawPointer?, _ isDark: Bool) {
+    guard let rawPtr = rawPtr else { return }
     let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
-
-    let alpha = CGFloat((colorArgb >> 24) & 0xFF) / 255.0
-    let red = CGFloat((colorArgb >> 16) & 0xFF) / 255.0
-    let green = CGFloat((colorArgb >> 8) & 0xFF) / 255.0
-    let blue = CGFloat(colorArgb & 0xFF) / 255.0
-    let tintColor = NSColor(red: red, green: green, blue: blue, alpha: alpha)
 
     DispatchQueue.main.async {
         if window.windowNumber <= 0 {
             return
         }
 
+        window.appearance = nil
+        window.appearance = NSAppearance(named: isDark ? .vibrantDark : .vibrantLight)
+
         window.isOpaque = false
         window.backgroundColor = .clear
+        window.titlebarAppearsTransparent = true
+        window.styleMask.insert(.fullSizeContentView)
 
         guard let contentView = window.contentView,
               let containerView = contentView.superview
@@ -280,46 +289,24 @@ public func applyAcrylicBackground(_ rawPtr: UnsafeRawPointer?, _ colorArgb: Int
         contentView.wantsLayer = true
         contentView.layer?.backgroundColor = NSColor.clear.cgColor
 
-        let kBlurId = NSUserInterfaceItemIdentifier("CrossPasteBlurLayer")
-        let kTintId = NSUserInterfaceItemIdentifier("CrossPasteTintLayer")
+        let kLayerId = NSUserInterfaceItemIdentifier("CrossPasteBackgroundLayer")
+        containerView.subviews.filter { $0.identifier == kLayerId }.forEach { $0.removeFromSuperview() }
 
-        var blurView = containerView.subviews.first {
-            $0.identifier == kBlurId
-        } as? NSVisualEffectView
-        var tintView = containerView.subviews.first {
-            $0.identifier == kTintId
-        }
-
-        if blurView == nil {
-            let newBlur = NSVisualEffectView(frame: containerView.bounds)
-            newBlur.autoresizingMask = [.width, .height]
-            newBlur.blendingMode = .behindWindow
-            newBlur.state = .active
-
-            newBlur.identifier = kBlurId
+        if #available(macOS 26.0, *) {
+            setupLiquidGlass(containerView: containerView, contentView: contentView, identifier: kLayerId)
+        } else {
+            let blurView = NSVisualEffectView(frame: containerView.bounds)
+            blurView.autoresizingMask = [.width, .height]
+            blurView.blendingMode = .behindWindow
 
             if let specificMaterial = NSVisualEffectView.Material(rawValue: 26) {
-                newBlur.material = specificMaterial
+                blurView.material = specificMaterial
             } else {
-                newBlur.material = .hudWindow
+                blurView.material = .hudWindow
             }
-
-            containerView.addSubview(newBlur, positioned: .below, relativeTo: contentView)
-            blurView = newBlur
+            blurView.identifier = kLayerId
+            containerView.addSubview(blurView, positioned: .below, relativeTo: contentView)
         }
-
-        if tintView == nil {
-            let newTint = NSView(frame: containerView.bounds)
-            newTint.autoresizingMask = [.width, .height]
-            newTint.wantsLayer = true
-
-            newTint.identifier = kTintId
-
-            containerView.addSubview(newTint, positioned: .above, relativeTo: blurView)
-            tintView = newTint
-        }
-
-        tintView?.layer?.backgroundColor = tintColor.cgColor
     }
 }
 

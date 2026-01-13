@@ -67,7 +67,7 @@ interface MacosApi : Library {
 
     fun applyAcrylicBackground(
         windowPtr: Pointer?,
-        colorArgb: Int,
+        isDark: Boolean,
     )
 
     fun bringToFront(windowTitle: String)

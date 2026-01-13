@@ -13,7 +13,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
@@ -26,7 +25,6 @@ import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.side.SideSearchWindowContent
-import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.cpuDispatcher
 import com.sun.jna.Memory
@@ -119,12 +117,10 @@ fun SearchWindow(windowIcon: Painter?) {
         transparent = isMac || isWindowsAndSupportBlurEffect,
         resizable = false,
     ) {
-        val color = AppUIColors.generalBackground.copy(alpha = 0.5f).toArgb()
-
         if (isMac) {
             MacAcrylicEffect(
                 window = this.window,
-                currentArgb = color,
+                isDark = themeState.isCurrentThemeDark,
             )
         } else if (isWindowsAndSupportBlurEffect) {
             WindowsBlurEffect(
@@ -172,17 +168,19 @@ fun SearchWindow(windowIcon: Painter?) {
 @Composable
 fun MacAcrylicEffect(
     window: ComposeWindow,
-    currentArgb: Int,
+    isDark: Boolean,
 ) {
-    LaunchedEffect(window, currentArgb) {
+    LaunchedEffect(window, isDark) {
         snapshotFlow { window.isDisplayable }
             .first { it }
+
+        window.background = java.awt.Color(0, 0, 0, 0)
 
         withContext(cpuDispatcher) {
             runCatching {
                 val pointer = Pointer(window.windowHandle)
                 MacAppUtils.setWindowLevelScreenSaver(pointer)
-                MacAppUtils.applyAcrylicBackground(pointer, currentArgb)
+                MacAppUtils.applyAcrylicBackground(pointer, isDark)
             }
         }
     }
