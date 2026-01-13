@@ -43,9 +43,9 @@ object MacAppUtils {
 
     fun applyAcrylicBackground(
         windowPtr: Pointer?,
-        colorArgb: Int,
+        isDark: Boolean,
     ) {
-        INSTANCE.applyAcrylicBackground(windowPtr, colorArgb)
+        INSTANCE.applyAcrylicBackground(windowPtr, isDark)
     }
 
     fun bringToFront(appName: String) {
