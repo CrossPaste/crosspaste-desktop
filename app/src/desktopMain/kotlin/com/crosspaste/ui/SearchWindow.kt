@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -21,12 +22,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.utils.cpuDispatcher
+import com.sun.jna.Memory
+import com.sun.jna.Native
 import com.sun.jna.Pointer
+import com.sun.jna.platform.win32.WinDef
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -49,6 +54,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
     val isMac = remember { platform.isMacos() }
+    val isWindows = remember { platform.isWindows() }
 
     val animationProgress by animateFloatAsState(
         targetValue = if (searchWindowInfo.show) 0f else 1f,
@@ -103,7 +109,7 @@ fun SearchWindow(windowIcon: Painter?) {
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
-        transparent = isMac,
+        transparent = isMac || isWindows,
         resizable = false,
     ) {
         val color = AppUIColors.generalBackground.copy(alpha = 0.5f).toArgb()
@@ -113,6 +119,8 @@ fun SearchWindow(windowIcon: Painter?) {
                 window = this.window,
                 currentArgb = color,
             )
+        } else if (isWindows) {
+            WindowWindowsBlurEffect(window = this.window)
         }
 
         DisposableEffect(Unit) {
@@ -167,5 +175,32 @@ fun WindowAcrylicEffect(
                 MacAppUtils.applyAcrylicBackground(pointer, currentArgb)
             }
         }
+    }
+}
+
+@Composable
+fun WindowWindowsBlurEffect(window: ComposeWindow) {
+    val isDark = isSystemInDarkTheme()
+
+    LaunchedEffect(window, isDark) {
+        snapshotFlow { window.isDisplayable }.first { it }
+
+        val hwnd = WinDef.HWND(Native.getWindowPointer(window))
+
+        val darkMode = Memory(4).apply { setInt(0, if (isDark) 1 else 0) }
+        Dwmapi.INSTANCE.DwmSetWindowAttribute(
+            hwnd,
+            Dwmapi.DWMWA_USE_IMMERSIVE_DARK_MODE,
+            darkMode,
+            4,
+        )
+
+        val backdropType = Memory(4).apply { setInt(0, Dwmapi.DWMSBT_TRANSIENT) }
+        Dwmapi.INSTANCE.DwmSetWindowAttribute(
+            hwnd,
+            Dwmapi.DWMWA_SYSTEMBACKDROP_TYPE,
+            backdropType,
+            4,
+        )
     }
 }
