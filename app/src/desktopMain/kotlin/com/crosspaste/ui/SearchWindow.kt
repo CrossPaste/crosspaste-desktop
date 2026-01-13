@@ -21,12 +21,18 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.platform.windows.WindowsVersionHelper
+import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.cpuDispatcher
+import com.sun.jna.Memory
+import com.sun.jna.Native
 import com.sun.jna.Pointer
+import com.sun.jna.platform.win32.WinDef
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -40,6 +46,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
+    val themeDetector = koinInject<ThemeDetector>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val navController = LocalNavHostController.current
@@ -48,7 +55,13 @@ fun SearchWindow(windowIcon: Painter?) {
 
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
+    val themeState by themeDetector.themeState.collectAsState()
+
     val isMac = remember { platform.isMacos() }
+    val isWindowsAndSupportBlurEffect =
+        remember {
+            platform.isWindows() && WindowsVersionHelper.isWindows11_22H2OrGreater
+        }
 
     val animationProgress by animateFloatAsState(
         targetValue = if (searchWindowInfo.show) 0f else 1f,
@@ -103,15 +116,20 @@ fun SearchWindow(windowIcon: Painter?) {
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
-        transparent = isMac,
+        transparent = isMac || isWindowsAndSupportBlurEffect,
         resizable = false,
     ) {
         val color = AppUIColors.generalBackground.copy(alpha = 0.5f).toArgb()
 
         if (isMac) {
-            WindowAcrylicEffect(
+            MacAcrylicEffect(
                 window = this.window,
                 currentArgb = color,
+            )
+        } else if (isWindowsAndSupportBlurEffect) {
+            WindowsBlurEffect(
+                window = this.window,
+                isDark = themeState.isCurrentThemeDark,
             )
         }
 
@@ -152,7 +170,7 @@ fun SearchWindow(windowIcon: Painter?) {
 }
 
 @Composable
-fun WindowAcrylicEffect(
+fun MacAcrylicEffect(
     window: ComposeWindow,
     currentArgb: Int,
 ) {
@@ -167,5 +185,35 @@ fun WindowAcrylicEffect(
                 MacAppUtils.applyAcrylicBackground(pointer, currentArgb)
             }
         }
+    }
+}
+
+@Composable
+fun WindowsBlurEffect(
+    window: ComposeWindow,
+    isDark: Boolean,
+) {
+    LaunchedEffect(window, isDark) {
+        snapshotFlow { window.isDisplayable }.first { it }
+
+        window.background = java.awt.Color(0, 0, 0, 0)
+
+        val hwnd = WinDef.HWND(Native.getWindowPointer(window))
+
+        val darkMode = Memory(4).apply { setInt(0, if (isDark) 1 else 0) }
+        Dwmapi.INSTANCE.DwmSetWindowAttribute(
+            hwnd,
+            Dwmapi.DWMWA_USE_IMMERSIVE_DARK_MODE,
+            darkMode,
+            4,
+        )
+
+        val backdropType = Memory(4).apply { setInt(0, Dwmapi.DWMSBT_TRANSIENT) }
+        Dwmapi.INSTANCE.DwmSetWindowAttribute(
+            hwnd,
+            Dwmapi.DWMWA_SYSTEMBACKDROP_TYPE,
+            backdropType,
+            4,
+        )
     }
 }
