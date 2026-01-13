@@ -192,6 +192,8 @@ fun WindowsBlurEffect(
     LaunchedEffect(window, isDark) {
         snapshotFlow { window.isDisplayable }.first { it }
 
+        window.background = java.awt.Color(0, 0, 0, 0)
+
         val hwnd = WinDef.HWND(Native.getWindowPointer(window))
 
         val darkMode = Memory(4).apply { setInt(0, if (isDark) 1 else 0) }

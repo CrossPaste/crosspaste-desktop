@@ -25,6 +25,8 @@ fun SideSearchWindowContent() {
     val backgroundModifier =
         if (!platform.isMacos()) {
             Modifier.background(AppUIColors.generalBackground)
+        } else if (platform.isWindows()) {
+            Modifier.background(AppUIColors.generalBackground.copy(alpha = 0.3f))
         } else {
             Modifier
         }
