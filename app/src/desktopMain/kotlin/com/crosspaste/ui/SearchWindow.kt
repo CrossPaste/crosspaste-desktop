@@ -2,7 +2,6 @@ package com.crosspaste.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +26,7 @@ import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.AppUIColors
+import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.cpuDispatcher
 import com.sun.jna.Memory
 import com.sun.jna.Native
@@ -45,6 +45,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
+    val themeDetector = koinInject<ThemeDetector>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val navController = LocalNavHostController.current
@@ -52,6 +53,8 @@ fun SearchWindow(windowIcon: Painter?) {
     val backStackEntry by navController.currentBackStackEntryAsState()
 
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
+
+    val themeState by themeDetector.themeState.collectAsState()
 
     val isMac = remember { platform.isMacos() }
     val isWindows = remember { platform.isWindows() }
@@ -115,12 +118,15 @@ fun SearchWindow(windowIcon: Painter?) {
         val color = AppUIColors.generalBackground.copy(alpha = 0.5f).toArgb()
 
         if (isMac) {
-            WindowAcrylicEffect(
+            MacAcrylicEffect(
                 window = this.window,
                 currentArgb = color,
             )
         } else if (isWindows) {
-            WindowWindowsBlurEffect(window = this.window)
+            WindowsBlurEffect(
+                window = this.window,
+                isDark = themeState.isCurrentThemeDark,
+            )
         }
 
         DisposableEffect(Unit) {
@@ -160,7 +166,7 @@ fun SearchWindow(windowIcon: Painter?) {
 }
 
 @Composable
-fun WindowAcrylicEffect(
+fun MacAcrylicEffect(
     window: ComposeWindow,
     currentArgb: Int,
 ) {
@@ -179,9 +185,10 @@ fun WindowAcrylicEffect(
 }
 
 @Composable
-fun WindowWindowsBlurEffect(window: ComposeWindow) {
-    val isDark = isSystemInDarkTheme()
-
+fun WindowsBlurEffect(
+    window: ComposeWindow,
+    isDark: Boolean,
+) {
     LaunchedEffect(window, isDark) {
         snapshotFlow { window.isDisplayable }.first { it }
 
