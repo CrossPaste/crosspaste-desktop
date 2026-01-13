@@ -21,6 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -57,7 +58,10 @@ fun SearchWindow(windowIcon: Painter?) {
     val themeState by themeDetector.themeState.collectAsState()
 
     val isMac = remember { platform.isMacos() }
-    val isWindows = remember { platform.isWindows() }
+    val isWindowsAndSupportBlurEffect =
+        remember {
+            platform.isWindows() && WindowsVersionHelper.isWindows11_22H2OrGreater
+        }
 
     val animationProgress by animateFloatAsState(
         targetValue = if (searchWindowInfo.show) 0f else 1f,
@@ -112,7 +116,7 @@ fun SearchWindow(windowIcon: Painter?) {
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
-        transparent = isMac || isWindows,
+        transparent = isMac || isWindowsAndSupportBlurEffect,
         resizable = false,
     ) {
         val color = AppUIColors.generalBackground.copy(alpha = 0.5f).toArgb()
@@ -122,7 +126,7 @@ fun SearchWindow(windowIcon: Painter?) {
                 window = this.window,
                 currentArgb = color,
             )
-        } else if (isWindows) {
+        } else if (isWindowsAndSupportBlurEffect) {
             WindowsBlurEffect(
                 window = this.window,
                 isDark = themeState.isCurrentThemeDark,

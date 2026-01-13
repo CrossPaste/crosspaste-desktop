@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.side.SidePasteboardContentView
 import com.crosspaste.ui.theme.AppUIColors
@@ -20,15 +22,21 @@ fun SideSearchWindowContent() {
     val viewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
+    val isMac = remember { platform.isMacos() }
+    val isWindowsAndSupportBlurEffect =
+        remember {
+            platform.isWindows() && WindowsVersionHelper.isWindows11_22H2OrGreater
+        }
+
     val scope = rememberCoroutineScope()
 
     val backgroundModifier =
-        if (platform.isLinux()) {
-            Modifier.background(AppUIColors.generalBackground)
-        } else if (platform.isWindows()) {
+        if (isMac) {
+            Modifier
+        } else if (isWindowsAndSupportBlurEffect) {
             Modifier.background(AppUIColors.generalBackground.copy(alpha = 0.3f))
         } else {
-            Modifier
+            Modifier.background(AppUIColors.generalBackground)
         }
 
     Box(
