@@ -23,7 +23,7 @@ fun SideSearchWindowContent() {
     val scope = rememberCoroutineScope()
 
     val backgroundModifier =
-        if (!platform.isMacos()) {
+        if (platform.isLinux()) {
             Modifier.background(AppUIColors.generalBackground)
         } else if (platform.isWindows()) {
             Modifier.background(AppUIColors.generalBackground.copy(alpha = 0.3f))
