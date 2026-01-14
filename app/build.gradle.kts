@@ -24,7 +24,8 @@ version = versionProperties.getProperty("version")
 plugins {
     alias(libs.plugins.atomicfu)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.compose.hot.reload)
+    // compose plugin 1.10.0 is not compatible with it, temporarily commented out
+    // alias(libs.plugins.compose.hot.reload)
     alias(libs.plugins.conveyor)
     alias(libs.plugins.download)
     alias(libs.plugins.jetbrainsCompose)
@@ -79,16 +80,16 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":shared"))
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.materialIconsExtended)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
             implementation(libs.awesome.brans)
             implementation(libs.coil.compose)
             implementation(libs.coil.svg)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.components.uiToolingPreview)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.materialIconsExtended)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.ui)
             implementation(libs.cryptography.core)
             implementation(libs.filekit)
             implementation(libs.koin.compose)
@@ -180,10 +181,10 @@ kotlin {
 
 dependencies {
     // Use the configurations created by the Conveyor plugin to tell Gradle/Conveyor where to find the artifacts for each platform.
-    macAmd64(compose.desktop.macos_x64)
-    macAarch64(compose.desktop.macos_arm64)
-    windowsAmd64(compose.desktop.windows_x64)
-    linuxAmd64(compose.desktop.linux_x64)
+    macAmd64(libs.compose.desktop.macos.x64)
+    macAarch64(libs.compose.desktop.macos.arm64)
+    windowsAmd64(libs.compose.desktop.windows.x64)
+    linuxAmd64(libs.compose.desktop.linux.x64)
 }
 
 tasks.register<Copy>("copyDevProperties") {

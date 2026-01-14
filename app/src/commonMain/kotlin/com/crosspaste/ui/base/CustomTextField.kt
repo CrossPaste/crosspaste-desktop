@@ -5,7 +5,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,9 +26,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import com.crosspaste.ui.theme.AppUIFont.NumberTextStyle
-import com.crosspaste.ui.theme.AppUISize.zero
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,7 +79,7 @@ fun CustomTextField(
         enabled = enabled,
         readOnly = readOnly,
         textStyle = mergedTextStyle,
-        cursorBrush = SolidColor(colors.cursorColor(isError).value),
+        cursorBrush = SolidColor(colors.cursorColor(isError)),
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
@@ -116,38 +112,6 @@ fun CustomTextField(
 }
 
 @Composable
-fun DefaultTextField(
-    modifier: Modifier = Modifier,
-    isError: Boolean = false,
-    textAlign: TextAlign = TextAlign.Start,
-    contentPadding: PaddingValues = PaddingValues(zero),
-    value: String,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default,
-    placeholder: @Composable (() -> Unit)? = null,
-    leadingIcon: @Composable (() -> Unit)? = null,
-    colors: TextFieldColors = TextFieldDefaults.colors(),
-    onValueChange: (String) -> Unit,
-) {
-    val textStyle = NumberTextStyle(textAlign)
-
-    CustomTextField(
-        modifier = modifier.wrapContentHeight(),
-        value = value,
-        onValueChange = onValueChange,
-        isError = isError,
-        singleLine = true,
-        keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
-        placeholder = placeholder,
-        leadingIcon = leadingIcon,
-        textStyle = textStyle,
-        colors = colors,
-        contentPadding = contentPadding,
-    )
-}
-
-@Composable
 fun TextFieldColors.textColor(
     enabled: Boolean,
     isError: Boolean,
@@ -164,7 +128,3 @@ fun TextFieldColors.textColor(
         }
     return rememberUpdatedState(targetValue)
 }
-
-@Composable
-fun TextFieldColors.cursorColor(isError: Boolean): State<Color> =
-    rememberUpdatedState(if (isError) errorCursorColor else cursorColor)
