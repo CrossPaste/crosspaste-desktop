@@ -17,19 +17,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.window.MenuBar
-import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.ExitMode
-import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.DesktopContext.MainWindowContext
 import com.crosspaste.ui.base.GeneralIconButton
@@ -37,7 +31,6 @@ import com.crosspaste.ui.settings.GrantAccessibilityDialog
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.intui.window.DecoratedWindowIconKeys
 import org.jetbrains.jewel.ui.icon.PathIconKey
@@ -57,12 +50,9 @@ val CorrectCloseIcon = PathIconKey("window/close.svg", DecoratedWindowIconKeys::
 fun MainWindow(windowIcon: Painter?) {
     val appLaunchState = koinInject<DesktopAppLaunchState>()
     val appSize = koinInject<DesktopAppSize>()
-    val appUpdateService = koinInject<AppUpdateService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
-    val copywriter = koinInject<GlobalCopywriter>()
     val platform = koinInject<Platform>()
-    val navigateManage = koinInject<NavigationManager>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
     val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
@@ -71,12 +61,9 @@ fun MainWindow(windowIcon: Painter?) {
         mutableStateOf(appSize.getPinPushEndPadding())
     }
 
-    val applicationExit = LocalExitApplication.current
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val config by configManager.config.collectAsState()
-
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(mainWindowInfo.show) {
         if (mainWindowInfo.show) {
@@ -163,72 +150,10 @@ fun MainWindow(windowIcon: Painter?) {
             }
         }
 
-        val isMac = remember { platform.isMacos() }
+        val isWindows = remember { platform.isWindows() }
 
-        if (isMac) {
-            MenuBar {
-                Menu(copywriter.getText("sync")) {
-                    Item(copywriter.getText("devices")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(Devices)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                    Item(copywriter.getText("pairing_code")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(PairingCode)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                }
-                Menu(copywriter.getText("action")) {
-                    Item(copywriter.getText("settings")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(Settings)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                    Item(copywriter.getText("extension")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(Extension)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                    Item(copywriter.getText("import")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(Import)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                    Item(copywriter.getText("export")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(Export)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                }
-                Menu(copywriter.getText("help")) {
-                    Item(copywriter.getText("shortcut_keys")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(ShortcutKeys)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                    Item(copywriter.getText("about")) {
-                        scope.launch {
-                            navigateManage.navigateAndClearStack(About)
-                            appWindowManager.showMainWindow(WindowTrigger.MENU)
-                        }
-                    }
-                    Item(copywriter.getText("check_for_updates")) {
-                        appUpdateService.tryTriggerUpdate()
-                    }
-                    Separator()
-                    Item(copywriter.getText("quit")) {
-                        applicationExit(ExitMode.EXIT)
-                    }
-                }
-            }
+        if (!isWindows) {
+            DesktopMenuBar()
         }
 
         MainWindowContext(mainWindowInfo) {
