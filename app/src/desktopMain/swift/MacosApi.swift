@@ -249,6 +249,7 @@ public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
     }
 }
 
+#if arch(arm64)
 @available(macOS 26.0, *)
 private func setupLiquidGlass(containerView: NSView, contentView: NSView, identifier: NSUserInterfaceItemIdentifier) {
     let glassContainer = NSGlassEffectContainerView(frame: containerView.bounds)
@@ -260,6 +261,21 @@ private func setupLiquidGlass(containerView: NSView, contentView: NSView, identi
 
     glassContainer.addSubview(glassView)
     containerView.addSubview(glassContainer, positioned: .below, relativeTo: contentView)
+}
+#endif
+
+private func setupFallbackBlur(containerView: NSView, contentView: NSView, identifier: NSUserInterfaceItemIdentifier) {
+    let blurView = NSVisualEffectView(frame: containerView.bounds)
+    blurView.autoresizingMask = [.width, .height]
+    blurView.blendingMode = .behindWindow
+
+    if let specificMaterial = NSVisualEffectView.Material(rawValue: 26) {
+        blurView.material = specificMaterial
+    } else {
+        blurView.material = .hudWindow
+    }
+    blurView.identifier = identifier
+    containerView.addSubview(blurView, positioned: .below, relativeTo: contentView)
 }
 
 @_cdecl("applyAcrylicBackground")
@@ -292,21 +308,15 @@ public func applyAcrylicBackground(_ rawPtr: UnsafeRawPointer?, _ isDark: Bool) 
         let kLayerId = NSUserInterfaceItemIdentifier("CrossPasteBackgroundLayer")
         containerView.subviews.filter { $0.identifier == kLayerId }.forEach { $0.removeFromSuperview() }
 
+        #if arch(arm64)
         if #available(macOS 26.0, *) {
             setupLiquidGlass(containerView: containerView, contentView: contentView, identifier: kLayerId)
         } else {
-            let blurView = NSVisualEffectView(frame: containerView.bounds)
-            blurView.autoresizingMask = [.width, .height]
-            blurView.blendingMode = .behindWindow
-
-            if let specificMaterial = NSVisualEffectView.Material(rawValue: 26) {
-                blurView.material = specificMaterial
-            } else {
-                blurView.material = .hudWindow
-            }
-            blurView.identifier = kLayerId
-            containerView.addSubview(blurView, positioned: .below, relativeTo: contentView)
+            setupFallbackBlur(containerView: containerView, contentView: contentView, identifier: kLayerId)
         }
+        #else
+        setupFallbackBlur(containerView: containerView, contentView: contentView, identifier: kLayerId)
+        #endif
     }
 }
 
