@@ -120,6 +120,8 @@ class CrossPaste {
                 if (appEnvUtils.isProduction()) {
                     System.setProperty("jna.library.path", appPathProvider.pasteAppExePath.toString())
                 }
+                // Initialize AWT Toolkit to prevent potential deadlock issues
+                java.awt.Toolkit.getDefaultToolkit()
 
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<AppLaunchState>()
