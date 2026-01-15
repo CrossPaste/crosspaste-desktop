@@ -280,7 +280,7 @@ class CrossPaste {
                 val navController = rememberNavController()
 
                 LaunchedEffect(Unit) {
-                    if (globalListener.isRegistered()) {
+                    if (!globalListener.isRegistered()) {
                         globalListener.start()
                     }
                 }
