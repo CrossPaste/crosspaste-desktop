@@ -2,6 +2,7 @@ package com.crosspaste
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -140,7 +141,6 @@ class CrossPaste {
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
                     koin.get<GuidePasteDataService>().initData()
-                    koin.get<GlobalListener>().start()
                     koin.get<DesktopAppWindowManager>().startWindowService()
 
                     FileKit.init(appId = AppName)
@@ -258,6 +258,7 @@ class CrossPaste {
             application {
                 val appWindowManager = koinInject<DesktopAppWindowManager>()
                 val appSize = koinInject<DesktopAppSize>()
+                val globalListener = koinInject<GlobalListener>()
 
                 val appSizeValue by appSize.appSizeValue.collectAsState()
 
@@ -275,6 +276,12 @@ class CrossPaste {
                 }
 
                 val navController = rememberNavController()
+
+                LaunchedEffect(Unit) {
+                    if (globalListener.isRegistered()) {
+                        globalListener.start()
+                    }
+                }
 
                 CompositionLocalProvider(
                     LocalAppSizeValueState provides appSizeValue,
