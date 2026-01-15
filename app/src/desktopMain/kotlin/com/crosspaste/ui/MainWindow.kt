@@ -150,9 +150,9 @@ fun MainWindow(windowIcon: Painter?) {
             }
         }
 
-        val isWindows = remember { platform.isWindows() }
+        val isMacos = remember { platform.isMacos() }
 
-        if (!isWindows) {
+        if (isMacos) {
             DesktopMenuBar()
         }
 
