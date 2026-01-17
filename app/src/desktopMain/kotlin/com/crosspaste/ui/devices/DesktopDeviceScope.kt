@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -17,25 +18,28 @@ class DesktopDeviceScope(
     override var syncRuntimeInfo: SyncRuntimeInfo,
 ) : DeviceScope {
 
-    override var refreshing: Boolean by mutableStateOf(false)
-
     @Composable
     override fun DeviceConnectView() {
         val navigationManager = koinInject<NavigationManager>()
+
+        var refreshing by remember { mutableStateOf(false) }
+
         DeviceRowContent(
             onClick = {
                 navigationManager.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
             },
             style = myDeviceStyle,
             tagContent = {
-                SyncStateTag()
+                SyncStateTag(refreshing)
             },
             trailingContent = {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(tiny),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    DeviceActionButton()
+                    DeviceActionButton(refreshing) {
+                        refreshing = it
+                    }
                     MyDeviceMenuButton()
                 }
             },

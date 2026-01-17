@@ -4,7 +4,6 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -26,7 +25,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
@@ -36,8 +34,6 @@ class GeneralSyncManager(
 ) : SyncManager {
 
     private val logger = KotlinLogging.logger {}
-
-    private val controlUtils = getControlUtils()
 
     private val _realTimeSyncRuntimeInfos = MutableStateFlow<List<SyncRuntimeInfo>>(listOf())
 
@@ -148,22 +144,22 @@ class GeneralSyncManager(
 
     private fun resolveSyncs(callback: () -> Unit) {
         realTimeSyncScope.launch {
-            controlUtils.ensureMinExecutionTime(delayTime = 1000L) {
-                supervisorScope {
-                    val jobs =
-                        getSyncHandlers()
-                            .values
-                            .map {
-                                async {
-                                    it.forceResolve()
-                                }
+            try {
+                val jobs =
+                    getSyncHandlers()
+                        .values
+                        .map {
+                            async {
+                                it.forceResolve()
                             }
-                    jobs.awaitAll()
+                        }
+                jobs.awaitAll()
+            } catch (e: Exception) {
+                logger.error(e) { "Exception while resolving sync handlers" }
+            } finally {
+                withContext(mainDispatcher) {
+                    callback()
                 }
-            }
-
-            withContext(mainDispatcher) {
-                callback()
             }
         }
     }
@@ -173,22 +169,22 @@ class GeneralSyncManager(
         callback: () -> Unit,
     ) {
         realTimeSyncScope.launch {
-            controlUtils.ensureMinExecutionTime(delayTime = 1000L) {
-                supervisorScope {
-                    val jobs =
-                        ids
-                            .mapNotNull { getSyncHandler(it) }
-                            .map {
-                                async {
-                                    it.forceResolve()
-                                }
+            try {
+                val jobs =
+                    ids
+                        .mapNotNull { getSyncHandler(it) }
+                        .map {
+                            async {
+                                it.forceResolve()
                             }
-                    jobs.awaitAll()
+                        }
+                jobs.awaitAll()
+            } catch (e: Exception) {
+                logger.error(e) { "Exception while resolving sync handlers for ids: $ids" }
+            } finally {
+                withContext(mainDispatcher) {
+                    callback()
                 }
-            }
-
-            withContext(mainDispatcher) {
-                callback()
             }
         }
     }

@@ -70,7 +70,7 @@ data class ThemeExt(
     companion object {
         private val COLOR_SUCCESS = Color(0xFF2E7D32)
         private val COLOR_INFO = Color(0xFF0288D1)
-        private val COLOR_NEUTRAL = Color(0xFF607D8B)
+        private val COLOR_NEUTRAL = Color(0xFF747775)
         private val COLOR_WARNING = Color(0xFFFBC02D)
         private val COLOR_SPECIAL = Color(0xFF6750A4)
 
