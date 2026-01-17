@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUrls
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CrossPasteLogoView
 import com.crosspaste.ui.base.UISupport
@@ -63,7 +65,10 @@ fun AboutContentView() {
     val appInfo = koinInject<AppInfo>()
     val appUrls = koinInject<AppUrls>()
     val uiSupport = koinInject<UISupport>()
+    val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+
+    val config by configManager.config.collectAsState()
 
     Surface(
         modifier =
@@ -83,13 +88,18 @@ fun AboutContentView() {
             CrossPasteLogoView(
                 size = giant,
                 color = MaterialTheme.colorScheme.primary,
+                enableDebugToggle = true,
             )
 
             Spacer(modifier = Modifier.height(medium))
 
-            // 2. App Name &amp;amp; Version Badge
             Text(
-                text = "CrossPaste",
+                text =
+                    if (!config.enableDebugMode) {
+                        "CrossPaste"
+                    } else {
+                        "CrossPaste [Debug]"
+                    },
                 style =
                     MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,

@@ -207,18 +207,15 @@ private fun initJvmArgs(
     buildFullPlatform: Boolean = false,
 ) {
     // Add system properties that need to be set for all platforms
-    val loggerLevel = project.findProperty("loggerLevel")?.toString() ?: "info"
     val appEnv = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
     val globalListener = project.findProperty("globalListener")?.toString() ?: "true"
     jvmArgs(
         arrayOf(
-            "-DloggerLevel=$loggerLevel",
             "-DappEnv=$appEnv",
             "-Djava.net.preferIPv4Stack=true",
             "-Djava.net.preferIPv6Addresses=false",
             "-DglobalListener=$globalListener",
             "-Dio.netty.maxDirectMemory=268435456",
-            "-DloggerDebugPackages=com.crosspaste.routing,com.crosspaste.net.clientapi,com.crosspaste.net.plugin",
         ),
     )
 

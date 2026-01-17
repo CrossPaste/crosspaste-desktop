@@ -6,96 +6,83 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
+import ch.qos.logback.core.util.FileSize
+import ch.qos.logback.core.util.StatusPrinter2
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.utils.getSystemProperty
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class DesktopCrossPasteLogger(
     override val logPath: String,
-    private val configManager: DesktopConfigManager,
+    configManager: DesktopConfigManager,
+    loggerLevelScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : CrossPasteLogger {
 
-    override lateinit var logLevel: String
-    override val loggerDebugPackages: String?
+    private val context = LoggerFactory.getILoggerFactory() as LoggerContext
 
-    var rootLogger: ch.qos.logback.classic.Logger? = null
+    private val rootLogger: ch.qos.logback.classic.Logger = context.getLogger(Logger.ROOT_LOGGER_NAME)
 
-    var jThemeLogger: ch.qos.logback.classic.Logger? = null
-    var jmDNSLogger: ch.qos.logback.classic.Logger? = null
+    private val jmDNSLogger: ch.qos.logback.classic.Logger = context.getLogger("javax.jmdns")
 
     init {
-        val systemProperty = getSystemProperty()
-        val config = configManager.getCurrentConfig()
-        systemProperty.getOption("loggerLevel")?.let {
-            logLevel = it
-            if (logLevel == "debug" && !config.enableDebugMode) {
-                configManager.updateConfig("enableDebugMode", true)
-            } else if (logLevel != "debug" && config.enableDebugMode) {
-                configManager.updateConfig("enableDebugMode", false)
+        val encoder =
+            PatternLayoutEncoder().apply {
+                this.context = this@DesktopCrossPasteLogger.context
+                this.pattern = "%date %level [%thread] %logger{10} [%file:%line] %msg%n"
+                start()
             }
-        } ?: run {
-            logLevel =
-                if (config.enableDebugMode) {
-                    "debug"
-                } else {
-                    "info"
-                }
-        }
 
-        val context = LoggerFactory.getILoggerFactory() as LoggerContext
+        val rollingFileAppender =
+            RollingFileAppender<ILoggingEvent>().apply {
+                this.context = this@DesktopCrossPasteLogger.context
+                this.file = logPath
+                this.encoder = encoder
+                this.isImmediateFlush = true
+            }
 
-        val encoder = PatternLayoutEncoder()
-        encoder.context = context
-        encoder.pattern = "%date %level [%thread] %logger{10} [%file:%line] %msg%n"
-        encoder.start()
-
-        val rollingFileAppender = RollingFileAppender<ILoggingEvent>()
-        rollingFileAppender.context = context
-        rollingFileAppender.file = logPath
-        rollingFileAppender.encoder = encoder
-
-        val rollingPolicy = TimeBasedRollingPolicy<ILoggingEvent>()
-        rollingPolicy.context = context
-        rollingPolicy.setParent(rollingFileAppender)
-        rollingPolicy.fileNamePattern = "$logPath.%d{yyyy-MM-dd}.log"
-        rollingPolicy.maxHistory = 30
-        rollingPolicy.start()
+        val rollingPolicy =
+            TimeBasedRollingPolicy<ILoggingEvent>().apply {
+                this.context = this@DesktopCrossPasteLogger.context
+                this.setParent(rollingFileAppender)
+                this.fileNamePattern = "$logPath.%d{yyyy-MM-dd}.log"
+                this.maxHistory = 7
+                this.setTotalSizeCap(FileSize(1024L * 1024 * 10))
+                start()
+            }
 
         rollingFileAppender.rollingPolicy = rollingPolicy
         rollingFileAppender.start()
 
-        rootLogger = context.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
-        rootLogger?.level = getLevel(logLevel)
-        rootLogger?.addAppender(rollingFileAppender)
+        rootLogger.level = Level.INFO
+        rootLogger.addAppender(rollingFileAppender)
 
-        jThemeLogger = context.getLogger("com.jthemedetecor") as ch.qos.logback.classic.Logger
-        jThemeLogger?.level = Level.OFF
-        jmDNSLogger = context.getLogger("javax.jmdns") as ch.qos.logback.classic.Logger
-        jmDNSLogger?.level = Level.OFF
+        jmDNSLogger.level = Level.OFF
+        StatusPrinter2().print(context)
 
-        loggerDebugPackages = systemProperty.getOption("loggerDebugPackages")
-
-        loggerDebugPackages?.let { debugPackages ->
-            for (packageName in debugPackages.split(",")) {
-                val logger = context.getLogger(packageName) as ch.qos.logback.classic.Logger
-                logger.level = Level.DEBUG
-            }
-        }
+        configManager.config
+            .map { it.enableDebugMode }
+            .distinctUntilChanged()
+            .onEach { enableDebugMode ->
+                val level = if (enableDebugMode) "debug" else "info"
+                updateRootLogLevel(level)
+            }.launchIn(loggerLevelScope)
     }
 
-    override fun updateRootLogLevel(logLevel: String) {
+    private fun updateRootLogLevel(logLevel: String) {
         val level = getLevel(logLevel)
         if (level == Level.DEBUG) {
-            configManager.updateConfig("enableDebugMode", true)
-            jThemeLogger?.level = Level.DEBUG
-            jmDNSLogger?.level = Level.DEBUG
+            jmDNSLogger.level = Level.DEBUG
         } else {
-            configManager.updateConfig("enableDebugMode", false)
-            jThemeLogger?.level = Level.OFF
-            jmDNSLogger?.level = Level.OFF
+            jmDNSLogger.level = Level.OFF
         }
-        rootLogger?.level = getLevel(logLevel)
+        rootLogger.level = level
     }
 
     private fun getLevel(logLevel: String): Level =
