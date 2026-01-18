@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material.icons.filled.Warning
@@ -72,8 +73,8 @@ val unmatchedStateStyle
     get() =
         StateTagStyle(
             label = "sync_status_unmatched",
-            containerColor = LocalThemeExtState.current.special.container,
-            contentColor = LocalThemeExtState.current.special.onContainer,
+            containerColor = LocalThemeExtState.current.warning.container,
+            contentColor = LocalThemeExtState.current.warning.onContainer,
             icon = Icons.Default.Warning,
         )
 
@@ -82,8 +83,8 @@ val unverifiedStateStyle
     get() =
         StateTagStyle(
             label = "sync_status_unverified",
-            containerColor = LocalThemeExtState.current.special.container,
-            contentColor = LocalThemeExtState.current.special.onContainer,
+            containerColor = LocalThemeExtState.current.warning.container,
+            contentColor = LocalThemeExtState.current.warning.onContainer,
             icon = Icons.Default.Shield,
         )
 
@@ -92,15 +93,27 @@ val incompatibleStateStyle
     get() =
         StateTagStyle(
             label = "sync_status_incompatible",
-            containerColor = LocalThemeExtState.current.warning.container,
-            contentColor = LocalThemeExtState.current.warning.onContainer,
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError,
             icon = Icons.Default.Close,
         )
 
+val refreshingStateStyle
+    @Composable @ReadOnlyComposable
+    get() =
+        StateTagStyle(
+            label = "refresh",
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            icon = Icons.Default.Refresh,
+        )
+
 @Composable
-fun DeviceScope.SyncStateTag() {
+fun DeviceScope.SyncStateTag(refreshing: Boolean) {
     val state = syncRuntimeInfo.connectState
-    if (state == SyncState.CONNECTED) {
+    if (refreshing) {
+        StateTagView(refreshingStateStyle)
+    } else if (state == SyncState.CONNECTED) {
         if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
             StateTagView(syncedStateStyle)
         } else if (syncRuntimeInfo.allowSend) {

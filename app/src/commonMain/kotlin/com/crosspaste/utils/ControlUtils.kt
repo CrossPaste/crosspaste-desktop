@@ -1,16 +1,20 @@
 package com.crosspaste.utils
 
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 expect fun getControlUtils(): ControlUtils
 
 interface ControlUtils {
 
     suspend fun <T> ensureMinExecutionTime(
-        delayTime: Long = 20L,
+        delayTime: Long,
         action: suspend () -> T,
     ): Result<T> {
         val start = nowEpochMilliseconds()
@@ -21,6 +25,32 @@ interface ControlUtils {
         val end = nowEpochMilliseconds()
 
         val remainingDelay = delayTime + start - end
+
+        if (remainingDelay > 0) {
+            delay(remainingDelay)
+        }
+        return result
+    }
+
+    suspend fun ensureMinExecutionTimeForCallback(
+        delayTime: Long,
+        action: (proceed: () -> Unit) -> Unit,
+    ): Result<Unit> {
+        val start = nowEpochMilliseconds()
+
+        val result =
+            runCatching {
+                suspendCancellableCoroutine { continuation ->
+                    CoroutineScope(continuation.context).launch {
+                        action {
+                            continuation.resume(Unit)
+                        }
+                    }
+                }
+            }
+
+        val end = nowEpochMilliseconds()
+        val remainingDelay = delayTime - (end - start)
 
         if (remainingDelay > 0) {
             delay(remainingDelay)

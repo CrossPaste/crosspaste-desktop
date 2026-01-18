@@ -6,8 +6,6 @@ import com.crosspaste.platform.Platform
 
 interface DeviceScope : PlatformScope {
 
-    var refreshing: Boolean
-
     var syncRuntimeInfo: SyncRuntimeInfo
 
     override val platform: Platform

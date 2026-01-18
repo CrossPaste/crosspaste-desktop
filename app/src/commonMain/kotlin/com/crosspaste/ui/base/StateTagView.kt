@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -38,6 +39,7 @@ fun StateTagView(style: StateTagStyle) {
     Surface(
         color = style.containerColor,
         shape = tinyRoundedCornerShape,
+        shadowElevation = 1.5.dp,
     ) {
         Row(
             modifier =
