@@ -5,7 +5,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @SerialName("sync")
-class SyncExtraInfo : PasteTaskExtraInfo {
+class SyncExtraInfo(
+    @SerialName("appInstanceId")
+    val appInstanceId: String,
+) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")
     override val executionHistories: MutableList<ExecutionHistory> = mutableListOf()

@@ -5,15 +5,16 @@ import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.hostInfoListEqual
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 class GeneralSyncHandler(
     syncRuntimeInfo: SyncRuntimeInfo,
@@ -53,9 +54,15 @@ class GeneralSyncHandler(
 
         job =
             syncPollingManager.startPollingResolve {
-                emitEvent(SyncEvent.ResolveConnection(currentSyncRuntimeInfo, ::updateVersionRelation))
+                emitEvent(SyncEvent.ResolveConnection(currentSyncRuntimeInfo, createCallback()))
             }
     }
+
+    private fun createCallback(onComplete: () -> Unit = {}): ResolveCallback =
+        ResolveCallback(
+            updateVersionRelation = ::updateVersionRelation,
+            onComplete = onComplete,
+        )
 
     override fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
         _syncRuntimeInfo.value = syncRuntimeInfo
@@ -72,13 +79,13 @@ class GeneralSyncHandler(
             SyncState.UNMATCHED,
             SyncState.UNVERIFIED,
             -> {
-                emitEvent(SyncEvent.ResolveDisconnected(syncRuntimeInfo, ::updateVersionRelation))
+                emitEvent(SyncEvent.ResolveDisconnected(syncRuntimeInfo, createCallback()))
             }
             SyncState.CONNECTING -> {
-                emitEvent(SyncEvent.ResolveConnecting(syncRuntimeInfo, ::updateVersionRelation))
+                emitEvent(SyncEvent.ResolveConnecting(syncRuntimeInfo, createCallback()))
             }
             SyncState.CONNECTED -> {
-                emitEvent(SyncEvent.ResolveConnection(syncRuntimeInfo, ::updateVersionRelation))
+                emitEvent(SyncEvent.ResolveConnection(syncRuntimeInfo, createCallback()))
             }
         }
     }
@@ -88,7 +95,7 @@ class GeneralSyncHandler(
         current: SyncRuntimeInfo,
     ) {
         if (current.port != previous.port) {
-            emitEvent(SyncEvent.ResolveConnection(current, ::updateVersionRelation))
+            emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
             return
         }
 
@@ -96,7 +103,7 @@ class GeneralSyncHandler(
             current.connectHostAddress != null &&
             previous.connectHostAddress != current.connectHostAddress
         ) {
-            emitEvent(SyncEvent.ResolveConnection(current, ::updateVersionRelation))
+            emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
             return
         }
 
@@ -111,19 +118,19 @@ class GeneralSyncHandler(
                     emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId, current.hostInfoList))
                 }
                 SyncState.CONNECTING -> {
-                    emitEvent(SyncEvent.ResolveConnecting(current, ::updateVersionRelation))
+                    emitEvent(SyncEvent.ResolveConnecting(current, createCallback()))
                 }
 
                 SyncState.CONNECTED -> {
                     syncPollingManager.reset()
-                    emitEvent(SyncEvent.ResolveConnection(current, ::updateVersionRelation))
+                    emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
                 }
             }
         }
 
         if (!hostInfoListEqual(previous.hostInfoList, current.hostInfoList)) {
             if (current.connectState == SyncState.CONNECTED) {
-                emitEvent(SyncEvent.ResolveConnection(current, ::updateVersionRelation))
+                emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
             }
         }
 
@@ -140,13 +147,26 @@ class GeneralSyncHandler(
 
     override suspend fun getConnectHostAddress(): String? =
         currentSyncRuntimeInfo.connectHostAddress ?: run {
-            emitEvent(SyncEvent.ResolveConnection(currentSyncRuntimeInfo, ::updateVersionRelation))
-            delay(1000)
+            val completionSignal = CompletableDeferred<Unit>()
+
+            val callback =
+                createCallback(
+                    onComplete = {
+                        completionSignal.complete(Unit)
+                    },
+                )
+
+            emitEvent(SyncEvent.ResolveConnection(currentSyncRuntimeInfo, callback))
+
+            withTimeoutOrNull(5000) {
+                completionSignal.await()
+            }
+
             currentSyncRuntimeInfo.connectHostAddress
         }
 
     override suspend fun forceResolve() {
-        emitEvent(SyncEvent.ForceResolveConnection(currentSyncRuntimeInfo, ::updateVersionRelation))
+        emitEvent(SyncEvent.ForceResolveConnection(currentSyncRuntimeInfo, createCallback()))
     }
 
     override suspend fun updateAllowSend(allowSend: Boolean) {
