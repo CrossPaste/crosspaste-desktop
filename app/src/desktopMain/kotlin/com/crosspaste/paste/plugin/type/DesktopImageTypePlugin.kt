@@ -10,6 +10,7 @@ import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
@@ -61,13 +62,10 @@ class DesktopImageTypePlugin(
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        ImagesPasteItem(
+        createImagesPasteItem(
             identifiers = listOf(identifier),
-            count = 0,
-            hash = "",
-            size = 0,
-            fileInfoTreeMap = mapOf(),
             relativePathList = listOf(),
+            fileInfoTreeMap = mapOf(),
         ).let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
         }
@@ -126,18 +124,12 @@ class DesktopImageTypePlugin(
                 )
             if (imageHandler.writeImage(image, ext, imagePath)) {
                 val fileTree = fileUtils.getFileInfoTree(imagePath)
-                val count = fileTree.getCount()
-                val size = fileTree.size
-                val hash = fileTree.hash
 
                 val update: (PasteItem) -> PasteItem = { pasteItem ->
-                    ImagesPasteItem(
+                    createImagesPasteItem(
                         identifiers = pasteItem.identifiers,
-                        count = count,
-                        hash = hash,
-                        size = size,
-                        fileInfoTreeMap = mapOf(name to fileTree),
                         relativePathList = listOf(relativePath),
+                        fileInfoTreeMap = mapOf(name to fileTree),
                         extraInfo = pasteItem.extraInfo,
                     )
                 }

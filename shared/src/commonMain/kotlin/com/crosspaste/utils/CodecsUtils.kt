@@ -27,13 +27,16 @@ interface CodecsUtils {
     @OptIn(ExperimentalEncodingApi::class)
     fun base64Decode(string: String): ByteArray = Base64.decode(string)
 
-    fun hash(bytes: ByteArray): String {
-        val (hash1, hash2) = CROSSPASTE_HASH.hash128x64(bytes)
-        return buildString(32) {
-            appendHex(hash1)
-            appendHex(hash2)
+    fun hash(bytes: ByteArray): String =
+        if (bytes.isEmpty()) {
+            ""
+        } else {
+            val (hash1, hash2) = CROSSPASTE_HASH.hash128x64(bytes)
+            buildString(32) {
+                appendHex(hash1)
+                appendHex(hash2)
+            }
         }
-    }
 
     fun hash(path: Path): String = fileUtils.getFileHash(path)
 

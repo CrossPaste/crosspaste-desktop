@@ -1,8 +1,8 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
-import com.crosspaste.utils.getCodecsUtils
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -22,27 +22,6 @@ class TextPasteItem(
 ) : PasteItem,
     PasteText {
 
-    companion object {
-        private val codecsUtils = getCodecsUtils()
-
-        fun createTextPasteItem(
-            identifiers: List<String> = listOf(),
-            text: String,
-            extraInfo: JsonObject? = null,
-        ): TextPasteItem {
-            val textBytes = text.encodeToByteArray()
-            val hash = codecsUtils.hash(textBytes)
-            val size = textBytes.size.toLong()
-            return TextPasteItem(
-                identifiers = identifiers,
-                hash = hash,
-                size = size,
-                text = text,
-                extraInfo = extraInfo,
-            )
-        }
-    }
-
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
@@ -57,18 +36,12 @@ class TextPasteItem(
 
     override fun getSummary(): String = text
 
-    override fun update(
-        data: Any,
-        hash: String,
-    ): PasteItem =
-        (data as? String)?.let { text ->
-            TextPasteItem(
-                identifiers = identifiers,
-                hash = hash,
-                size = text.length.toLong(),
-                text = text,
-            )
-        } ?: this
+    override fun copy(extraInfo: JsonObject?): TextPasteItem =
+        createTextPasteItem(
+            identifiers = identifiers,
+            text = text,
+            extraInfo = extraInfo,
+        )
 
     override fun isValid(): Boolean =
         hash.isNotEmpty() &&

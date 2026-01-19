@@ -13,7 +13,7 @@ import com.composables.icons.fontawesome.brands.Linkedin
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteboardService
-import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape

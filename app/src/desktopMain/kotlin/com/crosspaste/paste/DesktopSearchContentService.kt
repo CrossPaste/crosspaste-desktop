@@ -7,7 +7,7 @@ class DesktopSearchContentService : SearchContentService {
 
     override fun createSearchContent(
         source: String?,
-        pasteItemSearchContent: String?,
+        searchContentList: List<String>,
     ): String {
         val tokens = mutableListOf<String>()
 
@@ -15,8 +15,8 @@ class DesktopSearchContentService : SearchContentService {
             tokens.add(it)
         }
 
-        pasteItemSearchContent?.let {
-            setTokens(it, tokens)
+        for (string in searchContentList) {
+            setTokens(string, tokens)
         }
 
         return tokens.distinct().filterNot { it.isEmpty() }.joinToString(" ")

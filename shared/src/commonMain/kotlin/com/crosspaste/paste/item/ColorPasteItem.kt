@@ -1,6 +1,7 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -35,18 +36,12 @@ class ColorPasteItem(
 
     override fun getSummary(): String = toHexString()
 
-    override fun update(
-        data: Any,
-        hash: String,
-    ): ColorPasteItem =
-        (data as? Int)?.let { color ->
-            ColorPasteItem(
-                identifiers = identifiers,
-                hash = hash,
-                size = 8,
-                color = color,
-            )
-        } ?: this
+    override fun copy(extraInfo: JsonObject?): ColorPasteItem =
+        createColorPasteItem(
+            identifiers = identifiers,
+            color = color,
+            extraInfo = extraInfo,
+        )
 
     override fun isValid(): Boolean = size == 8L && hash.isNotEmpty() && hash == color.toString()
 

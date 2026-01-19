@@ -6,5 +6,9 @@ object PasteItemProperties {
 
     const val MARKETING_PATH = "marketingPath"
 
+    // user edit name of the paste item
+    const val NAME = "name"
+
+    // title of the url paste item
     const val TITLE = "title"
 }

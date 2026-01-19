@@ -1,8 +1,10 @@
 package com.crosspaste.ui.paste.side.preview
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -12,8 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,10 +30,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.LocalThemeState
@@ -51,6 +68,9 @@ fun PasteDataScope.SidePasteTitleView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
     val pasteDao = koinInject<PasteDao>()
+    val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
+
+    val pasteItem = getPasteItem(PasteItem::class)
 
     val sideTitleHeight = LocalDesktopAppSizeValueState.current.sideTitleHeight
     val showWindow = LocalSearchWindowInfoState.current.show
@@ -81,6 +101,16 @@ fun PasteDataScope.SidePasteTitleView() {
         mutableStateOf<RelativeTime?>(null)
     }
 
+    var pasteboardName by remember(pasteData.id) {
+        mutableStateOf(pasteItem.getUserEditName() ?: copywriter.getText(pasteData.getTypeName()))
+    }
+
+    var editedTextValue by remember { mutableStateOf(TextFieldValue(pasteboardName)) }
+
+    var isEditing by remember { mutableStateOf(false) }
+
+    val focusRequester = remember { FocusRequester() }
+
     LaunchedEffect(isCurrentThemeDark, pasteData.source) {
         pasteData.source?.let {
             desktopIconColorExtractor.getBackgroundColor(it)?.let { color -> background = color }
@@ -103,27 +133,96 @@ fun PasteDataScope.SidePasteTitleView() {
                 .height(sideTitleHeight)
                 .background(background)
                 .padding(start = medium),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
             modifier =
                 Modifier
-                    .fillMaxHeight()
-                    .wrapContentWidth(),
+                    .weight(1f)
+                    .fillMaxHeight(),
             verticalArrangement = Arrangement.Center,
         ) {
             Row(
-                modifier = Modifier.wrapContentSize(),
+                modifier = Modifier.wrapContentSize().width(IntrinsicSize.Min),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start,
             ) {
-                Text(
-                    text = copywriter.getText(pasteData.getTypeName()),
-                    style =
-                        DesktopAppUIFont.sidePasteTitleTextStyle.copy(
-                            color = onBackground,
-                        ),
-                )
+                if (isEditing) {
+                    val customTextSelectionColors =
+                        remember(onBackground) {
+                            TextSelectionColors(
+                                handleColor = onBackground,
+                                backgroundColor = onBackground.copy(alpha = 0.3f),
+                            )
+                        }
+
+                    CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
+                        BasicTextField(
+                            value = editedTextValue,
+                            onValueChange = { editedTextValue = it },
+                            modifier =
+                                Modifier
+                                    .focusRequester(focusRequester)
+                                    .weight(1f, fill = false),
+                            textStyle =
+                                DesktopAppUIFont.sidePasteTitleTextStyle.copy(
+                                    color = onBackground,
+                                ),
+                            cursorBrush = SolidColor(onBackground),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions =
+                                KeyboardActions(
+                                    onDone = {
+                                        if (editedTextValue.text.isBlank()) {
+                                            // Revert to the original name if empty
+                                            editedTextValue =
+                                                TextFieldValue(
+                                                    text = pasteboardName,
+                                                    selection = TextRange(pasteboardName.length),
+                                                )
+                                            isEditing = false
+                                        } else {
+                                            // Proceed with update if not empty
+                                            scope.launch {
+                                                updatePasteItemHelper.updateName(
+                                                    pasteData,
+                                                    editedTextValue.text,
+                                                    pasteItem,
+                                                )
+                                                isEditing = false
+                                            }
+                                        }
+                                    },
+                                ),
+                        )
+                    }
+
+                    // Autofocus and select all when entering edit mode
+                    LaunchedEffect(Unit) {
+                        focusRequester.requestFocus()
+                        // Set selection to cover the entire text length
+                        editedTextValue =
+                            editedTextValue.copy(
+                                selection = TextRange(0, editedTextValue.text.length),
+                            )
+                    }
+                } else {
+                    Text(
+                        modifier =
+                            Modifier.clickable {
+                                isEditing = true
+                            },
+                        text = editedTextValue.text,
+                        style =
+                            DesktopAppUIFont.sidePasteTitleTextStyle.copy(
+                                color = onBackground,
+                            ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Spacer(Modifier.width(tiny4X))
                 PasteTooltipIconView(
                     painter = if (favorite) favorite() else noFavorite(),
@@ -148,10 +247,11 @@ fun PasteDataScope.SidePasteTitleView() {
                         DesktopAppUIFont.sidePasteTimeTextStyle.copy(
                             color = onBackground,
                         ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
-        Spacer(Modifier.weight(1f))
         SidePasteTypeIconView(
             modifier = Modifier.fillMaxHeight().wrapContentWidth(),
             tint = onBackground,

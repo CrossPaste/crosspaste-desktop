@@ -1,8 +1,8 @@
 package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
-import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
@@ -55,19 +55,13 @@ class FilesToImagesPlugin(
                     val identifiers = pasteAppearItem.identifiers
                     val relativePathList = pasteAppearItem.relativePathList
                     val fileInfoTreeMap = pasteAppearItem.fileInfoTreeMap
-                    val count = pasteAppearItem.count
-                    val size = pasteAppearItem.size
-                    val hash = pasteAppearItem.hash
                     pasteAppearItem.clear(
                         clearResource = false,
                         pasteCoordinate = pasteCoordinate,
                         userDataPathProvider = userDataPathProvider,
                     )
-                    ImagesPasteItem(
+                    createImagesPasteItem(
                         identifiers = identifiers,
-                        count = count,
-                        hash = hash,
-                        size = size,
                         basePath = basePath,
                         relativePathList = relativePathList,
                         fileInfoTreeMap = fileInfoTreeMap,

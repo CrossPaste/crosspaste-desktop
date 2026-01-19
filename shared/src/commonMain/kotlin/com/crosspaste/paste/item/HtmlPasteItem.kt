@@ -2,6 +2,7 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.path.UserDataPathProvider
@@ -59,11 +60,11 @@ class HtmlPasteItem(
             }.getOrNull()
         } ?: 0
 
-    override fun bind(pasteCoordinate: PasteCoordinate): HtmlPasteItem =
-        HtmlPasteItem(
+    override fun bind(pasteCoordinate: PasteCoordinate): HtmlPasteItem = this
+
+    override fun copy(extraInfo: JsonObject?): HtmlPasteItem =
+        createHtmlPasteItem(
             identifiers = identifiers,
-            hash = hash,
-            size = size,
             html = html,
             extraInfo = extraInfo,
         )
@@ -73,20 +74,6 @@ class HtmlPasteItem(
     override fun getSearchContent(): String = getText()
 
     override fun getSummary(): String = getText()
-
-    override fun update(
-        data: Any,
-        hash: String,
-    ): PasteItem =
-        (data as? String)?.let { html ->
-            HtmlPasteItem(
-                identifiers = identifiers,
-                hash = hash,
-                size = html.encodeToByteArray().size.toLong(),
-                html = html,
-                extraInfo = extraInfo,
-            )
-        } ?: this
 
     override fun getRenderingFilePath(
         pasteCoordinate: PasteCoordinate,

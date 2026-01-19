@@ -4,9 +4,9 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppLaunchState
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.utils.getCodecsUtils
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -78,26 +78,14 @@ abstract class GuidePasteDataService(
 
         return if (index == 5) {
             val githubUrl = "https://github.com/CrossPaste/crosspaste-desktop"
-            val githubUrlBytes = githubUrl.encodeToByteArray()
-            val githubUrlHash = codecsUtils.hash(githubUrlBytes)
-            val githubUrlSize = githubUrlBytes.size.toLong()
-            UrlPasteItem(
-                identifiers = listOf(),
+            createUrlPasteItem(
                 url = githubUrl,
-                size = githubUrlSize,
-                hash = githubUrlHash,
                 extraInfo = extraInfo,
             )
         } else {
             val text = copywriter.getText("$guideKey$index").replace("\\n", "\n")
-            val byteArray = text.encodeToByteArray()
-            val size = byteArray.size.toLong()
-            val hash = codecsUtils.hash(byteArray)
-            TextPasteItem(
-                identifiers = listOf(),
+            createTextPasteItem(
                 text = text,
-                size = size,
-                hash = hash,
                 extraInfo = extraInfo,
             )
         }

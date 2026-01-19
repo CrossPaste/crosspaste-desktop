@@ -2,6 +2,7 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
@@ -111,13 +112,14 @@ data class FilesPasteItem(
         )
     }
 
-    override fun update(
-        data: Any,
-        hash: String,
-    ): PasteItem {
-        // TODO: Implement update
-        return this
-    }
+    override fun copy(extraInfo: JsonObject?): FilesPasteItem =
+        createFilesPasteItem(
+            identifiers = identifiers,
+            basePath = basePath,
+            relativePathList = relativePathList,
+            fileInfoTreeMap = fileInfoTreeMap,
+            extraInfo = extraInfo,
+        )
 
     override fun clear(
         clearResource: Boolean,

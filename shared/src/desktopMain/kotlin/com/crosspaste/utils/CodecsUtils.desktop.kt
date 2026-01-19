@@ -14,11 +14,10 @@ object DesktopCodecsUtils : CodecsUtils {
 
     override val sha256 = provider.get(SHA256).hasher()
 
-    override fun hashByArray(array: Array<String>): String {
+    override fun hashByArray(array: Array<String>): String =
         if (array.isEmpty()) {
-            throw IllegalArgumentException("Array is empty")
-        }
-        return if (array.size == 1) {
+            ""
+        } else if (array.size == 1) {
             hashByString(array[0])
         } else {
             val outputStream = ByteArrayOutputStream()
@@ -27,5 +26,4 @@ object DesktopCodecsUtils : CodecsUtils {
             }
             hash(outputStream.toByteArray())
         }
-    }
 }

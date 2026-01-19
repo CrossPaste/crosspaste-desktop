@@ -2,6 +2,7 @@ package com.crosspaste.paste.plugin.process
 
 import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.paste.item.ColorPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
@@ -20,10 +21,8 @@ object TextToColorPlugin : PasteProcessPlugin {
             pasteItems.filterIsInstance<TextPasteItem>().firstOrNull()?.let {
                 colorUtils.toColor(it.text)?.let { color ->
                     return pasteItems +
-                        ColorPasteItem(
+                        createColorPasteItem(
                             identifiers = it.identifiers,
-                            hash = color.toArgb().toString(),
-                            size = 8L,
                             color = color.toArgb(),
                         )
                 }

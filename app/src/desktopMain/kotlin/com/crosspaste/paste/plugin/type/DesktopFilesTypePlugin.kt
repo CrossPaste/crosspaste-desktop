@@ -9,6 +9,7 @@ import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
@@ -17,7 +18,6 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.FileNameNormalizer
-import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
 import okio.Path.Companion.toOkioPath
@@ -35,8 +35,6 @@ class DesktopFilesTypePlugin(
     companion object {
 
         const val FILE_LIST_ID = "application/x-java-file-list"
-
-        private val codecsUtils = getCodecsUtils()
     }
 
     private val fileUtils = getFileUtils()
@@ -51,13 +49,10 @@ class DesktopFilesTypePlugin(
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        FilesPasteItem(
+        createFilesPasteItem(
             identifiers = listOf(identifier),
-            count = 0,
-            hash = "",
-            size = 0,
-            fileInfoTreeMap = mapOf(),
             relativePathList = listOf(),
+            fileInfoTreeMap = mapOf(),
         ).let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
         }
@@ -143,16 +138,9 @@ class DesktopFilesTypePlugin(
                 }
             }
 
-            val hash = codecsUtils.hashByArray(paths.mapNotNull { fileInfoTrees[it.name]?.hash }.toTypedArray())
-            val count = fileInfoTrees.map { it.value.getCount() }.sum()
-            val size = fileInfoTrees.map { it.value.size }.sum()
-
             val update: (PasteItem) -> PasteItem = { pasteItem ->
-                FilesPasteItem(
+                createFilesPasteItem(
                     identifiers = pasteItem.identifiers,
-                    count = count,
-                    hash = hash,
-                    size = size,
                     basePath = if (useRefCopyFiles) parentPath.toString() else null,
                     relativePathList = relativePathList,
                     fileInfoTreeMap = fileInfoTrees,

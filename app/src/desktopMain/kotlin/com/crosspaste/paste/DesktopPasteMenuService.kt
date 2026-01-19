@@ -18,9 +18,9 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.OCRModule
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.TextPasteItem.Companion.createTextPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteSearchViewModel

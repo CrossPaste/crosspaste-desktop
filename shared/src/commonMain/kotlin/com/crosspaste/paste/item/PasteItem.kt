@@ -80,6 +80,14 @@ sealed interface PasteItem {
                 }
                 update()
             }
+
+        @Suppress("UNCHECKED_CAST")
+        fun <T : PasteItem> T.copy(update: JsonObjectBuilder.() -> Unit): T {
+            val newExtraInfo = updateExtraInfo(this.extraInfo, update)
+            // Cast to T is safe here because withExtraInfo is expected
+            // to return the same implementation type
+            return this.copy(newExtraInfo) as T
+        }
     }
 
     val extraInfo: JsonObject?
@@ -94,6 +102,11 @@ sealed interface PasteItem {
 
     fun getSearchContent(): String?
 
+    fun getUserEditName(): String? =
+        extraInfo?.let { extraInfo ->
+            extraInfo[PasteItemProperties.NAME]?.jsonPrimitive?.content
+        }
+
     fun getSummary(): String
 
     fun getMarketingPath(): String? =
@@ -103,15 +116,17 @@ sealed interface PasteItem {
 
     fun bind(pasteCoordinate: PasteCoordinate): PasteItem = this
 
+    fun copy(extraInfo: JsonObject? = null): PasteItem
+
+    fun copy(update: JsonObjectBuilder.() -> Unit): PasteItem {
+        val newExtraInfo = updateExtraInfo(extraInfo, update)
+        return copy(extraInfo = newExtraInfo)
+    }
+
     fun getRenderingFilePath(
         pasteCoordinate: PasteCoordinate,
         userDataPathProvider: UserDataPathProvider,
     ): Path? = null
-
-    fun update(
-        data: Any,
-        hash: String,
-    ): PasteItem
 
     fun clear(
         clearResource: Boolean = true,
