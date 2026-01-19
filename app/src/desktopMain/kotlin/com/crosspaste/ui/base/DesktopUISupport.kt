@@ -3,7 +3,6 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
@@ -12,11 +11,10 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteRtf
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
-import com.crosspaste.paste.plugin.type.ColorTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.NavigationManager
@@ -39,12 +37,11 @@ import javax.swing.JColorChooser
 
 class DesktopUISupport(
     private val appUrls: AppUrls,
-    private val colorTypePlugin: ColorTypePlugin,
     private val copywriter: GlobalCopywriter,
     private val navigationManager: NavigationManager,
     private val notificationManager: NotificationManager,
-    private val pasteDao: PasteDao,
     private val platform: Platform,
+    private val updatePasteItemHelper: UpdatePasteItemHelper,
     private val userDataPathProvider: UserDataPathProvider,
     private val actionScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : UISupport {
@@ -141,8 +138,8 @@ class DesktopUISupport(
     }
 
     override fun openColorPicker(pasteData: PasteData) {
-        pasteData.getPasteItem(PasteColor::class)?.let { pasteColor ->
-            val initialColor = Color(pasteColor.color)
+        pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteItem ->
+            val initialColor = Color(pasteItem.color)
             EventQueue.invokeLater {
                 JColorChooser(initialColor)
                 val result =
@@ -164,11 +161,10 @@ class DesktopUISupport(
 
                     logger.info { "Selected color: $rgbColor" }
                     actionScope.launch {
-                        colorTypePlugin.updateColor(
+                        updatePasteItemHelper.updateColor(
                             pasteData,
                             newColor,
-                            (pasteColor as ColorPasteItem),
-                            pasteDao,
+                            pasteItem,
                         )
                     }
                 }

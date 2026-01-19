@@ -5,11 +5,11 @@ import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.Platform
-import com.crosspaste.utils.getCodecsUtils
 import java.net.MalformedURLException
 import java.net.URL
 
@@ -19,8 +19,6 @@ class DesktopUrlTypePlugin(
 
     companion object {
         const val URL = "application/x-java-url"
-
-        private val codecsUtils = getCodecsUtils()
     }
 
     override fun getPasteType(): PasteType = PasteType.URL_TYPE
@@ -33,10 +31,8 @@ class DesktopUrlTypePlugin(
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        UrlPasteItem(
+        createUrlPasteItem(
             identifiers = listOf(identifier),
-            hash = "",
-            size = 0,
             url = "",
         ).let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
@@ -53,13 +49,9 @@ class DesktopUrlTypePlugin(
         pasteCollector: PasteCollector,
     ) {
         if (transferData is String) {
-            val urlBytes = transferData.encodeToByteArray()
-            val hash = codecsUtils.hash(urlBytes)
             val update: (PasteItem) -> PasteItem = { pasteItem ->
-                UrlPasteItem(
+                createUrlPasteItem(
                     identifiers = pasteItem.identifiers,
-                    hash = hash,
-                    size = urlBytes.size.toLong(),
                     url = transferData,
                     extraInfo = pasteItem.extraInfo,
                 )

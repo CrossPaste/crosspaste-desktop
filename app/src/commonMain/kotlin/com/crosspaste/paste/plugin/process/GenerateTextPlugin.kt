@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.process
 
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
@@ -18,7 +19,7 @@ object GenerateTextPlugin : PasteProcessPlugin {
             pasteItems.filterIsInstance<HtmlPasteItem>().firstOrNull()?.let {
                 val text = it.getText()
                 return pasteItems +
-                    TextPasteItem.createTextPasteItem(
+                    createTextPasteItem(
                         text = text,
                     )
             }
@@ -30,7 +31,7 @@ object GenerateTextPlugin : PasteProcessPlugin {
             pasteItems.filterIsInstance<RtfPasteItem>().firstOrNull()?.let {
                 val text = it.getText()
                 return pasteItems +
-                    TextPasteItem.createTextPasteItem(
+                    createTextPasteItem(
                         text = text,
                     )
             }

@@ -1,14 +1,11 @@
 package com.crosspaste.rendering
 
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.net.ClientResponse
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteData
-import com.crosspaste.paste.SearchContentService
-import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.PasteItemProperties
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
@@ -17,15 +14,13 @@ import com.fleeksoft.ksoup.nodes.Document
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.ContentType
 import io.ktor.utils.io.toByteArray
-import kotlinx.serialization.json.put
 import okio.Path
 
 class OpenGraphService<Image>(
     private val generateImageService: GenerateImageService,
     private val imageHandler: ImageHandler<Image>,
     private val resourcesClient: ResourcesClient,
-    private val pasteDao: PasteDao,
-    private val searchContentService: SearchContentService,
+    private val updatePasteItemHelper: UpdatePasteItemHelper,
     private val userDataPathProvider: UserDataPathProvider,
 ) : RenderingService<String> {
 
@@ -85,30 +80,10 @@ class OpenGraphService<Image>(
             ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
 
         htmlTitle?.let { title ->
-            val extraInfo =
-                PasteItem.updateExtraInfo(
-                    urlPasteItem.extraInfo,
-                    update = {
-                        put(PasteItemProperties.TITLE, title)
-                    },
-                )
-            val newUrlPasteItem =
-                UrlPasteItem(
-                    identifiers = urlPasteItem.identifiers,
-                    hash = urlPasteItem.hash,
-                    size = urlPasteItem.size + title.length,
-                    url = urlPasteItem.url,
-                    extraInfo = extraInfo,
-                )
-            pasteDao.updatePasteAppearItem(
-                id = pasteData.id,
-                pasteItem = newUrlPasteItem,
-                pasteSearchContent =
-                    searchContentService.createSearchContent(
-                        pasteData.source,
-                        newUrlPasteItem.getSearchContent(),
-                    ),
-                addedSize = title.length.toLong(),
+            updatePasteItemHelper.updateTitle(
+                pasteData,
+                title,
+                urlPasteItem,
             )
         }
 

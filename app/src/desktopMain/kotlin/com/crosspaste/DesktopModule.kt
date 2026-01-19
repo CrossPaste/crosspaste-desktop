@@ -129,6 +129,7 @@ import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.paste.getDesktopPasteboardService
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.plugin.process.DistinctPlugin
 import com.crosspaste.paste.plugin.process.FileToUrlPlugin
 import com.crosspaste.paste.plugin.process.FilesToImagesPlugin
@@ -424,12 +425,12 @@ class DesktopModule(
     // PasteTypePluginModule.kt
     override fun pasteTypePluginModule() =
         module {
-            single<ColorTypePlugin> { DesktopColorTypePlugin(get()) }
+            single<ColorTypePlugin> { DesktopColorTypePlugin() }
             single<FilesTypePlugin> { DesktopFilesTypePlugin(get(), get(), get(), get()) }
             single<HtmlTypePlugin> { DesktopHtmlTypePlugin(get()) }
             single<ImageTypePlugin> { DesktopImageTypePlugin(get(), get(), get(), get()) }
             single<RtfTypePlugin> { DesktopRtfTypePlugin() }
-            single<TextTypePlugin> { DesktopTextTypePlugin(get()) }
+            single<TextTypePlugin> { DesktopTextTypePlugin() }
             single<UrlTypePlugin> { DesktopUrlTypePlugin(get()) }
         }
 
@@ -439,7 +440,7 @@ class DesktopModule(
             single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
             single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
             single<RenderingService<String>>(named("urlRendering")) {
-                OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
+                OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get())
             }
             single<DesktopPasteMenuService> {
                 DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get(), get())
@@ -504,6 +505,9 @@ class DesktopModule(
                     ),
                 )
             }
+            single<UpdatePasteItemHelper> {
+                UpdatePasteItemHelper(get(), get())
+            }
         }
 
     // UIModule.kt
@@ -545,7 +549,7 @@ class DesktopModule(
             single<SyncScopeFactory> { DesktopSyncScopeFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<TokenCache> { TokenCache }
-            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get(), get()) }
+            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
         }
 
     // ViewModelModule.kt

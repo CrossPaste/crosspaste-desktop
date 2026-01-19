@@ -20,12 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.plugin.type.TextTypePlugin
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.refresh
@@ -39,8 +38,7 @@ import org.koin.compose.koinInject
 fun PasteDataScope.PasteTextEditContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
-    val pasteDao = koinInject<PasteDao>()
-    val textUpdater = koinInject<TextTypePlugin>()
+    val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
 
     val scope = rememberCoroutineScope()
 
@@ -106,8 +104,8 @@ fun PasteDataScope.PasteTextEditContentView() {
                 ) {
                     if (hasChanges) {
                         scope.launch {
-                            textUpdater
-                                .updateText(pasteData, text, textPasteItem, pasteDao)
+                            updatePasteItemHelper
+                                .updateText(pasteData, text, textPasteItem)
                                 .onSuccess {
                                     originText = text
                                     notificationManager.sendNotification(

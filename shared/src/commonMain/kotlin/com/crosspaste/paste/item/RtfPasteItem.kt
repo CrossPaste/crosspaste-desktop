@@ -2,6 +2,7 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createRtfPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.path.UserDataPathProvider
@@ -65,11 +66,11 @@ class RtfPasteItem(
             }.getOrNull()
         } ?: 0
 
-    override fun bind(pasteCoordinate: PasteCoordinate): RtfPasteItem =
-        RtfPasteItem(
+    override fun bind(pasteCoordinate: PasteCoordinate): RtfPasteItem = this
+
+    override fun copy(extraInfo: JsonObject?): RtfPasteItem =
+        createRtfPasteItem(
             identifiers = identifiers,
-            hash = hash,
-            size = size,
             rtf = rtf,
             extraInfo = extraInfo,
         )
@@ -79,21 +80,6 @@ class RtfPasteItem(
     override fun getSearchContent(): String = rtfTextCache.lowercase()
 
     override fun getSummary(): String = rtfTextCache
-
-    override fun update(
-        data: Any,
-        hash: String,
-    ): PasteItem =
-        (data as? String)?.let { rtf ->
-            // todo update rtf image
-            RtfPasteItem(
-                identifiers = identifiers,
-                hash = hash,
-                size = rtf.encodeToByteArray().size.toLong(),
-                rtf = rtf,
-                extraInfo = extraInfo,
-            )
-        } ?: this
 
     override fun getRenderingFilePath(
         pasteCoordinate: PasteCoordinate,

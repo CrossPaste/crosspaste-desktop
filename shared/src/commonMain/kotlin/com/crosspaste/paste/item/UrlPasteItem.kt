@@ -2,6 +2,7 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem.Companion.fileUtils
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
 import com.crosspaste.paste.item.PasteItemProperties.TITLE
@@ -45,6 +46,13 @@ class UrlPasteItem(
 
     override fun getSummary(): String = url
 
+    override fun copy(extraInfo: JsonObject?): UrlPasteItem =
+        createUrlPasteItem(
+            identifiers = identifiers,
+            url = url,
+            extraInfo = extraInfo,
+        )
+
     override fun getTitle(): String? =
         extraInfo?.let {
             it[TITLE]?.jsonPrimitive?.content
@@ -63,19 +71,6 @@ class UrlPasteItem(
                 )
             userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
         }
-
-    override fun update(
-        data: Any,
-        hash: String,
-    ): PasteItem =
-        (data as? String)?.let { url ->
-            UrlPasteItem(
-                identifiers = identifiers,
-                hash = hash,
-                size = url.length.toLong(),
-                url = url,
-            )
-        } ?: this
 
     override fun isValid(): Boolean =
         hash.isNotEmpty() &&

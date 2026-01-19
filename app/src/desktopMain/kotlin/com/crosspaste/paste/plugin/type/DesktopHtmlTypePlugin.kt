@@ -6,6 +6,7 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.updateExtraInfo
@@ -15,7 +16,6 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.html.HTMLCodec
 import com.crosspaste.plugin.office.OfficeHtmlPlugin
 import com.crosspaste.utils.HtmlColorUtils
-import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getHtmlUtils
 import kotlinx.serialization.json.put
 import java.awt.datatransfer.DataFlavor
@@ -27,8 +27,6 @@ class DesktopHtmlTypePlugin(
     companion object {
 
         const val HTML_ID = "text/html"
-
-        private val codecsUtils = getCodecsUtils()
 
         private val htmlUtils = getHtmlUtils()
 
@@ -45,10 +43,8 @@ class DesktopHtmlTypePlugin(
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        HtmlPasteItem(
+        createHtmlPasteItem(
             identifiers = listOf(HTML_ID),
-            hash = "",
-            size = 0,
             html = "",
         ).let {
             pasteCollector.preCollectItem(itemIndex, this::class, it)
@@ -67,14 +63,9 @@ class DesktopHtmlTypePlugin(
         if (transferData is String) {
             val html = extractHtml(transferData)
             val background = HtmlColorUtils.getBackgroundColor(html) ?: Color.Transparent
-            val htmlBytes = html.encodeToByteArray()
-            val hash = codecsUtils.hash(htmlBytes)
-            val size = htmlBytes.size.toLong()
             val update: (PasteItem) -> PasteItem = { pasteItem ->
-                HtmlPasteItem(
+                createHtmlPasteItem(
                     identifiers = pasteItem.identifiers,
-                    hash = hash,
-                    size = size,
                     html = html,
                     extraInfo =
                         updateExtraInfo(

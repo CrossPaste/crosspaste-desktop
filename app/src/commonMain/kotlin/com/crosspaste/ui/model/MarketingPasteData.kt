@@ -7,14 +7,14 @@ import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
-import com.crosspaste.paste.item.ColorPasteItem
-import com.crosspaste.paste.item.FilesPasteItem
-import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItemProperties.MARKETING_PATH
 import com.crosspaste.paste.item.PasteItemProperties.TITLE
-import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform.Companion.MACOS
 import com.crosspaste.presist.FileInfoTree
@@ -37,24 +37,21 @@ open class MarketingPasteData(
     private val color =
         run {
             val colorHex = "#FFA6D6D6"
-            val colorBytes = colorHex.encodeToByteArray()
+            val pasteItem =
+                createColorPasteItem(
+                    color = parseHexColor(colorHex)!!.toArgb(),
+                )
 
             PasteData(
                 id = 1L,
                 appInstanceId = "$MACOS-id",
                 favorite = false,
-                pasteAppearItem =
-                    ColorPasteItem(
-                        identifiers = listOf(),
-                        color = parseHexColor(colorHex)!!.toArgb(),
-                        size = colorBytes.size.toLong(),
-                        hash = parseHexColor(colorHex)!!.toArgb().toString(),
-                    ),
+                pasteAppearItem = pasteItem,
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.COLOR_TYPE.type,
                 source = "Figma",
-                size = colorBytes.size.toLong(),
-                hash = codecsUtils.hash(colorBytes),
+                size = pasteItem.size,
+                hash = pasteItem.hash,
                 pasteState = PasteState.LOADED,
             )
         }
@@ -75,11 +72,8 @@ open class MarketingPasteData(
                 appInstanceId = "$MACOS-id",
                 favorite = false,
                 pasteAppearItem =
-                    UrlPasteItem(
-                        identifiers = listOf(),
+                    createUrlPasteItem(
                         url = url,
-                        size = urlBytes.size.toLong(),
-                        hash = codecsUtils.hash(urlBytes),
                         extraInfo =
                             buildJsonObject {
                                 put(MARKETING_PATH, imagePath)
@@ -100,27 +94,23 @@ open class MarketingPasteData(
             val dataZipPath = userDataPathProvider.resolve("data.zip", AppFileType.MARKETING)
             val fileInfoTree = fileUtils.getFileInfoTree(dataZipPath)
             val fileInfoTrees = mapOf("data.zip" to fileInfoTree)
-            val size = fileInfoTree.size
-            val hash = fileInfoTree.hash
+            val pasteItem =
+                createFilesPasteItem(
+                    basePath = dataZipPath.noOptionParent.toString(),
+                    relativePathList = listOf("data.zip"),
+                    fileInfoTreeMap = fileInfoTrees,
+                )
+
             PasteData(
                 id = 3L,
                 appInstanceId = "$MACOS-id",
                 favorite = false,
-                pasteAppearItem =
-                    FilesPasteItem(
-                        identifiers = listOf(),
-                        count = 1,
-                        size = size,
-                        hash = hash,
-                        basePath = dataZipPath.noOptionParent.toString(),
-                        fileInfoTreeMap = fileInfoTrees,
-                        relativePathList = listOf("data.zip"),
-                    ),
+                pasteAppearItem = pasteItem,
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.FILE_TYPE.type,
                 source = "Finder",
-                size = size,
-                hash = hash,
+                size = pasteItem.size,
+                hash = pasteItem.hash,
                 pasteState = PasteState.LOADED,
             )
         }
@@ -135,28 +125,23 @@ open class MarketingPasteData(
                 )
             val fileInfoTree = fileUtils.getFileInfoTree(imagePath)
             val fileInfoTrees: Map<String, FileInfoTree> = mapOf(imageName to fileInfoTree)
-            val size = fileUtils.getFileSize(imagePath)
-            val hash = fileUtils.getFileHash(imagePath)
+            val pasteItem =
+                createImagesPasteItem(
+                    basePath = imagePath.noOptionParent.toString(),
+                    relativePathList = listOf(imageName),
+                    fileInfoTreeMap = fileInfoTrees,
+                )
 
             PasteData(
                 id = 4L,
                 appInstanceId = "$MACOS-id",
                 favorite = false,
-                pasteAppearItem =
-                    ImagesPasteItem(
-                        identifiers = listOf(),
-                        count = 1,
-                        basePath = imagePath.noOptionParent.toString(),
-                        size = size,
-                        hash = hash,
-                        fileInfoTreeMap = fileInfoTrees,
-                        relativePathList = listOf(imageName),
-                    ),
+                pasteAppearItem = pasteItem,
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.IMAGE_TYPE.type,
                 source = "Photo Album",
-                size = size,
-                hash = hash,
+                size = pasteItem.size,
+                hash = pasteItem.hash,
                 pasteState = PasteState.LOADED,
             )
         }
@@ -173,25 +158,21 @@ open class MarketingPasteData(
 
             val byteArray = fileUtils.fileSystem.read(textPath) { readByteArray() }
 
-            val size = byteArray.size.toLong()
-            val hash = codecsUtils.hash(byteArray)
+            val pasteItem =
+                createTextPasteItem(
+                    text = byteArray.decodeToString(),
+                )
 
             PasteData(
                 id = 5L,
                 appInstanceId = "$MACOS-id",
                 favorite = false,
-                pasteAppearItem =
-                    TextPasteItem(
-                        identifiers = listOf(),
-                        text = byteArray.decodeToString(),
-                        size = size,
-                        hash = hash,
-                    ),
+                pasteAppearItem = pasteItem,
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.TEXT_TYPE.type,
                 source = "Notes Archive",
-                size = size,
-                hash = hash,
+                size = pasteItem.size,
+                hash = pasteItem.hash,
                 pasteState = PasteState.LOADED,
             )
         }
@@ -210,30 +191,27 @@ open class MarketingPasteData(
                     AppFileType.MARKETING,
                 )
 
-            val byteArray = fileUtils.fileSystem.read(htmlPath) { readByteArray() }
-            val size = byteArray.size.toLong()
-            val hash = codecsUtils.hash(byteArray)
+            val html = fileUtils.fileSystem.read(htmlPath) { readUtf8() }
+
+            val pasteItem =
+                createHtmlPasteItem(
+                    html = html,
+                    extraInfo =
+                        buildJsonObject {
+                            put(MARKETING_PATH, imagePath)
+                        },
+                )
 
             PasteData(
                 id = 6L,
                 appInstanceId = "$MACOS-id",
                 favorite = false,
-                pasteAppearItem =
-                    HtmlPasteItem(
-                        identifiers = listOf(),
-                        hash = hash,
-                        size = size,
-                        html = byteArray.decodeToString(),
-                        extraInfo =
-                            buildJsonObject {
-                                put(MARKETING_PATH, imagePath)
-                            },
-                    ),
+                pasteAppearItem = pasteItem,
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.HTML_TYPE.type,
                 source = "Email",
-                size = size,
-                hash = hash,
+                size = pasteItem.size,
+                hash = pasteItem.hash,
                 pasteState = PasteState.LOADED,
             )
         }

@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.process
 
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
@@ -19,10 +20,8 @@ object GenerateUrlPlugin : PasteProcessPlugin {
             pasteItems.filterIsInstance<TextPasteItem>().firstOrNull()?.let {
                 if (urlUtils.isValidUrl(it.text)) {
                     return pasteItems +
-                        UrlPasteItem(
+                        createUrlPasteItem(
                             identifiers = it.identifiers,
-                            hash = it.hash,
-                            size = it.size,
                             url = it.text,
                         )
                 }

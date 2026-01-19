@@ -4,10 +4,10 @@ import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.utils.DateUtils
-import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getJsonUtils
 import java.util.UUID
 import kotlin.test.Test
@@ -21,13 +21,10 @@ class SerializerTest {
 
     @Test
     fun testPasteData() {
-        val codecsUtils = getCodecsUtils()
         val textPasteItem =
-            TextPasteItem(
+            createTextPasteItem(
                 identifiers = listOf(DesktopTextTypePlugin.TEXT),
                 text = "testPasteData",
-                size = "testPasteData".encodeToByteArray().size.toLong(),
-                hash = codecsUtils.hashByString("testPasteData"),
             )
 
         val pasteData =

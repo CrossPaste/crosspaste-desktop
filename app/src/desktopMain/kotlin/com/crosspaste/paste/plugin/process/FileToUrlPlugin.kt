@@ -1,5 +1,6 @@
 package com.crosspaste.paste.plugin.process
 
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
@@ -7,7 +8,6 @@ import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DesktopFileUtils.fileSystem
 import com.crosspaste.utils.extension
-import com.crosspaste.utils.getCodecsUtils
 import okio.Path
 import okio.buffer
 
@@ -20,8 +20,6 @@ class FileToUrlPlugin(
         const val MAX_FILE_SIZE = 64 * 1024 // 64KB
         const val URL_PREFIX = "URL="
     }
-
-    private val codecsUtils = getCodecsUtils()
 
     override fun process(
         pasteCoordinate: PasteCoordinate,
@@ -37,12 +35,8 @@ class FileToUrlPlugin(
                         if (pasteItems.any { it is UrlPasteItem && it.url == url }) {
                             null
                         } else {
-                            val urlBytes = url.encodeToByteArray()
-                            val hash = codecsUtils.hash(urlBytes)
-                            UrlPasteItem(
+                            createUrlPasteItem(
                                 identifiers = pasteAppearItem.identifiers,
-                                hash = hash,
-                                size = urlBytes.size.toLong(),
                                 url = url,
                             )
                         }
