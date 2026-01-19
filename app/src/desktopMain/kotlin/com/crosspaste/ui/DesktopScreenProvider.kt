@@ -44,13 +44,13 @@ import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
+import com.crosspaste.ui.settings.DesktopPasteboardSettingsContentView
 import com.crosspaste.ui.settings.NetworkSettingsContentView
 import com.crosspaste.ui.settings.PasteboardSettingsContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.settings.StoragePathManager
 import com.crosspaste.ui.settings.StorageSettingsContentView
-import com.crosspaste.ui.settings.WindowsPasteboardSettingsContentView
 import com.crosspaste.ui.theme.AppUISize.medium
 import kotlinx.coroutines.channels.Channel
 
@@ -349,10 +349,7 @@ class DesktopScreenProvider(
     private fun PasteboardSettingsScreen() {
         ScreenLayout {
             PasteboardSettingsContentView {
-                val isWindows = remember { platform.isWindows() }
-                if (isWindows) {
-                    WindowsPasteboardSettingsContentView()
-                }
+                DesktopPasteboardSettingsContentView(platform)
             }
         }
     }

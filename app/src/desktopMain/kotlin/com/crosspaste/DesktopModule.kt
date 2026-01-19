@@ -182,12 +182,14 @@ import com.crosspaste.sync.TokenCache
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.CleanTaskTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
+import com.crosspaste.task.DesktopTaskSubmitter
 import com.crosspaste.task.OpenGraphTaskExecutor
 import com.crosspaste.task.PullFileTaskExecutor
 import com.crosspaste.task.PullIconTaskExecutor
 import com.crosspaste.task.SwitchLanguageTaskExecutor
 import com.crosspaste.task.SyncPasteTaskExecutor
 import com.crosspaste.task.TaskExecutor
+import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.ui.DesktopFontManager
 import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.NavigationManager
@@ -303,11 +305,9 @@ class DesktopModule(
             single<Database> { createDatabase(get()) }
             single<PasteDao> {
                 PasteDao(
-                    appControl = get(),
                     appInfo = get(),
                     currentPaste = get(),
                     database = get(),
-                    lazyTaskExecutor = lazy { get() },
                     pasteProcessPlugins =
                         listOf(
                             RemoveInvalidPlugin,
@@ -322,7 +322,7 @@ class DesktopModule(
                             SortPlugin,
                         ),
                     searchContentService = get(),
-                    taskDao = get(),
+                    taskSubmitter = get(),
                     userDataPathProvider = get(),
                 )
             }
@@ -471,11 +471,12 @@ class DesktopModule(
                         PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
                         PullIconTaskExecutor(get(), get(), get(), get()),
                         SwitchLanguageTaskExecutor(get(), get()),
-                        SyncPasteTaskExecutor(get(), get(), get(), get()),
+                        SyncPasteTaskExecutor(get(), get(), get(), get(), get()),
                     ),
                     get(),
                 )
             }
+            single<TaskSubmitter> { DesktopTaskSubmitter(get(), get(), get(), lazy { get() }) }
             single<TransferableConsumer> {
                 DesktopTransferableConsumer(
                     get(),

@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.platform.Platform
@@ -22,6 +23,11 @@ interface SyncHandler {
     fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo)
 
     suspend fun getConnectHostAddress(): String?
+
+    suspend fun getConnectHostInfo(): HostInfo? {
+        val address = getConnectHostAddress() ?: return null
+        return currentSyncRuntimeInfo.hostInfoList.firstOrNull { it.hostAddress == address }
+    }
 
     suspend fun forceResolve()
 
