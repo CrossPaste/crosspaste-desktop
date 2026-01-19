@@ -3,26 +3,21 @@ package com.crosspaste.db.paste
 import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
-import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.task.PullExtraInfo
-import com.crosspaste.db.task.SyncExtraInfo
-import com.crosspaste.db.task.TaskDao
-import com.crosspaste.db.task.TaskType
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteTag
-import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.task.TaskExecutor
+import com.crosspaste.task.TaskBuilder
+import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
 import com.crosspaste.utils.getFileUtils
@@ -36,14 +31,12 @@ import kotlinx.coroutines.withContext
 import kotlin.time.ExperimentalTime
 
 class PasteDao(
-    private val appControl: AppControl,
     private val appInfo: AppInfo,
     private val currentPaste: CurrentPaste,
     private val database: Database,
-    private val lazyTaskExecutor: Lazy<TaskExecutor>,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
     private val searchContentService: SearchContentService,
-    private val taskDao: TaskDao,
+    private val taskSubmitter: TaskSubmitter,
     private val userDataPathProvider: UserDataPathProvider,
 ) {
 
@@ -56,8 +49,6 @@ class PasteDao(
     private val pasteDatabaseQueries = database.pasteDatabaseQueries
 
     private val tagDatabaseQueries = database.tagDatabaseQueries
-
-    private val taskExecutor by lazy { lazyTaskExecutor.value }
 
     private val markDeleteBatchNum = 50L
 
@@ -140,21 +131,19 @@ class PasteDao(
     }
 
     private suspend fun batchMarkDelete(doQuery: () -> Query<Long>) = withContext(ioDispatcher) {
-        val tasks = mutableListOf<Long>()
-        var idList: List<Long>
-
-        do {
-            idList = database.transactionWithResult {
-                val ids = doQuery().executeAsList()
-                if (ids.isNotEmpty()) {
-                    pasteDatabaseQueries.markDeletePasteData(ids)
-                    tasks.addAll(ids.map { id -> taskDao.createTaskBlock(id, TaskType.DELETE_PASTE_TASK) })
+        taskSubmitter.submit {
+            var idList: List<Long>
+            do {
+                idList = database.transactionWithResult {
+                    val ids = doQuery().executeAsList()
+                    if (ids.isNotEmpty()) {
+                        pasteDatabaseQueries.markDeletePasteData(ids)
+                        addDeletePasteTasks(ids)
+                    }
+                    ids
                 }
-                ids
-            }
-        } while (idList.isNotEmpty())
-
-        taskExecutor.submitTasks(tasks)
+            } while (idList.isNotEmpty())
+        }
     }
 
     suspend fun markAllDeleteExceptFavorite(): Result<Unit> {
@@ -169,11 +158,12 @@ class PasteDao(
 
     suspend fun markDeletePasteData(id: Long): Result<Unit> = withContext(ioDispatcher) {
         runCatching {
-            val taskId = database.transactionWithResult {
-                pasteDatabaseQueries.markDeletePasteData(listOf(id))
-                taskDao.createTaskBlock(id, TaskType.DELETE_PASTE_TASK)
+            taskSubmitter.submit {
+                database.transaction {
+                    pasteDatabaseQueries.markDeletePasteData(listOf(id))
+                    addDeletePasteTasks(listOf(id))
+                }
             }
-            taskExecutor.submitTask(taskId)
         }.onFailure { e ->
             logger.error(e) { "Mark delete paste data failed" }
         }
@@ -255,13 +245,13 @@ class PasteDao(
     }
 
     @OptIn(ExperimentalTime::class)
-    private fun markDeleteSameHash(
+    private fun TaskBuilder.markDeleteSameHash(
         newPasteDataId: Long,
         newPasteDataType: Int,
         newPasteDataHash: String,
-    ): List<Long> {
+    ) {
         if (newPasteDataHash.isEmpty()) {
-            return listOf()
+            return
         }
 
         val idList = pasteDatabaseQueries.getSameHashPasteDataIds(
@@ -271,9 +261,9 @@ class PasteDao(
             newPasteDataId,
         ).executeAsList()
 
-        return database.transactionWithResult {
+        database.transaction {
             pasteDatabaseQueries.markDeletePasteData(idList)
-            idList.map { id -> taskDao.createTaskBlock(id, TaskType.DELETE_PASTE_TASK) }
+            addDeletePasteTasks(idList)
         }
     }
 
@@ -426,7 +416,6 @@ class PasteDao(
     ): Result<Unit> {
         return runCatching {
             val remotePasteDataId = pasteData.id
-            val tasks = mutableListOf<Long>()
             val existFile = pasteData.existFileCategory()
             val existIconFile: Boolean? =
                 pasteData.source?.let {
@@ -441,46 +430,35 @@ class PasteDao(
 
             val id = createPasteData(pasteData, pasteState)
 
-            if (!existFile) {
-                tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
-                addRenderingTask(id, pasteData.getType()) {
-                    tasks.add(it)
+            taskSubmitter.submit {
+                if (!existFile) {
+                    markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
+                    addRenderingTask(id, pasteData.getType())
+                    tryWritePasteboard(pasteData)
+                } else {
+                    val pasteCoordinate = pasteData.getPasteCoordinate(id)
+                    val pasteAppearItem = pasteData.pasteAppearItem
+                    val pasteCollection = pasteData.pasteCollection
+
+                    val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
+                    val newPasteCollection = pasteCollection.bind(pasteCoordinate)
+
+                    val newPasteData = pasteData.copy(
+                        id = id,
+                        pasteAppearItem = newPasteAppearItem,
+                        pasteCollection = newPasteCollection,
+                    )
+
+                    updateFilePath(newPasteData)
+
+                    addPullFileTask(id, remotePasteDataId)
+                    addRelaySyncTask(id, newPasteData.appInstanceId)
                 }
-            } else {
-                val pasteCoordinate = pasteData.getPasteCoordinate(id)
-                val pasteAppearItem = pasteData.pasteAppearItem
-                val pasteCollection = pasteData.pasteCollection
 
-                val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
-                val newPasteCollection = pasteCollection.bind(pasteCoordinate)
-
-                val newPasteData = pasteData.copy(
-                    id = id,
-                    pasteAppearItem = newPasteAppearItem,
-                    pasteCollection = newPasteCollection,
-                )
-
-                updateFilePath(newPasteData)
-
-                tasks.add(
-                    taskDao.createTask(
-                        id,
-                        TaskType.PULL_FILE_TASK,
-                        PullExtraInfo(remotePasteDataId),
-                    ),
-                )
-            }
-
-            existIconFile?.let {
-                if (!it) {
-                    tasks.add(taskDao.createTask(id, TaskType.PULL_ICON_TASK))
+                existIconFile?.let {
+                    addPullIconTask(id, it)
                 }
             }
-
-            if (!existFile) {
-                tryWritePasteboard(pasteData)
-            }
-            taskExecutor.submitTasks(tasks)
         }.onFailure { e ->
             logger.error(e) { "Release remote paste data failed" }
         }
@@ -491,15 +469,16 @@ class PasteDao(
         tryWritePasteboard: (PasteData) -> Unit,
     ): Result<Unit> = withContext(ioDispatcher) {
         runCatching {
-            val tasks = mutableListOf<Long>()
-            database.transactionWithResult {
-                pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
-                getNoDeletePasteDataBlock(id)
-            }?.let { pasteData ->
-                tasks.addAll(markDeleteSameHash(id, pasteData.pasteType, pasteData.hash))
-                tryWritePasteboard(pasteData)
+            taskSubmitter.submit {
+                database.transactionWithResult {
+                    pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
+                    getNoDeletePasteDataBlock(id)
+                }?.let {
+                    markDeleteSameHash(id, it.pasteType, it.hash)
+                    addRelaySyncTask(id, it.appInstanceId)
+                    tryWritePasteboard(it)
+                }
             }
-            taskExecutor.submitTasks(tasks)
         }.onFailure { e ->
             logger.error(e) { "Release remote paste data with file failed" }
         }
@@ -550,35 +529,20 @@ class PasteDao(
             }
 
             if (change) {
-                val tasks = mutableListOf<Long>()
-                addRenderingTask(id, pasteType) {
-                    tasks.add(it)
-                }
-                if (appControl.isFileSizeSyncEnabled(maxFileSize)) {
-                    tasks.add(
-                        taskDao.createTask(
-                            id,
-                            TaskType.SYNC_PASTE_TASK,
-                            SyncExtraInfo()
-                        )
-                    )
-                }
-                if (pasteType.isFile() || pasteType.isImage()) {
-                    if ((firstItem as PasteFiles).isRefFiles()) {
-                        tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
-                    }
-                } else {
-                    tasks.addAll(markDeleteSameHash(id, pasteType.type, hash))
-                }
                 currentPaste.setPasteId(id)
-                taskExecutor.submitTasks(tasks)
-            }
-        }
-    }
+                taskSubmitter.submit {
+                    addRenderingTask(id, pasteType)
+                    addSyncTask(id, pasteData.appInstanceId, maxFileSize)
 
-    private fun addRenderingTask(id: Long, pasteType: PasteType, addTask: (Long) -> Unit) {
-        if (pasteType.isUrl()) {
-            addTask(taskDao.createTaskBlock(id, TaskType.OPEN_GRAPH_TASK))
+                    if (pasteType.isFile() || pasteType.isImage()) {
+                        if ((firstItem as PasteFiles).isRefFiles()) {
+                            markDeleteSameHash(id, pasteType.type, hash)
+                        }
+                    } else {
+                        markDeleteSameHash(id, pasteType.type, hash)
+                    }
+                }
+            }
         }
     }
 

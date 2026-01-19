@@ -31,6 +31,7 @@ import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.devices.SyncScopeFactory
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.getJsonUtils
@@ -135,7 +136,7 @@ fun NetworkSettingsContentView() {
         }
 
         item {
-            SectionHeader("blacklist")
+            SectionHeader("blacklist", topPadding = medium)
         }
 
         if (blacklist.isEmpty()) {

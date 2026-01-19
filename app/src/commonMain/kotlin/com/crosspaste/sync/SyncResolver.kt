@@ -17,6 +17,7 @@ import com.crosspaste.net.clientapi.EncryptFail
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.filter
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostAndPort
@@ -42,19 +43,19 @@ class SyncResolver(
         runCatching {
             when (event) {
                 is SyncEvent.ResolveDisconnected -> {
-                    event.syncRuntimeInfo.resolveDisconnected(event.updateVersionRelation)
+                    event.syncRuntimeInfo.resolveDisconnected(event.callback)
                 }
 
                 is SyncEvent.ResolveConnecting -> {
-                    event.syncRuntimeInfo.resolveConnecting(event.updateVersionRelation)
+                    event.syncRuntimeInfo.resolveConnecting(event.callback)
                 }
 
                 is SyncEvent.ResolveConnection -> {
-                    event.syncRuntimeInfo.resolveConnection(event.updateVersionRelation)
+                    event.syncRuntimeInfo.resolveConnection(event.callback)
                 }
 
                 is SyncEvent.ForceResolveConnection -> {
-                    event.syncRuntimeInfo.forceResolveConnection(event.updateVersionRelation)
+                    event.syncRuntimeInfo.forceResolveConnection(event.callback)
                 }
 
                 is SyncEvent.TrustByToken -> {
@@ -101,16 +102,20 @@ class SyncResolver(
                     logger.warn { "unknown event $event" }
                 }
             }
+        }.apply {
+            if (event is SyncEvent.CallbackEvent) {
+                event.callback.onComplete()
+            }
         }
     }
 
-    private suspend fun SyncRuntimeInfo.resolveDisconnected(updateVersionRelation: (VersionRelation) -> Unit) {
+    private suspend fun SyncRuntimeInfo.resolveDisconnected(callback: ResolveCallback) {
         logger.info { "Resolve disconnected $appInstanceId" }
         telnetHelper.switchHost(hostInfoList, port)?.let { pair ->
             val (hostInfo, versionRelation) = pair
             logger.info { "$appInstanceId $hostInfo to connecting, versionRelation: $versionRelation" }
 
-            updateVersionRelation(versionRelation)
+            callback.updateVersionRelation(versionRelation)
             val isEqualVersion = versionRelation == VersionRelation.EQUAL_TO
 
             if (isEqualVersion) {
@@ -143,11 +148,11 @@ class SyncResolver(
         }
     }
 
-    private suspend fun SyncRuntimeInfo.resolveConnecting(updateVersionRelation: (VersionRelation) -> Unit) {
+    private suspend fun SyncRuntimeInfo.resolveConnecting(callback: ResolveCallback) {
         logger.info { "Resolve connecting $appInstanceId" }
         this.connectHostAddress?.let { host ->
             if (secureStore.existCryptPublicKey(appInstanceId)) {
-                val state = heartbeat(host, port, appInstanceId, updateVersionRelation)
+                val state = heartbeat(host, port, appInstanceId, callback)
 
                 when (state) {
                     SyncState.CONNECTED -> {
@@ -205,28 +210,28 @@ class SyncResolver(
         }
     }
 
-    private suspend fun SyncRuntimeInfo.resolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
+    private suspend fun SyncRuntimeInfo.resolveConnection(callback: ResolveCallback) {
         logger.info { "Resolve connection $appInstanceId" }
         if (connectState == SyncState.DISCONNECTED ||
             connectState == SyncState.INCOMPATIBLE
         ) {
-            resolveDisconnected(updateVersionRelation)
+            resolveDisconnected(callback)
         } else {
-            resolveConnecting(updateVersionRelation)
+            resolveConnecting(callback)
         }
     }
 
-    private suspend fun SyncRuntimeInfo.forceResolveConnection(updateVersionRelation: (VersionRelation) -> Unit) {
+    private suspend fun SyncRuntimeInfo.forceResolveConnection(callback: ResolveCallback) {
         logger.info { "Force resolve connection $appInstanceId" }
         refreshSyncInfo(appInstanceId, hostInfoList)
-        resolveConnection(updateVersionRelation)
+        resolveConnection(callback)
     }
 
     private suspend fun heartbeat(
         host: String,
         port: Int,
         targetAppInstanceId: String,
-        updateVersionRelation: (VersionRelation) -> Unit,
+        callback: ResolveCallback,
     ): Int {
         val hostAndPort = HostAndPort(host, port)
         val result =
@@ -240,7 +245,7 @@ class SyncResolver(
             is SuccessResult -> {
                 val versionRelation: VersionRelation? = result.getResult()
                 versionRelation?.let {
-                    updateVersionRelation(versionRelation)
+                    callback.updateVersionRelation(versionRelation)
                     if (versionRelation == VersionRelation.EQUAL_TO) {
                         SyncState.CONNECTED
                     } else {

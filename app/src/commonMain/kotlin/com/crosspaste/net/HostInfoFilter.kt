@@ -1,7 +1,14 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.net.HostInfoFilter.Companion.createHostInfoFilter
 import io.ktor.network.sockets.InetSocketAddress
+
+fun HostInfo.filter(host: String): Boolean =
+    createHostInfoFilter(
+        hostAddress = hostAddress,
+        networkPrefixLength = networkPrefixLength,
+    ).filter(host)
 
 interface HostInfoFilter {
 

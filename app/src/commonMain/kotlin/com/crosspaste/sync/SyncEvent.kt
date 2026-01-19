@@ -3,7 +3,6 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.net.VersionRelation
 
 sealed interface SyncEvent {
 
@@ -11,31 +10,39 @@ sealed interface SyncEvent {
         val syncRuntimeInfo: SyncRuntimeInfo
     }
 
+    interface CallbackEvent : SyncEvent {
+        val callback: ResolveCallback
+    }
+
     data class ResolveDisconnected(
         override val syncRuntimeInfo: SyncRuntimeInfo,
-        val updateVersionRelation: (VersionRelation) -> Unit,
-    ) : SyncRunTimeInfoEvent {
+        override val callback: ResolveCallback,
+    ) : SyncRunTimeInfoEvent,
+        CallbackEvent {
         override fun toString(): String = "ResolveDisconnected ${syncRuntimeInfo.appInstanceId}"
     }
 
     data class ResolveConnecting(
         override val syncRuntimeInfo: SyncRuntimeInfo,
-        val updateVersionRelation: (VersionRelation) -> Unit,
-    ) : SyncRunTimeInfoEvent {
+        override val callback: ResolveCallback,
+    ) : SyncRunTimeInfoEvent,
+        CallbackEvent {
         override fun toString(): String = "ResolveConnecting ${syncRuntimeInfo.appInstanceId}"
     }
 
     data class ResolveConnection(
         override val syncRuntimeInfo: SyncRuntimeInfo,
-        val updateVersionRelation: (VersionRelation) -> Unit,
-    ) : SyncRunTimeInfoEvent {
+        override val callback: ResolveCallback,
+    ) : SyncRunTimeInfoEvent,
+        CallbackEvent {
         override fun toString(): String = "ResolveConnection ${syncRuntimeInfo.appInstanceId}"
     }
 
     data class ForceResolveConnection(
         override val syncRuntimeInfo: SyncRuntimeInfo,
-        val updateVersionRelation: (VersionRelation) -> Unit,
-    ) : SyncRunTimeInfoEvent {
+        override val callback: ResolveCallback,
+    ) : SyncRunTimeInfoEvent,
+        CallbackEvent {
         override fun toString(): String = "ForceResolveConnection ${syncRuntimeInfo.appInstanceId}"
     }
 

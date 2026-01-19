@@ -1,6 +1,7 @@
 package com.crosspaste.task
 
 import com.crosspaste.app.AppControl
+import com.crosspaste.app.AppInfo
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
@@ -12,6 +13,7 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.net.filter
 import com.crosspaste.paste.PasteData
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
@@ -25,9 +27,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlin.collections.filter
 
 class SyncPasteTaskExecutor(
     private val appControl: AppControl,
+    private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
     private val pasteClientApi: PasteClientApi,
     private val syncManager: SyncManager,
@@ -75,11 +79,32 @@ class SyncPasteTaskExecutor(
         return deferredResults.associate { it.await() }
     }
 
-    private fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> =
-        syncManager.getSyncHandlers().filter { (key, handler) ->
-            handler.currentSyncRuntimeInfo.allowSend &&
-                handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
-                (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
+    private suspend fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> =
+        if (syncExtraInfo.appInstanceId == appInfo.appInstanceId) {
+            syncManager.getSyncHandlers().filter { (key, handler) ->
+                handler.currentSyncRuntimeInfo.allowSend &&
+                    handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
+                    (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
+            }
+        } else {
+            syncManager.getSyncHandler(syncExtraInfo.appInstanceId)?.let { handler ->
+                handler.getConnectHostInfo()?.let { connectHostInfo ->
+                    syncManager.getSyncHandlers().filter { (key, handler) ->
+                        if (key != syncExtraInfo.appInstanceId) {
+                            val address = handler.getConnectHostAddress()
+                            if (address != null && !connectHostInfo.filter(address)) {
+                                handler.currentSyncRuntimeInfo.allowSend &&
+                                    handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
+                                    (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    }
+                }
+            } ?: mapOf()
         }
 
     private fun createSyncTask(
@@ -90,8 +115,7 @@ class SyncPasteTaskExecutor(
         ioScope.async {
             runCatching {
                 handler.getConnectHostAddress()?.let {
-                    val hostAddress = it
-                    val result = syncPasteToTarget(handlerKey, handler, pasteData, hostAddress)
+                    val result = syncPasteToTarget(handlerKey, handler, pasteData, it)
 
                     if (result is SuccessResult) {
                         appControl.completeSendOperation()
