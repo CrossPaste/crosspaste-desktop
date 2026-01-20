@@ -155,8 +155,6 @@ fun SideSearchInputView() {
                 }
                 TutorialButton()
             }
-            Spacer(modifier = Modifier.width(large))
-            TutorialButton()
         }
 
         CustomTextField(
