@@ -1,5 +1,6 @@
 package com.crosspaste.ui.search.side
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
@@ -50,7 +52,7 @@ import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
-import com.crosspaste.ui.base.PasteTooltipIconView
+import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.model.FocusedElement
@@ -63,7 +65,10 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -117,7 +122,7 @@ fun SideSearchInputView() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(appSizeValue.sideSearchInputHeight),
+                .height(appSizeValue.sideSearchTopBarHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
@@ -150,13 +155,18 @@ fun SideSearchInputView() {
                 }
                 TutorialButton()
             }
+            Spacer(modifier = Modifier.width(large))
+            TutorialButton()
         }
 
         CustomTextField(
             modifier =
                 Modifier
                     .fillMaxHeight()
+                    .padding(vertical = small2X)
                     .widthIn(min = 600.dp, max = 800.dp)
+                    .clip(tinyRoundedCornerShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .focusRequester(searchFocusRequester)
                     .onFocusEvent {
                         if (it.isFocused) {
@@ -245,10 +255,11 @@ fun SideSearchInputView() {
 
             Spacer(modifier = Modifier.width(small))
 
-            PasteTooltipIconView(
+            GeneralIconButton(
                 painter = settings(),
-                tint = MaterialTheme.colorScheme.primary,
-                text = copywriter.getText("settings"),
+                desc = "settings",
+                iconColor = MaterialTheme.colorScheme.primary,
+                shape = tiny2XRoundedCornerShape,
             ) {
                 scope.launch {
                     navigationManager.navigateAndClearStack(Settings)
