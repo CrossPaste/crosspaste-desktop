@@ -1,5 +1,6 @@
 package com.crosspaste.ui
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,6 +41,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -68,6 +70,11 @@ fun WindowDecoration() {
     ) {
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
+
+        val animatedStartPadding by animateDpAsState(
+            targetValue = if (isHovered && canNavigateBack) tiny else zero,
+            label = "startPaddingAnimation",
+        )
 
         val backgroundColor =
             if (isHovered && canNavigateBack) {
@@ -103,7 +110,7 @@ fun WindowDecoration() {
                 modifier =
                     Modifier
                         .padding(vertical = tiny2X)
-                        .padding(end = tiny)
+                        .padding(start = animatedStartPadding, end = medium)
                         .wrapContentSize(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
