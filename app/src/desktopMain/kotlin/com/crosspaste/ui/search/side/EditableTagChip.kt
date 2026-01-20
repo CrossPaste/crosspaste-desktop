@@ -87,7 +87,11 @@ fun PasteTagScope.TagChip(
         },
         border =
             if (isSelected) {
-                FilterChipDefaults.filterChipBorder(true, selected = true)
+                FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = true,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                )
             } else {
                 null
             },
