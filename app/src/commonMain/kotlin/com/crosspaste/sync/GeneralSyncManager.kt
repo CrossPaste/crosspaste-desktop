@@ -202,12 +202,13 @@ class GeneralSyncManager(
     override fun trustByToken(
         appInstanceId: String,
         token: Int,
+        callback: (Boolean) -> Unit,
     ) {
         internalSyncHandlers[appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch {
-                syncHandler.trustByToken(token)
+                syncHandler.trustByToken(token, callback)
             }
-        }
+        } ?: callback(false)
     }
 
     override fun updateAllowSend(

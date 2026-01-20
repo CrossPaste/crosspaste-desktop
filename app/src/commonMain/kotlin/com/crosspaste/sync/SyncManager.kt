@@ -38,6 +38,7 @@ interface SyncManager : SyncRoutingApi {
     fun trustByToken(
         appInstanceId: String,
         token: Int,
+        callback: (Boolean) -> Unit,
     )
 
     fun refresh(

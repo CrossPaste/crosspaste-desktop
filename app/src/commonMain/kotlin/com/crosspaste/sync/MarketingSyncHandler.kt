@@ -35,7 +35,10 @@ class MarketingSyncHandler(
     override suspend fun updateNoteName(noteName: String) {
     }
 
-    override suspend fun trustByToken(token: Int) {
+    override suspend fun trustByToken(
+        token: Int,
+        callback: (Boolean) -> Unit,
+    ) {
     }
 
     override suspend fun showToken() {

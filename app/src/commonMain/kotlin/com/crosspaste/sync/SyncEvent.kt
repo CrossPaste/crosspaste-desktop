@@ -49,6 +49,7 @@ sealed interface SyncEvent {
     data class TrustByToken(
         override val syncRuntimeInfo: SyncRuntimeInfo,
         val token: Int,
+        val callback: (Boolean) -> Unit,
     ) : SyncRunTimeInfoEvent {
         override fun toString(): String = "TrustByToken ${syncRuntimeInfo.appInstanceId} $token"
     }

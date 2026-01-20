@@ -38,7 +38,10 @@ interface SyncHandler {
     suspend fun updateNoteName(noteName: String)
 
     // use user input token to trust
-    suspend fun trustByToken(token: Int)
+    suspend fun trustByToken(
+        token: Int,
+        callback: (Boolean) -> Unit,
+    )
 
     suspend fun showToken()
 

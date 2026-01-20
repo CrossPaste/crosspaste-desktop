@@ -20,6 +20,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -40,6 +42,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.key
@@ -78,22 +81,34 @@ fun DeviceScope.TrustDeviceDialog() {
     val tokenCount = 6
     val tokens = remember { mutableStateListOf(*Array(tokenCount) { "" }) }
     var isError by remember { mutableStateOf(false) }
+
+    var isLoading by remember { mutableStateOf(false) }
+
     val focusRequesters = remember { List(tokenCount) { FocusRequester() } }
 
-    val setError = { value: Boolean -> isError = value }
+    val setError = { value: Boolean ->
+        isError = value
+        if (value) isLoading = false
+    }
 
     val confirmAction = {
-        confirmToken(
-            tokens = tokens,
-            tokenCount = tokenCount,
-            setError = setError,
-            syncManager = syncManager,
-            syncRuntimeInfo = syncRuntimeInfo,
-        )
+        if (!isLoading) {
+            isLoading = true
+            isError = false
+            confirmToken(
+                tokens = tokens,
+                tokenCount = tokenCount,
+                setError = setError,
+                syncManager = syncManager,
+                syncRuntimeInfo = syncRuntimeInfo,
+            )
+        }
     }
 
     val cancelAction = {
-        cancelVerification(syncManager, syncRuntimeInfo)
+        if (!isLoading) {
+            cancelVerification(syncManager, syncRuntimeInfo)
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -102,7 +117,12 @@ fun DeviceScope.TrustDeviceDialog() {
 
     AlertDialog(
         modifier = Modifier.width(appSizeValue.dialogWidth),
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = !isLoading,
+                dismissOnClickOutside = !isLoading,
+            ),
         onDismissRequest = cancelAction,
         title = {
             Row(
@@ -153,19 +173,28 @@ fun DeviceScope.TrustDeviceDialog() {
                         }
                     },
                 )
-                TokenInputRow(tokens, isError, focusRequesters, confirmAction, cancelAction)
+                TokenInputRow(tokens, isError, isLoading, focusRequesters, confirmAction, cancelAction)
             }
         },
         confirmButton = {
-            DialogActionButton(
-                text = copywriter.getText("confirm"),
-                type = DialogButtonType.FILLED,
-            ) {
-                confirmAction()
+            if (isLoading) {
+                Button(onClick = {}, enabled = false) {
+                    CircularProgressIndicator(modifier = Modifier.size(medium))
+                }
+            } else {
+                DialogActionButton(
+                    text = copywriter.getText("confirm"),
+                    type = DialogButtonType.FILLED,
+                ) {
+                    confirmAction()
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = cancelAction) {
+            TextButton(
+                onClick = cancelAction,
+                enabled = !isLoading,
+            ) {
                 Text(copywriter.getText("cancel"))
             }
         },
@@ -176,6 +205,7 @@ fun DeviceScope.TrustDeviceDialog() {
 fun TokenInputRow(
     tokens: MutableList<String>,
     isError: Boolean,
+    isLoading: Boolean,
     focusRequesters: List<FocusRequester>,
     confirmAction: () -> Unit,
     cancelAction: () -> Unit,
@@ -184,7 +214,8 @@ fun TokenInputRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .wrapContentHeight(),
+                .wrapContentHeight()
+                .graphicsLayer { alpha = if (isLoading) 0.5f else 1f },
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         tokens.forEachIndexed { index, token ->
@@ -192,6 +223,7 @@ fun TokenInputRow(
                 token = token,
                 index = index,
                 isError = isError,
+                isLoading = isLoading,
                 focusRequesters = focusRequesters,
                 onValueChange = { value ->
                     if (value.length <= 1 && value.all { it.isDigit() }) {
@@ -213,6 +245,7 @@ fun TokenInputBox(
     token: String,
     index: Int,
     isError: Boolean,
+    isLoading: Boolean,
     focusRequesters: List<FocusRequester>,
     onValueChange: (String) -> Unit,
     confirmAction: () -> Unit,
@@ -265,7 +298,10 @@ fun TokenInputBox(
                     width = borderWidth,
                     color = borderColor,
                     shape = shape,
-                ).onKeyEvent { handleKeyEvent(it, token, index, focusRequesters, confirmAction, cancelAction) },
+                ).onKeyEvent {
+                    if (isLoading) return@onKeyEvent false
+                    handleKeyEvent(it, token, index, focusRequesters, confirmAction, cancelAction)
+                },
         shape = shape,
         color = containerColor,
         tonalElevation = if (isFocused) tiny4X else zero,
@@ -276,6 +312,7 @@ fun TokenInputBox(
         ) {
             BasicTextField(
                 value = token,
+                enabled = !isLoading,
                 onValueChange = {
                     if (it.length <= 1) {
                         onValueChange(it)
@@ -349,7 +386,9 @@ fun confirmToken(
 ) {
     tokens.joinToString("").let { token ->
         if (token.length == tokenCount) {
-            syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt())
+            syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt()) {
+                setError(!it)
+            }
         } else {
             setError(true)
         }

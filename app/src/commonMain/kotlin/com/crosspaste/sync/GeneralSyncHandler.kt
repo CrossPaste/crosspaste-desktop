@@ -181,8 +181,11 @@ class GeneralSyncHandler(
         emitEvent(SyncEvent.UpdateNoteName(currentSyncRuntimeInfo, noteName))
     }
 
-    override suspend fun trustByToken(token: Int) {
-        emitEvent(SyncEvent.TrustByToken(currentSyncRuntimeInfo, token))
+    override suspend fun trustByToken(
+        token: Int,
+        callback: (Boolean) -> Unit,
+    ) {
+        emitEvent(SyncEvent.TrustByToken(currentSyncRuntimeInfo, token, callback))
     }
 
     override suspend fun showToken() {

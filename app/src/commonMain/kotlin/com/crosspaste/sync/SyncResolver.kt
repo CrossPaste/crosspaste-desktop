@@ -59,7 +59,7 @@ class SyncResolver(
                 }
 
                 is SyncEvent.TrustByToken -> {
-                    event.syncRuntimeInfo.trustByToken(event.token)
+                    event.syncRuntimeInfo.trustByToken(event.token, event.callback)
                 }
 
                 is SyncEvent.RefreshSyncInfo -> {
@@ -366,7 +366,10 @@ class SyncResolver(
         return false
     }
 
-    private suspend fun SyncRuntimeInfo.trustByToken(token: Int) {
+    private suspend fun SyncRuntimeInfo.trustByToken(
+        token: Int,
+        callback: (Boolean) -> Unit,
+    ) {
         if (connectState == SyncState.UNVERIFIED) {
             connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, port)
@@ -394,9 +397,14 @@ class SyncResolver(
                             modifyTime = nowEpochMilliseconds(),
                         ),
                     )
+                    callback(true)
                     ratingPromptManager.trackSignificantAction()
+                } else {
+                    callback(false)
                 }
             }
+        } else {
+            callback(false)
         }
     }
 
