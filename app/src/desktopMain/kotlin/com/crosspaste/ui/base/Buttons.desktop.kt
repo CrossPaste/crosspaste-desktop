@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.Dp
 import com.crosspaste.i18n.GlobalCopywriter
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 actual fun GeneralIconButton(
     imageVector: ImageVector,
@@ -35,48 +34,23 @@ actual fun GeneralIconButton(
     shape: Shape,
     onClick: () -> Unit,
 ) {
-    val copywriter = koinInject<GlobalCopywriter>()
-
-    @Composable
-    fun IconButtonContent() {
-        IconButton(
-            onClick = onClick,
-            colors = colors,
-            modifier =
-                modifier
-                    .size(buttonSize),
-            shape = shape,
-        ) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = desc,
-                modifier = iconModifier.size(iconSize),
-                tint = iconColor,
-            )
-        }
-    }
-
-    if (!desc.isNullOrBlank()) {
-        val tooltipState = rememberTooltipState()
-        val positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above)
-
-        TooltipBox(
-            positionProvider = positionProvider,
-            tooltip = {
-                PlainTooltip {
-                    Text(copywriter.getText(desc))
-                }
-            },
-            state = tooltipState,
-        ) {
-            IconButtonContent()
-        }
-    } else {
-        IconButtonContent()
+    BaseGeneralIconButton(
+        desc = desc,
+        colors = colors,
+        modifier = modifier,
+        buttonSize = buttonSize,
+        shape = shape,
+        onClick = onClick,
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = desc,
+            modifier = iconModifier.size(iconSize),
+            tint = iconColor,
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 actual fun GeneralIconButton(
     painter: Painter,
@@ -90,27 +64,49 @@ actual fun GeneralIconButton(
     shape: Shape,
     onClick: () -> Unit,
 ) {
+    BaseGeneralIconButton(
+        desc = desc,
+        colors = colors,
+        modifier = modifier,
+        buttonSize = buttonSize,
+        shape = shape,
+        onClick = onClick,
+    ) {
+        Icon(
+            painter = painter,
+            contentDescription = desc,
+            modifier = iconModifier.size(iconSize),
+            tint = iconColor,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BaseGeneralIconButton(
+    desc: String?,
+    colors: IconButtonColors,
+    modifier: Modifier,
+    buttonSize: Dp,
+    shape: Shape,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit, // The Icon content slot
+) {
     val copywriter = koinInject<GlobalCopywriter>()
 
+    // Define the core IconButton structure
     @Composable
-    fun IconButtonContent() {
+    fun IconButtonContainer() {
         IconButton(
             onClick = onClick,
             colors = colors,
-            modifier =
-                modifier
-                    .size(buttonSize),
+            modifier = modifier.size(buttonSize),
             shape = shape,
-        ) {
-            Icon(
-                painter = painter,
-                contentDescription = desc,
-                modifier = iconModifier.size(iconSize),
-                tint = iconColor,
-            )
-        }
+            content = content,
+        )
     }
 
+    // Logic for Tooltip
     if (!desc.isNullOrBlank()) {
         val tooltipState = rememberTooltipState()
         val positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above)
@@ -124,9 +120,9 @@ actual fun GeneralIconButton(
             },
             state = tooltipState,
         ) {
-            IconButtonContent()
+            IconButtonContainer()
         }
     } else {
-        IconButtonContent()
+        IconButtonContainer()
     }
 }
