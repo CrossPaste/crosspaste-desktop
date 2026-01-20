@@ -32,7 +32,7 @@ jobs:
 
   build-macos:
     needs: check-dylib-cache
-    runs-on: macos-latest
+    runs-on: macos-26
     if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' && needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
     steps:
       - uses: actions/checkout@v4
