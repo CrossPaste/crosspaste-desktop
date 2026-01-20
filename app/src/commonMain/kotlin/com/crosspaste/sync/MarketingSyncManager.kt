@@ -102,6 +102,7 @@ class MarketingSyncManager : SyncManager {
     override fun trustByToken(
         appInstanceId: String,
         token: Int,
+        callback: (Boolean) -> Unit,
     ) {
     }
 
