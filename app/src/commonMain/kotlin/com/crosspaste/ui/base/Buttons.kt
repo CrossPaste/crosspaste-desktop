@@ -6,6 +6,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import com.crosspaste.ui.theme.AppUISize.large
@@ -14,12 +16,27 @@ import com.crosspaste.ui.theme.AppUISize.xxLarge
 @Composable
 expect fun GeneralIconButton(
     imageVector: ImageVector,
-    desc: String,
+    desc: String? = null,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     modifier: Modifier = Modifier,
     iconModifier: Modifier = Modifier,
     iconColor: Color = LocalContentColor.current,
     buttonSize: Dp = xxLarge,
     iconSize: Dp = large,
+    shape: Shape = IconButtonDefaults.standardShape,
+    onClick: () -> Unit,
+)
+
+@Composable
+expect fun GeneralIconButton(
+    painter: Painter,
+    desc: String? = null,
+    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    modifier: Modifier = Modifier,
+    iconModifier: Modifier = Modifier,
+    iconColor: Color = LocalContentColor.current,
+    buttonSize: Dp = xxLarge,
+    iconSize: Dp = large,
+    shape: Shape = IconButtonDefaults.standardShape,
     onClick: () -> Unit,
 )

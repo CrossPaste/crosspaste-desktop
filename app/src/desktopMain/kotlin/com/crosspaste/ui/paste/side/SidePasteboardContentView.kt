@@ -236,7 +236,7 @@ fun SidePasteboardContentView() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(vertical = appSizeValue.sideSearchPaddingSize),
+                .padding(bottom = appSizeValue.sideSearchPaddingSize),
     ) {
         Box(
             modifier =

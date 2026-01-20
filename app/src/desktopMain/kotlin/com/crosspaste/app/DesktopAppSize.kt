@@ -57,14 +57,14 @@ class DesktopAppSize(
 
             // --- Side Search Calculation ---
             val sideSearchWindowHeight: Dp = 332.dp
-            val sideSearchInputHeight: Dp = 48.dp
+            val sideSearchTopBarHeight: Dp = 64.dp
             val sideSearchPaddingSize: Dp = 16.dp
             val sideTitleHeight: Dp = huge
 
             // Use 'run' block logic to calculate sidePasteSize
             val sidePasteSize =
                 run {
-                    val size = sideSearchWindowHeight - sideSearchInputHeight - (sideSearchPaddingSize * 2)
+                    val size = sideSearchWindowHeight - sideSearchTopBarHeight - sideSearchPaddingSize
                     DpSize(width = size, height = size)
                 }
 
@@ -92,7 +92,7 @@ class DesktopAppSize(
                 windowDecorationHeight = windowDecorationHeight,
                 sidePasteContentSize = sidePasteContentSize,
                 sidePasteSize = sidePasteSize,
-                sideSearchInputHeight = sideSearchInputHeight,
+                sideSearchTopBarHeight = sideSearchTopBarHeight,
                 sideSearchPaddingSize = sideSearchPaddingSize,
                 sideSearchWindowHeight = sideSearchWindowHeight,
                 sideTitleHeight = sideTitleHeight,
@@ -174,7 +174,7 @@ class DesktopAppSizeValue(
     val windowDecorationHeight: Dp,
     val sidePasteContentSize: DpSize,
     val sidePasteSize: DpSize,
-    val sideSearchInputHeight: Dp,
+    val sideSearchTopBarHeight: Dp,
     val sideSearchPaddingSize: Dp,
     val sideSearchWindowHeight: Dp,
     val sideTitleHeight: Dp,

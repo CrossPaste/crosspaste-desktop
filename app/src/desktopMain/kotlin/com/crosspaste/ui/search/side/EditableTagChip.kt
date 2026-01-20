@@ -86,16 +86,20 @@ fun PasteTagScope.TagChip(
             )
         },
         border =
-            FilterChipDefaults.filterChipBorder(
-                enabled = true,
-                selected = false,
-                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                selectedBorderColor = MaterialTheme.colorScheme.primary,
-            ),
+            if (isSelected) {
+                FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = true,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                null
+            },
+        elevation = null,
         colors =
             FilterChipDefaults.filterChipColors(
                 containerColor = Color.Transparent,
-                selectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                selectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 labelColor = MaterialTheme.colorScheme.onSurface,
                 selectedLabelColor = MaterialTheme.colorScheme.primary,
             ),
@@ -171,17 +175,11 @@ fun PasteTagScope.EditableTagChip(onEditDone: suspend (String) -> Unit) {
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             )
         },
-        border =
-            FilterChipDefaults.filterChipBorder(
-                enabled = true,
-                selected = false,
-                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                selectedBorderColor = MaterialTheme.colorScheme.primary,
-            ),
+        elevation = null,
         colors =
             FilterChipDefaults.filterChipColors(
                 containerColor = Color.Transparent,
-                selectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                selectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 labelColor = MaterialTheme.colorScheme.onSurface,
                 selectedLabelColor = MaterialTheme.colorScheme.primary,
             ),

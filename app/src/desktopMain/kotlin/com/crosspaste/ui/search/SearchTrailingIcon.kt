@@ -1,8 +1,7 @@
 package com.crosspaste.ui.search
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,13 +32,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
+import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.MenuItemView
-import com.crosspaste.ui.base.PasteTooltipIconView
 import com.crosspaste.ui.base.ascSort
 import com.crosspaste.ui.base.descSort
 import com.crosspaste.ui.base.favorite
@@ -52,7 +53,6 @@ import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
-import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
@@ -94,46 +94,42 @@ fun SearchTrailingIcon() {
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PasteTooltipIconView(
+        GeneralIconButton(
             painter = if (searchBaseParams.sort) descSort() else ascSort(),
-            contentDescription = "Sort by creation time",
-            tint = MaterialTheme.colorScheme.primary,
-            text = copywriter.getText("sort_by_creation_time"),
+            desc = "sort_by_creation_time",
+            iconColor = MaterialTheme.colorScheme.primary,
+            shape = tiny2XRoundedCornerShape,
         ) {
             pasteSearchViewModel.switchSort()
         }
 
-        PasteTooltipIconView(
+        GeneralIconButton(
             painter = if (searchBaseParams.favorite) favorite() else noFavorite(),
-            contentDescription = "Favorite",
-            tint = MaterialTheme.colorScheme.primary,
-            text = copywriter.getText("whether_to_search_only_favorites"),
+            desc = "whether_to_search_only_favorites",
+            iconColor = MaterialTheme.colorScheme.primary,
+            shape = tiny2XRoundedCornerShape,
         ) {
             pasteSearchViewModel.switchFavorite()
         }
 
         Spacer(modifier = Modifier.width(tiny2X))
 
-        Row(
-            modifier =
-                Modifier
-                    .width(maxWidth)
-                    .height(xxLarge)
-                    .clip(tiny2XRoundedCornerShape)
-                    .border(
-                        tiny5X,
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                        tiny2XRoundedCornerShape,
-                    ).clickable {
-                        showTypes = true
-                    }.padding(horizontal = small3X, vertical = small3X / 2),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
+        OutlinedButton(
+            onClick = {
+                showTypes = true
+            },
+            modifier = Modifier.height(28.dp),
+            shape = tiny2XRoundedCornerShape,
+            border =
+                BorderStroke(
+                    tiny5X,
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                ),
+            contentPadding = PaddingValues(horizontal = small3X, vertical = small3X / 2),
         ) {
             Text(
                 text = currentType?.let { copywriter.getText(it.name) } ?: copywriter.getText(ALL_TYPES),
                 color = MaterialTheme.colorScheme.primary,
-                style = textStyle,
             )
         }
 
