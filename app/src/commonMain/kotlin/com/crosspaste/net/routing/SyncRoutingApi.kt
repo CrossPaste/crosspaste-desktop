@@ -35,5 +35,10 @@ interface SyncRoutingApi {
 
     fun updateSyncInfo(syncInfo: SyncInfo)
 
+    fun trustSyncInfo(
+        syncInfo: SyncInfo,
+        host: String?,
+    )
+
     fun removeSyncHandler(appInstanceId: String)
 }

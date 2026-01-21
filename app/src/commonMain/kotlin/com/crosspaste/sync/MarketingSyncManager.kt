@@ -117,6 +117,12 @@ class MarketingSyncManager : SyncManager {
     override fun updateSyncInfo(syncInfo: SyncInfo) {
     }
 
+    override fun trustSyncInfo(
+        syncInfo: SyncInfo,
+        host: String?,
+    ) {
+    }
+
     override fun removeSyncHandler(appInstanceId: String) {
     }
 }

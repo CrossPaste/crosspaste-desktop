@@ -48,8 +48,10 @@ class SyncClientApi(
                 pasteClient.post(
                     syncInfo,
                     typeInfo<SyncInfo>(),
-                    targetAppInstanceId,
-                    encrypt = true,
+                    headersBuilder = {
+                        append("targetAppInstanceId", targetAppInstanceId)
+                        append("secure", "1")
+                    },
                     urlBuilder = {
                         toUrl()
                         buildUrl("sync", "heartbeat", "syncInfo")
@@ -57,7 +59,9 @@ class SyncClientApi(
                 )
             } ?: run {
                 pasteClient.get(
-                    targetAppInstanceId,
+                    headersBuilder = {
+                        append("targetAppInstanceId", targetAppInstanceId)
+                    },
                     urlBuilder = {
                         toUrl()
                         buildUrl("sync", "heartbeat")
@@ -73,6 +77,7 @@ class SyncClientApi(
 
     suspend fun trust(
         targetAppInstanceId: String,
+        host: String,
         token: Int,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult =
@@ -99,6 +104,9 @@ class SyncClientApi(
             pasteClient.post(
                 trustRequest,
                 typeInfo<TrustRequest>(),
+                headersBuilder = {
+                    append("host", host)
+                },
                 urlBuilder = {
                     toUrl()
                     buildUrl("sync", "trust")

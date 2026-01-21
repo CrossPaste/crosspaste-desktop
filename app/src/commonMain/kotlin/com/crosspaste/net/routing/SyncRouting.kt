@@ -32,7 +32,7 @@ fun Routing.syncRouting(
     syncApi: SyncApi,
     syncInfoFactory: SyncInfoFactory,
     syncRoutingApi: SyncRoutingApi,
-    updateSyncInfo: (String) -> Unit,
+    trustSyncInfo: (String, String?) -> Unit,
 ) {
     val logger = KotlinLogging.logger {}
 
@@ -165,7 +165,8 @@ fun Routing.syncRouting(
                         ),
                 )
             }.onSuccess { trustResponse ->
-                updateSyncInfo(appInstanceId)
+                val host = call.request.headers["host"]
+                trustSyncInfo(appInstanceId, host)
                 successResponse(call, trustResponse)
             }.onFailure {
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())

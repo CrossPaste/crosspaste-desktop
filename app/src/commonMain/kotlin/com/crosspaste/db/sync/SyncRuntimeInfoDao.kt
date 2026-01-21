@@ -3,6 +3,7 @@ package com.crosspaste.db.sync
 import app.cash.sqldelight.Query
 import com.crosspaste.Database
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.filter
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
@@ -132,7 +133,10 @@ class SyncRuntimeInfoDao(private val database: Database) {
 
     // only use in GeneralSyncManager，if want to insertOrUpdateSyncInfo SyncRuntimeInfo
     // use SyncManager.updateSyncInfo，it will refresh connect state
-    suspend fun insertOrUpdateSyncInfo(syncInfo: SyncInfo) = withContext(ioDispatcher) {
+    suspend fun insertOrUpdateSyncInfo(
+        syncInfo: SyncInfo,
+        host: String? = null,
+    ) = withContext(ioDispatcher) {
         database.transactionWithResult {
             val now = nowEpochMilliseconds()
             syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
@@ -140,6 +144,22 @@ class SyncRuntimeInfoDao(private val database: Database) {
                 SyncRuntimeInfo::mapper,
             ).executeAsOneOrNull()?.let {
                 val hostInfoList = (it.hostInfoList + syncInfo.endpointInfo.hostInfoList).distinct()
+
+                var connectNetworkPrefixLength: Long? = null
+                var connectHostAddress: String? = null
+                var connectState: Long = -1L
+
+                if (host != null) {
+                    for (hostInfo in hostInfoList) {
+                        if (hostInfo.filter(host)) {
+                            connectNetworkPrefixLength = hostInfo.networkPrefixLength.toLong()
+                            connectHostAddress = hostInfo.hostAddress
+                            connectState = SyncState.CONNECTED.toLong()
+                            break
+                        }
+                    }
+                }
+
                 val hostInfoArrayJson = jsonUtils.JSON.encodeToString(hostInfoList)
                 syncRuntimeInfoDatabaseQueries.updateSyncInfo(
                     syncInfo.appInfo.appVersion,
@@ -153,10 +173,29 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     hostInfoArrayJson,
                     syncInfo.endpointInfo.port.toLong(),
                     syncInfo.endpointInfo.port.toLong(),
+                    connectNetworkPrefixLength,
+                    connectHostAddress,
+                    connectState,
+                    connectState,
                     now,
                     syncInfo.appInfo.appInstanceId,
                 )
             } ?: run {
+                var connectNetworkPrefixLength: Long? = null
+                var connectHostAddress: String? = null
+                var connectState: Long = SyncState.DISCONNECTED.toLong()
+
+                if (host != null) {
+                    for (hostInfo in syncInfo.endpointInfo.hostInfoList) {
+                        if (hostInfo.filter(host)) {
+                            connectNetworkPrefixLength = hostInfo.networkPrefixLength.toLong()
+                            connectHostAddress = hostInfo.hostAddress
+                            connectState = SyncState.CONNECTED.toLong()
+                            break
+                        }
+                    }
+                }
+
                 val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
                 syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
                     syncInfo.appInfo.appInstanceId,
@@ -170,7 +209,9 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     syncInfo.endpointInfo.platform.version,
                     hostInfoArrayJson,
                     syncInfo.endpointInfo.port.toLong(),
-                    SyncState.DISCONNECTED.toLong(),
+                    connectNetworkPrefixLength,
+                    connectHostAddress,
+                    connectState,
                     now,
                     now,
                 )

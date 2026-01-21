@@ -111,4 +111,11 @@ sealed interface SyncEvent {
     ) : SyncEvent {
         override fun toString(): String = "UpdateSyncInfo ${syncInfo.appInfo.appInstanceId}"
     }
+
+    data class TrustSyncInfo(
+        val syncInfo: SyncInfo,
+        val host: String,
+    ) : SyncEvent {
+        override fun toString(): String = "TrustSyncInfo ${syncInfo.appInfo.appInstanceId}"
+    }
 }

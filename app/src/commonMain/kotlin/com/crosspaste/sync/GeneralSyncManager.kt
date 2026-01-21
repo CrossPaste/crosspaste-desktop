@@ -245,8 +245,21 @@ class GeneralSyncManager(
     }
 
     override fun updateSyncInfo(syncInfo: SyncInfo) {
-        realTimeSyncScope.launch(CoroutineName("UpdateSyncInfo")) {
+        realTimeSyncScope.launch {
             emitEvent(SyncEvent.UpdateSyncInfo(syncInfo))
+        }
+    }
+
+    override fun trustSyncInfo(
+        syncInfo: SyncInfo,
+        host: String?,
+    ) {
+        realTimeSyncScope.launch {
+            host?.let {
+                emitEvent(SyncEvent.TrustSyncInfo(syncInfo, host))
+            } ?: run {
+                emitEvent(SyncEvent.UpdateSyncInfo(syncInfo))
+            }
         }
     }
 

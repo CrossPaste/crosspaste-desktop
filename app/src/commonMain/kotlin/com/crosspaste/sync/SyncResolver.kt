@@ -70,6 +70,10 @@ class SyncResolver(
                     updateSyncInfo(event.syncInfo)
                 }
 
+                is SyncEvent.TrustSyncInfo -> {
+                    trustSyncInfo(event.syncInfo, event.host)
+                }
+
                 is SyncEvent.UpdateAllowSend -> {
                     event.syncRuntimeInfo.updateAllowSend(event.allowSend)
                 }
@@ -342,7 +346,7 @@ class SyncResolver(
             connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, port)
                 val result =
-                    syncClientApi.trust(appInstanceId, token) {
+                    syncClientApi.trust(appInstanceId, host, token) {
                         buildUrl(hostAndPort)
                     }
 
@@ -374,7 +378,7 @@ class SyncResolver(
             connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, port)
                 val result =
-                    syncClientApi.trust(appInstanceId, token) {
+                    syncClientApi.trust(appInstanceId, host, token) {
                         buildUrl(hostAndPort)
                     }
 
@@ -417,6 +421,13 @@ class SyncResolver(
 
     private suspend fun updateSyncInfo(syncInfo: SyncInfo) {
         syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
+    }
+
+    private suspend fun trustSyncInfo(
+        syncInfo: SyncInfo,
+        host: String,
+    ) {
+        syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, host)
     }
 
     private suspend fun SyncRuntimeInfo.updateAllowSend(allowSend: Boolean) {
