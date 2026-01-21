@@ -28,10 +28,14 @@ class PullClientApi(
             pasteClient.post(
                 message = pullFileRequest,
                 messageType = typeInfo<PullFileRequest>(),
-                targetAppInstanceId = targetAppInstanceId,
-                encrypt = configManager.getCurrentConfig().enableEncryptSync,
-                // pull file timeout is 50s
                 timeout = 50000L,
+                headersBuilder = {
+                    append("targetAppInstanceId", targetAppInstanceId)
+                    if (configManager.getCurrentConfig().enableEncryptSync) {
+                        append("secure", "1")
+                    }
+                },
+                // pull file timeout is 50s
                 urlBuilder = {
                     toUrl()
                     buildUrl("pull", "file")

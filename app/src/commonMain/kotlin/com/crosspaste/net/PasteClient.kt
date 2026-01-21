@@ -50,19 +50,13 @@ class PasteClient(
     suspend fun <T : Any> post(
         message: T,
         messageType: TypeInfo,
-        targetAppInstanceId: String? = null,
-        encrypt: Boolean = false,
         timeout: Long = 1000L,
+        headersBuilder: (HeadersBuilder.() -> Unit) = {},
         urlBuilder: URLBuilder.() -> Unit,
     ): HttpResponse =
         client.post {
             header("appInstanceId", appInfo.appInstanceId)
-            targetAppInstanceId?.let {
-                header("targetAppInstanceId", it)
-            }
-            if (encrypt) {
-                header("secure", "1")
-            }
+            headers(headersBuilder)
             timeout {
                 requestTimeoutMillis = timeout
             }
@@ -74,15 +68,13 @@ class PasteClient(
         }
 
     suspend fun get(
-        targetAppInstanceId: String? = null,
         timeout: Long = 1000L,
+        headersBuilder: (HeadersBuilder.() -> Unit) = {},
         urlBuilder: URLBuilder.() -> Unit,
     ): HttpResponse =
         client.get {
             header("appInstanceId", appInfo.appInstanceId)
-            targetAppInstanceId?.let {
-                header("targetAppInstanceId", it)
-            }
+            headers(headersBuilder)
             timeout {
                 requestTimeoutMillis = timeout
             }

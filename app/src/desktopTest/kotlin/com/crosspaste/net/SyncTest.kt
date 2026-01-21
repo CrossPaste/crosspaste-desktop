@@ -181,6 +181,7 @@ class SyncTest : KoinTest {
 
                 syncClientApi.trust(
                     serverAppInfo.appInstanceId,
+                    "localhost",
                     appTokenApi.token.value
                         .concatToString()
                         .toInt(),

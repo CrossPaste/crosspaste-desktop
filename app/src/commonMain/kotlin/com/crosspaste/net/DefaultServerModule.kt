@@ -78,9 +78,8 @@ open class DefaultServerModule(
                     syncApi,
                     syncInfoFactory,
                     syncRoutingApi,
-                ) {
-                    updateSyncInfo(it)
-                }
+                    ::trustSyncInfo,
+                )
                 pasteRouting(
                     appControl,
                     pasteboardService,
@@ -95,12 +94,15 @@ open class DefaultServerModule(
             }
         }
 
-    private fun updateSyncInfo(appInstanceId: String) {
+    private fun trustSyncInfo(
+        appInstanceId: String,
+        host: String?,
+    ) {
         nearbyDeviceManager.nearbySyncInfos.value
             .firstOrNull {
                 it.appInfo.appInstanceId == appInstanceId
             }?.let {
-                syncRoutingApi.updateSyncInfo(it)
+                syncRoutingApi.trustSyncInfo(it, host)
             }
     }
 }
