@@ -40,17 +40,28 @@ class DesktopNetworkInterfaceService(
                 config.useNetworkInterfaces,
             )
         if (config.enableDiscovery && useNetworkInterfaces.isEmpty()) {
-            val preferredInterface = getPreferredNetworkInterface()
-            if (preferredInterface != null) {
-                val useNetworkInterfacesJson =
-                    jsonUtils.JSON.encodeToString(listOf(preferredInterface.name))
-                configManager.updateConfig("useNetworkInterfaces", useNetworkInterfacesJson)
-            }
+            autoSelectAndSavePreferredInterface()?.let { return it }
         }
-        return createNetworkInterfaceInfos(
-            configManager.getCurrentConfig().useNetworkInterfaces,
-        )
+
+        val allNetworkInterfaceInfos = getAllNetworkInterfaceInfo()
+
+        val interfaceInfos = allNetworkInterfaceInfos.filter { it.name in useNetworkInterfaces }
+
+        if (interfaceInfos.isEmpty() && allNetworkInterfaceInfos.isNotEmpty()) {
+            autoSelectAndSavePreferredInterface()?.let { return it }
+        }
+
+        return interfaceInfos
     }
+
+    private fun autoSelectAndSavePreferredInterface(): List<NetworkInterfaceInfo>? =
+        getPreferredNetworkInterface()?.let {
+            val useNetworkInterfacesJson =
+                jsonUtils.JSON.encodeToString(listOf(it.name))
+            configManager.updateConfig("useNetworkInterfaces", useNetworkInterfacesJson)
+
+            listOf(it)
+        }
 
     private fun createNetworkInterfaceInfos(useNetworkInterfacesJson: String): List<NetworkInterfaceInfo> {
         val useNetworkInterfaces =
@@ -58,8 +69,8 @@ class DesktopNetworkInterfaceService(
                 useNetworkInterfacesJson,
             )
 
-        val networkInterfaceInfos = getAllNetworkInterfaceInfo()
+        val allNetworkInterfaceInfos = getAllNetworkInterfaceInfo()
 
-        return networkInterfaceInfos.filter { it.name in useNetworkInterfaces }
+        return allNetworkInterfaceInfos.filter { it.name in useNetworkInterfaces }
     }
 }
