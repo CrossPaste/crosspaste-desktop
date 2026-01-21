@@ -2,6 +2,117 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.2.6] - 2026-01-21
+# Highlights 🌟
+
+- 🎨 **Material 3 Design Overhaul**
+  A massive visual upgrade transitioning the entire application to Material 3 principles. This includes a complete refactor of Settings, Device Management, Dialogs, OCR, and Import/Export interfaces for a modern, unified experience (#3516 #3529 #3546 #3560).
+
+- ✏️ **Editable Paste Titles**
+  You can now customize and edit the titles of items in your clipboard history directly via the `SidePasteTitleView`, allowing for better organization and quicker identification of important snippets (#3664).
+
+- 🪟 **Enhanced Desktop Aesthetics**
+  Significant improvements to platform-specific visuals, including a new frosted glass (translucent) background for the search window on Windows. For macOS, we've introduced support for the "Liquid Glass" effect and ensured full compatibility with macOS 26+ (#3628 #3630 #3643).
+
+- 🔄 **Clipboard Relay & Sync**
+  Introduced a new Clipboard Relay system and refactored the task submission architecture. Improved device discovery reliability with network interface fallbacks and enhanced sync status UI (#3662 #3679 #3651).
+
+- 🛠️ **Infrastructure & Performance**
+  Upgraded to Kotlin 2.3.0 and Compose 1.10.0. Optimized Bonjour service discovery and resolved critical stability issues, including a SIGSEGV crash in XToolkit for Linux users (#3510 #3637 #3521 #3645).
+
+# Bug Fixes 🐛
+
+- Fix SIGSEGV in XToolkit by deferring JNativeHook initialization (#3645)
+- Resolve search window position flickering when opened (#3507)
+- Fix layout of platform text in `DeviceRowContent` (#3552)
+- Fix flaky `testDecryptionWithWrongKeyPair` unit test (#3568)
+- Resolve configuration cache issues for `copyDevProperties` task (#3577)
+- Fix AlwaysOnTop button theme color and size inconsistencies (#3606)
+- Avoid special fonts in `DeviceDisplayName` to ensure cross-platform compatibility (#3608)
+- Resolve x86 compilation error by restricting Liquid Glass to ARM64 (#3643)
+- Fix nested padding issues by introducing `InnerScaffold` (#3525)
+- Add network interface fallback to ensure service discovery starts reliably (#3679)
+
+# New Features ✨
+
+- :sparkles: Support adding tags to clipboard items (#3389)
+- :sparkles: Support keyboard shortcuts for top 9 clipboard items (#3385)
+- :sparkles: Add support for F13-F20 function keys (#3515)
+- :sparkles: Support toggling search window via global shortcut (#3570)
+- :sparkles: Implement Clipboard Relay system for advanced syncing (#3662)
+- :sparkles: Enhance i18n tool with unused key detection and auto-cleanup (#3556)
+- :sparkles: Implement dynamic debug mode and move About view to desktop source set (#3649)
+- :sparkles: Add callback for `TrustByToken` and loading states in device dialogs (#3668)
+
+# UI Improvements 💄
+
+- :lipstick: Refactor major UI components (Settings, Devices, Dialog, Token, Notification, OCR) to Material 3 (#3516 #3529 #3531 #3536 #3546 #3560)
+- :lipstick: Implement `AnimatedSegmentedControl` component (#3610)
+- :lipstick: Add frosted glass background to search window on Windows (#3628)
+- :lipstick: Refactor macOS acrylic background for macOS 26+ support (#3630)
+- :lipstick: Implement dynamic semantic color support (#3604)
+- :lipstick: Support editing paste item titles in `SidePasteTitleView` (#3664)
+- :lipstick: Add `IncompatibleSection` to device detail view (#3519)
+- :lipstick: Improve token input readability with adjusted line height (#3538)
+- :lipstick: Refine device row UI and state tag appearance (#3602)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Refactor navigation to pass IDs instead of complex objects (#3579)
+- :hammer: Rename QR Code to "Pairing Code" across UI and i18n (#3598)
+- :hammer: Introduce multi-platform support for Export/Import Param Factories (#3585)
+- :hammer: Consolidate MainWindow menu bar into `DesktopMenuBar` component (#3636)
+- :hammer: Remove deprecated color contrast support from theme system (#3625 #3632)
+- :hammer: Clean up unused code and i18n entries after refactoring (#3575 #3596)
+
+# Performance ⚡
+
+- :zap: Optimize `DesktopPasteBonjourService` discovery and throttling logic (#3521)
+- :zap: Track connected host addresses and refactor `PasteClient` headers (#3676)
+- :zap: Improve device refresh UX and sync reliability UI (#3651)
+
+# Dependencies ⬆️
+
+- ⬆️ **Kotlin** 2.2.21 → 2.3.0 (#3510)
+- ⬆️ **Compose Plugin** 1.9.3 → 1.10.0 (#3637)
+- ⬆️ **JBR (JetBrains Runtime)** → 21.0.9b1163.94 (#3634)
+- ⬆️ **Jewel** 0.32.1 → 0.33.0 (#3528)
+- ⬆️ **Logback** 1.5.20 → 1.5.25 (#3509 #3655)
+- ⬆️ **MaterialKolor** 4.0.5 → 4.1.0 (#3639)
+- ⬆️ **JmDNS** 3.6.2 → 3.6.3 (#3620)
+- ⬆️ **ICU4J** 78.1 → 78.2 (#3656)
+
+# Build & Tooling 👷
+
+- :construction_worker: Update macOS runner to `macos-26` in build-release workflow (#3670)
+- :construction_worker: Sync JBR version in `conveyor.conf` with actual runtime version (#3672)
+- :bookmark: Update version to 1.2.6 (#3641)
+
+---
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.5.1787...1.2.6.1876
+
+# [1.2.5] - 2025-12-19
+# 🚀 Highlights
+This is an **urgent release** addressing critical performance issues and streamlining the UI.
+
+- ⚡️ Performance & Stability Hotfix: Addressed UI freezing and lag. We migrated database operations to an async/await pattern with an IO dispatcher and introduced HikariCP to handle concurrency. Also fixed the freeze issue during token refreshes.
+
+- ✂️ UI Streamlining: Removed deprecated and redundant UI elements, including the Main Window clipboard display and the Central Search Window, to provide a cleaner and lighter user experience.
+
+## What's Changed
+* :zap: Convert database operations to async/await pattern with IO dispatcher by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3489
+* :bug: Fix database concurrency issues by introducing HikariCP by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3491
+* :lipstick: Remove clipboard display from Main Window (keep in Sidebar only) by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3492
+* :lipstick: Remove Central Search Window implementation by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3493
+* :hammer: Merge i18n update and sort logic into single script by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3495
+* :bug: Resolve token refresh freeze and progress bar issues by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3497
+* :sparkles: Make Server interface async and improve shutdown handling by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3499
+* :bookmark: Update version to 1.2.5 by @guiyanakuang in https://github.com/CrossPaste/crosspaste-desktop/pull/3502
+
+
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.4.1778...1.2.5.1787
+
 # [1.2.4] - 2025-12-16
 # Highlights 🌟
 
