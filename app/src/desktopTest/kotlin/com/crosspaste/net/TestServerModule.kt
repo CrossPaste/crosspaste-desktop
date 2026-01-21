@@ -46,7 +46,7 @@ class TestServerModule(
                     syncApi,
                     syncInfoFactory,
                     syncRoutingApi,
-                ) {
+                ) { _, _ ->
                 }
             }
         }

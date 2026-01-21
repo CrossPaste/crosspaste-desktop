@@ -19,6 +19,13 @@ class TestSyncRoutingApi : SyncRoutingApi {
         this.syncInfo = syncInfo
     }
 
+    override fun trustSyncInfo(
+        syncInfo: SyncInfo,
+        host: String?,
+    ) {
+        this.syncInfo = syncInfo
+    }
+
     override fun removeSyncHandler(appInstanceId: String) {
         innerSyncHandlers.remove(appInstanceId)
     }
