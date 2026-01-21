@@ -79,7 +79,14 @@ fun CustomTextField(
         enabled = enabled,
         readOnly = readOnly,
         textStyle = mergedTextStyle,
-        cursorBrush = SolidColor(colors.cursorColor(isError)),
+        cursorBrush =
+            SolidColor(
+                if (isError) {
+                    colors.errorCursorColor
+                } else {
+                    colors.cursorColor
+                },
+            ),
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
