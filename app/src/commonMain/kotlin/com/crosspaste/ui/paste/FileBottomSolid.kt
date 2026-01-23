@@ -45,7 +45,7 @@ fun getFileDisplayInfo(
         return FileDisplayInfo(title, copywriter.getText("folder"))
     }
 
-    val subtitle = getFileUtils().formatBytes(file.toFile().length())
+    val subtitle = getFileUtils().formatBytes(getFileUtils().getFileSize(file))
     return FileDisplayInfo(title, subtitle)
 }
 
