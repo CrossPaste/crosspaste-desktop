@@ -60,6 +60,21 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
+    @Suppress("unused")
+    fun getNoDeletePasteDataFlow(id: Long): Flow<PasteData?> {
+        return pasteDatabaseQueries.getPasteData(
+            id,
+            listOf(PasteState.LOADING.toLong(), PasteState.LOADED.toLong()),
+            PasteData::mapper,
+        ).asFlow()
+            .map { it.executeAsOneOrNull() }
+            .catch { e ->
+                logger.error(e) { "Error executing getNoDeletePasteDataFlow query: ${e.message}" }
+                emit(null)
+            }
+            .flowOn(ioDispatcher)
+    }
+
     suspend fun getNoDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
         getNoDeletePasteDataBlock(id)
     }
@@ -174,6 +189,7 @@ class PasteDao(
         pasteDatabaseQueries.deletePasteData(listOf(id))
     }
 
+    @Suppress("unused")
     fun getPasteDataFlow(limit: Long): Flow<List<PasteData>> {
         return pasteDatabaseQueries.getPasteDataListLimit(limit, PasteData::mapper)
             .asFlow()
