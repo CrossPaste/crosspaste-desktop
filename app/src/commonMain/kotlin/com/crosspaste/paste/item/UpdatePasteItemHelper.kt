@@ -36,6 +36,36 @@ class UpdatePasteItemHelper(
             }
     }
 
+    suspend fun updateHtml(
+        pasteData: PasteData,
+        newHtml: String,
+        backgroundColor: Int? = null,
+        htmlPasteItem: HtmlPasteItem,
+    ): Result<HtmlPasteItem> {
+        var newPasteItem = htmlPasteItem.copy(newHtml)
+
+        if (backgroundColor != null) {
+            newPasteItem =
+                newPasteItem.copy {
+                    put(PasteItemProperties.BACKGROUND, backgroundColor)
+                } as HtmlPasteItem
+        }
+
+        return pasteDao
+            .updatePasteAppearItem(
+                id = pasteData.id,
+                pasteItem = newPasteItem,
+                pasteSearchContent =
+                    searchContentService.createSearchContent(
+                        pasteData.source,
+                        newPasteItem.getSearchContent(),
+                    ),
+                addedSize = newPasteItem.size - htmlPasteItem.size,
+            ).map {
+                newPasteItem
+            }
+    }
+
     suspend fun updateText(
         pasteData: PasteData,
         newText: String,
