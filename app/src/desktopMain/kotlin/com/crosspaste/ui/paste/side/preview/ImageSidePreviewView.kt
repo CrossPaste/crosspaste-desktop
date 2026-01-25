@@ -2,6 +2,7 @@ package com.crosspaste.ui.paste.side.preview
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -48,6 +49,7 @@ import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 import java.awt.image.BufferedImage
@@ -94,23 +96,14 @@ fun PasteDataScope.ImageSidePreviewView() {
         value = imageHandler.readSize(imagePath)
     }
 
-    val fileSize by produceState<Long>(
+    val fileSize by produceState(
         initialValue = 0L,
         key1 = imagePath,
     ) {
         value = fileUtils.getFileSize(imagePath)
     }
 
-    val fileFormat =
-        remember(imagePath) {
-            val fileName = imagePath.name
-            val dotIndex = fileName.lastIndexOf('.')
-            if (dotIndex != -1) {
-                fileName.substring(dotIndex + 1)
-            } else {
-                null
-            }
-        }
+    val fileFormat = remember(imagePath) { imagePath.extension }
 
     SidePasteLayoutView(
         pasteBottomContent = {},
@@ -179,7 +172,7 @@ fun PasteDataScope.ImageSidePreviewView() {
                 },
             )
 
-            Row(
+            FlowRow(
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
