@@ -105,7 +105,7 @@ class SyncClientApi(
                 trustRequest,
                 typeInfo<TrustRequest>(),
                 headersBuilder = {
-                    append("host", host)
+                    append("crosspaste-host", host)
                 },
                 urlBuilder = {
                     toUrl()
