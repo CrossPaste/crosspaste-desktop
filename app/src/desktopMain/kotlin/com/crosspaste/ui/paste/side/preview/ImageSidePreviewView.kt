@@ -103,7 +103,7 @@ fun PasteDataScope.ImageSidePreviewView() {
         value = fileUtils.getFileSize(imagePath)
     }
 
-    val fileFormat = imagePath.extension
+    val fileFormat = remember(imagePath) { imagePath.extension }
 
     SidePasteLayoutView(
         pasteBottomContent = {},
