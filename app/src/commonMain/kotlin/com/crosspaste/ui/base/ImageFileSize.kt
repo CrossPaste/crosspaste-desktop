@@ -2,19 +2,22 @@ package com.crosspaste.ui.base
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.IntSize
+import com.crosspaste.utils.getFileUtils
 
 @Composable
-fun ImageResolution(
-    imageSize: IntSize?,
+fun ImageFileSize(
+    fileSize: Long,
     modifier: Modifier = Modifier,
 ) {
-    if (imageSize == null || imageSize.width <= 0 || imageSize.height <= 0) {
+    if (fileSize <= 0) {
         return
     }
 
+    val fileUtils = getFileUtils()
+    val formattedSize = fileUtils.formatBytes(fileSize)
+
     ImageInfoLabel(
-        text = "${imageSize.width} × ${imageSize.height}",
+        text = formattedSize,
         modifier = modifier,
     )
 }
