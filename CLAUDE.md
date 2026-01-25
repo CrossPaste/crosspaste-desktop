@@ -80,6 +80,7 @@ SQLDelight manages database schema in `.sq` files:
 - **Code formatting**: Enforced via ktlint with exclusions for generated code
 - **Package structure**: Organized by feature domain under `com.crosspaste`
 - **Platform files**: Use `.desktop.kt` suffix for platform-specific implementations
+- **Utility usage**: Always check `com.crosspaste.utils` and prefer existing utility classes (e.g., FileUtils, DateUtils, StringUtils) instead of implementing new ones.
 
 ## Key Technical Details
 
