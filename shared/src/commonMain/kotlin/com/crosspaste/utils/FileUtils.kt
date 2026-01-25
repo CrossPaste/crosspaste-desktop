@@ -50,7 +50,7 @@ interface FileUtils {
     val fileBufferSize: Int
 
     fun formatBytes(bytesSize: Long): String {
-        if (bytesSize < 1024) return "$bytesSize B"
+        if (bytesSize < 1024) return "$bytesSize $B"
         var value = bytesSize.toDouble()
         var unitIndex = 0
         while (value >= 1024 && unitIndex < UNITS.size - 1) {
@@ -64,10 +64,11 @@ interface FileUtils {
 
     private fun formatDecimal(value: Double): String {
         val rounded = (value * 10).toLong() / 10.0
-        return if (rounded == rounded.toLong().toDouble()) {
-            rounded.toLong().toString()
+        val roundedLong = rounded.toLong()
+        return if (rounded == roundedLong.toDouble()) {
+            roundedLong.toString()
         } else {
-            "${rounded.toLong() / 10}.${(rounded.toLong() % 10)}"
+            rounded.toString()
         }
     }
 
