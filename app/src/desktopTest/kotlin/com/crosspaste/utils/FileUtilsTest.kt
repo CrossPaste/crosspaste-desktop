@@ -112,6 +112,18 @@ class FileUtilsTest {
         assertEquals("Move me", destFile.toFile().readText())
     }
 
+    @Test
+    fun testFormatBytes() {
+        assertEquals("500 B", fileUtils.formatBytes(500))
+        assertEquals("1023 B", fileUtils.formatBytes(1023))
+        assertEquals("1 KB", fileUtils.formatBytes(1024))
+        assertEquals("1.5 KB", fileUtils.formatBytes(1536))
+        assertEquals("1 MB", fileUtils.formatBytes(1024 * 1024))
+        // Verify the bug reported by user: 1863330 should be 1.7 MB (1863330 / 1024 / 1024 = 1.777)
+        assertEquals("1.7 MB", fileUtils.formatBytes(1863330))
+        assertEquals("1 GB", fileUtils.formatBytes(1024L * 1024 * 1024))
+    }
+
     @AfterAll
     fun cleanup() {
         tempDir.toFile().deleteRecursively()
