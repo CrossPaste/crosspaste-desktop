@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +43,7 @@ import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import org.koin.compose.koinInject
 import java.awt.image.BufferedImage
@@ -154,11 +156,13 @@ fun PasteDataScope.ImageSidePreviewView() {
                 },
             )
 
-            intSize?.let {
-                if (it.width > 0 && it.height > 0) {
-                    ImageResolution(it)
-                }
-            }
+            ImageResolution(
+                imageSize = intSize,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = small2X),
+            )
         }
     }
 }
