@@ -165,7 +165,7 @@ fun Routing.syncRouting(
                         ),
                 )
             }.onSuccess { trustResponse ->
-                val host = call.request.headers["host"]
+                val host = call.request.headers["crosspaste-host"]
                 trustSyncInfo(appInstanceId, host)
                 successResponse(call, trustResponse)
             }.onFailure {
