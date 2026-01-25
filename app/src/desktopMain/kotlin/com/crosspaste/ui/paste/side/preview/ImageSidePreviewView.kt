@@ -38,6 +38,8 @@ import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.ImageResolution
+import com.crosspaste.ui.base.ImageFileSize
+import com.crosspaste.ui.base.ImageFileFormat
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.imageSlash
@@ -45,6 +47,8 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.utils.getFileUtils
 import org.koin.compose.koinInject
 import java.awt.image.BufferedImage
 
@@ -54,6 +58,7 @@ fun PasteDataScope.ImageSidePreviewView() {
     val imageHandler = koinInject<ImageHandler<BufferedImage>>()
     val platformContext = koinInject<PlatformContext>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val fileUtils = remember { getFileUtils() }
 
     val smartImageDisplayStrategy = remember { SmartImageDisplayStrategy() }
 
@@ -87,6 +92,23 @@ fun PasteDataScope.ImageSidePreviewView() {
         key1 = imagePath,
     ) {
         value = imageHandler.readSize(imagePath)
+    }
+
+    val fileSize by produceState<Long>(
+        initialValue = 0L,
+        key1 = imagePath,
+    ) {
+        value = fileUtils.getFileSize(imagePath)
+    }
+
+    val fileFormat = remember(imagePath) {
+        val fileName = imagePath.name
+        val dotIndex = fileName.lastIndexOf('.')
+        if (dotIndex != -1) {
+            fileName.substring(dotIndex + 1)
+        } else {
+            null
+        }
     }
 
     SidePasteLayoutView(
@@ -156,13 +178,17 @@ fun PasteDataScope.ImageSidePreviewView() {
                 },
             )
 
-            ImageResolution(
-                imageSize = intSize,
+            Row(
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = small2X),
-            )
+                horizontalArrangement = Arrangement.spacedBy(tiny3X),
+            ) {
+                ImageFileFormat(format = fileFormat)
+                ImageResolution(imageSize = intSize)
+                ImageFileSize(fileSize = fileSize)
+            }
         }
     }
 }
