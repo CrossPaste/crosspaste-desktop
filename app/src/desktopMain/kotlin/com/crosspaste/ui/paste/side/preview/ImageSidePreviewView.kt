@@ -37,9 +37,9 @@ import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
-import com.crosspaste.ui.base.ImageResolution
-import com.crosspaste.ui.base.ImageFileSize
 import com.crosspaste.ui.base.ImageFileFormat
+import com.crosspaste.ui.base.ImageFileSize
+import com.crosspaste.ui.base.ImageResolution
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.base.imageSlash
@@ -101,15 +101,16 @@ fun PasteDataScope.ImageSidePreviewView() {
         value = fileUtils.getFileSize(imagePath)
     }
 
-    val fileFormat = remember(imagePath) {
-        val fileName = imagePath.name
-        val dotIndex = fileName.lastIndexOf('.')
-        if (dotIndex != -1) {
-            fileName.substring(dotIndex + 1)
-        } else {
-            null
+    val fileFormat =
+        remember(imagePath) {
+            val fileName = imagePath.name
+            val dotIndex = fileName.lastIndexOf('.')
+            if (dotIndex != -1) {
+                fileName.substring(dotIndex + 1)
+            } else {
+                null
+            }
         }
-    }
 
     SidePasteLayoutView(
         pasteBottomContent = {},
