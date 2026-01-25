@@ -178,6 +178,7 @@ fun PasteDataScope.ImageSidePreviewView() {
                         .align(Alignment.BottomCenter)
                         .padding(bottom = small2X),
                 horizontalArrangement = Arrangement.spacedBy(tiny3X),
+                verticalArrangement = Arrangement.spacedBy(tiny3X),
             ) {
                 ImageFileFormat(format = fileFormat)
                 ImageResolution(imageSize = intSize)
