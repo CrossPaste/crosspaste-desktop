@@ -1,5 +1,5 @@
 [versions]
-atomicfu = "0.29.0"
+atomicfu = "0.31.0"
 awesome-brans = "2.2.1"
 caffeine = "3.2.3"
 coil = "3.3.0"
