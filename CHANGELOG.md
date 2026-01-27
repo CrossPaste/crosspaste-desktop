@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.2.7] - 2026-01-25
+## 🚀 v1.2.7 - Emergency Hotfix
+
+This release addresses a critical issue where devices were unable to connect or sync due to an incorrectly configured HTTP header.
+
+### ⚠️ Critical Fixes
+* **Connection Failure**: Removed manually set `Host` reserved header which caused communication timeouts in certain network environments. ([#3691](https://github.com/CrossPaste/crosspaste-desktop/pull/3691))
+
+### 📝 Other Improvements
+* **Compatibility**: Fixed `cursorColor` method for better Android compatibility. ([#3681](https://github.com/CrossPaste/crosspaste-desktop/pull/3681))
+* **UI**: Fixed `FileBottomSolid` size calculation logic. ([#3686](https://github.com/CrossPaste/crosspaste-desktop/pull/3686))
+* **Internal**: New `getNoDeletePasteDataFlow` for better multiplatform data handling. ([#3688](https://github.com/CrossPaste/crosspaste-desktop/pull/3688))
+
+---
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.6.1876...1.2.7.1883
+
 # [1.2.6] - 2026-01-21
 # Highlights 🌟
 
