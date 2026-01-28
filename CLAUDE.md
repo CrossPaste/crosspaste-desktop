@@ -88,3 +88,28 @@ SQLDelight manages database schema in `.sq` files:
 - **Discovery**: mDNS/Bonjour for local network device discovery
 - **Storage**: Local-only architecture with no cloud dependencies
 - **Performance**: Coroutines for async operations, caching for clipboard history
+
+## Commit Message Convention
+Format: `<emoji code> <description>`
+
+Types:
+- :sparkles: new feature
+- :bug: Bug fix
+- :hammer: Refactoring
+- :memo: docs
+- :art: code style
+- :zap: performance
+- :white_check_mark: test
+- :construction_worker: build/ci
+- :heavy_plus_sign: add dependency
+- :heavy_minus_sign: remove dependency
+- :arrow_up: dependency upgrade
+- :arrow_down: dependency downgrade
+
+Examples from this project:
+- :sparkles: add OCR support for images
+- :bug: resolve navigation crash on back press
+- :hammer: extract SwipeableDeviceRow component
+- :construction_worker: bump kotlin to 2.0.0
+
+Language: English for commit messages

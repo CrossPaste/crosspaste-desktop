@@ -26,3 +26,4 @@ app/jbr/
 logs/
 node_modules/
 output*/
+/.claude/commands/
