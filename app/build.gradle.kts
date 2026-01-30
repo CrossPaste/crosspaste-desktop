@@ -526,9 +526,13 @@ afterEvaluate {
 
 // region Work around temporary Compose bugs.
 configurations.all {
-    attributes {
-        // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
-        attribute(Attribute.of("ui", String::class.java), "awt")
+    // Check if the configuration is either Resolvable or Consumable
+    // In Gradle 9, only these types allow attribute modification
+    if (isCanBeResolved || isCanBeConsumed) {
+        attributes {
+            // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
+            attribute(Attribute.of("ui", String::class.java), "awt")
+        }
     }
 }
 
