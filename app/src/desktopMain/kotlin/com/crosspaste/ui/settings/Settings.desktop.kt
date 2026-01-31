@@ -252,7 +252,6 @@ actual fun <T> SegmentedControlSettingsRow(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f),
         ) {
             if (icon != null) {
                 Icon(
@@ -266,11 +265,13 @@ actual fun <T> SegmentedControlSettingsRow(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
             )
+            Spacer(Modifier.width(medium))
         }
 
         SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.widthIn(max = 280.dp),
+            modifier = Modifier.weight(1f),
         ) {
             options.forEachIndexed { index, item ->
                 SegmentedButton(
