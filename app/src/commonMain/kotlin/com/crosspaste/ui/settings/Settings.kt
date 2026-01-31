@@ -99,40 +99,11 @@ fun <T> SegmentedControlSettingsRow(
     onOptionSelected: (Int, T) -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    twoLine: Boolean = false,
     optionLabel: (T) -> String = { it.toString() },
 ) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .height(huge)
-                .padding(horizontal = medium),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.width(medium))
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-            )
-            Spacer(Modifier.width(medium))
-        }
-
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.weight(1f),
-        ) {
+    val segmentedRow: @Composable () -> Unit = {
+        SingleChoiceSegmentedButtonRow {
             options.forEachIndexed { index, item ->
                 SegmentedButton(
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
@@ -146,6 +117,84 @@ fun <T> SegmentedControlSettingsRow(
                         )
                     },
                 )
+            }
+        }
+    }
+
+    if (twoLine) {
+        Column(
+            modifier = modifier.fillMaxWidth().padding(medium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(medium))
+                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+            }
+            Spacer(Modifier.height(medium))
+            segmentedRow()
+        }
+    } else {
+        Row(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .height(huge)
+                    .padding(horizontal = medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(medium))
+                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+                Spacer(Modifier.width(medium))
+            }
+
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier.weight(1f),
+            ) {
+                options.forEachIndexed { index, item ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                        onClick = { onOptionSelected(index, item) },
+                        selected = index == selectedOptionIndex,
+                        label = {
+                            Text(
+                                text = optionLabel(item),
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                            )
+                        },
+                    )
+                }
             }
         }
     }
