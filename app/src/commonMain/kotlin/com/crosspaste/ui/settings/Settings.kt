@@ -97,8 +97,8 @@ fun <T> SegmentedControlSettingsRow(
     options: List<T>,
     selectedOptionIndex: Int,
     onOptionSelected: (Int, T) -> Unit,
-    modifier: Modifier,
-    icon: ImageVector?,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     optionLabel: (T) -> String = { it.toString() },
 ) {
     Row(
