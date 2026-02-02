@@ -46,13 +46,4 @@ object CrossPasteTheme {
             }
         }
     }
-
-    fun getThemeColor(name: String): ThemeColor =
-        when (name) {
-            CoralColor.name -> CoralColor
-            GrassColor.name -> GrassColor
-            HoneyColor.name -> HoneyColor
-            SeaColor.name -> SeaColor
-            else -> GrassColor
-        }
 }
