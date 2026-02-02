@@ -35,7 +35,7 @@ fun MainSettingsContentView() {
         SettingListSwitchItem(
             title = "launch_at_startup",
             icon = Icons.Default.RocketLaunch,
-            checked = config.enablePasteboardListening,
+            checked = config.enableAutoStartUp,
         ) {
             configManager.updateConfig("enableAutoStartUp", it)
         }
