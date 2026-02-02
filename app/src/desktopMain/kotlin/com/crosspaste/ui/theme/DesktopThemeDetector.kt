@@ -67,5 +67,4 @@ class DesktopThemeDetector(
             listOf(isFollowSystem, isUserInDark),
         )
     }
-
 }
