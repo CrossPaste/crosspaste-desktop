@@ -74,6 +74,7 @@ data class ThemeExt(
     val colorPasteTypeExt: PasteTypeExt,
     val htmlPasteTypeExt: PasteTypeExt,
     val rtfPasteTypeExt: PasteTypeExt,
+    val mutedText: Color,
 ) {
     companion object {
         private val COLOR_SUCCESS = Color(0xFF2E7D32)
@@ -112,6 +113,8 @@ data class ThemeExt(
                     if (isDark) PasteTypeExt.DARK_HTML_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_HTML_PASTE_TYPE_EXT,
                 rtfPasteTypeExt =
                     if (isDark) PasteTypeExt.DARK_RTF_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_RTF_PASTE_TYPE_EXT,
+                mutedText =
+                    if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280),
             )
         }
     }
