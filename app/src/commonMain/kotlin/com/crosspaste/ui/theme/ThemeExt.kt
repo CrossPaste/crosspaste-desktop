@@ -2,6 +2,7 @@ package com.crosspaste.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import com.crosspaste.paste.PasteTypeExt
 import com.materialkolor.ktx.harmonize
 import com.materialkolor.ktx.toneColor
 import com.materialkolor.palettes.TonalPalette
@@ -66,6 +67,13 @@ data class ThemeExt(
     val neutral: SemanticColorGroup,
     val warning: SemanticColorGroup,
     val special: SemanticColorGroup,
+    val textPasteTypeExt: PasteTypeExt,
+    val imagePasteTypeExt: PasteTypeExt,
+    val filePasteTypeExt: PasteTypeExt,
+    val urlPasteTypeExt: PasteTypeExt,
+    val colorPasteTypeExt: PasteTypeExt,
+    val htmlPasteTypeExt: PasteTypeExt,
+    val rtfPasteTypeExt: PasteTypeExt,
 ) {
     companion object {
         private val COLOR_SUCCESS = Color(0xFF2E7D32)
@@ -90,6 +98,20 @@ data class ThemeExt(
                 neutral = createGroup(COLOR_NEUTRAL, SemanticColorPolicy.Dynamic),
                 warning = createGroup(COLOR_WARNING, SemanticColorPolicy.FixedHue, isWarning = true),
                 special = createGroup(COLOR_SPECIAL, SemanticColorPolicy.Dynamic),
+                textPasteTypeExt =
+                    if (isDark) PasteTypeExt.DARK_TEXT_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_TEXT_PASTE_TYPE_EXT,
+                imagePasteTypeExt =
+                    if (isDark) PasteTypeExt.DARK_IMAGE_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_IMAGE_PASTE_TYPE_EXT,
+                filePasteTypeExt =
+                    if (isDark) PasteTypeExt.DARK_FILE_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_FILE_PASTE_TYPE_EXT,
+                urlPasteTypeExt =
+                    if (isDark) PasteTypeExt.DARK_URL_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_URL_PASTE_TYPE_EXT,
+                colorPasteTypeExt =
+                    if (isDark) PasteTypeExt.DARK_COLOR_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_COLOR_PASTE_TYPE_EXT,
+                htmlPasteTypeExt =
+                    if (isDark) PasteTypeExt.DARK_HTML_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_HTML_PASTE_TYPE_EXT,
+                rtfPasteTypeExt =
+                    if (isDark) PasteTypeExt.DARK_RTF_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_RTF_PASTE_TYPE_EXT,
             )
         }
     }
