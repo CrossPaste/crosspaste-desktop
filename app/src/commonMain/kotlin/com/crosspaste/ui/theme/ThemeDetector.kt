@@ -13,8 +13,6 @@ interface ThemeDetector {
         isFollowSystem: Boolean,
         isUserInDark: Boolean = false,
     )
-
-    fun setThemeColor(themeColor: ThemeColor)
 }
 
 data class ThemeState(

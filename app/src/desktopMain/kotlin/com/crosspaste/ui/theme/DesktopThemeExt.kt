@@ -76,7 +76,7 @@ private fun SemanticColorsPreviewContent(
 @Preview
 @Composable
 private fun SemanticColorsLightPreview() {
-    val lightScheme = SeaColor.lightColorScheme
+    val lightScheme = CrossPasteColor.lightColorScheme
     MaterialTheme(colorScheme = lightScheme) {
         SemanticColorsPreviewContent(primary = lightScheme.primary, isDark = false)
     }
@@ -85,7 +85,7 @@ private fun SemanticColorsLightPreview() {
 @Preview
 @Composable
 private fun SemanticColorsDarkPreview() {
-    val darkScheme = SeaColor.darkColorScheme
+    val darkScheme = CrossPasteColor.darkColorScheme
     MaterialTheme(colorScheme = darkScheme) {
         SemanticColorsPreviewContent(primary = darkScheme.primary, isDark = true)
     }

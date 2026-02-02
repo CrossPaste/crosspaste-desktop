@@ -16,7 +16,7 @@ class DesktopThemeDetector(
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher),
 ) : ThemeDetector {
 
-    private val initialThemeColor = CrossPasteTheme.getThemeColor(configManager.getCurrentConfig().themeColor)
+    private val initialThemeColor = CrossPasteColor
     private val initialFollowSystem = configManager.getCurrentConfig().isFollowSystemTheme
     private val initialIsDarkTheme = configManager.getCurrentConfig().isDarkTheme
 
@@ -66,10 +66,5 @@ class DesktopThemeDetector(
             listOf("isFollowSystemTheme", "isDarkTheme"),
             listOf(isFollowSystem, isUserInDark),
         )
-    }
-
-    override fun setThemeColor(themeColor: ThemeColor) {
-        _themeColor.value = themeColor
-        configManager.updateConfig("themeColor", themeColor.name)
     }
 }
