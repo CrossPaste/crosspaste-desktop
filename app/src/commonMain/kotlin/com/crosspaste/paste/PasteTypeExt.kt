@@ -8,8 +8,10 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.TextFields
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.crosspaste.ui.LocalThemeExtState
 
 data class PasteTypeExt(
     val imageVector: ImageVector,
@@ -114,5 +116,20 @@ data class PasteTypeExt(
                 color = Color(0xFF22D3EE),
                 bgColor = Color(0xFF164E63),
             )
+    }
+}
+
+@Composable
+fun PasteType.getPasteTypeExt(): PasteTypeExt {
+    val themeExt = LocalThemeExtState.current
+    return when (this) {
+        PasteType.TEXT_TYPE -> themeExt.textPasteTypeExt
+        PasteType.URL_TYPE -> themeExt.urlPasteTypeExt
+        PasteType.HTML_TYPE -> themeExt.htmlPasteTypeExt
+        PasteType.FILE_TYPE -> themeExt.filePasteTypeExt
+        PasteType.IMAGE_TYPE -> themeExt.imagePasteTypeExt
+        PasteType.RTF_TYPE -> themeExt.rtfPasteTypeExt
+        PasteType.COLOR_TYPE -> themeExt.colorPasteTypeExt
+        else -> themeExt.textPasteTypeExt
     }
 }
