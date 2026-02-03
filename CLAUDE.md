@@ -89,6 +89,10 @@ SQLDelight manages database schema in `.sq` files:
 - **Storage**: Local-only architecture with no cloud dependencies
 - **Performance**: Coroutines for async operations, caching for clipboard history
 
+## Code Formatting
+
+Before attempting to compile or build the project, always run `./gradlew ktlintFormat` first. If the command fails with errors, investigate and fix the issues. If it succeeds and modifies files, understand that the changes are purely stylistic and semantically equivalent to the original code — do not treat reformatted code as something that needs review or further modification.
+
 ## Commit Message Convention
 Format: `<emoji code> <description>`
 
