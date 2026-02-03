@@ -29,9 +29,7 @@ object CrossPasteTheme {
             themeDetector.setSystemInDark(isSystemInDark)
         }
 
-        val primary = themeState.colorScheme.primary
-
-        val themeExt = ThemeExt.buildThemeExt(primary, themeState.isCurrentThemeDark)
+        val themeExt = ThemeExt.buildThemeExt(themeState.isCurrentThemeDark)
 
         CompositionLocalProvider(LocalThemeExtState provides themeExt) {
             MaterialTheme(
