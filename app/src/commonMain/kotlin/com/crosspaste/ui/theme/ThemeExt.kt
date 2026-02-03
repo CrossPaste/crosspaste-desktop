@@ -8,7 +8,6 @@ data class ThemeExt(
     val info: SemanticColorGroup,
     val neutral: SemanticColorGroup,
     val warning: SemanticColorGroup,
-    val special: SemanticColorGroup,
     val textPasteTypeExt: PasteTypeExt,
     val imagePasteTypeExt: PasteTypeExt,
     val filePasteTypeExt: PasteTypeExt,
@@ -19,28 +18,16 @@ data class ThemeExt(
     val mutedText: Color,
 ) {
     companion object {
-        private val COLOR_SUCCESS = Color(0xFF2E7D32)
-        private val COLOR_INFO = Color(0xFF0288D1)
-        private val COLOR_NEUTRAL = Color(0xFF747775)
-        private val COLOR_WARNING = Color(0xFFFBC02D)
-        private val COLOR_SPECIAL = Color(0xFF6750A4)
-
-        fun buildThemeExt(
-            primary: Color,
-            isDark: Boolean,
-        ): ThemeExt {
-            fun createGroup(
-                source: Color,
-                policy: SemanticColorPolicy,
-                isWarning: Boolean = false,
-            ) = SemanticColorGroup.create(source, primary, isDark, policy, isWarning)
-
-            return ThemeExt(
-                success = createGroup(COLOR_SUCCESS, SemanticColorPolicy.Dynamic),
-                info = createGroup(COLOR_INFO, SemanticColorPolicy.Dynamic),
-                neutral = createGroup(COLOR_NEUTRAL, SemanticColorPolicy.Dynamic),
-                warning = createGroup(COLOR_WARNING, SemanticColorPolicy.FixedHue, isWarning = true),
-                special = createGroup(COLOR_SPECIAL, SemanticColorPolicy.Dynamic),
+        fun buildThemeExt(isDark: Boolean): ThemeExt =
+            ThemeExt(
+                success =
+                    if (isDark) SemanticColorGroup.DARK_SUCCESS else SemanticColorGroup.LIGHT_SUCCESS,
+                info =
+                    if (isDark) SemanticColorGroup.DARK_INFO else SemanticColorGroup.LIGHT_INFO,
+                neutral =
+                    if (isDark) SemanticColorGroup.DARK_NEUTRAL else SemanticColorGroup.LIGHT_NEUTRAL,
+                warning =
+                    if (isDark) SemanticColorGroup.DARK_WARNING else SemanticColorGroup.LIGHT_WARNING,
                 textPasteTypeExt =
                     if (isDark) PasteTypeExt.DARK_TEXT_PASTE_TYPE_EXT else PasteTypeExt.LIGHT_TEXT_PASTE_TYPE_EXT,
                 imagePasteTypeExt =
@@ -58,6 +45,5 @@ data class ThemeExt(
                 mutedText =
                     if (isDark) Color(0xFF9CA3AF) else Color(0xFF6B7280),
             )
-        }
     }
 }

@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -52,11 +51,8 @@ private fun SemanticColorRow(
 }
 
 @Composable
-private fun SemanticColorsPreviewContent(
-    primary: Color,
-    isDark: Boolean,
-) {
-    val ext = ThemeExt.buildThemeExt(primary = primary, isDark = isDark)
+private fun SemanticColorsPreviewContent(isDark: Boolean) {
+    val ext = ThemeExt.buildThemeExt(isDark = isDark)
     Column(
         modifier =
             Modifier
@@ -69,7 +65,6 @@ private fun SemanticColorsPreviewContent(
         SemanticColorRow("Info", ext.info)
         SemanticColorRow("Warning", ext.warning)
         SemanticColorRow("Neutral", ext.neutral)
-        SemanticColorRow("Special", ext.special)
     }
 }
 
@@ -78,7 +73,7 @@ private fun SemanticColorsPreviewContent(
 private fun SemanticColorsLightPreview() {
     val lightScheme = CrossPasteColor.lightColorScheme
     MaterialTheme(colorScheme = lightScheme) {
-        SemanticColorsPreviewContent(primary = lightScheme.primary, isDark = false)
+        SemanticColorsPreviewContent(isDark = false)
     }
 }
 
@@ -87,6 +82,6 @@ private fun SemanticColorsLightPreview() {
 private fun SemanticColorsDarkPreview() {
     val darkScheme = CrossPasteColor.darkColorScheme
     MaterialTheme(colorScheme = darkScheme) {
-        SemanticColorsPreviewContent(primary = darkScheme.primary, isDark = true)
+        SemanticColorsPreviewContent(isDark = true)
     }
 }

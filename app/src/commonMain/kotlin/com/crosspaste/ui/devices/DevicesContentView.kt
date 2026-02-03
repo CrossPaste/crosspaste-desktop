@@ -27,6 +27,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -73,8 +74,8 @@ fun DevicesContentView() {
                 onClick = {
                     showAddDeviceDialog = true
                 },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                containerColor = LocalThemeExtState.current.success.surface,
+                contentColor = LocalThemeExtState.current.success.onContainer,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(copywriter.getText("add_device_manually")) },
             )
