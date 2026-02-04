@@ -2,6 +2,8 @@ package com.crosspaste.task
 
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.AppConfig
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
@@ -15,6 +17,7 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.net.filter
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteType
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.HostAndPort
@@ -32,6 +35,7 @@ import kotlin.collections.filter
 class SyncPasteTaskExecutor(
     private val appControl: AppControl,
     private val appInfo: AppInfo,
+    private val configManager: CommonConfigManager,
     private val pasteDao: PasteDao,
     private val pasteClientApi: PasteClientApi,
     private val syncManager: SyncManager,
@@ -53,12 +57,39 @@ class SyncPasteTaskExecutor(
         }
 
         return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
+            // Check if sync is enabled for this paste type
+            if (!isSyncEnabledForPasteType(pasteData)) {
+                logger.debug { "Sync disabled for paste type: ${pasteData.getType().name}" }
+                return@let createEmptyResult(syncExtraInfo)
+            }
+
             val syncResults = executeSyncTasks(pasteData, syncExtraInfo)
             processResults(syncResults, syncExtraInfo, pasteTask.modifyTime)
         } ?: run {
             createEmptyResult(syncExtraInfo)
         }
     }
+
+    private fun isSyncEnabledForPasteType(pasteData: PasteData): Boolean {
+        val config = configManager.config.value
+        val pasteType = pasteData.getType()
+        return isSyncEnabledForType(config, pasteType)
+    }
+
+    private fun isSyncEnabledForType(
+        config: AppConfig,
+        pasteType: PasteType,
+    ): Boolean =
+        when (pasteType) {
+            PasteType.TEXT_TYPE -> config.enableSyncText
+            PasteType.URL_TYPE -> config.enableSyncUrl
+            PasteType.HTML_TYPE -> config.enableSyncHtml
+            PasteType.RTF_TYPE -> config.enableSyncRtf
+            PasteType.IMAGE_TYPE -> config.enableSyncImage
+            PasteType.FILE_TYPE -> config.enableSyncFile
+            PasteType.COLOR_TYPE -> config.enableSyncColor
+            else -> true
+        }
 
     private fun createEmptyResult(syncExtraInfo: SyncExtraInfo): PasteTaskResult {
         syncExtraInfo.syncFails.clear()

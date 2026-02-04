@@ -8,8 +8,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
+import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.filled.Cable
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material.icons.filled.WifiFind
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -29,6 +39,7 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -132,6 +143,106 @@ fun NetworkSettingsContentView() {
                         }
                     },
                 )
+            }
+        }
+
+        item {
+            SectionHeader("sync_settings", topPadding = medium)
+        }
+
+        item {
+            SettingSectionCard {
+                SettingListSwitchItem(
+                    title = "encrypted_sync",
+                    icon = Icons.Default.Shield,
+                    checked = config.enableEncryptSync,
+                ) {
+                    configManager.updateConfig("enableEncryptSync", it)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "sync_file_size_limit",
+                    icon = Icons.Default.SyncAlt,
+                    checked = config.enabledSyncFileSizeLimit,
+                ) { newEnabledSyncFileSizeLimit ->
+                    configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "max_sync_file_size",
+                    icon = Icons.AutoMirrored.Filled.InsertDriveFile,
+                    trailingContent = {
+                        Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
+                            it >= 0
+                        }) { currentMaxSyncFileSize ->
+                            configManager.updateConfig("maxSyncFileSize", currentMaxSyncFileSize)
+                        }
+                    },
+                )
+            }
+        }
+
+        item {
+            SectionHeader("sync_content_types", topPadding = medium)
+        }
+
+        item {
+            SettingSectionCard {
+                SettingListSwitchItem(
+                    title = "sync_text",
+                    icon = Icons.Outlined.TextFields,
+                    checked = config.enableSyncText,
+                ) { enableSyncText ->
+                    configManager.updateConfig("enableSyncText", enableSyncText)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "sync_url",
+                    icon = Icons.Outlined.Link,
+                    checked = config.enableSyncUrl,
+                ) { enableSyncUrl ->
+                    configManager.updateConfig("enableSyncUrl", enableSyncUrl)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "sync_html",
+                    icon = Icons.Outlined.Code,
+                    checked = config.enableSyncHtml,
+                ) { enableSyncHtml ->
+                    configManager.updateConfig("enableSyncHtml", enableSyncHtml)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "sync_rtf",
+                    icon = Icons.AutoMirrored.Outlined.Article,
+                    checked = config.enableSyncRtf,
+                ) { enableSyncRtf ->
+                    configManager.updateConfig("enableSyncRtf", enableSyncRtf)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "sync_image",
+                    icon = Icons.Outlined.Image,
+                    checked = config.enableSyncImage,
+                ) { enableSyncImage ->
+                    configManager.updateConfig("enableSyncImage", enableSyncImage)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "sync_file",
+                    icon = Icons.Outlined.Description,
+                    checked = config.enableSyncFile,
+                ) { enableSyncFile ->
+                    configManager.updateConfig("enableSyncFile", enableSyncFile)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "sync_color",
+                    icon = Icons.Outlined.Palette,
+                    checked = config.enableSyncColor,
+                ) { enableSyncColor ->
+                    configManager.updateConfig("enableSyncColor", enableSyncColor)
+                }
             }
         }
 

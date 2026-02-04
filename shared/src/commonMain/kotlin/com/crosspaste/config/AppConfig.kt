@@ -32,6 +32,15 @@ interface AppConfig {
     val pastePrimaryTypeOnly: Boolean
     val useNetworkInterfaces: String
 
+    // Sync content type controls
+    val enableSyncText: Boolean
+    val enableSyncUrl: Boolean
+    val enableSyncHtml: Boolean
+    val enableSyncRtf: Boolean
+    val enableSyncImage: Boolean
+    val enableSyncFile: Boolean
+    val enableSyncColor: Boolean
+
     fun copy(
         key: String,
         value: Any,

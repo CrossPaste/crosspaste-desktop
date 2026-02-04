@@ -48,6 +48,14 @@ data class DesktopAppConfig(
     val proxyPort: String = "7890",
     val showGrantAccessibility: Boolean = true,
     val enableClipboardRelay: Boolean = false,
+    // Sync content type controls
+    override val enableSyncText: Boolean = true,
+    override val enableSyncUrl: Boolean = true,
+    override val enableSyncHtml: Boolean = true,
+    override val enableSyncRtf: Boolean = true,
+    override val enableSyncImage: Boolean = true,
+    override val enableSyncFile: Boolean = true,
+    override val enableSyncColor: Boolean = true,
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -135,5 +143,12 @@ data class DesktopAppConfig(
             proxyHost = if (key == "proxyHost") toString(value) else proxyHost,
             proxyPort = if (key == "proxyPort") toString(value) else proxyPort,
             showGrantAccessibility = if (key == "showGrantAccessibility") toBoolean(value) else showGrantAccessibility,
+            enableSyncText = if (key == "enableSyncText") toBoolean(value) else enableSyncText,
+            enableSyncUrl = if (key == "enableSyncUrl") toBoolean(value) else enableSyncUrl,
+            enableSyncHtml = if (key == "enableSyncHtml") toBoolean(value) else enableSyncHtml,
+            enableSyncRtf = if (key == "enableSyncRtf") toBoolean(value) else enableSyncRtf,
+            enableSyncImage = if (key == "enableSyncImage") toBoolean(value) else enableSyncImage,
+            enableSyncFile = if (key == "enableSyncFile") toBoolean(value) else enableSyncFile,
+            enableSyncColor = if (key == "enableSyncColor") toBoolean(value) else enableSyncColor,
         )
 }
