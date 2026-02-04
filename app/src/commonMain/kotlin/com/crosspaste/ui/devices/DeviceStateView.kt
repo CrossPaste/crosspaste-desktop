@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Color
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.StateTagStyle
@@ -107,6 +108,35 @@ val refreshingStateStyle
             contentColor = MaterialTheme.colorScheme.onPrimary,
             icon = Icons.Default.Refresh,
         )
+
+@Composable
+fun PlatformScope.SyncStateColor(): Color =
+    if (this is DeviceScope) {
+        val state = syncRuntimeInfo.connectState
+        if (state == SyncState.CONNECTED) {
+            if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
+                LocalThemeExtState.current.success.color
+            } else if (syncRuntimeInfo.allowSend) {
+                LocalThemeExtState.current.info.color
+            } else if (syncRuntimeInfo.allowReceive) {
+                LocalThemeExtState.current.info.color
+            } else {
+                LocalThemeExtState.current.neutral.color
+            }
+        } else if (state == SyncState.DISCONNECTED) {
+            MaterialTheme.colorScheme.error
+        } else if (state == SyncState.UNMATCHED) {
+            LocalThemeExtState.current.warning.color
+        } else if (state == SyncState.UNVERIFIED) {
+            LocalThemeExtState.current.info.color
+        } else if (state == SyncState.INCOMPATIBLE) {
+            MaterialTheme.colorScheme.error
+        } else {
+            LocalThemeExtState.current.warning.color
+        }
+    } else {
+        LocalThemeExtState.current.info.color
+    }
 
 @Composable
 fun DeviceScope.SyncStateTag(refreshing: Boolean) {

@@ -11,11 +11,8 @@ fun DeviceScope.DeviceDetailHeaderView() {
     var refreshing by remember { mutableStateOf(false) }
     DeviceRowContent(
         style = myDeviceDetailStyle,
-        tagContent = { SyncStateTag(refreshing) },
         trailingContent = {
-            DeviceActionButton(refreshing) {
-                refreshing = it
-            }
+            SyncStateTag(refreshing)
         },
     )
 }

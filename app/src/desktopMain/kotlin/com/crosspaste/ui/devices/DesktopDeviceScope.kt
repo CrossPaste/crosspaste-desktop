@@ -29,14 +29,12 @@ class DesktopDeviceScope(
                 navigationManager.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
             },
             style = myDeviceStyle,
-            tagContent = {
-                SyncStateTag(refreshing)
-            },
             trailingContent = {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(tiny),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    SyncStateTag(refreshing)
                     DeviceActionButton(refreshing) {
                         refreshing = it
                     }

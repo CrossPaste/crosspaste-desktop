@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -45,7 +46,7 @@ fun NotFoundNearByDevices() {
                 imageVector = Icons.Outlined.WifiFind,
                 contentDescription = null,
                 modifier = Modifier.size(enormous),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                tint = LocalThemeExtState.current.info.container,
             )
             Spacer(modifier = Modifier.height(medium))
             Text(

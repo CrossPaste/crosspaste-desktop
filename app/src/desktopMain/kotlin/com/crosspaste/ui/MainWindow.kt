@@ -9,6 +9,7 @@ import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -19,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
@@ -102,7 +104,11 @@ fun MainWindow(windowIcon: Painter?) {
                                 Icons.Outlined.PushPin
                             },
                         desc = "always_on_top",
-                        iconColor = MaterialTheme.colorScheme.onSurface,
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
                         buttonSize = xxLarge,
                         iconSize = large2X,
                         shape = tiny2XRoundedCornerShape,

@@ -2,10 +2,8 @@ package com.crosspaste.ui.base
 
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,7 +18,6 @@ expect fun GeneralIconButton(
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     modifier: Modifier = Modifier,
     iconModifier: Modifier = Modifier,
-    iconColor: Color = LocalContentColor.current,
     buttonSize: Dp = xxLarge,
     iconSize: Dp = large,
     shape: Shape = IconButtonDefaults.standardShape,
@@ -34,7 +31,6 @@ expect fun GeneralIconButton(
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     modifier: Modifier = Modifier,
     iconModifier: Modifier = Modifier,
-    iconColor: Color = LocalContentColor.current,
     buttonSize: Dp = xxLarge,
     iconSize: Dp = large,
     shape: Shape = IconButtonDefaults.standardShape,

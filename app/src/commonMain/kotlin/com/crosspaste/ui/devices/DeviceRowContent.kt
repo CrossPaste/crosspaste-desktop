@@ -12,13 +12,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import com.crosspaste.ui.base.PlatformIcon
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
@@ -30,7 +31,6 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 fun PlatformScope.DeviceRowContent(
     style: DeviceStyle,
     onClick: (() -> Unit)? = null,
-    tagContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -78,7 +78,7 @@ fun PlatformScope.DeviceRowContent(
                     painter = PlatformIcon(platform),
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
-                    tint = style.iconContentColor,
+                    tint = SyncStateColor(),
                 )
             }
 
@@ -94,20 +94,20 @@ fun PlatformScope.DeviceRowContent(
                     Text(
                         modifier = Modifier.weight(1f, fill = false),
                         text = getDeviceDisplayName(),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = style.contentColor,
+                        color = style.titleColor,
                     )
-                    tagContent?.invoke()
                 }
 
                 Text(
                     text = "${platform.name} ${platform.version}",
+                    fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = style.contentColor.copy(alpha = 0.7f),
+                    color = style.subtitleColor,
                 )
             }
 
