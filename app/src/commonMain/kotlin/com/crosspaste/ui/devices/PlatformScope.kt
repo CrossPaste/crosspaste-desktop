@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 
@@ -22,7 +23,8 @@ data class DeviceStyle(
     val containerColor: Color,
     val contentColor: Color,
     val iconContainerColor: Color,
-    val iconContentColor: Color,
+    val titleColor: Color,
+    val subtitleColor: Color,
     val paddingValues: PaddingValues = PaddingValues(medium),
     val shape: Shape = mediumRoundedCornerShape,
     val isClickable: Boolean = true,
@@ -32,20 +34,22 @@ val myDeviceStyle: DeviceStyle
     @Composable @ReadOnlyComposable
     get() =
         DeviceStyle(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            iconContainerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
-            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconContainerColor = MaterialTheme.colorScheme.background,
+            titleColor = MaterialTheme.colorScheme.onBackground,
+            subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
 val myDeviceDetailStyle: DeviceStyle
     @Composable @ReadOnlyComposable
     get() =
         DeviceStyle(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            iconContainerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
-            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconContainerColor = MaterialTheme.colorScheme.background,
+            titleColor = MaterialTheme.colorScheme.onBackground,
+            subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant,
             isClickable = false,
         )
 
@@ -55,8 +59,9 @@ val tokenDeviceStyle: DeviceStyle
         DeviceStyle(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            iconContainerColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
-            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            iconContainerColor = MaterialTheme.colorScheme.background,
+            titleColor = MaterialTheme.colorScheme.onBackground,
+            subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant,
             paddingValues = PaddingValues(),
             shape = RectangleShape,
             isClickable = false,
@@ -67,7 +72,8 @@ val nearbyDeviceStyle: DeviceStyle
     get() =
         DeviceStyle(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            iconContainerColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
-            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            contentColor = LocalThemeExtState.current.info.color,
+            iconContainerColor = MaterialTheme.colorScheme.background,
+            titleColor = MaterialTheme.colorScheme.onBackground,
+            subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant,
         )

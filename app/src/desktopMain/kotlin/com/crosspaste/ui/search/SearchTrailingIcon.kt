@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButtonDefaults.iconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -97,7 +98,11 @@ fun SearchTrailingIcon() {
         GeneralIconButton(
             painter = if (searchBaseParams.sort) descSort() else ascSort(),
             desc = "sort_by_creation_time",
-            iconColor = MaterialTheme.colorScheme.primary,
+            colors =
+                iconButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ),
             shape = tiny2XRoundedCornerShape,
         ) {
             pasteSearchViewModel.switchSort()
@@ -106,7 +111,11 @@ fun SearchTrailingIcon() {
         GeneralIconButton(
             painter = if (searchBaseParams.favorite) favorite() else noFavorite(),
             desc = "whether_to_search_only_favorites",
-            iconColor = MaterialTheme.colorScheme.primary,
+            colors =
+                iconButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ),
             shape = tiny2XRoundedCornerShape,
         ) {
             pasteSearchViewModel.switchFavorite()

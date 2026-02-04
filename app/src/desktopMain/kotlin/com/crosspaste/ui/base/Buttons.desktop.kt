@@ -13,7 +13,6 @@ import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvide
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,7 +27,6 @@ actual fun GeneralIconButton(
     colors: IconButtonColors,
     modifier: Modifier,
     iconModifier: Modifier,
-    iconColor: Color,
     buttonSize: Dp,
     iconSize: Dp,
     shape: Shape,
@@ -46,7 +44,6 @@ actual fun GeneralIconButton(
             imageVector = imageVector,
             contentDescription = desc,
             modifier = iconModifier.size(iconSize),
-            tint = iconColor,
         )
     }
 }
@@ -58,7 +55,6 @@ actual fun GeneralIconButton(
     colors: IconButtonColors,
     modifier: Modifier,
     iconModifier: Modifier,
-    iconColor: Color,
     buttonSize: Dp,
     iconSize: Dp,
     shape: Shape,
@@ -76,7 +72,6 @@ actual fun GeneralIconButton(
             painter = painter,
             contentDescription = desc,
             modifier = iconModifier.size(iconSize),
-            tint = iconColor,
         )
     }
 }

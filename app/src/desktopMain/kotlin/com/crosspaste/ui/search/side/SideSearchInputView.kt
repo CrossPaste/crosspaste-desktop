@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults.iconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -256,7 +257,11 @@ fun SideSearchInputView() {
             GeneralIconButton(
                 painter = settings(),
                 desc = "settings",
-                iconColor = MaterialTheme.colorScheme.primary,
+                colors =
+                    iconButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
                 shape = tiny2XRoundedCornerShape,
             ) {
                 scope.launch {

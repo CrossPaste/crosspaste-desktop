@@ -65,8 +65,8 @@ fun DeviceScope.DeviceActionButton(
                 desc = "refresh",
                 colors =
                     IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
                     ),
                 iconModifier =
                     Modifier.graphicsLayer {
