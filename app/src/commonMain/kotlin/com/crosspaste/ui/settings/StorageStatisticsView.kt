@@ -32,7 +32,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AnimatedSegmentedControl
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.base.color
 import com.crosspaste.ui.base.file
@@ -83,6 +85,7 @@ fun StorageStatisticsScope.StorageStatisticsHeader() {
 @Composable
 fun StorageStatisticsScope.StorageStatisticsContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
+    val themeExt = LocalThemeExtState.current
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -238,7 +241,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
 
             SettingListItem(
                 title = "clear_non_favorite_pasteboards",
-                icon = Icons.Default.Delete,
+                icon = IconData(Icons.Default.Delete, themeExt.redIconColor),
                 trailingContent = {
                     if (!cleaning) {
                         Button(

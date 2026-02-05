@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
@@ -30,6 +32,7 @@ import org.koin.compose.koinInject
 @Composable
 fun LanguageSettingItemView() {
     val copywriter = koinInject<GlobalCopywriter>()
+    val themeExt = LocalThemeExtState.current
     var expanded by remember { mutableStateOf(false) }
 
     Box(
@@ -38,7 +41,7 @@ fun LanguageSettingItemView() {
         SettingListItem(
             title = "language",
             subtitle = "current_language",
-            icon = Icons.Default.Language,
+            icon = IconData(Icons.Default.Language, themeExt.indigoIconColor),
         ) {
             expanded = true
         }

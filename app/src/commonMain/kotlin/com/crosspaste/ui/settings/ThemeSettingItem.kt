@@ -4,7 +4,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.runtime.Composable
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.LocalThemeState
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.ThemeDetector
 import org.koin.compose.koinInject
 
@@ -13,6 +15,7 @@ fun ThemeSettingItem() {
     val copywriter = koinInject<GlobalCopywriter>()
     val themeDetector = koinInject<ThemeDetector>()
     val themeState = LocalThemeState.current
+    val themeExt = LocalThemeExtState.current
 
     val themeOptions = listOf("light", "system", "dark")
 
@@ -25,7 +28,7 @@ fun ThemeSettingItem() {
 
     SegmentedControlSettingsRow(
         title = copywriter.getText("theme"),
-        icon = Icons.Default.Palette,
+        icon = IconData(Icons.Default.Palette, themeExt.purpleIconColor),
         options = themeOptions,
         selectedOptionIndex = selectedIndex,
         optionLabel = { labelKey -> copywriter.getText(labelKey) },

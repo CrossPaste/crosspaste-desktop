@@ -13,7 +13,9 @@ import androidx.compose.ui.Modifier
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.ui.About
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.NavigationManager
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
@@ -22,6 +24,7 @@ fun MainSettingsContentView() {
     val appInfo = koinInject<AppInfo>()
     val configManager = koinInject<DesktopConfigManager>()
     val navigationManager = koinInject<NavigationManager>()
+    val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
@@ -34,7 +37,7 @@ fun MainSettingsContentView() {
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListSwitchItem(
             title = "launch_at_startup",
-            icon = Icons.Default.RocketLaunch,
+            icon = IconData(Icons.Default.RocketLaunch, themeExt.roseIconColor),
             checked = config.enableAutoStartUp,
         ) {
             configManager.updateConfig("enableAutoStartUp", it)
@@ -45,7 +48,7 @@ fun MainSettingsContentView() {
             subtitleContent = {
                 Text("v${appInfo.displayVersion()}")
             },
-            icon = Icons.Default.Info,
+            icon = IconData(Icons.Default.Info, themeExt.blueIconColor),
         ) {
             navigationManager.navigate(About)
         }

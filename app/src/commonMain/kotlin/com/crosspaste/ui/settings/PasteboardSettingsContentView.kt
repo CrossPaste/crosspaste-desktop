@@ -17,7 +17,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
@@ -26,6 +28,7 @@ import org.koin.compose.koinInject
 fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
     val configManager = koinInject<CommonConfigManager>()
     val pasteboardService = koinInject<PasteboardService>()
+    val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
@@ -37,7 +40,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "pasteboard_listening",
-                    icon = Icons.Default.ContentPasteGo,
+                    icon = IconData(Icons.Default.ContentPasteGo, themeExt.indigoIconColor),
                     checked = config.enablePasteboardListening,
                 ) {
                     pasteboardService.toggle()
@@ -45,7 +48,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "paste_primary_type_only",
-                    icon = Icons.Default.FormatPaint,
+                    icon = IconData(Icons.Default.FormatPaint, themeExt.indigoIconColor),
                     checked = config.pastePrimaryTypeOnly,
                 ) { newPastePrimaryTypeOnly ->
                     configManager.updateConfig(
@@ -56,7 +59,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "skip_pre_launch_pasteboard_content",
-                    icon = Icons.Default.Start,
+                    icon = IconData(Icons.Default.Start, themeExt.indigoIconColor),
                     checked = config.enableSkipPreLaunchPasteboardContent,
                 ) { newEnableSkipPreLaunchPasteboardContent ->
                     configManager.updateConfig(
@@ -67,7 +70,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sound_effect",
-                    icon = Icons.Default.MusicNote,
+                    icon = IconData(Icons.Default.MusicNote, themeExt.indigoIconColor),
                     checked = config.enableSoundEffect,
                 ) { enableSoundEffect ->
                     configManager.updateConfig(
@@ -78,7 +81,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "max_back_up_file_size",
-                    icon = Icons.Default.Archive,
+                    icon = IconData(Icons.Default.Archive, themeExt.indigoIconColor),
                     trailingContent = {
                         Counter(defaultValue = config.maxBackupFileSize, unit = "MB", rule = {
                             it >= 0

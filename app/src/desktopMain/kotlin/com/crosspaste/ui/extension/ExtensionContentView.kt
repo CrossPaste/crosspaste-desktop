@@ -11,8 +11,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.ocr
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.OCR
+import com.crosspaste.ui.base.PainterData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.settings.SettingListItem
 import com.crosspaste.ui.settings.SettingSectionCard
@@ -24,6 +26,7 @@ import org.koin.compose.koinInject
 @Composable
 fun ExtensionContentView() {
     val navigateManager = koinInject<NavigationManager>()
+    val themeExt = LocalThemeExtState.current
 
     var isProxyExpanded by remember { mutableStateOf(false) }
 
@@ -47,7 +50,12 @@ fun ExtensionContentView() {
                 SettingListItem(
                     title = "ocr_settings",
                     subtitle = "language_module_settings",
-                    painter = painterResource(Res.drawable.ocr),
+                    painter =
+                        PainterData(
+                            painter = painterResource(Res.drawable.ocr),
+                            iconBg = themeExt.violetIconColor.bgColor,
+                            tint = themeExt.violetIconColor.color,
+                        ),
                     onClick = {
                         navigateManager.navigate(OCR)
                     },

@@ -22,8 +22,10 @@ import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.FilledDropdown
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -35,6 +37,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
+    val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
@@ -70,7 +73,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "expiration_cleanup",
-                    icon = Icons.Default.HourglassEmpty,
+                    icon = IconData(Icons.Default.HourglassEmpty, themeExt.amberIconColor),
                     checked = config.enableExpirationCleanup,
                 ) {
                     configManager.updateConfig("enableExpirationCleanup", it)
@@ -79,7 +82,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "image_retention_period",
-                        icon = Icons.Default.Image,
+                        icon = IconData(Icons.Default.Image, themeExt.amberIconColor),
                         trailingContent = {
                             val cleanTimeMenuTexts by remember(copywriter.language()) {
                                 mutableStateOf(
@@ -101,7 +104,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "file_retention_period",
-                        icon = Icons.AutoMirrored.Filled.InsertDriveFile,
+                        icon = IconData(Icons.AutoMirrored.Filled.InsertDriveFile, themeExt.amberIconColor),
                         trailingContent = {
                             val cleanTimeMenuTexts by remember(copywriter.language()) {
                                 mutableStateOf(
@@ -124,7 +127,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "threshold_cleanup",
-                    icon = Icons.Default.AutoDelete,
+                    icon = IconData(Icons.Default.AutoDelete, themeExt.amberIconColor),
                     checked = config.enableThresholdCleanup,
                 ) {
                     configManager.updateConfig("enableThresholdCleanup", it)
@@ -133,7 +136,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "maximum_storage",
-                        icon = Icons.Default.Storage,
+                        icon = IconData(Icons.Default.Storage, themeExt.amberIconColor),
                         trailingContent = {
                             Counter(defaultValue = config.maxStorage, unit = "MB", rule = { it >= 256 }) {
                                 configManager.updateConfig("maxStorage", it)
@@ -143,7 +146,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "cleanup_percentage",
-                        icon = Icons.Default.Percent,
+                        icon = IconData(Icons.Default.Percent, themeExt.amberIconColor),
                         trailingContent = {
                             Counter(
                                 defaultValue = config.cleanupPercentage.toLong(),

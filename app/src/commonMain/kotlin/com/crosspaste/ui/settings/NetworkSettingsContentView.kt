@@ -33,13 +33,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -54,6 +55,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
     val copywriter = koinInject<GlobalCopywriter>()
     val networkInterfaceService = koinInject<NetworkInterfaceService>()
     val syncScopeFactory = koinInject<SyncScopeFactory>()
+    val themeExt = LocalThemeExtState.current
 
     val jsonUtils = getJsonUtils()
 
@@ -90,7 +92,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "allow_discovery_by_new_devices",
-                    icon = Icons.Default.WifiFind,
+                    icon = IconData(Icons.Default.WifiFind, themeExt.greenIconColor),
                     checked = useNetworkInterfaces.isNotEmpty(),
                 ) { enableDiscovery ->
                     if (enableDiscovery) {
@@ -134,7 +136,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "port",
-                    icon = Icons.Default.Cable,
+                    icon = IconData(Icons.Default.Cable, themeExt.greenIconColor),
                     trailingContent = {
                         port?.let {
                             Text(text = it)
@@ -154,7 +156,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "encrypted_sync",
-                    icon = Icons.Default.Shield,
+                    icon = IconData(Icons.Default.Shield, themeExt.greenIconColor),
                     checked = config.enableEncryptSync,
                 ) {
                     configManager.updateConfig("enableEncryptSync", it)
@@ -162,7 +164,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_file_size_limit",
-                    icon = Icons.Default.SyncAlt,
+                    icon = IconData(Icons.Default.SyncAlt, themeExt.greenIconColor),
                     checked = config.enabledSyncFileSizeLimit,
                 ) { newEnabledSyncFileSizeLimit ->
                     configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)
@@ -170,7 +172,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "max_sync_file_size",
-                    icon = Icons.AutoMirrored.Filled.InsertDriveFile,
+                    icon = IconData(Icons.AutoMirrored.Filled.InsertDriveFile, themeExt.greenIconColor),
                     trailingContent = {
                         Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
                             it >= 0
@@ -191,7 +193,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "sync_text",
-                    icon = Icons.Outlined.TextFields,
+                    icon = IconData(Icons.Outlined.TextFields, themeExt.greenIconColor),
                     checked = config.enableSyncText,
                 ) { enableSyncText ->
                     configManager.updateConfig("enableSyncText", enableSyncText)
@@ -199,7 +201,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_url",
-                    icon = Icons.Outlined.Link,
+                    icon = IconData(Icons.Outlined.Link, themeExt.greenIconColor),
                     checked = config.enableSyncUrl,
                 ) { enableSyncUrl ->
                     configManager.updateConfig("enableSyncUrl", enableSyncUrl)
@@ -207,7 +209,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_html",
-                    icon = Icons.Outlined.Code,
+                    icon = IconData(Icons.Outlined.Code, themeExt.greenIconColor),
                     checked = config.enableSyncHtml,
                 ) { enableSyncHtml ->
                     configManager.updateConfig("enableSyncHtml", enableSyncHtml)
@@ -215,7 +217,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_rtf",
-                    icon = Icons.AutoMirrored.Outlined.Article,
+                    icon = IconData(Icons.AutoMirrored.Outlined.Article, themeExt.greenIconColor),
                     checked = config.enableSyncRtf,
                 ) { enableSyncRtf ->
                     configManager.updateConfig("enableSyncRtf", enableSyncRtf)
@@ -223,7 +225,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_image",
-                    icon = Icons.Outlined.Image,
+                    icon = IconData(Icons.Outlined.Image, themeExt.greenIconColor),
                     checked = config.enableSyncImage,
                 ) { enableSyncImage ->
                     configManager.updateConfig("enableSyncImage", enableSyncImage)
@@ -231,7 +233,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_file",
-                    icon = Icons.Outlined.Description,
+                    icon = IconData(Icons.Outlined.Description, themeExt.greenIconColor),
                     checked = config.enableSyncFile,
                 ) { enableSyncFile ->
                     configManager.updateConfig("enableSyncFile", enableSyncFile)
@@ -239,7 +241,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_color",
-                    icon = Icons.Outlined.Palette,
+                    icon = IconData(Icons.Outlined.Palette, themeExt.greenIconColor),
                     checked = config.enableSyncColor,
                 ) { enableSyncColor ->
                     configManager.updateConfig("enableSyncColor", enableSyncColor)
@@ -256,7 +258,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 SettingSectionCard {
                     SettingListItem(
                         title = "empty",
-                        icon = null as ImageVector?,
+                        icon = null,
                         trailingContent = null,
                     )
                 }

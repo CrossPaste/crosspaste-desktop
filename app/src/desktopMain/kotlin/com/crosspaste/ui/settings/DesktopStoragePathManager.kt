@@ -28,6 +28,8 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.DesktopMigration
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -50,6 +52,7 @@ class DesktopStoragePathManager : StoragePathManager {
         val desktopMigration = koinInject<DesktopMigration>()
         val notificationManager = koinInject<NotificationManager>()
         val userDataPathProvider = koinInject<UserDataPathProvider>()
+        val themeExt = LocalThemeExtState.current
 
         val config by configManager.config.collectAsState()
 
@@ -77,7 +80,7 @@ class DesktopStoragePathManager : StoragePathManager {
             if (useDefaultStoragePath) {
                 SettingListSwitchItem(
                     title = "use_default_storage_path",
-                    icon = Icons.Default.Archive,
+                    icon = IconData(Icons.Default.Archive, themeExt.amberIconColor),
                     checked = useDefaultStoragePath,
                 ) {
                     useDefaultStoragePath = !useDefaultStoragePath

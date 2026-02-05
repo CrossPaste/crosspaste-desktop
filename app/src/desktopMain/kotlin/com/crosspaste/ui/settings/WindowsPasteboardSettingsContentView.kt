@@ -9,12 +9,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 @Composable
 fun WindowsPasteboardSettingsContentView() {
     val configManager = koinInject<DesktopConfigManager>()
+    val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
@@ -22,7 +25,7 @@ fun WindowsPasteboardSettingsContentView() {
 
     SettingListSwitchItem(
         title = "legacy_software_compatibility",
-        icon = Icons.Default.DesktopWindows,
+        icon = IconData(Icons.Default.DesktopWindows, themeExt.indigoIconColor),
         checked = config.legacySoftwareCompatibility,
     ) { newLegacySoftwareCompatibility ->
         configManager.updateConfig(

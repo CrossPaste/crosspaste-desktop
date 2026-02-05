@@ -92,6 +92,7 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.cryptography.core)
             implementation(libs.filekit)
+            implementation(libs.icons.material.symbols.rounded)
             implementation(libs.koin.compose)
             implementation(libs.koin.core)
             implementation(libs.koin.viewmodel)

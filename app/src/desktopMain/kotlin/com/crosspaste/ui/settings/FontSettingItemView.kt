@@ -24,8 +24,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpOffset
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.FontInfo
 import com.crosspaste.ui.base.FontManager
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.theme.AppUIFont.menuItemTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -37,6 +39,7 @@ import org.koin.compose.koinInject
 @Composable
 fun FontSettingItemView() {
     val fontManager = koinInject<FontManager>()
+    val themeExt = LocalThemeExtState.current
 
     val currentFont by rememberUserSelectedFont()
 
@@ -50,7 +53,7 @@ fun FontSettingItemView() {
             subtitleContent = {
                 Text(currentFont.name)
             },
-            icon = Icons.Default.FontDownload,
+            icon = IconData(Icons.Default.FontDownload, themeExt.amberIconColor),
             trailingContent = { Icon(Icons.Default.ChevronRight, null) },
         ) {
             expanded = true

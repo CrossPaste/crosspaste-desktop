@@ -9,6 +9,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
@@ -24,13 +26,14 @@ fun DesktopNetworkSettingsContentView() {
 @Composable
 private fun DesktopSyncExtContent() {
     val configManager = koinInject<DesktopConfigManager>()
+    val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
     SettingListSwitchItem(
         title = "enable_clipboard_relay",
-        icon = Icons.Default.Share,
+        icon = IconData(Icons.Default.Share, themeExt.greenIconColor),
         checked = config.enableClipboardRelay,
     ) { enableClipboardRelay ->
         configManager.updateConfig("enableClipboardRelay", enableClipboardRelay)

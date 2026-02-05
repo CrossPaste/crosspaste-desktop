@@ -35,7 +35,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AnimatedSegmentedControl
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.PortTextField
 import com.crosspaste.ui.extension.ProxyType.HTTP
 import com.crosspaste.ui.extension.ProxyType.SOCKS
@@ -61,6 +63,7 @@ fun ProxySection(
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val config by configManager.config.collectAsState()
+    val themeExt = LocalThemeExtState.current
 
     val rotation by animateFloatAsState(if (isExpanded) 180f else 0f)
 
@@ -76,7 +79,7 @@ fun ProxySection(
         SettingListItem(
             title = "proxy",
             subtitle = "proxy_extension_network_requests",
-            icon = Icons.Default.DeviceHub,
+            icon = IconData(Icons.Default.DeviceHub, themeExt.cyanIconColor),
             trailingContent = {
                 Icon(
                     imageVector = Icons.Default.ExpandMore,
