@@ -49,7 +49,7 @@ import com.crosspaste.utils.getJsonUtils
 import org.koin.compose.koinInject
 
 @Composable
-fun NetworkSettingsContentView() {
+fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val networkInterfaceService = koinInject<NetworkInterfaceService>()
@@ -179,6 +179,7 @@ fun NetworkSettingsContentView() {
                         }
                     },
                 )
+                syncExtContent()
             }
         }
 

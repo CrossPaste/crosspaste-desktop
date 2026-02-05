@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.FormatPaint
@@ -85,18 +84,6 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                             it >= 0
                         }) { currentMaxStorage ->
                             configManager.updateConfig("maxBackupFileSize", currentMaxStorage)
-                        }
-                    },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingListItem(
-                    title = "max_sync_file_size",
-                    icon = Icons.AutoMirrored.Filled.InsertDriveFile,
-                    trailingContent = {
-                        Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
-                            it >= 0
-                        }) { currentMaxSyncFileSize ->
-                            configManager.updateConfig("maxSyncFileSize", currentMaxSyncFileSize)
                         }
                     },
                 )
