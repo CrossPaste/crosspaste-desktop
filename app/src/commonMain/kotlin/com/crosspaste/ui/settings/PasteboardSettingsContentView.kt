@@ -5,14 +5,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ContentPasteGo
 import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Start
-import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -44,14 +41,6 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     checked = config.enablePasteboardListening,
                 ) {
                     pasteboardService.toggle()
-                }
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingListSwitchItem(
-                    title = "encrypted_sync",
-                    icon = Icons.Default.Shield,
-                    checked = config.enableEncryptSync,
-                ) {
-                    configManager.updateConfig("enableEncryptSync", it)
                 }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
@@ -87,14 +76,6 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     )
                 }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingListSwitchItem(
-                    title = "sync_file_size_limit",
-                    icon = Icons.Default.SyncAlt,
-                    checked = config.enabledSyncFileSizeLimit,
-                ) { newEnabledSyncFileSizeLimit ->
-                    configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)
-                }
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "max_back_up_file_size",
                     icon = Icons.Default.Archive,
@@ -103,18 +84,6 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                             it >= 0
                         }) { currentMaxStorage ->
                             configManager.updateConfig("maxBackupFileSize", currentMaxStorage)
-                        }
-                    },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingListItem(
-                    title = "max_sync_file_size",
-                    icon = Icons.AutoMirrored.Filled.InsertDriveFile,
-                    trailingContent = {
-                        Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
-                            it >= 0
-                        }) { currentMaxSyncFileSize ->
-                            configManager.updateConfig("maxSyncFileSize", currentMaxSyncFileSize)
                         }
                     },
                 )

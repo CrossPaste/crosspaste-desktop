@@ -44,8 +44,8 @@ import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
+import com.crosspaste.ui.settings.DesktopNetworkSettingsContentView
 import com.crosspaste.ui.settings.DesktopPasteboardSettingsContentView
-import com.crosspaste.ui.settings.NetworkSettingsContentView
 import com.crosspaste.ui.settings.PasteboardSettingsContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
@@ -357,7 +357,7 @@ class DesktopScreenProvider(
     @Composable
     private fun NetworkSettingsScreen() {
         ScreenLayout {
-            NetworkSettingsContentView()
+            DesktopNetworkSettingsContentView()
         }
     }
 
