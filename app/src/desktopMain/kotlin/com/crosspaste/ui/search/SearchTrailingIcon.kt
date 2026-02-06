@@ -100,11 +100,12 @@ fun SearchTrailingIcon() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         GeneralIconButton(
-            imageVector = if (searchBaseParams.sort) {
-                MaterialSymbols.Rounded.Vertical_align_bottom
-            } else {
-                MaterialSymbols.Rounded.Vertical_align_top
-            },
+            imageVector =
+                if (searchBaseParams.sort) {
+                    MaterialSymbols.Rounded.Vertical_align_bottom
+                } else {
+                    MaterialSymbols.Rounded.Vertical_align_top
+                },
             desc = "sort_by_creation_time",
             colors =
                 iconButtonColors(
