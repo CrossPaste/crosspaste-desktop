@@ -6,10 +6,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Upgrade
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Link
+import com.composables.icons.materialsymbols.rounded.Refresh
+import com.composables.icons.materialsymbols.rounded.Upgrade
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.VersionRelation
@@ -61,7 +61,7 @@ fun DeviceScope.DeviceActionButton(
             )
 
             GeneralIconButton(
-                imageVector = Icons.Default.Refresh,
+                imageVector = MaterialSymbols.Rounded.Refresh,
                 desc = "refresh",
                 colors =
                     IconButtonDefaults.iconButtonColors(
@@ -95,7 +95,7 @@ fun DeviceScope.DeviceActionButton(
         }
         SyncState.UNVERIFIED -> {
             GeneralIconButton(
-                imageVector = Icons.Default.Link,
+                imageVector = MaterialSymbols.Rounded.Link,
                 desc = "pair",
                 colors =
                     IconButtonDefaults.iconButtonColors(
@@ -114,7 +114,7 @@ fun DeviceScope.DeviceActionButton(
 
             if (versionRelation == VersionRelation.LOWER_THAN) {
                 GeneralIconButton(
-                    imageVector = Icons.Default.Upgrade,
+                    imageVector = MaterialSymbols.Rounded.Upgrade,
                     desc = "upgrade",
                     colors =
                         IconButtonDefaults.iconButtonColors(

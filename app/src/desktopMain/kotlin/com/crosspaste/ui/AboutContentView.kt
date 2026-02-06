@@ -15,13 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Feedback
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Mail
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +33,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Auto_awesome
+import com.composables.icons.materialsymbols.rounded.Chevron_right
+import com.composables.icons.materialsymbols.rounded.Feedback
+import com.composables.icons.materialsymbols.rounded.Language
+import com.composables.icons.materialsymbols.rounded.Mail
+import com.composables.icons.materialsymbols.rounded.School
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppUrls
 import com.crosspaste.config.DesktopConfigManager
@@ -150,7 +150,7 @@ fun AboutInfoList(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         AboutInfoItem(
-            icon = Icons.Default.Language,
+            icon = MaterialSymbols.Rounded.Language,
             title = copywriter.getText("official_website"),
             onClick = { uiSupport.openCrossPasteWebInBrowser() },
         )
@@ -159,12 +159,12 @@ fun AboutInfoList(
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         )
         AboutInfoItem(
-            icon = Icons.Default.School,
+            icon = MaterialSymbols.Rounded.School,
             title = copywriter.getText("newbie_tutorial"),
             onClick = { uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard") },
         )
         AboutInfoItem(
-            icon = Icons.Default.AutoAwesome,
+            icon = MaterialSymbols.Rounded.Auto_awesome,
             title = copywriter.getText("change_log"),
             onClick = { uiSupport.openUrlInBrowser(appUrls.changeLogUrl) },
         )
@@ -173,12 +173,12 @@ fun AboutInfoList(
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         )
         AboutInfoItem(
-            icon = Icons.Default.Feedback,
+            icon = MaterialSymbols.Rounded.Feedback,
             title = copywriter.getText("feedback"),
             onClick = { uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl) },
         )
         AboutInfoItem(
-            icon = Icons.Default.Mail,
+            icon = MaterialSymbols.Rounded.Mail,
             title = copywriter.getText("contact_us"),
             onClick = { uiSupport.openEmailClient("compile.future@gmail.com") },
         )
@@ -244,7 +244,7 @@ fun AboutInfoItem(
             )
 
             Icon(
-                imageVector = Icons.Default.ChevronRight,
+                imageVector = MaterialSymbols.Rounded.Chevron_right,
                 contentDescription = null,
                 modifier = Modifier.size(large2X),
                 tint = MaterialTheme.colorScheme.outline,

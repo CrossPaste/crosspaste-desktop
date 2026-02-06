@@ -1,8 +1,6 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -12,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.getMessageImageVector
 import com.crosspaste.ui.theme.AppUISize.large
@@ -57,7 +57,7 @@ fun MessageContentCard(
                         modifier = Modifier.size(xLarge),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Close,
+                            imageVector = MaterialSymbols.Rounded.Close,
                             contentDescription = "Dismiss",
                             modifier = Modifier.size(large),
                             tint = contentColor.copy(alpha = 0.5f),

@@ -1,13 +1,13 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Desktop_windows
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
@@ -25,7 +25,7 @@ fun WindowsPasteboardSettingsContentView() {
 
     SettingListSwitchItem(
         title = "legacy_software_compatibility",
-        icon = IconData(Icons.Default.DesktopWindows, themeExt.indigoIconColor),
+        icon = IconData(MaterialSymbols.Rounded.Desktop_windows, themeExt.indigoIconColor),
         checked = config.legacySoftwareCompatibility,
     ) { newLegacySoftwareCompatibility ->
         configManager.updateConfig(

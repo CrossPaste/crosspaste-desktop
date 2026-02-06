@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Edit
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
@@ -56,7 +56,7 @@ fun DeviceScope.EditNoteDialog(onDismiss: () -> Unit) {
                         .padding(top = tiny),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Edit,
+                    imageVector = MaterialSymbols.Rounded.Edit,
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
                     tint = MaterialTheme.colorScheme.primary,

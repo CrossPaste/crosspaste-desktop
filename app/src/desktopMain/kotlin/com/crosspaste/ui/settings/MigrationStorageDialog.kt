@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -28,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Storage
 import com.crosspaste.app.AppExitService
 import com.crosspaste.app.AppRestartService
 import com.crosspaste.app.ExitMode
@@ -80,7 +80,7 @@ fun MigrationStorageDialog(
                         .padding(top = tiny),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Storage,
+                    imageVector = MaterialSymbols.Rounded.Storage,
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
                     tint = MaterialTheme.colorScheme.primary,

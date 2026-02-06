@@ -9,10 +9,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.times
+import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 
 data class IconColor(
     val bgColor: Color,
@@ -70,7 +72,7 @@ data class IconColor(
         // Indigo
         val LIGHT_INDIGO =
             IconColor(
-                bgColor = Color(0xFFEEF2FF),
+                bgColor = Color(0xFFE0E7FF),
                 color = Color(0xFF6366F1),
             )
         val DARK_INDIGO =
@@ -154,43 +156,23 @@ data class IconData(
     )
 
     @Composable
-    fun IconContent() {
+    fun IconContent(isSmallIcon: Boolean = false) {
+        val iconSize = if (isSmallIcon) medium else large
+        val bgSize = 2 * iconSize
+        val rounded = if (isSmallIcon) tinyRoundedCornerShape else small3XRoundedCornerShape
         Box(
             modifier =
                 Modifier
-                    .size(xxxLarge)
-                    .clip(small3XRoundedCornerShape)
+                    .size(bgSize)
+                    .clip(rounded)
                     .background(bgColor),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
+                modifier = Modifier.size(iconSize),
                 imageVector = imageVector,
                 contentDescription = null,
                 tint = color,
-            )
-        }
-    }
-}
-
-data class PainterData(
-    val painter: Painter,
-    val iconBg: Color,
-    val tint: Color,
-) {
-    @Composable
-    fun IconContent() {
-        Box(
-            modifier =
-                Modifier
-                    .size(xxxLarge)
-                    .background(iconBg)
-                    .clip(small3XRoundedCornerShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painter,
-                contentDescription = null,
-                tint = tint,
             )
         }
     }

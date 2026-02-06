@@ -2,9 +2,6 @@ package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -12,6 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Block
+import com.composables.icons.materialsymbols.rounded.Link
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
@@ -45,7 +45,7 @@ fun SyncScope.NearbyDeviceView() {
                 horizontalArrangement = Arrangement.spacedBy(tiny),
             ) {
                 GeneralIconButton(
-                    imageVector = Icons.Default.Block,
+                    imageVector = MaterialSymbols.Rounded.Block,
                     desc = "block",
                     colors =
                         IconButtonDefaults.iconButtonColors(
@@ -68,7 +68,7 @@ fun SyncScope.NearbyDeviceView() {
                 }
 
                 GeneralIconButton(
-                    imageVector = Icons.Default.Link,
+                    imageVector = MaterialSymbols.Rounded.Link,
                     desc = "pair",
                     colors =
                         IconButtonDefaults.iconButtonColors(

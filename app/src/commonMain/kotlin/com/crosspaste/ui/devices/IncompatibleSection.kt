@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Warning
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.sync.SyncManager
@@ -55,7 +55,7 @@ fun DeviceScope.IncompatibleSection() {
             ) {
                 // Use a warning icon to alert the user
                 Icon(
-                    imageVector = Icons.Outlined.WarningAmber,
+                    imageVector = MaterialSymbols.Rounded.Warning,
                     contentDescription = null,
                     modifier = Modifier.size(enormous),
                     tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),

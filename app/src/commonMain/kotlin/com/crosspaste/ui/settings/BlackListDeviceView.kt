@@ -1,12 +1,12 @@
 package com.crosspaste.ui.settings
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DoNotDisturbOn
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Remove
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.ui.base.GeneralIconButton
@@ -24,7 +24,7 @@ fun SyncScope.BlackListDeviceView() {
 
     SyncDeviceView {
         GeneralIconButton(
-            imageVector = Icons.Default.DoNotDisturbOn,
+            imageVector = MaterialSymbols.Rounded.Remove,
             desc = "remove_blacklist",
             colors =
                 IconButtonDefaults.iconButtonColors(

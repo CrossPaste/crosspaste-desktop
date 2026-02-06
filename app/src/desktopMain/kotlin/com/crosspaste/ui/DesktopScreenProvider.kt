@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -202,7 +203,7 @@ class DesktopScreenProvider(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(horizontal = medium)
                     .padding(bottom = medium),
         ) {
@@ -251,7 +252,9 @@ class DesktopScreenProvider(
     @Composable
     private fun ExportScreen() {
         ScreenLayout {
-            PasteExportContentView()
+            CompositionLocalProvider(LocalSmallSettingItemState provides true) {
+                PasteExportContentView()
+            }
         }
     }
 
@@ -334,7 +337,9 @@ class DesktopScreenProvider(
     @Composable
     private fun ShortcutKeysScreen() {
         ScreenLayout {
-            ShortcutKeysContentView()
+            CompositionLocalProvider(LocalSmallSettingItemState provides true) {
+                ShortcutKeysContentView()
+            }
         }
     }
 
@@ -348,8 +353,10 @@ class DesktopScreenProvider(
     @Composable
     private fun PasteboardSettingsScreen() {
         ScreenLayout {
-            PasteboardSettingsContentView {
-                DesktopPasteboardSettingsContentView(platform)
+            CompositionLocalProvider(LocalSmallSettingItemState provides true) {
+                PasteboardSettingsContentView {
+                    DesktopPasteboardSettingsContentView(platform)
+                }
             }
         }
     }
@@ -357,14 +364,18 @@ class DesktopScreenProvider(
     @Composable
     private fun NetworkSettingsScreen() {
         ScreenLayout {
-            DesktopNetworkSettingsContentView()
+            CompositionLocalProvider(LocalSmallSettingItemState provides true) {
+                DesktopNetworkSettingsContentView()
+            }
         }
     }
 
     @Composable
     private fun StorageSettingsScreen() {
         ScreenLayout {
-            StorageSettingsContentView(storagePathManager)
+            CompositionLocalProvider(LocalSmallSettingItemState provides true) {
+                StorageSettingsContentView(storagePathManager)
+            }
         }
     }
 

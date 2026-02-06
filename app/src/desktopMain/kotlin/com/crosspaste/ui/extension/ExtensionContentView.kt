@@ -9,18 +9,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.crosspaste.app.generated.resources.Res
-import com.crosspaste.app.generated.resources.ocr
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Document_scanner
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.OCR
-import com.crosspaste.ui.base.PainterData
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.settings.SettingListItem
 import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
-import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
 @Composable
@@ -50,11 +49,10 @@ fun ExtensionContentView() {
                 SettingListItem(
                     title = "ocr_settings",
                     subtitle = "language_module_settings",
-                    painter =
-                        PainterData(
-                            painter = painterResource(Res.drawable.ocr),
-                            iconBg = themeExt.violetIconColor.bgColor,
-                            tint = themeExt.violetIconColor.color,
+                    icon =
+                        IconData(
+                            imageVector = MaterialSymbols.Rounded.Document_scanner,
+                            iconColor = themeExt.violetIconColor,
                         ),
                     onClick = {
                         navigateManager.navigate(OCR)

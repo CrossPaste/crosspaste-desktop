@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -17,6 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Keyboard_arrow_down
+import com.composables.icons.materialsymbols.rounded.Keyboard_arrow_up
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -104,7 +104,7 @@ private fun PortStepper(
             shape = RectangleShape,
         ) {
             Icon(
-                Icons.Default.KeyboardArrowUp,
+                MaterialSymbols.Rounded.Keyboard_arrow_up,
                 contentDescription = "Increase Port",
                 modifier = Modifier.size(large2X),
             )
@@ -117,7 +117,7 @@ private fun PortStepper(
             shape = RectangleShape,
         ) {
             Icon(
-                Icons.Default.KeyboardArrowDown,
+                MaterialSymbols.Rounded.Keyboard_arrow_down,
                 contentDescription = "Decrease Port",
                 modifier = Modifier.size(large2X),
             )

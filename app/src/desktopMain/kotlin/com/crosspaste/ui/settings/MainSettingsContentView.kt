@@ -1,15 +1,15 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Info
+import com.composables.icons.materialsymbols.rounded.Rocket_launch
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.ui.About
@@ -37,7 +37,7 @@ fun MainSettingsContentView() {
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListSwitchItem(
             title = "launch_at_startup",
-            icon = IconData(Icons.Default.RocketLaunch, themeExt.roseIconColor),
+            icon = IconData(MaterialSymbols.Rounded.Rocket_launch, themeExt.roseIconColor),
             checked = config.enableAutoStartUp,
         ) {
             configManager.updateConfig("enableAutoStartUp", it)
@@ -48,7 +48,7 @@ fun MainSettingsContentView() {
             subtitleContent = {
                 Text("v${appInfo.displayVersion()}")
             },
-            icon = IconData(Icons.Default.Info, themeExt.blueIconColor),
+            icon = IconData(MaterialSymbols.Rounded.Info, themeExt.blueIconColor),
         ) {
             navigationManager.navigate(About)
         }

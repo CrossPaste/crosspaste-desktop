@@ -5,10 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Backspace
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -22,6 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Backspace
+import com.composables.icons.materialsymbols.rounded.Edit
+import com.composables.icons.materialsymbols.rounded.More_vert
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.theme.AppUISize.large
@@ -53,7 +53,7 @@ fun DeviceScope.MyDeviceMenuButton() {
             modifier = Modifier.size(xxLarge),
         ) {
             Icon(
-                Icons.Default.MoreVert,
+                MaterialSymbols.Rounded.More_vert,
                 contentDescription = "menu",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(large2X),
@@ -75,7 +75,7 @@ fun DeviceScope.MyDeviceMenuButton() {
                 leadingIcon = {
                     Icon(
                         modifier = Modifier.size(large),
-                        imageVector = Icons.Default.Edit,
+                        imageVector = MaterialSymbols.Rounded.Edit,
                         contentDescription = null,
                     )
                 },
@@ -97,7 +97,7 @@ fun DeviceScope.MyDeviceMenuButton() {
                 leadingIcon = {
                     Icon(
                         modifier = Modifier.size(large),
-                        imageVector = Icons.AutoMirrored.Filled.Backspace,
+                        imageVector = MaterialSymbols.Rounded.Backspace,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
                     )

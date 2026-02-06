@@ -2,6 +2,7 @@ package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,8 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Delete
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AnimatedSegmentedControl
@@ -47,7 +48,9 @@ import com.crosspaste.ui.base.rtf
 import com.crosspaste.ui.base.text
 import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.Quadruple
@@ -241,7 +244,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
 
             SettingListItem(
                 title = "clear_non_favorite_pasteboards",
-                icon = IconData(Icons.Default.Delete, themeExt.redIconColor),
+                icon = IconData(MaterialSymbols.Rounded.Delete, themeExt.redIconColor),
                 trailingContent = {
                     if (!cleaning) {
                         Button(
@@ -255,13 +258,18 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
                                         }
                                 }
                             },
+                            modifier = Modifier.height(xxLarge),
+                            contentPadding = PaddingValues(horizontal = small2X),
                             colors =
                                 buttonColors(
                                     containerColor = MaterialTheme.colorScheme.error,
                                     contentColor = MaterialTheme.colorScheme.onError,
                                 ),
                         ) {
-                            Text(copywriter.getText("manual_clear"))
+                            Text(
+                                copywriter.getText("manual_clear"),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         }
                     } else {
                         CircularProgressIndicator(

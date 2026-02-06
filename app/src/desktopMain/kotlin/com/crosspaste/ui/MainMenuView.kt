@@ -12,18 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ExitToApp
-import androidx.compose.material.icons.outlined.Devices
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Keyboard
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.Upload
-import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +29,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Devices
+import com.composables.icons.materialsymbols.rounded.Download
+import com.composables.icons.materialsymbols.rounded.Exit_to_app
+import com.composables.icons.materialsymbols.rounded.Extension
+import com.composables.icons.materialsymbols.rounded.Info
+import com.composables.icons.materialsymbols.rounded.Keyboard
+import com.composables.icons.materialsymbols.rounded.Refresh
+import com.composables.icons.materialsymbols.rounded.Settings
+import com.composables.icons.materialsymbols.rounded.Share
+import com.composables.icons.materialsymbols.rounded.Upload
+import com.composables.icons.materialsymbols.rounded.Vpn_key
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.ExitMode
@@ -69,21 +69,21 @@ fun MainMenuView() {
     val primaryMenuList =
         remember {
             listOf(
-                MainMenuItem("devices", Devices, Icons.Outlined.Devices),
-                MainMenuItem("pairing_code", PairingCode, Icons.Outlined.VpnKey),
-                MainMenuItem("settings", Settings, Icons.Outlined.Settings),
-                MainMenuItem("extension", Extension, Icons.Outlined.Extension),
+                MainMenuItem("devices", Devices, MaterialSymbols.Rounded.Devices),
+                MainMenuItem("pairing_code", PairingCode, MaterialSymbols.Rounded.Vpn_key),
+                MainMenuItem("settings", Settings, MaterialSymbols.Rounded.Settings),
+                MainMenuItem("extension", Extension, MaterialSymbols.Rounded.Extension),
             )
         }
 
     val secondaryMenuList =
         remember {
             listOf(
-                MainMenuItem("import", Import, Icons.Outlined.Download),
-                MainMenuItem("export", Export, Icons.Outlined.Upload),
-                MainMenuItem("shortcut_keys", ShortcutKeys, Icons.Outlined.Keyboard),
-                MainMenuItem("share", Share, Icons.Outlined.Share),
-                MainMenuItem("about", About, Icons.Outlined.Info),
+                MainMenuItem("import", Import, MaterialSymbols.Rounded.Download),
+                MainMenuItem("export", Export, MaterialSymbols.Rounded.Upload),
+                MainMenuItem("shortcut_keys", ShortcutKeys, MaterialSymbols.Rounded.Keyboard),
+                MainMenuItem("share", Share, MaterialSymbols.Rounded.Share),
+                MainMenuItem("about", About, MaterialSymbols.Rounded.Info),
             )
         }
 
@@ -151,7 +151,7 @@ fun MainMenuView() {
 
             MainMenuItemView(
                 title = "check_for_updates",
-                icon = Icons.Outlined.Refresh,
+                icon = MaterialSymbols.Rounded.Refresh,
                 selected = false,
                 onClick = { appUpdateService.tryTriggerUpdate() },
                 compact = true,
@@ -159,7 +159,7 @@ fun MainMenuView() {
 
             MainMenuItemView(
                 title = "quit",
-                icon = Icons.AutoMirrored.Outlined.ExitToApp,
+                icon = MaterialSymbols.Rounded.Exit_to_app,
                 selected = false,
                 onClick = { exitApplication(ExitMode.EXIT) },
                 compact = true,

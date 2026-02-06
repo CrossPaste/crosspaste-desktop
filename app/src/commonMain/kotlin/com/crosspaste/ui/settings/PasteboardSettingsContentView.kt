@@ -4,17 +4,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.ContentPasteGo
-import androidx.compose.material.icons.filled.FormatPaint
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Start
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Archive
+import com.composables.icons.materialsymbols.rounded.Content_paste
+import com.composables.icons.materialsymbols.rounded.Music_note
+import com.composables.icons.materialsymbols.rounded.Skip_next
+import com.composables.icons.materialsymbols.rounded.Stacks
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.LocalThemeExtState
@@ -40,7 +40,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "pasteboard_listening",
-                    icon = IconData(Icons.Default.ContentPasteGo, themeExt.blueIconColor),
+                    icon = IconData(MaterialSymbols.Rounded.Content_paste, themeExt.blueIconColor),
                     checked = config.enablePasteboardListening,
                 ) {
                     pasteboardService.toggle()
@@ -48,7 +48,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "paste_primary_type_only",
-                    icon = IconData(Icons.Default.FormatPaint, themeExt.amberIconColor),
+                    icon = IconData(MaterialSymbols.Rounded.Stacks, themeExt.amberIconColor),
                     checked = config.pastePrimaryTypeOnly,
                 ) { newPastePrimaryTypeOnly ->
                     configManager.updateConfig(
@@ -59,7 +59,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "skip_pre_launch_pasteboard_content",
-                    icon = IconData(Icons.Default.Start, themeExt.purpleIconColor),
+                    icon = IconData(MaterialSymbols.Rounded.Skip_next, themeExt.purpleIconColor),
                     checked = config.enableSkipPreLaunchPasteboardContent,
                 ) { newEnableSkipPreLaunchPasteboardContent ->
                     configManager.updateConfig(
@@ -70,7 +70,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sound_effect",
-                    icon = IconData(Icons.Default.MusicNote, themeExt.redIconColor),
+                    icon = IconData(MaterialSymbols.Rounded.Music_note, themeExt.redIconColor),
                     checked = config.enableSoundEffect,
                 ) { enableSoundEffect ->
                     configManager.updateConfig(
@@ -81,7 +81,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "max_back_up_file_size",
-                    icon = IconData(Icons.Default.Archive, themeExt.greenIconColor),
+                    icon = IconData(MaterialSymbols.Rounded.Archive, themeExt.greenIconColor),
                     trailingContent = {
                         Counter(defaultValue = config.maxBackupFileSize, unit = "MB", rule = {
                             it >= 0

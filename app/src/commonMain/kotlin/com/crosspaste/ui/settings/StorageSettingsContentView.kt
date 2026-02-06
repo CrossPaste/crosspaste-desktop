@@ -4,13 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
-import androidx.compose.material.icons.filled.AutoDelete
-import androidx.compose.material.icons.filled.HourglassEmpty
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Percent
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,6 +11,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Auto_delete
+import com.composables.icons.materialsymbols.rounded.Docs
+import com.composables.icons.materialsymbols.rounded.Hourglass_empty
+import com.composables.icons.materialsymbols.rounded.Image
+import com.composables.icons.materialsymbols.rounded.Percent
+import com.composables.icons.materialsymbols.rounded.Storage
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
@@ -73,7 +73,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "expiration_cleanup",
-                    icon = IconData(Icons.Default.HourglassEmpty, themeExt.amberIconColor),
+                    icon = IconData(MaterialSymbols.Rounded.Hourglass_empty, themeExt.amberIconColor),
                     checked = config.enableExpirationCleanup,
                 ) {
                     configManager.updateConfig("enableExpirationCleanup", it)
@@ -82,7 +82,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "image_retention_period",
-                        icon = IconData(Icons.Default.Image, themeExt.amberIconColor),
+                        icon = IconData(MaterialSymbols.Rounded.Image, themeExt.greenIconColor),
                         trailingContent = {
                             val cleanTimeMenuTexts by remember(copywriter.language()) {
                                 mutableStateOf(
@@ -104,7 +104,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "file_retention_period",
-                        icon = IconData(Icons.AutoMirrored.Filled.InsertDriveFile, themeExt.amberIconColor),
+                        icon = IconData(MaterialSymbols.Rounded.Docs, themeExt.purpleIconColor),
                         trailingContent = {
                             val cleanTimeMenuTexts by remember(copywriter.language()) {
                                 mutableStateOf(
@@ -127,7 +127,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "threshold_cleanup",
-                    icon = IconData(Icons.Default.AutoDelete, themeExt.amberIconColor),
+                    icon = IconData(MaterialSymbols.Rounded.Auto_delete, themeExt.redIconColor),
                     checked = config.enableThresholdCleanup,
                 ) {
                     configManager.updateConfig("enableThresholdCleanup", it)
@@ -136,7 +136,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "maximum_storage",
-                        icon = IconData(Icons.Default.Storage, themeExt.amberIconColor),
+                        icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.blueIconColor),
                         trailingContent = {
                             Counter(defaultValue = config.maxStorage, unit = "MB", rule = { it >= 256 }) {
                                 configManager.updateConfig("maxStorage", it)
@@ -146,7 +146,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "cleanup_percentage",
-                        icon = IconData(Icons.Default.Percent, themeExt.amberIconColor),
+                        icon = IconData(MaterialSymbols.Rounded.Percent, themeExt.yellowIconColor),
                         trailingContent = {
                             Counter(
                                 defaultValue = config.cleanupPercentage.toLong(),

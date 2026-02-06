@@ -1,13 +1,13 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Content_paste
+import com.composables.icons.materialsymbols.rounded.Storage
+import com.composables.icons.materialsymbols.rounded.Wifi
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.NetworkSettings
@@ -25,7 +25,7 @@ fun AdvancedSettingsContentView() {
         SettingListItem(
             title = "pasteboard_settings",
             subtitle = "pasteboard_settings_desc",
-            icon = IconData(Icons.Default.ContentPaste, themeExt.indigoIconColor),
+            icon = IconData(MaterialSymbols.Rounded.Content_paste, themeExt.indigoIconColor),
         ) {
             navigationManager.navigate(PasteboardSettings)
         }
@@ -33,7 +33,7 @@ fun AdvancedSettingsContentView() {
         SettingListItem(
             title = "network_settings",
             subtitle = "network_settings_desc",
-            icon = IconData(Icons.Default.Wifi, themeExt.greenIconColor),
+            icon = IconData(MaterialSymbols.Rounded.Wifi, themeExt.greenIconColor),
         ) {
             navigationManager.navigate(NetworkSettings)
         }
@@ -41,7 +41,7 @@ fun AdvancedSettingsContentView() {
         SettingListItem(
             title = "storage_settings",
             subtitle = "storage_settings_desc",
-            icon = IconData(Icons.Default.Storage, themeExt.amberIconColor),
+            icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.amberIconColor),
         ) {
             navigationManager.navigate(StorageSettings)
         }

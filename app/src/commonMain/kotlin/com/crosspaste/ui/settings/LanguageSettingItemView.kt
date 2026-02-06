@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Language
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
@@ -41,7 +41,7 @@ fun LanguageSettingItemView() {
         SettingListItem(
             title = "language",
             subtitle = "current_language",
-            icon = IconData(Icons.Default.Language, themeExt.indigoIconColor),
+            icon = IconData(MaterialSymbols.Rounded.Language, themeExt.indigoIconColor),
         ) {
             expanded = true
         }

@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Storage
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -321,7 +321,7 @@ fun PasteExportContentView() {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "export_favorites_only",
-                        icon = IconData(Icons.Default.Storage, themeExt.amberIconColor),
+                        icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.amberIconColor),
                         trailingContent = {
                             Counter(
                                 defaultValue = maxFileSize,
