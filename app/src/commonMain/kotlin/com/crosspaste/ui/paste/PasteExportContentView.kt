@@ -42,7 +42,6 @@ import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.base.SectionHeader
-import com.crosspaste.ui.base.color
 import com.crosspaste.ui.settings.SettingListItem
 import com.crosspaste.ui.settings.SettingListSwitchItem
 import com.crosspaste.ui.settings.SettingSectionCard

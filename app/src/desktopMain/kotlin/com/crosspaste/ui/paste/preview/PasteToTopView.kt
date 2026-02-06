@@ -19,10 +19,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Arrow_upward_alt
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
-import com.crosspaste.ui.base.toTop
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -68,7 +69,7 @@ fun PasteToTopView(toTopAction: () -> Unit) {
                         ),
             ) {
                 Icon(
-                    painter = toTop(),
+                    imageVector = MaterialSymbols.Rounded.Arrow_upward_alt,
                     contentDescription = "To Top",
                     modifier = Modifier.size(xLarge),
                     tint = AppUIColors.importantColor.copy(alpha = transparency),

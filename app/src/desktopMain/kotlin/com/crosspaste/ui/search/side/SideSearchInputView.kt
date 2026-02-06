@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Search
+import com.composables.icons.materialsymbols.rounded.Settings
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
@@ -55,7 +56,6 @@ import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.TutorialButton
-import com.crosspaste.ui.base.settings
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -255,7 +255,7 @@ fun SideSearchInputView() {
             Spacer(modifier = Modifier.width(small))
 
             GeneralIconButton(
-                painter = settings(),
+                imageVector = MaterialSymbols.Rounded.Settings,
                 desc = "settings",
                 colors =
                     iconButtonColors(

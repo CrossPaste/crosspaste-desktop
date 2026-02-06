@@ -36,24 +36,28 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Bookmark
+import com.composables.icons.materialsymbols.rounded.Vertical_align_bottom
+import com.composables.icons.materialsymbols.rounded.Vertical_align_top
+import com.composables.icons.materialsymbols.roundedfilled.Bookmark
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.MenuItemView
-import com.crosspaste.ui.base.ascSort
-import com.crosspaste.ui.base.descSort
-import com.crosspaste.ui.base.favorite
-import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
@@ -96,26 +100,41 @@ fun SearchTrailingIcon() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         GeneralIconButton(
-            painter = if (searchBaseParams.sort) descSort() else ascSort(),
+            imageVector = if (searchBaseParams.sort) {
+                MaterialSymbols.Rounded.Vertical_align_bottom
+            } else {
+                MaterialSymbols.Rounded.Vertical_align_top
+            },
             desc = "sort_by_creation_time",
             colors =
                 iconButtonColors(
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary,
                 ),
+            buttonSize = xLarge,
+            iconSize = large2X,
             shape = tiny2XRoundedCornerShape,
         ) {
             pasteSearchViewModel.switchSort()
         }
 
+        Spacer(modifier = Modifier.width(tiny4X))
+
         GeneralIconButton(
-            painter = if (searchBaseParams.favorite) favorite() else noFavorite(),
+            imageVector =
+                if (searchBaseParams.favorite) {
+                    MaterialSymbols.RoundedFilled.Bookmark
+                } else {
+                    MaterialSymbols.Rounded.Bookmark
+                },
             desc = "whether_to_search_only_favorites",
             colors =
                 iconButtonColors(
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary,
                 ),
+            buttonSize = xLarge,
+            iconSize = large2X,
             shape = tiny2XRoundedCornerShape,
         ) {
             pasteSearchViewModel.switchFavorite()

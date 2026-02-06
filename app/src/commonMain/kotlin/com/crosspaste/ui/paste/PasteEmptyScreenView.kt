@@ -1,4 +1,4 @@
-package com.crosspaste.ui.paste.preview
+package com.crosspaste.ui.paste
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
