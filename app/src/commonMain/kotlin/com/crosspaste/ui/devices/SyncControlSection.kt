@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -26,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Arrow_back
+import com.composables.icons.materialsymbols.rounded.Arrow_forward
 import com.crosspaste.app.AppControl
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
@@ -56,7 +56,7 @@ fun DeviceScope.SyncControlSection() {
                 SyncSwitchRow(
                     title = copywriter.getText("allow_send_to"),
                     subtitle = syncRuntimeInfo.getDeviceDisplayName(),
-                    icon = Icons.AutoMirrored.Filled.ArrowForward,
+                    icon = MaterialSymbols.Rounded.Arrow_forward,
                     checked = !appControl.isSyncControlEnabled() || syncRuntimeInfo.allowSend,
                 ) { allowSend ->
                     if (appControl.isSyncControlEnabled(true)) {
@@ -69,7 +69,7 @@ fun DeviceScope.SyncControlSection() {
                 SyncSwitchRow(
                     title = copywriter.getText("allow_receive_from"),
                     subtitle = syncRuntimeInfo.getDeviceDisplayName(),
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                    icon = MaterialSymbols.Rounded.Arrow_back,
                     checked = !appControl.isSyncControlEnabled() || syncRuntimeInfo.allowReceive,
                 ) { allowReceive ->
                     if (appControl.isSyncControlEnabled(true)) {

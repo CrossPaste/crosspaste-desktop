@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,6 +52,8 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.DialogProperties
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Key
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
@@ -133,7 +133,7 @@ fun DeviceScope.TrustDeviceDialog() {
                         .padding(top = tiny),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Key,
+                    imageVector = MaterialSymbols.Rounded.Key,
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
                     tint = MaterialTheme.colorScheme.primary,

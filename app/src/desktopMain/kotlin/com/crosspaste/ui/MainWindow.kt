@@ -6,9 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.window.WindowDraggableArea
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -22,6 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Push_pin
+import com.composables.icons.materialsymbols.roundedfilled.Push_pin
 import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
@@ -99,9 +99,9 @@ fun MainWindow(windowIcon: Painter?) {
                     GeneralIconButton(
                         imageVector =
                             if (alwaysOnTop) {
-                                Icons.Filled.PushPin
+                                MaterialSymbols.Rounded.Push_pin
                             } else {
-                                Icons.Outlined.PushPin
+                                MaterialSymbols.RoundedFilled.Push_pin
                             },
                         desc = "always_on_top",
                         colors =

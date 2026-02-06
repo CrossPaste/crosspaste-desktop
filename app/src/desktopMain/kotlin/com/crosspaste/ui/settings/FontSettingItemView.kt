@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.FontDownload
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -24,8 +21,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpOffset
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Chevron_right
+import com.composables.icons.materialsymbols.rounded.Font_download
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.FontInfo
 import com.crosspaste.ui.base.FontManager
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.theme.AppUIFont.menuItemTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -37,6 +39,7 @@ import org.koin.compose.koinInject
 @Composable
 fun FontSettingItemView() {
     val fontManager = koinInject<FontManager>()
+    val themeExt = LocalThemeExtState.current
 
     val currentFont by rememberUserSelectedFont()
 
@@ -50,8 +53,8 @@ fun FontSettingItemView() {
             subtitleContent = {
                 Text(currentFont.name)
             },
-            icon = Icons.Default.FontDownload,
-            trailingContent = { Icon(Icons.Default.ChevronRight, null) },
+            icon = IconData(MaterialSymbols.Rounded.Font_download, themeExt.amberIconColor),
+            trailingContent = { Icon(MaterialSymbols.Rounded.Chevron_right, null) },
         ) {
             expanded = true
         }

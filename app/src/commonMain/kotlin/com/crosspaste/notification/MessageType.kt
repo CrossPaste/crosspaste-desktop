@@ -1,14 +1,14 @@
 package com.crosspaste.notification
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.roundedfilled.Check_circle
+import com.composables.icons.materialsymbols.roundedfilled.Error
+import com.composables.icons.materialsymbols.roundedfilled.Info
+import com.composables.icons.materialsymbols.roundedfilled.Warning
 import com.crosspaste.ui.LocalThemeExtState
 
 enum class MessageType {
@@ -46,10 +46,10 @@ enum class MessageStyle {
 @Composable
 fun getMessageImageVector(messageStyle: MessageStyle): ImageVector =
     when (messageStyle) {
-        MessageStyle.Error -> Icons.Default.Error
-        MessageStyle.Info -> Icons.Default.Info
-        MessageStyle.Success -> Icons.Default.CheckCircle
-        MessageStyle.Warning -> Icons.Default.Warning
+        MessageStyle.Error -> MaterialSymbols.RoundedFilled.Error
+        MessageStyle.Info -> MaterialSymbols.RoundedFilled.Info
+        MessageStyle.Success -> MaterialSymbols.RoundedFilled.Check_circle
+        MessageStyle.Warning -> MaterialSymbols.RoundedFilled.Warning
     }
 
 @Composable

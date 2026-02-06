@@ -2,6 +2,7 @@ package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,8 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,24 +27,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Delete
+import com.composables.icons.materialsymbols.rounded.Tag
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AnimatedSegmentedControl
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
-import com.crosspaste.ui.base.color
-import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.hashtag
-import com.crosspaste.ui.base.html
-import com.crosspaste.ui.base.image
-import com.crosspaste.ui.base.link
 import com.crosspaste.ui.base.measureTextWidth
-import com.crosspaste.ui.base.rtf
-import com.crosspaste.ui.base.text
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.Quadruple
@@ -83,6 +81,7 @@ fun StorageStatisticsScope.StorageStatisticsHeader() {
 @Composable
 fun StorageStatisticsScope.StorageStatisticsContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
+    val themeExt = LocalThemeExtState.current
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -93,16 +92,18 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
 
     var nameMaxWidth by remember { mutableStateOf(massive) }
 
-    val pasteTypes: Array<Quadruple<String, Painter, Long?, String?>> =
+    val pasteboard = IconData(MaterialSymbols.Rounded.Tag, themeExt.blueIconColor)
+
+    val pasteTypes: Array<Quadruple<String, IconData, Long?, String?>> =
         arrayOf(
-            Quadruple("pasteboard", hashtag(), pasteCount, pasteFormatSize),
-            Quadruple("text", text(), textCount, textFormatSize),
-            Quadruple("color", color(), colorCount, colorFormatSize),
-            Quadruple("link", link(), urlCount, urlFormatSize),
-            Quadruple("html", html(), htmlCount, htmlFormatSize),
-            Quadruple("rtf", rtf(), rtfCount, rtfFormatSize),
-            Quadruple("image", image(), imageCount, imageFormatSize),
-            Quadruple("file", file(), fileCount, fileFormatSize),
+            Quadruple("pasteboard", pasteboard, pasteCount, pasteFormatSize),
+            Quadruple("text", themeExt.textTypeIconData, textCount, textFormatSize),
+            Quadruple("color", themeExt.colorTypeIconData, colorCount, colorFormatSize),
+            Quadruple("link", themeExt.urlTypeIconData, urlCount, urlFormatSize),
+            Quadruple("html", themeExt.htmlTypeIconData, htmlCount, htmlFormatSize),
+            Quadruple("rtf", themeExt.rtfTypeIconData, rtfCount, rtfFormatSize),
+            Quadruple("image", themeExt.imageTypeIconData, imageCount, imageFormatSize),
+            Quadruple("file", themeExt.fileTypeIconData, fileCount, fileFormatSize),
         )
 
     val typeTextStyle =
@@ -178,9 +179,10 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        modifier = Modifier.size(medium),
-                        painter = quadruple.second,
+                        modifier = Modifier.size(large2X),
+                        imageVector = quadruple.second.imageVector,
                         contentDescription = null,
+                        tint = quadruple.second.color,
                     )
 
                     Spacer(modifier = Modifier.width(xLarge))
@@ -238,7 +240,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
 
             SettingListItem(
                 title = "clear_non_favorite_pasteboards",
-                icon = Icons.Default.Delete,
+                icon = IconData(MaterialSymbols.Rounded.Delete, themeExt.redIconColor),
                 trailingContent = {
                     if (!cleaning) {
                         Button(
@@ -252,13 +254,18 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
                                         }
                                 }
                             },
+                            modifier = Modifier.height(xxLarge),
+                            contentPadding = PaddingValues(horizontal = small2X),
                             colors =
                                 buttonColors(
                                     containerColor = MaterialTheme.colorScheme.error,
                                     contentColor = MaterialTheme.colorScheme.onError,
                                 ),
                         ) {
-                            Text(copywriter.getText("manual_clear"))
+                            Text(
+                                copywriter.getText("manual_clear"),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         }
                     } else {
                         CircularProgressIndicator(

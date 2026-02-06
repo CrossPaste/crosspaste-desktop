@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -21,9 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Chevron_right
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 
@@ -42,20 +41,9 @@ fun SettingSectionCard(content: @Composable ColumnScope.() -> Unit) {
 expect fun SettingListItem(
     title: String,
     subtitle: String? = null,
-    icon: ImageVector? = null,
+    icon: IconData? = null,
     trailingContent: @Composable (() -> Unit)? = {
-        Icon(Icons.Default.ChevronRight, null)
-    },
-    onClick: (() -> Unit)? = null,
-)
-
-@Composable
-expect fun SettingListItem(
-    title: String,
-    subtitle: String? = null,
-    painter: Painter? = null,
-    trailingContent: @Composable (() -> Unit)? = {
-        Icon(Icons.Default.ChevronRight, null)
+        Icon(MaterialSymbols.Rounded.Chevron_right, null)
     },
     onClick: (() -> Unit)? = null,
 )
@@ -64,9 +52,9 @@ expect fun SettingListItem(
 expect fun SettingListItem(
     titleContent: @Composable (() -> Unit),
     subtitle: String? = null,
-    icon: ImageVector? = null,
+    icon: IconData? = null,
     trailingContent: @Composable (() -> Unit)? = {
-        Icon(Icons.Default.ChevronRight, null)
+        Icon(MaterialSymbols.Rounded.Chevron_right, null)
     },
     onClick: (() -> Unit)? = null,
 )
@@ -75,9 +63,9 @@ expect fun SettingListItem(
 expect fun SettingListItem(
     title: String,
     subtitleContent: @Composable (() -> Unit),
-    icon: ImageVector? = null,
+    icon: IconData? = null,
     trailingContent: @Composable (() -> Unit)? = {
-        Icon(Icons.Default.ChevronRight, null)
+        Icon(MaterialSymbols.Rounded.Chevron_right, null)
     },
     onClick: (() -> Unit)? = null,
 )
@@ -86,7 +74,7 @@ expect fun SettingListItem(
 expect fun SettingListSwitchItem(
     title: String,
     subtitle: String? = null,
-    icon: ImageVector? = null,
+    icon: IconData? = null,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 )
@@ -98,7 +86,7 @@ fun <T> SegmentedControlSettingsRow(
     selectedOptionIndex: Int,
     onOptionSelected: (Int, T) -> Unit,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
+    icon: IconData? = null,
     twoLine: Boolean = false,
     optionLabel: (T) -> String = { it.toString() },
 ) {
@@ -131,11 +119,7 @@ fun <T> SegmentedControlSettingsRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    icon.IconContent()
                     Spacer(Modifier.width(medium))
                 }
                 Text(
@@ -162,11 +146,7 @@ fun <T> SegmentedControlSettingsRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    icon.IconContent()
                     Spacer(Modifier.width(medium))
                 }
                 Text(

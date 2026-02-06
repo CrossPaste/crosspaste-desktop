@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Shortcut
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +20,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Edit
+import com.composables.icons.materialsymbols.rounded.Keyboard
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
@@ -69,7 +69,7 @@ fun SetShortcutKeysDialog(
                         .padding(top = tiny),
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Shortcut,
+                    imageVector = MaterialSymbols.Rounded.Keyboard,
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
                     tint = MaterialTheme.colorScheme.primary,
@@ -117,7 +117,7 @@ fun SetShortcutKeysDialog(
                         Icon(
                             modifier =
                                 Modifier.size(medium),
-                            imageVector = Icons.Default.Edit,
+                            imageVector = MaterialSymbols.Rounded.Edit,
                             contentDescription = "edit shortcut key",
                             tint = MaterialTheme.colorScheme.primary,
                         )

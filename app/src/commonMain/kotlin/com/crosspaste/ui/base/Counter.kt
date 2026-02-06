@@ -11,9 +11,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +30,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Add
+import com.composables.icons.materialsymbols.rounded.Remove
 
 @Composable
 fun Counter(
@@ -68,7 +68,7 @@ fun Counter(
                 modifier = Modifier.size(40.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Remove,
+                    imageVector = MaterialSymbols.Rounded.Remove,
                     contentDescription = "Decrease",
                     tint = colorScheme.primary,
                 )
@@ -128,7 +128,7 @@ fun Counter(
                 modifier = Modifier.size(40.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Add,
+                    imageVector = MaterialSymbols.Rounded.Add,
                     contentDescription = "Increase",
                     tint = colorScheme.primary,
                 )

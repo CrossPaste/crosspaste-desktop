@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material3.IconButtonDefaults.iconButtonColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,11 +33,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Bookmark
+import com.composables.icons.materialsymbols.roundedfilled.Bookmark
 import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
@@ -46,15 +51,16 @@ import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.LocalThemeState
-import com.crosspaste.ui.base.PasteTooltipIconView
+import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
-import com.crosspaste.ui.base.favorite
 import com.crosspaste.ui.base.lightSideBarColors
-import com.crosspaste.ui.base.noFavorite
 import com.crosspaste.ui.paste.PasteDataScope
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.ColorUtils.getBestTextColor
 import com.crosspaste.utils.DateUtils
@@ -224,12 +230,21 @@ fun PasteDataScope.SidePasteTitleView() {
                     )
                 }
                 Spacer(Modifier.width(tiny4X))
-                PasteTooltipIconView(
-                    painter = if (favorite) favorite() else noFavorite(),
-                    contentDescription = "Favorite",
-                    tint = onBackground,
-                    hover = background.copy(alpha = 0.3f),
-                    text = copywriter.getText(if (favorite) "remove_from_favorites" else "favorite"),
+                GeneralIconButton(
+                    imageVector =
+                        if (favorite) {
+                            MaterialSymbols.RoundedFilled.Bookmark
+                        } else {
+                            MaterialSymbols.Rounded.Bookmark
+                        },
+                    colors =
+                        iconButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = onBackground,
+                        ),
+                    buttonSize = xLarge,
+                    iconSize = large2X,
+                    shape = tiny2XRoundedCornerShape,
                 ) {
                     if (appControl.isFavoriteEnabled()) {
                         scope.launch {
@@ -254,7 +269,6 @@ fun PasteDataScope.SidePasteTitleView() {
         }
         SidePasteTypeIconView(
             modifier = Modifier.fillMaxHeight().wrapContentWidth(),
-            tint = onBackground,
         )
     }
 }

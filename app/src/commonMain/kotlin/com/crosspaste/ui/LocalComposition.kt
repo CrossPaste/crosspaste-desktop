@@ -25,3 +25,6 @@ val LocalAppSizeValueState =
     staticCompositionLocalOf<AppSizeValue> {
         error("CompositionLocal AppSizeValue not present")
     }
+
+val LocalSmallSettingItemState =
+    staticCompositionLocalOf { false }

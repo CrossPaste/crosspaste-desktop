@@ -7,7 +7,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import coil3.PlatformContext
@@ -20,21 +19,20 @@ import coil3.size.Precision
 import com.crosspaste.image.coil.ImageLoaders
 import com.crosspaste.image.coil.UrlItem
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteDataScope.PasteUrlIcon(
-    iconColor: Color,
-    size: Dp = large2X,
-) {
+fun PasteDataScope.PasteUrlIcon(size: Dp = large2X) {
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
 
     val urlPasteItem = getPasteItem(UrlPasteItem::class)
 
     val density = LocalDensity.current
+    val themeExt = LocalThemeExtState.current
 
     val sizePx = with(density) { size.roundToPx() }
 
@@ -66,11 +64,13 @@ fun PasteDataScope.PasteUrlIcon(
                 is AsyncImagePainter.State.Error,
                 -> {
                     Icon(
-                        painter = link(),
+                        imageVector = themeExt.urlTypeIconData.imageVector,
                         contentDescription = "Paste Icon",
                         modifier = Modifier.size(size),
-                        tint = iconColor,
+                        tint = themeExt.urlTypeIconData.color,
                     )
+
+                    LocalThemeExtState.current.urlTypeIconData.IconContent()
                 }
                 else -> {
                     SubcomposeAsyncImageContent()

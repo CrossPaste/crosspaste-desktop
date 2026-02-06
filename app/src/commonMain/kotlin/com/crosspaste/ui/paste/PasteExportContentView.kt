@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Storage
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -37,16 +37,11 @@ import com.crosspaste.paste.PasteType.Companion.IMAGE_TYPE
 import com.crosspaste.paste.PasteType.Companion.RTF_TYPE
 import com.crosspaste.paste.PasteType.Companion.TEXT_TYPE
 import com.crosspaste.paste.PasteType.Companion.URL_TYPE
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.base.SectionHeader
-import com.crosspaste.ui.base.color
-import com.crosspaste.ui.base.file
-import com.crosspaste.ui.base.html
-import com.crosspaste.ui.base.image
-import com.crosspaste.ui.base.link
-import com.crosspaste.ui.base.rtf
-import com.crosspaste.ui.base.text
 import com.crosspaste.ui.settings.SettingListItem
 import com.crosspaste.ui.settings.SettingListSwitchItem
 import com.crosspaste.ui.settings.SettingSectionCard
@@ -91,6 +86,8 @@ fun PasteExportContentView() {
     // Export progress state
     var progressing by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
+
+    val themeExt = LocalThemeExtState.current
 
     InnerScaffold(
         bottomBar = {
@@ -197,7 +194,7 @@ fun PasteExportContentView() {
                 SettingSectionCard {
                     SettingListItem(
                         title = "text",
-                        painter = text(),
+                        icon = themeExt.textTypeIconData,
                         trailingContent = {
                             Checkbox(
                                 checked = textTypeSelected,
@@ -213,7 +210,7 @@ fun PasteExportContentView() {
                     HorizontalDivider()
                     SettingListItem(
                         title = "link",
-                        painter = link(),
+                        icon = themeExt.urlTypeIconData,
                         trailingContent = {
                             Checkbox(
                                 checked = urlTypeSelected,
@@ -229,7 +226,7 @@ fun PasteExportContentView() {
                     HorizontalDivider()
                     SettingListItem(
                         title = "html",
-                        painter = html(),
+                        icon = themeExt.htmlTypeIconData,
                         trailingContent = {
                             Checkbox(
                                 checked = htmlTypeSelected,
@@ -245,7 +242,7 @@ fun PasteExportContentView() {
                     HorizontalDivider()
                     SettingListItem(
                         title = "file",
-                        painter = file(),
+                        icon = themeExt.fileTypeIconData,
                         trailingContent = {
                             Checkbox(
                                 checked = fileTypeSelected,
@@ -261,7 +258,7 @@ fun PasteExportContentView() {
                     HorizontalDivider()
                     SettingListItem(
                         title = "image",
-                        painter = image(),
+                        icon = themeExt.imageTypeIconData,
                         trailingContent = {
                             Checkbox(
                                 checked = imageTypeSelected,
@@ -277,7 +274,7 @@ fun PasteExportContentView() {
                     HorizontalDivider()
                     SettingListItem(
                         title = "rtf",
-                        painter = rtf(),
+                        icon = themeExt.rtfTypeIconData,
                         trailingContent = {
                             Checkbox(
                                 checked = rtfTypeSelected,
@@ -293,7 +290,7 @@ fun PasteExportContentView() {
                     HorizontalDivider()
                     SettingListItem(
                         title = "color",
-                        painter = color(),
+                        icon = themeExt.colorTypeIconData,
                         trailingContent = {
                             Checkbox(
                                 checked = colorTypeSelected,
@@ -323,7 +320,7 @@ fun PasteExportContentView() {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "export_favorites_only",
-                        icon = Icons.Default.Storage,
+                        icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.amberIconColor),
                         trailingContent = {
                             Counter(
                                 defaultValue = maxFileSize,

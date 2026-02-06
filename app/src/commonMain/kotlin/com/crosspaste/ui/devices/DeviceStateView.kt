@@ -1,19 +1,19 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.LinkOff
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.SyncAlt
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Arrow_back
+import com.composables.icons.materialsymbols.rounded.Arrow_forward
+import com.composables.icons.materialsymbols.rounded.Close
+import com.composables.icons.materialsymbols.rounded.Link_off
+import com.composables.icons.materialsymbols.rounded.Pause
+import com.composables.icons.materialsymbols.rounded.Refresh
+import com.composables.icons.materialsymbols.rounded.Shield
+import com.composables.icons.materialsymbols.rounded.Sync_alt
+import com.composables.icons.materialsymbols.rounded.Warning
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.StateTagStyle
@@ -26,7 +26,7 @@ val syncedStateStyle
             label = "sync_status_synced",
             containerColor = LocalThemeExtState.current.success.container,
             contentColor = LocalThemeExtState.current.success.onContainer,
-            icon = Icons.Default.SyncAlt,
+            icon = MaterialSymbols.Rounded.Sync_alt,
         )
 
 val outgoingOnlyStateStyle
@@ -36,7 +36,7 @@ val outgoingOnlyStateStyle
             label = "sync_status_outgoing_only",
             containerColor = LocalThemeExtState.current.info.container,
             contentColor = LocalThemeExtState.current.info.onContainer,
-            icon = Icons.AutoMirrored.Filled.ArrowForward,
+            icon = MaterialSymbols.Rounded.Arrow_forward,
         )
 
 val incomingOnlyStateStyle
@@ -46,7 +46,7 @@ val incomingOnlyStateStyle
             label = "sync_status_incoming_only",
             containerColor = LocalThemeExtState.current.info.container,
             contentColor = LocalThemeExtState.current.info.onContainer,
-            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            icon = MaterialSymbols.Rounded.Arrow_back,
         )
 
 val pauseSyncStateStyle
@@ -56,7 +56,7 @@ val pauseSyncStateStyle
             label = "sync_status_paused",
             containerColor = LocalThemeExtState.current.neutral.container,
             contentColor = LocalThemeExtState.current.neutral.onContainer,
-            icon = Icons.Default.Pause,
+            icon = MaterialSymbols.Rounded.Pause,
         )
 
 val disconnectedStateStyle
@@ -66,7 +66,7 @@ val disconnectedStateStyle
             label = "sync_status_disconnected",
             containerColor = MaterialTheme.colorScheme.errorContainer,
             contentColor = MaterialTheme.colorScheme.onErrorContainer,
-            icon = Icons.Default.LinkOff,
+            icon = MaterialSymbols.Rounded.Link_off,
         )
 
 val unmatchedStateStyle
@@ -76,7 +76,7 @@ val unmatchedStateStyle
             label = "sync_status_unmatched",
             containerColor = LocalThemeExtState.current.warning.container,
             contentColor = LocalThemeExtState.current.warning.onContainer,
-            icon = Icons.Default.Warning,
+            icon = MaterialSymbols.Rounded.Warning,
         )
 
 val unverifiedStateStyle
@@ -86,7 +86,7 @@ val unverifiedStateStyle
             label = "sync_status_unverified",
             containerColor = LocalThemeExtState.current.warning.container,
             contentColor = LocalThemeExtState.current.warning.onContainer,
-            icon = Icons.Default.Shield,
+            icon = MaterialSymbols.Rounded.Shield,
         )
 
 val incompatibleStateStyle
@@ -96,7 +96,7 @@ val incompatibleStateStyle
             label = "sync_status_incompatible",
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,
-            icon = Icons.Default.Close,
+            icon = MaterialSymbols.Rounded.Close,
         )
 
 val refreshingStateStyle
@@ -106,7 +106,7 @@ val refreshingStateStyle
             label = "refresh",
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
-            icon = Icons.Default.Refresh,
+            icon = MaterialSymbols.Rounded.Refresh,
         )
 
 @Composable

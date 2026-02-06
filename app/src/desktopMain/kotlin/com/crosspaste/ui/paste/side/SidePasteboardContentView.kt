@@ -57,8 +57,8 @@ import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestPasteListFocus
+import com.crosspaste.ui.paste.PasteEmptyScreenView
 import com.crosspaste.ui.paste.createPasteDataScope
-import com.crosspaste.ui.paste.preview.PasteEmptyScreenView
 import com.crosspaste.ui.paste.side.preview.SidePreviewView
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium

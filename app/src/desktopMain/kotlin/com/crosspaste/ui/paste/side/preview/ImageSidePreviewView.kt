@@ -31,6 +31,8 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Broken_image
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaders
@@ -43,7 +45,6 @@ import com.crosspaste.ui.base.ImageFileSize
 import com.crosspaste.ui.base.ImageResolution
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
-import com.crosspaste.ui.base.imageSlash
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -146,7 +147,7 @@ fun PasteDataScope.ImageSidePreviewView() {
                         }
                         is AsyncImagePainter.State.Error -> {
                             Icon(
-                                painter = imageSlash(),
+                                imageVector = MaterialSymbols.Rounded.Broken_image,
                                 contentDescription = imagePath.name,
                                 modifier = Modifier.size(gigantic),
                                 tint = MaterialTheme.colorScheme.onBackground,

@@ -7,21 +7,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
-import androidx.compose.material.icons.automirrored.outlined.Article
-import androidx.compose.material.icons.filled.Cable
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.SyncAlt
-import androidx.compose.material.icons.filled.WifiFind
-import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,13 +21,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Docs
+import com.composables.icons.materialsymbols.rounded.Power
+import com.composables.icons.materialsymbols.rounded.Shield
+import com.composables.icons.materialsymbols.rounded.Sync_alt
+import com.composables.icons.materialsymbols.rounded.Visibility
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -54,6 +49,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
     val copywriter = koinInject<GlobalCopywriter>()
     val networkInterfaceService = koinInject<NetworkInterfaceService>()
     val syncScopeFactory = koinInject<SyncScopeFactory>()
+    val themeExt = LocalThemeExtState.current
 
     val jsonUtils = getJsonUtils()
 
@@ -90,7 +86,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "allow_discovery_by_new_devices",
-                    icon = Icons.Default.WifiFind,
+                    icon = IconData(MaterialSymbols.Rounded.Visibility, themeExt.blueIconColor),
                     checked = useNetworkInterfaces.isNotEmpty(),
                 ) { enableDiscovery ->
                     if (enableDiscovery) {
@@ -112,7 +108,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingCheckboxView(
-                    list = networkInterfaces.map { it.toString() },
+                    list = networkInterfaces.map { it.name },
                     getCurrentCheckboxValue = { index ->
                         config.useNetworkInterfaces.contains(networkInterfaces.map { it.name }[index])
                     },
@@ -130,11 +126,19 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                             listOf(newUseNetworkInterfacesJson, useNetworkInterfaces.isNotEmpty()),
                         )
                     },
+                    trailingContent = { index ->
+                        val info = networkInterfaces[index]
+                        Text(
+                            text = "${info.hostAddress}/${info.networkPrefixLength}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "port",
-                    icon = Icons.Default.Cable,
+                    icon = IconData(MaterialSymbols.Rounded.Power, themeExt.purpleIconColor),
                     trailingContent = {
                         port?.let {
                             Text(text = it)
@@ -154,7 +158,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "encrypted_sync",
-                    icon = Icons.Default.Shield,
+                    icon = IconData(MaterialSymbols.Rounded.Shield, themeExt.greenIconColor),
                     checked = config.enableEncryptSync,
                 ) {
                     configManager.updateConfig("enableEncryptSync", it)
@@ -162,7 +166,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_file_size_limit",
-                    icon = Icons.Default.SyncAlt,
+                    icon = IconData(MaterialSymbols.Rounded.Sync_alt, themeExt.indigoIconColor),
                     checked = config.enabledSyncFileSizeLimit,
                 ) { newEnabledSyncFileSizeLimit ->
                     configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)
@@ -170,7 +174,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "max_sync_file_size",
-                    icon = Icons.AutoMirrored.Filled.InsertDriveFile,
+                    icon = IconData(MaterialSymbols.Rounded.Docs, themeExt.redIconColor),
                     trailingContent = {
                         Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
                             it >= 0
@@ -191,7 +195,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "sync_text",
-                    icon = Icons.Outlined.TextFields,
+                    icon = themeExt.textTypeIconData,
                     checked = config.enableSyncText,
                 ) { enableSyncText ->
                     configManager.updateConfig("enableSyncText", enableSyncText)
@@ -199,7 +203,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_url",
-                    icon = Icons.Outlined.Link,
+                    icon = themeExt.urlTypeIconData,
                     checked = config.enableSyncUrl,
                 ) { enableSyncUrl ->
                     configManager.updateConfig("enableSyncUrl", enableSyncUrl)
@@ -207,7 +211,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_html",
-                    icon = Icons.Outlined.Code,
+                    icon = themeExt.htmlTypeIconData,
                     checked = config.enableSyncHtml,
                 ) { enableSyncHtml ->
                     configManager.updateConfig("enableSyncHtml", enableSyncHtml)
@@ -215,7 +219,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_rtf",
-                    icon = Icons.AutoMirrored.Outlined.Article,
+                    icon = themeExt.rtfTypeIconData,
                     checked = config.enableSyncRtf,
                 ) { enableSyncRtf ->
                     configManager.updateConfig("enableSyncRtf", enableSyncRtf)
@@ -223,7 +227,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_image",
-                    icon = Icons.Outlined.Image,
+                    icon = themeExt.imageTypeIconData,
                     checked = config.enableSyncImage,
                 ) { enableSyncImage ->
                     configManager.updateConfig("enableSyncImage", enableSyncImage)
@@ -231,7 +235,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_file",
-                    icon = Icons.Outlined.Description,
+                    icon = themeExt.fileTypeIconData,
                     checked = config.enableSyncFile,
                 ) { enableSyncFile ->
                     configManager.updateConfig("enableSyncFile", enableSyncFile)
@@ -239,7 +243,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListSwitchItem(
                     title = "sync_color",
-                    icon = Icons.Outlined.Palette,
+                    icon = themeExt.colorTypeIconData,
                     checked = config.enableSyncColor,
                 ) { enableSyncColor ->
                     configManager.updateConfig("enableSyncColor", enableSyncColor)
@@ -256,7 +260,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 SettingSectionCard {
                     SettingListItem(
                         title = "empty",
-                        icon = null as ImageVector?,
+                        icon = null,
                         trailingContent = null,
                     )
                 }

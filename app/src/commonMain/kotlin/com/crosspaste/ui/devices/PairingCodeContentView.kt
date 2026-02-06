@@ -19,10 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Autorenew
-import androidx.compose.material.icons.rounded.QrCodeScanner
-import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,6 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Autorenew
+import com.composables.icons.materialsymbols.rounded.Qr_code_scanner
+import com.composables.icons.materialsymbols.rounded.Verified_user
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
@@ -121,7 +121,7 @@ fun PairingCodeContentView() {
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Rounded.QrCodeScanner,
+                imageVector = MaterialSymbols.Rounded.Qr_code_scanner,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(xxLarge),
@@ -183,7 +183,7 @@ fun PairingCodeContentView() {
             Box(contentAlignment = Alignment.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Rounded.VerifiedUser,
+                        imageVector = MaterialSymbols.Rounded.Verified_user,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(medium),
@@ -228,7 +228,7 @@ fun LoadingSpinner(size: Dp) {
             Modifier
                 .size(size)
                 .graphicsLayer(rotationZ = rotation),
-        imageVector = Icons.Default.Autorenew,
+        imageVector = MaterialSymbols.Rounded.Autorenew,
         contentDescription = "Loading",
         tint = MaterialTheme.colorScheme.primary,
     )

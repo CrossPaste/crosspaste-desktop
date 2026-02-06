@@ -12,9 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeviceHub
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,9 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Device_hub
+import com.composables.icons.materialsymbols.rounded.Expand_more
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AnimatedSegmentedControl
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.PortTextField
 import com.crosspaste.ui.extension.ProxyType.HTTP
 import com.crosspaste.ui.extension.ProxyType.SOCKS
@@ -61,6 +63,7 @@ fun ProxySection(
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val config by configManager.config.collectAsState()
+    val themeExt = LocalThemeExtState.current
 
     val rotation by animateFloatAsState(if (isExpanded) 180f else 0f)
 
@@ -76,10 +79,10 @@ fun ProxySection(
         SettingListItem(
             title = "proxy",
             subtitle = "proxy_extension_network_requests",
-            icon = Icons.Default.DeviceHub,
+            icon = IconData(MaterialSymbols.Rounded.Device_hub, themeExt.cyanIconColor),
             trailingContent = {
                 Icon(
-                    imageVector = Icons.Default.ExpandMore,
+                    imageVector = MaterialSymbols.Rounded.Expand_more,
                     contentDescription = null,
                     modifier = Modifier.rotate(rotation),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,

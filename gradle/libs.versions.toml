@@ -13,6 +13,7 @@ filekit = "0.12.0"
 foojay-resolver = "1.0.0"
 hikaricp = "7.0.2"
 hot-reload = "1.1.0-alpha04"
+icons-material-symbols = "2.2.1"
 icu4j = "78.2"
 imageio = "3.13.0"
 jewel = "0.33.0-253.29795"
@@ -32,7 +33,6 @@ ktor = "3.4.0"
 lifecycle = "2.9.6"
 logback = "1.5.27"
 material3 = "1.10.0-alpha05"
-material-icons-extended = "1.7.3"
 material-kolor = "4.1.0"
 menu = "0.3.1"
 metadata-extractor = "2.19.0"
@@ -63,7 +63,6 @@ compose-desktop-windows-x64 = { module = "org.jetbrains.compose.desktop:desktop-
 compose-desktop-linux-x64 = { module = "org.jetbrains.compose.desktop:desktop-jvm-linux-x64", version.ref = "compose-plugin" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-plugin" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
-compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "material-icons-extended" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-plugin" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-plugin" }
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "compose-shimmer" }
@@ -72,6 +71,8 @@ cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", ver
 cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
 filekit = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
+icons-material-symbols-rounded = { module = "com.composables:icons-material-symbols-rounded-cmp", version.ref = "icons-material-symbols" }
+icons-material-symbols-rounded-filled = { module = "com.composables:icons-material-symbols-rounded-filled-cmp", version.ref = "icons-material-symbols" }
 icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "imageio" }
 imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "imageio" }

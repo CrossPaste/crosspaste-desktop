@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Check
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
@@ -205,7 +205,7 @@ class DesktopPasteMenuService(
                         trailingIcon = {
                             if (tagIdList.contains(tag.id)) {
                                 Icon(
-                                    imageVector = Icons.Default.Check,
+                                    imageVector = MaterialSymbols.Rounded.Check,
                                     contentDescription = "Checked",
                                     tint = AppUIColors.importantColor,
                                 )
