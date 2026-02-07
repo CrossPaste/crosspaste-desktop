@@ -61,7 +61,6 @@ class PullClientApi(
         return result(response, "icon", response.request.url)
     }
 
-    @OptIn(InternalAPI::class)
     private suspend fun result(
         response: HttpResponse,
         api: String,
@@ -71,14 +70,23 @@ class PullClientApi(
             logger.debug { "Success to pull $api" }
             SuccessResult(response.bodyAsChannel())
         } else {
-            val failResponse = response.body<FailResponse>()
-            createFailureResult(
+            val errorCode =
                 if (api == "file") {
                     StandardErrorCode.PULL_FILE_CHUNK_TASK_FAIL
                 } else {
                     StandardErrorCode.PULL_ICON_TASK_FAIL
-                },
-                "Fail to pull $api $key: ${response.status.value} $failResponse",
-            )
+                }
+            runCatching {
+                val failResponse = response.body<FailResponse>()
+                createFailureResult(
+                    errorCode,
+                    "Fail to pull $api $key: ${response.status.value} $failResponse",
+                )
+            }.getOrElse {
+                createFailureResult(
+                    errorCode,
+                    "Fail to pull $api $key: ${response.status.value}",
+                )
+            }
         }
 }

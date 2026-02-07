@@ -59,7 +59,7 @@ suspend inline fun <T> request(
 ): ClientApiResult =
     try {
         val response = request()
-        logger.info { "response status: ${response.call.request.url} ${response.status}" }
+        logger.debug { "response status: ${response.call.request.url} ${response.status}" }
         if (response.status.value == 404) {
             createFailureResult(StandardErrorCode.NOT_FOUND_API, "Not found Api")
         } else if (response.status.value != 200) {

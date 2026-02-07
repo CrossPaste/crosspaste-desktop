@@ -72,6 +72,9 @@ class SyncClientApi(
             val result = it.bodyAsText()
             result.toIntOrNull()?.let { connectedVersion ->
                 syncApi.compareVersion(connectedVersion)
+            } ?: run {
+                logger.warn { "heartbeat response is not a valid version int: '$result'" }
+                null
             }
         })
 
