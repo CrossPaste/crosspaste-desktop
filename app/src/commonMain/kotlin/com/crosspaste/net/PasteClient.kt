@@ -82,4 +82,8 @@ class PasteClient(
                 urlBuilder()
             }
         }
+
+    fun close() {
+        client.close()
+    }
 }

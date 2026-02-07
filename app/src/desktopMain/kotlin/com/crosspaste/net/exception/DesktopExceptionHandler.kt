@@ -16,27 +16,28 @@ class DesktopExceptionHandler : ExceptionHandler() {
      * @param throwable The throwable to check.
      * @return True if a "port in use" message is found, false otherwise.
      */
-    private fun containsPortInUseMessage(throwable: Throwable): Boolean {
-        // Check if the current throwable's message indicates a "port in use" error.
+    private fun containsPortInUseMessage(
+        throwable: Throwable,
+        visited: MutableSet<Throwable> = mutableSetOf(),
+    ): Boolean {
+        if (!visited.add(throwable)) return false
+
         if (isExceptionMessageContainsPortInUse(throwable)) {
             return true
         }
 
-        // Recursively check the cause of the throwable, if it exists.
         throwable.cause?.let {
-            if (containsPortInUseMessage(it)) {
+            if (containsPortInUseMessage(it, visited)) {
                 return true
             }
         }
 
-        // Recursively check all suppressed exceptions, if any exist.
         for (suppressed in throwable.suppressed) {
-            if (containsPortInUseMessage(suppressed)) {
+            if (containsPortInUseMessage(suppressed, visited)) {
                 return true
             }
         }
 
-        // Return false if no "port in use" message is found in the hierarchy.
         return false
     }
 

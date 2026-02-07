@@ -16,8 +16,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
@@ -40,6 +42,7 @@ class DesktopPasteBonjourService(
         private const val INTERFACE_SCAN_INTERVAL = 5000L // Throttle for heavy scan per interface
         private const val DEVICE_RESOLVE_INTERVAL = 2000L // Throttle for specific device resolution
         private const val MIN_SEARCH_DURATION = 2000L // Minimum duration for searching
+        private const val CLOSE_TIMEOUT = 10000L // Maximum time to wait for close
 
         private val dateUtils = getDateUtils()
     }
@@ -70,13 +73,13 @@ class DesktopPasteBonjourService(
         }
     }
 
-    fun processNetworkChange(interfaces: List<NetworkInterfaceInfo>) {
+    suspend fun processNetworkChange(interfaces: List<NetworkInterfaceInfo>) {
         close()
 
         setup(interfaces)
     }
 
-    fun setup(interfaces: List<NetworkInterfaceInfo>) {
+    suspend fun setup(interfaces: List<NetworkInterfaceInfo>) {
         val hostInfoList = interfaces.map { info -> info.toHostInfo() }
         val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
         val syncInfo = SyncInfo(appInfo, endpointInfo)
@@ -85,32 +88,29 @@ class DesktopPasteBonjourService(
 
         val txtRecordDict = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
 
-        val deferred =
-            scope.async {
-                hostInfoList
-                    .map { hostInfo ->
-                        async {
-                            val hostAddress = hostInfo.hostAddress
-                            jmdnsMap.computeIfAbsent(hostAddress) {
-                                val jmDNS = JmDNS.create(InetAddress.getByName(hostAddress))
-                                val serviceInfo =
-                                    ServiceInfo.create(
-                                        SERVICE_TYPE,
-                                        "crosspaste@${appInfo.appInstanceId}@${hostAddress.replace(".", "_")}",
-                                        endpointInfo.port,
-                                        0,
-                                        0,
-                                        txtRecordDict,
-                                    )
-                                jmDNS.addServiceListener(SERVICE_TYPE, serviceListener)
-                                jmDNS.registerService(serviceInfo)
-                                jmDNS
-                            }
+        coroutineScope {
+            hostInfoList
+                .map { hostInfo ->
+                    async {
+                        val hostAddress = hostInfo.hostAddress
+                        jmdnsMap.computeIfAbsent(hostAddress) {
+                            val jmDNS = JmDNS.create(InetAddress.getByName(hostAddress))
+                            val serviceInfo =
+                                ServiceInfo.create(
+                                    SERVICE_TYPE,
+                                    "crosspaste@${appInfo.appInstanceId}@${hostAddress.replace(".", "_")}",
+                                    endpointInfo.port,
+                                    0,
+                                    0,
+                                    txtRecordDict,
+                                )
+                            jmDNS.addServiceListener(SERVICE_TYPE, serviceListener)
+                            jmDNS.registerService(serviceInfo)
+                            jmDNS
                         }
-                    }.awaitAll()
-            }
-
-        runBlocking { deferred.await() }
+                    }
+                }.awaitAll()
+        }
     }
 
     override fun refreshAll() {
@@ -209,8 +209,8 @@ class DesktopPasteBonjourService(
 
     override fun close() {
         runCatching {
-            val deferred =
-                scope.async {
+            runBlocking {
+                withTimeout(CLOSE_TIMEOUT) {
                     jmdnsMap.values
                         .map { jmDNS ->
                             async {
@@ -219,10 +219,12 @@ class DesktopPasteBonjourService(
                             }
                         }.awaitAll()
                 }
-            runBlocking { deferred.await() }
+            }
             jmdnsMap.clear()
             interfaceScanThrottle.clear()
             deviceResolveThrottle.clear()
+        }.onFailure { e ->
+            logger.warn(e) { "Error closing Bonjour service" }
         }
     }
 }
@@ -238,16 +240,24 @@ class DesktopServiceListener(
     }
 
     override fun serviceRemoved(event: ServiceEvent) {
-        val map: Map<String, ByteArray> = mutableMapOf()
-        ByteWrangler.readProperties(map, event.info.textBytes)
-        val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
-        nearbyDeviceManager.removeDevice(syncInfo)
+        runCatching {
+            val map: Map<String, ByteArray> = mutableMapOf()
+            ByteWrangler.readProperties(map, event.info.textBytes)
+            val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
+            nearbyDeviceManager.removeDevice(syncInfo)
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to decode service removed event: ${event.info}" }
+        }
     }
 
     override fun serviceResolved(event: ServiceEvent) {
-        val map: Map<String, ByteArray> = mutableMapOf()
-        ByteWrangler.readProperties(map, event.info.textBytes)
-        val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
-        nearbyDeviceManager.addDevice(syncInfo)
+        runCatching {
+            val map: Map<String, ByteArray> = mutableMapOf()
+            ByteWrangler.readProperties(map, event.info.textBytes)
+            val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
+            nearbyDeviceManager.addDevice(syncInfo)
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to decode service resolved event: ${event.info}" }
+        }
     }
 }

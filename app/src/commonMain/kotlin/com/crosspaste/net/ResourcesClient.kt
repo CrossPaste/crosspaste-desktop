@@ -18,6 +18,8 @@ interface ResourcesClient {
         path: Path,
         listener: DownloadProgressListener,
     )
+
+    fun close() {}
 }
 
 class ClientResponse(

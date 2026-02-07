@@ -30,10 +30,9 @@ abstract class ExceptionHandler {
     abstract fun isConnectionRefused(e: Throwable): Boolean
 
     fun isEncryptFail(e: Throwable): Boolean =
-        if (e is PasteException) {
-            e.getErrorCode() == StandardErrorCode.ENCRYPT_FAIL.toErrorCode()
-        } else {
-            false
+        when (e) {
+            is PasteException -> e.getErrorCode() == StandardErrorCode.ENCRYPT_FAIL.toErrorCode()
+            else -> false
         }
 
     fun isDecryptFail(e: Throwable): Boolean =

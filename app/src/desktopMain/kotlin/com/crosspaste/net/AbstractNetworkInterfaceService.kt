@@ -15,7 +15,7 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
         private const val INVALID_END_OCTET_255 = ".255"
     }
 
-    protected val logger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     protected val networkInterfaceInfoProvider = ValueProvider<List<NetworkInterfaceInfo>>()
 

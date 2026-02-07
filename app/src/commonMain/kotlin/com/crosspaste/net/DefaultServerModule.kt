@@ -63,7 +63,7 @@ open class DefaultServerModule(
             install(serverEncryptPluginFactory.createPlugin())
             install(serverDecryptionPluginFactory.createPlugin())
             intercept(ApplicationCallPipeline.Setup) {
-                logger.info {
+                logger.debug {
                     "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}"
                 }
             }

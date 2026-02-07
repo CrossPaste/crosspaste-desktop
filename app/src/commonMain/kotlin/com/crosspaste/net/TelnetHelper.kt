@@ -44,6 +44,8 @@ class TelnetHelper(
                             }
                         }
                     }
+                }.onFailure { e ->
+                    logger.debug(e) { "switchHost telnet failed for ${hostInfo.hostAddress}:$port" }
                 }
             }
         }
