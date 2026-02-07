@@ -224,7 +224,7 @@ class SyncPasteTaskExecutor(
             val noNeedRetry =
                 fails.values.any {
                     it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP) ||
-                        it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP) ||
+                        it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP) ||
                         it.exception.match(StandardErrorCode.DECRYPT_FAIL)
                 }
 

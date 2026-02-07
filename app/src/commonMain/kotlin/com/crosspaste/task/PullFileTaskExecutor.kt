@@ -76,7 +76,19 @@ class PullFileTaskExecutor(
 
         return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
-            check(fileItems.isNotEmpty() && fileItems.size == 1)
+            if (fileItems.size != 1) {
+                return@let doFailure(
+                    pasteData,
+                    pullExtraInfo,
+                    listOf(
+                        createFailureResult(
+                            StandardErrorCode.PULL_FILE_TASK_FAIL,
+                            "Expected exactly 1 PasteFiles item, got ${fileItems.size}",
+                        ),
+                    ),
+                    pasteTask.modifyTime,
+                )
+            }
             val fileItem = fileItems.first()
             val appInstanceId = pasteData.appInstanceId
             val dateString =
