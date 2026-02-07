@@ -100,8 +100,11 @@ data class ImagesPasteItem(
                     fileName = fileName,
                 )
             }
-        return createImagesPasteItem(
+        return ImagesPasteItem(
             identifiers = identifiers,
+            count = count,
+            hash = hash,
+            size = size,
             basePath = basePath,
             relativePathList = newRelativePathList,
             fileInfoTreeMap = fileInfoTreeMap,
@@ -117,6 +120,21 @@ data class ImagesPasteItem(
             fileInfoTreeMap = fileInfoTreeMap,
             extraInfo = extraInfo,
         )
+
+    override fun clear(
+        clearResource: Boolean,
+        pasteCoordinate: PasteCoordinate,
+        userDataPathProvider: UserDataPathProvider,
+    ) {
+        if (clearResource) {
+            // Non-reference types need to clean up copied files
+            if (basePath == null) {
+                for (path in getFilePaths(userDataPathProvider)) {
+                    fileUtils.deleteFile(path)
+                }
+            }
+        }
+    }
 
     override fun isValid(): Boolean =
         count > 0 &&

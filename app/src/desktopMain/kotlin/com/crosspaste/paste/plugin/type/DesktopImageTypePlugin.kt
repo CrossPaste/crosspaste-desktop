@@ -134,6 +134,8 @@ class DesktopImageTypePlugin(
                     )
                 }
                 pasteCollector.updateCollectItem(itemIndex, this::class, update)
+            } else {
+                logger.warn { "Failed to write image for pasteId=$pasteId itemIndex=$itemIndex path=$imagePath" }
             }
         }
     }
