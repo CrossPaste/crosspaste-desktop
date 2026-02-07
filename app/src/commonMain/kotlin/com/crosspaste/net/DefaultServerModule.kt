@@ -19,6 +19,7 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -26,6 +27,9 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
 open class DefaultServerModule(
     private val appControl: AppControl,
@@ -67,6 +71,8 @@ open class DefaultServerModule(
                     "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}"
                 }
             }
+            val pasteRoutingScope =
+                CoroutineScope(ioDispatcher + SupervisorJob(coroutineContext[Job]))
             routing {
                 syncRouting(
                     appInfo,
@@ -83,6 +89,7 @@ open class DefaultServerModule(
                 pasteRouting(
                     appControl,
                     pasteboardService,
+                    pasteRoutingScope,
                     syncRoutingApi,
                 )
                 pullRouting(
@@ -98,11 +105,15 @@ open class DefaultServerModule(
         appInstanceId: String,
         host: String?,
     ) {
-        nearbyDeviceManager.nearbySyncInfos.value
-            .firstOrNull {
-                it.appInfo.appInstanceId == appInstanceId
-            }?.let {
-                syncRoutingApi.trustSyncInfo(it, host)
-            }
+        val syncInfo =
+            nearbyDeviceManager.nearbySyncInfos.value
+                .firstOrNull {
+                    it.appInfo.appInstanceId == appInstanceId
+                }
+        if (syncInfo != null) {
+            syncRoutingApi.trustSyncInfo(syncInfo, host)
+        } else {
+            logger.warn { "trustSyncInfo: $appInstanceId not found in nearby devices" }
+        }
     }
 }
