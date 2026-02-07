@@ -76,7 +76,7 @@ class PasteDataSerializer : KSerializer<PasteData> {
             hash = hash,
             createTime = DateUtils.nowEpochMilliseconds(),
             pasteSearchContent =
-                PasteData.createSearchContent(
+                PasteData.buildRawSearchContent(
                     source,
                     pasteAppearItem?.getSearchContent(),
                 ),

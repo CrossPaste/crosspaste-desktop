@@ -12,6 +12,7 @@ import com.composables.icons.materialsymbols.rounded.Palette
 import com.composables.icons.materialsymbols.rounded.Title
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 object PasteTypeExt {
     // Text
@@ -113,6 +114,8 @@ object PasteTypeExt {
         )
 }
 
+private val logger = KotlinLogging.logger {}
+
 @Composable
 fun PasteType.getIconData(): IconData {
     val themeExt = LocalThemeExtState.current
@@ -124,6 +127,9 @@ fun PasteType.getIconData(): IconData {
         PasteType.IMAGE_TYPE -> themeExt.imageTypeIconData
         PasteType.RTF_TYPE -> themeExt.rtfTypeIconData
         PasteType.COLOR_TYPE -> themeExt.colorTypeIconData
-        else -> themeExt.textTypeIconData
+        else -> {
+            logger.warn { "Unknown PasteType: $this, falling back to textTypeIconData" }
+            themeExt.textTypeIconData
+        }
     }
 }

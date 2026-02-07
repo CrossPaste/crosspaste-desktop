@@ -108,7 +108,7 @@ data class PasteData(
                 remote,
             )
 
-        fun createSearchContent(
+        fun buildRawSearchContent(
             source: String?,
             pasteItemSearchContent: String?,
         ): String? =

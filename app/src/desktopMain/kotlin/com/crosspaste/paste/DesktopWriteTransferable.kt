@@ -4,7 +4,6 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
-import java.awt.datatransfer.UnsupportedFlavorException
 
 class DesktopWriteTransferableBuilder {
 
@@ -49,7 +48,7 @@ class DesktopWriteTransferable(
 
     override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean = map.containsKey(flavor)
 
-    override fun getTransferData(flavor: DataFlavor?): Any = map[flavor] ?: throw UnsupportedFlavorException(flavor)
+    override fun getTransferData(flavor: DataFlavor?): Any = map[flavor] ?: NoneTransferData
 
     override fun getTransferData(pasteDataFlavor: PasteDataFlavor): Any {
         pasteDataFlavor as DesktopPasteDataFlavor
