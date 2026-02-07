@@ -9,6 +9,7 @@ import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.onFailure
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.Transferable
@@ -33,7 +34,7 @@ abstract class AbstractPasteboardService :
 
     abstract val currentPaste: CurrentPaste
 
-    override val pasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.UNLIMITED)
+    override val remotePasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.CONFLATED)
 
     override val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
@@ -101,34 +102,40 @@ abstract class AbstractPasteboardService :
 
     override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
         pasteDao.releaseRemotePasteData(pasteData) { storePasteData ->
-            pasteboardChannel.trySend {
-                tryWritePasteboard(
-                    pasteData = storePasteData,
-                    localOnly = true,
-                ).onFailure {
-                    notificationManager.sendNotification(
-                        title = { copyWriter -> copyWriter.getText("copy_failed") },
-                        message = it.message?.let { message -> { message } },
-                        messageType = MessageType.Error,
-                    )
+            remotePasteboardChannel
+                .trySend {
+                    tryWritePasteboard(
+                        pasteData = storePasteData,
+                        localOnly = true,
+                    ).onFailure {
+                        notificationManager.sendNotification(
+                            title = { copyWriter -> copyWriter.getText("copy_failed") },
+                            message = it.message?.let { message -> { message } },
+                            messageType = MessageType.Error,
+                        )
+                    }
+                }.onFailure { e ->
+                    logger.error(e) { "Failed to send remote pasteboard task to channel" }
                 }
-            }
         }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?> =
         pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
-            pasteboardChannel.trySend {
-                tryWritePasteboard(
-                    pasteData = storePasteData,
-                    localOnly = true,
-                ).onFailure {
-                    notificationManager.sendNotification(
-                        title = { copyWriter -> copyWriter.getText("copy_failed") },
-                        message = it.message?.let { message -> { message } },
-                        messageType = MessageType.Error,
-                    )
+            remotePasteboardChannel
+                .trySend {
+                    tryWritePasteboard(
+                        pasteData = storePasteData,
+                        localOnly = true,
+                    ).onFailure {
+                        notificationManager.sendNotification(
+                            title = { copyWriter -> copyWriter.getText("copy_failed") },
+                            message = it.message?.let { message -> { message } },
+                            messageType = MessageType.Error,
+                        )
+                    }
+                }.onFailure { e ->
+                    logger.error(e) { "Failed to send remote pasteboard task to channel" }
                 }
-            }
         }
 
     override suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit?> =

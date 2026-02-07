@@ -155,10 +155,8 @@ class LinuxPasteboardService(
     }
 
     override fun start() {
-        if (configManager.getCurrentConfig().enablePasteboardListening) {
-            if (job?.isActive != true) {
-                job = run()
-            }
+        if (job?.isActive != true) {
+            job = run()
         }
     }
 

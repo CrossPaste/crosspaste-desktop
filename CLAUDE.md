@@ -24,8 +24,11 @@ First startup downloads JBR (JetBrains Runtime) and gradle dependencies automati
 - **UI**: Compose Multiplatform with Material 3 design
 - **DI**: Koin for dependency injection across modules
 
+### Multi-Platform Strategy
+CrossPaste is a cross-platform product covering Desktop (this repo) and Mobile (Android/iOS, separate private repos). The `commonMain` code is designed to be shared across both Desktop and Mobile platforms — it gets copied to the mobile projects. When modifying `commonMain` code, always consider mobile compatibility: avoid desktop-only APIs, keep interfaces platform-agnostic, and ensure changes won't break mobile consumers.
+
 ### Key Source Directories
-- `app/src/commonMain/kotlin/`: Shared business logic across platforms
+- `app/src/commonMain/kotlin/`: Shared business logic across Desktop and Mobile platforms
 - `app/src/desktopMain/kotlin/`: Desktop-specific implementations
 - `app/src/desktopTest/kotlin/`: Desktop platform tests
 - `app/src/commonMain/sqldelight/`: Database schema definitions

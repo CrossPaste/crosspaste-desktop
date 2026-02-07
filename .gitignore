@@ -27,3 +27,4 @@ logs/
 node_modules/
 output*/
 /.claude/commands/
+/code-review/

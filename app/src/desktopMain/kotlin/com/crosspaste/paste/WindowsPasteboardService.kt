@@ -200,9 +200,9 @@ class WindowsPasteboardService(
                 }
 
             contents?.let {
-                serviceConsumerScope.launch(CoroutineName("WindowsPasteboardConsumer")) {
-                    if (it != ownerTransferable) {
-                        ownerTransferable = it
+                if (it != ownerTransferable) {
+                    ownerTransferable = it
+                    serviceConsumerScope.launch(CoroutineName("WindowsPasteboardConsumer")) {
                         val pasteTransferable = DesktopReadTransferable(it)
                         // in windows, we don't know if the pasteboard is local or remote
                         pasteConsumer.consume(pasteTransferable, source, remote = false)
@@ -223,14 +223,13 @@ class WindowsPasteboardService(
         when (uMsg) {
             User32.WM_CHANGECBCHAIN -> {
                 // If the next window is closing, repair the chain.
-                if (nextViewer!!.toNative() == uParam!!.toNative()) {
+                val nv = nextViewer
+                if (nv != null && uParam != null && nv.toNative() == uParam.toNative()) {
                     nextViewer =
-                        HWND(
-                            Pointer.createConstant(lParam!!.toLong()),
-                        )
-                } else if (nextViewer != null) {
+                        lParam?.let { HWND(Pointer.createConstant(it.toLong())) }
+                } else if (nv != null) {
                     // Otherwise, pass the message to the next link
-                    User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
+                    User32.INSTANCE.SendMessage(nv, uMsg, uParam, lParam)
                 }
                 return 0
             }

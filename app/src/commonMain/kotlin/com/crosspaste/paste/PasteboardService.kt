@@ -6,9 +6,7 @@ import com.crosspaste.paste.item.PasteItem
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
 
 interface PasteboardService : PasteboardMonitor {
 
@@ -20,27 +18,19 @@ interface PasteboardService : PasteboardMonitor {
 
     val configManager: CommonConfigManager
 
-    val pasteboardChannel: Channel<suspend () -> Result<Unit?>>
+    val remotePasteboardChannel: Channel<suspend () -> Result<Unit?>>
 
     val serviceScope: CoroutineScope
 
     fun startRemotePasteboardListener() {
         serviceScope.launch {
-            runCatching {
-                for (task in pasteboardChannel) {
-                    try {
+            for (task in remotePasteboardChannel) {
+                try {
+                    if (configManager.getCurrentConfig().enablePasteboardListening) {
                         task()
-                    } catch (e: Exception) {
-                        logger.error(e) { "Run write remote pasteboard" }
                     }
-                }
-            }.onFailure { e ->
-                if (e !is CancellationException) {
-                    logger.error(e) { "Channel write remote failed" }
-                    delay(1000)
-                    startRemotePasteboardListener()
-                } else {
-                    throw e
+                } catch (e: Exception) {
+                    logger.error(e) { "Run write remote pasteboard" }
                 }
             }
         }

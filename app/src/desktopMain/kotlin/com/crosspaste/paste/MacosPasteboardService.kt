@@ -13,7 +13,6 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -44,8 +43,6 @@ class MacosPasteboardService(
     override var ownerTransferable: Transferable? = null
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
-
-    override val pasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.UNLIMITED)
 
     private var job: Job? = null
 
