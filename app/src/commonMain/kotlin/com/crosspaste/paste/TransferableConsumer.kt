@@ -25,7 +25,7 @@ interface TransferableConsumer {
         logExecutionTime(logger, "preCollect") {
             for ((itemIndex, entry) in dataFlavorMap.entries.withIndex()) {
                 val identity = entry.key
-                logger.info { "Processing item $itemIndex with flavor: $identity" }
+                logger.debug { "Processing item $itemIndex with flavor: $identity" }
                 val plugin = getPlugin(identity) ?: continue
                 if (pasteCollector.needPreCollectionItem(itemIndex, plugin::class)) {
                     plugin.createPrePasteItem(

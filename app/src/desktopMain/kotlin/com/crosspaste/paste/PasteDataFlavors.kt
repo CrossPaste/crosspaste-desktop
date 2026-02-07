@@ -10,3 +10,7 @@ object PasteDataFlavors {
 
     val GNOME_COPIED_FILES_FLAVOR = DataFlavor("x-special/gnome-copied-files;class=java.io.InputStream")
 }
+
+object LocalOnlyFlavor : DataFlavor("application/x-local-only-flavor;class=java.lang.Boolean", "Local Only Flavor") {
+    private fun readResolve(): Any = LocalOnlyFlavor
+}

@@ -22,7 +22,7 @@ interface PasteSyncProcessManager<T> {
 
 interface PasteSingleProcess {
 
-    var process: StateFlow<Float>
+    val process: StateFlow<Float>
 
     fun success(index: Int)
 }

@@ -6,12 +6,12 @@ import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
-import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -22,14 +22,14 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
     private val semaphore = Semaphore(10)
 
-    private val _processMap: MutableStateFlow<ConcurrentMap<Long, PasteSingleProcess>> =
-        MutableStateFlow(ConcurrentMap())
+    private val _processMap: MutableStateFlow<Map<Long, PasteSingleProcess>> =
+        MutableStateFlow(mapOf())
 
     override val processMap: StateFlow<Map<Long, PasteSingleProcess>> = _processMap
 
     override suspend fun cleanProcess(key: Long) {
         withContext(mainDispatcher) {
-            _processMap.value.remove(key)
+            _processMap.update { it - key }
         }
     }
 
@@ -39,8 +39,8 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
     ): PasteSingleProcess =
         mainCoroutineDispatcher
             .async {
-                _processMap.value.computeIfAbsent(key) {
-                    PasteSingleProcessImpl(taskNum)
+                _processMap.value[key] ?: PasteSingleProcessImpl(taskNum).also { process ->
+                    _processMap.update { it + (key to process) }
                 }
             }.await()
 
@@ -73,7 +73,7 @@ class PasteSingleProcessImpl(
 
     private val _process = MutableStateFlow(0.0f)
 
-    override var process: StateFlow<Float> = _process
+    override val process: StateFlow<Float> = _process
 
     private var successNum = 0
 
