@@ -20,27 +20,32 @@ interface PasteboardService : PasteboardMonitor {
 
     val configManager: CommonConfigManager
 
-    val pasteboardChannel: Channel<suspend () -> Result<Unit?>>
+    val remotePasteboardChannel: Channel<suspend () -> Result<Unit?>>
 
     val serviceScope: CoroutineScope
 
     fun startRemotePasteboardListener() {
         serviceScope.launch {
-            runCatching {
-                for (task in pasteboardChannel) {
-                    try {
-                        task()
-                    } catch (e: Exception) {
-                        logger.error(e) { "Run write remote pasteboard" }
+            var retryDelay = 1000L
+            val maxRetryDelay = 30000L
+            while (true) {
+                runCatching {
+                    for (task in remotePasteboardChannel) {
+                        try {
+                            task()
+                            retryDelay = 1000L
+                        } catch (e: Exception) {
+                            logger.error(e) { "Run write remote pasteboard" }
+                        }
                     }
-                }
-            }.onFailure { e ->
-                if (e !is CancellationException) {
-                    logger.error(e) { "Channel write remote failed" }
-                    delay(1000)
-                    startRemotePasteboardListener()
-                } else {
-                    throw e
+                    return@launch
+                }.onFailure { e ->
+                    if (e is CancellationException) {
+                        throw e
+                    }
+                    logger.error(e) { "Channel write remote failed, retrying in ${retryDelay}ms" }
+                    delay(retryDelay)
+                    retryDelay = (retryDelay * 2).coerceAtMost(maxRetryDelay)
                 }
             }
         }

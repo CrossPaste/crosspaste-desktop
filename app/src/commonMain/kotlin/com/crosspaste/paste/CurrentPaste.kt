@@ -18,7 +18,7 @@ abstract class CurrentPaste {
 
     suspend fun getCurrentPaste(): PasteData? =
         getPasteId()?.let { id ->
-            logger.info { "Getting current paste with id $id" }
+            logger.debug { "Getting current paste with id $id" }
             pasteDao.getNoDeletePasteData(id)
         }
 }
