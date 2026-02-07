@@ -3,7 +3,6 @@ package com.crosspaste.net
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.extension.ProxyType
-import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
@@ -22,8 +21,6 @@ class DesktopResourcesClient(
 ) : AbstractResourcesClient(userDataPathProvider) {
 
     companion object {
-
-        val fileUtils = getFileUtils()
 
         fun createClient(
             clientLogger: KLogger,
@@ -96,4 +93,10 @@ class DesktopResourcesClient(
                 requestTimeoutMillis = 5000L
             }
         }
+
+    override fun close() {
+        noProxyClient.close()
+        proxyClientMap.values.forEach { it.close() }
+        proxyClientMap.clear()
+    }
 }

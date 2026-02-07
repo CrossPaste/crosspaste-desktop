@@ -28,6 +28,7 @@ import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.net.Server
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.GuidePasteDataService
@@ -218,6 +219,8 @@ class CrossPaste {
                             },
                             async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
                             async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
+                            async { stopService<PasteClient>("PasteClient") { it.close() } },
+                            async { stopService<ResourcesClient>("ResourcesClient") { it.close() } },
                         )
 
                     jobs.awaitAll()

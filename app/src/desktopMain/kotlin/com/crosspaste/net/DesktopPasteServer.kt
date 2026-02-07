@@ -28,9 +28,15 @@ class DesktopPasteServer(
                 server?.start(wait = false)
             }.onFailure { e ->
                 if (exceptionHandler.isPortAlreadyInUse(e)) {
-                    logger.warn { "Port ${readWritePort.getValue()} is already in use" }
-                    server = createServer(port = 0)
-                    server?.start(wait = false)
+                    logger.warn { "Port ${readWritePort.getValue()} is already in use, retrying on random port" }
+                    runCatching {
+                        server = createServer(port = 0)
+                        server?.start(wait = false)
+                    }.onFailure { retryError ->
+                        logger.error(retryError) { "Failed to start server on random port" }
+                    }
+                } else {
+                    logger.error(e) { "Failed to start server" }
                 }
             }
             server?.application?.engine?.resolvedConnectors()?.first()?.port?.let {
