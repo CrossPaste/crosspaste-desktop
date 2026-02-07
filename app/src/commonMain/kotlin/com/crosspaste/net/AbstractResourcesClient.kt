@@ -53,14 +53,22 @@ abstract class AbstractResourcesClient(
                         fileUtils.moveFile(tempFilePath, path)
                     }.onSuccess {
                         listener.onSuccess()
-                    }.onFailure {
-                        if (fileUtils.existFile(tempFilePath)) {
-                            fileUtils.deleteFile(tempFilePath)
+                    }.onFailure { error ->
+                        runCatching {
+                            if (fileUtils.existFile(tempFilePath)) {
+                                fileUtils.deleteFile(tempFilePath)
+                            }
+                        }.onFailure { e ->
+                            logger.warn(e) { "Failed to delete temp file: $tempFilePath" }
                         }
-                        if (fileUtils.existFile(path)) {
-                            fileUtils.deleteFile(path)
+                        runCatching {
+                            if (fileUtils.existFile(path)) {
+                                fileUtils.deleteFile(path)
+                            }
+                        }.onFailure { e ->
+                            logger.warn(e) { "Failed to delete target file: $path" }
                         }
-                        listener.onFailure(response.status, it)
+                        listener.onFailure(response.status, error)
                     }
                 } else {
                     listener.onFailure(response.status, null)
