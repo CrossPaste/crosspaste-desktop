@@ -26,7 +26,9 @@ interface PasteboardService : PasteboardMonitor {
         serviceScope.launch {
             for (task in remotePasteboardChannel) {
                 try {
-                    task()
+                    if (configManager.getCurrentConfig().enablePasteboardListening) {
+                        task()
+                    }
                 } catch (e: Exception) {
                     logger.error(e) { "Run write remote pasteboard" }
                 }
