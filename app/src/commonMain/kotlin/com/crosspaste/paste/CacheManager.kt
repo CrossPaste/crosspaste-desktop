@@ -26,11 +26,18 @@ interface CacheManager {
                 )
             val filesIndexBuilder = FilesIndexBuilder(PullFileTaskExecutor.CHUNK_SIZE)
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
-            val id = pasteData.id
+            val pasteDataId = pasteData.id
             val appInstanceId = pasteData.appInstanceId
             for (pasteAppearItem in fileItems) {
                 val pasteFiles = pasteAppearItem as PasteFiles
-                userDataPathProvider.resolve(appInstanceId, dateString, id, pasteFiles, false, filesIndexBuilder)
+                userDataPathProvider.resolve(
+                    appInstanceId,
+                    dateString,
+                    pasteDataId,
+                    pasteFiles,
+                    false,
+                    filesIndexBuilder,
+                )
             }
             filesIndexBuilder.build()
         }

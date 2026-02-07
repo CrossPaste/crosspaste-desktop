@@ -186,19 +186,19 @@ class PasteImportService(
         decompressPath: Path,
     ) {
         pasteImportParam.importBufferedSource()?.let { bufferSource ->
-            compressUtils
-                .unzip(bufferSource, decompressPath)
-                .onSuccess {
-                    runCatching {
-                        bufferSource.close()
+            try {
+                compressUtils
+                    .unzip(bufferSource, decompressPath)
+                    .onFailure {
+                        logger.error(it) { "Failed to decompress the file" }
+                        throw PasteException(
+                            errorCode = StandardErrorCode.IMPORT_FAIL.toErrorCode(),
+                            message = "Failed to decompress the file",
+                        )
                     }
-                }.onFailure {
-                    logger.error(it) { "Failed to decompress the file" }
-                    throw PasteException(
-                        errorCode = StandardErrorCode.IMPORT_FAIL.toErrorCode(),
-                        message = "Failed to decompress the file",
-                    )
-                }
+            } finally {
+                runCatching { bufferSource.close() }
+            }
         } ?: run {
             throw PasteException(
                 errorCode = StandardErrorCode.IMPORT_FAIL.toErrorCode(),
