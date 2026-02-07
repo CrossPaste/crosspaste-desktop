@@ -120,11 +120,11 @@ interface MacosApi : Library {
 
         fun getString(ptr: Pointer?): String? {
             val pointer = ptr ?: return null
-            return runCatching {
-                return pointer.getString(0)
-            }.apply {
+            return try {
+                pointer.getString(0)
+            } finally {
                 Native.free(Pointer.nativeValue(pointer))
-            }.getOrNull()
+            }
         }
     }
 }

@@ -73,7 +73,20 @@ public func setPassword(service: UnsafePointer<CChar>, account: UnsafePointer<CC
     // Try to add the item to the keychain
     let status = SecItemAdd(query as CFDictionary, nil)
 
-    // Check the result
+    if status == errSecDuplicateItem {
+        // Entry already exists, update it instead
+        let searchQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceString,
+            kSecAttrAccount as String: accountString
+        ]
+        let updateFields: [String: Any] = [
+            kSecValueData as String: passwordData
+        ]
+        let updateStatus = SecItemUpdate(searchQuery as CFDictionary, updateFields as CFDictionary)
+        return updateStatus == errSecSuccess
+    }
+
     return status == errSecSuccess
 }
 
