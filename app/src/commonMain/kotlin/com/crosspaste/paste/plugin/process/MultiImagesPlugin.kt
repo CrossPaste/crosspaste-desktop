@@ -25,9 +25,7 @@ class MultiImagesPlugin(
 
             if (allMemoryImages) {
                 val maxSizeImagePasteItem =
-                    pasteItems.maxWith { a, b ->
-                        a.size.compareTo(b.size)
-                    } as ImagesPasteItem
+                    pasteItems.maxBy { it.size } as ImagesPasteItem
 
                 pasteItems
                     .filter { it != maxSizeImagePasteItem }
