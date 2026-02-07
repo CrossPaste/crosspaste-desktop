@@ -33,7 +33,7 @@ object TxtRecordUtils {
         // Combine the split data into a complete base64 encoded string
         val base64Encoded =
             txtRecordDict.entries
-                .sortedBy { it.key }
+                .sortedBy { it.key.toIntOrNull() ?: 0 }
                 .joinToString(separator = "") { (_, value) ->
                     value.decodeToString()
                 }
