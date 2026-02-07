@@ -17,7 +17,6 @@ object CryptographyUtils {
     private val codecsUtils = getCodecsUtils()
 
     fun generateSecureKeyPair(): SecureKeyPair {
-        val provider = CryptographyProvider.Default
         val ecdsa = provider.get(ECDSA)
         val ecdh = provider.get(ECDH)
         val signKeyPairGenerator = ecdsa.keyPairGenerator(EC.Curve.P256)

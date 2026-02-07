@@ -62,15 +62,11 @@ class SecureKeyPairSerializer {
         var offset = 0
 
         // Read public key size and content
-        val publicKeySize = readIntFromByteArray(bytes, offset)
-        offset += 4
-        val publicKeyBytes = bytes.sliceArray(offset until offset + publicKeySize)
-        offset += publicKeySize
+        val (publicKeyBytes, nextOffset1) = readSegment(bytes, offset, "sign public key")
+        offset = nextOffset1
 
         // Read private key size and content
-        val privateKeySize = readIntFromByteArray(bytes, offset)
-        offset += 4
-        val privateKeyBytes = bytes.sliceArray(offset until offset + privateKeySize)
+        val (privateKeyBytes, _) = readSegment(bytes, offset, "sign private key")
 
         return ECDSAKeyPairImpl(
             publicKey = decodeSignPublicKey(publicKeyBytes),
@@ -125,15 +121,11 @@ class SecureKeyPairSerializer {
         var offset = 0
 
         // Read public key size and content
-        val publicKeySize = readIntFromByteArray(bytes, offset)
-        offset += 4
-        val publicKeyBytes = bytes.sliceArray(offset until offset + publicKeySize)
-        offset += publicKeySize
+        val (publicKeyBytes, nextOffset1) = readSegment(bytes, offset, "crypt public key")
+        offset = nextOffset1
 
         // Read private key size and content
-        val privateKeySize = readIntFromByteArray(bytes, offset)
-        offset += 4
-        val privateKeyBytes = bytes.sliceArray(offset until offset + privateKeySize)
+        val (privateKeyBytes, _) = readSegment(bytes, offset, "crypt private key")
 
         return ECDHKeyPairImpl(
             publicKey = decodeCryptPublicKey(publicKeyBytes),
@@ -145,15 +137,11 @@ class SecureKeyPairSerializer {
         var offset = 0
 
         // Read sign key pair size and content
-        val signKeyPairSize = readIntFromByteArray(bytes, offset)
-        offset += 4
-        val signKeyPairBytes = bytes.sliceArray(offset until offset + signKeyPairSize)
-        offset += signKeyPairSize
+        val (signKeyPairBytes, nextOffset1) = readSegment(bytes, offset, "sign key pair")
+        offset = nextOffset1
 
         // Read crypt key pair size and content
-        val cryptKeyPairSize = readIntFromByteArray(bytes, offset)
-        offset += 4
-        val cryptKeyPairBytes = bytes.sliceArray(offset until offset + cryptKeyPairSize)
+        val (cryptKeyPairBytes, _) = readSegment(bytes, offset, "crypt key pair")
 
         // Decode both key pairs
         val signKeyPair = decodeSignKeyPair(signKeyPairBytes)
@@ -185,6 +173,20 @@ class SecureKeyPairSerializer {
             offset += 4
             cryptKeyPairBytes.copyInto(this, offset)
         }
+    }
+
+    private fun readSegment(
+        bytes: ByteArray,
+        offset: Int,
+        label: String,
+    ): Pair<ByteArray, Int> {
+        require(bytes.size >= offset + 4) { "Truncated key data: missing $label size at offset $offset" }
+        val size = readIntFromByteArray(bytes, offset)
+        require(size >= 0 && bytes.size >= offset + 4 + size) {
+            "Invalid $label size: $size at offset $offset (available: ${bytes.size - offset - 4})"
+        }
+        val segment = bytes.sliceArray(offset + 4 until offset + 4 + size)
+        return Pair(segment, offset + 4 + size)
     }
 
     private fun writeIntToByteArray(
