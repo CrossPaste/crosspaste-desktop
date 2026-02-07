@@ -134,13 +134,15 @@ class GeneralSyncHandler(
             }
         }
 
-        when (current.connectState) {
-            SyncState.DISCONNECTED,
-            SyncState.INCOMPATIBLE,
-            SyncState.UNMATCHED,
-            SyncState.UNVERIFIED,
-            -> {
-                syncPollingManager.fail()
+        if (current.connectState == previous.connectState) {
+            when (current.connectState) {
+                SyncState.DISCONNECTED,
+                SyncState.INCOMPATIBLE,
+                SyncState.UNMATCHED,
+                SyncState.UNVERIFIED,
+                -> {
+                    syncPollingManager.fail()
+                }
             }
         }
     }

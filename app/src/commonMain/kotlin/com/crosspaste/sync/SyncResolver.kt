@@ -106,6 +106,8 @@ class SyncResolver(
                     logger.warn { "unknown event $event" }
                 }
             }
+        }.onFailure { e ->
+            logger.error(e) { "Failed to process event: $event" }
         }.apply {
             if (event is SyncEvent.CallbackEvent) {
                 event.callback.onComplete()
@@ -268,27 +270,27 @@ class SyncResolver(
                         SyncState.DISCONNECTED
                     }
                     StandardErrorCode.DECRYPT_FAIL.getCode() -> {
-                        logger.info { "exchangeSyncInfo return fail state to unmatched $host $port $failErrorCode" }
+                        logger.info { "heartbeat decrypt fail, state to unmatched $host $port $failErrorCode" }
                         SyncState.UNMATCHED
                     }
                     else -> {
-                        logger.info { "failErrorCode $failErrorCode $host $port" }
+                        logger.info { "heartbeat fail, errorCode: $failErrorCode $host $port" }
                         SyncState.DISCONNECTED
                     }
                 }
             }
 
             is EncryptFail -> {
-                logger.info { "exchangeSyncInfo encrypt fail $host $port" }
+                logger.info { "heartbeat encrypt fail $host $port" }
                 SyncState.UNMATCHED
             }
             is DecryptFail -> {
-                logger.info { "exchangeSyncInfo decrypt fail $host $port" }
+                logger.info { "heartbeat decrypt fail $host $port" }
                 SyncState.UNMATCHED
             }
 
             else -> {
-                logger.info { "exchangeSyncInfo connect fail state to disconnected $host $port" }
+                logger.info { "heartbeat connect fail, state to disconnected $host $port" }
                 SyncState.DISCONNECTED
             }
         }
@@ -310,7 +312,6 @@ class SyncResolver(
         } else {
             connectHostAddress?.let {
                 telnetHelper.telnet(it, port)?.let { versionRelation ->
-                    val versionRelation = versionRelation
                     if (versionRelation == VersionRelation.EQUAL_TO) {
                         logger.info { "telnet success $host $port" }
                         syncRuntimeInfoDao.updateConnectInfo(
@@ -406,7 +407,7 @@ class SyncResolver(
                 } else {
                     callback(false)
                 }
-            }
+            } ?: callback(false)
         } else {
             callback(false)
         }
