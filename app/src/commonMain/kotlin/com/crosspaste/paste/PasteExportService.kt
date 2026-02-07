@@ -130,9 +130,9 @@ class PasteExportService(
                 pasteData
                     .getPasteAppearItems()
                     .filterIsInstance<PasteFiles>()
-                    .filter { pasteData ->
+                    .filter { pasteFiles ->
                         pasteExportParam.maxFileSize?.let {
-                            pasteData.size <= pasteExportParam.maxFileSize
+                            pasteFiles.size <= pasteExportParam.maxFileSize
                         } != false
                     }
 
@@ -174,25 +174,25 @@ class PasteExportService(
         exportFileName: String,
     ) {
         pasteExportParam.exportBufferedSink(exportFileName)?.let { bufferedSink ->
-            compressUtils
-                .zipDir(basePath, bufferedSink)
-                .onSuccess {
-                    runCatching {
-                        bufferedSink.flush()
-                        bufferedSink.close()
+            try {
+                compressUtils
+                    .zipDir(basePath, bufferedSink)
+                    .onFailure {
+                        logger.error { "compress export file fail" }
+                        throw PasteException(
+                            StandardErrorCode.EXPORT_FAIL.toErrorCode(),
+                            "compress export file fail",
+                        )
                     }
-                }.onFailure {
-                    logger.error { "compress export file fail" }
-                    throw PasteException(
-                        StandardErrorCode.EXPORT_FAIL.toErrorCode(),
-                        "compress export file fail",
-                    )
-                }
+                bufferedSink.flush()
+            } finally {
+                runCatching { bufferedSink.close() }
+            }
         } ?: run {
-            logger.error { "cant to write fail" }
+            logger.error { "can't write to export output" }
             throw PasteException(
                 StandardErrorCode.EXPORT_FAIL.toErrorCode(),
-                "cant to write fail",
+                "can't write to export output",
             )
         }
     }

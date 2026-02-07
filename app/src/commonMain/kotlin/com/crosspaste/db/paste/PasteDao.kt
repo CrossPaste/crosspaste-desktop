@@ -44,7 +44,7 @@ class PasteDao(
         private val fileUtils = getFileUtils()
     }
 
-    val logger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     private val pasteDatabaseQueries = database.pasteDatabaseQueries
 

@@ -85,10 +85,8 @@ class DesktopTaskBuilder(
                     SyncExtraInfo(appInstanceId),
                 ),
             )
-            return this
-        } else {
-            return this
         }
+        return this
     }
 
     override fun addPullIconTask(
