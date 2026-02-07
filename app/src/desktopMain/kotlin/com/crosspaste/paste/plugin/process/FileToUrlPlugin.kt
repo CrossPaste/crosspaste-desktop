@@ -32,6 +32,10 @@ class FileToUrlPlugin(
                 if (filePaths.size == 1 && filePaths[0].extension == "url") {
                     val url = extractUrlFromFile(filePaths[0])
                     if (url != null) {
+                        pasteAppearItem.clear(
+                            pasteCoordinate = pasteCoordinate,
+                            userDataPathProvider = userDataPathProvider,
+                        )
                         if (pasteItems.any { it is UrlPasteItem && it.url == url }) {
                             null
                         } else {
