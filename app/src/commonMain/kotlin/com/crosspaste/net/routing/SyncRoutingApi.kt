@@ -3,10 +3,14 @@ package com.crosspaste.net.routing
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncHandler
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 interface SyncRoutingApi {
 
@@ -21,9 +25,20 @@ interface SyncRoutingApi {
     }
 
     fun notifyExit() {
-        getSyncHandlers().values.forEach { syncHandler ->
-            // Ensure that the notification is completed before exiting
-            runBlocking { syncHandler.notifyExit() }
+        val logger = KotlinLogging.logger {}
+        // Ensure that all notifications are completed before exiting, with a timeout
+        runBlocking {
+            runCatching {
+                withTimeout(5000) {
+                    getSyncHandlers()
+                        .values
+                        .map { syncHandler ->
+                            async { syncHandler.notifyExit() }
+                        }.awaitAll()
+                }
+            }.onFailure { e ->
+                logger.warn(e) { "notifyExit timed out or failed" }
+            }
         }
     }
 

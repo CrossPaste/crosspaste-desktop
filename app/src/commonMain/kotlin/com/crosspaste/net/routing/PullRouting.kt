@@ -85,6 +85,12 @@ fun Routing.pullRouting(
                 return@get
             }
 
+        if (source.contains('/') || source.contains('\\') || source.contains("..")) {
+            logger.warn { "icon source contains invalid characters: $source" }
+            failResponse(call, StandardErrorCode.NOT_FOUND_SOURCE.toErrorCode())
+            return@get
+        }
+
         val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
         if (!fileUtils.existFile(iconPath)) {
             logger.error { "icon not found: $source" }

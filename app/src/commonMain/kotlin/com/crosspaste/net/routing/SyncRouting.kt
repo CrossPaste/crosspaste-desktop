@@ -19,6 +19,7 @@ import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 
@@ -36,16 +37,27 @@ fun Routing.syncRouting(
 ) {
     val logger = KotlinLogging.logger {}
 
+    suspend fun validateHeartbeat(
+        appInstanceId: String,
+        call: ApplicationCall,
+    ): Boolean {
+        val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+        if (targetAppInstanceId != appInfo.appInstanceId) {
+            logger.error { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
+            failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+            return false
+        }
+        if (!secureStore.existCryptPublicKey(appInstanceId)) {
+            logger.error { "heartbeat appInstanceId $appInstanceId not exist crypt public key" }
+            failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
+            return false
+        }
+        return true
+    }
+
     get("/sync/heartbeat") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
-            if (targetAppInstanceId != appInfo.appInstanceId) {
-                logger.error { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
-                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
-            } else if (!secureStore.existCryptPublicKey(appInstanceId)) {
-                logger.error { "heartbeat appInstanceId $appInstanceId not exist crypt public key" }
-                failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
-            } else {
+            if (validateHeartbeat(appInstanceId, call)) {
                 successResponse(call, syncApi.VERSION)
             }
         }
@@ -53,27 +65,21 @@ fun Routing.syncRouting(
 
     post("/sync/heartbeat/syncInfo") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
-            if (targetAppInstanceId != appInfo.appInstanceId) {
-                logger.error { "heartbeat targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
-                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
-            } else if (!secureStore.existCryptPublicKey(appInstanceId)) {
-                logger.error { "heartbeat appInstanceId $appInstanceId not exist crypt public key" }
-                failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
-            } else {
-                runCatching {
-                    val syncInfo = call.receive(SyncInfo::class)
-                    syncRoutingApi.updateSyncInfo(syncInfo)
-                    logger.info { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
-                }.onSuccess {
-                    successResponse(call, syncApi.VERSION)
-                }.onFailure { e ->
-                    logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
-                    if (exceptionHandler.isDecryptFail(e)) {
-                        failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
-                    } else {
-                        failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
-                    }
+            if (!validateHeartbeat(appInstanceId, call)) {
+                return@let
+            }
+            runCatching {
+                val syncInfo = call.receive(SyncInfo::class)
+                syncRoutingApi.updateSyncInfo(syncInfo)
+                logger.info { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
+            }.onSuccess {
+                successResponse(call, syncApi.VERSION)
+            }.onFailure { e ->
+                logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
+                if (exceptionHandler.isDecryptFail(e)) {
+                    failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
+                } else {
+                    failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
                 }
             }
         }
@@ -94,8 +100,9 @@ fun Routing.syncRouting(
     }
 
     get("/sync/showToken") {
+        val host = call.request.host()
         appTokenApi.startRefresh(showToken = true)
-        logger.debug { "show token" }
+        logger.info { "show token requested from $host" }
         successResponse(call)
     }
 
@@ -106,6 +113,9 @@ fun Routing.syncRouting(
                 .getCurrentUseNetworkInterfaces()
                 .map { it.toHostInfo() }
                 .filter { it.hostAddress == host }
+        if (hostInfoList.isEmpty()) {
+            logger.debug { "syncInfo request from $host matched no local network interfaces" }
+        }
         val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
         successResponse(call, syncInfo)
     }
@@ -133,7 +143,7 @@ fun Routing.syncRouting(
                     )
 
                 if (!verifyResult) {
-                    logger.debug { "trustRequest verify fail" }
+                    logger.warn { "trustRequest verify fail for $appInstanceId" }
                     failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
                     return@post
                 }
@@ -168,7 +178,8 @@ fun Routing.syncRouting(
                 val host = call.request.headers["crosspaste-host"]
                 trustSyncInfo(appInstanceId, host)
                 successResponse(call, trustResponse)
-            }.onFailure {
+            }.onFailure { e ->
+                logger.error(e) { "Trust request failed for $appInstanceId" }
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
             }
         }
