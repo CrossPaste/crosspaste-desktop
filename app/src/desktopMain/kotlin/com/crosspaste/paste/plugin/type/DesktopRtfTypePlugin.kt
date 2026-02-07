@@ -14,11 +14,14 @@ import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.utils.HtmlColorUtils
 import com.crosspaste.utils.getRtfUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.put
 import java.awt.datatransfer.DataFlavor
 import java.io.InputStream
 
 class DesktopRtfTypePlugin : RtfTypePlugin {
+
+    private val logger = KotlinLogging.logger {}
 
     companion object {
         const val RTF_ID = "text/rtf"
@@ -60,9 +63,13 @@ class DesktopRtfTypePlugin : RtfTypePlugin {
         pasteCollector: PasteCollector,
     ) {
         if (transferData is InputStream) {
-            val rtfBytes = transferData.readBytes()
+            val rtfBytes = transferData.use { it.readBytes() }
             val rtf = rtfBytes.toString(Charsets.UTF_8)
-            val html = rtfUtils.rtfToHtml(rtf) ?: return
+            val html =
+                rtfUtils.rtfToHtml(rtf) ?: run {
+                    logger.warn { "Failed to convert RTF to HTML for pasteId=$pasteId itemIndex=$itemIndex" }
+                    return
+                }
             val background = HtmlColorUtils.getBackgroundColor(html) ?: Color.Transparent
             val update: (PasteItem) -> PasteItem = { pasteItem ->
                 createRtfPasteItem(
