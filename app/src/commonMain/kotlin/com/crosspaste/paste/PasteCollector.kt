@@ -97,7 +97,8 @@ class PasteCollector(
 
     suspend fun completeCollect(id: Long) {
         logSuspendExecutionTime(logger, "completeCollect") {
-            if (preCollectors.isEmpty() || (existError && updateErrors.all { it != null })) {
+            val activeIndices = preCollectors.indices.filter { preCollectors[it].isNotEmpty() }
+            if (activeIndices.isEmpty() || (existError && activeIndices.all { updateErrors[it] != null })) {
                 markDeletePasteData(id)
             } else {
                 runCatching {

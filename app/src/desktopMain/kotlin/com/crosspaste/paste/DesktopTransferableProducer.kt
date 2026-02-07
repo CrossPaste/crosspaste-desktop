@@ -3,7 +3,6 @@ package com.crosspaste.paste
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
-import java.awt.datatransfer.DataFlavor
 
 class DesktopTransferableProducer(
     pasteTypePlugins: List<PasteTypePlugin>,
@@ -45,6 +44,9 @@ class DesktopTransferableProducer(
 
         val isFileCategory = pasteAppearItem is PasteFiles
 
+        // Reverse so the primary item (first in pasteAppearItems) is added last to the
+        // LinkedHashMap-backed builder, giving its DataFlavors the highest priority for
+        // clipboard consumers that pick the last supported flavor.
         val itemsToProcess =
             if (primary) {
                 pasteAppearItems.reversed().filter { (it is PasteFiles) == isFileCategory }
@@ -69,8 +71,4 @@ class DesktopTransferableProducer(
             builder.build()
         }
     }
-}
-
-object LocalOnlyFlavor : DataFlavor("application/x-local-only-flavor;class=java.lang.Boolean", "Local Only Flavor") {
-    private fun readResolve(): Any = LocalOnlyFlavor
 }
