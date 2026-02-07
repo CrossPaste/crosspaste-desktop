@@ -10,9 +10,8 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.util.pipeline.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.io.readByteArray
 
 class ServerEncryptPluginFactory(
@@ -50,8 +49,6 @@ class ServerEncryptPluginFactory(
 object EncryptResponse :
     Hook<suspend EncryptResponse.Context.(ApplicationCall, OutgoingContent) -> Unit> {
 
-    private val ioCoroutineDispatcher = CoroutineScope(SupervisorJob() + ioDispatcher)
-
     private const val ENCRYPT_CHUNK_SIZE = 1024 * 256
 
     class Context(
@@ -87,27 +84,34 @@ object EncryptResponse :
                         val originChannel = ByteChannel(true)
                         val encryptChannel = this
 
-                        val deferred =
-                            ioCoroutineDispatcher.async {
-                                val buffer = ByteArray(ENCRYPT_CHUNK_SIZE)
-                                while (true) {
-                                    val bytesRead = originChannel.readAvailable(buffer)
-                                    if (bytesRead <= 0) break
-                                    val chunk =
-                                        if (bytesRead == ENCRYPT_CHUNK_SIZE) {
-                                            buffer
-                                        } else {
-                                            buffer.copyOf(bytesRead)
-                                        }
-                                    val encryptedData = encrypt(chunk)
-                                    encryptChannel.writeInt(encryptedData.size)
-                                    encryptChannel.writeFully(encryptedData)
+                        coroutineScope {
+                            val deferred =
+                                async(ioDispatcher) {
+                                    val buffer = ByteArray(ENCRYPT_CHUNK_SIZE)
+                                    while (true) {
+                                        val bytesRead = originChannel.readAvailable(buffer)
+                                        if (bytesRead <= 0) break
+                                        val chunk =
+                                            if (bytesRead == ENCRYPT_CHUNK_SIZE) {
+                                                buffer
+                                            } else {
+                                                buffer.copyOf(bytesRead)
+                                            }
+                                        val encryptedData = encrypt(chunk)
+                                        encryptChannel.writeInt(encryptedData.size)
+                                        encryptChannel.writeFully(encryptedData)
+                                    }
                                 }
-                            }
 
-                        body.writeTo(originChannel)
-                        originChannel.close()
-                        deferred.await()
+                            runCatching {
+                                body.writeTo(originChannel)
+                            }.onFailure { e ->
+                                originChannel.close(e)
+                            }.onSuccess {
+                                originChannel.close()
+                            }
+                            deferred.await()
+                        }
                     }
 
                     val content =
