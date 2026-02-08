@@ -61,7 +61,7 @@ class ModuleDownloadManager(
                 updateDownloadState(task.id, state)
             }
 
-        val job =
+        downloadJobs[task.id] =
             downloadScope.launch {
                 try {
                     fileUtils.createDir(task.savePath)
@@ -120,8 +120,6 @@ class ModuleDownloadManager(
                     downloadJobs.remove(task.id)
                 }
             }
-
-        downloadJobs[task.id] = job
     }
 
     fun cancelDownload(taskId: String) {
