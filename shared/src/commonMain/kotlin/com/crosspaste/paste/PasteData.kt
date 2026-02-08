@@ -155,21 +155,27 @@ data class PasteData(
     }
 
     fun isValid(): Boolean =
-        if (pasteState == PasteState.LOADED) {
-            val pasteItem =
-                when (getType()) {
-                    PasteType.TEXT_TYPE -> getPasteItem(PasteText::class)
-                    PasteType.COLOR_TYPE -> getPasteItem(PasteColor::class)
-                    PasteType.URL_TYPE -> getPasteItem(PasteUrl::class)
-                    PasteType.HTML_TYPE -> getPasteItem(PasteHtml::class)
-                    PasteType.RTF_TYPE -> getPasteItem(PasteRtf::class)
-                    PasteType.IMAGE_TYPE -> getPasteItem(PasteImages::class)
-                    PasteType.FILE_TYPE -> getPasteItem(PasteFiles::class)
-                    else -> null
-                }
-            (pasteItem as? PasteItem)?.isValid() ?: false
-        } else {
-            true
+        when (pasteState) {
+            PasteState.LOADED -> {
+                val pasteItem =
+                    when (getType()) {
+                        PasteType.TEXT_TYPE -> getPasteItem(PasteText::class)
+                        PasteType.COLOR_TYPE -> getPasteItem(PasteColor::class)
+                        PasteType.URL_TYPE -> getPasteItem(PasteUrl::class)
+                        PasteType.HTML_TYPE -> getPasteItem(PasteHtml::class)
+                        PasteType.RTF_TYPE -> getPasteItem(PasteRtf::class)
+                        PasteType.IMAGE_TYPE -> getPasteItem(PasteImages::class)
+                        PasteType.FILE_TYPE -> getPasteItem(PasteFiles::class)
+                        else -> null
+                    }
+                (pasteItem as? PasteItem)?.isValid() ?: false
+            }
+            PasteState.LOADING -> {
+                true
+            }
+            else -> {
+                false
+            }
         }
 
     fun existFileCategory(): Boolean = getPasteAppearItems().any { it is PasteFiles }

@@ -54,7 +54,7 @@ SELECT last_insert_rowid();
 
 getBatchPasteData:
 SELECT * FROM PasteDataEntity
-WHERE id > :id
+WHERE id > :id AND pasteState != -1
 ORDER BY id ASC
 LIMIT :limit;
 
@@ -143,6 +143,7 @@ WHERE hash = :hash AND
 simpleSearch:
 SELECT * FROM PasteDataEntity
 WHERE
+    pasteState != -1 AND
     CASE WHEN :appInstanceId IS NOT NULL
         THEN CASE WHEN :local
             THEN appInstanceId = :appInstanceId
