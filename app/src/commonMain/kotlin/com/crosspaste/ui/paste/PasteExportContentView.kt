@@ -318,19 +318,28 @@ fun PasteExportContentView() {
                         onCheckedChange = { favoritesSelected = it },
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                    SettingListItem(
-                        title = "export_favorites_only",
+                    SettingListSwitchItem(
+                        title = "max_back_up_file_size",
                         icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.amberIconColor),
-                        trailingContent = {
-                            Counter(
-                                defaultValue = maxFileSize,
-                                unit = "MB",
-                                rule = { it >= 0 },
-                            ) {
-                                maxFileSize = it
-                            }
-                        },
+                        checked = sizeFilterSelected,
+                        onCheckedChange = { sizeFilterSelected = it },
                     )
+                    if (sizeFilterSelected) {
+                        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                        SettingListItem(
+                            title = "max_back_up_file_size",
+                            icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.amberIconColor),
+                            trailingContent = {
+                                Counter(
+                                    defaultValue = maxFileSize,
+                                    unit = "MB",
+                                    rule = { it >= 0 },
+                                ) {
+                                    maxFileSize = it
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
