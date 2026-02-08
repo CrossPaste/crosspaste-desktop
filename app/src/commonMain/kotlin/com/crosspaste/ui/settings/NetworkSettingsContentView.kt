@@ -123,7 +123,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                         val newUseNetworkInterfacesJson = jsonUtils.JSON.encodeToString(newUseNetworkInterfaces)
                         configManager.updateConfig(
                             listOf("useNetworkInterfaces", "enableDiscovery"),
-                            listOf(newUseNetworkInterfacesJson, useNetworkInterfaces.isNotEmpty()),
+                            listOf(newUseNetworkInterfacesJson, newUseNetworkInterfaces.isNotEmpty()),
                         )
                     },
                     trailingContent = { index ->

@@ -1,6 +1,5 @@
 package com.crosspaste.ui.settings
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,7 +34,6 @@ import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FontSettingItemView() {
     val fontManager = koinInject<FontManager>()
@@ -77,7 +75,7 @@ fun FontSettingItemView() {
                 offset = DpOffset(x = -medium, y = zero),
                 modifier = Modifier.heightIn(max = xxLarge * 8),
             ) {
-                allPossibleFonts.forEachIndexed { _, fontInfo ->
+                allPossibleFonts.forEach { fontInfo ->
                     val isSelected = fontInfo.name == currentFont.name
                     DropdownMenuItem(
                         modifier =
