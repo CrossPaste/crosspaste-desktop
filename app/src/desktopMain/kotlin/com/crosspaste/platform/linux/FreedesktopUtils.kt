@@ -91,13 +91,18 @@ object FreedesktopUtils {
 
         findIconInTheme(themeName)?.let { return it }
 
+        val indexFile = File("/usr/share/icons/$themeName/index.theme")
         val inheritedThemes =
-            File("/usr/share/icons/$themeName/index.theme")
-                .readLines()
-                .find { it.startsWith("Inherits=") }
-                ?.substringAfter("=")
-                ?.split(",")
-                ?: emptyList()
+            if (indexFile.exists()) {
+                indexFile
+                    .readLines()
+                    .find { it.startsWith("Inherits=") }
+                    ?.substringAfter("=")
+                    ?.split(",")
+                    ?: emptyList()
+            } else {
+                emptyList()
+            }
 
         for (inheritedTheme in inheritedThemes) {
             findIconInTheme(inheritedTheme)?.let { return it }

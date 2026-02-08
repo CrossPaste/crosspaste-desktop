@@ -35,49 +35,54 @@ object WMCtrl {
         val childCountRef = IntByReference()
 
         x11.XQueryTree(display, rootWindow, windowRef, parentRef, childrenRef, childCountRef)
-        if (childrenRef.value == null) {
+        val children = childrenRef.value ?: return null
+
+        val childrenCount = childCountRef.value
+        if (childrenCount == 0) {
+            free(children)
             return null
         }
 
-        val childrenCount = childCountRef.value
-        if (childrenCount == 0) return null
+        try {
+            val ids: LongArray
 
-        val ids: LongArray
-
-        when (Native.LONG_SIZE) {
-            java.lang.Long.BYTES -> {
-                ids = childrenRef.value.getLongArray(0, childCountRef.value)
-            }
-            Integer.BYTES -> {
-                val intIds = childrenRef.value.getIntArray(0, childCountRef.value)
-                ids = LongArray(intIds.size)
-                for (i in intIds.indices) {
-                    ids[i] = intIds[i].toLong()
+            when (Native.LONG_SIZE) {
+                java.lang.Long.BYTES -> {
+                    ids = children.getLongArray(0, childCountRef.value)
+                }
+                Integer.BYTES -> {
+                    val intIds = children.getIntArray(0, childCountRef.value)
+                    ids = LongArray(intIds.size)
+                    for (i in intIds.indices) {
+                        ids[i] = intIds[i].toLong()
+                    }
+                }
+                else -> {
+                    throw IllegalStateException("Unexpected size for Native.LONG_SIZE" + Native.LONG_SIZE)
                 }
             }
-            else -> {
-                throw IllegalStateException("Unexpected size for Native.LONG_SIZE" + Native.LONG_SIZE)
-            }
-        }
 
-        for (id in ids) {
-            if (id == 0L) {
-                continue
-            }
-            val window: X11.Window = X11.Window(id)
-
-            val namePtr = PointerByReference()
-            if (INSTANCE.XFetchName(display, window, namePtr) != 0) {
-                val name = namePtr.value.getString(0)
-                free(namePtr.value)
-                if (title == name) {
-                    return window
+            for (id in ids) {
+                if (id == 0L) {
+                    continue
                 }
-            } else {
-                free(namePtr.value)
+                val window: X11.Window = X11.Window(id)
+
+                val namePtr = PointerByReference()
+                if (INSTANCE.XFetchName(display, window, namePtr) != 0) {
+                    val name = namePtr.value.getString(0)
+                    free(namePtr.value)
+                    if (title == name) {
+                        return window
+                    }
+                } else {
+                    free(namePtr.value)
+                }
             }
+            return null
+        } finally {
+            free(children)
         }
-        return null
     }
 
     fun switchDesktop(
@@ -193,11 +198,13 @@ object WMCtrl {
         val iconNameReturn = PointerByReference()
 
         if (X11Ext.INSTANCE.XGetIconName(display, win, iconNameReturn) == 0) {
-            free(iconNameReturn.pointer)
             return null
         }
 
-        return getString(iconNameReturn.pointer)
+        val namePointer = iconNameReturn.value ?: return null
+        val name = getString(namePointer)
+        free(namePointer)
+        return name
     }
 
     fun getActiveWindowInstanceAndClass(display: X11.Display): Pair<String?, String?>? {
@@ -277,32 +284,36 @@ object WMCtrl {
             "_NET_WM_ICON",
             null,
         )?.let { prop ->
-            val width = prop.getLong(0).toInt()
-            val height = prop.getLong(8).toInt()
-            val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+            try {
+                val width = prop.getLong(0).toInt()
+                val height = prop.getLong(8).toInt()
+                val buffer = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
 
-            val numPixels = width * height
-            // Define the number of bytes per pixel, including padding
-            val bytesPerPixel = 8
-            val imageData = ByteArray(numPixels * bytesPerPixel)
+                val numPixels = width * height
+                // Define the number of bytes per pixel, including padding
+                val bytesPerPixel = 8
+                val imageData = ByteArray(numPixels * bytesPerPixel)
 
-            prop.read(16, imageData, 0, imageData.size)
+                prop.read(16, imageData, 0, imageData.size)
 
-            // https://stackoverflow.com/questions/43237104/picture-format-for-net-wm-icon
-            var offset = 0
-            for (y in 0 until height) {
-                for (x in 0 until width) {
-                    val bgraIndex = offset
-                    val blue = imageData[bgraIndex].toInt() and 0xff
-                    val green = imageData[bgraIndex + 1].toInt() and 0xff
-                    val red = imageData[bgraIndex + 2].toInt() and 0xff
-                    val alpha = imageData[bgraIndex + 3].toInt() and 0xff
-                    val argb = (alpha shl 24) or (red shl 16) or (green shl 8) or blue
-                    buffer.setRGB(x, y, argb)
-                    offset += bytesPerPixel
+                // https://stackoverflow.com/questions/43237104/picture-format-for-net-wm-icon
+                var offset = 0
+                for (y in 0 until height) {
+                    for (x in 0 until width) {
+                        val bgraIndex = offset
+                        val blue = imageData[bgraIndex].toInt() and 0xff
+                        val green = imageData[bgraIndex + 1].toInt() and 0xff
+                        val red = imageData[bgraIndex + 2].toInt() and 0xff
+                        val alpha = imageData[bgraIndex + 3].toInt() and 0xff
+                        val argb = (alpha shl 24) or (red shl 16) or (green shl 8) or blue
+                        buffer.setRGB(x, y, argb)
+                        offset += bytesPerPixel
+                    }
                 }
+                buffer
+            } finally {
+                free(prop)
             }
-            buffer
         }
 
     private fun getPropertyAsWindow(
@@ -408,7 +419,7 @@ object WMCtrl {
             )
         ) {
             logger.error { "Invalid type of $propName property." }
-            free(retProp.pointer)
+            free(retProp.value)
             return null
         }
 
