@@ -20,7 +20,9 @@ class DesktopFaviconLoader(
     ): Path? =
         resourcesClient.request(url).getOrNull()?.let { response ->
             FileOutputStream(path.toFile()).use { output ->
-                response.getBody().toInputStream().copyTo(output)
+                response.getBody().toInputStream().use { input ->
+                    input.copyTo(output)
+                }
             }
             path
         }

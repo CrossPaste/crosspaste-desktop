@@ -31,7 +31,6 @@ class ClientEncryptPlugin(
                 context.headers["secure"]?.let {
                     logger.debug { "client encrypt $targetAppInstanceId" }
                     when (context.body) {
-                        // Current all client requests use the Json protocol
                         is OutgoingContent.ByteArrayContent -> {
                             val processor = secureStore.getMessageProcessor(targetAppInstanceId)
                             val originalContent = context.body as OutgoingContent.ByteArrayContent
@@ -39,6 +38,9 @@ class ClientEncryptPlugin(
                             val ciphertextMessageBytes = processor.encrypt(bytes)
                             context.body =
                                 ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json)
+                        }
+                        else -> {
+                            logger.warn { "Unsupported content type for encryption: ${context.body::class}" }
                         }
                     }
                 }
