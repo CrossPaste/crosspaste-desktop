@@ -8,8 +8,6 @@ import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 class DesktopAppStartUpService(
     appLaunchState: DesktopAppLaunchState,
@@ -187,18 +185,20 @@ class WindowsAppStartUpService(
                     .command(command)
                     .start()
 
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                if (line!!.contains("REG_SZ")) {
-                    val registryValue = line.substringAfter("REG_SZ").trim()
-                    if (registryValue.equals(getRegValue(), ignoreCase = true)) {
-                        logger.info { "$AppName is set to start on boot with the correct path." }
-                        return true
-                    } else {
-                        logger.info { "$AppName is set to start on boot with the path is not current path." }
-                        return false
-                    }
+            val result =
+                process.inputStream.bufferedReader().use { reader ->
+                    reader.lineSequence().firstOrNull { it.contains("REG_SZ") }
+                }
+            process.waitFor()
+
+            if (result != null) {
+                val registryValue = result.substringAfter("REG_SZ").trim()
+                if (registryValue.equals(getRegValue(), ignoreCase = true)) {
+                    logger.info { "$AppName is set to start on boot with the correct path." }
+                    return true
+                } else {
+                    logger.info { "$AppName is set to start on boot with the path is not current path." }
+                    return false
                 }
             }
         }.onFailure { e ->
@@ -225,8 +225,10 @@ class WindowsAppStartUpService(
                 val process =
                     ProcessBuilder()
                         .command(command)
+                        .redirectErrorStream(true)
                         .start()
 
+                process.inputStream.bufferedReader().use { it.readText() }
                 val exitCode = process.waitFor()
 
                 if (exitCode == 0) {
@@ -256,8 +258,10 @@ class WindowsAppStartUpService(
                 val process =
                     ProcessBuilder()
                         .command(command)
+                        .redirectErrorStream(true)
                         .start()
 
+                process.inputStream.bufferedReader().use { it.readText() }
                 val exitCode = process.waitFor()
 
                 if (exitCode == 0) {
@@ -330,7 +334,7 @@ class LinuxAppStartUpService(
     }
 
     override fun removeAutoStartUp() {
-        try {
+        runCatching {
             if (isAutoStartUp()) {
                 logger.info { "Remove auto startup" }
                 appPathProvider.userHome
@@ -338,7 +342,7 @@ class LinuxAppStartUpService(
                     .toFile()
                     .delete()
             }
-        } catch (e: Exception) {
+        }.onFailure { e ->
             logger.error(e) { "Failed to remove auto startup" }
         }
     }

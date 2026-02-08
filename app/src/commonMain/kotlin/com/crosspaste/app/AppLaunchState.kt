@@ -2,7 +2,7 @@ package com.crosspaste.app
 
 interface AppLaunchState {
 
-    val acquireLock: Boolean
+    val acquiredLock: Boolean
 
     val firstLaunch: Boolean
 }

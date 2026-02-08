@@ -2,10 +2,10 @@ package com.crosspaste.app
 
 data class DesktopAppLaunchState(
     val pid: Long,
-    override val acquireLock: Boolean,
+    override val acquiredLock: Boolean,
     override val firstLaunch: Boolean,
     var accessibilityPermissions: Boolean,
-    var installFrom: String?,
+    val installFrom: String?,
 ) : AppLaunchState
 
 const val MICROSOFT_STORE = "Microsoft Store"

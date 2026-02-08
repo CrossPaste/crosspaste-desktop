@@ -28,7 +28,7 @@ class DesktopAppLaunch(
         MutableStateFlow<AppLaunchState>(
             DesktopAppLaunchState(
                 -1,
-                acquireLock = false,
+                acquiredLock = false,
                 firstLaunch = false,
                 accessibilityPermissions = false,
                 installFrom = null,
@@ -57,13 +57,15 @@ class DesktopAppLaunch(
                 GeneralAppLockState(true, firstLaunch)
             }
         }.getOrElse { e ->
+            channel?.close()
+            channel = null
             when (e) {
                 is OverlappingFileLockException -> {
                     logger.error(e) { "Another instance of the application is already running." }
                     GeneralAppLockState(false, firstLaunch)
                 }
                 else -> {
-                    logger.error { "Failed to create and lock file" }
+                    logger.error(e) { "Failed to create and lock file" }
                     GeneralAppLockState(false, firstLaunch)
                 }
             }

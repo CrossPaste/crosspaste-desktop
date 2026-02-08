@@ -126,7 +126,7 @@ class CrossPaste {
 
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<AppLaunchState>()
-                if (appLaunchState.acquireLock) {
+                if (appLaunchState.acquiredLock) {
                     val configManager = koin.get<DesktopConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()
                     configManager.notificationManager = notificationManager
