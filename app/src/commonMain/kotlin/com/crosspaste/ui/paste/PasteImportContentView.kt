@@ -158,7 +158,6 @@ fun PasteImportContentView() {
 
                                 val strokeWidth = tiny4X.toPx()
                                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                                val borderColor = borderColor
 
                                 val halfStroke = strokeWidth / 2
                                 drawRoundRect(
