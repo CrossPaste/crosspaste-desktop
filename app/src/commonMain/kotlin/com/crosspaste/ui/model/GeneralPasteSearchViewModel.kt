@@ -47,6 +47,10 @@ class GeneralPasteSearchViewModel(
                         tag = params.tag,
                         limit = params.limit,
                     ).map { pasteDataList ->
+                        // Use pre-filter size for pagination: the SQL query already excludes
+                        // deleted items (pasteState != -1). isValid() only catches items that
+                        // became invalid after the query returned (e.g., concurrent deletion
+                        // or corrupted content), which is rare.
                         checkLoadAll(pasteDataList.size)
                         pasteDataList.filter { it.isValid() }
                     }

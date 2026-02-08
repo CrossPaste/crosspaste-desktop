@@ -70,15 +70,17 @@ class PasteSelectionViewModel(
     }
 
     fun selectPrev() {
-        _selectedIndexes.value = listOf((_selectedIndexes.value.min() - 1).coerceAtLeast(0))
+        val indexes = _selectedIndexes.value
+        if (indexes.isEmpty()) return
+        _selectedIndexes.value = listOf((indexes.min() - 1).coerceAtLeast(0))
     }
 
     fun selectNext() {
-        _selectedIndexes.value =
-            listOf(
-                (_selectedIndexes.value.max() + 1)
-                    .coerceAtMost(searchViewModel.searchResults.value.size - 1),
-            )
+        val resultSize = searchViewModel.searchResults.value.size
+        if (resultSize == 0) return
+        val indexes = _selectedIndexes.value
+        if (indexes.isEmpty()) return
+        _selectedIndexes.value = listOf((indexes.max() + 1).coerceAtMost(resultSize - 1))
     }
 
     fun setFocusedElement(focusedElement: FocusedElement) {

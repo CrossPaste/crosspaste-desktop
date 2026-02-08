@@ -8,6 +8,7 @@ import com.crosspaste.utils.getDateUtils
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
@@ -23,7 +24,7 @@ abstract class PasteSearchViewModel : ViewModel() {
 
     private val _inputSearch = MutableStateFlow("")
 
-    val inputSearch = _inputSearch
+    val inputSearch: StateFlow<String> = _inputSearch.asStateFlow()
 
     private val _searchBaseParams =
         MutableStateFlow(
@@ -36,12 +37,13 @@ abstract class PasteSearchViewModel : ViewModel() {
             ),
         )
 
-    val searchBaseParams = _searchBaseParams
+    val searchBaseParams: StateFlow<SearchBaseParams> = _searchBaseParams.asStateFlow()
 
     private val _loadAll = MutableStateFlow(false)
 
     abstract val convertTerm: (String) -> List<String>
 
+    @Volatile
     private var lastLoadTime = 0L
     private val loadMoreMutex = Mutex()
 
