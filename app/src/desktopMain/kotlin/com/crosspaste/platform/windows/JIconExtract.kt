@@ -167,8 +167,9 @@ object JIconExtract {
         filePath: String,
     ): HBITMAP? {
         val h1 = Ole32.INSTANCE.CoInitialize(null)
+        if (!COMUtils.SUCCEEDED(h1)) return null
 
-        if (COMUtils.SUCCEEDED(h1)) {
+        try {
             val factory = PointerByReference()
 
             val h2: HRESULT? =
@@ -194,8 +195,10 @@ object JIconExtract {
                 imageFactory.Release()
                 return bitmap
             }
-        }
 
-        return null
+            return null
+        } finally {
+            Ole32.INSTANCE.CoUninitialize()
+        }
     }
 }

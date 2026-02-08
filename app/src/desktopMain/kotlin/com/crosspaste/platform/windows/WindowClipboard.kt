@@ -73,8 +73,11 @@ object WindowClipboard {
             ptr.write(0, data, 0, data.size)
             kernel32.GlobalUnlock(hGlobal)
 
-            // Set to clipboard
+            // Set to clipboard — if successful, system takes ownership of hGlobal
             val result = user32.SetClipboardData(ClipboardFormats.CF_TEXT, hGlobal)
+            if (result == null) {
+                kernel32.GlobalFree(hGlobal)
+            }
             result != null
         }.getOrElse { e ->
             logger.error(e) { "Error adding CF_TEXT format" }
@@ -114,8 +117,12 @@ object WindowClipboard {
             ptr.setInt(0, lcidValue)
             kernel32.GlobalUnlock(hGlobal)
 
-            user32.SetClipboardData(ClipboardFormats.CF_LOCALE, hGlobal)
-            logger.info { "Added locale information: $lcidValue (0x${lcidValue.toString(16)})" }
+            val result = user32.SetClipboardData(ClipboardFormats.CF_LOCALE, hGlobal)
+            if (result == null) {
+                kernel32.GlobalFree(hGlobal)
+            } else {
+                logger.info { "Added locale information: $lcidValue (0x${lcidValue.toString(16)})" }
+            }
         }
     }
 

@@ -11,21 +11,26 @@ object WinProcessUtils {
 
     fun getChildProcessIds(parentProcessId: Long): List<Pair<String, Long>> {
         val command = GET_CHILD_PROCESS_IDS.map { it.format(parentProcessId) }
-        val process = ProcessBuilder(command).start()
-        val reader = process.inputStream.bufferedReader()
-        val lines = reader.readLines()
-        val processIds = mutableListOf<Pair<String, Long>>()
-        for (line in lines) {
-            val parts = line.trim().split("\\s+".toRegex())
-            if (parts.size == 2) {
-                val processName = parts[0]
-                val processId = parts[1].toLongOrNull()
-                if (processId != null) {
-                    processIds.add(processName to processId)
+        val process = ProcessBuilder(command).redirectErrorStream(true).start()
+        return try {
+            val processIds = mutableListOf<Pair<String, Long>>()
+            process.inputStream.bufferedReader().use { reader ->
+                val lines = reader.readLines()
+                for (line in lines) {
+                    val parts = line.trim().split("\\s+".toRegex())
+                    if (parts.size == 2) {
+                        val processName = parts[0]
+                        val processId = parts[1].toLongOrNull()
+                        if (processId != null) {
+                            processIds.add(processName to processId)
+                        }
+                    }
                 }
             }
+            processIds
+        } finally {
+            process.destroyForcibly()
         }
-        return processIds
     }
 
     fun killProcessSet(pids: Set<Long>) {
