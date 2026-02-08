@@ -1,7 +1,6 @@
 package com.crosspaste.ui.base
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,7 +31,6 @@ fun PasteDataScope.PasteUrlIcon(size: Dp = large2X) {
     val urlPasteItem = getPasteItem(UrlPasteItem::class)
 
     val density = LocalDensity.current
-    val themeExt = LocalThemeExtState.current
 
     val sizePx = with(density) { size.roundToPx() }
 
@@ -63,13 +61,6 @@ fun PasteDataScope.PasteUrlIcon(size: Dp = large2X) {
                 is AsyncImagePainter.State.Loading,
                 is AsyncImagePainter.State.Error,
                 -> {
-                    Icon(
-                        imageVector = themeExt.urlTypeIconData.imageVector,
-                        contentDescription = "Paste Icon",
-                        modifier = Modifier.size(size),
-                        tint = themeExt.urlTypeIconData.color,
-                    )
-
                     LocalThemeExtState.current.urlTypeIconData.IconContent()
                 }
                 else -> {

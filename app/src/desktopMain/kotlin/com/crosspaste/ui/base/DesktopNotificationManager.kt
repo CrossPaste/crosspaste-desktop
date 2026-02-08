@@ -27,7 +27,7 @@ class DesktopNotificationManager(
         if (appWindowManager.getCurrentMainWindowInfo().show) {
             pushNotification(message)
         } else if (platform.isLinux()) {
-            sendNotification(message)
+            pushNotification(message)
         } else {
             notifyTray(message)
         }
