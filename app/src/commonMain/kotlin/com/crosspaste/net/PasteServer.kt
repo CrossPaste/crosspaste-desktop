@@ -7,6 +7,8 @@ import io.ktor.server.engine.applicationEnvironment
 import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.util.logging.KtorSimpleLogger
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlin.coroutines.CoroutineContext
 
 abstract class PasteServer<TEngine : ApplicationEngine, TConfiguration : ApplicationEngine.Configuration>(
@@ -14,7 +16,14 @@ abstract class PasteServer<TEngine : ApplicationEngine, TConfiguration : Applica
     private val serverModule: ServerModule,
 ) : Server {
 
-    protected var port = 0
+    private val _portFlow = MutableStateFlow(0)
+    override val portFlow: StateFlow<Int> = _portFlow
+
+    protected var port: Int
+        get() = _portFlow.value
+        set(value) {
+            _portFlow.value = value
+        }
 
     protected var server: EmbeddedServer<TEngine, TConfiguration>? = null
 

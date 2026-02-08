@@ -346,7 +346,15 @@ class DesktopModule(
             }
             single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get()) }
             single<ResourcesClient> { DesktopResourcesClient(get(), get()) }
-            single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
+            single<PasteBonjourService> {
+                DesktopPasteBonjourService(
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    lazy { get<Server>() },
+                )
+            }
             single<PasteClient> { PasteClient(get<AppInfo>(), get(), get()) }
             single<PullClientApi> { PullClientApi(get(), get()) }
             single<PasteClientApi> { PasteClientApi(get(), get()) }
