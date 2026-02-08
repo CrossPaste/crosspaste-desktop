@@ -3,6 +3,7 @@ package com.crosspaste.image
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.Box
 import com.crosspaste.utils.ColorUtils.hsvToRgb
 import com.crosspaste.utils.ColorUtils.isNearWhiteOrBlack
 import com.crosspaste.utils.ColorUtils.rgbToHsv
@@ -10,6 +11,7 @@ import com.crosspaste.utils.ColorUtils.toHexString
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.util.collections.*
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Image
@@ -23,8 +25,7 @@ class DesktopIconColorExtractor(
 
     private val logger = KotlinLogging.logger {}
 
-    // Color cache
-    private val colorCache = mutableMapOf<String, Color?>()
+    private val colorCache: MutableMap<String, Box<Color>> = ConcurrentMap()
 
     private val mutex = StripedMutex()
 
@@ -33,22 +34,22 @@ class DesktopIconColorExtractor(
      */
     suspend fun getBackgroundColor(source: String): Color? =
         mutex.withLock(source) {
-            if (colorCache.containsKey(source)) {
-                colorCache[source]
-            } else {
-                withContext(ioDispatcher) {
-                    val color =
-                        runCatching {
-                            val path = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
-                            val bytes = path.toNioPath().readBytes()
-                            extractColorFromBytes(bytes)
-                        }.getOrNull()
+            colorCache[source]?.let { cached ->
+                return@withLock cached.getOrNull()
+            }
 
-                    logger.debug { "$source - ${color?.toHexString()}" }
+            withContext(ioDispatcher) {
+                val color =
+                    runCatching {
+                        val path = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
+                        val bytes = path.toNioPath().readBytes()
+                        extractColorFromBytes(bytes)
+                    }.getOrNull()
 
-                    colorCache[source] = color
-                    color
-                }
+                logger.debug { "$source - ${color?.toHexString()}" }
+
+                colorCache[source] = Box.of(color)
+                color
             }
         }
 
