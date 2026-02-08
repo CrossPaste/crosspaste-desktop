@@ -33,7 +33,9 @@ class DesktopThumbnailLoader(
     ) {
         runCatching {
             val properties = Properties()
-            properties.load(getOriginMetaPath(pasteFileCoordinate).toNioPath().inputStream().buffered())
+            getOriginMetaPath(pasteFileCoordinate).toNioPath().inputStream().buffered().use { input ->
+                properties.load(input)
+            }
             properties.getProperty(DIMENSIONS)?.let {
                 imageInfoBuilder.add(createPasteInfoWithoutConverter(DIMENSIONS, it))
             }
@@ -125,7 +127,9 @@ class DesktopThumbnailLoader(
             val properties = Properties()
             properties.setProperty(SIZE, "$fileSize")
             properties.setProperty(DIMENSIONS, "$originalWidth x $originalHeight")
-            properties.store(getOriginMetaPath(value).toNioPath().outputStream().buffered(), null)
+            getOriginMetaPath(value).toNioPath().outputStream().buffered().use { output ->
+                properties.store(output, null)
+            }
         }
     }
 }

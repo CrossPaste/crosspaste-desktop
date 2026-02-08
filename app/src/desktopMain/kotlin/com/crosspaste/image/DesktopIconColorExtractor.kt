@@ -10,9 +10,11 @@ import com.crosspaste.utils.ColorUtils.toHexString
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.util.collections.*
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Image
+import java.util.Optional
 import kotlin.io.path.readBytes
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -23,8 +25,7 @@ class DesktopIconColorExtractor(
 
     private val logger = KotlinLogging.logger {}
 
-    // Color cache
-    private val colorCache = mutableMapOf<String, Color?>()
+    private val colorCache: MutableMap<String, Optional<Color>> = ConcurrentMap()
 
     private val mutex = StripedMutex()
 
@@ -33,22 +34,22 @@ class DesktopIconColorExtractor(
      */
     suspend fun getBackgroundColor(source: String): Color? =
         mutex.withLock(source) {
-            if (colorCache.containsKey(source)) {
-                colorCache[source]
-            } else {
-                withContext(ioDispatcher) {
-                    val color =
-                        runCatching {
-                            val path = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
-                            val bytes = path.toNioPath().readBytes()
-                            extractColorFromBytes(bytes)
-                        }.getOrNull()
+            colorCache[source]?.let { cached ->
+                return@withLock cached.orElse(null)
+            }
 
-                    logger.debug { "$source - ${color?.toHexString()}" }
+            withContext(ioDispatcher) {
+                val color =
+                    runCatching {
+                        val path = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
+                        val bytes = path.toNioPath().readBytes()
+                        extractColorFromBytes(bytes)
+                    }.getOrNull()
 
-                    colorCache[source] = color
-                    color
-                }
+                logger.debug { "$source - ${color?.toHexString()}" }
+
+                colorCache[source] = Optional.ofNullable(color)
+                color
             }
         }
 

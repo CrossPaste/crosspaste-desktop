@@ -25,23 +25,29 @@ class WebpImageWriter : ImageWriter<BufferedImage> {
     ): Boolean =
         runCatching {
             val writer = ImageIO.getImageWritersByMIMEType("image/webp").next()
+            try {
+                // Configure encoding parameters
+                val writeParam =
+                    (writer.defaultWriteParam as WebPWriteParam).apply {
+                        compressionType = CompressionType.Lossy
+                        alphaCompressionAlgorithm = 1
+                        useSharpYUV = true
+                    }
 
-            // Configure encoding parameters
-            val writeParam =
-                (writer.defaultWriteParam as WebPWriteParam).apply {
-                    compressionType = CompressionType.Lossy
-                    alphaCompressionAlgorithm = 1
-                    useSharpYUV = true
+                fileUtils.createDir(imagePath.noOptionParent)
+
+                // Configure the output on the ImageWriter and encode
+                val output = FileImageOutputStream(imagePath.toFile())
+                try {
+                    writer.output = output
+                    writer.write(null, IIOImage(image, null, null), writeParam)
+                } finally {
+                    output.close()
                 }
-
-            fileUtils.createDir(imagePath.noOptionParent)
-
-            // Configure the output on the ImageWriter
-            writer.output = FileImageOutputStream(imagePath.toFile())
-
-            // Encode
-            writer.write(null, IIOImage(image, null, null), writeParam)
-            true
+                true
+            } finally {
+                writer.dispose()
+            }
         }.getOrElse {
             logger.warn(it) { "Failed to write image to webp" }
             false

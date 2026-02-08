@@ -43,7 +43,10 @@ object MacCropTransformation : Transformation() {
         // 4) Fallback: if extractSubset fails (rare), copy the pixels manually
         val copy = coil3.Bitmap()
         copy.allocN32Pixels(width, height)
-        input.readPixels(srcX = left, srcY = top)
+        val pixels = input.readPixels(copy.imageInfo, copy.rowBytes, srcX = left, srcY = top)
+        if (pixels != null) {
+            copy.installPixels(pixels)
+        }
         return copy
     }
 }
