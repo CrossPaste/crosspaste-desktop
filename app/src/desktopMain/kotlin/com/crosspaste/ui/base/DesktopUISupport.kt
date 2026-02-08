@@ -1,6 +1,5 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
@@ -141,10 +140,9 @@ class DesktopUISupport(
         pasteData.getPasteItem(ColorPasteItem::class)?.let { pasteItem ->
             val initialColor = Color(pasteItem.color)
             EventQueue.invokeLater {
-                JColorChooser(initialColor)
                 val result =
                     JColorChooser.showDialog(
-                        ComposeWindow(),
+                        null,
                         copywriter.getText("color_picker"),
                         initialColor,
                     )
