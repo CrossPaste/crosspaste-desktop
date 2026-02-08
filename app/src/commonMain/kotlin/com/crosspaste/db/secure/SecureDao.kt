@@ -10,13 +10,9 @@ class SecureDao(private val database: Database): SecureIO {
 
     override suspend fun saveCryptPublicKey(
         appInstanceId: String,
-        serialized: ByteArray
-    ): Boolean = withContext(ioDispatcher) {
-        database.transactionWithResult {
-            val result = secureDatabaseQueries.checkKeyExists(appInstanceId).executeAsOne()
-            secureDatabaseQueries.saveCryptPublicKey(appInstanceId, serialized)
-            result
-        }
+        serialized: ByteArray,
+    ): Unit = withContext(ioDispatcher) {
+        secureDatabaseQueries.saveCryptPublicKey(appInstanceId, serialized)
     }
 
     override suspend fun existCryptPublicKey(appInstanceId: String): Boolean = withContext(ioDispatcher) {

@@ -18,8 +18,6 @@ class GeneralSecureStore(
             SecureSession()
         }
 
-    private fun removeSecureSession(appInstanceId: String): SecureSession? = sessions.remove(appInstanceId)
-
     override suspend fun saveCryptPublicKey(
         appInstanceId: String,
         cryptPublicKey: ByteArray,
@@ -39,10 +37,11 @@ class GeneralSecureStore(
     }
 
     override suspend fun deleteCryptPublicKey(appInstanceId: String) {
-        val session = removeSecureSession(appInstanceId)
-        session?.mutex?.withLock {
+        val session = getSecureSession(appInstanceId)
+        session.mutex.withLock {
             session.processor = null
             secureIO.deleteCryptPublicKey(appInstanceId)
+            sessions.remove(appInstanceId)
         }
     }
 

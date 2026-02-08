@@ -9,8 +9,8 @@ class MemorySecureIO : SecureIO {
     override suspend fun saveCryptPublicKey(
         appInstanceId: String,
         serialized: ByteArray,
-    ): Boolean {
-        return cryptPublicKeyMap.put(appInstanceId, serialized) == null
+    ) {
+        cryptPublicKeyMap[appInstanceId] = serialized
     }
 
     override suspend fun existCryptPublicKey(appInstanceId: String): Boolean {

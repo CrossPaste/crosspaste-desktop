@@ -49,8 +49,10 @@ class WindowsSecureStoreFactory(
         logger.info { "Generate secureKeyPair" }
         val secureKeyPair = CryptographyUtils.generateSecureKeyPair()
         val data = secureKeyPairSerializer.encodeSecureKeyPair(secureKeyPair)
-        val encryptData = WindowDapiHelper.encryptData(data)
-        filePersist.saveBytes(encryptData!!)
+        val encryptData =
+            WindowDapiHelper.encryptData(data)
+                ?: throw IllegalStateException("DPAPI encryption failed — cannot persist secure key pair")
+        filePersist.saveBytes(encryptData)
         return GeneralSecureStore(secureKeyPair, secureKeyPairSerializer, secureIO)
     }
 }

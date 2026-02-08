@@ -4,7 +4,7 @@ interface SecureIO {
     suspend fun saveCryptPublicKey(
         appInstanceId: String,
         serialized: ByteArray,
-    ): Boolean
+    )
 
     suspend fun existCryptPublicKey(appInstanceId: String): Boolean
 
