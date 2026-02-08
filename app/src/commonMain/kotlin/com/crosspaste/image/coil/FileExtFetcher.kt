@@ -30,11 +30,11 @@ class FileExtFetcher(
 
                 if (fileUtils.existFile(path)) {
                     if (!path.isDirectory) {
-                        fileExtLoader.load(path)?.let {
+                        fileExtLoader.load(path)?.let { iconPath ->
                             SourceFetchResult(
                                 source =
                                     ImageSource(
-                                        file = path,
+                                        file = iconPath,
                                         fileSystem = fileUtils.fileSystem,
                                     ),
                                 mimeType = null,

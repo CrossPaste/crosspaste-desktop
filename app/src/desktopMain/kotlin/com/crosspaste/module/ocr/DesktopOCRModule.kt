@@ -108,11 +108,17 @@ class DesktopOCRModule(
         val innerApi = TessBaseAPI()
         val dataPath = BytePointer(trainedDataPath.toString())
         val language = BytePointer(ocrLanguage)
-        return if (innerApi.Init(dataPath, language) != 0) {
-            null
-        } else {
-            innerApi.SetPageSegMode(6)
-            innerApi
+        return try {
+            if (innerApi.Init(dataPath, language) != 0) {
+                innerApi.deallocate()
+                null
+            } else {
+                innerApi.SetPageSegMode(6)
+                innerApi
+            }
+        } finally {
+            dataPath.deallocate()
+            language.deallocate()
         }
     }
 
