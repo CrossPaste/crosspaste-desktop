@@ -56,6 +56,9 @@ class CleanScheduler(
     }
 
     private suspend fun cleanPaste() {
+        // Note: createTask + submitTask is not atomic across cancellation.
+        // If cancelled between them, an orphan task row remains in the database.
+        // This is acceptable because CleanTaskTaskExecutor cleans up stale tasks.
         val taskId =
             taskDao.createTask(
                 pasteDataId = null,

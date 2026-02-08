@@ -68,6 +68,9 @@ class DesktopGlobalCopywriter(
             }
         }
 
+    // mutableStateOf is intentionally used here to trigger Compose recomposition when the
+    // language changes. Writes from non-Compose threads (e.g., switchLanguage()) are safe
+    // because Compose's global snapshot system handles cross-thread state mutations.
     private var copywriter: Copywriter by mutableStateOf(
         LANGUAGE_MAP
             .computeIfAbsent(language) {

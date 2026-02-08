@@ -5,8 +5,9 @@ import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -14,6 +15,7 @@ import java.io.ByteArrayInputStream
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.Clip
 import javax.sound.sampled.DataLine
+import javax.sound.sampled.LineEvent
 import kotlin.time.Duration.Companion.milliseconds
 
 class DesktopSoundService(
@@ -22,7 +24,7 @@ class DesktopSoundService(
 
     private val logger = KotlinLogging.logger {}
 
-    private val scope = CoroutineScope(cpuDispatcher)
+    private val scope = CoroutineScope(cpuDispatcher + SupervisorJob())
 
     companion object {
 
@@ -56,13 +58,15 @@ class DesktopSoundService(
 
                             AudioSystem.getClip().use { clip ->
                                 clip.open(audioInputStream)
-                                clip.start()
-
-                                // Wait for the clip to finish playing
-                                withTimeoutOrNull(clip.microsecondLength.milliseconds) {
-                                    while (clip.isActive) {
-                                        delay(10)
+                                val done = CompletableDeferred<Unit>()
+                                clip.addLineListener { event ->
+                                    if (event.type == LineEvent.Type.STOP) {
+                                        done.complete(Unit)
                                     }
+                                }
+                                clip.start()
+                                withTimeoutOrNull(clip.microsecondLength.milliseconds) {
+                                    done.await()
                                 }
                             }
                         }

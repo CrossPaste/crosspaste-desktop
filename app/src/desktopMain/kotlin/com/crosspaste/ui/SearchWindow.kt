@@ -7,9 +7,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.painter.Painter
@@ -38,6 +36,7 @@ import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
 fun SearchWindow(windowIcon: Painter?) {
@@ -77,7 +76,11 @@ fun SearchWindow(windowIcon: Painter?) {
 
     val logger = remember { KotlinLogging.logger("SearchWindow") }
 
-    var ignoreFocusLoss by remember { mutableStateOf(true) }
+    // AtomicBoolean instead of mutableStateOf: this flag is read from the AWT EDT thread
+    // in the WindowAdapter callback, so it needs thread-safe access rather than Compose snapshot state.
+    // Note: kotlinx.atomicfu.atomic() cannot be used here because the atomicfu compiler plugin
+    // only supports class property initializers, not local variables inside functions.
+    val ignoreFocusLoss = remember { AtomicBoolean(true) }
 
     LaunchedEffect(searchWindowInfo, animationProgress, appSizeValue) {
         // Update size and placement if they change
@@ -97,11 +100,11 @@ fun SearchWindow(windowIcon: Painter?) {
 
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
-            ignoreFocusLoss = true
+            ignoreFocusLoss.set(true)
             appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
             delay(1000)
         }
-        ignoreFocusLoss = false
+        ignoreFocusLoss.set(false)
     }
 
     Window(
@@ -140,7 +143,7 @@ fun SearchWindow(windowIcon: Painter?) {
                     }
 
                     override fun windowLostFocus(e: WindowEvent) {
-                        if (ignoreFocusLoss) {
+                        if (ignoreFocusLoss.get()) {
                             logger.info { "Ignored focus loss during startup grace period" }
                             return
                         }
@@ -156,6 +159,7 @@ fun SearchWindow(windowIcon: Painter?) {
 
             onDispose {
                 window.removeWindowFocusListener(windowListener)
+                appWindowManager.searchComposeWindow = null
             }
         }
 
