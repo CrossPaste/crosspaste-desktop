@@ -9,6 +9,7 @@ import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11.Window
+import io.ktor.util.collections.ConcurrentSet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +25,7 @@ class LinuxAppWindowManager(
 
     private val prevLinuxAppInfo: MutableStateFlow<LinuxAppInfo?> = MutableStateFlow(null)
 
-    private val classNameSet: MutableSet<String> = mutableSetOf()
+    private val classNameSet: MutableSet<String> = ConcurrentSet()
 
     private var _cachedMainWindow: Window? = null
     private var _cachedSearchWindow: Window? = null

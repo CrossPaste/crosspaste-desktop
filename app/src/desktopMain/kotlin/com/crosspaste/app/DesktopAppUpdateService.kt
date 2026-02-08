@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
@@ -57,7 +56,7 @@ class DesktopAppUpdateService(
             }
         }
 
-    override fun checkForUpdate() {
+    override suspend fun checkForUpdate() {
         _lastVersion.value = readLastVersion()
     }
 
@@ -109,19 +108,18 @@ class DesktopAppUpdateService(
             false
         }
 
-    private fun readLastVersion(): Version? =
-        runBlocking {
-            resourcesClient
-                .request(
-                    url = appUrls.checkMetadataUrl,
-                ).getOrNull()
-                ?.let { response ->
-                    val inputStream = response.getBody().toInputStream()
+    private suspend fun readLastVersion(): Version? =
+        resourcesClient
+            .request(
+                url = appUrls.checkMetadataUrl,
+            ).getOrNull()
+            ?.let { response ->
+                response.getBody().toInputStream().use { inputStream ->
                     val properties = Properties()
                     properties.load(inputStream)
                     properties.getProperty("app.version")?.let { versionString ->
                         Version.parse(versionString)
                     }
                 }
-        }
+            }
 }

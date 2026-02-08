@@ -104,7 +104,6 @@ class DesktopShortKeysAction(
             actionLogMessage = "Hide window",
         ) {
             if (appWindowManager.getCurrentMainWindowInfo().show &&
-                !appWindowManager.showMainDialog.value &&
                 !appFileChooser.showFileDialog.value
             ) {
                 appWindowManager.hideMainWindow()
