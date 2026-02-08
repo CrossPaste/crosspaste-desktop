@@ -168,7 +168,7 @@ object MacKeyboardKeys : KeyboardKeys {
         KeyboardKeyDefine("9", NativeKeyEvent.VC_9, 0x19) { it.keyCode == NativeKeyEvent.VC_9 }
 
     override val _0: KeyboardKeyDefine =
-        KeyboardKeyDefine("0", NativeKeyEvent.VC_0, 0x1F) { it.keyCode == NativeKeyEvent.VC_0 }
+        KeyboardKeyDefine("0", NativeKeyEvent.VC_0, 0x1D) { it.keyCode == NativeKeyEvent.VC_0 }
 
     override val A: KeyboardKeyDefine =
         KeyboardKeyDefine("A", NativeKeyEvent.VC_A, 0x00) { it.keyCode == NativeKeyEvent.VC_A }

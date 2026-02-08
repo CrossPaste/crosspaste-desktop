@@ -56,7 +56,7 @@ class DesktopShortcutKeys(
                 _shortcutKeysCore.value = it
             }
         }.onFailure {
-            defaultKeysCore()
+            _shortcutKeysCore.value = defaultKeysCore()
         }
     }
 
