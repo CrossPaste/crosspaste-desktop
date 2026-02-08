@@ -224,22 +224,22 @@ class SyncTest : KoinTest {
 
         assertTrue(result is SuccessResult)
 
-        val syncInfo =
-            SyncInfo(
-                appInfo = clientAppInfo,
-                endpointInfo =
-                    endpointInfoFactory.createEndpointInfo(
-                        listOf(
-                            HostInfo(
-                                hostAddress = "localhost",
-                                networkPrefixLength = 24,
-                            ),
-                        ),
-                    ),
-            )
-
         result =
             runBlocking {
+                val syncInfo =
+                    SyncInfo(
+                        appInfo = clientAppInfo,
+                        endpointInfo =
+                            endpointInfoFactory.createEndpointInfo(
+                                listOf(
+                                    HostInfo(
+                                        hostAddress = "localhost",
+                                        networkPrefixLength = 24,
+                                    ),
+                                ),
+                            ),
+                    )
+
                 syncClientApi.heartbeat(
                     syncInfo = syncInfo,
                     targetAppInstanceId = serverAppInfo.appInstanceId,

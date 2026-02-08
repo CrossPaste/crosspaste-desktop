@@ -17,7 +17,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -33,7 +32,6 @@ class DesktopPasteBonjourService(
     private val endpointInfoFactory: EndpointInfoFactory,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
-    private val pasteServer: Lazy<Server>,
     private val scope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : PasteBonjourService {
 
@@ -82,10 +80,6 @@ class DesktopPasteBonjourService(
     }
 
     suspend fun setup(interfaces: List<NetworkInterfaceInfo>) {
-        // Wait for server port to be assigned before registering Bonjour service.
-        // The init block may trigger setup() before PasteServer.start() completes.
-        pasteServer.value.portFlow.first { it > 0 }
-
         val hostInfoList = interfaces.map { info -> info.toHostInfo() }
         val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
         val syncInfo = SyncInfo(appInfo, endpointInfo)

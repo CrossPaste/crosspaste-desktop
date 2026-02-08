@@ -12,7 +12,7 @@ class DesktopQRCodeGenerator(
     networkInterfaceService: NetworkInterfaceService,
 ) : QRCodeGenerator(appInfo, endpointInfoFactory, networkInterfaceService) {
 
-    override fun generateQRCode(token: CharArray): PlatformImage =
+    override suspend fun generateQRCode(token: CharArray): PlatformImage =
         DesktopQRCodeImage(
             data = buildQRCode(token).encodeToByteArray(),
         )
