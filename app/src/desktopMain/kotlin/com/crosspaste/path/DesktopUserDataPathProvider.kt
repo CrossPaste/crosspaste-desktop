@@ -85,7 +85,7 @@ class MacosPlatformUserDataPathProvider : PlatformUserDataPathProvider {
                 .resolve("Application Support")
                 .resolve("CrossPaste")
         if (!fileUtils.existFile(appSupportPath)) {
-            fileUtils.createDir(appSupportPath)
+            fileUtils.createDir(appSupportPath).getOrThrow()
         }
         return appSupportPath
     }

@@ -10,6 +10,7 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 import okio.Path.Companion.toPath
 
@@ -17,6 +18,8 @@ class UserDataPathProvider(
     private val configManager: CommonConfigManager,
     private val platformUserDataPathProvider: PlatformUserDataPathProvider,
 ) : PathProvider {
+
+    private val logger = KotlinLogging.logger {}
 
     override val fileUtils: FileUtils = getFileUtils()
 
@@ -62,6 +65,8 @@ class UserDataPathProvider(
         runCatching {
             val tempPath = resolve(appFileType = AppFileType.TEMP)
             fileUtils.fileSystem.deleteRecursively(tempPath)
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to clean temp directory" }
         }
     }
 

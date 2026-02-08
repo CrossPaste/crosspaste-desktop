@@ -95,6 +95,8 @@ class DesktopMigration(
                             fileSystem.delete(subPath)
                         }
                     }
+                }.onFailure { cleanupError ->
+                    logger.warn(cleanupError) { "Failed to clean up migration path after failure" }
                 }
                 throw e
             }
@@ -140,10 +142,11 @@ class DesktopMigration(
                 fileSystem.write(testFile) {
                     writeUtf8("permission_test")
                 }
-                fileUtils.deleteFile(testFile)
                 null
             } catch (_: Exception) {
                 "no_write_permission"
+            } finally {
+                runCatching { fileUtils.deleteFile(testFile) }
             }
         }
     }
