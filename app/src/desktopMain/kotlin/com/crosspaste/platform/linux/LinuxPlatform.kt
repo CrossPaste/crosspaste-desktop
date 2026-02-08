@@ -35,13 +35,16 @@ object LinuxPlatform {
         }.getOrElse { false }
 
     private fun getLsbReleaseInfo(): String {
-        val process = ProcessBuilder("lsb_release", "-ds").start()
-        val output =
-            process.inputStream
-                .bufferedReader()
-                .readText()
-                .trim()
-        return parseOsInfo(output)
+        val process = ProcessBuilder("lsb_release", "-ds").redirectErrorStream(true).start()
+        return try {
+            val output =
+                process.inputStream
+                    .bufferedReader()
+                    .use { it.readText().trim() }
+            parseOsInfo(output)
+        } finally {
+            process.destroyForcibly()
+        }
     }
 
     private fun getOsReleaseInfo(): String {
