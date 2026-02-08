@@ -58,7 +58,7 @@ fun LanguageSettingItemView() {
                 offset = DpOffset(x = -medium, y = zero),
             ) {
                 val allLanguages = copywriter.getAllLanguages()
-                allLanguages.forEachIndexed { _, language ->
+                allLanguages.forEach { language ->
                     val isSelected = language.abridge == copywriter.language()
                     DropdownMenuItem(
                         modifier =
