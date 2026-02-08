@@ -11,6 +11,7 @@ import com.sun.jna.platform.win32.Psapi
 import com.sun.jna.platform.win32.Version
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HBITMAP
+import com.sun.jna.platform.win32.WinDef.HDC
 import com.sun.jna.platform.win32.WinDef.HICON
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
@@ -302,17 +303,23 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     1,
                 )
 
-            if (iconCount > 0 && largeIcons[0] != null) {
-                val icon = largeIcons[0]!!
+            try {
+                if (iconCount > 0 && largeIcons[0] != null) {
+                    val icon = largeIcons[0]!!
 
-                hiconToImage(icon)?.let { image ->
-                    ImageIO.write(image, "png", outputFile)
+                    hiconToImage(icon)?.let { image ->
+                        ImageIO.write(image, "png", outputFile)
+                    }
                 }
+            } finally {
+                largeIcons[0]?.let { INSTANCE.DestroyIcon(it) }
+                smallIcons[0]?.let { INSTANCE.DestroyIcon(it) }
             }
         }
 
         private fun hiconToImage(hicon: HICON): BufferedImage? {
             var bitmapHandle: HBITMAP? = null
+            var deviceContext: HDC? = null
             val user32 = INSTANCE
             val gdi32 = GDI32.INSTANCE
 
@@ -330,13 +337,14 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     val width = bitmap.bmWidth.toInt()
                     val height = bitmap.bmHeight.toInt()
 
-                    user32.GetDC(null)?.let { deviceContext ->
+                    deviceContext = user32.GetDC(null)
+                    deviceContext?.let { dc ->
                         val bitmapInfo = BITMAPINFO()
 
                         bitmapInfo.bmiHeader.biSize = bitmapInfo.bmiHeader.size()
                         require(
                             gdi32.GetDIBits(
-                                deviceContext,
+                                dc,
                                 bitmapHandle,
                                 0,
                                 0,
@@ -354,7 +362,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
                         require(
                             gdi32.GetDIBits(
-                                deviceContext,
+                                dc,
                                 bitmapHandle,
                                 0,
                                 bitmapInfo.bmiHeader.biHeight,
@@ -374,7 +382,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                     null
                 }
             }.apply {
-                gdi32.DeleteObject(hicon)
+                deviceContext?.let { user32.ReleaseDC(null, it) }
                 Optional
                     .ofNullable(bitmapHandle)
                     .ifPresent { hObject: HANDLE? -> gdi32.DeleteObject(hObject) }
