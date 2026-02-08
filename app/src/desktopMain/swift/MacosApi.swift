@@ -179,8 +179,8 @@ public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePoin
 public func mainToBack(
     appName: UnsafePointer<CChar>
 ) {
+    let appNameString = String(cString: appName)
     DispatchQueue.main.async {
-        let appNameString = String(cString: appName)
         hideWindowAndActivateApp(hideTitle: "CrossPaste", appName: appNameString)
     }
 }
@@ -191,12 +191,16 @@ public func mainToBack(
     keyCodesPointer: UnsafePointer<Int32>,
     count: Int
 ) {
+    let appNameString = String(cString: appName)
+    let keyCodes = Array(UnsafeBufferPointer(start: keyCodesPointer, count: count))
     DispatchQueue.main.async {
-        let appNameString = String(cString: appName)
         hideWindowAndActivateApp(hideTitle: "CrossPaste", appName: appNameString)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
+            keyCodes.withUnsafeBufferPointer { buffer in
+                guard let baseAddress = buffer.baseAddress else { return }
+                simulatePasteCommand(keyCodesPointer: baseAddress, count: buffer.count)
+            }
         }
     }
 }
@@ -205,8 +209,8 @@ public func mainToBack(
 public func searchToBack(
     appName: UnsafePointer<CChar>
 ) {
+    let appNameString = String(cString: appName)
     DispatchQueue.main.async {
-        let appNameString = String(cString: appName)
         hideWindowAndActivateApp(hideTitle: "CrossPaste Search", appName: appNameString)
     }
 }
@@ -217,12 +221,16 @@ public func searchToBackAndPaste(
     keyCodesPointer: UnsafePointer<Int32>,
     count: Int
 ) {
+    let appNameString = String(cString: appName)
+    let keyCodes = Array(UnsafeBufferPointer(start: keyCodesPointer, count: count))
     DispatchQueue.main.async {
-        let appNameString = String(cString: appName)
         hideWindowAndActivateApp(hideTitle: "CrossPaste Search", appName: appNameString)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            simulatePasteCommand(keyCodesPointer: keyCodesPointer, count: count)
+            keyCodes.withUnsafeBufferPointer { buffer in
+                guard let baseAddress = buffer.baseAddress else { return }
+                simulatePasteCommand(keyCodesPointer: baseAddress, count: buffer.count)
+            }
         }
     }
 }
