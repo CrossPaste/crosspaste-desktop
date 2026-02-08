@@ -137,8 +137,6 @@ class CrossPaste {
                     koin.get<SyncManager>().start()
                     koin.get<Server>().start()
                     koin.get<PasteClient>()
-                    // bonjour service should be registered after paste server started
-                    // only server started, bonjour service can get the port
                     koin.get<PasteBonjourService>()
                     koin.get<CleanScheduler>().start()
                     koin.get<AppStartUpService>().followConfig()

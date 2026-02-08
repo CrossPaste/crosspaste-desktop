@@ -10,7 +10,7 @@ class SyncInfoFactory(
     private val endpointInfoFactory: EndpointInfoFactory,
 ) {
 
-    fun createSyncInfo(hostInfoList: List<HostInfo>): SyncInfo =
+    suspend fun createSyncInfo(hostInfoList: List<HostInfo>): SyncInfo =
         SyncInfo(
             appInfo = appInfo,
             endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList),

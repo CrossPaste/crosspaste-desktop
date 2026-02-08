@@ -242,24 +242,34 @@ class DesktopServiceListener(
     }
 
     override fun serviceRemoved(event: ServiceEvent) {
+        val textBytes = event.info.textBytes
+        if (textBytes == null || textBytes.isEmpty()) {
+            logger.debug { "Service removed with empty textBytes: ${event.info.name}" }
+            return
+        }
         runCatching {
             val map: Map<String, ByteArray> = mutableMapOf()
-            ByteWrangler.readProperties(map, event.info.textBytes)
+            ByteWrangler.readProperties(map, textBytes)
             val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
             nearbyDeviceManager.removeDevice(syncInfo)
         }.onFailure { e ->
-            logger.warn(e) { "Failed to decode service removed event: ${event.info}" }
+            logger.debug(e) { "Failed to decode service removed event: ${event.info}" }
         }
     }
 
     override fun serviceResolved(event: ServiceEvent) {
+        val textBytes = event.info.textBytes
+        if (textBytes == null || textBytes.isEmpty()) {
+            logger.debug { "Service resolved with empty textBytes: ${event.info.name}" }
+            return
+        }
         runCatching {
             val map: Map<String, ByteArray> = mutableMapOf()
-            ByteWrangler.readProperties(map, event.info.textBytes)
+            ByteWrangler.readProperties(map, textBytes)
             val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
             nearbyDeviceManager.addDevice(syncInfo)
         }.onFailure { e ->
-            logger.warn(e) { "Failed to decode service resolved event: ${event.info}" }
+            logger.debug(e) { "Failed to decode service resolved event: ${event.info}" }
         }
     }
 }

@@ -17,9 +17,9 @@ abstract class QRCodeGenerator(
     private val codecsUtils = getCodecsUtils()
     protected val jsonUtils = getJsonUtils()
 
-    abstract fun generateQRCode(token: CharArray): PlatformImage
+    abstract suspend fun generateQRCode(token: CharArray): PlatformImage
 
-    protected fun buildQRCode(token: CharArray): String {
+    protected suspend fun buildQRCode(token: CharArray): String {
         val hostInfoList =
             networkInterfaceService
                 .getCurrentUseNetworkInterfaces()
