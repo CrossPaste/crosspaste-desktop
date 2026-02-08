@@ -3,6 +3,7 @@ package com.crosspaste.image
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.Box
 import com.crosspaste.utils.ColorUtils.hsvToRgb
 import com.crosspaste.utils.ColorUtils.isNearWhiteOrBlack
 import com.crosspaste.utils.ColorUtils.rgbToHsv
@@ -14,7 +15,6 @@ import io.ktor.util.collections.*
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.Image
-import java.util.Optional
 import kotlin.io.path.readBytes
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -25,7 +25,7 @@ class DesktopIconColorExtractor(
 
     private val logger = KotlinLogging.logger {}
 
-    private val colorCache: MutableMap<String, Optional<Color>> = ConcurrentMap()
+    private val colorCache: MutableMap<String, Box<Color>> = ConcurrentMap()
 
     private val mutex = StripedMutex()
 
@@ -35,7 +35,7 @@ class DesktopIconColorExtractor(
     suspend fun getBackgroundColor(source: String): Color? =
         mutex.withLock(source) {
             colorCache[source]?.let { cached ->
-                return@withLock cached.orElse(null)
+                return@withLock cached.getOrNull()
             }
 
             withContext(ioDispatcher) {
@@ -48,7 +48,7 @@ class DesktopIconColorExtractor(
 
                 logger.debug { "$source - ${color?.toHexString()}" }
 
-                colorCache[source] = Optional.ofNullable(color)
+                colorCache[source] = Box.of(color)
                 color
             }
         }

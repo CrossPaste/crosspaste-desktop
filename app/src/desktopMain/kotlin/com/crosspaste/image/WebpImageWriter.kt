@@ -38,13 +38,11 @@ class WebpImageWriter : ImageWriter<BufferedImage> {
 
                 // Configure the output on the ImageWriter and encode
                 val output = FileImageOutputStream(imagePath.toFile())
-                try {
+                output.use { output ->
                     writer.output = output
                     writer.write(null, IIOImage(image, null, null), writeParam)
-                } finally {
-                    output.close()
+                    true
                 }
-                true
             } finally {
                 writer.dispose()
             }
