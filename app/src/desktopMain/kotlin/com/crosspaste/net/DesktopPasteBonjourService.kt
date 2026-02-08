@@ -119,17 +119,19 @@ class DesktopPasteBonjourService(
             ensureMinExecutionTime(MIN_SEARCH_DURATION) {
                 logger.info { "Manual refresh started..." }
 
-                jmdnsMap
-                    .map { (hostAddress, jmdns) ->
-                        async {
-                            val services = jmdns.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
-                            logger.debug { "Interface $hostAddress found ${services.size} services" }
+                coroutineScope {
+                    jmdnsMap
+                        .map { (hostAddress, jmdns) ->
+                            async {
+                                val services = jmdns.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
+                                logger.debug { "Interface $hostAddress found ${services.size} services" }
 
-                            services.forEach { serviceInfo ->
-                                jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+                                services.forEach { serviceInfo ->
+                                    jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+                                }
                             }
-                        }
-                    }.awaitAll()
+                        }.awaitAll()
+                }
             }.onFailure { e ->
                 logger.error(e) { "Error during manual refreshAll" }
             }

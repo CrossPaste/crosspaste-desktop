@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 class GeneralNearbyDeviceManager(
     private val appInfo: AppInfo,
@@ -88,12 +89,13 @@ class GeneralNearbyDeviceManager(
         val appInstanceId = syncInfo.appInfo.appInstanceId
         if (!isSelf(appInstanceId)) {
             logger.info { "Service resolved: $syncInfo" }
-            val existSyncInfo = syncInfos.value[appInstanceId]
-            if (existSyncInfo == null) {
-                syncInfos.value += (appInstanceId to syncInfo)
-            } else {
-                val newSyncInfo = existSyncInfo.merge(syncInfo)
-                syncInfos.value += (appInstanceId to newSyncInfo)
+            syncInfos.update { current ->
+                val existSyncInfo = current[appInstanceId]
+                if (existSyncInfo == null) {
+                    current + (appInstanceId to syncInfo)
+                } else {
+                    current + (appInstanceId to existSyncInfo.merge(syncInfo))
+                }
             }
             ratingPromptManager.trackSignificantAction()
         }
@@ -102,8 +104,16 @@ class GeneralNearbyDeviceManager(
     override fun removeDevice(syncInfo: SyncInfo) {
         val appInstanceId = syncInfo.appInfo.appInstanceId
         logger.info { "Service removed: $syncInfo" }
-        if (syncInfos.value.containsKey(appInstanceId)) {
-            syncInfos.value -= appInstanceId
+        var removed = false
+        syncInfos.update { current ->
+            if (current.containsKey(appInstanceId)) {
+                removed = true
+                current - appInstanceId
+            } else {
+                current
+            }
+        }
+        if (removed) {
             ratingPromptManager.trackSignificantAction()
         }
     }
