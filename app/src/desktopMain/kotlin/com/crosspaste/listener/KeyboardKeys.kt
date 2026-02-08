@@ -207,7 +207,7 @@ interface KeyboardKeys {
     fun initAllMap(): Map<Int, KeyboardKeyDefine> =
         this::class
             .memberProperties
-            .filter { it.returnType.toString() == "com.crosspaste.listener.KeyboardKeyDefine" }
+            .filter { it.returnType.classifier == KeyboardKeyDefine::class }
             .map { it.getter.call(this) as KeyboardKeyDefine }
             .associateBy { it.code }
 
