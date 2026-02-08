@@ -10,7 +10,7 @@ interface AppUpdateService {
 
     val lastVersion: StateFlow<Version?>
 
-    fun checkForUpdate()
+    suspend fun checkForUpdate()
 
     fun tryTriggerUpdate()
 

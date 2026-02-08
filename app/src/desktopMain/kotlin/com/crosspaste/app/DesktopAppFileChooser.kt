@@ -33,7 +33,7 @@ class DesktopAppFileChooser(
             _showFileDialog.value = true
             ioCoroutineDispatcher
                 .launch {
-                    runCatching {
+                    try {
                         when (fileSelectionMode) {
                             FileSelectionMode.FILE_ONLY -> {
                                 FileKit
@@ -58,12 +58,12 @@ class DesktopAppFileChooser(
                                 }
                             }
                         }
-                    }.onFailure {
-                        logger.error(it) { "Failed to open file chooser dialog" }
+                    } catch (e: Exception) {
+                        logger.error(e) { "Exception when open file chooser dialog" }
                         cancel?.let { cancelAction -> cancelAction() }
+                    } finally {
+                        _showFileDialog.value = false
                     }
-                }.apply {
-                    _showFileDialog.value = false
                 }
         }
     }

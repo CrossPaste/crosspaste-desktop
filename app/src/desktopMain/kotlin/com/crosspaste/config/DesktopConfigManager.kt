@@ -5,6 +5,7 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -13,6 +14,8 @@ class DesktopConfigManager(
     override val deviceUtils: DeviceUtils,
     private val localeUtils: LocaleUtils,
 ) : ConfigManager<DesktopAppConfig> {
+
+    private val logger = KotlinLogging.logger {}
 
     private val _config: MutableStateFlow<DesktopAppConfig> =
         MutableStateFlow(
@@ -44,7 +47,8 @@ class DesktopConfigManager(
         _config.value = oldConfig.copy(key, value)
         runCatching {
             saveConfig(_config.value)
-        }.onFailure {
+        }.onFailure { e ->
+            logger.error(e) { "Failed to save config" }
             notificationManager?.let { manager ->
                 manager.sendNotification(
                     title = { it.getText("failed_to_save_config") },
@@ -69,7 +73,8 @@ class DesktopConfigManager(
         _config.value = newConfig
         runCatching {
             saveConfig(_config.value)
-        }.onFailure {
+        }.onFailure { e ->
+            logger.error(e) { "Failed to save config" }
             notificationManager?.let { manager ->
                 manager.sendNotification(
                     title = { it.getText("failed_to_save_config") },
