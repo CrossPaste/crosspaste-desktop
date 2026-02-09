@@ -45,6 +45,8 @@ class ClientDecryptPlugin(
                     val processor = secureStore.getMessageProcessor(appInstanceId)
 
                     if (contentType?.match(ContentType.Application.Json) == true) {
+                        // Note: reads entire JSON response into memory. Acceptable for LAN sync
+                        // where JSON payloads (metadata, device info) are bounded and small.
                         val bytes = byteReadChannel.readRemaining().readByteArray()
                         val decrypt = processor.decrypt(bytes)
 
