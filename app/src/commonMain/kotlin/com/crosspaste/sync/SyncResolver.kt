@@ -33,7 +33,7 @@ class SyncResolver(
     private val syncInfoFactory: SyncInfoFactory,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val telnetHelper: TelnetHelper,
-    private val tokenCache: TokenCache,
+    private val tokenCache: TokenCacheApi,
 ) {
 
     private val logger = KotlinLogging.logger {}
