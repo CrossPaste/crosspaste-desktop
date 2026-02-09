@@ -12,11 +12,13 @@ import kotlinx.serialization.Serializable
 
 interface ClientApiResult
 
-@Suppress("UNCHECKED_CAST")
 class SuccessResult(
-    private val result: Any? = null,
+    @PublishedApi internal val value: Any? = null,
 ) : ClientApiResult {
-    fun <T> getResult(): T = result as T
+    inline fun <reified T> getResult(): T {
+        check(value is T) { "Expected ${T::class}, got ${value?.let { it::class }}" }
+        return value
+    }
 }
 
 class FailureResult(

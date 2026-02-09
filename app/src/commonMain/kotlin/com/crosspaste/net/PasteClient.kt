@@ -30,7 +30,7 @@ class PasteClient(
                 header(HttpHeaders.AcceptEncoding, "identity")
             }
             install(HttpTimeout) {
-                requestTimeoutMillis = 1000
+                requestTimeoutMillis = 3000
             }
             install(Logging, configure = {
                 logger =
@@ -50,7 +50,7 @@ class PasteClient(
     suspend fun <T : Any> post(
         message: T,
         messageType: TypeInfo,
-        timeout: Long = 1000L,
+        timeout: Long = 3000L,
         headersBuilder: (HeadersBuilder.() -> Unit) = {},
         urlBuilder: URLBuilder.() -> Unit,
     ): HttpResponse =
@@ -68,7 +68,7 @@ class PasteClient(
         }
 
     suspend fun get(
-        timeout: Long = 1000L,
+        timeout: Long = 3000L,
         headersBuilder: (HeadersBuilder.() -> Unit) = {},
         urlBuilder: URLBuilder.() -> Unit,
     ): HttpResponse =
