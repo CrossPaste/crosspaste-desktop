@@ -180,6 +180,7 @@ import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
 import com.crosspaste.sync.TokenCache
+import com.crosspaste.sync.TokenCacheApi
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.CleanTaskTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
@@ -548,7 +549,7 @@ class DesktopModule(
             single<StoragePathManager> { DesktopStoragePathManager() }
             single<SyncScopeFactory> { DesktopSyncScopeFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
-            single<TokenCache> { TokenCache }
+            single<TokenCacheApi> { TokenCache }
             single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
         }
 

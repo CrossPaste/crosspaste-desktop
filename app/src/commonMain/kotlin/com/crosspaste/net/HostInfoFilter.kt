@@ -57,10 +57,17 @@ private class HostInfoFilterImpl(
 
     private fun resolveIpBytes(host: String): ByteArray? =
         try {
+            if (!looksLikeIpLiteral(host)) return null
             InetSocketAddress(host, 0).resolveAddress()
         } catch (_: Throwable) {
             null
         }
+
+    private fun looksLikeIpLiteral(host: String): Boolean =
+        host.contains('.') &&
+            host.all { it.isDigit() || it == '.' } ||
+            host.contains(':') &&
+            host.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' || it == ':' }
 
     private fun compareWithMask(
         a: ByteArray,
