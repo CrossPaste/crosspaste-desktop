@@ -73,9 +73,10 @@ fun DragTargetContentView() {
                     isDragging = false
                 }
 
+                // DragAndDropTarget.onDrop requires a synchronous Boolean return,
+                // so runBlocking is unavoidable here due to the framework API contract.
                 override fun onDrop(event: DragAndDropEvent): Boolean {
                     val transferable = event.awtTransferable
-
                     val source: String? = appWindowManager.getCurrentActiveAppName()
                     val pasteTransferable = DesktopReadTransferable(transferable)
                     return runBlocking {

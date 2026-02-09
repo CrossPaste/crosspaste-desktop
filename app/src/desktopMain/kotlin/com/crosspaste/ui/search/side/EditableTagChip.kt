@@ -43,6 +43,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+private const val DOUBLE_CLICK_TIMEOUT_MS = 300L
+
 @Composable
 fun PasteTagScope.TagChip(
     isSelected: Boolean,
@@ -55,6 +57,7 @@ fun PasteTagScope.TagChip(
 
     FilterChip(
         selected = isSelected,
+        // Single click triggers onEdit (tag filter); double click triggers onSelect (enter edit mode)
         onClick = {
             if (clickJob != null && clickJob?.isActive == true) {
                 clickJob?.cancel()
@@ -63,7 +66,7 @@ fun PasteTagScope.TagChip(
             } else {
                 clickJob =
                     scope.launch {
-                        delay(300)
+                        delay(DOUBLE_CLICK_TIMEOUT_MS)
                         onEdit()
                         clickJob = null
                     }

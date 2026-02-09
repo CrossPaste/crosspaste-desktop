@@ -19,7 +19,7 @@ class DesktopAppShareService(
             Reddit(uiSupport),
             LinkedIn(notificationManager, pasteboardService, uiSupport),
             Telegram(uiSupport),
-            Mail(notificationManager, uiSupport),
+            Mail(notificationManager, pasteboardService, uiSupport),
             Clipboard(notificationManager, pasteboardService),
         )
     override val shareContentKey: String = "share_content"
