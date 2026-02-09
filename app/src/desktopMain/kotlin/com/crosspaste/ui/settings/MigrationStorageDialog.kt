@@ -156,7 +156,6 @@ fun MigrationStorageDialog(
                             delay(500)
                             isMigration = false
                         }
-                        isMigration = false
                     }.onFailure {
                         coroutineScope.launch {
                             isMigration = false
