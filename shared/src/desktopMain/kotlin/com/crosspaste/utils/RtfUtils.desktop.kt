@@ -14,28 +14,25 @@ object DesktopRtfUtils : RtfUtils {
 
     private val logger = KotlinLogging.logger {}
 
-    private val rtfParser = RTFEditorKit()
-
     override fun getText(rtf: String): String? =
         runCatching {
             val doc = DefaultStyledDocument()
-            rtfParser.read(ByteArrayInputStream(rtf.encodeToByteArray()), doc, 0)
+            RTFEditorKit().read(ByteArrayInputStream(rtf.encodeToByteArray()), doc, 0)
             doc.getText(0, doc.length)
         }.onFailure { e ->
             logger.error(e) { "Failed to parse RTF text" }
         }.getOrNull()
 
-    override fun rtfToHtml(rtf: String): String? {
-        return runCatching {
+    override fun rtfToHtml(rtf: String): String? =
+        runCatching {
             val doc = DefaultStyledDocument()
             StringReader(rtf).use { reader ->
                 RTFEditorKit().read(reader, doc, 0)
             }
             val out = StringWriter()
             MinimalHTMLWriter(out, doc).write()
-            return out.toString()
+            out.toString()
         }.onFailure { e ->
             logger.error(e) { "Failed to convert RTF to HTML" }
         }.getOrNull()
-    }
 }

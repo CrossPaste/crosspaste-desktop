@@ -24,7 +24,7 @@ object HtmlUtils {
             ksoupDoc.select("br").before("\\n")
             ksoupDoc.select("p").before("\\n")
             val str = ksoupDoc.html().replace("\\\\n".toRegex(), "\n")
-            return Ksoup.clean(str, Safelist.none(), "", outputSettings)
+            Ksoup.clean(str, Safelist.none(), "", outputSettings)
         }.getOrNull()
 
     fun ensureHtmlCharsetUtf8(html: String): String =

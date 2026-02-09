@@ -2,10 +2,11 @@ package com.crosspaste.utils
 
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import io.github.oshai.kotlinlogging.KLogger
+import io.ktor.util.collections.ConcurrentMap
 
 object Memoize {
-    fun <T, R> memoize(function: (T) -> R): (T) -> R {
-        val cache = mutableMapOf<T, R>()
+    fun <T : Any, R> memoize(function: (T) -> R): (T) -> R {
+        val cache = ConcurrentMap<T, R>()
         return {
             cache.getOrPut(it) { function(it) }
         }
