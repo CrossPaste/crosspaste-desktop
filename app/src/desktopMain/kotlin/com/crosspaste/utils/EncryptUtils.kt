@@ -46,8 +46,9 @@ object EncryptUtils {
         encryptedData: ByteArray,
     ): ByteArray {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        val ivBytes = encryptedData.copyOfRange(0, 16)
-        val actualEncryptedData = encryptedData.copyOfRange(16, encryptedData.size)
+        val ivSize = cipher.blockSize
+        val ivBytes = encryptedData.copyOfRange(0, ivSize)
+        val actualEncryptedData = encryptedData.copyOfRange(ivSize, encryptedData.size)
 
         val ivSpec = IvParameterSpec(ivBytes)
         cipher.init(Cipher.DECRYPT_MODE, key, ivSpec)

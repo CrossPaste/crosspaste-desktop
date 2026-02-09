@@ -64,11 +64,15 @@ object HtmlColorUtils {
             }
         } ?: elements.firstOrNull { it.tagName() == "div" }
 
+    private val WIDTH_100_PATTERN = "width:\\s*100%".toRegex()
+    private val MIN_HEIGHT_100VH_PATTERN = "min-height:\\s*100vh".toRegex()
+    private val HEIGHT_100VH_PATTERN = "height:\\s*100vh".toRegex()
+
     private fun hasFullWidthStyle(element: Element): Boolean {
         val style = element.attr("style")
-        return style.contains("width:\\s*100%".toRegex()) ||
-            style.contains("min-height:\\s*100vh".toRegex()) ||
-            style.contains("height:\\s*100vh".toRegex())
+        return style.contains(WIDTH_100_PATTERN) ||
+            style.contains(MIN_HEIGHT_100VH_PATTERN) ||
+            style.contains(HEIGHT_100VH_PATTERN)
     }
 
     private fun getColorFromElement(element: Element): Color? {
