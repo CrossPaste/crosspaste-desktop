@@ -45,12 +45,13 @@ class Reddit(
     }
 
     override suspend fun action(appShareService: AppShareService) {
-        val encodedTitle =
-            withContext(ioDispatcher) {
-                URLEncoder.encode(appShareService.getShareTitle(), "UTF-8")
-            }
         val appUrl = appShareService.getShareUrl()
-        val url = "https://www.reddit.com/submit?title=$encodedTitle&url=$appUrl"
+        val (encodedTitle, encodedUrl) =
+            withContext(ioDispatcher) {
+                URLEncoder.encode(appShareService.getShareTitle(), "UTF-8") to
+                    URLEncoder.encode(appUrl, "UTF-8")
+            }
+        val url = "https://www.reddit.com/submit?title=$encodedTitle&url=$encodedUrl"
         uiSupport.openUrlInBrowser(url)
     }
 }

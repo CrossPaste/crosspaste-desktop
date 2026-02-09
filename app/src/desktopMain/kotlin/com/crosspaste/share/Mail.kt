@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.base.mail
 import com.crosspaste.ui.theme.AppUISize.huge
@@ -19,6 +21,7 @@ import kotlinx.coroutines.delay
 
 class Mail(
     private val notificationManager: NotificationManager,
+    private val pasteboardService: PasteboardService,
     private val uiSupport: UISupport,
 ) : AppSharePlatform {
     override val platformName: String = "Mail"
@@ -45,6 +48,10 @@ class Mail(
     }
 
     override suspend fun action(appShareService: AppShareService) {
+        pasteboardService.tryWritePasteboard(
+            pasteItem = createTextPasteItem(text = appShareService.getShareText()),
+            localOnly = true,
+        )
         notificationManager.sendNotification(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,

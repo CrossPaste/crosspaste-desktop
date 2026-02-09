@@ -31,7 +31,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Auto_awesome
@@ -155,7 +154,7 @@ fun AboutInfoList(
             onClick = { uiSupport.openCrossPasteWebInBrowser() },
         )
         HorizontalDivider(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = medium, vertical = tiny3X),
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         )
         AboutInfoItem(

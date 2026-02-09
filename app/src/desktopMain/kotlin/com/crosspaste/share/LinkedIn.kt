@@ -18,10 +18,8 @@ import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
 
@@ -71,9 +69,7 @@ class LinkedIn(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,
         )
-        mainCoroutineDispatcher.launch {
-            delay(2000)
-            uiSupport.openUrlInBrowser(url)
-        }
+        delay(2000)
+        uiSupport.openUrlInBrowser(url)
     }
 }
