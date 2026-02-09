@@ -141,7 +141,7 @@ class DesktopCopywriter(
     private val language: String,
 ) : Copywriter {
 
-    val logger = KotlinLogging.logger {}
+    private val logger = KotlinLogging.logger {}
 
     private val dateUtils = getDateUtils()
 
