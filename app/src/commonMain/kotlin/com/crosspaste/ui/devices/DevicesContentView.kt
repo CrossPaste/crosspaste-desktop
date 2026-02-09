@@ -104,7 +104,6 @@ fun DevicesContentView() {
             }
 
             items(syncRuntimeInfos) { syncRuntimeInfo ->
-                val deviceScopeFactory = koinInject<DeviceScopeFactory>()
                 val scope =
                     remember(syncRuntimeInfo) {
                         deviceScopeFactory.createDeviceScope(syncRuntimeInfo)

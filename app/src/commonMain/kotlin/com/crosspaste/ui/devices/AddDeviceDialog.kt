@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +45,7 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.NetUtils
 import com.crosspaste.utils.buildUrl
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
@@ -56,9 +57,13 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
 
     val appSizeValue = LocalAppSizeValueState.current
 
+    val coroutineScope = rememberCoroutineScope()
+
     var ip by remember { mutableStateOf("") }
 
     var port by remember { mutableStateOf("13129") }
+
+    var isLoading by remember { mutableStateOf(false) }
 
     // Determine if the confirm button should be enabled
     val isInputValid =
@@ -137,10 +142,10 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
             DialogActionButton(
                 text = copywriter.getText("confirm"),
                 type = DialogButtonType.FILLED,
-                enabled = isInputValid,
+                enabled = isInputValid && !isLoading,
             ) {
-                // Logic inside click stays simple because button is only enabled when valid
-                runBlocking {
+                isLoading = true
+                coroutineScope.launch {
                     val hostAndPort = HostAndPort(ip, port.toInt())
                     val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
 
@@ -149,6 +154,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         syncManager.updateSyncInfo(syncInfo)
                         onDismiss() // Close dialog after success
                     } else {
+                        isLoading = false
                         notificationManager.sendNotification(
                             title = { it.getText("addition_failed") },
                             message = {
