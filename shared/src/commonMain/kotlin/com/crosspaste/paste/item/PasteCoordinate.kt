@@ -49,9 +49,6 @@ open class PasteFileCoordinate(
         if (other !is PasteFileCoordinate) return false
         if (!super.equals(other)) return false
 
-        if (id != other.id) return false
-        if (appInstanceId != other.appInstanceId) return false
-        if (createTime != other.createTime) return false
         if (filePath != other.filePath) return false
 
         return true
@@ -59,9 +56,6 @@ open class PasteFileCoordinate(
 
     override fun hashCode(): Int {
         var result = super.hashCode()
-        result = 31 * result + id.hashCode()
-        result = 31 * result + appInstanceId.hashCode()
-        result = 31 * result + createTime.hashCode()
         result = 31 * result + filePath.hashCode()
         return result
     }
@@ -90,10 +84,6 @@ class PasteFileInfoTreeCoordinate(
         if (other !is PasteFileInfoTreeCoordinate) return false
         if (!super.equals(other)) return false
 
-        if (id != other.id) return false
-        if (appInstanceId != other.appInstanceId) return false
-        if (createTime != other.createTime) return false
-        if (filePath != other.filePath) return false
         if (fileInfoTree != other.fileInfoTree) return false
 
         return true
@@ -101,10 +91,6 @@ class PasteFileInfoTreeCoordinate(
 
     override fun hashCode(): Int {
         var result = super.hashCode()
-        result = 31 * result + id.hashCode()
-        result = 31 * result + appInstanceId.hashCode()
-        result = 31 * result + createTime.hashCode()
-        result = 31 * result + filePath.hashCode()
         result = 31 * result + fileInfoTree.hashCode()
         return result
     }

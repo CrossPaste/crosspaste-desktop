@@ -145,14 +145,17 @@ class OpenGraphService<Image>(
         for (script in jsonLdScripts) {
             runCatching {
                 val json = script.data()
-                val imagePattern = """"image"\s*:\s*"([^"]+)"""".toRegex()
-                val match = imagePattern.find(json)
+                val match = JSON_LD_IMAGE_PATTERN.find(json)
                 if (match != null) {
                     return match.groupValues[1]
                 }
             }
         }
         return null
+    }
+
+    companion object {
+        private val JSON_LD_IMAGE_PATTERN = """"image"\s*:\s*"([^"]+)"""".toRegex()
     }
 
     private fun findLargestImage(doc: Document): String? =

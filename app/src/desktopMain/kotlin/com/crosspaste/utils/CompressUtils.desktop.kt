@@ -70,12 +70,17 @@ object DesktopCompressUtils : CompressUtils {
         targetDir: Path,
     ): Result<Unit> =
         runCatching {
+            val canonicalTarget = targetDir.toFile().canonicalPath
             ZipInputStream(
                 BufferedInputStream(bufferSource.inputStream()),
             ).use { zipIn ->
                 var entry = zipIn.nextEntry
                 while (entry != null) {
                     val filePath = targetDir.resolve(entry.name)
+                    val canonicalFile = filePath.toFile().canonicalPath
+                    require(canonicalFile.startsWith(canonicalTarget)) {
+                        "Zip entry outside target dir: ${entry!!.name}"
+                    }
 
                     filePath.parent?.toFile()?.mkdirs()
 
