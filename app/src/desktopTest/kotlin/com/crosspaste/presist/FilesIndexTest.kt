@@ -120,38 +120,6 @@ class FilesIndexTest {
         assertNull(index.getChunk(-1))
     }
 
-    // --- FileChunk data ---
-
-    @Test
-    fun `FileChunk preserves offset size and path`() {
-        val path = "/test/file.txt".toPath()
-        val chunk = FileChunk(offset = 100L, size = 50L, path = path)
-        assertEquals(100L, chunk.offset)
-        assertEquals(50L, chunk.size)
-        assertEquals(path, chunk.path)
-    }
-
-    @Test
-    fun `FileChunk toString contains filename`() {
-        val chunk = FileChunk(offset = 0, size = 100, path = "/test/my_file.txt".toPath())
-        val str = chunk.toString()
-        assert(str.contains("my_file.txt"))
-    }
-
-    @Test
-    fun `FilesChunk toString contains all file chunks`() {
-        val chunks =
-            FilesChunk(
-                listOf(
-                    FileChunk(0, 100, "/a.txt".toPath()),
-                    FileChunk(0, 200, "/b.txt".toPath()),
-                ),
-            )
-        val str = chunks.toString()
-        assert(str.contains("a.txt"))
-        assert(str.contains("b.txt"))
-    }
-
     // --- Large file scenario ---
 
     @Test

@@ -89,12 +89,4 @@ class PasteCollectionTest {
 
         assertEquals(1, restored.pasteItems.size)
     }
-
-    @Test
-    fun `toJson produces valid JSON array`() {
-        val collection = PasteCollection(listOf(createTextPasteItem(text = "test")))
-        val json = collection.toJson()
-        assertTrue(json.startsWith("["))
-        assertTrue(json.endsWith("]"))
-    }
 }

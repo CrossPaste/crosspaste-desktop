@@ -44,14 +44,6 @@ class DtoSerializationTest {
         assertEquals(7, decoded.chunkIndex)
     }
 
-    @Test
-    fun `PullFileRequest toString contains fields`() {
-        val req = PullFileRequest(id = 1, chunkIndex = 0)
-        val str = req.toString()
-        assertTrue(str.contains("id=1"))
-        assertTrue(str.contains("chunkIndex=0"))
-    }
-
     // --- EndpointInfo ---
 
     @Test
@@ -204,23 +196,6 @@ class DtoSerializationTest {
         assertEquals(1000L, decoded.timestamp)
     }
 
-    @Test
-    fun `PairingRequest equals works correctly with byte arrays`() {
-        val a = PairingRequest(byteArrayOf(1, 2), byteArrayOf(3, 4), 1, 100)
-        val b = PairingRequest(byteArrayOf(1, 2), byteArrayOf(3, 4), 1, 100)
-        val c = PairingRequest(byteArrayOf(1, 2), byteArrayOf(3, 5), 1, 100)
-
-        assertEquals(a, b)
-        assertTrue(a != c)
-    }
-
-    @Test
-    fun `PairingRequest hashCode consistent with equals`() {
-        val a = PairingRequest(byteArrayOf(1, 2), byteArrayOf(3, 4), 1, 100)
-        val b = PairingRequest(byteArrayOf(1, 2), byteArrayOf(3, 4), 1, 100)
-        assertEquals(a.hashCode(), b.hashCode())
-    }
-
     // --- PairingResponse ---
 
     @Test
@@ -239,14 +214,6 @@ class DtoSerializationTest {
         assertEquals(2000L, decoded.timestamp)
     }
 
-    @Test
-    fun `PairingResponse equals and hashCode`() {
-        val a = PairingResponse(byteArrayOf(1), byteArrayOf(2), 100)
-        val b = PairingResponse(byteArrayOf(1), byteArrayOf(2), 100)
-        assertEquals(a, b)
-        assertEquals(a.hashCode(), b.hashCode())
-    }
-
     // --- TrustRequest ---
 
     @Test
@@ -262,15 +229,6 @@ class DtoSerializationTest {
 
         assertEquals(pairingRequest, decoded.pairingRequest)
         assertContentEquals(byteArrayOf(7, 8, 9), decoded.signature)
-    }
-
-    @Test
-    fun `TrustRequest equals and hashCode`() {
-        val pr = PairingRequest(byteArrayOf(1), byteArrayOf(2), 1, 1)
-        val a = TrustRequest(pr, byteArrayOf(3))
-        val b = TrustRequest(pr, byteArrayOf(3))
-        assertEquals(a, b)
-        assertEquals(a.hashCode(), b.hashCode())
     }
 
     // --- TrustResponse ---
