@@ -53,6 +53,10 @@ enum class StandardErrorCode(
 
     EXPORT_FAIL(5000, ErrorType.INTERNAL_ERROR),
     IMPORT_FAIL(5001, ErrorType.INTERNAL_ERROR),
+
+    CLI_FORBIDDEN(6000, ErrorType.EXTERNAL_ERROR),
+    CLI_NOT_FOUND(6001, ErrorType.EXTERNAL_ERROR),
+    CLI_INVALID_REQUEST(6002, ErrorType.EXTERNAL_ERROR),
     ;
 
     private val errorCode: ErrorCode = ErrorCode(code, name, errorType)

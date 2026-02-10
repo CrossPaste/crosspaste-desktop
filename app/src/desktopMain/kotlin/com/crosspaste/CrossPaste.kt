@@ -30,6 +30,7 @@ import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.net.Server
+import com.crosspaste.net.cli.CliTokenManager
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.GuidePasteDataService
 import com.crosspaste.paste.PasteboardService
@@ -136,6 +137,7 @@ class CrossPaste {
                     koin.get<QRCodeGenerator>()
                     koin.get<SyncManager>().start()
                     koin.get<Server>().start()
+                    koin.get<CliTokenManager>().generateAndWriteToken()
                     koin.get<PasteClient>()
                     koin.get<PasteBonjourService>()
                     koin.get<CleanScheduler>().start()
