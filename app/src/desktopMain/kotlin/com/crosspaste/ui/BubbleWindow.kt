@@ -44,7 +44,6 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
-import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.DesktopContext.BubbleWindowContext
@@ -54,6 +53,7 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.utils.cpuDispatcher
+import com.crosspaste.utils.getPlatformUtils
 import com.sun.jna.Pointer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
@@ -123,7 +123,7 @@ fun BubbleWindow(windowIcon: Painter?) {
     val pasteDao = koinInject<PasteDao>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
-    val platform = koinInject<Platform>()
+    val platform = getPlatformUtils().platform
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val density = LocalDensity.current
 
@@ -151,14 +151,6 @@ fun BubbleWindow(windowIcon: Painter?) {
     val logger = remember { KotlinLogging.logger("BubbleWindow") }
     val ignoreFocusLoss = remember { AtomicBoolean(true) }
 
-    val windowState =
-        remember {
-            WindowState(
-                size = windowSize,
-                position = WindowPosition(Alignment.Center),
-            )
-        }
-
     // Reactively track the target item's center-X in SearchWindow coordinates (Dp).
     // Reads LazyListState.layoutInfo which is snapshot state → recomposes on scroll.
     val itemCenterXInSearchWindow: Dp? by remember(bubbleWindowInfo.pasteId) {
@@ -183,6 +175,29 @@ fun BubbleWindow(windowIcon: Painter?) {
         }
     }
 
+    // Compute bubble position synchronously so the window starts at the correct location.
+    // LaunchedEffect is async and would cause the window to flash at center first.
+    fun computeBubblePosition(): WindowPosition {
+        val searchPos = searchWindowInfo.state.position
+        val centerX = itemCenterXInSearchWindow
+        val bubbleX =
+            if (centerX != null) {
+                searchPos.x + centerX - windowSize.width / 2
+            } else {
+                searchPos.x + (searchWindowInfo.state.size.width - windowSize.width) / 2
+            }
+        val bubbleY = searchPos.y - windowSize.height - gap + appSizeValue.sideSearchTopBarHeight
+        return WindowPosition(x = bubbleX, y = bubbleY)
+    }
+
+    val windowState =
+        remember {
+            WindowState(
+                size = windowSize,
+                position = computeBubblePosition(),
+            )
+        }
+
     // Auto-hide when the target item scrolls out of view
     LaunchedEffect(itemCenterXInSearchWindow, bubbleWindowInfo.show) {
         if (bubbleWindowInfo.show && itemCenterXInSearchWindow == null) {
@@ -198,21 +213,10 @@ fun BubbleWindow(windowIcon: Painter?) {
         }
     }
 
-    // Position the bubble so its tail tip points at the item's center-top
+    // Reactively update position when item scrolls horizontally
     LaunchedEffect(searchWindowInfo, bubbleWindowInfo.show, itemCenterXInSearchWindow) {
         if (bubbleWindowInfo.show) {
-            val searchPos = searchWindowInfo.state.position
-            val centerX = itemCenterXInSearchWindow
-            val bubbleX =
-                if (centerX != null) {
-                    searchPos.x + centerX - windowSize.width / 2
-                } else {
-                    // Fallback: center above SearchWindow
-                    searchPos.x + (searchWindowInfo.state.size.width - windowSize.width) / 2
-                }
-            val bubbleY = searchPos.y - windowSize.height - gap + appSizeValue.sideSearchTopBarHeight
-
-            windowState.position = WindowPosition(x = bubbleX, y = bubbleY)
+            windowState.position = computeBubblePosition()
             windowState.size = windowSize
         }
     }
