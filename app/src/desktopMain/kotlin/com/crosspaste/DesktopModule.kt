@@ -308,6 +308,7 @@ class DesktopModule(
             single<PasteDao> {
                 PasteDao(
                     appInfo = get(),
+                    commonConfigManager = get(),
                     currentPaste = get(),
                     database = get(),
                     pasteProcessPlugins =

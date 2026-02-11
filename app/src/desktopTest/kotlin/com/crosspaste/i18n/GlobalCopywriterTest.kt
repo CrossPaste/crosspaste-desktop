@@ -7,11 +7,11 @@ import com.crosspaste.db.createDatabase
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
-import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
+import com.crosspaste.utils.getPlatformUtils
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
@@ -26,7 +26,7 @@ class GlobalCopywriterTest {
         configDirPath.toFile().deleteOnExit()
         val configPath = configDirPath.resolve("appConfig.json")
 
-        val platform = DesktopPlatformProvider().getPlatform()
+        val platform = getPlatformUtils().platform
 
         @Suppress("UNCHECKED_CAST")
         val configManager =

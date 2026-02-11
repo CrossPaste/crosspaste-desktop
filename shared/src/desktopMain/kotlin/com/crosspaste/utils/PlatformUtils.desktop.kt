@@ -1,14 +1,17 @@
-package com.crosspaste.platform
+package com.crosspaste.utils
 
+import com.crosspaste.platform.LinuxPlatform
+import com.crosspaste.platform.Platform
 import com.crosspaste.platform.Platform.Companion.LINUX
 import com.crosspaste.platform.Platform.Companion.MACOS
 import com.crosspaste.platform.Platform.Companion.UNKNOWN_OS
 import com.crosspaste.platform.Platform.Companion.WINDOWS
-import com.crosspaste.platform.linux.LinuxPlatform
-import com.crosspaste.utils.getSystemProperty
 
-class DesktopPlatformProvider : PlatformProvider {
-    override fun getPlatform(): Platform = getCurrentPlatform()
+actual fun getPlatformUtils(): PlatformUtils = DesktopPlatformUtils
+
+object DesktopPlatformUtils : PlatformUtils {
+
+    override val platform: Platform by lazy { getCurrentPlatform() }
 
     private fun getCurrentPlatform(): Platform {
         val systemProperty = getSystemProperty()

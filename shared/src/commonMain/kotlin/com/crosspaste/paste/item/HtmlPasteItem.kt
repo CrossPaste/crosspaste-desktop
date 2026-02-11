@@ -60,8 +60,6 @@ class HtmlPasteItem(
             }.getOrNull()
         } ?: 0
 
-    override fun bind(pasteCoordinate: PasteCoordinate): HtmlPasteItem = this
-
     override fun copy(extraInfo: JsonObject?): HtmlPasteItem =
         createHtmlPasteItem(
             identifiers = identifiers,

@@ -7,6 +7,7 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
+import com.fleeksoft.ksoup.internal.Normalizer.normalize
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -352,4 +353,29 @@ interface FileUtils {
         filesChunk: FilesChunk,
         byteWriteChannel: ByteWriteChannel,
     )
+
+    fun getSystemDownloadDir(): Path
+
+    fun resolveLinuxDownloadDir(userHome: String): Path {
+        val userHomePath = userHome.toPath(normalize = true)
+        val userDirsFile = userHomePath / ".config" / "user-dirs.dirs"
+        if (fileSystem.exists(userDirsFile)) {
+            fileSystem.read(userDirsFile) {
+                while (true) {
+                    val line = readUtf8Line() ?: break
+                    val trimmed = line.trim()
+                    if (trimmed.startsWith("XDG_DOWNLOAD_DIR=")) {
+                        val value =
+                            trimmed
+                                .substringAfter("=")
+                                .removeSurrounding("\"")
+                                .replace($$"$HOME", userHome)
+                                .replace($$"${HOME}", userHome)
+                        return value.toPath(normalize = true)
+                    }
+                }
+            }
+        }
+        return userHomePath / "Downloads"
+    }
 }

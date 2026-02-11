@@ -1,7 +1,7 @@
 package com.crosspaste.macos
 
-import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.platform.macos.MacosKeychainHelper
+import com.crosspaste.utils.getPlatformUtils
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,7 +11,7 @@ class MacosKeychainHelperTest {
 
     @Test
     fun testKeychain() {
-        val platform = DesktopPlatformProvider().getPlatform()
+        val platform = getPlatformUtils().platform
         assumeTrue(platform.isMacos(), "Test requires macOS")
 
         MacosKeychainHelper.setPassword("com.crosspaste", "test", "test")

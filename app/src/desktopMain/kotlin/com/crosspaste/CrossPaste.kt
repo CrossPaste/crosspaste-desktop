@@ -35,7 +35,6 @@ import com.crosspaste.paste.GuidePasteDataService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.QRCodeGenerator
@@ -52,6 +51,7 @@ import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.getAppEnvUtils
+import com.crosspaste.utils.getPlatformUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -77,7 +77,7 @@ class CrossPaste {
 
         private val appEnv = appEnvUtils.getCurrentAppEnv()
 
-        private val platform = DesktopPlatformProvider().getPlatform()
+        private val platform = getPlatformUtils().platform
 
         private val appPathProvider = DesktopAppPathProvider(platform)
 
