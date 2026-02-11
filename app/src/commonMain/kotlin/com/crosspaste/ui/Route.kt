@@ -75,24 +75,8 @@ object OCR : Route {
 }
 
 @Serializable
-object PasteboardGraph : Route {
-    override val name = "pasteboard_graph"
-}
-
-@Serializable
 object Pasteboard : Route {
     const val NAME: String = "pasteboard"
-    override val name: String = NAME
-}
-
-@Serializable
-data class PasteTextEdit(
-    val id: Long,
-) : Route {
-    companion object {
-        const val NAME: String = "text_edit"
-    }
-
     override val name: String = NAME
 }
 

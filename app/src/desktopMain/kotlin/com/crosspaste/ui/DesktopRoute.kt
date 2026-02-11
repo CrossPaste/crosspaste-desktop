@@ -14,7 +14,6 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<NearbyDeviceDetail>() -> NearbyDeviceDetail.NAME
         dest.hasRoute<OCR>() -> OCR.NAME
         dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
-        dest.hasRoute<PasteTextEdit>() -> PasteTextEdit.NAME
         dest.hasRoute<PairingCode>() -> PairingCode.NAME
         dest.hasRoute<Share>() -> Share.NAME
         dest.hasRoute<Settings>() -> Settings.NAME
@@ -36,7 +35,6 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<NearbyDeviceDetail>() -> Devices.NAME
         dest.hasRoute<OCR>() -> Extension.NAME
         dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
-        dest.hasRoute<PasteTextEdit>() -> Pasteboard.NAME
         dest.hasRoute<PairingCode>() -> PairingCode.NAME
         dest.hasRoute<Share>() -> Share.NAME
         dest.hasRoute<Settings>() -> Settings.NAME

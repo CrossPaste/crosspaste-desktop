@@ -17,7 +17,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
@@ -26,8 +25,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.paste.PasteData
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
@@ -43,8 +40,6 @@ import com.crosspaste.ui.extension.ExtensionContentView
 import com.crosspaste.ui.extension.ocr.OCRScreen
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
-import com.crosspaste.ui.paste.createPasteDataScope
-import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.ui.settings.DesktopNetworkSettingsContentView
 import com.crosspaste.ui.settings.DesktopPasteboardSettingsContentView
 import com.crosspaste.ui.settings.PasteboardSettingsContentView
@@ -60,7 +55,6 @@ class DesktopScreenProvider(
     private val deviceScopeFactory: DeviceScopeFactory,
     private val syncScopeFactory: SyncScopeFactory,
     private val storagePathManager: StoragePathManager,
-    private val pasteDao: PasteDao,
     private val syncManager: SyncManager,
     private val nearbyDeviceManager: NearbyDeviceManager,
 ) : ScreenProvider {
@@ -164,12 +158,6 @@ class DesktopScreenProvider(
                 }
             }
             composable<Import> { ImportScreen() }
-            composable<PasteTextEdit>(
-                exitTransition = { slideOutRight() },
-                enterTransition = { slideInLeft() },
-            ) { backStackEntry ->
-                backStackEntry.PasteTextEditScreen()
-            }
             composable<PairingCode> { PairingCodeScreen() }
             composable<Share> { ShareScreen() }
             navigation<SettingsGraph>(startDestination = Settings) {
@@ -296,33 +284,6 @@ class DesktopScreenProvider(
                 }
             ScreenLayout {
                 scope.NearbyDeviceDetailContentView()
-            }
-        }
-    }
-
-    @Composable
-    private fun NavBackStackEntry.PasteTextEditScreen() {
-        val pasteTextEdit = toRoute<PasteTextEdit>()
-
-        var currentPaste by remember { mutableStateOf<PasteData?>(null) }
-
-        LaunchedEffect(pasteTextEdit.id) {
-            currentPaste = pasteDao.getNoDeletePasteData(pasteTextEdit.id)
-            if (currentPaste == null) {
-                navigateUp()
-            }
-        }
-
-        currentPaste?.let {
-            val scope =
-                remember(it.id, it.pasteState, it.pasteSearchContent) {
-                    createPasteDataScope(it)
-                }
-
-            scope?.let {
-                ScreenLayout {
-                    scope.PasteTextEditContentView()
-                }
             }
         }
     }

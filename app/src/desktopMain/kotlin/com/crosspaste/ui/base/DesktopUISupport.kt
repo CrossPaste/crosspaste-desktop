@@ -17,8 +17,6 @@ import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.NavigationManager
-import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
@@ -38,7 +36,6 @@ import javax.swing.JColorChooser
 class DesktopUISupport(
     private val appUrls: AppUrls,
     private val copywriter: GlobalCopywriter,
-    private val navigationManager: NavigationManager,
     private val notificationManager: NotificationManager,
     private val platform: Platform,
     private val updatePasteItemHelper: UpdatePasteItemHelper,
@@ -201,11 +198,7 @@ class DesktopUISupport(
     }
 
     override fun openText(pasteData: PasteData) {
-        if (appWindowManager.getCurrentSearchWindowInfo().show) {
-            appWindowManager.showBubbleWindow(pasteData.id)
-        } else {
-            navigationManager.navigate(PasteTextEdit(pasteData.id))
-        }
+        appWindowManager.showBubbleWindow(pasteData.id)
     }
 
     override fun openRtf(pasteData: PasteData) {
