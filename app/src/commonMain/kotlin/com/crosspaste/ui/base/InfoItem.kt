@@ -10,13 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.crosspaste.ui.theme.AppUISize.small2X
 
 @Composable
 fun InfoItem(
     key: String,
     value: String,
-    isMono: Boolean = false,
 ) {
     Row(
         modifier =
@@ -33,10 +33,12 @@ fun InfoItem(
             fontWeight = FontWeight.Medium,
         )
         Text(
+            modifier = Modifier.weight(1f),
             text = value,
-            style = if (isMono) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Normal,
+            textAlign = TextAlign.End,
         )
     }
 }
