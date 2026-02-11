@@ -13,7 +13,6 @@ import com.crosspaste.net.plugin.ClientEncryptPlugin
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.TestSyncRoutingApi
-import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPair
@@ -22,13 +21,14 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
+import com.crosspaste.utils.getPlatformUtils
 
 class TestInstance(
     val appInstanceId: String,
     userName: String = appInstanceId,
 ) {
     companion object {
-        val platform: Platform = DesktopPlatformProvider().getPlatform()
+        val platform: Platform = getPlatformUtils().platform
         val deviceUtils: DeviceUtils = DesktopDeviceUtils(platform)
         val secureKeyPairSerializer = SecureKeyPairSerializer()
         val syncApi: SyncApi = SyncApi

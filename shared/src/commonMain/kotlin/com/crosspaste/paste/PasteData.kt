@@ -178,7 +178,11 @@ data class PasteData(
             }
         }
 
-    fun existFileCategory(): Boolean = getPasteAppearItems().any { it is PasteFiles }
+    fun isFileType(): Boolean =
+        when (getType()) {
+            PasteType.FILE_TYPE, PasteType.IMAGE_TYPE -> true
+            else -> false
+        }
 
     fun getTypeName(): String = PasteType.fromType(this.pasteType).name
 

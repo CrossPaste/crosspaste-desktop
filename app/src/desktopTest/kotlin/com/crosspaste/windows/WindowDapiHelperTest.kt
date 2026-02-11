@@ -1,7 +1,7 @@
 package com.crosspaste.windows
 
-import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.platform.windows.WindowDapiHelper
+import com.crosspaste.utils.getPlatformUtils
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,7 +11,7 @@ class WindowDapiHelperTest {
 
     @Test
     fun testDapi() {
-        val currentPlatform = DesktopPlatformProvider().getPlatform()
+        val currentPlatform = getPlatformUtils().platform
         assumeTrue(currentPlatform.isWindows(), "Test requires Windows")
 
         val str = "test windows dapi"

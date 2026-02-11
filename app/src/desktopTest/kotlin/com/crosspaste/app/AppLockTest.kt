@@ -2,7 +2,7 @@ package com.crosspaste.app
 
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.path.FakeAppPathProvider
-import com.crosspaste.platform.DesktopPlatformProvider
+import com.crosspaste.utils.getPlatformUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -20,7 +20,7 @@ class AppLockTest : KoinTest {
 
     companion object {
 
-        private val platform = DesktopPlatformProvider().getPlatform()
+        private val platform = getPlatformUtils().platform
 
         private val testModule =
             module {

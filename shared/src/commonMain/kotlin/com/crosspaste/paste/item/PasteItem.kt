@@ -114,7 +114,10 @@ sealed interface PasteItem {
             extraInfo[MARKETING_PATH]?.jsonPrimitive?.content
         }
 
-    fun bind(pasteCoordinate: PasteCoordinate): PasteItem = this
+    fun bind(
+        pasteCoordinate: PasteCoordinate,
+        isLargeFile: Boolean = false,
+    ): PasteItem = this
 
     fun copy(extraInfo: JsonObject? = null): PasteItem
 

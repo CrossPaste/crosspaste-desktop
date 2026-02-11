@@ -2,6 +2,7 @@ package com.crosspaste.db.paste
 
 import app.cash.turbine.test
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.paste.CurrentPaste
@@ -51,6 +52,7 @@ class PasteDaoTest {
         }
     }
 
+    private val commonConfigManager: CommonConfigManager = mockk(relaxed = true)
     private val currentPaste: CurrentPaste = mockk(relaxed = true)
     private val taskSubmitter: TaskSubmitter = mockk(relaxed = true)
     private val userDataPathProvider = mockk<com.crosspaste.path.UserDataPathProvider>(relaxed = true)
@@ -59,6 +61,7 @@ class PasteDaoTest {
 
     private val pasteDao = PasteDao(
         appInfo = appInfo,
+        commonConfigManager = commonConfigManager,
         currentPaste = currentPaste,
         database = database,
         pasteProcessPlugins = listOf(),

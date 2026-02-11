@@ -1,4 +1,4 @@
-package com.crosspaste.platform.linux
+package com.crosspaste.platform
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File

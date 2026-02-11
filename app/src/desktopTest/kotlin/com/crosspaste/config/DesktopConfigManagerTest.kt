@@ -1,9 +1,9 @@
 package com.crosspaste.config
 
-import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
+import com.crosspaste.utils.getPlatformUtils
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
 
 class DesktopConfigManagerTest {
 
-    private val platform = DesktopPlatformProvider().getPlatform()
+    private val platform = getPlatformUtils().platform
 
     private fun createConfigManager(): Pair<DesktopConfigManager, okio.Path> {
         val configDirPath = Files.createTempDirectory("configDir").toOkioPath()

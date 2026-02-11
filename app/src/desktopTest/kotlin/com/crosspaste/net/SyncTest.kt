@@ -20,7 +20,6 @@ import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.TestSyncRoutingApi
-import com.crosspaste.platform.DesktopPlatformProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
@@ -30,6 +29,7 @@ import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
+import com.crosspaste.utils.getPlatformUtils
 import io.ktor.server.netty.*
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.GlobalContext
@@ -83,7 +83,7 @@ class SyncTest : KoinTest {
 
         private val clientSecureKeyPair = generateSecureKeyPair()
 
-        private val platform = DesktopPlatformProvider().getPlatform()
+        private val platform = getPlatformUtils().platform
 
         private val testModule =
             module {

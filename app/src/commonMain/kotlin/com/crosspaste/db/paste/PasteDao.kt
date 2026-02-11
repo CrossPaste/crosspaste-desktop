@@ -5,6 +5,7 @@ import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
@@ -32,6 +33,7 @@ import kotlin.time.ExperimentalTime
 
 class PasteDao(
     private val appInfo: AppInfo,
+    private val commonConfigManager: CommonConfigManager,
     private val currentPaste: CurrentPaste,
     private val database: Database,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
@@ -432,13 +434,13 @@ class PasteDao(
     ): Result<Unit> {
         return runCatching {
             val remotePasteDataId = pasteData.id
-            val existFile = pasteData.existFileCategory()
+            val isFileType = pasteData.isFileType()
             val existIconFile: Boolean? =
                 pasteData.source?.let {
                     fileUtils.existFile(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
                 }
 
-            val pasteState = if (existFile) {
+            val pasteState = if (isFileType) {
                 PasteState.LOADING
             } else {
                 PasteState.LOADED
@@ -447,17 +449,32 @@ class PasteDao(
             val id = createPasteData(pasteData, pasteState)
 
             taskSubmitter.submit {
-                if (!existFile) {
+                if (!isFileType) {
                     markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
                     addRenderingTask(id, pasteData.getType())
                     tryWritePasteboard(pasteData)
                 } else {
+                    val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
+
+                    if (pasteFiles == null) {
+                        logger.warn { "File-type paste $id has no PasteFiles item, skipping" }
+                        return@submit
+                    }
+
+                    val fileSize = pasteFiles.size
+                    val maxBackupFileSize =
+                        fileUtils.bytesSize(
+                            commonConfigManager.getCurrentConfig().maxBackupFileSize,
+                        )
+
+                    val isLargeFile = fileSize > maxBackupFileSize
+
                     val pasteCoordinate = pasteData.getPasteCoordinate(id)
                     val pasteAppearItem = pasteData.pasteAppearItem
                     val pasteCollection = pasteData.pasteCollection
 
-                    val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
-                    val newPasteCollection = pasteCollection.bind(pasteCoordinate)
+                    val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate, isLargeFile)
+                    val newPasteCollection = pasteCollection.bind(pasteCoordinate, isLargeFile)
 
                     val newPasteData = pasteData.copy(
                         id = id,

@@ -41,10 +41,13 @@ data class PasteCollection(
         }
     }
 
-    fun bind(pasteCoordinate: PasteCoordinate): PasteCollection =
+    fun bind(
+        pasteCoordinate: PasteCoordinate,
+        isLargeFile: Boolean = false,
+    ): PasteCollection =
         PasteCollection(
             pasteItems.map {
-                it.bind(pasteCoordinate)
+                it.bind(pasteCoordinate, isLargeFile)
             },
         )
 

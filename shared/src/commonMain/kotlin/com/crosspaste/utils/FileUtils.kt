@@ -352,4 +352,22 @@ interface FileUtils {
         filesChunk: FilesChunk,
         byteWriteChannel: ByteWriteChannel,
     )
+
+    fun resolveNonConflictFileName(
+        dir: Path,
+        fileName: String,
+    ): String {
+        if (!fileSystem.exists(dir / fileName)) return fileName
+
+        val dotIndex = fileName.lastIndexOf('.')
+        val nameWithoutExt = if (dotIndex > 0) fileName.substring(0, dotIndex) else fileName
+        val ext = if (dotIndex > 0) fileName.substring(dotIndex) else ""
+
+        var counter = 1
+        while (true) {
+            val candidate = "$nameWithoutExt($counter)$ext"
+            if (!fileSystem.exists(dir / candidate)) return candidate
+            counter++
+        }
+    }
 }

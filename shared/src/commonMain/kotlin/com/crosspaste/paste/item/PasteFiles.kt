@@ -3,7 +3,10 @@ package com.crosspaste.paste.item
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
+import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getPlatformUtils
 import okio.Path
+import okio.Path.Companion.toPath
 
 interface PasteFiles {
 
@@ -25,4 +28,34 @@ interface PasteFiles {
     fun getDirectChildrenCount(): Long = fileInfoTreeMap.size.toLong()
 
     fun isRefFiles(): Boolean = basePath != null
+
+    fun applyRenameMap(renameMap: Map<String, String>): PasteFiles
+
+    fun computeRenamedFileData(renameMap: Map<String, String>): Pair<List<String>, Map<String, FileInfoTree>> {
+        val newRelativePathList = relativePathList.map { renameMap[it] ?: it }
+        val newFileInfoTreeMap = fileInfoTreeMap.entries.associate { (k, v) -> (renameMap[k] ?: k) to v }
+        return newRelativePathList to newFileInfoTreeMap
+    }
+
+    fun bindFilePaths(
+        pasteCoordinate: PasteCoordinate,
+        isLargeFile: Boolean,
+    ): Pair<String?, List<String>> {
+        val fileUtils = getFileUtils()
+        val newBasePath =
+            if (isLargeFile) getPlatformUtils().getSystemDownloadDir().toString() else null
+        val newRelativePathList =
+            relativePathList.map { relativePath ->
+                val fileName = relativePath.toPath().name
+                if (isLargeFile) {
+                    fileName
+                } else {
+                    fileUtils.createPasteRelativePath(
+                        pasteCoordinate = pasteCoordinate,
+                        fileName = fileName,
+                    )
+                }
+            }
+        return newBasePath to newRelativePathList
+    }
 }

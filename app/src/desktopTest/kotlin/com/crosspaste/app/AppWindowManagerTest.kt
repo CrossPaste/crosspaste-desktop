@@ -1,7 +1,7 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.window.WindowState
-import com.crosspaste.platform.DesktopPlatformProvider
+import com.crosspaste.utils.getPlatformUtils
 import io.mockk.every
 import io.mockk.spyk
 import kotlinx.coroutines.flow.first
@@ -16,7 +16,7 @@ class AppWindowManagerTest {
     fun testMockTestAppWindowManager() {
         val mockOS = MockOS()
 
-        val platform = DesktopPlatformProvider().getPlatform()
+        val platform = getPlatformUtils().platform
 
         val mockDesktopAppSize =
             spyk(DesktopAppSize(platform)) {
