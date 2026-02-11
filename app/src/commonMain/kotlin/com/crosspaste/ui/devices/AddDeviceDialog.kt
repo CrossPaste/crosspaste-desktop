@@ -142,7 +142,8 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
             DialogActionButton(
                 text = copywriter.getText("confirm"),
                 type = DialogButtonType.FILLED,
-                enabled = isInputValid && !isLoading,
+                enabled = isInputValid,
+                isLoading = isLoading,
             ) {
                 isLoading = true
                 coroutineScope.launch {

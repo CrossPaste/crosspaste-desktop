@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -177,17 +175,12 @@ fun DeviceScope.TrustDeviceDialog() {
             }
         },
         confirmButton = {
-            if (isLoading) {
-                Button(onClick = {}, enabled = false) {
-                    CircularProgressIndicator(modifier = Modifier.size(medium))
-                }
-            } else {
-                DialogActionButton(
-                    text = copywriter.getText("confirm"),
-                    type = DialogButtonType.FILLED,
-                ) {
-                    confirmAction()
-                }
+            DialogActionButton(
+                text = copywriter.getText("confirm"),
+                type = DialogButtonType.FILLED,
+                isLoading = isLoading,
+            ) {
+                confirmAction()
             }
         },
         dismissButton = {
