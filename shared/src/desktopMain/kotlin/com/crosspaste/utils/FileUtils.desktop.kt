@@ -1,13 +1,11 @@
 package com.crosspaste.utils
 
 import com.crosspaste.presist.FilesChunk
-import com.crosspaste.utils.DesktopPlatformUtils.platform
 import io.ktor.utils.io.*
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import okio.FileSystem
 import okio.Path
-import okio.Path.Companion.toPath
 import java.io.RandomAccessFile
 
 actual fun getFileUtils(): FileUtils = DesktopFileUtils
@@ -94,16 +92,6 @@ object DesktopFileUtils : FileUtils {
                     remaining -= readSize
                 }
             }
-        }
-    }
-
-    override fun getSystemDownloadDir(): Path {
-        val systemProperty = getSystemProperty()
-        val userHome = systemProperty.get("user.home")
-
-        return when {
-            platform.isLinux() -> resolveLinuxDownloadDir(userHome)
-            else -> userHome.toPath(normalize = true).resolve("Downloads")
         }
     }
 

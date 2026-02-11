@@ -456,33 +456,36 @@ class PasteDao(
                 } else {
                     val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
 
-                    if (pasteFiles != null) {
-                        val fileSize = pasteFiles.size
-                        val maxBackupFileSize =
-                            fileUtils.bytesSize(
-                                commonConfigManager.getCurrentConfig().maxBackupFileSize,
-                            )
+                    if (pasteFiles == null) {
+                        logger.warn { "File-type paste $id has no PasteFiles item, skipping" }
+                        return@submit
+                    }
 
-                        val isLargeFile = fileSize > maxBackupFileSize
-
-                        val pasteCoordinate = pasteData.getPasteCoordinate(id)
-                        val pasteAppearItem = pasteData.pasteAppearItem
-                        val pasteCollection = pasteData.pasteCollection
-
-                        val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate, isLargeFile)
-                        val newPasteCollection = pasteCollection.bind(pasteCoordinate, isLargeFile)
-
-                        val newPasteData = pasteData.copy(
-                            id = id,
-                            pasteAppearItem = newPasteAppearItem,
-                            pasteCollection = newPasteCollection,
+                    val fileSize = pasteFiles.size
+                    val maxBackupFileSize =
+                        fileUtils.bytesSize(
+                            commonConfigManager.getCurrentConfig().maxBackupFileSize,
                         )
 
-                        updateFilePath(newPasteData)
+                    val isLargeFile = fileSize > maxBackupFileSize
 
-                        addPullFileTask(id, remotePasteDataId)
-                        addRelaySyncTask(id, newPasteData.appInstanceId)
-                    }
+                    val pasteCoordinate = pasteData.getPasteCoordinate(id)
+                    val pasteAppearItem = pasteData.pasteAppearItem
+                    val pasteCollection = pasteData.pasteCollection
+
+                    val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate, isLargeFile)
+                    val newPasteCollection = pasteCollection.bind(pasteCoordinate, isLargeFile)
+
+                    val newPasteData = pasteData.copy(
+                        id = id,
+                        pasteAppearItem = newPasteAppearItem,
+                        pasteCollection = newPasteCollection,
+                    )
+
+                    updateFilePath(newPasteData)
+
+                    addPullFileTask(id, remotePasteDataId)
+                    addRelaySyncTask(id, newPasteData.appInstanceId)
                 }
 
                 existIconFile?.let {

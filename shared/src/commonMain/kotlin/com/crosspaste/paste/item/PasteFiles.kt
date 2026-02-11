@@ -3,7 +3,10 @@ package com.crosspaste.paste.item
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileInfoTree
+import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getPlatformUtils
 import okio.Path
+import okio.Path.Companion.toPath
 
 interface PasteFiles {
 
@@ -25,4 +28,26 @@ interface PasteFiles {
     fun getDirectChildrenCount(): Long = fileInfoTreeMap.size.toLong()
 
     fun isRefFiles(): Boolean = basePath != null
+
+    fun bindFilePaths(
+        pasteCoordinate: PasteCoordinate,
+        isLargeFile: Boolean,
+    ): Pair<String?, List<String>> {
+        val fileUtils = getFileUtils()
+        val downloadDir =
+            if (isLargeFile) getPlatformUtils().getSystemDownloadDir() else null
+        val newRelativePathList =
+            relativePathList.map { relativePath ->
+                val fileName = relativePath.toPath().name
+                if (isLargeFile) {
+                    fileUtils.resolveNonConflictFileName(downloadDir!!, fileName)
+                } else {
+                    fileUtils.createPasteRelativePath(
+                        pasteCoordinate = pasteCoordinate,
+                        fileName = fileName,
+                    )
+                }
+            }
+        return downloadDir?.toString() to newRelativePathList
+    }
 }

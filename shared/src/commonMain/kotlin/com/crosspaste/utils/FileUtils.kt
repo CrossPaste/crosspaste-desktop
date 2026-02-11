@@ -7,7 +7,6 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FileInfoTreeBuilder
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.SingleFileInfoTree
-import com.fleeksoft.ksoup.internal.Normalizer.normalize
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -354,28 +353,21 @@ interface FileUtils {
         byteWriteChannel: ByteWriteChannel,
     )
 
-    fun getSystemDownloadDir(): Path
+    fun resolveNonConflictFileName(
+        dir: Path,
+        fileName: String,
+    ): String {
+        if (!fileSystem.exists(dir / fileName)) return fileName
 
-    fun resolveLinuxDownloadDir(userHome: String): Path {
-        val userHomePath = userHome.toPath(normalize = true)
-        val userDirsFile = userHomePath / ".config" / "user-dirs.dirs"
-        if (fileSystem.exists(userDirsFile)) {
-            fileSystem.read(userDirsFile) {
-                while (true) {
-                    val line = readUtf8Line() ?: break
-                    val trimmed = line.trim()
-                    if (trimmed.startsWith("XDG_DOWNLOAD_DIR=")) {
-                        val value =
-                            trimmed
-                                .substringAfter("=")
-                                .removeSurrounding("\"")
-                                .replace($$"$HOME", userHome)
-                                .replace($$"${HOME}", userHome)
-                        return value.toPath(normalize = true)
-                    }
-                }
-            }
+        val dotIndex = fileName.lastIndexOf('.')
+        val nameWithoutExt = if (dotIndex > 0) fileName.substring(0, dotIndex) else fileName
+        val ext = if (dotIndex > 0) fileName.substring(dotIndex) else ""
+
+        var counter = 1
+        while (true) {
+            val candidate = "$nameWithoutExt($counter)$ext"
+            if (!fileSystem.exists(dir / candidate)) return candidate
+            counter++
         }
-        return userHomePath / "Downloads"
     }
 }

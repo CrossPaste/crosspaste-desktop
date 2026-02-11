@@ -1,6 +1,8 @@
 package com.crosspaste.utils
 
 import com.crosspaste.platform.Platform
+import okio.Path
+import okio.Path.Companion.toPath
 import kotlin.experimental.ExperimentalNativeApi
 import kotlin.native.CpuArchitecture
 import kotlin.native.OsFamily
@@ -36,5 +38,11 @@ object NativePlatformUtils : PlatformUtils {
             if (cpuArch == CpuArchitecture.ARM64 || cpuArch == CpuArchitecture.X64) 64 else 32
 
         return Platform(name = name, arch = arch, bitMode = bitMode, version = "")
+    }
+
+    override fun getSystemDownloadDir(): Path {
+        val userHome = getSystemProperty().get("user.home")
+        // Native targets are desktop (macOS/Linux/Windows), all use ~/Downloads
+        return userHome.toPath(normalize = true) / "Downloads"
     }
 }

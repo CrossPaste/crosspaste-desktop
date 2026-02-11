@@ -94,25 +94,7 @@ data class FilesPasteItem(
         pasteCoordinate: PasteCoordinate,
         isLargeFile: Boolean,
     ): PasteItem {
-        val newRelativePathList =
-            relativePathList.map { relativePath ->
-                val path = relativePath.toPath()
-                val fileName = path.name
-                if (!isLargeFile) {
-                    fileUtils.createPasteRelativePath(
-                        pasteCoordinate = pasteCoordinate,
-                        fileName = fileName,
-                    )
-                } else {
-                    fileName
-                }
-            }
-        val newBasePath =
-            if (isLargeFile) {
-                fileUtils.getSystemDownloadDir().toString()
-            } else {
-                null
-            }
+        val (newBasePath, newRelativePathList) = bindFilePaths(pasteCoordinate, isLargeFile)
         return FilesPasteItem(
             identifiers = identifiers,
             count = count,

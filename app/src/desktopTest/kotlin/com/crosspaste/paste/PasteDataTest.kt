@@ -156,12 +156,12 @@ class PasteDataTest {
         assertFalse(pd.isValid())
     }
 
-    // --- existFileCategory ---
+    // --- isFileType ---
 
     @Test
-    fun `existFileCategory returns false for text only paste`() {
+    fun `isFileType returns false for text only paste`() {
         val pd = createTestPasteData()
-        assertFalse(pd.existFileCategory())
+        assertFalse(pd.isFileType())
     }
 
     // --- getTypeName ---

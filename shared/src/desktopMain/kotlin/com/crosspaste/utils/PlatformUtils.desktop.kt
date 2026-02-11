@@ -6,6 +6,10 @@ import com.crosspaste.platform.Platform.Companion.LINUX
 import com.crosspaste.platform.Platform.Companion.MACOS
 import com.crosspaste.platform.Platform.Companion.UNKNOWN_OS
 import com.crosspaste.platform.Platform.Companion.WINDOWS
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
+import okio.buffer
 
 actual fun getPlatformUtils(): PlatformUtils = DesktopPlatformUtils
 
@@ -51,5 +55,37 @@ object DesktopPlatformUtils : PlatformUtils {
     ): String {
         val parts = osName.split(" ", limit = 2)
         return if (parts.size > 1) parts[1] else javaOsVersion
+    }
+
+    override fun getSystemDownloadDir(): Path {
+        val userHome = getSystemProperty().get("user.home")
+        return if (platform.isLinux()) {
+            resolveLinuxDownloadDir(userHome)
+        } else {
+            userHome.toPath(normalize = true) / "Downloads"
+        }
+    }
+
+    private fun resolveLinuxDownloadDir(userHome: String): Path {
+        val userHomePath = userHome.toPath(normalize = true)
+        val userDirsFile = userHomePath / ".config" / "user-dirs.dirs"
+        if (FileSystem.SYSTEM.exists(userDirsFile)) {
+            FileSystem.SYSTEM.source(userDirsFile).buffer().use { source ->
+                while (true) {
+                    val line = source.readUtf8Line() ?: break
+                    val trimmed = line.trim()
+                    if (trimmed.startsWith("XDG_DOWNLOAD_DIR=")) {
+                        val value =
+                            trimmed
+                                .substringAfter("=")
+                                .removeSurrounding("\"")
+                                .replace($$"$HOME", userHome)
+                                .replace($$"${HOME}", userHome)
+                        return value.toPath(normalize = true)
+                    }
+                }
+            }
+        }
+        return userHomePath / "Downloads"
     }
 }
