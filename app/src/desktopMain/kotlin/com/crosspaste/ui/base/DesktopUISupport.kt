@@ -2,6 +2,7 @@ package com.crosspaste.ui.base
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
@@ -16,8 +17,6 @@ import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.NavigationManager
-import com.crosspaste.ui.PasteTextEdit
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
@@ -37,11 +36,11 @@ import javax.swing.JColorChooser
 class DesktopUISupport(
     private val appUrls: AppUrls,
     private val copywriter: GlobalCopywriter,
-    private val navigationManager: NavigationManager,
     private val notificationManager: NotificationManager,
     private val platform: Platform,
     private val updatePasteItemHelper: UpdatePasteItemHelper,
     private val userDataPathProvider: UserDataPathProvider,
+    private val appWindowManager: DesktopAppWindowManager,
     private val actionScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : UISupport {
 
@@ -199,7 +198,7 @@ class DesktopUISupport(
     }
 
     override fun openText(pasteData: PasteData) {
-        navigationManager.navigate(PasteTextEdit(pasteData.id))
+        appWindowManager.showBubbleWindow(pasteData.id)
     }
 
     override fun openRtf(pasteData: PasteData) {

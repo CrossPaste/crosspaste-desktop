@@ -28,6 +28,8 @@ class TestWindowManager(
 
     override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {}
 
+    override suspend fun focusBubbleWindow() {}
+
     fun saveActiveAppInfo(appName: String?) {
         if (mockOS.currentApp != "CrossPaste") {
             prevApp.value = mockOS.currentApp

@@ -90,6 +90,7 @@ fun SidePasteboardContentView() {
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
 
     val searchListState = rememberLazyListState()
+    pasteSelectionViewModel.searchListState = searchListState
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }

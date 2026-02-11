@@ -103,10 +103,14 @@ class DesktopPasteMenuService(
         menuScope.launch {
             uiSupport.openPasteData(pasteData, index)
             val pasteType = pasteData.getType()
-            if (!pasteType.isText() && !pasteType.isColor()) {
-                desktopAppWindowManager.hideMainWindow()
-            } else {
+            if (pasteType.isText()) {
+                if (!desktopAppWindowManager.getCurrentSearchWindowInfo().show) {
+                    desktopAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
+                }
+            } else if (pasteType.isColor()) {
                 desktopAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
+            } else {
+                desktopAppWindowManager.hideMainWindow()
             }
         }
     }

@@ -525,7 +525,7 @@ class DesktopModule(
                 getDesktopAppWindowManager(get(), lazy { get() }, lazy { get() }, get(), get())
             }
             single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get(), get(), get()) }
+            single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get(), get()) }
             single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
             single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
             single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
@@ -551,7 +551,17 @@ class DesktopModule(
             single<SyncScopeFactory> { DesktopSyncScopeFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<TokenCacheApi> { TokenCache }
-            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
+            single<UISupport> {
+                DesktopUISupport(
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get<DesktopAppWindowManager>(),
+                )
+            }
         }
 
     // ViewModelModule.kt

@@ -29,6 +29,7 @@ class LinuxAppWindowManager(
 
     private var _cachedMainWindow: Window? = null
     private var _cachedSearchWindow: Window? = null
+    private var _cachedBubbleWindow: Window? = null
 
     val mainWindow: Window?
         get() {
@@ -44,6 +45,14 @@ class LinuxAppWindowManager(
                 _cachedSearchWindow = X11Api.getWindow(searchWindowTitle)
             }
             return _cachedSearchWindow
+        }
+
+    val bubbleWindow: Window?
+        get() {
+            if (_cachedBubbleWindow == null) {
+                _cachedBubbleWindow = X11Api.getWindow(bubbleWindowTitle)
+            }
+            return _cachedBubbleWindow
         }
 
     override fun getCurrentActiveAppName(): String? =
@@ -116,6 +125,10 @@ class LinuxAppWindowManager(
         }
     }
 
+    override suspend fun focusBubbleWindow() {
+        X11Api.bringToFront(bubbleWindow, source = NativeLong(1))
+    }
+
     override suspend fun hideSearchWindowAndPaste(
         size: Int,
         preparePaste: suspend (Int) -> Boolean,
@@ -159,6 +172,11 @@ class LinuxAppWindowManager(
     override fun onSearchComposeWindowChanged(window: ComposeWindow?) {
         logger.debug { "Search ComposeWindow changed (Linux), invalidating X11 Window cache" }
         _cachedSearchWindow = null
+    }
+
+    override fun onBubbleComposeWindowChanged(window: ComposeWindow?) {
+        logger.debug { "Bubble ComposeWindow changed (Linux), invalidating X11 Window cache" }
+        _cachedBubbleWindow = null
     }
 }
 
