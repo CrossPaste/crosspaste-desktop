@@ -71,6 +71,8 @@ abstract class DesktopAppWindowManager(
         private const val MAIN_WINDOW_TITLE: String = "CrossPaste"
 
         private const val SEARCH_WINDOW_TITLE = "CrossPaste Search"
+
+        private const val BUBBLE_WINDOW_TITLE = "CrossPaste Editor"
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -78,6 +80,8 @@ abstract class DesktopAppWindowManager(
     val mainWindowTitle: String = MAIN_WINDOW_TITLE
 
     val searchWindowTitle: String = SEARCH_WINDOW_TITLE
+
+    val bubbleWindowTitle: String = BUBBLE_WINDOW_TITLE
 
     protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
@@ -125,6 +129,34 @@ abstract class DesktopAppWindowManager(
             }
         }
 
+    data class BubbleWindowInfo(
+        val show: Boolean = false,
+        val pasteId: Long = 0L,
+    )
+
+    private val _bubbleWindowInfo = MutableStateFlow(BubbleWindowInfo())
+    val bubbleWindowInfo: StateFlow<BubbleWindowInfo> = _bubbleWindowInfo
+
+    var bubbleComposeWindow: ComposeWindow? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                onBubbleComposeWindowChanged(value)
+            }
+        }
+
+    fun showBubbleWindow(pasteId: Long) {
+        _bubbleWindowInfo.value = BubbleWindowInfo(show = true, pasteId = pasteId)
+    }
+
+    fun hideBubbleWindow() {
+        _bubbleWindowInfo.value = BubbleWindowInfo(show = false)
+    }
+
+    fun isBubbleWindowVisible(): Boolean = _bubbleWindowInfo.value.show
+
+    abstract suspend fun focusBubbleWindow()
+
     abstract fun startWindowService()
 
     abstract fun stopWindowService()
@@ -159,6 +191,7 @@ abstract class DesktopAppWindowManager(
     abstract suspend fun focusMainWindow(windowTrigger: WindowTrigger)
 
     fun hideSearchWindow() {
+        hideBubbleWindow()
         _searchWindowInfo.value = _searchWindowInfo.value.copy(show = false)
     }
 
@@ -209,4 +242,6 @@ abstract class DesktopAppWindowManager(
     protected open fun onMainComposeWindowChanged(window: ComposeWindow?) {}
 
     protected open fun onSearchComposeWindowChanged(window: ComposeWindow?) {}
+
+    protected open fun onBubbleComposeWindowChanged(window: ComposeWindow?) {}
 }

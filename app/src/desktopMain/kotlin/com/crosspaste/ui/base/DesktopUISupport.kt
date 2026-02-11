@@ -2,6 +2,7 @@ package com.crosspaste.ui.base
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppUrls
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
@@ -42,6 +43,7 @@ class DesktopUISupport(
     private val platform: Platform,
     private val updatePasteItemHelper: UpdatePasteItemHelper,
     private val userDataPathProvider: UserDataPathProvider,
+    private val appWindowManager: DesktopAppWindowManager,
     private val actionScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) : UISupport {
 
@@ -199,7 +201,11 @@ class DesktopUISupport(
     }
 
     override fun openText(pasteData: PasteData) {
-        navigationManager.navigate(PasteTextEdit(pasteData.id))
+        if (appWindowManager.getCurrentSearchWindowInfo().show) {
+            appWindowManager.showBubbleWindow(pasteData.id)
+        } else {
+            navigationManager.navigate(PasteTextEdit(pasteData.id))
+        }
     }
 
     override fun openRtf(pasteData: PasteData) {

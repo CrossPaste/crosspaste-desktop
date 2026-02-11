@@ -108,6 +108,10 @@ class MacAppWindowManager(
         MacAppUtils.bringToFront(searchWindowTitle)
     }
 
+    override suspend fun focusBubbleWindow() {
+        MacAppUtils.bringToFront(bubbleWindowTitle)
+    }
+
     override suspend fun hideSearchWindowAndPaste(
         size: Int,
         preparePaste: suspend (Int) -> Boolean,

@@ -74,4 +74,11 @@ object DesktopContext {
             }
         }
     }
+
+    @Composable
+    fun BubbleWindowContext(content: @Composable () -> Unit) {
+        BaseContext {
+            content()
+        }
+    }
 }

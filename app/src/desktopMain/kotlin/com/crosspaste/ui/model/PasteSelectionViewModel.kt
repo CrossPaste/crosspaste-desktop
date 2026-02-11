@@ -1,5 +1,6 @@
 package com.crosspaste.ui.model
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.app.DesktopAppWindowManager
@@ -22,6 +23,9 @@ class PasteSelectionViewModel(
     private val pasteboardService: PasteboardService,
     private val searchViewModel: PasteSearchViewModel,
 ) : ViewModel() {
+
+    /** Set by SidePasteboardContentView so BubbleWindow can read item positions. */
+    var searchListState: LazyListState? = null
 
     private val _focusedElement: MutableStateFlow<FocusedElement> =
         MutableStateFlow(FocusedElement.PASTE_LIST)

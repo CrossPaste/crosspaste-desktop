@@ -61,6 +61,12 @@ class DesktopAppSize(
             val sideSearchPaddingSize: Dp = 16.dp
             val sideTitleHeight: Dp = huge
 
+            // --- Bubble Window ---
+            val bubbleBodySize = DpSize(480.dp, 360.dp)
+            val bubbleCornerRadius: Dp = 12.dp
+            val bubbleTailWidth: Dp = 24.dp
+            val bubbleTailHeight: Dp = 12.dp
+
             // Use 'run' block logic to calculate sidePasteSize
             val sidePasteSize =
                 run {
@@ -96,6 +102,11 @@ class DesktopAppSize(
                 sideSearchPaddingSize = sideSearchPaddingSize,
                 sideSearchWindowHeight = sideSearchWindowHeight,
                 sideTitleHeight = sideTitleHeight,
+                // Bubble window
+                bubbleBodySize = bubbleBodySize,
+                bubbleCornerRadius = bubbleCornerRadius,
+                bubbleTailWidth = bubbleTailWidth,
+                bubbleTailHeight = bubbleTailHeight,
             )
         }
     }
@@ -178,6 +189,10 @@ class DesktopAppSizeValue(
     val sideSearchPaddingSize: Dp,
     val sideSearchWindowHeight: Dp,
     val sideTitleHeight: Dp,
+    val bubbleBodySize: DpSize,
+    val bubbleCornerRadius: Dp,
+    val bubbleTailWidth: Dp,
+    val bubbleTailHeight: Dp,
 ) : AppSizeValue(
         mainWindowSize,
         mainPasteSize,

@@ -22,6 +22,7 @@ class WinAppWindowManager(
 
     private var _cachedMainHWND: HWND? = null
     private var _cachedSearchHWND: HWND? = null
+    private var _cachedBubbleHWND: HWND? = null
 
     val mainHWND: HWND?
         get() {
@@ -37,6 +38,14 @@ class WinAppWindowManager(
                 _cachedSearchHWND = User32.findPasteWindow(searchWindowTitle)
             }
             return _cachedSearchHWND
+        }
+
+    val bubbleHWND: HWND?
+        get() {
+            if (_cachedBubbleHWND == null) {
+                _cachedBubbleHWND = User32.findPasteWindow(bubbleWindowTitle)
+            }
+            return _cachedBubbleHWND
         }
 
     private val winAppInfoCaches = WinAppInfoCaches(userDataPathProvider, ioScope)
@@ -84,6 +93,14 @@ class WinAppWindowManager(
         User32.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             searchHWND,
+        )
+    }
+
+    override suspend fun focusBubbleWindow() {
+        delay(500)
+        User32.bringToFront(
+            windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
+            bubbleHWND,
         )
     }
 
@@ -138,5 +155,10 @@ class WinAppWindowManager(
     override fun onSearchComposeWindowChanged(window: ComposeWindow?) {
         logger.debug { "Search ComposeWindow changed, invalidating HWND cache" }
         _cachedSearchHWND = null
+    }
+
+    override fun onBubbleComposeWindowChanged(window: ComposeWindow?) {
+        logger.debug { "Bubble ComposeWindow changed, invalidating HWND cache" }
+        _cachedBubbleHWND = null
     }
 }

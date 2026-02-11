@@ -551,7 +551,18 @@ class DesktopModule(
             single<SyncScopeFactory> { DesktopSyncScopeFactory() }
             single<ThemeDetector> { DesktopThemeDetector(get()) }
             single<TokenCacheApi> { TokenCache }
-            single<UISupport> { DesktopUISupport(get(), get(), get(), get(), get(), get(), get()) }
+            single<UISupport> {
+                DesktopUISupport(
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get(),
+                    get<DesktopAppWindowManager>(),
+                )
+            }
         }
 
     // ViewModelModule.kt

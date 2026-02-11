@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
@@ -46,9 +45,6 @@ fun SearchWindow(windowIcon: Painter?) {
     val themeDetector = koinInject<ThemeDetector>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
-    val navController = LocalNavHostController.current
-
-    val backStackEntry by navController.currentBackStackEntryAsState()
 
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
@@ -149,7 +145,7 @@ fun SearchWindow(windowIcon: Painter?) {
                         }
 
                         logger.info { "Search window lost focus" }
-                        if (backStackEntry?.let { getRouteName(it.destination) } != PasteTextEdit.NAME) {
+                        if (!appWindowManager.isBubbleWindowVisible()) {
                             appWindowManager.hideSearchWindow()
                         }
                     }
