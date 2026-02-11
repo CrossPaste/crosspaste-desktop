@@ -29,18 +29,26 @@ interface PasteFiles {
 
     fun isRefFiles(): Boolean = basePath != null
 
+    fun applyRenameMap(renameMap: Map<String, String>): PasteFiles
+
+    fun computeRenamedFileData(renameMap: Map<String, String>): Pair<List<String>, Map<String, FileInfoTree>> {
+        val newRelativePathList = relativePathList.map { renameMap[it] ?: it }
+        val newFileInfoTreeMap = fileInfoTreeMap.entries.associate { (k, v) -> (renameMap[k] ?: k) to v }
+        return newRelativePathList to newFileInfoTreeMap
+    }
+
     fun bindFilePaths(
         pasteCoordinate: PasteCoordinate,
         isLargeFile: Boolean,
     ): Pair<String?, List<String>> {
         val fileUtils = getFileUtils()
-        val downloadDir =
-            if (isLargeFile) getPlatformUtils().getSystemDownloadDir() else null
+        val newBasePath =
+            if (isLargeFile) getPlatformUtils().getSystemDownloadDir().toString() else null
         val newRelativePathList =
             relativePathList.map { relativePath ->
                 val fileName = relativePath.toPath().name
                 if (isLargeFile) {
-                    fileUtils.resolveNonConflictFileName(downloadDir!!, fileName)
+                    fileName
                 } else {
                     fileUtils.createPasteRelativePath(
                         pasteCoordinate = pasteCoordinate,
@@ -48,6 +56,6 @@ interface PasteFiles {
                     )
                 }
             }
-        return downloadDir?.toString() to newRelativePathList
+        return newBasePath to newRelativePathList
     }
 }

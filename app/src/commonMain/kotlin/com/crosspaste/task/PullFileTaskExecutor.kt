@@ -11,10 +11,12 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
@@ -98,14 +100,15 @@ class PullFileTaskExecutor(
             val id = pasteData.id
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             val pasteFiles = fileItem as PasteFiles
-            userDataPathProvider.resolve(
-                appInstanceId,
-                dateString,
-                id,
-                pasteFiles,
-                true,
-                filesIndexBuilder,
-            )
+            val renameMap =
+                userDataPathProvider.resolve(
+                    appInstanceId,
+                    dateString,
+                    id,
+                    pasteFiles,
+                    true,
+                    filesIndexBuilder,
+                )
             val filesIndex = filesIndexBuilder.build()
 
             if (filesIndex.getChunkCount() == 0) {
@@ -122,7 +125,7 @@ class PullFileTaskExecutor(
                 val port = it.currentSyncRuntimeInfo.port
 
                 it.getConnectHostAddress()?.let { host ->
-                    pullFiles(pasteData, host, port, filesIndex, pullExtraInfo)
+                    pullFiles(pasteData, host, port, filesIndex, pullExtraInfo, renameMap)
                 } ?: run {
                     doFailure(
                         pasteData,
@@ -160,6 +163,7 @@ class PullFileTaskExecutor(
         port: Int,
         filesIndex: FilesIndex,
         pullExtraInfo: PullExtraInfo,
+        renameMap: Map<String, String>,
     ): PasteTaskResult {
         val hostAndPort = HostAndPort(host, port)
         val toUrl: URLBuilder.() -> Unit = {
@@ -221,10 +225,31 @@ class PullFileTaskExecutor(
             doFailure(pasteData, pullExtraInfo, fails.values)
         } else {
             pasteSyncProcessManager.cleanProcess(pasteData.id)
+            if (renameMap.isNotEmpty()) {
+                val updatedPasteData = applyRenameMapToPasteData(pasteData, renameMap)
+                pasteDao.updateFilePath(updatedPasteData)
+            }
             pasteboardService.tryWriteRemotePasteboardWithFile(pasteData)
             soundService.successSound()
             SuccessPasteTaskResult()
         }
+    }
+
+    private fun applyRenameMapToPasteData(
+        pasteData: PasteData,
+        renameMap: Map<String, String>,
+    ): PasteData {
+        val updatedAppearItem =
+            (pasteData.pasteAppearItem as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem
+                ?: pasteData.pasteAppearItem
+        val updatedCollectionItems =
+            pasteData.pasteCollection.pasteItems.map { item ->
+                (item as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem ?: item
+            }
+        return pasteData.copy(
+            pasteAppearItem = updatedAppearItem,
+            pasteCollection = PasteCollection(updatedCollectionItems),
+        )
     }
 
     private suspend fun doFailure(

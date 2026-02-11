@@ -107,6 +107,11 @@ data class FilesPasteItem(
         )
     }
 
+    override fun applyRenameMap(renameMap: Map<String, String>): FilesPasteItem {
+        val (newRelativePathList, newFileInfoTreeMap) = computeRenamedFileData(renameMap)
+        return copy(relativePathList = newRelativePathList, fileInfoTreeMap = newFileInfoTreeMap)
+    }
+
     override fun copy(extraInfo: JsonObject?): FilesPasteItem =
         createFilesPasteItem(
             identifiers = identifiers,
