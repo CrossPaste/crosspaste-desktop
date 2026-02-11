@@ -65,13 +65,18 @@ import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * A bubble shape: rounded rectangle body with a triangular tail at the bottom center,
+ * A bubble shape: rounded rectangle body with a triangular tail at the bottom,
  * pointing downward toward the search window.
+ *
+ * @param tailCenterFraction horizontal position of the tail center as a fraction of
+ *   the bubble width (0.0 = left edge, 1.0 = right edge, 0.5 = centered).
+ *   Clamped internally so the tail never overlaps the rounded corners.
  */
 private class BubbleShape(
     private val cornerRadiusDp: Dp,
     private val tailWidthDp: Dp,
     private val tailHeightDp: Dp,
+    private val tailCenterFraction: Float = 0.5f,
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -83,8 +88,9 @@ private class BubbleShape(
         val th = with(density) { tailHeightDp.toPx() }
         val bodyBottom = size.height - th
         val w = size.width
-        val cx = w / 2f
         val halfTail = tw / 2f
+        // Clamp tail center so it never overlaps the rounded corners
+        val cx = (w * tailCenterFraction).coerceIn(cr + halfTail, w - cr - halfTail)
 
         val path =
             Path().apply {
@@ -175,19 +181,37 @@ fun BubbleWindow(windowIcon: Painter?) {
         }
     }
 
+    // Tail center fraction: 0.5 = centered, shifts when bubble is clamped to screen edges
+    var tailCenterFraction by remember { mutableStateOf(0.5f) }
+
     // Compute bubble position synchronously so the window starts at the correct location.
-    // LaunchedEffect is async and would cause the window to flash at center first.
+    // Also updates tailCenterFraction so the tail still points at the target item.
     fun computeBubblePosition(): WindowPosition {
         val searchPos = searchWindowInfo.state.position
+        val searchWidth = searchWindowInfo.state.size.width
         val centerX = itemCenterXInSearchWindow
-        val bubbleX =
+        val idealBubbleX =
             if (centerX != null) {
                 searchPos.x + centerX - windowSize.width / 2
             } else {
-                searchPos.x + (searchWindowInfo.state.size.width - windowSize.width) / 2
+                searchPos.x + (searchWidth - windowSize.width) / 2
             }
+        // Clamp bubble X within the search window bounds
+        val minX = searchPos.x
+        val maxX = searchPos.x + searchWidth - windowSize.width
+        val clampedBubbleX = idealBubbleX.coerceIn(minX, maxX)
+
+        // Compute tail fraction: where should the tail point within the bubble?
+        tailCenterFraction =
+            if (centerX != null) {
+                val itemScreenX = searchPos.x + centerX
+                ((itemScreenX - clampedBubbleX) / windowSize.width).coerceIn(0.1f, 0.9f)
+            } else {
+                0.5f
+            }
+
         val bubbleY = searchPos.y - windowSize.height - gap + appSizeValue.sideSearchTopBarHeight
-        return WindowPosition(x = bubbleX, y = bubbleY)
+        return WindowPosition(x = clampedBubbleX, y = bubbleY)
     }
 
     val windowState =
@@ -286,6 +310,7 @@ fun BubbleWindow(windowIcon: Painter?) {
                 pasteDao = pasteDao,
                 onEscape = { appWindowManager.hideBubbleWindow() },
                 isTransparent = isTransparent,
+                tailCenterFraction = tailCenterFraction,
             )
         }
     }
@@ -297,6 +322,7 @@ private fun BubbleWindowContent(
     pasteDao: PasteDao,
     onEscape: () -> Unit,
     isTransparent: Boolean,
+    tailCenterFraction: Float,
 ) {
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
@@ -314,8 +340,8 @@ private fun BubbleWindowContent(
     val tailHeight = appSizeValue.bubbleTailHeight
     val shape: Shape =
         if (isTransparent) {
-            remember {
-                BubbleShape(cornerRadius, appSizeValue.bubbleTailWidth, tailHeight)
+            remember(tailCenterFraction) {
+                BubbleShape(cornerRadius, appSizeValue.bubbleTailWidth, tailHeight, tailCenterFraction)
             }
         } else {
             RoundedCornerShape(cornerRadius)
