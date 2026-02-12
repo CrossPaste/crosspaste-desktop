@@ -26,6 +26,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
+import com.crosspaste.mcp.McpServer
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.ResourcesClient
@@ -66,7 +67,6 @@ import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
-import kotlin.jvm.java
 import kotlin.system.exitProcess
 
 class CrossPaste {
@@ -136,6 +136,9 @@ class CrossPaste {
                     koin.get<QRCodeGenerator>()
                     koin.get<SyncManager>().start()
                     koin.get<Server>().start()
+                    if (configManager.getCurrentConfig().enableMcpServer) {
+                        ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
+                    }
                     koin.get<PasteClient>()
                     koin.get<PasteBonjourService>()
                     koin.get<CleanScheduler>().start()
@@ -208,6 +211,7 @@ class CrossPaste {
                             async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
                             async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } },
                             async { stopService<Server>("PasteServer") { it.stop() } },
+                            async { stopService<McpServer>("McpServer") { it.stop() } },
                             async { stopService<SyncManager>("SyncManager") { it.stop() } },
                             async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },
                             async {

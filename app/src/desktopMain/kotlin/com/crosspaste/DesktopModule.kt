@@ -75,6 +75,10 @@ import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.listener.ShortcutKeysLoader
 import com.crosspaste.log.CrossPasteLogger
+import com.crosspaste.mcp.DesktopMcpServer
+import com.crosspaste.mcp.McpResourceProvider
+import com.crosspaste.mcp.McpServer
+import com.crosspaste.mcp.McpToolProvider
 import com.crosspaste.module.ModuleDownloadManager
 import com.crosspaste.module.ModuleManager
 import com.crosspaste.module.ocr.DesktopOCRModule
@@ -339,6 +343,15 @@ class DesktopModule(
         module {
             single<ExceptionHandler> { DesktopExceptionHandler() }
             single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
+            single<McpToolProvider> { McpToolProvider(get(), get(), get()) }
+            single<McpResourceProvider> { McpResourceProvider(get()) }
+            single<McpServer> {
+                DesktopMcpServer(
+                    mcpPort = (get<DesktopConfigManager>().getCurrentConfig()).mcpServerPort,
+                    mcpToolProvider = get(),
+                    mcpResourceProvider = get(),
+                )
+            }
             single<NearbyDeviceManager> {
                 if (marketingMode) {
                     MarketingNearbyDeviceManager()

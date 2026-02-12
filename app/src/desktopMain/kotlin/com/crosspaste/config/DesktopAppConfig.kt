@@ -56,6 +56,9 @@ data class DesktopAppConfig(
     override val enableSyncImage: Boolean = true,
     override val enableSyncFile: Boolean = true,
     override val enableSyncColor: Boolean = true,
+    // MCP server
+    val enableMcpServer: Boolean = false,
+    val mcpServerPort: Int = 0,
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -150,5 +153,7 @@ data class DesktopAppConfig(
             enableSyncImage = if (key == "enableSyncImage") toBoolean(value) else enableSyncImage,
             enableSyncFile = if (key == "enableSyncFile") toBoolean(value) else enableSyncFile,
             enableSyncColor = if (key == "enableSyncColor") toBoolean(value) else enableSyncColor,
+            enableMcpServer = if (key == "enableMcpServer") toBoolean(value) else enableMcpServer,
+            mcpServerPort = if (key == "mcpServerPort") toInt(value) else mcpServerPort,
         )
 }
