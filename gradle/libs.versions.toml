@@ -31,6 +31,7 @@ ksoup = "0.2.5"
 ktlint = "14.0.1"
 ktor = "3.4.0"
 lifecycle = "2.9.6"
+mcp-kotlin-sdk = "0.8.3"
 logback = "1.5.27"
 material3 = "1.10.0-alpha05"
 material-kolor = "4.1.0"
@@ -116,6 +117,7 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
 material-menu = { module = "io.github.dzirbel:compose-material-context-menu", version.ref = "menu" }
 material-kolor = { module = "com.materialkolor:material-kolor", version.ref = "material-kolor" }
+mcp-server = { module = "io.modelcontextprotocol:kotlin-sdk-server", version.ref = "mcp-kotlin-sdk" }
 metadata-extractor = { module = "com.drewnoakes:metadata-extractor", version.ref = "metadata-extractor" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }

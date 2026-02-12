@@ -41,6 +41,10 @@ interface AppConfig {
     val enableSyncFile: Boolean
     val enableSyncColor: Boolean
 
+    // MCP server
+    val enableMcpServer: Boolean
+    val mcpServerPort: Int
+
     fun copy(
         key: String,
         value: Any,

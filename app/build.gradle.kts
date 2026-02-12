@@ -150,6 +150,7 @@ kotlin {
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.classic)
             implementation(libs.material.menu)
+            implementation(libs.mcp.server)
             implementation(libs.metadata.extractor)
             implementation(libs.native.tray)
             implementation(libs.ph.css)
