@@ -1,31 +1,62 @@
 package com.crosspaste.mcp
 
+import androidx.compose.ui.graphics.toArgb
+import com.crosspaste.app.AppInfo
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createRtfPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
+import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopImageTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopRtfTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
+import com.crosspaste.paste.plugin.type.DesktopUrlTypePlugin
+import com.crosspaste.presist.SingleFileInfoTree
+import com.crosspaste.utils.ColorUtils
+import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.HtmlUtils
+import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.getFileUtils
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import okio.FileSystem
+import okio.Path.Companion.toPath
 
 class McpToolProvider(
+    private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
     private val searchContentService: SearchContentService,
 ) {
+    private val fileUtils = getFileUtils()
 
     fun registerTools(server: Server) {
         registerSearchClipboard(server)
         registerGetPasteItem(server)
         registerGetClipboardStats(server)
         registerListTags(server)
+        registerAddToClipboard(server)
     }
 
     private fun registerSearchClipboard(server: Server) {
@@ -58,22 +89,24 @@ class McpToolProvider(
             val query =
                 request.arguments
                     ?.get("query")
-                    ?.toString()
-                    ?.removeSurrounding("\"") ?: ""
+                    ?.jsonPrimitive
+                    ?.content ?: ""
             val typeStr =
                 request.arguments
                     ?.get("type")
-                    ?.toString()
-                    ?.removeSurrounding("\"")
+                    ?.jsonPrimitive
+                    ?.content
             val favorite =
                 request.arguments
                     ?.get("favorite")
-                    ?.toString()
+                    ?.jsonPrimitive
+                    ?.content
                     ?.toBooleanStrictOrNull()
             val limit =
                 request.arguments
                     ?.get("limit")
-                    ?.toString()
+                    ?.jsonPrimitive
+                    ?.content
                     ?.toIntOrNull()
                     ?.coerceIn(1, 100) ?: 20
 
@@ -138,8 +171,8 @@ class McpToolProvider(
             val id =
                 request.arguments
                     ?.get("id")
-                    ?.toString()
-                    ?.removeSurrounding("\"")
+                    ?.jsonPrimitive
+                    ?.content
                     ?.toLongOrNull()
             if (id == null) {
                 CallToolResult(
@@ -182,16 +215,16 @@ class McpToolProvider(
             val text =
                 buildString {
                     appendLine("Clipboard Statistics:")
-                    appendLine("Total: ${stats.pasteCount} items, ${formatSize(stats.pasteSize)}")
+                    appendLine("Total: ${stats.pasteCount} items, ${fileUtils.formatBytes(stats.pasteSize)}")
                     appendLine()
                     appendLine("By type:")
-                    appendLine("  Text:   ${stats.textCount} items, ${formatSize(stats.textSize)}")
-                    appendLine("  URL:    ${stats.urlCount} items, ${formatSize(stats.urlSize)}")
-                    appendLine("  HTML:   ${stats.htmlCount} items, ${formatSize(stats.htmlSize)}")
-                    appendLine("  RTF:    ${stats.rtfCount} items, ${formatSize(stats.rtfSize)}")
-                    appendLine("  Image:  ${stats.imageCount} items, ${formatSize(stats.imageSize)}")
-                    appendLine("  File:   ${stats.fileCount} items, ${formatSize(stats.fileSize)}")
-                    appendLine("  Color:  ${stats.colorCount} items, ${formatSize(stats.colorSize)}")
+                    appendLine("  Text:   ${stats.textCount} items, ${fileUtils.formatBytes(stats.textSize)}")
+                    appendLine("  URL:    ${stats.urlCount} items, ${fileUtils.formatBytes(stats.urlSize)}")
+                    appendLine("  HTML:   ${stats.htmlCount} items, ${fileUtils.formatBytes(stats.htmlSize)}")
+                    appendLine("  RTF:    ${stats.rtfCount} items, ${fileUtils.formatBytes(stats.rtfSize)}")
+                    appendLine("  Image:  ${stats.imageCount} items, ${fileUtils.formatBytes(stats.imageSize)}")
+                    appendLine("  File:   ${stats.fileCount} items, ${fileUtils.formatBytes(stats.fileSize)}")
+                    appendLine("  Color:  ${stats.colorCount} items, ${fileUtils.formatBytes(stats.colorSize)}")
                 }
             CallToolResult(content = listOf(TextContent(text)))
         }
@@ -218,8 +251,213 @@ class McpToolProvider(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod")
+    private fun registerAddToClipboard(server: Server) {
+        server.addTool(
+            name = "add_to_clipboard",
+            description =
+                "Add content to the clipboard history. " +
+                    "Supported types: text, url, html, rtf, color, file, image. " +
+                    "For file/image, content should be the absolute file path. " +
+                    "For color, content can be hex (#FF0000), rgb(), rgba(), hsl(), hsla(), or CSS color name.",
+            inputSchema =
+                ToolSchema(
+                    properties =
+                        buildJsonObject {
+                            putJsonObject("content") {
+                                put("type", "string")
+                                put(
+                                    "description",
+                                    "The content to add. Text/URL/HTML/RTF as string, " +
+                                        "color as color value (e.g. #FF0000), file/image as absolute file path",
+                                )
+                            }
+                            putJsonObject("type") {
+                                put("type", "string")
+                                put(
+                                    "description",
+                                    "Content type: 'text' (default), 'url', 'html', 'rtf', 'color', 'file', 'image'",
+                                )
+                            }
+                        },
+                    required = listOf("content"),
+                ),
+        ) { request ->
+            val content =
+                request.arguments
+                    ?.get("content")
+                    ?.jsonPrimitive
+                    ?.content
+            val typeStr =
+                request.arguments
+                    ?.get("type")
+                    ?.jsonPrimitive
+                    ?.content
+                    ?.lowercase() ?: "text"
+
+            if (content.isNullOrBlank()) {
+                CallToolResult(
+                    content = listOf(TextContent("Error: 'content' parameter is required and must not be blank.")),
+                    isError = true,
+                )
+            } else {
+                val result = createPasteData(content, typeStr)
+                result.fold(
+                    onSuccess = { pasteData ->
+                        val id = pasteDao.createPasteData(pasteData)
+                        CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent("Successfully added to clipboard with ID: $id (type: $typeStr)"),
+                                ),
+                        )
+                    },
+                    onFailure = { error ->
+                        CallToolResult(
+                            content = listOf(TextContent("Error: ${error.message}")),
+                            isError = true,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    private val codecsUtils = getCodecsUtils()
+
+    private fun createPasteData(
+        content: String,
+        type: String,
+    ): Result<PasteData> {
+        val (pasteItem, pasteType) =
+            when (type) {
+                "url" -> {
+                    createUrlPasteItem(
+                        identifiers = listOf(DesktopUrlTypePlugin.URL),
+                        url = content,
+                    ) to PasteType.URL_TYPE
+                }
+                "html" -> {
+                    val extractedText = HtmlUtils.getHtmlText(content)
+                    if (extractedText.isNullOrBlank()) {
+                        return Result.failure(
+                            IllegalArgumentException(
+                                "Invalid HTML content: cannot extract text from the provided HTML.",
+                            ),
+                        )
+                    }
+                    createHtmlPasteItem(
+                        identifiers = listOf(DesktopHtmlTypePlugin.HTML_ID),
+                        html = content,
+                    ) to PasteType.HTML_TYPE
+                }
+                "rtf" -> {
+                    if (!content.trimStart().startsWith("{\\rtf")) {
+                        return Result.failure(
+                            IllegalArgumentException("Invalid RTF content: must start with '{\\rtf'."),
+                        )
+                    }
+                    createRtfPasteItem(
+                        identifiers = listOf(DesktopRtfTypePlugin.RTF_ID),
+                        rtf = content,
+                    ) to PasteType.RTF_TYPE
+                }
+                "color" -> {
+                    val color =
+                        ColorUtils.toColor(content)
+                            ?: return Result.failure(
+                                IllegalArgumentException(
+                                    "Invalid color value: '$content'. " +
+                                        "Supported formats: #RGB, #RRGGBB, #RRGGBBAA, rgb(), rgba(), hsl(), hsla(), CSS color names.",
+                                ),
+                            )
+                    createColorPasteItem(
+                        color = color.toArgb(),
+                    ) to PasteType.COLOR_TYPE
+                }
+                "file" -> {
+                    createFilePasteItem(content, PasteType.FILE_TYPE)
+                        ?: return Result.failure(
+                            IllegalArgumentException("File not found: '$content'."),
+                        )
+                }
+                "image" -> {
+                    val path = content.toPath()
+                    val ext = path.name.substringAfterLast('.', "").lowercase()
+                    if (!fileUtils.canPreviewImage(ext)) {
+                        return Result.failure(
+                            IllegalArgumentException(
+                                "Unsupported image format: '$ext'. " +
+                                    "Supported: png, jpg, jpeg, gif, bmp, webp, heic, heif, tiff, svg.",
+                            ),
+                        )
+                    }
+                    createFilePasteItem(content, PasteType.IMAGE_TYPE)
+                        ?: return Result.failure(
+                            IllegalArgumentException("Image file not found: '$content'."),
+                        )
+                }
+                else -> {
+                    createTextPasteItem(
+                        identifiers = listOf(DesktopTextTypePlugin.TEXT),
+                        text = content,
+                    ) to PasteType.TEXT_TYPE
+                }
+            }
+        return Result.success(
+            PasteData(
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = pasteItem,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = pasteType.type,
+                source = "MCP",
+                size = pasteItem.size,
+                hash = pasteItem.hash,
+                pasteState = PasteState.LOADED,
+                createTime = DateUtils.nowEpochMilliseconds(),
+            ),
+        )
+    }
+
+    private fun createFilePasteItem(
+        filePath: String,
+        pasteType: PasteType,
+    ): Pair<PasteItem, PasteType>? {
+        val path = filePath.toPath()
+        if (!FileSystem.SYSTEM.exists(path)) {
+            return null
+        }
+        val metadata = FileSystem.SYSTEM.metadata(path)
+        val fileSize = metadata.size ?: 0L
+        val fileBytes = FileSystem.SYSTEM.read(path) { readByteArray() }
+        val fileHash = codecsUtils.hash(fileBytes)
+        val fileName = path.name
+        val fileInfoTree = SingleFileInfoTree(size = fileSize, hash = fileHash)
+        val identifiers =
+            if (pasteType == PasteType.IMAGE_TYPE) {
+                listOf(DesktopImageTypePlugin.IMAGE)
+            } else {
+                listOf(DesktopFilesTypePlugin.FILE_LIST_ID)
+            }
+        val item =
+            if (pasteType == PasteType.IMAGE_TYPE) {
+                createImagesPasteItem(
+                    identifiers = identifiers,
+                    relativePathList = listOf(fileName),
+                    fileInfoTreeMap = mapOf(fileName to fileInfoTree),
+                )
+            } else {
+                createFilesPasteItem(
+                    identifiers = identifiers,
+                    relativePathList = listOf(fileName),
+                    fileInfoTreeMap = mapOf(fileName to fileInfoTree),
+                )
+            }
+        return item to pasteType
+    }
+
     private fun extractContent(
-        pasteData: com.crosspaste.paste.PasteData,
+        pasteData: PasteData,
         sb: StringBuilder,
     ) {
         val type = pasteData.getType()
@@ -265,12 +503,4 @@ class McpToolProvider(
 
     private fun findPasteType(name: String): PasteType? =
         PasteType.TYPES.firstOrNull { it.name.equals(name, ignoreCase = true) }
-
-    private fun formatSize(bytes: Long): String =
-        when {
-            bytes < 1024 -> "$bytes B"
-            bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-            bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
-            else -> "${bytes / (1024 * 1024 * 1024)} GB"
-        }
 }

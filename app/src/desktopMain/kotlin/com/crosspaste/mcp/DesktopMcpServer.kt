@@ -26,23 +26,26 @@ class DesktopMcpServer(
         withContext(ioDispatcher) {
             runCatching {
                 val port = if (mcpPort > 0) mcpPort else DEFAULT_PORT
-                val mcpServer = Server(
-                    serverInfo = Implementation(
-                        name = "example-server",
-                        version = "1.0.0"
-                    ),
-                    options = ServerOptions(
-                        capabilities =
-                            ServerCapabilities(
-                                tools = ServerCapabilities.Tools(listChanged = true),
-                                resources =
-                                    ServerCapabilities.Resources(
-                                        subscribe = false,
-                                        listChanged = true,
+                val mcpServer =
+                    Server(
+                        serverInfo =
+                            Implementation(
+                                name = "crosspaste-mcp-server",
+                                version = "1.0.0",
+                            ),
+                        options =
+                            ServerOptions(
+                                capabilities =
+                                    ServerCapabilities(
+                                        tools = ServerCapabilities.Tools(listChanged = true),
+                                        resources =
+                                            ServerCapabilities.Resources(
+                                                subscribe = false,
+                                                listChanged = true,
+                                            ),
                                     ),
                             ),
                     )
-                )
 
                 mcpToolProvider.registerTools(mcpServer)
                 mcpResourceProvider.registerResources(mcpServer)
@@ -52,7 +55,6 @@ class DesktopMcpServer(
                         mcpServer
                     }
                 }.start(wait = false)
-
 
                 actualPort = port
                 logger.info { "MCP Server started at port $actualPort (WebSocket)" }

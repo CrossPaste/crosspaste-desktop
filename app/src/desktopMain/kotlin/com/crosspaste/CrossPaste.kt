@@ -67,7 +67,6 @@ import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
-import kotlin.jvm.java
 import kotlin.system.exitProcess
 
 class CrossPaste {
@@ -137,7 +136,6 @@ class CrossPaste {
                     koin.get<QRCodeGenerator>()
                     koin.get<SyncManager>().start()
                     koin.get<Server>().start()
-                    ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
                     }
