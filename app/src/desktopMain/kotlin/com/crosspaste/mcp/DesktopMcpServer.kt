@@ -12,7 +12,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import kotlinx.coroutines.withContext
 
 class DesktopMcpServer(
-    private val mcpPort: Int,
+    private var mcpPort: Int,
     private val mcpToolProvider: McpToolProvider,
     private val mcpResourceProvider: McpResourceProvider,
 ) : McpServer {
@@ -50,11 +50,12 @@ class DesktopMcpServer(
                 mcpToolProvider.registerTools(mcpServer)
                 mcpResourceProvider.registerResources(mcpServer)
 
-                embeddedServer(Netty, host = "127.0.0.1", port = port) {
-                    mcp {
-                        mcpServer
-                    }
-                }.start(wait = false)
+                server =
+                    embeddedServer(Netty, host = "127.0.0.1", port = port) {
+                        mcp {
+                            mcpServer
+                        }
+                    }.start(wait = false)
 
                 actualPort = port
                 logger.info { "MCP Server started at port $actualPort (WebSocket)" }
@@ -72,6 +73,12 @@ class DesktopMcpServer(
         }.onFailure { e ->
             logger.error(e) { "Failed to stop MCP Server" }
         }
+    }
+
+    override suspend fun restart(newPort: Int) {
+        stop()
+        mcpPort = newPort
+        start()
     }
 
     override fun port(): Int = actualPort

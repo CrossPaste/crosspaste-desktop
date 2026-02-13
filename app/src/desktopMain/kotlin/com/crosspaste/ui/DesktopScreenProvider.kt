@@ -37,6 +37,7 @@ import com.crosspaste.ui.devices.PairingCodeContentView
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.extension.ExtensionContentView
+import com.crosspaste.ui.extension.mcp.McpScreen
 import com.crosspaste.ui.extension.ocr.OCRScreen
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
@@ -150,6 +151,12 @@ class DesktopScreenProvider(
             composable<Export> { ExportScreen() }
             navigation<ExtensionGraph>(startDestination = Extension) {
                 composable<Extension> { ExtensionScreen() }
+                composable<MCP>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    McpSettingsScreen()
+                }
                 composable<OCR>(
                     exitTransition = { slideOutRight() },
                     enterTransition = { slideInLeft() },
@@ -251,6 +258,11 @@ class DesktopScreenProvider(
         ScreenLayout {
             ExtensionContentView()
         }
+    }
+
+    @Composable
+    private fun McpSettingsScreen() {
+        McpScreen()
     }
 
     @Composable
