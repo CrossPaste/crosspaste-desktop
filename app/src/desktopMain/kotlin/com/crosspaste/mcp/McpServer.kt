@@ -6,5 +6,7 @@ interface McpServer {
 
     suspend fun stop()
 
+    suspend fun restart(newPort: Int)
+
     fun port(): Int
 }
