@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,19 +35,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.style.TextAlign
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Content_paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopReadTransferable
 import com.crosspaste.paste.TransferableConsumer
-import com.crosspaste.ui.theme.AppUISize.huge
-import com.crosspaste.ui.theme.AppUISize.large2X
-import com.crosspaste.ui.theme.AppUISize.massive
+import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.xLarge
+import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 
@@ -57,7 +66,7 @@ fun DragTargetContentView() {
     val pasteConsumer = koinInject<TransferableConsumer>()
     var isDragging by remember { mutableStateOf(false) }
     val animatedAlpha by animateFloatAsState(
-        targetValue = if (isDragging) 0.8f else 0f,
+        targetValue = if (isDragging) 0.85f else 0f,
         animationSpec = tween(300),
         label = "drag_target_alpha",
     )
@@ -100,53 +109,96 @@ fun DragTargetContentView() {
                 Modifier
                     .fillMaxSize()
                     .background(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = animatedAlpha),
+                        MaterialTheme.colorScheme.surface.copy(alpha = animatedAlpha),
                     ),
         )
 
         AnimatedVisibility(
             visible = isDragging,
             enter =
-                fadeIn(animationSpec = tween(300)) +
+                fadeIn(animationSpec = tween(250)) +
                     scaleIn(
-                        initialScale = 0.9f,
-                        animationSpec = tween(300),
+                        initialScale = 0.92f,
+                        animationSpec = tween(250),
                     ),
             exit =
-                fadeOut(animationSpec = tween(300)) +
+                fadeOut(animationSpec = tween(200)) +
                     scaleOut(
-                        targetScale = 0.9f,
-                        animationSpec = tween(300),
+                        targetScale = 0.92f,
+                        animationSpec = tween(200),
                     ),
             modifier = Modifier.align(Alignment.Center),
         ) {
-            Column(
+            val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+            Surface(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
-                        .padding(horizontal = massive)
-                        .clip(mediumRoundedCornerShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(vertical = large2X),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                        .padding(horizontal = xLarge)
+                        .drawWithContent {
+                            drawContent()
+                            val strokeWidth = tiny4X.toPx()
+                            val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                            val halfStroke = strokeWidth / 2
+                            drawRoundRect(
+                                color = borderColor,
+                                topLeft = Offset(halfStroke, halfStroke),
+                                size =
+                                    Size(
+                                        width = size.width - strokeWidth,
+                                        height = size.height - strokeWidth,
+                                    ),
+                                style =
+                                    Stroke(
+                                        width = strokeWidth,
+                                        pathEffect = dashEffect,
+                                    ),
+                                cornerRadius = CornerRadius(xLarge.toPx()),
+                            )
+                        },
+                shape = xLargeRoundedCornerShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Content_paste,
-                    contentDescription = "clipboard icon",
-                    modifier = Modifier.size(huge),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = xxLarge, horizontal = medium),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Surface(
+                        modifier = Modifier.size(enormous),
+                        shape = RoundedCornerShape(xxLarge),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
+                        Icon(
+                            imageVector = MaterialSymbols.Rounded.Content_paste,
+                            contentDescription = null,
+                            modifier = Modifier.padding(medium),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(medium))
+                    Spacer(modifier = Modifier.height(medium))
 
-                Text(
-                    text = copywriter.getText("drop_to_clipboard_and_sync"),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.Medium,
-                )
+                    Text(
+                        text = copywriter.getText("drop_to_clipboard_and_sync"),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Spacer(modifier = Modifier.height(tiny))
+
+                    Text(
+                        text = copywriter.getText("drop_hint"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
