@@ -92,9 +92,9 @@ data class ImagesPasteItem(
     // use to adapt relative paths when relative is no storage in crossPaste
     override fun bind(
         pasteCoordinate: PasteCoordinate,
-        isLargeFile: Boolean,
+        syncToDownload: Boolean,
     ): PasteItem {
-        val (newBasePath, newRelativePathList) = bindFilePaths(pasteCoordinate, isLargeFile)
+        val (newBasePath, newRelativePathList) = bindFilePaths(pasteCoordinate, syncToDownload)
         return ImagesPasteItem(
             identifiers = identifiers,
             count = count,

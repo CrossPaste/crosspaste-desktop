@@ -15,6 +15,7 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskBuilder
@@ -28,6 +29,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.withContext
 import kotlin.time.ExperimentalTime
 
@@ -467,14 +470,18 @@ class PasteDao(
                             commonConfigManager.getCurrentConfig().maxBackupFileSize,
                         )
 
-                    val isLargeFile = fileSize > maxBackupFileSize
+                    val syncToDownload =
+                        fileSize > maxBackupFileSize ||
+                            pasteData.pasteAppearItem?.extraInfo
+                                ?.get(PasteItemProperties.SYNC_TO_DOWNLOAD)
+                                ?.jsonPrimitive?.booleanOrNull == true
 
                     val pasteCoordinate = pasteData.getPasteCoordinate(id)
                     val pasteAppearItem = pasteData.pasteAppearItem
                     val pasteCollection = pasteData.pasteCollection
 
-                    val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate, isLargeFile)
-                    val newPasteCollection = pasteCollection.bind(pasteCoordinate, isLargeFile)
+                    val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate, syncToDownload)
+                    val newPasteCollection = pasteCollection.bind(pasteCoordinate, syncToDownload)
 
                     val newPasteData = pasteData.copy(
                         id = id,

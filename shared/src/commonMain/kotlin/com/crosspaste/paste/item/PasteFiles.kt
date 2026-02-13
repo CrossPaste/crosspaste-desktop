@@ -39,15 +39,15 @@ interface PasteFiles {
 
     fun bindFilePaths(
         pasteCoordinate: PasteCoordinate,
-        isLargeFile: Boolean,
+        syncToDownload: Boolean,
     ): Pair<String?, List<String>> {
         val fileUtils = getFileUtils()
         val newBasePath =
-            if (isLargeFile) getPlatformUtils().getSystemDownloadDir().toString() else null
+            if (syncToDownload) getPlatformUtils().getSystemDownloadDir().toString() else null
         val newRelativePathList =
             relativePathList.map { relativePath ->
                 val fileName = relativePath.toPath().name
-                if (isLargeFile) {
+                if (syncToDownload) {
                     fileName
                 } else {
                     fileUtils.createPasteRelativePath(

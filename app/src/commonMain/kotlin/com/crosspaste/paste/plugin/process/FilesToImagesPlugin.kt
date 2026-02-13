@@ -65,6 +65,7 @@ class FilesToImagesPlugin(
                         basePath = basePath,
                         relativePathList = relativePathList,
                         fileInfoTreeMap = fileInfoTreeMap,
+                        extraInfo = pasteAppearItem.extraInfo,
                     )
                 } else {
                     pasteAppearItem

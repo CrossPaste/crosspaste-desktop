@@ -2,10 +2,14 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItem.Companion.copy
+import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.collections.set
 import kotlin.reflect.KClass
 
@@ -13,6 +17,7 @@ class PasteCollector(
     itemCount: Int,
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
+    private val dragAndDrop: Boolean = false,
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -102,7 +107,19 @@ class PasteCollector(
                 markDeletePasteData(id)
             } else {
                 runCatching {
-                    val pasteItems = preCollectors.flatMap { it.values }
+                    var pasteItems = preCollectors.flatMap { it.values }
+                    if (dragAndDrop) {
+                        pasteItems =
+                            pasteItems.map { item ->
+                                if (item is PasteFiles) {
+                                    item.copy {
+                                        put(PasteItemProperties.SYNC_TO_DOWNLOAD, JsonPrimitive(true))
+                                    }
+                                } else {
+                                    item
+                                }
+                            }
+                    }
                     pasteDao.releaseLocalPasteData(id, pasteItems)
                 }.onFailure { e ->
                     logger.error(e) { "Failed to complete paste $id" }

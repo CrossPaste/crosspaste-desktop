@@ -37,6 +37,7 @@ class DesktopTransferableConsumer(
         pasteTransferable: PasteTransferable,
         source: String?,
         remote: Boolean,
+        dragAndDrop: Boolean,
     ): Result<Unit> {
         return runCatching {
             logSuspendExecutionTime(logger, "consume") {
@@ -47,7 +48,7 @@ class DesktopTransferableConsumer(
                     return@logSuspendExecutionTime
                 }
 
-                val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao)
+                val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao, dragAndDrop)
 
                 preCollect(dataFlavorMap, pasteTransferable, pasteCollector)
                 pasteCollector.createPrePasteData(source, remote = remote)?.also { id ->

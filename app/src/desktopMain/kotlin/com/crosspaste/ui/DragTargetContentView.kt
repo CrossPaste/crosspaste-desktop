@@ -80,7 +80,7 @@ fun DragTargetContentView() {
                     val source: String? = appWindowManager.getCurrentActiveAppName()
                     val pasteTransferable = DesktopReadTransferable(transferable)
                     return runBlocking {
-                        pasteConsumer.consume(pasteTransferable, source, false)
+                        pasteConsumer.consume(pasteTransferable, source, remote = false, dragAndDrop = true)
                     }.isSuccess
                 }
             }

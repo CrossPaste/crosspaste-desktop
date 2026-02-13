@@ -11,4 +11,7 @@ object PasteItemProperties {
 
     // title of the url paste item
     const val TITLE = "title"
+
+    // flag to force sync files to remote download directory
+    const val SYNC_TO_DOWNLOAD = "syncToDownload"
 }
