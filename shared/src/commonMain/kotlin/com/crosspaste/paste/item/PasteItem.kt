@@ -116,7 +116,7 @@ sealed interface PasteItem {
 
     fun bind(
         pasteCoordinate: PasteCoordinate,
-        isLargeFile: Boolean = false,
+        syncToDownload: Boolean = false,
     ): PasteItem = this
 
     fun copy(extraInfo: JsonObject? = null): PasteItem

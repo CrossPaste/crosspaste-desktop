@@ -43,11 +43,11 @@ data class PasteCollection(
 
     fun bind(
         pasteCoordinate: PasteCoordinate,
-        isLargeFile: Boolean = false,
+        syncToDownload: Boolean = false,
     ): PasteCollection =
         PasteCollection(
             pasteItems.map {
-                it.bind(pasteCoordinate, isLargeFile)
+                it.bind(pasteCoordinate, syncToDownload)
             },
         )
 
