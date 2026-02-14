@@ -46,7 +46,7 @@ fun NotFoundNearByDevices() {
                 imageVector = MaterialSymbols.Rounded.Wifi_find,
                 contentDescription = null,
                 modifier = Modifier.size(enormous),
-                tint = LocalThemeExtState.current.info.container,
+                tint = LocalThemeExtState.current.info.color,
             )
             Spacer(modifier = Modifier.height(medium))
             Text(
