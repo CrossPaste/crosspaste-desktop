@@ -45,6 +45,8 @@ fun PasteDataScope.FilesSidePreviewView() {
         return
     }
 
+    val isInDownloads = remember(filesPasteItem) { filesPasteItem.isInDownloads() }
+
     val fileDisplayInfo by produceState<FileDisplayInfo?>(
         initialValue = null,
         key1 = filePaths,
@@ -58,6 +60,14 @@ fun PasteDataScope.FilesSidePreviewView() {
 
     SidePasteLayoutView(
         pasteBottomContent = {
+            val subtitle =
+                if (isInDownloads) {
+                    val inDownloadsText = copywriter.getText("in_downloads")
+                    val base = fileDisplayInfo?.subtitle ?: ""
+                    if (base.isNotEmpty()) "$inDownloadsText · $base" else inDownloadsText
+                } else {
+                    fileDisplayInfo?.subtitle ?: ""
+                }
             FileBottomSolid(
                 modifier =
                     Modifier
@@ -66,7 +76,7 @@ fun PasteDataScope.FilesSidePreviewView() {
                         .background(AppUIColors.topBackground)
                         .padding(tiny),
                 title = fileDisplayInfo?.title,
-                subtitle = fileDisplayInfo?.subtitle ?: "",
+                subtitle = subtitle,
             )
         },
     ) {

@@ -29,6 +29,19 @@ interface PasteFiles {
 
     fun isRefFiles(): Boolean = basePath != null
 
+    fun hasExistingFiles(): Boolean {
+        val base = basePath ?: return true
+        val fileUtils = getFileUtils()
+        return relativePathList.any { relativePath ->
+            fileUtils.existFile(base.toPath() / relativePath.toPath().name)
+        }
+    }
+
+    fun isInDownloads(): Boolean {
+        val base = basePath ?: return false
+        return base == getPlatformUtils().getSystemDownloadDir().toString()
+    }
+
     fun applyRenameMap(renameMap: Map<String, String>): PasteFiles
 
     fun computeRenamedFileData(renameMap: Map<String, String>): Pair<List<String>, Map<String, FileInfoTree>> {

@@ -2,6 +2,7 @@ package com.crosspaste.ui.paste.side.preview
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +34,7 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Broken_image
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaders
@@ -42,6 +44,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.ImageFileFormat
 import com.crosspaste.ui.base.ImageFileSize
+import com.crosspaste.ui.base.ImageInfoLabel
 import com.crosspaste.ui.base.ImageResolution
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
@@ -65,7 +68,11 @@ fun PasteDataScope.ImageSidePreviewView() {
 
     val smartImageDisplayStrategy = remember { SmartImageDisplayStrategy() }
 
+    val copywriter = koinInject<GlobalCopywriter>()
+
     val imagePasteItem = getPasteItem(PasteImages::class)
+
+    val isInDownloads = remember(imagePasteItem) { imagePasteItem.isInDownloads() }
 
     var index by remember(pasteData.id) { mutableStateOf(0) }
 
@@ -173,16 +180,25 @@ fun PasteDataScope.ImageSidePreviewView() {
                 },
             )
 
-            FlowRow(
+            Column(
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = small2X),
-                horizontalArrangement = Arrangement.spacedBy(tiny3X),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(tiny3X),
             ) {
-                ImageFileFormat(format = fileFormat)
-                ImageResolution(imageSize = intSize)
-                ImageFileSize(fileSize = fileSize)
+                if (isInDownloads) {
+                    ImageInfoLabel(text = copywriter.getText("in_downloads"))
+                }
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(tiny3X, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(tiny3X),
+                ) {
+                    ImageFileFormat(format = fileFormat)
+                    ImageResolution(imageSize = intSize)
+                    ImageFileSize(fileSize = fileSize)
+                }
             }
         }
     }
