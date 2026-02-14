@@ -49,7 +49,10 @@ kotlin {
                 baseName = "crosspaste"
                 // Workaround for Clikt duplicate symbol bug in Kotlin/Native
                 // See: https://github.com/ajalt/clikt/issues/598
-                linkerOpts("--allow-multiple-definition")
+                // Only applies to Linux/Windows; macOS ld doesn't support this flag
+                if (!hostOs.startsWith("Mac")) {
+                    linkerOpts("--allow-multiple-definition")
+                }
             }
         }
     }
