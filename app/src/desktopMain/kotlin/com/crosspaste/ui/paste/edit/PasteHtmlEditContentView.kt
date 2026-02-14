@@ -68,7 +68,7 @@ import org.koin.compose.koinInject
 
 private const val MAX_UNDO_STACK_SIZE = 50
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, FlowPreview::class)
+@OptIn(FlowPreview::class)
 @Composable
 fun PasteDataScope.PasteHtmlEditContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
@@ -212,112 +212,16 @@ fun PasteDataScope.PasteHtmlEditContentView() {
                 },
         containerColor = MaterialTheme.colorScheme.surface,
         floatingActionButton = {
-            HorizontalFloatingToolbar(
-                expanded = true,
-                floatingActionButton = {
-                    FloatingActionButton(
-                        onClick = { save() },
-                        containerColor =
-                            if (hasChanges) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
-                        contentColor =
-                            if (hasChanges) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                            },
-                    ) {
-                        Icon(
-                            imageVector = MaterialSymbols.Rounded.Save,
-                            contentDescription = copywriter.getText("save"),
-                        )
-                    }
-                },
-                colors =
-                    FloatingToolbarDefaults.standardFloatingToolbarColors(
-                        toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    ),
-            ) {
-                IconButton(
-                    onClick = {
-                        richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                    },
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Format_bold,
-                        contentDescription = "bold",
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                    },
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Format_italic,
-                        contentDescription = "italic",
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        richTextState.toggleSpanStyle(
-                            SpanStyle(textDecoration = TextDecoration.Underline),
-                        )
-                    },
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Format_underlined,
-                        contentDescription = "underline",
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        richTextState.toggleSpanStyle(
-                            SpanStyle(textDecoration = TextDecoration.LineThrough),
-                        )
-                    },
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Format_strikethrough,
-                        contentDescription = "strikethrough",
-                    )
-                }
-
-                IconButton(
-                    onClick = { undo() },
-                    enabled = canUndo,
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Undo,
-                        contentDescription = "undo",
-                    )
-                }
-
-                IconButton(
-                    onClick = { redo() },
-                    enabled = canRedo,
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Redo,
-                        contentDescription = "redo",
-                    )
-                }
-
-                IconButton(
-                    onClick = { appWindowManager.hideBubbleWindow() },
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Close,
-                        contentDescription = "cancel",
-                    )
-                }
-            }
+            HtmlEditFloatingToolbar(
+                richTextState = richTextState,
+                hasChanges = hasChanges,
+                canUndo = canUndo,
+                canRedo = canRedo,
+                onSave = { save() },
+                onUndo = { undo() },
+                onRedo = { redo() },
+                onClose = { appWindowManager.hideBubbleWindow() },
+            )
         },
     ) { innerPadding ->
         RichTextEditor(
@@ -330,5 +234,127 @@ fun PasteDataScope.PasteHtmlEditContentView() {
             textStyle = TextStyle(color = richTextColor),
             contentPadding = PaddingValues(bottom = huge),
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun HtmlEditFloatingToolbar(
+    richTextState: com.mohamedrejeb.richeditor.model.RichTextState,
+    hasChanges: Boolean,
+    canUndo: Boolean,
+    canRedo: Boolean,
+    onSave: () -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+
+    HorizontalFloatingToolbar(
+        expanded = true,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onSave,
+                containerColor =
+                    if (hasChanges) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                contentColor =
+                    if (hasChanges) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    },
+            ) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Save,
+                    contentDescription = copywriter.getText("save"),
+                )
+            }
+        },
+        colors =
+            FloatingToolbarDefaults.standardFloatingToolbarColors(
+                toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
+    ) {
+        IconButton(
+            onClick = {
+                richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
+            },
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Format_bold,
+                contentDescription = "bold",
+            )
+        }
+
+        IconButton(
+            onClick = {
+                richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
+            },
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Format_italic,
+                contentDescription = "italic",
+            )
+        }
+
+        IconButton(
+            onClick = {
+                richTextState.toggleSpanStyle(
+                    SpanStyle(textDecoration = TextDecoration.Underline),
+                )
+            },
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Format_underlined,
+                contentDescription = "underline",
+            )
+        }
+
+        IconButton(
+            onClick = {
+                richTextState.toggleSpanStyle(
+                    SpanStyle(textDecoration = TextDecoration.LineThrough),
+                )
+            },
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Format_strikethrough,
+                contentDescription = "strikethrough",
+            )
+        }
+
+        IconButton(
+            onClick = onUndo,
+            enabled = canUndo,
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Undo,
+                contentDescription = "undo",
+            )
+        }
+
+        IconButton(
+            onClick = onRedo,
+            enabled = canRedo,
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Redo,
+                contentDescription = "redo",
+            )
+        }
+
+        IconButton(
+            onClick = onClose,
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Close,
+                contentDescription = "cancel",
+            )
+        }
     }
 }
