@@ -99,9 +99,9 @@ fun MainWindow(windowIcon: Painter?) {
                     GeneralIconButton(
                         imageVector =
                             if (alwaysOnTop) {
-                                MaterialSymbols.Rounded.Push_pin
-                            } else {
                                 MaterialSymbols.RoundedFilled.Push_pin
+                            } else {
+                                MaterialSymbols.Rounded.Push_pin
                             },
                         desc = "always_on_top",
                         colors =
