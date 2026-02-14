@@ -67,210 +67,235 @@ fun Routing.cliRouting(
             }
         }
 
-        get("/status") {
-            val config = configManager.getCurrentConfig()
-            val deviceCount = syncRuntimeInfoDao.getAllSyncRuntimeInfos().size
-            val pasteCount = pasteDao.getActiveCount()
-            val response =
-                StatusResponse(
-                    appVersion = appInfo.appVersion,
-                    appInstanceId = appInfo.appInstanceId,
-                    port = server.port(),
-                    pasteboardListening = config.enablePasteboardListening,
-                    deviceCount = deviceCount,
-                    pasteCount = pasteCount,
+        pasteRoutes(pasteDao, pasteboardService)
+        deviceRoutes(syncRuntimeInfoDao)
+        configRoutes(configManager)
+        tagRoutes(pasteDao)
+        statusRoute(appInfo, configManager, pasteDao, server, syncRuntimeInfoDao)
+    }
+}
+
+private fun Route.statusRoute(
+    appInfo: AppInfo,
+    configManager: CommonConfigManager,
+    pasteDao: PasteDao,
+    server: Server,
+    syncRuntimeInfoDao: SyncRuntimeInfoDao,
+) {
+    get("/status") {
+        val config = configManager.getCurrentConfig()
+        val deviceCount = syncRuntimeInfoDao.getAllSyncRuntimeInfos().size
+        val pasteCount = pasteDao.getActiveCount()
+        val response =
+            StatusResponse(
+                appVersion = appInfo.appVersion,
+                appInstanceId = appInfo.appInstanceId,
+                port = server.port(),
+                pasteboardListening = config.enablePasteboardListening,
+                deviceCount = deviceCount,
+                pasteCount = pasteCount,
+            )
+        successResponse(call, response)
+    }
+}
+
+private fun Route.pasteRoutes(
+    pasteDao: PasteDao,
+    pasteboardService: PasteboardService,
+) {
+    get("/paste/current") {
+        val results =
+            pasteDao.searchPasteData(
+                searchTerms = listOf(),
+                limit = 1,
+            )
+        val paste = results.firstOrNull()
+        if (paste == null) {
+            failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "No pastes found")
+            return@get
+        }
+        successResponse(call, paste.toDetailResponse())
+    }
+
+    get("/paste/{id}") {
+        val id = call.parameters["id"]?.toLongOrNull()
+        if (id == null) {
+            failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid paste ID")
+            return@get
+        }
+        val paste = pasteDao.getNoDeletePasteData(id)
+        if (paste == null) {
+            failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "Paste #$id not found")
+            return@get
+        }
+        successResponse(call, paste.toDetailResponse())
+    }
+
+    get("/paste/list") {
+        val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+        val typeParam = call.request.queryParameters["type"]
+        val favoriteParam = call.request.queryParameters["favorite"]
+
+        val pasteType = typeParam?.let { resolveTypeFilter(it) }
+        val favorite = favoriteParam?.toBooleanStrictOrNull()
+
+        val results =
+            pasteDao.searchPasteData(
+                searchTerms = listOf(),
+                favorite = favorite,
+                pasteType = pasteType,
+                limit = limit.coerceIn(1, 100),
+            )
+        val total = pasteDao.getActiveCount()
+        val items = results.map { it.toSummaryDto() }
+        successResponse(call, PasteListResponse(items = items, total = total))
+    }
+
+    get("/paste/search") {
+        val query = call.request.queryParameters["q"] ?: ""
+        val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+        val typeParam = call.request.queryParameters["type"]
+        val pasteType = typeParam?.let { resolveTypeFilter(it) }
+
+        val searchTerms = query.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        val results =
+            pasteDao.searchPasteData(
+                searchTerms = searchTerms,
+                pasteType = pasteType,
+                limit = limit.coerceIn(1, 100),
+            )
+        val items = results.map { it.toSummaryDto() }
+        successResponse(call, PasteListResponse(items = items, total = items.size.toLong()))
+    }
+
+    post("/clipboard/write") {
+        val request = call.receive<CopyRequest>()
+        val textItem =
+            TextPasteItem(
+                identifiers = listOf("public.utf8-plain-text"),
+                hash = request.text.hashCode().toString(),
+                size =
+                    request.text
+                        .encodeToByteArray()
+                        .size
+                        .toLong(),
+                text = request.text,
+            )
+        pasteboardService.tryWritePasteboard(pasteItem = textItem, localOnly = true)
+        successResponse(call)
+    }
+
+    delete("/paste/{id}") {
+        val id = call.parameters["id"]?.toLongOrNull()
+        if (id == null) {
+            failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid paste ID")
+            return@delete
+        }
+        val paste = pasteDao.getNoDeletePasteData(id)
+        if (paste == null) {
+            failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "Paste #$id not found")
+            return@delete
+        }
+        pasteDao.markDeletePasteData(id)
+        successResponse(call)
+    }
+
+    put("/paste/{id}/favorite") {
+        val id = call.parameters["id"]?.toLongOrNull()
+        if (id == null) {
+            failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid paste ID")
+            return@put
+        }
+        val paste = pasteDao.getNoDeletePasteData(id)
+        if (paste == null) {
+            failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "Paste #$id not found")
+            return@put
+        }
+        pasteDao.setFavorite(id, !paste.favorite)
+        successResponse(call)
+    }
+}
+
+private fun Route.deviceRoutes(syncRuntimeInfoDao: SyncRuntimeInfoDao) {
+    get("/devices") {
+        val devices = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
+        val summaries =
+            devices.map { info ->
+                DeviceSummary(
+                    appInstanceId = info.appInstanceId,
+                    deviceName = info.deviceName,
+                    noteName = info.noteName,
+                    platform = "${info.platform.name} ${info.platform.version}",
+                    appVersion = info.appVersion,
+                    connectState = info.connectState,
+                    connectHostAddress = info.connectHostAddress,
+                    port = info.port,
+                    allowSend = info.allowSend,
+                    allowReceive = info.allowReceive,
                 )
-            successResponse(call, response)
-        }
-
-        get("/paste/current") {
-            val results =
-                pasteDao.searchPasteData(
-                    searchTerms = listOf(),
-                    limit = 1,
-                )
-            val paste = results.firstOrNull()
-            if (paste == null) {
-                failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "No pastes found")
-                return@get
             }
-            successResponse(call, paste.toDetailResponse())
-        }
+        successResponse(call, summaries)
+    }
+}
 
-        get("/paste/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid paste ID")
-                return@get
+private fun Route.configRoutes(configManager: CommonConfigManager) {
+    get("/config") {
+        val config = configManager.getCurrentConfig()
+        val entries = buildConfigEntries(config)
+        successResponse(call, entries)
+    }
+
+    put("/config") {
+        val request = call.receive<ConfigUpdateRequest>()
+        if (request.key !in MUTABLE_CONFIG_KEYS) {
+            failResponse(
+                call,
+                StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(),
+                "Config key '${request.key}' is not modifiable via CLI. " +
+                    "Allowed keys: ${MUTABLE_CONFIG_KEYS.joinToString(", ")}",
+            )
+            return@put
+        }
+        val value = parseConfigValue(request.key, request.value)
+        if (value == null) {
+            failResponse(
+                call,
+                StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(),
+                "Invalid value '${request.value}' for key '${request.key}'",
+            )
+            return@put
+        }
+        configManager.updateConfig(request.key, value)
+        successResponse(call)
+    }
+}
+
+private fun Route.tagRoutes(pasteDao: PasteDao) {
+    get("/tags") {
+        val tags = pasteDao.getAllTagsFlow().first()
+        val summaries =
+            tags.map { tag ->
+                TagSummary(id = tag.id, name = tag.name, color = tag.color)
             }
-            val paste = pasteDao.getNoDeletePasteData(id)
-            if (paste == null) {
-                failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "Paste #$id not found")
-                return@get
-            }
-            successResponse(call, paste.toDetailResponse())
+        successResponse(call, summaries)
+    }
+
+    post("/tags") {
+        val request = call.receive<CreateTagRequest>()
+        val maxSortOrder = pasteDao.getMaxSortOrder()
+        val color = request.color ?: PasteTag.getColor(maxSortOrder + 1)
+        val id = pasteDao.createPasteTag(request.name, color)
+        successResponse(call, TagSummary(id = id, name = request.name, color = color))
+    }
+
+    delete("/tags/{id}") {
+        val id = call.parameters["id"]?.toLongOrNull()
+        if (id == null) {
+            failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid tag ID")
+            return@delete
         }
-
-        get("/paste/list") {
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val typeParam = call.request.queryParameters["type"]
-            val favoriteParam = call.request.queryParameters["favorite"]
-
-            val pasteType = typeParam?.let { resolveTypeFilter(it) }
-            val favorite = favoriteParam?.toBooleanStrictOrNull()
-
-            val results =
-                pasteDao.searchPasteData(
-                    searchTerms = listOf(),
-                    favorite = favorite,
-                    pasteType = pasteType,
-                    limit = limit.coerceIn(1, 100),
-                )
-            val total = pasteDao.getActiveCount()
-            val items = results.map { it.toSummaryDto() }
-            successResponse(call, PasteListResponse(items = items, total = total))
-        }
-
-        get("/paste/search") {
-            val query = call.request.queryParameters["q"] ?: ""
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
-            val typeParam = call.request.queryParameters["type"]
-            val pasteType = typeParam?.let { resolveTypeFilter(it) }
-
-            val searchTerms = query.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
-            val results =
-                pasteDao.searchPasteData(
-                    searchTerms = searchTerms,
-                    pasteType = pasteType,
-                    limit = limit.coerceIn(1, 100),
-                )
-            val items = results.map { it.toSummaryDto() }
-            successResponse(call, PasteListResponse(items = items, total = items.size.toLong()))
-        }
-
-        post("/clipboard/write") {
-            val request = call.receive<CopyRequest>()
-            val textItem =
-                TextPasteItem(
-                    identifiers = listOf("public.utf8-plain-text"),
-                    hash = request.text.hashCode().toString(),
-                    size =
-                        request.text
-                            .encodeToByteArray()
-                            .size
-                            .toLong(),
-                    text = request.text,
-                )
-            pasteboardService.tryWritePasteboard(pasteItem = textItem, localOnly = true)
-            successResponse(call)
-        }
-
-        delete("/paste/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid paste ID")
-                return@delete
-            }
-            val paste = pasteDao.getNoDeletePasteData(id)
-            if (paste == null) {
-                failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "Paste #$id not found")
-                return@delete
-            }
-            pasteDao.markDeletePasteData(id)
-            successResponse(call)
-        }
-
-        put("/paste/{id}/favorite") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid paste ID")
-                return@put
-            }
-            val paste = pasteDao.getNoDeletePasteData(id)
-            if (paste == null) {
-                failResponse(call, StandardErrorCode.CLI_NOT_FOUND.toErrorCode(), "Paste #$id not found")
-                return@put
-            }
-            pasteDao.setFavorite(id, !paste.favorite)
-            successResponse(call)
-        }
-
-        get("/devices") {
-            val devices = syncRuntimeInfoDao.getAllSyncRuntimeInfos()
-            val summaries =
-                devices.map { info ->
-                    DeviceSummary(
-                        appInstanceId = info.appInstanceId,
-                        deviceName = info.deviceName,
-                        noteName = info.noteName,
-                        platform = "${info.platform.name} ${info.platform.version}",
-                        appVersion = info.appVersion,
-                        connectState = info.connectState,
-                        connectHostAddress = info.connectHostAddress,
-                        port = info.port,
-                        allowSend = info.allowSend,
-                        allowReceive = info.allowReceive,
-                    )
-                }
-            successResponse(call, summaries)
-        }
-
-        get("/config") {
-            val config = configManager.getCurrentConfig()
-            val entries = buildConfigEntries(config)
-            successResponse(call, entries)
-        }
-
-        put("/config") {
-            val request = call.receive<ConfigUpdateRequest>()
-            if (request.key !in MUTABLE_CONFIG_KEYS) {
-                failResponse(
-                    call,
-                    StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(),
-                    "Config key '${request.key}' is not modifiable via CLI. " +
-                        "Allowed keys: ${MUTABLE_CONFIG_KEYS.joinToString(", ")}",
-                )
-                return@put
-            }
-            val value = parseConfigValue(request.key, request.value)
-            if (value == null) {
-                failResponse(
-                    call,
-                    StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(),
-                    "Invalid value '${request.value}' for key '${request.key}'",
-                )
-                return@put
-            }
-            configManager.updateConfig(request.key, value)
-            successResponse(call)
-        }
-
-        get("/tags") {
-            val tags = pasteDao.getAllTagsFlow().first()
-            val summaries =
-                tags.map { tag ->
-                    TagSummary(id = tag.id, name = tag.name, color = tag.color)
-                }
-            successResponse(call, summaries)
-        }
-
-        post("/tags") {
-            val request = call.receive<CreateTagRequest>()
-            val maxSortOrder = pasteDao.getMaxSortOrder()
-            val color = request.color ?: PasteTag.getColor(maxSortOrder + 1)
-            val id = pasteDao.createPasteTag(request.name, color)
-            successResponse(call, TagSummary(id = id, name = request.name, color = color))
-        }
-
-        delete("/tags/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid tag ID")
-                return@delete
-            }
-            pasteDao.deletePasteTagBlock(id)
-            successResponse(call)
-        }
+        pasteDao.deletePasteTagBlock(id)
+        successResponse(call)
     }
 }
 
