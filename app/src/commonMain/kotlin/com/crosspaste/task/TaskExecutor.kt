@@ -19,6 +19,7 @@ class TaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
     private val taskDao: TaskDao,
     maxConcurrentTasks: Int = 10,
+    private val scope: CoroutineScope = CoroutineScope(cpuDispatcher + SupervisorJob()),
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -27,8 +28,6 @@ class TaskExecutor(
     private val taskShardedFlow = MutableSharedFlow<Long>()
 
     private val executionSemaphore = Channel<Unit>(maxConcurrentTasks)
-
-    private val scope = CoroutineScope(cpuDispatcher + SupervisorJob())
 
     init {
         scope.launch(CoroutineName("TaskExecutor")) {

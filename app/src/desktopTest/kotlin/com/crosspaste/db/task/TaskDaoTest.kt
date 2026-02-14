@@ -156,7 +156,6 @@ class TaskDaoTest {
     fun `executingTask updates modifyTime`() = runTest {
         val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
         val taskBefore = taskDao.getTask(taskId)!!
-        Thread.sleep(10)
         taskDao.executingTask(taskId)
         val taskAfter = taskDao.getTask(taskId)!!
         assert(taskAfter.modifyTime >= taskBefore.modifyTime)
