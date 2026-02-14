@@ -79,7 +79,7 @@ object DesktopCompressUtils : CompressUtils {
                     val filePath = targetDir.resolve(entry.name)
                     val canonicalFile = filePath.toFile().canonicalPath
                     require(canonicalFile.startsWith(canonicalTarget)) {
-                        "Zip entry outside target dir: ${entry!!.name}"
+                        "Zip entry outside target dir: ${entry.name}"
                     }
 
                     filePath.parent?.toFile()?.mkdirs()
