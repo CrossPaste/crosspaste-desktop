@@ -10,7 +10,6 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.ColorPasteItem
-import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.UpdatePasteItemHelper
@@ -233,7 +232,7 @@ class DesktopUISupport(
                 PasteType.TEXT_TYPE -> openText(pasteData)
                 PasteType.COLOR_TYPE -> openColorPicker(pasteData)
                 PasteType.URL_TYPE -> openUrlInBrowser((item as UrlPasteItem).url)
-                PasteType.HTML_TYPE -> openHtml(pasteData.id, (item as HtmlPasteItem).html)
+                PasteType.HTML_TYPE -> appWindowManager.showBubbleWindow(pasteData.id)
                 PasteType.RTF_TYPE -> openRtf(pasteData)
                 PasteType.FILE_TYPE -> {
                     item as PasteFiles

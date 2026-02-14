@@ -51,6 +51,7 @@ import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.createPasteDataScope
+import com.crosspaste.ui.paste.edit.PasteHtmlEditContentView
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getPlatformUtils
@@ -376,7 +377,13 @@ private fun BubbleWindowContent(
                 val data = pasteData
                 if (data != null) {
                     val scope: PasteDataScope? = createPasteDataScope(data)
-                    scope?.PasteTextEditContentView()
+                    if (scope != null) {
+                        val pasteType = data.getType()
+                        when {
+                            pasteType.isText() -> scope.PasteTextEditContentView()
+                            pasteType.isHtml() -> scope.PasteHtmlEditContentView()
+                        }
+                    }
                 }
             }
         }
