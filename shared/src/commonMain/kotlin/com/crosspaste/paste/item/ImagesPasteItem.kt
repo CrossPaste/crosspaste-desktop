@@ -142,7 +142,8 @@ data class ImagesPasteItem(
             size > 0 &&
             fileInfoTreeMap.isNotEmpty() &&
             relativePathList.isNotEmpty() &&
-            relativePathList.size == fileInfoTreeMap.size
+            relativePathList.size == fileInfoTreeMap.size &&
+            hasExistingFiles()
 
     override fun toJson(): String =
         buildJsonObject {
