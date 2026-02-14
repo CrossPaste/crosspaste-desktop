@@ -202,8 +202,6 @@ class PasteDaoTest {
         val pasteData = createTestPasteData()
         val id = pasteDao.createPasteData(pasteData)
         val before = pasteDao.getNoDeletePasteData(id)!!.createTime
-
-        Thread.sleep(10)
         pasteDao.updateCreateTime(id)
 
         val after = pasteDao.getNoDeletePasteData(id)!!.createTime
