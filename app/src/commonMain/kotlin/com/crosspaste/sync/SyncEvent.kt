@@ -3,6 +3,7 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.dto.sync.SyncInfo
+import kotlinx.coroutines.CompletableDeferred
 
 sealed interface SyncEvent {
 
@@ -83,6 +84,7 @@ sealed interface SyncEvent {
 
     data class NotifyExit(
         override val syncRuntimeInfo: SyncRuntimeInfo,
+        val completionSignal: CompletableDeferred<Unit> = CompletableDeferred(),
     ) : SyncRunTimeInfoEvent {
         override fun toString(): String = "NotifyExit ${syncRuntimeInfo.appInstanceId}"
     }

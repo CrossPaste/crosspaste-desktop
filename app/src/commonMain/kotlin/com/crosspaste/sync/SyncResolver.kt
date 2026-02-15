@@ -105,6 +105,7 @@ class SyncResolver(
 
                     is SyncEvent.NotifyExit -> {
                         syncRuntimeInfo.notifyExit()
+                        event.completionSignal.complete(Unit)
                     }
 
                     is SyncEvent.MarkExit -> {
