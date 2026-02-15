@@ -1,8 +1,13 @@
 package com.crosspaste.ui.paste.edit
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -25,6 +30,7 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.unit.dp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
 import com.composables.icons.materialsymbols.rounded.Redo
@@ -41,6 +47,8 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIFont.pasteTextStyle
+import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import kotlinx.coroutines.launch
@@ -58,6 +66,7 @@ fun PasteDataScope.PasteTextEditContentView() {
     val platform = koinInject<Platform>()
 
     val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
     val isMac = remember { platform.isMacos() }
 
     val textPasteItem = getPasteItem(TextPasteItem::class)
@@ -137,6 +146,7 @@ fun PasteDataScope.PasteTextEditContentView() {
         containerColor = MaterialTheme.colorScheme.surface,
         floatingActionButton = {
             HorizontalFloatingToolbar(
+                modifier = Modifier.offset(y = 20.dp),
                 expanded = true,
                 floatingActionButton = {
                     FloatingActionButton(
@@ -196,15 +206,32 @@ fun PasteDataScope.PasteTextEditContentView() {
             }
         },
     ) { innerPadding ->
-        CustomTextField(
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
-            shape = RoundedCornerShape(tiny),
-            value = textValue,
-            onValueChange = { updateTextWithHistory(it) },
-            textStyle = pasteTextStyle,
-        )
+                    .padding(horizontal = small2X)
+                    .padding(top = small2X, bottom = 85.dp)
+                    .clip(mediumRoundedCornerShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState),
+            ) {
+                CustomTextField(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                    shape = RoundedCornerShape(tiny),
+                    value = textValue,
+                    onValueChange = { updateTextWithHistory(it) },
+                    textStyle = pasteTextStyle,
+                )
+            }
+        }
     }
 }

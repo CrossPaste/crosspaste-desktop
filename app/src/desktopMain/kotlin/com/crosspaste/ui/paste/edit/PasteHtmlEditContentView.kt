@@ -1,9 +1,11 @@
 package com.crosspaste.ui.paste.edit
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -36,6 +38,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
 import com.composables.icons.materialsymbols.rounded.Format_bold
@@ -55,11 +58,14 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.utils.getColorUtils
+import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
+import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -68,7 +74,7 @@ import org.koin.compose.koinInject
 
 private const val MAX_UNDO_STACK_SIZE = 50
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PasteDataScope.PasteHtmlEditContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
@@ -85,21 +91,39 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     val richTextState = rememberRichTextState()
 
     val colorUtils = getColorUtils()
-    val backgroundColor by remember(pasteData.id) {
-        mutableStateOf(Color(htmlPasteItem.getBackgroundColor()))
-    }
-    val htmlBackground =
-        if (backgroundColor == Color.Transparent) {
-            MaterialTheme.colorScheme.background
-        } else {
-            backgroundColor
+    val currentThemeState = LocalThemeState.current
+    val colorScheme = MaterialTheme.colorScheme
+
+    val initialHtmlBackground =
+        remember(htmlPasteItem) {
+            val rawBgColor = Color(htmlPasteItem.getBackgroundColor())
+            if (rawBgColor == Color.Transparent) Color.Transparent else rawBgColor
         }
-    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(htmlBackground)) }
-    val richTextColor =
-        if (isDark == LocalThemeState.current.isCurrentThemeDark) {
-            MaterialTheme.colorScheme.onBackground
-        } else {
-            MaterialTheme.colorScheme.background
+
+    var currentBackgroundColor by remember { mutableStateOf(initialHtmlBackground) }
+
+    val (effectiveBackgroundColor, richTextColor) =
+        remember(
+            currentBackgroundColor,
+            currentThemeState.isCurrentThemeDark,
+            colorScheme,
+        ) {
+            val finalBg =
+                if (currentBackgroundColor == Color.Transparent) {
+                    colorScheme.background
+                } else {
+                    currentBackgroundColor
+                }
+
+            val isBgDark = colorUtils.isDarkColor(finalBg)
+            val finalTxt =
+                if (isBgDark == currentThemeState.isCurrentThemeDark) {
+                    colorScheme.onBackground
+                } else {
+                    colorScheme.background
+                }
+
+            finalBg to finalTxt
         }
 
     // Undo/Redo stacks
@@ -224,23 +248,39 @@ fun PasteDataScope.PasteHtmlEditContentView() {
             )
         },
     ) { innerPadding ->
-        RichTextEditor(
-            state = richTextState,
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(innerPadding)
-                    .background(htmlBackground),
-            textStyle = TextStyle(color = richTextColor),
-            contentPadding = PaddingValues(bottom = huge),
-        )
+                    .padding(horizontal = small2X)
+                    .padding(top = small2X, bottom = 85.dp)
+                    .clip(mediumRoundedCornerShape)
+                    .background(effectiveBackgroundColor),
+        ) {
+            RichTextEditor(
+                state = richTextState,
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
+                textStyle = TextStyle(color = richTextColor),
+                colors =
+                    RichTextEditorDefaults.richTextEditorColors(
+                        containerColor = Color.Transparent,
+                        textColor = richTextColor,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun HtmlEditFloatingToolbar(
-    richTextState: com.mohamedrejeb.richeditor.model.RichTextState,
+    richTextState: RichTextState,
     hasChanges: Boolean,
     canUndo: Boolean,
     canRedo: Boolean,
@@ -252,6 +292,7 @@ private fun HtmlEditFloatingToolbar(
     val copywriter = koinInject<GlobalCopywriter>()
 
     HorizontalFloatingToolbar(
+        modifier = Modifier.offset(y = 20.dp),
         expanded = true,
         floatingActionButton = {
             FloatingActionButton(
