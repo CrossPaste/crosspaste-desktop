@@ -121,13 +121,25 @@ class SyncRuntimeInfoDaoTest {
             assertEquals(1, insertedList.size)
             assertEquals(testSyncRuntimeInfo.appInstanceId, insertedList[0].appInstanceId)
 
-            // Update the data
+            // Re-insert identical data — should NOT trigger emission (no actual change)
             syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
+            expectNoEvents()
 
-            // Verify the Flow emits a list containing the updated data
+            // Update with changed data — should trigger emission
+            val changedSyncInfo = SyncInfo(
+                appInfo = AppInfo(
+                    appInstanceId = "test-instance-1",
+                    appVersion = "2.0.0",
+                    appRevision = "12345",
+                    userName = "testUser",
+                ),
+                endpointInfo = testSyncInfo.endpointInfo,
+            )
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(changedSyncInfo)
+
             val updatedList = awaitItem()
             assertEquals(1, updatedList.size)
-            assertEquals(SyncState.DISCONNECTED, updatedList[0].connectState)
+            assertEquals("2.0.0", updatedList[0].appVersion)
 
             // Verify no further emissions
             expectNoEvents()
