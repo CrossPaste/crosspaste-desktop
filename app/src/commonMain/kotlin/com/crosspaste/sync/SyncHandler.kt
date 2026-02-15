@@ -50,4 +50,6 @@ interface SyncHandler {
     suspend fun markExit()
 
     suspend fun removeDevice()
+
+    fun cancelScope() {}
 }

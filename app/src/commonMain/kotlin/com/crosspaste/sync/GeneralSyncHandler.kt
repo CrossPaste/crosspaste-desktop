@@ -109,7 +109,11 @@ class GeneralSyncHandler(
 
         if (current.connectState != previous.connectState) {
             when (current.connectState) {
-                SyncState.DISCONNECTED,
+                SyncState.DISCONNECTED -> {
+                    syncPollingManager.fail()
+                    emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId, current.hostInfoList))
+                    emitEvent(SyncEvent.ResolveDisconnected(current, createCallback()))
+                }
                 SyncState.INCOMPATIBLE,
                 SyncState.UNMATCHED,
                 SyncState.UNVERIFIED,
@@ -196,8 +200,7 @@ class GeneralSyncHandler(
 
     override suspend fun notifyExit() {
         emitEvent(SyncEvent.NotifyExit(currentSyncRuntimeInfo))
-        job.cancel()
-        syncHandlerScope.cancel()
+        cancelScope()
     }
 
     override suspend fun markExit() {
@@ -206,6 +209,10 @@ class GeneralSyncHandler(
 
     override suspend fun removeDevice() {
         emitEvent(SyncEvent.RemoveDevice(currentSyncRuntimeInfo))
+        cancelScope()
+    }
+
+    override fun cancelScope() {
         job.cancel()
         syncHandlerScope.cancel()
     }

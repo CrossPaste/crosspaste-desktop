@@ -102,7 +102,7 @@ class GeneralSyncManager(
                     val newSet = currentAppInstanceIdSet - previousAppInstanceIdSet
 
                     deleteSet.forEach { appInstanceId ->
-                        internalSyncHandlers.remove(appInstanceId)
+                        internalSyncHandlers.remove(appInstanceId)?.cancelScope()
                     }
 
                     newSet.forEach { appInstanceId ->
