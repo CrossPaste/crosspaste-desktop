@@ -47,6 +47,10 @@ class SyncResolverTest {
         val telnetHelper: TelnetHelper = mockk(relaxed = true)
         val tokenCache: FakeTokenCache = FakeTokenCache()
 
+        fun stubDbRead(syncRuntimeInfo: SyncRuntimeInfo) {
+            coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) } returns syncRuntimeInfo
+        }
+
         fun createResolver(): SyncResolver =
             SyncResolver(
                 lazyPasteBonjourService = lazy { pasteBonjourService },
@@ -87,6 +91,7 @@ class SyncResolverTest {
                 )
             val hostInfo = HostInfo(24, "192.168.1.100")
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
                 Pair(hostInfo, VersionRelation.EQUAL_TO)
 
@@ -108,6 +113,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo()
             val hostInfo = HostInfo(24, "192.168.1.100")
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
                 Pair(hostInfo, VersionRelation.LOWER_THAN)
 
@@ -128,6 +134,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo()
             val hostInfo = HostInfo(24, "192.168.1.100")
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
                 Pair(hostInfo, VersionRelation.HIGHER_THAN)
 
@@ -147,6 +154,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
@@ -165,6 +173,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createSyncRuntimeInfo(hostInfoList = emptyList())
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
@@ -186,6 +195,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.EQUAL_TO)
@@ -207,6 +217,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery {
                 deps.syncClientApi.heartbeat(
@@ -235,6 +246,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.LOWER_THAN)
@@ -255,6 +267,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             // No token cached -> telnet
             coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns VersionRelation.EQUAL_TO
@@ -279,6 +292,8 @@ class SyncResolverTest {
                     connectHostAddress = null,
                 )
 
+            deps.stubDbRead(syncRuntimeInfo)
+
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
 
@@ -295,6 +310,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns ConnectionRefused
 
@@ -316,6 +332,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.EQUAL_TO)
@@ -335,6 +352,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.LOWER_THAN)
@@ -354,6 +372,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.HIGHER_THAN)
@@ -373,6 +392,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(null)
@@ -392,6 +412,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 FailureResult(
@@ -416,6 +437,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 FailureResult(
@@ -443,6 +465,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns EncryptFail
 
@@ -463,6 +486,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns DecryptFail
 
@@ -483,6 +507,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns UnknownError
 
@@ -503,6 +528,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             deps.tokenCache.setToken(syncRuntimeInfo.appInstanceId, 123456)
 
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
@@ -529,6 +555,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             deps.tokenCache.setToken(syncRuntimeInfo.appInstanceId, 123456)
 
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
@@ -551,6 +578,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns VersionRelation.EQUAL_TO
 
@@ -569,6 +597,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns VersionRelation.LOWER_THAN
 
@@ -587,6 +616,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns null
 
@@ -609,6 +639,7 @@ class SyncResolverTest {
                     connectHostAddress = null,
                 )
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
 
             val capturedInfo = slot<SyncRuntimeInfo>()
@@ -628,6 +659,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.syncClientApi.trust(any(), any(), any(), any()) } returns SuccessResult(true)
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.EQUAL_TO)
@@ -654,6 +686,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.syncClientApi.trust(any(), any(), any(), any()) } returns
                 FailureResult(PasteException(StandardErrorCode.TOKEN_INVALID.toErrorCode(), "invalid"))
 
@@ -671,6 +704,8 @@ class SyncResolverTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
 
             var callbackResult: Boolean? = null
             resolver.emitEvent(
@@ -691,6 +726,8 @@ class SyncResolverTest {
                     connectHostAddress = null,
                 )
 
+            deps.stubDbRead(syncRuntimeInfo)
+
             var callbackResult: Boolean? = null
             resolver.emitEvent(
                 SyncEvent.TrustByToken(syncRuntimeInfo, 123456) { callbackResult = it },
@@ -708,6 +745,8 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
+
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateAllowSend(capture(capturedInfo)) } returns null
 
@@ -722,6 +761,8 @@ class SyncResolverTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateAllowReceive(capture(capturedInfo)) } returns null
@@ -738,6 +779,8 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
+
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateNoteName(capture(capturedInfo)) } returns null
 
@@ -753,6 +796,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.syncClientApi.showToken(any()) } returns SuccessResult(true)
 
             resolver.emitEvent(SyncEvent.ShowToken(syncRuntimeInfo))
@@ -768,6 +812,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.syncClientApi.showToken(any()) } returns ConnectionRefused
 
             val capturedInfo = slot<SyncRuntimeInfo>()
@@ -785,6 +830,8 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
+
             resolver.emitEvent(SyncEvent.ShowToken(syncRuntimeInfo))
 
             coVerify(exactly = 0) { deps.syncClientApi.showToken(any()) }
@@ -796,6 +843,8 @@ class SyncResolverTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
 
             resolver.emitEvent(SyncEvent.NotifyExit(syncRuntimeInfo))
 
@@ -809,6 +858,8 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
+            deps.stubDbRead(syncRuntimeInfo)
+
             resolver.emitEvent(SyncEvent.NotifyExit(syncRuntimeInfo))
 
             coVerify(exactly = 0) { deps.syncClientApi.notifyExit(any()) }
@@ -820,6 +871,8 @@ class SyncResolverTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -835,6 +888,8 @@ class SyncResolverTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
 
             resolver.emitEvent(SyncEvent.RemoveDevice(syncRuntimeInfo))
 
@@ -854,6 +909,8 @@ class SyncResolverTest {
                     connectHostAddress = null,
                 )
 
+            deps.stubDbRead(syncRuntimeInfo)
+
             resolver.emitEvent(SyncEvent.RemoveDevice(syncRuntimeInfo))
 
             coVerify { deps.secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId) }
@@ -870,6 +927,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
@@ -888,6 +946,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.INCOMPATIBLE)
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
@@ -906,6 +965,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns null
 
@@ -926,6 +986,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(any()) } returns "test-app-1"
 
@@ -979,6 +1040,7 @@ class SyncResolverTest {
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createSyncRuntimeInfo()
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } throws RuntimeException("test error")
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(any()) } returns "test-app-1"
 
@@ -1002,6 +1064,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo()
             val hostInfo = HostInfo(24, "192.168.1.100")
 
+            deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
                 Pair(hostInfo, VersionRelation.EQUAL_TO)
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(any()) } returns "test-app-1"

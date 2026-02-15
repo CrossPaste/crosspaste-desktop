@@ -59,6 +59,13 @@ class SyncRuntimeInfoDao(private val database: Database) {
         createGetAllSyncRuntimeInfosQuery().executeAsList()
     }
 
+    suspend fun getSyncRuntimeInfo(appInstanceId: String): SyncRuntimeInfo? = withContext(ioDispatcher) {
+        syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
+            appInstanceId,
+            SyncRuntimeInfo::mapper,
+        ).executeAsOneOrNull()
+    }
+
     private suspend fun updateTemplate(
         syncRuntimeInfo: SyncRuntimeInfo,
         updateAction: (SyncRuntimeInfo) -> Boolean,
