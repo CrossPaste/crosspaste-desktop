@@ -189,9 +189,24 @@ class PasteDao(
         }
     }
 
+    suspend fun cutPasteData(id: Long, delayMillis: Long) = withContext(ioDispatcher) {
+        runCatching {
+            taskSubmitter.submit {
+                database.transaction {
+                    pasteDatabaseQueries.markDeletePasteData(listOf(id))
+                    addDelayedDeletePasteTask(id, delayMillis)
+                }
+            }
+        }.onFailure { e ->
+            logger.error(e) { "Cut paste data failed" }
+        }
+    }
+
     suspend fun deletePasteData(id: Long) = withContext(ioDispatcher) {
-        getDeletePasteData(id)?.clear(userDataPathProvider)
-        pasteDatabaseQueries.deletePasteData(listOf(id))
+        getDeletePasteData(id)?.let {
+            it.clear(userDataPathProvider)
+            pasteDatabaseQueries.deletePasteData(listOf(id))
+        }
     }
 
     @Suppress("unused")

@@ -20,6 +20,7 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
@@ -32,7 +33,12 @@ import com.dzirbel.contextmenu.ContextMenuDivider
 import com.dzirbel.contextmenu.ContextMenuGroup
 import com.dzirbel.contextmenu.MaterialContextMenuItem
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class DesktopPasteMenuService(
@@ -46,9 +52,18 @@ class DesktopPasteMenuService(
     private val uiSupport: UISupport,
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteMenuService {
+
+    companion object {
+        private const val CUT_UNDO_DELAY_MS = 60_000L
+    }
+
     private val desktopAppWindowManager = appWindowManager as DesktopAppWindowManager
 
     private val menuScope = CoroutineScope(ioDispatcher + SupervisorJob())
+
+    private val _pendingCutPasteId = MutableStateFlow<Long?>(null)
+    val pendingCutPasteId: StateFlow<Long?> = _pendingCutPasteId.asStateFlow()
+    private var pendingCutJob: Job? = null
 
     private fun copySingleFile(
         id: Long,
@@ -93,6 +108,49 @@ class DesktopPasteMenuService(
                         messageType = MessageType.Error,
                     )
                 }
+        }
+    }
+
+    private fun cutPasteData(pasteData: PasteData) {
+        menuScope.launch {
+            pasteboardService
+                .tryWritePasteboard(
+                    pasteData = pasteData,
+                    localOnly = true,
+                ).onSuccess {
+                    pendingCutJob?.cancel()
+                    _pendingCutPasteId.value = null
+
+                    pendingCutJob =
+                        menuScope.launch {
+                            pasteDao.cutPasteData(pasteData.id, CUT_UNDO_DELAY_MS)
+                            _pendingCutPasteId.value = pasteData.id
+                            delay(CUT_UNDO_DELAY_MS)
+                            _pendingCutPasteId.value = null
+                            pendingCutJob = null
+                        }
+                    notificationManager.sendNotification(
+                        title = { it.getText("copy_successful") },
+                        messageType = MessageType.Success,
+                    )
+                }.onFailure { e ->
+                    notificationManager.sendNotification(
+                        title = { it.getText("copy_failed") },
+                        message = e.message?.let { message -> { message } },
+                        messageType = MessageType.Error,
+                    )
+                }
+        }
+    }
+
+    fun cancelCut() {
+        menuScope.launch {
+            pendingCutJob?.cancel()
+            pendingCutJob = null
+            _pendingCutPasteId.value?.let { id ->
+                pasteDao.updatePasteState(id, PasteState.LOADED)
+            }
+            _pendingCutPasteId.value = null
         }
     }
 
@@ -169,6 +227,11 @@ class DesktopPasteMenuService(
     private fun createCopyContextMenuItem(pasteData: PasteData): ContextMenuItem =
         ContextMenuItem(copywriter.getText("copy")) {
             copyPasteData(pasteData)
+        }
+
+    private fun createCutContextMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuItem(copywriter.getText("cut")) {
+            cutPasteData(pasteData)
         }
 
     private fun createDeleteContextMenuItem(pasteData: PasteData): ContextMenuItem =
@@ -261,6 +324,19 @@ class DesktopPasteMenuService(
             createDeleteContextMenuItem(pasteData),
         )
 
+    private fun createFileTypeMenuItems(pasteData: PasteData): List<ContextMenuItem> =
+        buildList {
+            add(createCopyContextMenuItem(pasteData))
+            val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
+            if (pasteFiles != null && !pasteFiles.isRefFiles()) {
+                add(createCutContextMenuItem(pasteData))
+            }
+            add(createOpenContextMenuItem(pasteData))
+            add(createPinTagMenuItem(pasteData))
+            add(ContextMenuDivider)
+            add(createDeleteContextMenuItem(pasteData))
+        }
+
     private fun createTextMenuItems(pasteData: PasteData): List<ContextMenuItem> =
         listOf(
             createCopyContextMenuItem(pasteData),
@@ -271,14 +347,18 @@ class DesktopPasteMenuService(
         )
 
     private fun createImageMenuItems(pasteData: PasteData): List<ContextMenuItem> =
-        listOf(
-            createCopyContextMenuItem(pasteData),
-            createEditContextMenuItem(pasteData),
-            createExtractTextContextMenuItem(pasteData),
-            createPinTagMenuItem(pasteData),
-            ContextMenuDivider,
-            createDeleteContextMenuItem(pasteData),
-        )
+        buildList {
+            add(createCopyContextMenuItem(pasteData))
+            val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
+            if (pasteFiles != null && !pasteFiles.isRefFiles()) {
+                add(createCutContextMenuItem(pasteData))
+            }
+            add(createEditContextMenuItem(pasteData))
+            add(createExtractTextContextMenuItem(pasteData))
+            add(createPinTagMenuItem(pasteData))
+            add(ContextMenuDivider)
+            add(createDeleteContextMenuItem(pasteData))
+        }
 
     fun mainPasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
         {
@@ -292,7 +372,7 @@ class DesktopPasteMenuService(
                     PasteType.HTML_TYPE -> createTextMenuItems(pasteData)
                     PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
-                    PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.FILE_TYPE -> createFileTypeMenuItems(pasteData)
                     else -> createLoadingMenuItems(pasteData)
                 }
             }
@@ -311,7 +391,7 @@ class DesktopPasteMenuService(
                     PasteType.HTML_TYPE -> createTextMenuItems(pasteData)
                     PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
-                    PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.FILE_TYPE -> createFileTypeMenuItems(pasteData)
                     else -> createLoadingMenuItems(pasteData)
                 }
             }

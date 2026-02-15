@@ -1,6 +1,7 @@
 package com.crosspaste.ui.search.side
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults.iconButtonColors
@@ -40,15 +43,18 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Search
 import com.composables.icons.materialsymbols.rounded.Settings
+import com.composables.icons.materialsymbols.rounded.Undo
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.NavigationManager
@@ -65,10 +71,13 @@ import com.crosspaste.ui.search.SearchTrailingIcon
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.large
+import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.launch
@@ -81,6 +90,7 @@ fun SideSearchInputView() {
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val navigationManager = koinInject<NavigationManager>()
+    val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
@@ -94,6 +104,8 @@ fun SideSearchInputView() {
     val config by configManager.config.collectAsState()
 
     val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
+
+    val pendingCutPasteId by pasteMenuService.pendingCutPasteId.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
 
@@ -253,6 +265,37 @@ fun SideSearchInputView() {
             }
 
             Spacer(modifier = Modifier.width(small))
+
+            if (pendingCutPasteId != null) {
+                Row(
+                    modifier =
+                        Modifier
+                            .wrapContentWidth()
+                            .height(large2X)
+                            .clip(tiny3XRoundedCornerShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                            .clickable { pasteMenuService.cancelCut() },
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        modifier = Modifier.padding(start = tiny2X).size(small),
+                        imageVector = MaterialSymbols.Rounded.Undo,
+                        contentDescription = "cancel_cut",
+                        tint = Color.White,
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = tiny, end = tiny2X),
+                        text = copywriter.getText("cancel_cut"),
+                        color = Color.White,
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                lineHeight = TextUnit.Unspecified,
+                            ),
+                    )
+                }
+                Spacer(modifier = Modifier.width(large))
+            }
 
             GeneralIconButton(
                 imageVector = MaterialSymbols.Rounded.Settings,

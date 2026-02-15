@@ -187,6 +187,7 @@ import com.crosspaste.sync.TokenCache
 import com.crosspaste.sync.TokenCacheApi
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.CleanTaskTaskExecutor
+import com.crosspaste.task.DelayedDeletePasteTaskExecutor
 import com.crosspaste.task.DeletePasteTaskExecutor
 import com.crosspaste.task.DesktopTaskSubmitter
 import com.crosspaste.task.OpenGraphTaskExecutor
@@ -479,6 +480,7 @@ class DesktopModule(
                     listOf(
                         CleanPasteTaskExecutor(get(), get()),
                         CleanTaskTaskExecutor(get()),
+                        DelayedDeletePasteTaskExecutor(get()),
                         DeletePasteTaskExecutor(get()),
                         OpenGraphTaskExecutor(
                             lazy { get<RenderingService<String>>(named("urlRendering")) },
