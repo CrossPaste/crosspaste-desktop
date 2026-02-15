@@ -33,8 +33,8 @@ class SyncRuntimeInfoDao(private val database: Database) {
     }
 
     fun getAllSyncRuntimeInfosFlow(): Flow<List<SyncRuntimeInfo>> {
-        cleanUpdateNotifier()
         return flow {
+            cleanUpdateNotifier()
             val currentMap = getAllSyncRuntimeInfos().associateBy { it.appInstanceId }.toMutableMap()
             emit(currentMap.values.toList())
 
@@ -144,13 +144,13 @@ class SyncRuntimeInfoDao(private val database: Database) {
         syncInfo: SyncInfo,
         host: String? = null,
     ) = withContext(ioDispatcher) {
-        database.transactionWithResult {
+        val changed = database.transactionWithResult {
             val now = nowEpochMilliseconds()
             syncRuntimeInfoDatabaseQueries.getSyncRuntimeInfo(
                 syncInfo.appInfo.appInstanceId,
                 SyncRuntimeInfo::mapper,
-            ).executeAsOneOrNull()?.let {
-                val hostInfoList = (it.hostInfoList + syncInfo.endpointInfo.hostInfoList).distinct()
+            ).executeAsOneOrNull()?.let { existing ->
+                val hostInfoList = (existing.hostInfoList + syncInfo.endpointInfo.hostInfoList).distinct()
 
                 var connectNetworkPrefixLength: Long? = null
                 var connectHostAddress: String? = null
@@ -165,6 +165,18 @@ class SyncRuntimeInfoDao(private val database: Database) {
                             break
                         }
                     }
+                }
+
+                val hostInfoChanged = !SyncRuntimeInfo.hostInfoListEqual(existing.hostInfoList, hostInfoList)
+                val syncInfoChanged = existing.diffSyncInfo(syncInfo)
+                val connectChanged = host != null && (
+                    existing.connectHostAddress != connectHostAddress ||
+                    existing.connectNetworkPrefixLength?.toLong() != connectNetworkPrefixLength ||
+                    existing.connectState.toLong() != connectState
+                )
+
+                if (!hostInfoChanged && !syncInfoChanged && !connectChanged) {
+                    return@transactionWithResult false
                 }
 
                 val hostInfoArrayJson = jsonUtils.JSON.encodeToString(hostInfoList)
@@ -187,6 +199,7 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     now,
                     syncInfo.appInfo.appInstanceId,
                 )
+                true
             } ?: run {
                 var connectNetworkPrefixLength: Long? = null
                 var connectHostAddress: String? = null
@@ -222,9 +235,12 @@ class SyncRuntimeInfoDao(private val database: Database) {
                     now,
                     now,
                 )
+                true
             }
         }
 
-        updateNotifier.trySend(syncInfo.appInfo.appInstanceId)
+        if (changed) {
+            updateNotifier.trySend(syncInfo.appInfo.appInstanceId)
+        }
     }
 }
