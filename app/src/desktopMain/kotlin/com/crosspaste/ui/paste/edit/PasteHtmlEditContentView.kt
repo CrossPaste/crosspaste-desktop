@@ -15,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -32,6 +34,7 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -131,7 +134,18 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     val redoStack = remember(pasteData.id, pasteData.hash) { mutableStateListOf<String>() }
     var isUndoRedoAction by remember { mutableStateOf(false) }
     var currentHtml by remember(pasteData.id, pasteData.hash) { mutableStateOf(originalHtml) }
-    var hasChanges by remember(pasteData.id, pasteData.hash) { mutableStateOf(false) }
+
+    // Track the annotated string at the last save point for robust change detection
+    var savedAnnotatedString by remember(pasteData.id, pasteData.hash) {
+        mutableStateOf<AnnotatedString?>(null)
+    }
+
+    val hasChanges by remember {
+        derivedStateOf {
+            val saved = savedAnnotatedString
+            saved != null && richTextState.annotatedString != saved
+        }
+    }
 
     val canUndo = undoStack.isNotEmpty()
     val canRedo = redoStack.isNotEmpty()
@@ -140,10 +154,11 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     LaunchedEffect(pasteData.id, pasteData.hash) {
         richTextState.setHtml(originalHtml)
         richTextState.selection = TextRange.Zero
-        currentHtml = originalHtml
+        savedAnnotatedString = richTextState.annotatedString
+        currentHtml = richTextState.toHtml()
     }
 
-    // Track changes via snapshotFlow on the rich text state
+    // Track changes via snapshotFlow for undo/redo stack only
     LaunchedEffect(pasteData.id, pasteData.hash) {
         snapshotFlow { richTextState.toHtml() }
             .debounce(300)
@@ -160,7 +175,6 @@ fun PasteDataScope.PasteHtmlEditContentView() {
                     }
                     redoStack.clear()
                     currentHtml = newHtml
-                    hasChanges = newHtml != originalHtml
                 }
             }
     }
@@ -171,7 +185,6 @@ fun PasteDataScope.PasteHtmlEditContentView() {
             val previous = undoStack.removeLast()
             redoStack.add(currentHtml)
             currentHtml = previous
-            hasChanges = previous != originalHtml
             scope.launch {
                 richTextState.setHtml(previous)
             }
@@ -184,7 +197,6 @@ fun PasteDataScope.PasteHtmlEditContentView() {
             val next = redoStack.removeLast()
             undoStack.add(currentHtml)
             currentHtml = next
-            hasChanges = next != originalHtml
             scope.launch {
                 richTextState.setHtml(next)
             }
@@ -202,6 +214,10 @@ fun PasteDataScope.PasteHtmlEditContentView() {
                         htmlPasteItem.getBackgroundColor(),
                         htmlPasteItem,
                     ).onSuccess {
+                        savedAnnotatedString = richTextState.annotatedString
+                        currentHtml = newHtml
+                        undoStack.clear()
+                        redoStack.clear()
                         notificationManager.sendNotification(
                             title = { copywriter.getText("save_successful") },
                             messageType = MessageType.Success,
@@ -297,6 +313,7 @@ private fun HtmlEditFloatingToolbar(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onSave,
+                modifier = Modifier.focusProperties { canFocus = false },
                 containerColor =
                     if (hasChanges) {
                         MaterialTheme.colorScheme.primaryContainer
@@ -325,6 +342,7 @@ private fun HtmlEditFloatingToolbar(
             onClick = {
                 richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
             },
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
                 imageVector = MaterialSymbols.Rounded.Format_bold,
@@ -336,6 +354,7 @@ private fun HtmlEditFloatingToolbar(
             onClick = {
                 richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
             },
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
                 imageVector = MaterialSymbols.Rounded.Format_italic,
@@ -349,6 +368,7 @@ private fun HtmlEditFloatingToolbar(
                     SpanStyle(textDecoration = TextDecoration.Underline),
                 )
             },
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
                 imageVector = MaterialSymbols.Rounded.Format_underlined,
@@ -362,6 +382,7 @@ private fun HtmlEditFloatingToolbar(
                     SpanStyle(textDecoration = TextDecoration.LineThrough),
                 )
             },
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
                 imageVector = MaterialSymbols.Rounded.Format_strikethrough,
@@ -372,6 +393,7 @@ private fun HtmlEditFloatingToolbar(
         IconButton(
             onClick = onUndo,
             enabled = canUndo,
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
                 imageVector = MaterialSymbols.Rounded.Undo,
@@ -382,6 +404,7 @@ private fun HtmlEditFloatingToolbar(
         IconButton(
             onClick = onRedo,
             enabled = canRedo,
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
                 imageVector = MaterialSymbols.Rounded.Redo,
@@ -391,6 +414,7 @@ private fun HtmlEditFloatingToolbar(
 
         IconButton(
             onClick = onClose,
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Icon(
                 imageVector = MaterialSymbols.Rounded.Close,
