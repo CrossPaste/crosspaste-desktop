@@ -209,7 +209,6 @@ class GeneralSyncHandler(
 
     override suspend fun removeDevice() {
         emitEvent(SyncEvent.RemoveDevice(currentSyncRuntimeInfo))
-        cancelScope()
     }
 
     override fun cancelScope() {
