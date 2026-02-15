@@ -199,7 +199,11 @@ class GeneralSyncHandler(
     }
 
     override suspend fun notifyExit() {
-        emitEvent(SyncEvent.NotifyExit(currentSyncRuntimeInfo))
+        val completionSignal = CompletableDeferred<Unit>()
+        emitEvent(SyncEvent.NotifyExit(currentSyncRuntimeInfo, completionSignal))
+        withTimeoutOrNull(5000) {
+            completionSignal.await()
+        }
         cancelScope()
     }
 
