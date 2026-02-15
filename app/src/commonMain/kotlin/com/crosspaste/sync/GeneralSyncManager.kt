@@ -8,6 +8,7 @@ import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -63,13 +64,12 @@ class GeneralSyncManager(
 
     private val eventChannel = Channel<SyncEvent>(Channel.UNLIMITED)
 
-    private var started = false
+    private val started = atomic(false)
 
     private var syncRuntimeInfosJob: Job? = null
 
     override fun start() {
-        if (started) return
-        started = true
+        if (!started.compareAndSet(expect = false, update = true)) return
 
         realTimeSyncScope.launch {
             for (event in eventChannel) {
@@ -83,8 +83,7 @@ class GeneralSyncManager(
     }
 
     override fun stop() {
-        if (!started) return
-        started = false
+        if (!started.compareAndSet(expect = true, update = false)) return
 
         notifyExit()
 
