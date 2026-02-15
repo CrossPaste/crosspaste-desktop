@@ -15,7 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
@@ -61,7 +61,7 @@ class GeneralSyncManager(
 
     private val internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
-    private val eventBus = MutableSharedFlow<SyncEvent>()
+    private val eventChannel = Channel<SyncEvent>(Channel.UNLIMITED)
 
     private var started = false
 
@@ -72,8 +72,10 @@ class GeneralSyncManager(
         started = true
 
         realTimeSyncScope.launch {
-            eventBus.collect { event ->
-                syncResolver.emitEvent(event)
+            for (event in eventChannel) {
+                launch {
+                    syncResolver.emitEvent(event)
+                }
             }
         }
 
@@ -128,7 +130,7 @@ class GeneralSyncManager(
     }
 
     private suspend fun emitEvent(event: SyncEvent) {
-        eventBus.emit(event)
+        eventChannel.send(event)
     }
 
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler =

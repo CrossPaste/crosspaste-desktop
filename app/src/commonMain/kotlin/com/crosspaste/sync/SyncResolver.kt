@@ -21,6 +21,7 @@ import com.crosspaste.net.filter
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostAndPort
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 
@@ -38,8 +39,25 @@ class SyncResolver(
 
     private val logger = KotlinLogging.logger {}
 
+    private val deviceMutex = StripedMutex()
+
+    private fun SyncEvent.appInstanceId(): String =
+        when (this) {
+            is SyncEvent.SyncRunTimeInfoEvent -> syncRuntimeInfo.appInstanceId
+            is SyncEvent.RefreshSyncInfo -> appInstanceId
+            is SyncEvent.UpdateSyncInfo -> syncInfo.appInfo.appInstanceId
+            is SyncEvent.TrustSyncInfo -> syncInfo.appInfo.appInstanceId
+            else -> error("Unknown SyncEvent type: $this")
+        }
+
     suspend fun emitEvent(event: SyncEvent) {
         logger.debug { "Event: $event" }
+        deviceMutex.withLock(event.appInstanceId()) {
+            processEvent(event)
+        }
+    }
+
+    private suspend fun processEvent(event: SyncEvent) {
         runCatching {
             if (event is SyncEvent.SyncRunTimeInfoEvent) {
                 // Re-read from DB to avoid stale snapshots.
