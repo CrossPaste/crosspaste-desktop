@@ -41,84 +41,79 @@ class SyncResolver(
     suspend fun emitEvent(event: SyncEvent) {
         logger.debug { "Event: $event" }
         runCatching {
-            // For events carrying SyncRuntimeInfo, re-read from DB to avoid stale snapshots.
-            // Events are queued in a SharedFlow and may be processed after the DB has changed.
-            val syncRuntimeInfo =
-                if (event is SyncEvent.SyncRunTimeInfoEvent) {
+            if (event is SyncEvent.SyncRunTimeInfoEvent) {
+                // Re-read from DB to avoid stale snapshots.
+                // Events are queued in a SharedFlow and may be processed after the DB has changed.
+                val syncRuntimeInfo =
                     syncRuntimeInfoDao.getSyncRuntimeInfo(event.syncRuntimeInfo.appInstanceId)
-                        ?: run {
-                            logger.info {
-                                "Device ${event.syncRuntimeInfo.appInstanceId} no longer exists, skipping $event"
-                            }
-                            return@runCatching
-                        }
-                } else {
-                    null
-                }
+                        ?: return@runCatching
 
-            when (event) {
-                is SyncEvent.ResolveDisconnected -> {
-                    syncRuntimeInfo!!.resolveDisconnected(event.callback)
-                }
+                when (event) {
+                    is SyncEvent.ResolveDisconnected -> {
+                        syncRuntimeInfo.resolveDisconnected(event.callback)
+                    }
 
-                is SyncEvent.ResolveConnecting -> {
-                    syncRuntimeInfo!!.resolveConnecting(event.callback)
-                }
+                    is SyncEvent.ResolveConnecting -> {
+                        syncRuntimeInfo.resolveConnecting(event.callback)
+                    }
 
-                is SyncEvent.ResolveConnection -> {
-                    syncRuntimeInfo!!.resolveConnection(event.callback)
-                }
+                    is SyncEvent.ResolveConnection -> {
+                        syncRuntimeInfo.resolveConnection(event.callback)
+                    }
 
-                is SyncEvent.ForceResolveConnection -> {
-                    syncRuntimeInfo!!.forceResolveConnection(event.callback)
-                }
+                    is SyncEvent.ForceResolveConnection -> {
+                        syncRuntimeInfo.forceResolveConnection(event.callback)
+                    }
 
-                is SyncEvent.TrustByToken -> {
-                    syncRuntimeInfo!!.trustByToken(event.token, event.callback)
-                }
+                    is SyncEvent.TrustByToken -> {
+                        syncRuntimeInfo.trustByToken(event.token, event.callback)
+                    }
 
-                is SyncEvent.RefreshSyncInfo -> {
-                    refreshSyncInfo(event.appInstanceId, event.hostInfoList)
-                }
+                    is SyncEvent.UpdateAllowSend -> {
+                        syncRuntimeInfo.updateAllowSend(event.allowSend)
+                    }
 
-                is SyncEvent.UpdateSyncInfo -> {
-                    updateSyncInfo(event.syncInfo)
-                }
+                    is SyncEvent.UpdateAllowReceive -> {
+                        syncRuntimeInfo.updateAllowReceive(event.allowReceive)
+                    }
 
-                is SyncEvent.TrustSyncInfo -> {
-                    trustSyncInfo(event.syncInfo, event.host)
-                }
+                    is SyncEvent.UpdateNoteName -> {
+                        syncRuntimeInfo.updateNoteName(event.noteName)
+                    }
 
-                is SyncEvent.UpdateAllowSend -> {
-                    syncRuntimeInfo!!.updateAllowSend(event.allowSend)
-                }
+                    is SyncEvent.ShowToken -> {
+                        syncRuntimeInfo.showToken()
+                    }
 
-                is SyncEvent.UpdateAllowReceive -> {
-                    syncRuntimeInfo!!.updateAllowReceive(event.allowReceive)
-                }
+                    is SyncEvent.NotifyExit -> {
+                        syncRuntimeInfo.notifyExit()
+                    }
 
-                is SyncEvent.UpdateNoteName -> {
-                    syncRuntimeInfo!!.updateNoteName(event.noteName)
-                }
+                    is SyncEvent.MarkExit -> {
+                        syncRuntimeInfo.markExit()
+                    }
 
-                is SyncEvent.ShowToken -> {
-                    syncRuntimeInfo!!.showToken()
+                    is SyncEvent.RemoveDevice -> {
+                        syncRuntimeInfo.removeDevice()
+                    }
                 }
+            } else {
+                when (event) {
+                    is SyncEvent.RefreshSyncInfo -> {
+                        refreshSyncInfo(event.appInstanceId, event.hostInfoList)
+                    }
 
-                is SyncEvent.NotifyExit -> {
-                    syncRuntimeInfo!!.notifyExit()
-                }
+                    is SyncEvent.UpdateSyncInfo -> {
+                        updateSyncInfo(event.syncInfo)
+                    }
 
-                is SyncEvent.MarkExit -> {
-                    syncRuntimeInfo!!.markExit()
-                }
+                    is SyncEvent.TrustSyncInfo -> {
+                        trustSyncInfo(event.syncInfo, event.host)
+                    }
 
-                is SyncEvent.RemoveDevice -> {
-                    syncRuntimeInfo!!.removeDevice()
-                }
-
-                else -> {
-                    logger.warn { "unknown event $event" }
+                    else -> {
+                        logger.warn { "unknown event $event" }
+                    }
                 }
             }
         }.onFailure { e ->
