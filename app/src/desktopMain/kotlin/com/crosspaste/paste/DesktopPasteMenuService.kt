@@ -103,7 +103,7 @@ class DesktopPasteMenuService(
         menuScope.launch {
             uiSupport.openPasteData(pasteData, index)
             val pasteType = pasteData.getType()
-            if (pasteType.isText()) {
+            if (pasteType.isText() || pasteType.isHtml()) {
                 if (!desktopAppWindowManager.getCurrentSearchWindowInfo().show) {
                     desktopAppWindowManager.showMainWindow(WindowTrigger.SYSTEM)
                 }
@@ -289,7 +289,7 @@ class DesktopPasteMenuService(
                     PasteType.TEXT_TYPE -> createTextMenuItems(pasteData)
                     PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.HTML_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.HTML_TYPE -> createTextMenuItems(pasteData)
                     PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
                     PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
@@ -308,7 +308,7 @@ class DesktopPasteMenuService(
                     PasteType.TEXT_TYPE -> createTextMenuItems(pasteData)
                     PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.HTML_TYPE -> createBaseMenuItems(pasteData)
+                    PasteType.HTML_TYPE -> createTextMenuItems(pasteData)
                     PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
                     PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
                     PasteType.FILE_TYPE -> createBaseMenuItems(pasteData)
