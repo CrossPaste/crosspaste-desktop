@@ -130,6 +130,7 @@ class GeneralSyncHandler(
                     emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
                 }
             }
+            return
         }
 
         if (!hostInfoListEqual(previous.hostInfoList, current.hostInfoList)) {
