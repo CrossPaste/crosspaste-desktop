@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -66,7 +64,6 @@ fun PasteDataScope.PasteTextEditContentView() {
     val platform = koinInject<Platform>()
 
     val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
     val isMac = remember { platform.isMacos() }
 
     val textPasteItem = getPasteItem(TextPasteItem::class)
@@ -210,28 +207,21 @@ fun PasteDataScope.PasteTextEditContentView() {
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .padding(innerPadding)
                     .padding(horizontal = small2X)
                     .padding(top = small2X, bottom = 85.dp)
                     .clip(mediumRoundedCornerShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         ) {
-            Column(
+            CustomTextField(
                 modifier =
                     Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState),
-            ) {
-                CustomTextField(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                    shape = RoundedCornerShape(tiny),
-                    value = textValue,
-                    onValueChange = { updateTextWithHistory(it) },
-                    textStyle = pasteTextStyle,
-                )
-            }
+                        .fillMaxSize(),
+                shape = RoundedCornerShape(tiny),
+                value = textValue,
+                onValueChange = { updateTextWithHistory(it) },
+                textStyle = pasteTextStyle,
+            )
         }
     }
 }
