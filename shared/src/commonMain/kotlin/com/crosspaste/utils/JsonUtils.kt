@@ -1,6 +1,7 @@
 package com.crosspaste.utils
 
 import com.crosspaste.db.task.BaseExtraInfo
+import com.crosspaste.db.task.DelayedDeleteExtraInfo
 import com.crosspaste.db.task.PasteTaskExtraInfo
 import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.SwitchLanguageInfo
@@ -63,6 +64,7 @@ interface JsonUtils {
                         subclass(SyncExtraInfo::class)
                         subclass(PullExtraInfo::class)
                         subclass(SwitchLanguageInfo::class)
+                        subclass(DelayedDeleteExtraInfo::class)
                     }
 
                     extSerializerModule()

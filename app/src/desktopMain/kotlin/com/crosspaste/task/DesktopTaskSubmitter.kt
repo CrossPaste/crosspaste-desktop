@@ -2,11 +2,13 @@ package com.crosspaste.task
 
 import com.crosspaste.app.AppControl
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.db.task.DelayedDeleteExtraInfo
 import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.paste.PasteType
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 
 class DesktopTaskSubmitter(
     private val appControl: AppControl,
@@ -34,6 +36,20 @@ class DesktopTaskBuilder(
 ) : TaskBuilder {
 
     private val taskIds = mutableListOf<Long>()
+
+    override fun addDelayedDeletePasteTask(
+        id: Long,
+        delayMillis: Long,
+    ): TaskBuilder {
+        taskIds.add(
+            taskDao.createTaskBlock(
+                id,
+                TaskType.DELAYED_DELETE_PASTE_TASK,
+                DelayedDeleteExtraInfo(nowEpochMilliseconds() + delayMillis),
+            ),
+        )
+        return this
+    }
 
     override fun addDeletePasteTasks(ids: List<Long>): TaskBuilder {
         ids.forEach { id ->

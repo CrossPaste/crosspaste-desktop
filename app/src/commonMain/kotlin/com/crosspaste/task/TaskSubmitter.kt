@@ -9,6 +9,11 @@ interface TaskSubmitter {
 
 interface TaskBuilder {
 
+    fun addDelayedDeletePasteTask(
+        id: Long,
+        delayMillis: Long,
+    ): TaskBuilder
+
     fun addDeletePasteTasks(ids: List<Long>): TaskBuilder
 
     fun addPullFileTask(
