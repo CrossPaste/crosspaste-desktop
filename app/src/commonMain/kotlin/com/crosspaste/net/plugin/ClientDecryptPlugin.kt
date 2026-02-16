@@ -11,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
+import kotlinx.io.IOException
 import kotlinx.io.readByteArray
 
 class ClientDecryptPlugin(
@@ -66,7 +67,14 @@ class ClientDecryptPlugin(
                         val result =
                             buildPacket {
                                 while (!byteReadChannel.isClosedForRead) {
-                                    val size = byteReadChannel.readInt()
+                                    val size =
+                                        try {
+                                            byteReadChannel.readInt()
+                                        } catch (_: IOException) {
+                                            // Channel closed between isClosedForRead check and readInt().
+                                            // All encrypted chunks were already read and decrypted.
+                                            break
+                                        }
                                     val byteArray = ByteArray(size)
                                     byteReadChannel.readFully(byteArray, 0, size)
                                     val decryptByteArray = processor.decrypt(byteArray)
