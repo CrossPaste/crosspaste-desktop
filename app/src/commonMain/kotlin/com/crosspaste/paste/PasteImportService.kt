@@ -79,24 +79,34 @@ class PasteImportService(
                 )
             }
 
-            var count = 0L
-            var failCount = 0L
+            var totalCount = 0L
+            var successCount = 0L
 
             fileUtils.readByLines(pasteDataFile) { line ->
-                count++
+                totalCount++
                 readPasteData(line)?.let { pasteData ->
-                    if (importPasteData(basePath, count, pasteData)) {
-                        updateProgress(count.toFloat() / importCount.toFloat())
+                    if (importPasteData(basePath, totalCount, pasteData)) {
+                        successCount++
                     }
                 } ?: run {
-                    logger.error { "Error parsing paste data, index = $count" }
-                    failCount++
+                    logger.error { "Error parsing paste data, index = $totalCount" }
                 }
+                updateProgress(totalCount.toFloat() / importCount.toFloat())
             }
-            if (count > 0) {
+            if (successCount > 0 && successCount < totalCount) {
+                notificationManager.sendNotification(
+                    title = { it.getText("import_partial") },
+                    messageType = MessageType.Warning,
+                )
+            } else if (successCount > 0) {
                 notificationManager.sendNotification(
                     title = { it.getText("import_successful") },
                     messageType = MessageType.Success,
+                )
+            } else if (totalCount > 0) {
+                notificationManager.sendNotification(
+                    title = { it.getText("import_fail") },
+                    messageType = MessageType.Error,
                 )
             } else {
                 notificationManager.sendNotification(
@@ -121,9 +131,11 @@ class PasteImportService(
         basePath: Path,
         index: Long,
         pasteData: PasteData,
-    ): Boolean =
-        runCatching {
+    ): Boolean {
+        var recordId: Long? = null
+        return runCatching {
             val id = pasteDao.createPasteData(pasteData)
+            recordId = id
 
             val pasteCoordinate = pasteData.getPasteCoordinate(id = id)
             val pasteAppearItem = pasteData.pasteAppearItem
@@ -156,7 +168,9 @@ class PasteImportService(
             pasteDao.updatePasteState(id, PasteState.LOADED)
         }.onFailure { e ->
             logger.error(e) { "Error importing paste data, index = $index" }
+            recordId?.let { runCatching { pasteDao.updatePasteState(it, PasteState.DELETED) } }
         }.isSuccess
+    }
 
     private fun moveResource(
         basePath: Path,
