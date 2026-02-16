@@ -77,6 +77,7 @@ class UserDataPathProvider(
         pasteFiles: PasteFiles,
         isPull: Boolean,
         filesIndexBuilder: FilesIndexBuilder?,
+        resolveConflicts: Boolean = true,
     ): Map<String, String> {
         val renameMap = mutableMapOf<String, String>()
         val isDownloadDir = pasteFiles.basePath != null
@@ -98,7 +99,7 @@ class UserDataPathProvider(
             val originalName = filePath.name
             fileInfoTreeMap[originalName]?.let { fileInfoTree ->
                 val resolvedName =
-                    if (isPull && isDownloadDir) {
+                    if (isPull && isDownloadDir && resolveConflicts) {
                         val resolved = fileUtils.resolveNonConflictFileName(basePath, originalName)
                         if (resolved != originalName) {
                             renameMap[originalName] = resolved

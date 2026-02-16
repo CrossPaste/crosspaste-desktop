@@ -100,6 +100,7 @@ class PullFileTaskExecutor(
             val id = pasteData.id
             val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
             val pasteFiles = fileItem as PasteFiles
+            val isRetry = pullExtraInfo.pullChunks.isNotEmpty()
             val renameMap =
                 userDataPathProvider.resolve(
                     appInstanceId,
@@ -108,6 +109,7 @@ class PullFileTaskExecutor(
                     pasteFiles,
                     true,
                     filesIndexBuilder,
+                    resolveConflicts = !isRetry,
                 )
             val filesIndex = filesIndexBuilder.build()
 
@@ -262,6 +264,7 @@ class PullFileTaskExecutor(
 
         if (!needRetry) {
             logger.error { "exist pull chunk fail" }
+            cleanupPullFiles(pasteData)
             pasteboardService.clearRemotePasteboard(pasteData)
             soundService.errorSound()
         }
@@ -273,5 +276,34 @@ class PullFileTaskExecutor(
             fails = fails,
             extraInfo = pullExtraInfo,
         )
+    }
+
+    private fun cleanupPullFiles(pasteData: PasteData) {
+        runCatching {
+            val fileItems = pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>()
+            for (pasteFiles in fileItems) {
+                if (pasteFiles.basePath == null) {
+                    // Managed storage: delete the paste directory
+                    val dateString =
+                        dateUtils.getYMD(
+                            dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
+                        )
+                    val basePath =
+                        userDataPathProvider
+                            .resolve(appFileType = pasteFiles.getAppFileType())
+                            .resolve(pasteData.appInstanceId)
+                            .resolve(dateString)
+                            .resolve(pasteData.id.toString())
+                    fileUtils.fileSystem.deleteRecursively(basePath)
+                } else {
+                    // Download directory: delete individual pre-allocated files
+                    for (filePath in pasteFiles.getFilePaths(userDataPathProvider)) {
+                        fileUtils.deleteFile(filePath)
+                    }
+                }
+            }
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to clean up pull files" }
+        }
     }
 }
