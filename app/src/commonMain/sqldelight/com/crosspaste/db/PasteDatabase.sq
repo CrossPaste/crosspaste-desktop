@@ -127,6 +127,12 @@ getSizeByTimeLessThan:
 SELECT SUM(size) FROM PasteDataEntity
 WHERE createTime < :time AND pasteState != -1;
 
+getOldestNonFavoriteCreateTimeAndSize:
+SELECT createTime, size FROM PasteDataEntity
+WHERE pasteState != -1 AND favorite = 0 AND createTime > :afterTime
+ORDER BY createTime ASC
+LIMIT :limit;
+
 getSameHashPasteDataIds:
 SELECT id FROM PasteDataEntity
 WHERE hash = :hash AND
