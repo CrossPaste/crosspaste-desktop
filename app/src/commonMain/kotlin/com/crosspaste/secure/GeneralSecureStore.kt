@@ -41,7 +41,6 @@ class GeneralSecureStore(
         session.mutex.withLock {
             session.processor = null
             secureIO.deleteCryptPublicKey(appInstanceId)
-            sessions.remove(appInstanceId)
         }
     }
 
