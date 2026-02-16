@@ -182,9 +182,8 @@ class CleanPasteTaskExecutorTest {
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is FailurePasteTaskResult)
-            val failResult = result as FailurePasteTaskResult
             // First execution: empty history → retries allowed
-            assertTrue(failResult.needRetry)
+            assertTrue(result.needRetry)
         }
 
     @Test

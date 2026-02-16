@@ -69,7 +69,7 @@ class PasteCollectionTest {
             listOf(
                 createTextPasteItem(text = "text content"),
                 createUrlPasteItem(url = "https://example.com"),
-                createColorPasteItem(color = 0xFF0000.toInt()),
+                createColorPasteItem(color = 0xFF0000),
             )
         val original = PasteCollection(items)
 

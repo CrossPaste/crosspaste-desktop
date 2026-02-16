@@ -51,7 +51,7 @@ class PasteTaskExtraInfoTest {
         val decoded = json.decodeFromString<PasteTaskExtraInfo>(encoded)
 
         assertTrue(decoded is SyncExtraInfo)
-        assertEquals("test-app-1", (decoded as SyncExtraInfo).appInstanceId)
+        assertEquals("test-app-1", decoded.appInstanceId)
         assertTrue(decoded.syncFails.isEmpty())
     }
 
@@ -83,7 +83,7 @@ class PasteTaskExtraInfoTest {
         val decoded = json.decodeFromString<PasteTaskExtraInfo>(encoded)
 
         assertTrue(decoded is PullExtraInfo)
-        assertEquals(42L, (decoded as PullExtraInfo).id)
+        assertEquals(42L, decoded.id)
     }
 
     @Test
@@ -120,7 +120,7 @@ class PasteTaskExtraInfoTest {
         val decoded = json.decodeFromString<PasteTaskExtraInfo>(encoded)
 
         assertTrue(decoded is SwitchLanguageInfo)
-        assertEquals("zh-CN", (decoded as SwitchLanguageInfo).language)
+        assertEquals("zh-CN", decoded.language)
     }
 
     // --- ExecutionHistory ---
