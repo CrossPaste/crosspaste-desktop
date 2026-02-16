@@ -1,5 +1,7 @@
 package com.crosspaste.net.plugin
 
+import com.crosspaste.exception.PasteException
+import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.secure.SecureStore
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -40,7 +42,10 @@ class ClientEncryptPlugin(
                                 ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json)
                         }
                         else -> {
-                            logger.warn { "Unsupported content type for encryption: ${context.body::class}" }
+                            throw PasteException(
+                                StandardErrorCode.ENCRYPT_FAIL.toErrorCode(),
+                                "Unsupported content type for encryption: ${context.body::class}",
+                            )
                         }
                     }
                 }
