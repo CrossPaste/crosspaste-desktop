@@ -5,7 +5,6 @@ import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
-import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
@@ -45,8 +44,6 @@ class SyncResolver(
         when (this) {
             is SyncEvent.SyncRunTimeInfoEvent -> syncRuntimeInfo.appInstanceId
             is SyncEvent.RefreshSyncInfo -> appInstanceId
-            is SyncEvent.UpdateSyncInfo -> syncInfo.appInfo.appInstanceId
-            is SyncEvent.TrustSyncInfo -> syncInfo.appInfo.appInstanceId
             else -> error("Unknown SyncEvent type: $this")
         }
 
@@ -120,14 +117,6 @@ class SyncResolver(
                 when (event) {
                     is SyncEvent.RefreshSyncInfo -> {
                         refreshSyncInfo(event.appInstanceId, event.hostInfoList)
-                    }
-
-                    is SyncEvent.UpdateSyncInfo -> {
-                        updateSyncInfo(event.syncInfo)
-                    }
-
-                    is SyncEvent.TrustSyncInfo -> {
-                        trustSyncInfo(event.syncInfo, event.host)
                     }
 
                     else -> {
@@ -447,17 +436,6 @@ class SyncResolver(
         hostInfoList: List<HostInfo>,
     ) {
         lazyPasteBonjourService.value.refreshTarget(appInstanceId, hostInfoList)
-    }
-
-    private suspend fun updateSyncInfo(syncInfo: SyncInfo) {
-        syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
-    }
-
-    private suspend fun trustSyncInfo(
-        syncInfo: SyncInfo,
-        host: String,
-    ) {
-        syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, host)
     }
 
     private suspend fun SyncRuntimeInfo.updateAllowSend(allowSend: Boolean) {

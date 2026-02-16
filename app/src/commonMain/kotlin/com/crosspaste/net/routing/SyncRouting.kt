@@ -70,7 +70,8 @@ fun Routing.syncRouting(
             }
             runCatching {
                 val syncInfo = call.receive(SyncInfo::class)
-                syncRoutingApi.updateSyncInfo(syncInfo)
+                val host = call.request.host()
+                syncRoutingApi.trustSyncInfo(syncInfo, host)
                 logger.info { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
             }.onSuccess {
                 successResponse(call, syncApi.VERSION)

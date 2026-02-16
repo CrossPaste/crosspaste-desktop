@@ -167,7 +167,7 @@ class GeneralSyncManagerTest {
                     every { appInfo.appInstanceId } returns "test-app-1"
                 }
 
-            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
+            coEvery { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(any<SyncInfo>()) } just runs
 
             val childScope = CoroutineScope(coroutineContext + Job())
             val syncManager = createSyncManager(mocks, childScope)
@@ -176,7 +176,7 @@ class GeneralSyncManagerTest {
             syncManager.updateSyncInfo(syncInfo)
             advanceUntilIdle()
 
-            coVerify { mocks.syncResolver.emitEvent(any()) }
+            coVerify { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo) }
         }
 
     @Test

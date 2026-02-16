@@ -2,7 +2,6 @@ package com.crosspaste.sync
 
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
-import com.crosspaste.dto.sync.SyncInfo
 import kotlinx.coroutines.CompletableDeferred
 
 sealed interface SyncEvent {
@@ -106,18 +105,5 @@ sealed interface SyncEvent {
         val hostInfoList: List<HostInfo>,
     ) : SyncEvent {
         override fun toString(): String = "RefreshSyncInfo $appInstanceId $hostInfoList"
-    }
-
-    data class UpdateSyncInfo(
-        val syncInfo: SyncInfo,
-    ) : SyncEvent {
-        override fun toString(): String = "UpdateSyncInfo ${syncInfo.appInfo.appInstanceId}"
-    }
-
-    data class TrustSyncInfo(
-        val syncInfo: SyncInfo,
-        val host: String,
-    ) : SyncEvent {
-        override fun toString(): String = "TrustSyncInfo ${syncInfo.appInfo.appInstanceId}"
     }
 }
