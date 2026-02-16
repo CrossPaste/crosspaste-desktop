@@ -998,30 +998,6 @@ class SyncResolverTest {
         }
 
     @Test
-    fun updateSyncInfo_delegatesToDao() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncInfo = SyncTestFixtures.createSyncInfo()
-
-            resolver.emitEvent(SyncEvent.UpdateSyncInfo(syncInfo))
-
-            coVerify { deps.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo) }
-        }
-
-    @Test
-    fun trustSyncInfo_delegatesToDaoWithHost() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncInfo = SyncTestFixtures.createSyncInfo()
-
-            resolver.emitEvent(SyncEvent.TrustSyncInfo(syncInfo, "192.168.1.100"))
-
-            coVerify { deps.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, "192.168.1.100") }
-        }
-
-    @Test
     fun refreshSyncInfo_delegatesToBonjour() =
         runTest {
             val deps = TestDeps()

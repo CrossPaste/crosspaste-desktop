@@ -112,7 +112,13 @@ class GeneralSyncHandler(
                 SyncState.DISCONNECTED -> {
                     syncPollingManager.fail()
                     emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId, current.hostInfoList))
-                    emitEvent(SyncEvent.ResolveDisconnected(current, createCallback()))
+                    // Only attempt immediate reconnection when transitioning from CONNECTED.
+                    // For CONNECTING -> DISCONNECTED (a failed connection attempt),
+                    // let polling handle retry with backoff to avoid tight retry loops
+                    // (e.g. NOT_MATCH_APP_INSTANCE_ID on dual-boot machines).
+                    if (previous.connectState == SyncState.CONNECTED) {
+                        emitEvent(SyncEvent.ResolveDisconnected(current, createCallback()))
+                    }
                 }
                 SyncState.INCOMPATIBLE,
                 SyncState.UNMATCHED,
@@ -139,15 +145,13 @@ class GeneralSyncHandler(
             }
         }
 
-        if (current.connectState == previous.connectState) {
-            when (current.connectState) {
-                SyncState.DISCONNECTED,
-                SyncState.INCOMPATIBLE,
-                SyncState.UNMATCHED,
-                SyncState.UNVERIFIED,
-                -> {
-                    syncPollingManager.fail()
-                }
+        when (current.connectState) {
+            SyncState.DISCONNECTED,
+            SyncState.INCOMPATIBLE,
+            SyncState.UNMATCHED,
+            SyncState.UNVERIFIED,
+            -> {
+                syncPollingManager.fail()
             }
         }
     }

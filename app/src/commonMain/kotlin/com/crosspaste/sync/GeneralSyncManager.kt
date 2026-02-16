@@ -247,7 +247,7 @@ class GeneralSyncManager(
 
     override fun updateSyncInfo(syncInfo: SyncInfo) {
         realTimeSyncScope.launch {
-            emitEvent(SyncEvent.UpdateSyncInfo(syncInfo))
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
         }
     }
 
@@ -256,11 +256,7 @@ class GeneralSyncManager(
         host: String?,
     ) {
         realTimeSyncScope.launch {
-            host?.let {
-                emitEvent(SyncEvent.TrustSyncInfo(syncInfo, host))
-            } ?: run {
-                emitEvent(SyncEvent.UpdateSyncInfo(syncInfo))
-            }
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, host)
         }
     }
 
