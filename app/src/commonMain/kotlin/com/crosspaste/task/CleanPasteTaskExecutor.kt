@@ -34,7 +34,7 @@ class CleanPasteTaskExecutor(
     @OptIn(ExperimentalTime::class)
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val config = configManager.getCurrentConfig()
-        if (config.enableThresholdCleanup) {
+        if (config.enableExpirationCleanup) {
             runCatching {
                 cleanLock.withLock {
                     val imageCleanTimeIndex = config.imageCleanTimeIndex

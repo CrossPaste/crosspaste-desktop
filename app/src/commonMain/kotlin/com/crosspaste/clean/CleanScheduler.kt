@@ -47,7 +47,8 @@ class CleanScheduler(
 
     private suspend fun safeCleanPaste() {
         runCatching {
-            if (configManager.getCurrentConfig().enableExpirationCleanup) {
+            val config = configManager.getCurrentConfig()
+            if (config.enableExpirationCleanup || config.enableThresholdCleanup) {
                 cleanPaste()
             }
         }.onFailure { e ->
