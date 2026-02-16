@@ -55,24 +55,29 @@ object NativeFileUtils : FileUtils {
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,
     ) {
-        val buffer = ByteArray(fileBufferSize)
-        filesChunk.fileChunks.forEach { fileChunk ->
-            val file = fileChunk.path
-            var offset = fileChunk.offset
-            val size = fileChunk.size
-            fileSystem.openReadWrite(file).use { fileHandle ->
-                var remaining = size
-                while (remaining > 0) {
-                    val toRead = minOf(buffer.size, remaining.toInt())
-                    val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
-                    if (readSize == -1) {
-                        break
+        try {
+            val buffer = ByteArray(fileBufferSize)
+            filesChunk.fileChunks.forEach { fileChunk ->
+                val file = fileChunk.path
+                var offset = fileChunk.offset
+                val size = fileChunk.size
+                fileSystem.openReadWrite(file).use { fileHandle ->
+                    var remaining = size
+                    while (remaining > 0) {
+                        val toRead = minOf(buffer.size, remaining.toInt())
+                        val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
+                        if (readSize == -1) {
+                            break
+                        }
+                        fileHandle.write(offset, buffer, 0, readSize)
+                        offset += readSize
+                        remaining -= readSize
                     }
-                    fileHandle.write(offset, buffer, 0, readSize)
-                    offset += readSize
-                    remaining -= readSize
                 }
             }
+        } catch (e: Exception) {
+            byteReadChannel.cancel(e)
+            throw e
         }
     }
 
