@@ -2,7 +2,6 @@ package com.crosspaste.paste
 
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.SuccessResult
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 
 class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
@@ -37,12 +37,11 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
         key: Long,
         taskNum: Int,
     ): PasteSingleProcess =
-        mainCoroutineDispatcher
-            .async {
-                _processMap.value[key] ?: PasteSingleProcessImpl(taskNum).also { process ->
-                    _processMap.update { it + (key to process) }
-                }
-            }.await()
+        withContext(mainDispatcher) {
+            _processMap.value[key] ?: PasteSingleProcessImpl(taskNum).also { process ->
+                _processMap.update { it + (key to process) }
+            }
+        }
 
     override suspend fun runTask(
         pasteDataId: Long,
@@ -55,11 +54,13 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
                     .map { task ->
                         async {
                             semaphore.withPermit {
-                                val result = task()
-                                if (result.second is SuccessResult) {
-                                    process.success(result.first)
+                                withTimeout(60_000L) {
+                                    val result = task()
+                                    if (result.second is SuccessResult) {
+                                        process.success(result.first)
+                                    }
+                                    result
                                 }
-                                result
                             }
                         }
                     }.awaitAll()

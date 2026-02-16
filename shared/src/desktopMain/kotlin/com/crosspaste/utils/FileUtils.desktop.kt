@@ -49,24 +49,29 @@ object DesktopFileUtils : FileUtils {
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,
     ) {
-        val buffer = ByteArray(fileBufferSize)
-        filesChunk.fileChunks.forEach { fileChunk ->
-            val file = fileChunk.path.toFile()
-            val offset = fileChunk.offset
-            val size = fileChunk.size
-            RandomAccessFile(file, "rw").use { randomAccessFile ->
-                randomAccessFile.seek(offset)
-                var remaining = size
-                while (remaining > 0) {
-                    val toRead = minOf(buffer.size, remaining.toInt())
-                    val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
-                    if (readSize == -1) {
-                        break
+        try {
+            val buffer = ByteArray(fileBufferSize)
+            filesChunk.fileChunks.forEach { fileChunk ->
+                val file = fileChunk.path.toFile()
+                val offset = fileChunk.offset
+                val size = fileChunk.size
+                RandomAccessFile(file, "rw").use { randomAccessFile ->
+                    randomAccessFile.seek(offset)
+                    var remaining = size
+                    while (remaining > 0) {
+                        val toRead = minOf(buffer.size, remaining.toInt())
+                        val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
+                        if (readSize == -1) {
+                            break
+                        }
+                        randomAccessFile.write(buffer, 0, readSize)
+                        remaining -= readSize
                     }
-                    randomAccessFile.write(buffer, 0, readSize)
-                    remaining -= readSize
                 }
             }
+        } catch (e: Exception) {
+            byteReadChannel.cancel(e)
+            throw e
         }
     }
 
