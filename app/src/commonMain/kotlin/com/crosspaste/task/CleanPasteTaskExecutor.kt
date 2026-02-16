@@ -9,14 +9,12 @@ import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.PasteType
-import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.time.ExperimentalTime
 
 class CleanPasteTaskExecutor(
     private val pasteDao: PasteDao,
@@ -31,7 +29,6 @@ class CleanPasteTaskExecutor(
 
     private val cleanLock = Mutex()
 
-    @OptIn(ExperimentalTime::class)
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val config = configManager.getCurrentConfig()
         if (config.enableExpirationCleanup) {
@@ -67,8 +64,7 @@ class CleanPasteTaskExecutor(
                     val noFavoriteSize = allSize - favoriteSize
                     if (noFavoriteSize > config.maxStorage * 1024 * 1024) {
                         val cleanSize = noFavoriteSize * config.cleanupPercentage / 100
-
-                        deleteStorageOfApproximateSize(cleanSize, noFavoriteSize)
+                        deleteStorageOfApproximateSize(cleanSize)
                     }
                 }
             }.onFailure {
@@ -86,42 +82,8 @@ class CleanPasteTaskExecutor(
         return SuccessPasteTaskResult()
     }
 
-    private suspend fun deleteStorageOfApproximateSize(
-        minSize: Long,
-        totalSize: Long,
-    ) {
-        // If there's no data, return immediately
-        val minTime = pasteDao.getMinPasteDataCreateTime() ?: return
-        val currentTime = DateUtils.nowEpochMilliseconds()
-
-        val proportion = minSize.toDouble() / totalSize
-        val estimatedDuration = currentTime - minTime
-        val targetDuration = (estimatedDuration * proportion).toLong()
-        val estimatedTargetTime = minTime + targetDuration
-
-        var left = minTime
-        var right = currentTime
-        var targetTime = estimatedTargetTime
-
-        var size = pasteDao.getSizeByTimeLessThan(targetTime)
-        if (size > minSize) {
-            right = targetTime
-        } else if (size < minSize) {
-            left = targetTime
-        }
-
-        while (left <= right) {
-            val mid = (left + right) / 2
-            size = pasteDao.getSizeByTimeLessThan(mid)
-
-            if (size >= minSize) {
-                targetTime = mid
-                right = mid - 1
-            } else {
-                left = mid + 1
-            }
-        }
-
-        pasteDao.markDeleteByCleanTime(targetTime)
+    private suspend fun deleteStorageOfApproximateSize(cleanSize: Long) {
+        val cutoffTime = pasteDao.findCleanTimeByCumulativeSize(cleanSize) ?: return
+        pasteDao.markDeleteByCleanTime(cutoffTime)
     }
 }

@@ -360,6 +360,29 @@ class PasteDao(
         pasteDatabaseQueries.getSizeByTimeLessThan(time).executeAsOne().SUM ?: 0L
     }
 
+    suspend fun findCleanTimeByCumulativeSize(targetSize: Long): Long? = withContext(ioDispatcher) {
+        var cumulativeSize = 0L
+        var afterTime = -1L
+        var afterId = -1L
+        val batchSize = 500L
+        while (true) {
+            val batch = pasteDatabaseQueries
+                .getOldestNonFavoriteCreateTimeAndSize(afterTime, afterId, batchSize)
+                .executeAsList()
+            if (batch.isEmpty()) break
+            for (row in batch) {
+                cumulativeSize += row.size
+                if (cumulativeSize >= targetSize) {
+                    return@withContext row.createTime
+                }
+            }
+            val last = batch.last()
+            afterTime = last.createTime
+            afterId = last.id
+        }
+        null
+    }
+
     private fun createSearchPasteQuery(
         searchTerms: List<String>,
         local: Boolean? = null,
