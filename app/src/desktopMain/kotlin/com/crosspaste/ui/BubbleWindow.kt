@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,7 +44,6 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
 import com.crosspaste.platform.macos.MacAppUtils
-import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.DesktopContext.BubbleWindowContext
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -139,21 +137,11 @@ fun BubbleWindow(windowIcon: Painter?) {
     val searchResults by pasteSearchViewModel.searchResults.collectAsState()
 
     val isMac = remember { platform.isMacos() }
-    val isWindowsAndSupportBlurEffect =
-        remember {
-            platform.isWindows() && WindowsVersionHelper.isWindows11_22H2OrGreater
-        }
-    val isTransparent = isMac || isWindowsAndSupportBlurEffect
 
     val bubbleBodySize = appSizeValue.bubbleBodySize
     val bubbleTailHeight = appSizeValue.bubbleTailHeight
-    val windowSize =
-        if (isTransparent) {
-            DpSize(bubbleBodySize.width, bubbleBodySize.height + bubbleTailHeight)
-        } else {
-            bubbleBodySize
-        }
-    val gap = if (isTransparent) 4.dp else 16.dp
+    val windowSize = DpSize(bubbleBodySize.width, bubbleBodySize.height + bubbleTailHeight)
+    val gap = 4.dp
 
     val logger = remember { KotlinLogging.logger("BubbleWindow") }
     val ignoreFocusLoss = remember { AtomicBoolean(true) }
@@ -265,7 +253,7 @@ fun BubbleWindow(windowIcon: Painter?) {
         icon = windowIcon,
         alwaysOnTop = true,
         undecorated = true,
-        transparent = isTransparent,
+        transparent = true,
         resizable = false,
     ) {
         if (isMac) {
@@ -310,7 +298,6 @@ fun BubbleWindow(windowIcon: Painter?) {
                 pasteId = bubbleWindowInfo.pasteId,
                 pasteDao = pasteDao,
                 onEscape = { appWindowManager.hideBubbleWindow() },
-                isTransparent = isTransparent,
                 tailCenterFraction = tailCenterFraction,
             )
         }
@@ -322,7 +309,6 @@ private fun BubbleWindowContent(
     pasteId: Long,
     pasteDao: PasteDao,
     onEscape: () -> Unit,
-    isTransparent: Boolean,
     tailCenterFraction: Float,
 ) {
     val appSizeValue = LocalDesktopAppSizeValueState.current
@@ -340,12 +326,8 @@ private fun BubbleWindowContent(
     val cornerRadius = appSizeValue.bubbleCornerRadius
     val tailHeight = appSizeValue.bubbleTailHeight
     val shape: Shape =
-        if (isTransparent) {
-            remember(tailCenterFraction) {
-                BubbleShape(cornerRadius, appSizeValue.bubbleTailWidth, tailHeight, tailCenterFraction)
-            }
-        } else {
-            RoundedCornerShape(cornerRadius)
+        remember(tailCenterFraction) {
+            BubbleShape(cornerRadius, appSizeValue.bubbleTailWidth, tailHeight, tailCenterFraction)
         }
 
     Box(
@@ -366,9 +348,8 @@ private fun BubbleWindowContent(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .then(
-                        if (isTransparent) Modifier.padding(bottom = tailHeight) else Modifier,
-                    ).padding(8.dp),
+                    .padding(bottom = tailHeight)
+                    .padding(8.dp),
             contentAlignment = Alignment.Center,
         ) {
             if (loading) {
