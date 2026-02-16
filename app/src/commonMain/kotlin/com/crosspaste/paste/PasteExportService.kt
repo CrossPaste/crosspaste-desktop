@@ -62,7 +62,7 @@ class PasteExportService(
             exportTempPath = basePath
             userDataPathProvider.autoCreateDir(basePath)
             val pasteDataFile = basePath.resolve("paste.data")
-            var count = 1L
+            var nextIndex = 1L
             var exportError = false
             fileUtils.writeFile(pasteDataFile) { sink ->
                 runCatching {
@@ -72,10 +72,11 @@ class PasteExportService(
                             pasteDao.getExportPasteData(id, limit, pasteExportParam)
                         },
                         dealPasteData = { pasteData ->
-                            count += exportPasteData(basePath, pasteExportParam, count, pasteData, sink)
+                            nextIndex += exportPasteData(basePath, pasteExportParam, nextIndex, pasteData, sink)
+                            val exportedCount = nextIndex - 1
                             val currentProgress =
-                                if (count != exportCount) {
-                                    count.toFloat() / exportCount.toFloat()
+                                if (exportedCount < exportCount) {
+                                    exportedCount.toFloat() / exportCount.toFloat()
                                 } else {
                                     0.99f
                                 }
@@ -87,14 +88,15 @@ class PasteExportService(
                     logger.error(e) { "read pasteData list fail" }
                 }
             }
+            val exportedCount = nextIndex - 1
             val exportFileName = "crosspaste-export-$epochMilliseconds.data"
-            if (exportError && count <= 1L) {
+            if (exportError && exportedCount == 0L) {
                 notificationManager.sendNotification(
                     title = { it.getText("export_fail") },
                     messageType = MessageType.Error,
                 )
-            } else if (count > 1L) {
-                val countFile = basePath.resolve("$count.count")
+            } else if (exportedCount > 0L) {
+                val countFile = basePath.resolve("$exportedCount.count")
                 fileUtils.createFile(countFile)
                 compressExportFile(basePath, pasteExportParam, exportFileName)
                 if (exportError) {
