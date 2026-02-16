@@ -53,8 +53,8 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
                 tasks
                     .map { task ->
                         async {
-                            withTimeout(120_000L) {
-                                semaphore.withPermit {
+                            semaphore.withPermit {
+                                withTimeout(60_000L) {
                                     val result = task()
                                     if (result.second is SuccessResult) {
                                         process.success(result.first)
