@@ -125,7 +125,7 @@ class PasteImportService(
         runCatching {
             val id = pasteDao.createPasteData(pasteData)
 
-            val pasteCoordinate = pasteData.getPasteCoordinate(id = index)
+            val pasteCoordinate = pasteData.getPasteCoordinate(id = id)
             val pasteAppearItem = pasteData.pasteAppearItem
             val pasteCollection = pasteData.pasteCollection
 
