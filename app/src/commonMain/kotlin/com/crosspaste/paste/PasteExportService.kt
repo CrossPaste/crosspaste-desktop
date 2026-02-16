@@ -63,6 +63,7 @@ class PasteExportService(
             userDataPathProvider.autoCreateDir(basePath)
             val pasteDataFile = basePath.resolve("paste.data")
             var count = 1L
+            var exportError = false
             fileUtils.writeFile(pasteDataFile) { sink ->
                 runCatching {
                     val exportCount = pasteDao.getExportNum(pasteExportParam)
@@ -82,20 +83,35 @@ class PasteExportService(
                         },
                     )
                 }.onFailure { e ->
+                    exportError = true
                     logger.error(e) { "read pasteData list fail" }
                 }
             }
             val exportFileName = "crosspaste-export-$epochMilliseconds.data"
-            if (count > 0L) {
+            if (exportError && count <= 1L) {
+                notificationManager.sendNotification(
+                    title = { it.getText("export_fail") },
+                    messageType = MessageType.Error,
+                )
+            } else if (count > 1L) {
                 val countFile = basePath.resolve("$count.count")
                 fileUtils.createFile(countFile)
                 compressExportFile(basePath, pasteExportParam, exportFileName)
-                notificationManager.sendNotification(
-                    title = { it.getText("export_successful") },
-                    message = { exportFileName },
-                    messageType = MessageType.Success,
-                    duration = null,
-                )
+                if (exportError) {
+                    notificationManager.sendNotification(
+                        title = { it.getText("export_partial") },
+                        message = { exportFileName },
+                        messageType = MessageType.Warning,
+                        duration = null,
+                    )
+                } else {
+                    notificationManager.sendNotification(
+                        title = { it.getText("export_successful") },
+                        message = { exportFileName },
+                        messageType = MessageType.Success,
+                        duration = null,
+                    )
+                }
             } else {
                 notificationManager.sendNotification(
                     title = { it.getText("no_data_found") },
