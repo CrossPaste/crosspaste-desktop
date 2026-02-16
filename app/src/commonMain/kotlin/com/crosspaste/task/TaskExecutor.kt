@@ -10,10 +10,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
 
 class TaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
@@ -25,19 +23,19 @@ class TaskExecutor(
 
     private val singleTypeTaskExecutorMap = singleTypeTaskExecutors.associateBy { it.taskType }
 
-    private val taskShardedFlow = MutableSharedFlow<Long>()
+    private val taskChannel = Channel<Long>(Channel.UNLIMITED)
 
-    private val executionSemaphore = Channel<Unit>(maxConcurrentTasks)
+    private val semaphore = Semaphore(maxConcurrentTasks)
 
     init {
         scope.launch(CoroutineName("TaskExecutor")) {
-            taskShardedFlow.collect { taskId ->
-                executionSemaphore.send(Unit)
+            for (taskId in taskChannel) {
+                semaphore.acquire()
                 launch {
                     try {
                         executeTask(taskId)
                     } finally {
-                        executionSemaphore.receive()
+                        semaphore.release()
                     }
                 }
             }
@@ -71,14 +69,15 @@ class TaskExecutor(
     }
 
     suspend fun submitTask(taskId: Long) {
-        taskShardedFlow.emit(taskId)
+        taskChannel.send(taskId)
     }
 
     suspend fun submitTasks(taskIds: List<Long>) {
-        taskShardedFlow.emitAll(taskIds.asFlow())
+        taskIds.forEach { taskChannel.send(it) }
     }
 
     fun shutdown() {
+        taskChannel.close()
         scope.cancel()
         logger.info { "TaskExecutor shutdown complete" }
     }
