@@ -82,8 +82,7 @@ class DeletePasteTaskExecutorTest {
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is FailurePasteTaskResult)
-            val failResult = result as FailurePasteTaskResult
-            assertTrue(!failResult.needRetry)
+            assertTrue(!result.needRetry)
         }
 
     @Test

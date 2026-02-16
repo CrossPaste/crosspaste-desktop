@@ -178,7 +178,7 @@ class CreatePasteItemHelperTest {
         val original = createUrlPasteItem(identifiers = listOf("url"), url = "https://old.com")
         val copy = original.copy(url = "https://new.com")
         assertTrue(copy is UrlPasteItem)
-        assertEquals("https://new.com", (copy as UrlPasteItem).url)
+        assertEquals("https://new.com", copy.url)
     }
 
     // --- ColorPasteItem ---
