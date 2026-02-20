@@ -102,18 +102,28 @@ class CrossPaste {
 
         private val logger: KLogger = KotlinLogging.logger {}
 
-        private val module =
-            DesktopModule(
-                appEnv,
-                appPathProvider,
-                configManager,
-                crossPasteLogger,
-                deviceUtils,
-                logger,
-                platform,
-            )
+        var headless: Boolean = false
+            private set
 
-        val koinApplication: KoinApplication = module.initKoinApplication()
+        private lateinit var module: DesktopModule
+
+        lateinit var koinApplication: KoinApplication
+            private set
+
+        private fun initModule() {
+            module =
+                DesktopModule(
+                    appEnv,
+                    appPathProvider,
+                    configManager,
+                    crossPasteLogger,
+                    deviceUtils,
+                    logger,
+                    platform,
+                    headless,
+                )
+            koinApplication = module.initKoinApplication()
+        }
 
         @Throws(Exception::class)
         private suspend fun startApplication() {
@@ -121,8 +131,10 @@ class CrossPaste {
                 if (appEnvUtils.isProduction()) {
                     System.setProperty("jna.library.path", appPathProvider.pasteAppExePath.toString())
                 }
-                // Initialize AWT Toolkit to prevent potential deadlock issues
-                java.awt.Toolkit.getDefaultToolkit()
+                if (!headless) {
+                    // Initialize AWT Toolkit to prevent potential deadlock issues
+                    java.awt.Toolkit.getDefaultToolkit()
+                }
 
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<AppLaunchState>()
@@ -145,9 +157,11 @@ class CrossPaste {
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
                     koin.get<GuidePasteDataService>().initData()
-                    koin.get<DesktopAppWindowManager>().startWindowService()
 
-                    FileKit.init(appId = AppName)
+                    if (!headless) {
+                        koin.get<DesktopAppWindowManager>().startWindowService()
+                        FileKit.init(appId = AppName)
+                    }
 
                     ioCoroutineDispatcher.launch {
                         val jobs =
@@ -184,7 +198,7 @@ class CrossPaste {
             logger.info { "beforeReleaseLockList execution completed" }
             koin.get<AppLock>().releaseLock()
             logger.info { "AppLock release completed" }
-            if (exitMode == ExitMode.MIGRATION) {
+            if (!headless && exitMode == ExitMode.MIGRATION) {
                 val appWindowManager = koin.get<DesktopAppWindowManager>()
                 appWindowManager.hideMainWindow()
             }
@@ -195,35 +209,41 @@ class CrossPaste {
             withTimeoutOrNull(5000L) {
                 supervisorScope {
                     val jobs =
-                        listOf(
-                            async {
-                                stopService<AppUpdateService>("AppUpdateService") { it.stop() }
-                            },
-                            async {
-                                stopService<TaskExecutor>("TaskExecutor") { it.shutdown() }
-                            },
-                            async {
-                                stopService<RenderingService<String>>(
-                                    qualifier = named("urlRendering"),
-                                    serviceName = "RenderingService",
-                                ) { it.stop() }
-                            },
-                            async { stopService<PasteboardService>("PasteboardService") { it.stop() } },
-                            async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } },
-                            async { stopService<Server>("PasteServer") { it.stop() } },
-                            async { stopService<McpServer>("McpServer") { it.stop() } },
-                            async { stopService<SyncManager>("SyncManager") { it.stop() } },
-                            async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } },
-                            async {
-                                stopService<DesktopAppWindowManager>("DesktopAppWindowManager") {
-                                    it.stopWindowService()
-                                }
-                            },
-                            async { stopService<GlobalListener>("GlobalListener") { it.stop() } },
-                            async { stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() } },
-                            async { stopService<PasteClient>("PasteClient") { it.close() } },
-                            async { stopService<ResourcesClient>("ResourcesClient") { it.close() } },
-                        )
+                        buildList {
+                            add(async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } })
+                            add(async { stopService<TaskExecutor>("TaskExecutor") { it.shutdown() } })
+                            add(
+                                async {
+                                    stopService<RenderingService<String>>(
+                                        qualifier = named("urlRendering"),
+                                        serviceName = "RenderingService",
+                                    ) { it.stop() }
+                                },
+                            )
+                            add(async { stopService<PasteboardService>("PasteboardService") { it.stop() } })
+                            add(async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } })
+                            add(async { stopService<Server>("PasteServer") { it.stop() } })
+                            add(async { stopService<McpServer>("McpServer") { it.stop() } })
+                            add(async { stopService<SyncManager>("SyncManager") { it.stop() } })
+                            add(async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } })
+                            if (!headless) {
+                                add(
+                                    async {
+                                        stopService<DesktopAppWindowManager>("DesktopAppWindowManager") {
+                                            it.stopWindowService()
+                                        }
+                                    },
+                                )
+                                add(async { stopService<GlobalListener>("GlobalListener") { it.stop() } })
+                            }
+                            add(
+                                async {
+                                    stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() }
+                                },
+                            )
+                            add(async { stopService<PasteClient>("PasteClient") { it.close() } })
+                            add(async { stopService<ResourcesClient>("ResourcesClient") { it.close() } })
+                        }
 
                     jobs.awaitAll()
                 }
@@ -249,55 +269,77 @@ class CrossPaste {
             }
         }
 
+        private fun runHeadless() {
+            logger.info { "Running in headless mode" }
+            val latch = java.util.concurrent.CountDownLatch(1)
+            Runtime.getRuntime().addShutdownHook(
+                Thread {
+                    logger.info { "Shutdown signal received" }
+                    runBlocking { shutdownAllServices() }
+                    val koin = koinApplication.koin
+                    koin.get<AppLock>().releaseLock()
+                    latch.countDown()
+                },
+            )
+            latch.await()
+        }
+
         @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
         @JvmStatic
         fun main(args: Array<String>) {
+            headless = args.contains("--headless")
+            initModule()
+
             System.setProperty("sun.awt.exception.handler", AwtExceptionHandler::class.java.name)
 
             Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
                 logger.error(throwable) { "Uncaught exception in thread: $thread" }
             }
 
-            logger.info { "Starting CrossPaste" }
+            logger.info { "Starting CrossPaste${if (headless) " (headless)" else ""}" }
             runBlocking { startApplication() }
             logger.info { "CrossPaste started" }
 
-            application {
-                val appWindowManager = koinInject<DesktopAppWindowManager>()
-                val appSize = koinInject<DesktopAppSize>()
-                val globalListener = koinInject<GlobalListener>()
+            if (headless) {
+                runHeadless()
+            } else {
+                application {
+                    val appWindowManager = koinInject<DesktopAppWindowManager>()
+                    val appSize = koinInject<DesktopAppSize>()
+                    val globalListener = koinInject<GlobalListener>()
 
-                val appSizeValue by appSize.appSizeValue.collectAsState()
+                    val appSizeValue by appSize.appSizeValue.collectAsState()
 
-                var exiting by remember { mutableStateOf(false) }
+                    var exiting by remember { mutableStateOf(false) }
 
-                val exitApplication: (ExitMode) -> Unit = { mode ->
-                    exiting = true
-                    if (mode == ExitMode.EXIT || mode == ExitMode.RESTART) {
-                        appWindowManager.hideMainWindow()
+                    val exitApplication: (ExitMode) -> Unit = { mode ->
+                        exiting = true
+                        if (mode == ExitMode.EXIT || mode == ExitMode.RESTART) {
+                            appWindowManager.hideMainWindow()
+                        }
+                        appWindowManager.hideSearchWindow()
+                        ioCoroutineDispatcher.launch {
+                            exitCrossPasteApplication(mode) { exitApplication() }
+                        }
                     }
-                    appWindowManager.hideSearchWindow()
-                    ioCoroutineDispatcher.launch {
-                        exitCrossPasteApplication(mode) { exitApplication() }
+
+                    val navController = rememberNavController()
+
+                    LaunchedEffect(Unit) {
+                        if (!globalListener.isRegistered()) {
+                            globalListener.start()
+                        }
                     }
-                }
 
-                val navController = rememberNavController()
-
-                LaunchedEffect(Unit) {
-                    if (!globalListener.isRegistered()) {
-                        globalListener.start()
-                    }
-                }
-
-                CompositionLocalProvider(
-                    LocalAppSizeValueState provides appSizeValue,
-                    LocalDesktopAppSizeValueState provides appSizeValue,
-                    LocalExitApplication provides exitApplication,
-                    LocalNavHostController provides navController,
-                ) {
-                    DesktopTheme {
-                        CrossPasteWindows(exiting)
+                    CompositionLocalProvider(
+                        LocalAppSizeValueState provides appSizeValue,
+                        LocalDesktopAppSizeValueState provides appSizeValue,
+                        LocalExitApplication provides exitApplication,
+                        LocalNavHostController provides navController,
+                    ) {
+                        DesktopTheme {
+                            CrossPasteWindows(exiting)
+                        }
                     }
                 }
             }

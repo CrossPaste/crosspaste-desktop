@@ -49,6 +49,9 @@ import com.crosspaste.db.secure.SecureDao
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.task.TaskDao
+import com.crosspaste.headless.HeadlessPasteboardService
+import com.crosspaste.headless.headlessUiModule
+import com.crosspaste.headless.headlessViewModelModule
 import com.crosspaste.i18n.DesktopGlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopFaviconLoader
@@ -246,6 +249,7 @@ class DesktopModule(
     private val deviceUtils: DeviceUtils,
     private val klogger: KLogger,
     private val platform: Platform,
+    private val headless: Boolean = false,
 ) : CrossPasteModule {
 
     val marketingMode = getAppEnvUtils().isDevelopment() && DevConfig.marketingMode
@@ -467,7 +471,11 @@ class DesktopModule(
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
             single<PasteboardService> {
-                getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
+                if (headless) {
+                    HeadlessPasteboardService(get(), get())
+                } else {
+                    getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
+                }
             }
             single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }
             single<PasteExportService> { PasteExportService(get(), get(), get()) }
@@ -596,16 +604,30 @@ class DesktopModule(
     // Application.kt
     fun initKoinApplication(): KoinApplication =
         GlobalContext.startKoin {
-            modules(
-                appModule(),
-                extensionModule(),
-                sqlDelightModule(),
-                networkModule(),
-                securityModule(),
-                pasteTypePluginModule(),
-                pasteComponentModule(),
-                uiModule(),
-                viewModelModule(),
-            )
+            if (headless) {
+                modules(
+                    appModule(),
+                    extensionModule(),
+                    sqlDelightModule(),
+                    networkModule(),
+                    securityModule(),
+                    pasteTypePluginModule(),
+                    pasteComponentModule(),
+                    headlessUiModule(),
+                    headlessViewModelModule(),
+                )
+            } else {
+                modules(
+                    appModule(),
+                    extensionModule(),
+                    sqlDelightModule(),
+                    networkModule(),
+                    securityModule(),
+                    pasteTypePluginModule(),
+                    pasteComponentModule(),
+                    uiModule(),
+                    viewModelModule(),
+                )
+            }
         }
 }
