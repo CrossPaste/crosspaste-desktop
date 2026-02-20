@@ -289,7 +289,7 @@ class CrossPaste {
         @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
         @JvmStatic
         fun main(args: Array<String>) {
-            headless = args.contains("--headless")
+            headless = args.contains("--headless") || java.awt.GraphicsEnvironment.isHeadless()
             initModule()
 
             System.setProperty("sun.awt.exception.handler", AwtExceptionHandler::class.java.name)

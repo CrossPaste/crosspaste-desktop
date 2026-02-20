@@ -10,6 +10,7 @@ import io.ktor.http.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import org.koin.core.Koin
 import org.koin.mp.KoinPlatform
 
 const val CLI_VERSION = "1.2.7"
@@ -21,21 +22,40 @@ val cliJson =
     }
 
 fun CliktCommand.runWithClient(block: suspend (CliClient) -> Unit) {
+    val koin = KoinPlatform.getKoin()
     val client =
         try {
-            KoinPlatform.getKoin().get<CliClient>()
+            koin.get<CliClient>()
         } catch (_: AppNotRunningException) {
-            echo("CrossPaste is not running.", err = true)
-            throw ProgramResult(1)
+            if (!attemptAutoStart(koin)) {
+                throw ProgramResult(1)
+            }
+            try {
+                koin.get<CliClient>()
+            } catch (_: AppNotRunningException) {
+                echo("CrossPaste is not running.", err = true)
+                throw ProgramResult(1)
+            }
         }
 
     runBlocking {
         client.use {
             try {
                 block(it)
-            } catch (e: AppNotRunningException) {
-                echo("CrossPaste is not running.", err = true)
-                throw ProgramResult(1)
+            } catch (_: AppNotRunningException) {
+                if (!attemptAutoStart(koin)) {
+                    throw ProgramResult(1)
+                }
+                val retryClient =
+                    try {
+                        koin.get<CliClient>()
+                    } catch (_: AppNotRunningException) {
+                        echo("CrossPaste is not running.", err = true)
+                        throw ProgramResult(1)
+                    }
+                retryClient.use { freshClient ->
+                    block(freshClient)
+                }
             } catch (e: ProgramResult) {
                 throw e
             } catch (e: Exception) {
@@ -43,6 +63,13 @@ fun CliktCommand.runWithClient(block: suspend (CliClient) -> Unit) {
                 throw ProgramResult(1)
             }
         }
+    }
+}
+
+private fun CliktCommand.attemptAutoStart(koin: Koin): Boolean {
+    val autoStarter = koin.get<AppAutoStarter>()
+    return runBlocking {
+        autoStarter.startAndWait { message, isError -> echo(message, err = isError) }
     }
 }
 

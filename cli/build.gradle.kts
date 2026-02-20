@@ -43,6 +43,11 @@ kotlin {
         }
 
     nativeTarget.apply {
+        compilations.getByName("main") {
+            cinterops {
+                val execpath by creating
+            }
+        }
         binaries {
             executable {
                 entryPoint = "com.crosspaste.cli.main"
