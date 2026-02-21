@@ -30,47 +30,9 @@ jobs:
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
-  check-cli-cache:
-    runs-on: ubuntu-latest
-    outputs:
-      cache-hit-macos-x64: ${{ steps.cli-cache-check-macos-x64.outputs.cache-hit }}
-      cache-hit-macos-aarch64: ${{ steps.cli-cache-check-macos-aarch64.outputs.cache-hit }}
-      cache-hit-windows-x64: ${{ steps.cli-cache-check-windows-x64.outputs.cache-hit }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: check-cli-cache-macos-x64
-        id: cli-cache-check-macos-x64
-        uses: actions/cache/restore@v4
-        with:
-          path: ./cli/build/cli-binaries/macos-x64/crosspaste-cli
-          key: cli-macos-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
-
-      - name: check-cli-cache-macos-aarch64
-        id: cli-cache-check-macos-aarch64
-        uses: actions/cache/restore@v4
-        with:
-          path: ./cli/build/cli-binaries/macos-aarch64/crosspaste-cli
-          key: cli-macos-aarch64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
-
-      - name: check-cli-cache-windows-x64
-        id: cli-cache-check-windows-x64
-        uses: actions/cache/restore@v4
-        with:
-          path: ./cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
-          key: cli-windows-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
-
   build-macos:
-    needs: [check-dylib-cache, check-cli-cache]
+    needs: [check-dylib-cache]
     runs-on: macos-26
-    if: >
-      needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' ||
-      needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true' ||
-      needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' ||
-      needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -107,7 +69,6 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Set up JDK 21
-        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' || needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -115,7 +76,6 @@ jobs:
           check-latest: true
 
       - name: Cache Gradle dependencies
-        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' || needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -126,7 +86,6 @@ jobs:
             '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
 
       - name: Cache Kotlin Native dependencies
-        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' || needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
         uses: actions/cache@v4
         with:
           path: ~/.konan
@@ -135,39 +94,25 @@ jobs:
             ${{ runner.os }}-konan-
 
       - name: Build CLI for macOS aarch64
-        if: needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
         run: |
           ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosArm64
           mkdir -p cli/build/cli-binaries/macos-aarch64
           cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-aarch64/crosspaste-cli
 
       - name: Build CLI for macOS x64
-        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true'
         run: |
           ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosX64
           mkdir -p cli/build/cli-binaries/macos-x64
           cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-x64/crosspaste-cli
 
-      - name: Save CLI cache for macOS aarch64
-        if: needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
-        uses: actions/cache/save@v4
+      - name: Upload CLI macOS binaries
+        uses: actions/upload-artifact@v4
         with:
-          path: ./cli/build/cli-binaries/macos-aarch64/crosspaste-cli
-          key: cli-macos-aarch64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
-
-      - name: Save CLI cache for macOS x64
-        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ./cli/build/cli-binaries/macos-x64/crosspaste-cli
-          key: cli-macos-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
+          name: cli-macos
+          path: cli/build/cli-binaries/
 
   build-windows:
-    needs: [check-cli-cache]
     runs-on: windows-latest
-    if: needs.check-cli-cache.outputs.cache-hit-windows-x64 != 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -203,20 +148,15 @@ jobs:
           mkdir -p cli/build/cli-binaries/windows-x64
           cp cli/build/bin/native/releaseExecutable/crosspaste-cli.exe cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
 
-      - name: Save CLI cache for Windows x64
-        uses: actions/cache/save@v4
+      - name: Upload CLI Windows binary
+        uses: actions/upload-artifact@v4
         with:
-          path: ./cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
-          key: cli-windows-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
+          name: cli-windows
+          path: cli/build/cli-binaries/
 
   build-ubuntu:
-    needs: [check-dylib-cache, check-cli-cache, build-macos, build-windows]
+    needs: [check-dylib-cache, build-macos, build-windows]
     runs-on: ubuntu-latest
-    if: >
-      !cancelled() &&
-      (needs.build-macos.result == 'success' || needs.build-macos.result == 'skipped') &&
-      (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped')
     env:
       APPLE_ASP: ${{ secrets.APPLE_ASP }}
       AUTH_KEY_FILE_PATH: ${{ github.workspace }}/AuthKey.p8
@@ -311,40 +251,31 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-konan-
 
-      - name: check-darwin-x86-64-dylib-cache
+      - name: Restore dylib cache for x86_64
         uses: actions/cache/restore@v4
         with:
           path: ./app/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
-      - name: check-darwin-aarch64-dylib-cache
+      - name: Restore dylib cache for aarch64
         uses: actions/cache/restore@v4
         with:
           path: ./app/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
-      - name: Restore CLI macOS aarch64 cache
-        uses: actions/cache/restore@v4
+      - name: Download CLI macOS binaries
+        uses: actions/download-artifact@v4
         with:
-          path: ./cli/build/cli-binaries/macos-aarch64/crosspaste-cli
-          key: cli-macos-aarch64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
+          name: cli-macos
+          path: cli/build/cli-binaries/
 
-      - name: Restore CLI macOS x64 cache
-        uses: actions/cache/restore@v4
+      - name: Download CLI Windows binary
+        uses: actions/download-artifact@v4
         with:
-          path: ./cli/build/cli-binaries/macos-x64/crosspaste-cli
-          key: cli-macos-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
-
-      - name: Restore CLI Windows x64 cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ./cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
-          key: cli-windows-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
-          enableCrossOsArchive: true
+          name: cli-windows
+          path: cli/build/cli-binaries/
 
       - name: Build with Gradle
         run: ./gradlew build
