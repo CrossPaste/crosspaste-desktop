@@ -44,28 +44,34 @@ fun Routing.cliRouting(
     val logger = KotlinLogging.logger {}
 
     route("/cli") {
-        intercept(ApplicationCallPipeline.Setup) {
-            val remoteHost = call.request.local.remoteHost
-            if (remoteHost != "127.0.0.1" && remoteHost != "::1" && remoteHost != "0:0:0:0:0:0:0:1") {
-                logger.warn { "CLI request rejected from non-local address: $remoteHost" }
-                failResponse(
-                    call,
-                    StandardErrorCode.CLI_FORBIDDEN.toErrorCode(),
-                    "CLI access is restricted to localhost",
-                )
-                finish()
-                return@intercept
-            }
+        install(
+            createRouteScopedPlugin("CliAuthGuard") {
+                onCall { call ->
+                    val remoteHost = call.request.local.remoteHost
+                    if (remoteHost != "127.0.0.1" && remoteHost != "::1" && remoteHost != "0:0:0:0:0:0:0:1") {
+                        logger.warn { "CLI request rejected from non-local address: $remoteHost" }
+                        failResponse(
+                            call,
+                            StandardErrorCode.CLI_FORBIDDEN.toErrorCode(),
+                            "CLI access is restricted to localhost",
+                        )
+                        return@onCall
+                    }
 
-            val authHeader = call.request.headers["Authorization"]
-            val token = authHeader?.removePrefix("Bearer ")?.trim()
-            if (token == null || !cliTokenManager.validate(token)) {
-                logger.warn { "CLI request rejected: invalid or missing token" }
-                failResponse(call, StandardErrorCode.CLI_FORBIDDEN.toErrorCode(), "Invalid or missing CLI token")
-                finish()
-                return@intercept
-            }
-        }
+                    val authHeader = call.request.headers["Authorization"]
+                    val token = authHeader?.removePrefix("Bearer ")?.trim()
+                    if (token == null || !cliTokenManager.validate(token)) {
+                        logger.warn { "CLI request rejected: invalid or missing token" }
+                        failResponse(
+                            call,
+                            StandardErrorCode.CLI_FORBIDDEN.toErrorCode(),
+                            "Invalid or missing CLI token",
+                        )
+                        return@onCall
+                    }
+                }
+            },
+        )
 
         pasteRoutes(pasteDao, pasteboardService)
         deviceRoutes(syncRuntimeInfoDao)
