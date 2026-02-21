@@ -54,6 +54,14 @@ object MacAppUtils {
 
     fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())
 
+    fun getRunningApplications(): List<Pair<String, String>> {
+        val raw = MacosApi.getString(INSTANCE.getRunningApplications()) ?: return emptyList()
+        return raw.split("\n\n").mapNotNull { entry ->
+            val parts = entry.split("\n", limit = 2)
+            if (parts.size == 2) Pair(parts[0], parts[1]) else null
+        }
+    }
+
     fun checkAccessibilityPermissions(): Boolean = INSTANCE.checkAccessibilityPermissions()
 
     fun saveIconByExt(

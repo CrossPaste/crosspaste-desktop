@@ -42,6 +42,8 @@ interface MacosApi : Library {
 
     fun getCurrentActiveAppInfo(): Pointer?
 
+    fun getRunningApplications(): Pointer?
+
     fun saveAppIcon(
         bundleIdentifier: String,
         path: String,

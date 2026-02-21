@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +35,9 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import coil3.size.Scale
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Add
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
@@ -42,8 +48,11 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
@@ -52,6 +61,7 @@ fun SourceExclusionContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
     val sourceExclusionService = koinInject<SourceExclusionService>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val config by configManager.config.collectAsState()
 
@@ -60,16 +70,46 @@ fun SourceExclusionContentView() {
             sourceExclusionService.getExclusions()
         }
 
-    var sources by remember { mutableStateOf<List<String>>(emptyList()) }
+    var dbSources by remember { mutableStateOf<List<String>>(emptyList()) }
+    var runningSources by remember { mutableStateOf<List<String>>(emptyList()) }
+    var manualInput by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
-        sources = pasteDao.getDistinctSources().sorted()
+        dbSources = pasteDao.getDistinctSources()
     }
+
+    LaunchedEffect(Unit) {
+        withContext(ioDispatcher) {
+            runningSources = appWindowManager.getRunningAppNames()
+        }
+    }
+
+    val allSources =
+        remember(dbSources, runningSources, exclusions) {
+            (dbSources + runningSources + exclusions).distinct().sorted()
+        }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
-        if (sources.isEmpty()) {
+        item {
+            ManualSourceInput(
+                value = manualInput,
+                onValueChange = { manualInput = it },
+                label = copywriter.getText("add_source_manually"),
+                placeholder = copywriter.getText("enter_app_name"),
+                onAdd = {
+                    val trimmed = manualInput.trim()
+                    if (trimmed.isNotEmpty()) {
+                        sourceExclusionService.addExclusion(trimmed)
+                        manualInput = ""
+                    }
+                },
+            )
+        }
+
+        if (allSources.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(medium),
@@ -85,7 +125,7 @@ fun SourceExclusionContentView() {
         } else {
             item {
                 SettingSectionCard {
-                    sources.forEachIndexed { index, source ->
+                    allSources.forEachIndexed { index, source ->
                         val isExcluded = source in exclusions
                         SourceExclusionItem(
                             source = source,
@@ -98,12 +138,52 @@ fun SourceExclusionContentView() {
                                 }
                             },
                         )
-                        if (index < sources.lastIndex) {
+                        if (index < allSources.lastIndex) {
                             HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ManualSourceInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    onAdd: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = medium, vertical = tiny),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(medium),
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            label = { Text(label) },
+            placeholder = { Text(placeholder) },
+            shape = small2XRoundedCornerShape,
+        )
+        IconButton(
+            onClick = onAdd,
+            enabled = value.isNotBlank(),
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Add,
+                contentDescription = null,
+                tint =
+                    if (value.isNotBlank()) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+            )
         }
     }
 }
