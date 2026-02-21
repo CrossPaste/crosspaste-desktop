@@ -30,6 +30,7 @@ data class DesktopAppConfig(
     override val enableSkipPreLaunchPasteboardContent: Boolean = true,
     override val lastPasteboardChangeCount: Int = -1,
     override val enablePasteboardListening: Boolean = true,
+    override val sourceExclusions: String = "[]",
     val showTutorial: Boolean = true,
     // MB
     override val maxBackupFileSize: Long = 32,
@@ -117,6 +118,7 @@ data class DesktopAppConfig(
                 } else {
                     enablePasteboardListening
                 },
+            sourceExclusions = if (key == "sourceExclusions") toString(value) else sourceExclusions,
             showTutorial = if (key == "showTutorial") toBoolean(value) else showTutorial,
             maxBackupFileSize = if (key == "maxBackupFileSize") toLong(value) else maxBackupFileSize,
             enabledSyncFileSizeLimit =

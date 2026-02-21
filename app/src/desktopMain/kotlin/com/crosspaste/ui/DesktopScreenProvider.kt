@@ -39,6 +39,7 @@ import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.extension.ExtensionContentView
 import com.crosspaste.ui.extension.mcp.McpScreen
 import com.crosspaste.ui.extension.ocr.OCRScreen
+import com.crosspaste.ui.extension.sourceexclusion.SourceExclusionScreen
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.settings.DesktopNetworkSettingsContentView
@@ -162,6 +163,12 @@ class DesktopScreenProvider(
                     enterTransition = { slideInLeft() },
                 ) {
                     OCRScreen()
+                }
+                composable<SourceExclusion>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    SourceExclusionScreen()
                 }
             }
             composable<Import> { ImportScreen() }

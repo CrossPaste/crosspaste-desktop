@@ -17,6 +17,7 @@ fun getDesktopPasteboardService(
     pasteDao: PasteDao,
     platform: Platform,
     soundService: SoundService,
+    sourceExclusionService: SourceExclusionService,
 ): AbstractPasteboardService =
     if (platform.isMacos()) {
         MacosPasteboardService(
@@ -28,6 +29,7 @@ fun getDesktopPasteboardService(
             pasteProducer,
             pasteDao,
             soundService,
+            sourceExclusionService,
         )
     } else if (platform.isWindows()) {
         WindowsPasteboardService(
@@ -40,6 +42,7 @@ fun getDesktopPasteboardService(
             pasteDao,
             platform,
             soundService,
+            sourceExclusionService,
         )
     } else if (platform.isLinux()) {
         LinuxPasteboardService(
@@ -51,6 +54,7 @@ fun getDesktopPasteboardService(
             pasteProducer,
             pasteDao,
             soundService,
+            sourceExclusionService,
         )
     } else {
         throw IllegalStateException("Unsupported platform: ${platform.name}")

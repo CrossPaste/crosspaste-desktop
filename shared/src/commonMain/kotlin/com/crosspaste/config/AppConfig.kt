@@ -21,6 +21,7 @@ interface AppConfig {
     val enableSkipPreLaunchPasteboardContent: Boolean
     val lastPasteboardChangeCount: Int
     val enablePasteboardListening: Boolean
+    val sourceExclusions: String
 
     // MB
     val maxBackupFileSize: Long

@@ -29,6 +29,7 @@ class MacosPasteboardService(
     override val pasteProducer: TransferableProducer,
     override val pasteDao: PasteDao,
     override val soundService: SoundService,
+    override val sourceExclusionService: SourceExclusionService,
 ) : AbstractPasteboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
 
@@ -94,6 +95,11 @@ class MacosPasteboardService(
                                     // we should ignore its source
                                     if (firstChange && source == AppName) {
                                         source = null
+                                    }
+
+                                    if (sourceExclusionService.isExcluded(source)) {
+                                        logger.debug { "Ignoring excluded source: $source" }
+                                        return@let
                                     }
 
                                     val contents =

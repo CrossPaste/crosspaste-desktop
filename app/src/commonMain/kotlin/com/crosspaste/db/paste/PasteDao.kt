@@ -469,6 +469,11 @@ class PasteDao(
             .executeAsList()
     }
 
+    suspend fun getDistinctSources(): List<String> = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getDistinctSources()
+            .executeAsList()
+    }
+
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData) -> Unit,

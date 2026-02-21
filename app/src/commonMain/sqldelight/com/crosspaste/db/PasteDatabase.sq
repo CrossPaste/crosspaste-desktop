@@ -261,5 +261,8 @@ SET pasteAppearItem = :pasteAppearItem,
     pasteSearchContent = :pasteSearchContent
 WHERE id = :id;
 
+getDistinctSources:
+SELECT DISTINCT source FROM PasteDataEntity WHERE source IS NOT NULL AND pasteState != -1;
+
 change:
 SELECT changes() AS changes;

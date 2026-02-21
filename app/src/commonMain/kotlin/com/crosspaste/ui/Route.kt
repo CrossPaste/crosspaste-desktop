@@ -81,6 +81,12 @@ object OCR : Route {
 }
 
 @Serializable
+object SourceExclusion : Route {
+    const val NAME: String = "source_exclusion"
+    override val name: String = NAME
+}
+
+@Serializable
 object Pasteboard : Route {
     const val NAME: String = "pasteboard"
     override val name: String = NAME

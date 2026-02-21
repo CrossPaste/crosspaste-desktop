@@ -41,6 +41,7 @@ class WindowsPasteboardService(
     override val pasteDao: PasteDao,
     private val platform: Platform,
     override val soundService: SoundService,
+    override val sourceExclusionService: SourceExclusionService,
 ) : AbstractPasteboardService(),
     User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
@@ -189,6 +190,11 @@ class WindowsPasteboardService(
                         appWindowManager.getCurrentActiveAppName()
                     }
                 }
+
+            if (sourceExclusionService.isExcluded(source)) {
+                logger.debug { "Ignoring excluded source: $source" }
+                return
+            }
 
             val contents =
                 controlUtils.blockExponentialBackoffUntilValid(
