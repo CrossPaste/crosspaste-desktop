@@ -3,11 +3,16 @@ package com.crosspaste.net
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.cli.CliTokenManager
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.net.routing.cliRouting
 import com.crosspaste.net.routing.pasteRouting
 import com.crosspaste.net.routing.pullRouting
 import com.crosspaste.net.routing.syncRouting
@@ -36,14 +41,19 @@ open class DefaultServerModule(
     private val appInfo: AppInfo,
     private val appTokenApi: AppTokenApi,
     private val cacheManager: CacheManager,
+    private val cliTokenManager: CliTokenManager,
+    private val configManager: CommonConfigManager,
     private val exceptionHandler: ExceptionHandler,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
     private val pasteboardService: PasteboardService,
+    private val pasteDao: PasteDao,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
+    private val server: Lazy<Server>,
     private val syncApi: SyncApi,
     private val syncInfoFactory: SyncInfoFactory,
+    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val syncRoutingApi: SyncRoutingApi,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
     private val serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
@@ -74,6 +84,15 @@ open class DefaultServerModule(
             val pasteRoutingScope =
                 CoroutineScope(ioDispatcher + SupervisorJob(coroutineContext[Job]))
             routing {
+                cliRouting(
+                    appInfo,
+                    cliTokenManager,
+                    configManager,
+                    pasteDao,
+                    pasteboardService,
+                    server.value,
+                    syncRuntimeInfoDao,
+                )
                 syncRouting(
                     appInfo,
                     appTokenApi,

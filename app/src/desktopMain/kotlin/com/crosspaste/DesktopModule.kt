@@ -101,6 +101,7 @@ import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
+import com.crosspaste.net.cli.CliTokenManager
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -346,6 +347,7 @@ class DesktopModule(
     // NetworkModule.kt
     override fun networkModule() =
         module {
+            single<CliTokenManager> { CliTokenManager(get()) }
             single<ExceptionHandler> { DesktopExceptionHandler() }
             single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
             single<McpToolProvider> { McpToolProvider(get(), get(), get()) }
@@ -387,14 +389,19 @@ class DesktopModule(
                     appInfo = get(),
                     appTokenApi = get(),
                     cacheManager = get(),
+                    cliTokenManager = get(),
+                    configManager = get(),
                     exceptionHandler = get(),
                     nearbyDeviceManager = get(),
                     networkInterfaceService = get(),
                     pasteboardService = get(),
+                    pasteDao = get(),
                     secureKeyPairSerializer = get(),
                     secureStore = get(),
+                    server = lazy { get<Server>() },
                     syncApi = get(),
                     syncInfoFactory = get(),
+                    syncRuntimeInfoDao = get(),
                     syncRoutingApi = get(),
                     serverEncryptPluginFactory = get(),
                     serverDecryptionPluginFactory = get(),

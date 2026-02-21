@@ -312,6 +312,10 @@ class PasteDao(
         }
     }
 
+    suspend fun getActiveCount(): Long = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getActiveCount().executeAsOne()
+    }
+
     suspend fun getSize(allOrFavorite: Boolean = false): Long = withContext(ioDispatcher) {
         if (allOrFavorite) {
             pasteDatabaseQueries.getSize().executeAsOne().SUM ?: 0L

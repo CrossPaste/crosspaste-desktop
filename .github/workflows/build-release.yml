@@ -31,26 +31,29 @@ jobs:
           enableCrossOsArchive: true
 
   build-macos:
-    needs: check-dylib-cache
+    needs: [check-dylib-cache]
     runs-on: macos-26
-    if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' && needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Swift environment
+        if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' || needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
         run: brew install swift
 
       - name: Build dylib for x86_64
+        if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true'
         run: |
           mkdir -p app/dylib/darwin-x86-64
           swiftc -emit-library app/src/desktopMain/swift/MacosApi.swift -target x86_64-apple-macos10.15 -o app/dylib/darwin-x86-64/libMacosApi.dylib
 
       - name: Build dylib for arm64
+        if: needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
         run: |
           mkdir -p app/dylib/darwin-aarch64
           swiftc -emit-library app/src/desktopMain/swift/MacosApi.swift -target arm64-apple-macos11 -o app/dylib/darwin-aarch64/libMacosApi.dylib
 
       - name: Save dylib to cache for x86_64
+        if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true'
         uses: actions/cache/save@v4
         with:
           path: ./app/dylib/darwin-x86-64/libMacosApi.dylib
@@ -58,16 +61,102 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Save dylib to cache for arm64
+        if: needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
         uses: actions/cache/save@v4
         with:
           path: ./app/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          check-latest: true
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+
+      - name: Cache Kotlin Native dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Build CLI for macOS aarch64
+        run: |
+          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosArm64
+          mkdir -p cli/build/cli-binaries/macos-aarch64
+          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-aarch64/crosspaste-cli
+
+      - name: Build CLI for macOS x64
+        run: |
+          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosX64
+          mkdir -p cli/build/cli-binaries/macos-x64
+          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-x64/crosspaste-cli
+
+      - name: Upload CLI macOS binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-macos
+          path: cli/build/cli-binaries/
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          check-latest: true
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+
+      - name: Cache Kotlin Native dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Build CLI for Windows x64
+        shell: bash
+        run: |
+          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=mingwX64
+          mkdir -p cli/build/cli-binaries/windows-x64
+          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.exe cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
+
+      - name: Upload CLI Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-windows
+          path: cli/build/cli-binaries/
+
   build-ubuntu:
-    needs: [check-dylib-cache, build-macos]
+    needs: [check-dylib-cache, build-macos, build-windows]
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && (success() || needs.build-macos.result == 'skipped') }}
     env:
       APPLE_ASP: ${{ secrets.APPLE_ASP }}
       AUTH_KEY_FILE_PATH: ${{ github.workspace }}/AuthKey.p8
@@ -96,7 +185,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -154,35 +243,60 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
-      - name: check-darwin-x86-64-dylib-cache
+      - name: Cache Kotlin Native dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Restore dylib cache for x86_64
         uses: actions/cache/restore@v4
         with:
           path: ./app/dylib/darwin-x86-64/libMacosApi.dylib
           key: mac-dylib-darwin-x86-64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
-      - name: check-darwin-aarch64-dylib-cache
+      - name: Restore dylib cache for aarch64
         uses: actions/cache/restore@v4
         with:
           path: ./app/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
+      - name: Download CLI macOS binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-macos
+          path: cli/build/cli-binaries/
+
+      - name: Download CLI Windows binary
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-windows
+          path: cli/build/cli-binaries/
+
       - name: Build with Gradle
         run: ./gradlew build
+
+      - name: Stage CLI Linux binary
+        run: |
+          mkdir -p cli/build/cli-binaries/linux-x64
+          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/linux-x64/crosspaste-cli
 
       - name: Check Dylib Files
         run: |
           BUILD_DIR=$(./gradlew app:properties | grep "buildDir:" | awk '{print $2}')
-          
+
           DYLIB_PATH="$BUILD_DIR/classes/kotlin/desktop/main"
-          
+
           echo "Looking for files in: $DYLIB_PATH"
-          
+
           if [ -d "$DYLIB_PATH" ]; then
             echo "Directory exists, contents:"
             ls -la "$DYLIB_PATH"
-          
+
             echo "Searching for .dylib files:"
             find "$DYLIB_PATH" -name "*.dylib" -type f
           else
@@ -213,7 +327,7 @@ jobs:
       - name: Package AppImage
         run: |
           chmod +x ./.github/scripts/package_appimage.sh
-          ./.github/scripts/package_appimage.sh    
+          ./.github/scripts/package_appimage.sh
 
       - name: CheckSum
         run: |

@@ -2,6 +2,7 @@
 atomicfu = "0.31.0"
 awesome-brans = "2.2.1"
 caffeine = "3.2.3"
+clikt = "5.1.0"
 coil = "3.3.0"
 compose-plugin = "1.10.1"
 compose-shimmer = "1.3.3"
@@ -29,6 +30,7 @@ kotlinx-serialization = "1.10.0"
 kotlinx-uuid = "0.1.7"
 ksoup = "0.2.5"
 ktlint = "14.0.1"
+kotter = "1.2.1"
 ktor = "3.4.0"
 lifecycle = "2.9.6"
 mcp-kotlin-sdk = "0.8.3"
@@ -54,6 +56,7 @@ zxing = "3.5.4"
 [libraries]
 awesome-brans = { module = "com.composables:icons-font-awesome-brands-cmp", version.ref = "awesome-brans" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose-plugin" }
@@ -90,6 +93,7 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
+kotter = { module = "com.varabyte.kotter:kotter", version.ref = "kotter" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
