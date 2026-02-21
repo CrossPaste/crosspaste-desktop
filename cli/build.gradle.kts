@@ -51,7 +51,7 @@ kotlin {
         binaries {
             executable {
                 entryPoint = "com.crosspaste.cli.main"
-                baseName = "crosspaste"
+                baseName = "crosspaste-cli"
                 // Workaround for Clikt duplicate symbol bug in Kotlin/Native
                 // See: https://github.com/ajalt/clikt/issues/598
                 linkerOpts("--allow-multiple-definition")

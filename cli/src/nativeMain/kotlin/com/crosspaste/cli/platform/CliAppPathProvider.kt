@@ -16,7 +16,7 @@ import kotlin.experimental.ExperimentalNativeApi
  *   CrossPaste.app/                     ← appPath
  *     Contents/
  *       bin/
- *         crosspaste                    ← CLI binary (binDir)
+ *         crosspaste-cli                ← CLI binary (binDir)
  *         start.sh                      ← start script
  *       MacOS/CrossPaste                ← JVM launcher
  *
@@ -30,7 +30,7 @@ import kotlin.experimental.ExperimentalNativeApi
  * Windows:
  *   CrossPaste/                         ← appPath
  *     bin/
- *       crosspaste.exe                  ← CLI binary (binDir)
+ *       crosspaste-cli.exe              ← CLI binary (binDir)
  *       CrossPaste.exe                  ← JVM launcher
  *       start.bat                       ← start script
  */
