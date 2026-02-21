@@ -33,6 +33,12 @@ kotlin {
     val isMingwX64 = hostOs.startsWith("Windows")
 
     val cliTarget = project.findProperty("cli.target") as? String
+    val isMacosTarget =
+        when (cliTarget) {
+            "macosArm64", "macosX64" -> true
+            null -> hostOs == "Mac OS X"
+            else -> false
+        }
 
     val nativeTarget =
         if (cliTarget != null) {
@@ -67,7 +73,10 @@ kotlin {
                 baseName = "crosspaste-cli"
                 // Workaround for Clikt duplicate symbol bug in Kotlin/Native
                 // See: https://github.com/ajalt/clikt/issues/598
-                linkerOpts("--allow-multiple-definition")
+                // Apple ld does not support --allow-multiple-definition (GNU ld only)
+                if (!isMacosTarget) {
+                    linkerOpts("--allow-multiple-definition")
+                }
             }
         }
     }
