@@ -30,27 +30,59 @@ jobs:
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
+  check-cli-cache:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit-macos-x64: ${{ steps.cli-cache-check-macos-x64.outputs.cache-hit }}
+      cache-hit-macos-aarch64: ${{ steps.cli-cache-check-macos-aarch64.outputs.cache-hit }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check-cli-cache-macos-x64
+        id: cli-cache-check-macos-x64
+        uses: actions/cache/restore@v4
+        with:
+          path: ./cli/build/cli-binaries/macos-x64/crosspaste-cli
+          key: cli-macos-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
+          enableCrossOsArchive: true
+
+      - name: check-cli-cache-macos-aarch64
+        id: cli-cache-check-macos-aarch64
+        uses: actions/cache/restore@v4
+        with:
+          path: ./cli/build/cli-binaries/macos-aarch64/crosspaste-cli
+          key: cli-macos-aarch64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
+          enableCrossOsArchive: true
+
   build-macos:
-    needs: check-dylib-cache
+    needs: [check-dylib-cache, check-cli-cache]
     runs-on: macos-26
-    if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' && needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
+    if: >
+      needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' ||
+      needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true' ||
+      needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' ||
+      needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Swift environment
+        if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' || needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
         run: brew install swift
 
       - name: Build dylib for x86_64
+        if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true'
         run: |
           mkdir -p app/dylib/darwin-x86-64
           swiftc -emit-library app/src/desktopMain/swift/MacosApi.swift -target x86_64-apple-macos10.15 -o app/dylib/darwin-x86-64/libMacosApi.dylib
 
       - name: Build dylib for arm64
+        if: needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
         run: |
           mkdir -p app/dylib/darwin-aarch64
           swiftc -emit-library app/src/desktopMain/swift/MacosApi.swift -target arm64-apple-macos11 -o app/dylib/darwin-aarch64/libMacosApi.dylib
 
       - name: Save dylib to cache for x86_64
+        if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true'
         uses: actions/cache/save@v4
         with:
           path: ./app/dylib/darwin-x86-64/libMacosApi.dylib
@@ -58,14 +90,73 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Save dylib to cache for arm64
+        if: needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
         uses: actions/cache/save@v4
         with:
           path: ./app/dylib/darwin-aarch64/libMacosApi.dylib
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
+      - name: Set up JDK 21
+        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' || needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          check-latest: true
+
+      - name: Cache Gradle dependencies
+        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' || needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+
+      - name: Cache Kotlin Native dependencies
+        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true' || needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Build CLI for macOS aarch64
+        if: needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
+        run: |
+          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosArm64
+          mkdir -p cli/build/cli-binaries/macos-aarch64
+          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-aarch64/crosspaste-cli
+
+      - name: Build CLI for macOS x64
+        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true'
+        run: |
+          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosX64
+          mkdir -p cli/build/cli-binaries/macos-x64
+          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-x64/crosspaste-cli
+
+      - name: Save CLI cache for macOS aarch64
+        if: needs.check-cli-cache.outputs.cache-hit-macos-aarch64 != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ./cli/build/cli-binaries/macos-aarch64/crosspaste-cli
+          key: cli-macos-aarch64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
+          enableCrossOsArchive: true
+
+      - name: Save CLI cache for macOS x64
+        if: needs.check-cli-cache.outputs.cache-hit-macos-x64 != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ./cli/build/cli-binaries/macos-x64/crosspaste-cli
+          key: cli-macos-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
+          enableCrossOsArchive: true
+
   build-ubuntu:
-    needs: [check-dylib-cache, build-macos]
+    needs: [check-dylib-cache, check-cli-cache, build-macos]
     runs-on: ubuntu-latest
     if: ${{ !cancelled() && (success() || needs.build-macos.result == 'skipped') }}
     env:
@@ -96,7 +187,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -154,6 +245,14 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
+      - name: Cache Kotlin Native dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
       - name: check-darwin-x86-64-dylib-cache
         uses: actions/cache/restore@v4
         with:
@@ -168,21 +267,40 @@ jobs:
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
+      - name: Restore CLI macOS aarch64 cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ./cli/build/cli-binaries/macos-aarch64/crosspaste-cli
+          key: cli-macos-aarch64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
+          enableCrossOsArchive: true
+
+      - name: Restore CLI macOS x64 cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ./cli/build/cli-binaries/macos-x64/crosspaste-cli
+          key: cli-macos-x64-${{ hashFiles('cli/**/*.kt', 'cli/**/*.kts', 'cli/src/nativeInterop/**/*') }}
+          enableCrossOsArchive: true
+
       - name: Build with Gradle
         run: ./gradlew build
+
+      - name: Stage CLI Linux binary
+        run: |
+          mkdir -p cli/build/cli-binaries/linux-x64
+          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/linux-x64/crosspaste-cli
 
       - name: Check Dylib Files
         run: |
           BUILD_DIR=$(./gradlew app:properties | grep "buildDir:" | awk '{print $2}')
-          
+
           DYLIB_PATH="$BUILD_DIR/classes/kotlin/desktop/main"
-          
+
           echo "Looking for files in: $DYLIB_PATH"
-          
+
           if [ -d "$DYLIB_PATH" ]; then
             echo "Directory exists, contents:"
             ls -la "$DYLIB_PATH"
-          
+
             echo "Searching for .dylib files:"
             find "$DYLIB_PATH" -name "*.dylib" -type f
           else
@@ -213,7 +331,7 @@ jobs:
       - name: Package AppImage
         run: |
           chmod +x ./.github/scripts/package_appimage.sh
-          ./.github/scripts/package_appimage.sh    
+          ./.github/scripts/package_appimage.sh
 
       - name: CheckSum
         run: |
