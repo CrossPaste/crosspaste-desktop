@@ -70,19 +70,19 @@ data class NearbyDeviceDetail(
 
 @Serializable
 object MCP : Route {
-    const val NAME: String = "mcp"
+    const val NAME: String = "mcp_settings"
     override val name: String = NAME
 }
 
 @Serializable
 object OCR : Route {
-    const val NAME: String = "ocr"
+    const val NAME: String = "ocr_settings"
     override val name: String = NAME
 }
 
 @Serializable
 object SourceControl : Route {
-    const val NAME: String = "source_control"
+    const val NAME: String = "source_control_settings"
     override val name: String = NAME
 }
 

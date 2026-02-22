@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xLarge
 
 @Composable
@@ -17,7 +18,8 @@ fun OCRScreen() {
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(start = xLarge, end = xLarge, bottom = xLarge),
+                .padding(horizontal = medium)
+                .padding(bottom = xLarge),
         contentAlignment = Alignment.Center,
     ) {
         OCRContentView()
