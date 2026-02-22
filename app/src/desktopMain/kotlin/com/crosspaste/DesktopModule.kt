@@ -392,6 +392,7 @@ class DesktopModule(
                     nearbyDeviceManager = get(),
                     networkInterfaceService = get(),
                     pasteboardService = get(),
+                    pasteDao = get(),
                     secureKeyPairSerializer = get(),
                     secureStore = get(),
                     syncApi = get(),

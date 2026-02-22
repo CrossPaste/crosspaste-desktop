@@ -79,6 +79,9 @@ SELECT * FROM PasteDataEntity WHERE id = :id AND pasteState IN :states;
 getPasteDataListLimit:
 SELECT * FROM PasteDataEntity WHERE pasteState != -1 ORDER BY createTime DESC, id DESC LIMIT ?;
 
+getLatestLoadedPasteData:
+SELECT * FROM PasteDataEntity WHERE pasteState = 1 ORDER BY createTime DESC, id DESC LIMIT 1;
+
 updateFavorite:
 UPDATE PasteDataEntity SET favorite = ? WHERE id = ?;
 

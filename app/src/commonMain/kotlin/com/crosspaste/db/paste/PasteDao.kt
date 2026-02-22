@@ -100,6 +100,11 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
+    suspend fun getLatestLoadedPasteData(): PasteData? = withContext(ioDispatcher) {
+        pasteDatabaseQueries.getLatestLoadedPasteData(PasteData::mapper)
+            .executeAsOneOrNull()
+    }
+
     suspend fun getDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
         pasteDatabaseQueries.getPasteData(
             id,

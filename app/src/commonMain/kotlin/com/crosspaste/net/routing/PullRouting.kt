@@ -2,6 +2,7 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
+import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.CacheManager
@@ -18,6 +19,7 @@ import io.ktor.utils.io.*
 fun Routing.pullRouting(
     appInfo: AppInfo,
     cacheManager: CacheManager,
+    pasteDao: PasteDao,
     syncRoutingApi: SyncRoutingApi,
     userDataPathProvider: UserDataPathProvider,
 ) {
@@ -102,5 +104,45 @@ fun Routing.pullRouting(
             fileUtils.readFile(iconPath, this)
         }
         successResponse(call, producer)
+    }
+
+    get("/pull/paste") {
+        getAppInstanceId(call)?.let { fromAppInstanceId ->
+            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
+            if (targetAppInstanceId != appInfo.appInstanceId) {
+                logger.debug {
+                    "pull paste targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}"
+                }
+                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
+                return@let
+            }
+
+            val syncHandler =
+                syncRoutingApi.getSyncHandler(fromAppInstanceId) ?: run {
+                    logger.error { "not found appInstance id: $fromAppInstanceId" }
+                    failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
+                    return@let
+                }
+
+            if (!syncHandler.currentSyncRuntimeInfo.allowSend) {
+                logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_USER.toErrorCode())
+                return@let
+            }
+
+            val pasteData =
+                pasteDao.getLatestLoadedPasteData() ?: run {
+                    logger.debug { "no paste data available for $fromAppInstanceId" }
+                    failResponse(call, StandardErrorCode.SYNC_PASTE_NOT_FOUND_DATA.toErrorCode())
+                    return@let
+                }
+
+            if (pasteData.isFileType()) {
+                cacheManager.getFilesIndex(pasteData.id)
+            }
+
+            logger.debug { "pull paste by ($fromAppInstanceId): ${pasteData.id}" }
+            successResponse(call, pasteData)
+        }
     }
 }

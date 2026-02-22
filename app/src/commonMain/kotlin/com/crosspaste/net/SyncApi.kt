@@ -2,7 +2,7 @@ package com.crosspaste.net
 
 object SyncApi {
 
-    const val VERSION: Int = 3
+    const val VERSION: Int = 4
 
     val SCHEMA =
         """
@@ -14,6 +14,10 @@ object SyncApi {
           },
           {
             "path": "/pull/icon/{source}",
+            "method": "get"
+          },
+          {
+            "path": "/pull/paste",
             "method": "get"
           },
           {
