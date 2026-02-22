@@ -41,7 +41,7 @@ class WindowsPasteboardService(
     override val pasteDao: PasteDao,
     private val platform: Platform,
     override val soundService: SoundService,
-    override val sourceExclusionService: SourceExclusionService,
+    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService(),
     User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}

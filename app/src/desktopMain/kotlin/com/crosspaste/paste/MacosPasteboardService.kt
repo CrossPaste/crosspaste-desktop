@@ -29,7 +29,7 @@ class MacosPasteboardService(
     override val pasteProducer: TransferableProducer,
     override val pasteDao: PasteDao,
     override val soundService: SoundService,
-    override val sourceExclusionService: SourceExclusionService,
+    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
 
