@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -64,59 +65,64 @@ fun SourceControlContentView() {
             sourceExclusionService.getExclusions()
         }
 
-    var dbSources by remember { mutableStateOf<List<String>>(emptyList()) }
-    var runningSources by remember { mutableStateOf<List<String>>(emptyList()) }
+    var allSources by remember { mutableStateOf<List<String>?>(null) }
 
-    LaunchedEffect(Unit) {
-        dbSources = pasteDao.getDistinctSources()
-    }
-
-    LaunchedEffect(Unit) {
-        withContext(ioDispatcher) {
-            runningSources = appWindowManager.getRunningAppNames()
-        }
-    }
-
-    val allSources =
-        remember(dbSources, runningSources, exclusions) {
-            (dbSources + runningSources + exclusions).distinct().sorted()
-        }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(tiny),
-    ) {
-        if (allSources.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(medium),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = copywriter.getText("no_source_found"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+    LaunchedEffect(exclusions) {
+        val dbSources = pasteDao.getDistinctSources()
+        val runningSources =
+            withContext(ioDispatcher) {
+                appWindowManager.getRunningAppNames()
             }
-        } else {
-            item {
-                SettingSectionCard {
-                    allSources.forEachIndexed { index, source ->
-                        val isEnabled = source !in exclusions
-                        SourceControlItem(
-                            source = source,
-                            isEnabled = isEnabled,
-                            onToggle = { enabled ->
-                                if (enabled) {
-                                    sourceExclusionService.removeExclusion(source)
-                                } else {
-                                    sourceExclusionService.addExclusion(source)
+        allSources = (dbSources + runningSources + exclusions).distinct().sorted()
+    }
+
+    when (val sources = allSources) {
+        null -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        else -> {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(tiny),
+            ) {
+                if (sources.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(medium),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = copywriter.getText("no_source_found"),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                } else {
+                    item {
+                        SettingSectionCard {
+                            sources.forEachIndexed { index, source ->
+                                val isEnabled = source !in exclusions
+                                SourceControlItem(
+                                    source = source,
+                                    isEnabled = isEnabled,
+                                    onToggle = { enabled ->
+                                        if (enabled) {
+                                            sourceExclusionService.removeExclusion(source)
+                                        } else {
+                                            sourceExclusionService.addExclusion(source)
+                                        }
+                                    },
+                                )
+                                if (index < sources.lastIndex) {
+                                    HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                                 }
-                            },
-                        )
-                        if (index < allSources.lastIndex) {
-                            HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                            }
                         }
                     }
                 }
