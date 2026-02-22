@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +32,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import coil3.size.Scale
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Add
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
@@ -48,7 +43,6 @@ import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.ioDispatcher
@@ -72,7 +66,6 @@ fun SourceExclusionContentView() {
 
     var dbSources by remember { mutableStateOf<List<String>>(emptyList()) }
     var runningSources by remember { mutableStateOf<List<String>>(emptyList()) }
-    var manualInput by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         dbSources = pasteDao.getDistinctSources()
@@ -93,22 +86,6 @@ fun SourceExclusionContentView() {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
-        item {
-            ManualSourceInput(
-                value = manualInput,
-                onValueChange = { manualInput = it },
-                label = copywriter.getText("add_source_manually"),
-                placeholder = copywriter.getText("enter_app_name"),
-                onAdd = {
-                    val trimmed = manualInput.trim()
-                    if (trimmed.isNotEmpty()) {
-                        sourceExclusionService.addExclusion(trimmed)
-                        manualInput = ""
-                    }
-                },
-            )
-        }
-
         if (allSources.isEmpty()) {
             item {
                 Box(
@@ -126,15 +103,15 @@ fun SourceExclusionContentView() {
             item {
                 SettingSectionCard {
                     allSources.forEachIndexed { index, source ->
-                        val isExcluded = source in exclusions
+                        val isEnabled = source !in exclusions
                         SourceExclusionItem(
                             source = source,
-                            isExcluded = isExcluded,
-                            onToggle = { excluded ->
-                                if (excluded) {
-                                    sourceExclusionService.addExclusion(source)
-                                } else {
+                            isEnabled = isEnabled,
+                            onToggle = { enabled ->
+                                if (enabled) {
                                     sourceExclusionService.removeExclusion(source)
+                                } else {
+                                    sourceExclusionService.addExclusion(source)
                                 }
                             },
                         )
@@ -149,49 +126,9 @@ fun SourceExclusionContentView() {
 }
 
 @Composable
-private fun ManualSourceInput(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String,
-    onAdd: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = medium, vertical = tiny),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(medium),
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.weight(1f),
-            singleLine = true,
-            label = { Text(label) },
-            placeholder = { Text(placeholder) },
-            shape = small2XRoundedCornerShape,
-        )
-        IconButton(
-            onClick = onAdd,
-            enabled = value.isNotBlank(),
-        ) {
-            Icon(
-                imageVector = MaterialSymbols.Rounded.Add,
-                contentDescription = null,
-                tint =
-                    if (value.isNotBlank()) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-            )
-        }
-    }
-}
-
-@Composable
 private fun SourceExclusionItem(
     source: String,
-    isExcluded: Boolean,
+    isEnabled: Boolean,
     onToggle: (Boolean) -> Unit,
 ) {
     Row(
@@ -209,7 +146,7 @@ private fun SourceExclusionItem(
             modifier = Modifier.weight(1f),
         )
         Switch(
-            checked = isExcluded,
+            checked = isEnabled,
             onCheckedChange = onToggle,
         )
     }
