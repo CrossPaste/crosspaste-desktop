@@ -35,12 +35,12 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import coil3.size.Scale
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.paste.SourceExclusionService
+import com.crosspaste.paste.DesktopSourceExclusionService
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -56,10 +56,10 @@ import org.koin.compose.koinInject
 
 @Composable
 fun SourceControlContentView() {
-    val configManager = koinInject<CommonConfigManager>()
+    val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
-    val sourceExclusionService = koinInject<SourceExclusionService>()
+    val sourceExclusionService = koinInject<DesktopSourceExclusionService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val config by configManager.config.collectAsState()

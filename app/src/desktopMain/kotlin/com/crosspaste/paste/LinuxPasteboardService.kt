@@ -33,7 +33,7 @@ class LinuxPasteboardService(
     override val pasteProducer: TransferableProducer,
     override val pasteDao: PasteDao,
     override val soundService: SoundService,
-    override val sourceExclusionService: SourceExclusionService,
+    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService() {
 
     companion object {

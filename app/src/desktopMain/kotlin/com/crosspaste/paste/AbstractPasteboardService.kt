@@ -34,7 +34,7 @@ abstract class AbstractPasteboardService :
 
     abstract val currentPaste: CurrentPaste
 
-    abstract val sourceExclusionService: SourceExclusionService
+    abstract val sourceExclusionService: DesktopSourceExclusionService
 
     override val remotePasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.CONFLATED)
 

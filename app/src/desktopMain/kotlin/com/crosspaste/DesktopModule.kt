@@ -134,7 +134,6 @@ import com.crosspaste.paste.PasteImportService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
-import com.crosspaste.paste.SourceExclusionService
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.paste.getDesktopPasteboardService
@@ -472,7 +471,7 @@ class DesktopModule(
             }
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
-            single<SourceExclusionService> { DesktopSourceExclusionService(get()) }
+            single<DesktopSourceExclusionService> { DesktopSourceExclusionService(get()) }
             single<PasteboardService> {
                 if (headless) {
                     HeadlessPasteboardService(get(), get())

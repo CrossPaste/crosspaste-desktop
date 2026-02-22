@@ -30,7 +30,7 @@ data class DesktopAppConfig(
     override val enableSkipPreLaunchPasteboardContent: Boolean = true,
     override val lastPasteboardChangeCount: Int = -1,
     override val enablePasteboardListening: Boolean = true,
-    override val sourceExclusions: String = "[]",
+    val sourceExclusions: String = "[]",
     val showTutorial: Boolean = true,
     // MB
     override val maxBackupFileSize: Long = 32,

@@ -17,7 +17,7 @@ fun getDesktopPasteboardService(
     pasteDao: PasteDao,
     platform: Platform,
     soundService: SoundService,
-    sourceExclusionService: SourceExclusionService,
+    sourceExclusionService: DesktopSourceExclusionService,
 ): AbstractPasteboardService =
     if (platform.isMacos()) {
         MacosPasteboardService(
