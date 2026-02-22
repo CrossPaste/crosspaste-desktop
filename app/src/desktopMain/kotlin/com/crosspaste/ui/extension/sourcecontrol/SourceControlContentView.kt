@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -163,24 +164,29 @@ private fun SourceControlItem(
 }
 
 @Composable
-private fun SourceAppIcon(source: String) {
+private fun SourceAppIcon(
+    source: String,
+    size: Dp = large2X,
+) {
     val iconStyle = koinInject<IconStyle>()
     val imageLoaders = koinInject<ImageLoaders>()
     val platformContext = koinInject<PlatformContext>()
     val density = LocalDensity.current
 
-    val size = large2X
+    var visualScale by remember(source) { mutableStateOf(1f) }
 
-    val visualScale =
-        remember(source) {
-            if (iconStyle.isMacStyleIcon(source)) {
-                val paddingRatio = 0.075f
-                val contentRatio = 1f - (paddingRatio * 2)
-                1f / contentRatio
-            } else {
-                1f
+    LaunchedEffect(source) {
+        visualScale =
+            withContext(ioDispatcher) {
+                if (iconStyle.isMacStyleIcon(source)) {
+                    val paddingRatio = 0.075f
+                    val contentRatio = 1f - (paddingRatio * 2)
+                    1f / contentRatio
+                } else {
+                    1f
+                }
             }
-        }
+    }
 
     val sizePx = with(density) { size.roundToPx() }
 
