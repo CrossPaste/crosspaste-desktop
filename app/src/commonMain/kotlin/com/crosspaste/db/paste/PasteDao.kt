@@ -470,7 +470,7 @@ class PasteDao(
     }
 
     suspend fun getDistinctSources(): List<String> = withContext(ioDispatcher) {
-        pasteDatabaseQueries.getDistinctSources()
+        pasteDatabaseQueries.getDistinctSources(appInfo.appInstanceId)
             .executeAsList()
     }
 

@@ -262,7 +262,7 @@ SET pasteAppearItem = :pasteAppearItem,
 WHERE id = :id;
 
 getDistinctSources:
-SELECT DISTINCT source FROM PasteDataEntity WHERE source IS NOT NULL AND pasteState != -1;
+SELECT DISTINCT source FROM PasteDataEntity WHERE source IS NOT NULL AND pasteState != -1 AND appInstanceId = :appInstanceId;
 
 change:
 SELECT changes() AS changes;
