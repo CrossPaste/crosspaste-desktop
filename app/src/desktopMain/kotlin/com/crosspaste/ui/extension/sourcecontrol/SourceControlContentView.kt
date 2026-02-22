@@ -47,6 +47,8 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
@@ -68,12 +70,14 @@ fun SourceControlContentView() {
     var allSources by remember { mutableStateOf<List<String>?>(null) }
 
     LaunchedEffect(exclusions) {
-        val dbSources = pasteDao.getDistinctSources()
-        val runningSources =
+        allSources =
             withContext(ioDispatcher) {
-                appWindowManager.getRunningAppNames()
+                coroutineScope {
+                    val dbDeferred = async { pasteDao.getDistinctSources() }
+                    val runningDeferred = async { appWindowManager.getRunningAppNames() }
+                    (dbDeferred.await() + runningDeferred.await() + exclusions).distinct().sorted()
+                }
             }
-        allSources = (dbSources + runningSources + exclusions).distinct().sorted()
     }
 
     when (val sources = allSources) {
