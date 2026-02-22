@@ -36,11 +36,12 @@ import coil3.size.Precision
 import coil3.size.Scale
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaders
-import com.crosspaste.paste.SourceExclusionService
+import com.crosspaste.paste.DesktopSourceExclusionService
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -59,13 +60,13 @@ fun SourceControlContentView() {
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
-    val sourceExclusionService = koinInject<SourceExclusionService>()
+    val sourceExclusionService = koinInject<DesktopSourceExclusionService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     val config by configManager.config.collectAsState()
 
     val exclusions =
-        remember(config.sourceExclusions) {
+        remember((config as DesktopAppConfig).sourceExclusions) {
             sourceExclusionService.getExclusions()
         }
 
