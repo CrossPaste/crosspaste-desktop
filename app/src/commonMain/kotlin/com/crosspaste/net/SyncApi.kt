@@ -17,6 +17,10 @@ object SyncApi {
             "method": "get"
           },
           {
+            "path": "/pull/paste",
+            "method": "get"
+          },
+          {
             "path": "/sync/heartbeat",
             "method": "get"
           },
