@@ -46,6 +46,7 @@ import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.async
@@ -150,13 +151,14 @@ private fun SourceControlItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(medium),
     ) {
-        SourceAppIcon(source = source)
+        SourceAppIcon(source = source, size = xxxLarge)
         Text(
             text = source,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
         )
         Switch(
+            modifier = Modifier.scale(0.7f),
             checked = isEnabled,
             onCheckedChange = onToggle,
         )
