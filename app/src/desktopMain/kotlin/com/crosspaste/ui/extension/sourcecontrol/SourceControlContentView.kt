@@ -1,4 +1,4 @@
-package com.crosspaste.ui.extension.sourceexclusion
+package com.crosspaste.ui.extension.sourcecontrol
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +50,7 @@ import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
-fun SourceExclusionContentView() {
+fun SourceControlContentView() {
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteDao = koinInject<PasteDao>()
@@ -104,7 +104,7 @@ fun SourceExclusionContentView() {
                 SettingSectionCard {
                     allSources.forEachIndexed { index, source ->
                         val isEnabled = source !in exclusions
-                        SourceExclusionItem(
+                        SourceControlItem(
                             source = source,
                             isEnabled = isEnabled,
                             onToggle = { enabled ->
@@ -126,7 +126,7 @@ fun SourceExclusionContentView() {
 }
 
 @Composable
-private fun SourceExclusionItem(
+private fun SourceControlItem(
     source: String,
     isEnabled: Boolean,
     onToggle: (Boolean) -> Unit,

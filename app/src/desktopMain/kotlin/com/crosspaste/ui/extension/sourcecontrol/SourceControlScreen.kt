@@ -1,4 +1,4 @@
-package com.crosspaste.ui.extension.sourceexclusion
+package com.crosspaste.ui.extension.sourcecontrol
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import com.crosspaste.ui.theme.AppUISize.xLarge
 
 @Composable
-fun SourceExclusionScreen() {
+fun SourceControlScreen() {
     Box(
         modifier =
             Modifier
@@ -20,6 +20,6 @@ fun SourceExclusionScreen() {
                 .padding(start = xLarge, end = xLarge, bottom = xLarge),
         contentAlignment = Alignment.Center,
     ) {
-        SourceExclusionContentView()
+        SourceControlContentView()
     }
 }

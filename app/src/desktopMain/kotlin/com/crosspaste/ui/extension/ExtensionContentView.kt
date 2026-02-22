@@ -19,7 +19,7 @@ import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.MCP
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.OCR
-import com.crosspaste.ui.SourceExclusion
+import com.crosspaste.ui.SourceControl
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.settings.SettingListItem
@@ -80,15 +80,15 @@ fun ExtensionContentView() {
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
-                    title = "source_exclusion_settings",
-                    subtitle = "source_exclusion_settings_desc",
+                    title = "source_control_settings",
+                    subtitle = "source_control_settings_desc",
                     icon =
                         IconData(
                             imageVector = MaterialSymbols.Rounded.Block,
                             iconColor = themeExt.redIconColor,
                         ),
                     onClick = {
-                        navigateManager.navigate(SourceExclusion)
+                        navigateManager.navigate(SourceControl)
                     },
                 )
             }
