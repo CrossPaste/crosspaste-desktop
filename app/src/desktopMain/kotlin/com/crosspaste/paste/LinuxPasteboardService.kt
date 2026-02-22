@@ -33,6 +33,7 @@ class LinuxPasteboardService(
     override val pasteProducer: TransferableProducer,
     override val pasteDao: PasteDao,
     override val soundService: SoundService,
+    override val sourceExclusionService: SourceExclusionService,
 ) : AbstractPasteboardService() {
 
     companion object {
@@ -134,6 +135,11 @@ class LinuxPasteboardService(
                         appWindowManager.getCurrentActiveAppName()
                     }.getOrNull()
             }
+
+        if (sourceExclusionService.isExcluded(source)) {
+            logger.debug { "Ignoring excluded source: $source" }
+            return
+        }
 
         val contents =
             controlUtils.exponentialBackoffUntilValid(

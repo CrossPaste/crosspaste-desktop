@@ -123,6 +123,7 @@ import com.crosspaste.paste.DesktopPasteImportParamFactory
 import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopPasteTagMenuService
 import com.crosspaste.paste.DesktopSearchContentService
+import com.crosspaste.paste.DesktopSourceExclusionService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.GuidePasteDataService
@@ -133,6 +134,7 @@ import com.crosspaste.paste.PasteImportService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.SourceExclusionService
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.paste.getDesktopPasteboardService
@@ -470,11 +472,12 @@ class DesktopModule(
             }
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
+            single<SourceExclusionService> { DesktopSourceExclusionService(get()) }
             single<PasteboardService> {
                 if (headless) {
                     HeadlessPasteboardService(get(), get())
                 } else {
-                    getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get())
+                    getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
                 }
             }
             single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }

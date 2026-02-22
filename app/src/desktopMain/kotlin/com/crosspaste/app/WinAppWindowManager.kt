@@ -9,6 +9,9 @@ import com.crosspaste.platform.windows.WinAppInfoCaches
 import com.crosspaste.platform.windows.WindowFocusRecorder
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
+import com.crosspaste.platform.windows.api.WndEnumProc
+import com.sun.jna.Native
+import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -59,6 +62,33 @@ class WinAppWindowManager(
 
     override fun getCurrentActiveAppName(): String? =
         WinAppInfo(INSTANCE.GetForegroundWindow()).getAppName(winAppInfoCaches)
+
+    override fun getRunningAppNames(): List<String> {
+        val appNames = mutableSetOf<String>()
+        val ignoredClasses = setOf("Shell_TrayWnd", "Shell_SecondaryTrayWnd")
+        val enumProc =
+            object : WndEnumProc {
+                override fun callback(
+                    hWnd: WinDef.HWND,
+                    lParam: com.sun.jna.Pointer?,
+                ): Boolean {
+                    if (INSTANCE.IsWindowVisible(hWnd)) {
+                        val titleLength = INSTANCE.GetWindowTextLengthW(hWnd)
+                        if (titleLength > 0) {
+                            val buffer = CharArray(512)
+                            INSTANCE.GetClassNameW(hWnd, buffer, 512)
+                            val className = Native.toString(buffer).trim()
+                            if (className !in ignoredClasses) {
+                                WinAppInfo(hWnd).getAppName(winAppInfoCaches)?.let { appNames.add(it) }
+                            }
+                        }
+                    }
+                    return true
+                }
+            }
+        INSTANCE.EnumWindows(enumProc, null)
+        return appNames.sorted()
+    }
 
     override fun startWindowService() {
         windowFocusRecorder.start()

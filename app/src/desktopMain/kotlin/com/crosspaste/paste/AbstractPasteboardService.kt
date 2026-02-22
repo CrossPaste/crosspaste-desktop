@@ -34,6 +34,8 @@ abstract class AbstractPasteboardService :
 
     abstract val currentPaste: CurrentPaste
 
+    abstract val sourceExclusionService: SourceExclusionService
+
     override val remotePasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.CONFLATED)
 
     override val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())

@@ -12,12 +12,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Block
 import com.composables.icons.materialsymbols.rounded.Code
 import com.composables.icons.materialsymbols.rounded.Document_scanner
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.MCP
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.OCR
+import com.crosspaste.ui.SourceControl
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.settings.SettingListItem
@@ -74,6 +76,19 @@ fun ExtensionContentView() {
                         ),
                     onClick = {
                         navigateManager.navigate(OCR)
+                    },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "source_control_settings",
+                    subtitle = "source_control_settings_desc",
+                    icon =
+                        IconData(
+                            imageVector = MaterialSymbols.Rounded.Block,
+                            iconColor = themeExt.redIconColor,
+                        ),
+                    onClick = {
+                        navigateManager.navigate(SourceControl)
                     },
                 )
             }

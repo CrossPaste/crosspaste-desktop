@@ -1,4 +1,4 @@
-package com.crosspaste.ui.extension.ocr
+package com.crosspaste.ui.extension.sourcecontrol
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,7 +12,7 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xLarge
 
 @Composable
-fun OCRScreen() {
+fun SourceControlScreen() {
     Box(
         modifier =
             Modifier
@@ -22,6 +22,6 @@ fun OCRScreen() {
                 .padding(bottom = xLarge),
         contentAlignment = Alignment.Center,
     ) {
-        OCRContentView()
+        SourceControlContentView()
     }
 }

@@ -351,6 +351,20 @@ public func getCurrentActiveAppInfo() -> UnsafePointer<CChar>? {
     return nil
 }
 
+@_cdecl("getRunningApplications")
+public func getRunningApplications() -> UnsafePointer<CChar>? {
+    let apps = NSWorkspace.shared.runningApplications
+    var result = [String]()
+    for app in apps {
+        guard app.activationPolicy == .regular,
+              let bundleId = app.bundleIdentifier,
+              let name = app.localizedName else { continue }
+        result.append("\(bundleId)\n\(name)")
+    }
+    if result.isEmpty { return nil }
+    return UnsafePointer<CChar>(strdup(result.joined(separator: "\n\n")))
+}
+
 @_cdecl("bringToFront")
 public func bringToFront(windowTitle: UnsafePointer<CChar>) {
     let title = String(cString: windowTitle)
