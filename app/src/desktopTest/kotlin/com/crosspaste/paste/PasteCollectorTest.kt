@@ -28,6 +28,7 @@ class PasteCollectorTest {
             userName = "testUser",
         )
     private val pasteDao: PasteDao = mockk(relaxed = true)
+    private val pasteReleaseService: PasteReleaseService = mockk(relaxed = true)
 
     private interface TestPasteTypePlugin : PasteTypePlugin
 
@@ -35,13 +36,13 @@ class PasteCollectorTest {
 
     @Test
     fun `needPreCollectionItem returns true when not collected yet`() {
-        val collector = PasteCollector(1, appInfo, pasteDao)
+        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
         assertTrue(collector.needPreCollectionItem(0, TestPasteTypePlugin::class))
     }
 
     @Test
     fun `needPreCollectionItem returns false after preCollectItem`() {
-        val collector = PasteCollector(1, appInfo, pasteDao)
+        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
         val item = createTextPasteItem(text = "test")
         collector.preCollectItem(0, TestPasteTypePlugin::class, item)
         assertFalse(collector.needPreCollectionItem(0, TestPasteTypePlugin::class))
@@ -51,13 +52,13 @@ class PasteCollectorTest {
 
     @Test
     fun `needUpdateCollectItem returns true when not updated yet`() {
-        val collector = PasteCollector(1, appInfo, pasteDao)
+        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
         assertTrue(collector.needUpdateCollectItem(0, TestPasteTypePlugin::class))
     }
 
     @Test
     fun `needUpdateCollectItem returns false after updateCollectItem`() {
-        val collector = PasteCollector(1, appInfo, pasteDao)
+        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
         val item = createTextPasteItem(text = "test")
         collector.preCollectItem(0, TestPasteTypePlugin::class, item)
         collector.updateCollectItem(0, TestPasteTypePlugin::class) { it }
@@ -68,7 +69,7 @@ class PasteCollectorTest {
 
     @Test
     fun `preCollectItem stores item at correct index`() {
-        val collector = PasteCollector(3, appInfo, pasteDao)
+        val collector = PasteCollector(3, appInfo, pasteDao, pasteReleaseService)
         val item = createTextPasteItem(text = "item2")
         collector.preCollectItem(1, TestPasteTypePlugin::class, item)
 
@@ -82,7 +83,7 @@ class PasteCollectorTest {
 
     @Test
     fun `updateCollectItem applies transform to pre-collected item`() {
-        val collector = PasteCollector(1, appInfo, pasteDao)
+        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
         val item = createTextPasteItem(text = "original")
         collector.preCollectItem(0, TestPasteTypePlugin::class, item)
 
@@ -95,7 +96,7 @@ class PasteCollectorTest {
 
     @Test
     fun `updateCollectItem without pre-collect does nothing`() {
-        val collector = PasteCollector(1, appInfo, pasteDao)
+        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
         // Try to update without pre-collecting - should not crash
         collector.updateCollectItem(0, TestPasteTypePlugin::class) { it }
         // needUpdateCollectItem should still be true since no pre-collect happened
@@ -106,7 +107,7 @@ class PasteCollectorTest {
 
     @Test
     fun `collectError records error`() {
-        val collector = PasteCollector(1, appInfo, pasteDao)
+        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
         collector.collectError(1L, 0, RuntimeException("test error"))
         // Error recorded, but we can't directly assert existError
         // We verify indirectly through completeCollect behavior
@@ -117,7 +118,7 @@ class PasteCollectorTest {
     @Test
     fun `createPrePasteData with no items returns null`() =
         runTest {
-            val collector = PasteCollector(1, appInfo, pasteDao)
+            val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
             val result = collector.createPrePasteData(null, false)
             assertNull(result)
         }
@@ -125,7 +126,7 @@ class PasteCollectorTest {
     @Test
     fun `createPrePasteData with items calls pasteDao createPasteData`() =
         runTest {
-            val collector = PasteCollector(1, appInfo, pasteDao)
+            val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
             val item = createTextPasteItem(text = "test")
             collector.preCollectItem(0, TestPasteTypePlugin::class, item)
 
@@ -142,7 +143,7 @@ class PasteCollectorTest {
     @Test
     fun `completeCollect with no items marks paste for deletion`() =
         runTest {
-            val collector = PasteCollector(1, appInfo, pasteDao)
+            val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
             collector.completeCollect(1L)
             coVerify { pasteDao.markDeletePasteData(1L) }
         }
@@ -150,19 +151,19 @@ class PasteCollectorTest {
     @Test
     fun `completeCollect with items calls releaseLocalPasteData`() =
         runTest {
-            val collector = PasteCollector(1, appInfo, pasteDao)
+            val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
             val item = createTextPasteItem(text = "test")
             collector.preCollectItem(0, TestPasteTypePlugin::class, item)
 
             collector.completeCollect(1L)
 
-            coVerify { pasteDao.releaseLocalPasteData(1L, any()) }
+            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any()) }
         }
 
     @Test
     fun `completeCollect with all indices errored marks paste for deletion`() =
         runTest {
-            val collector = PasteCollector(1, appInfo, pasteDao)
+            val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
             val item = createTextPasteItem(text = "test")
             collector.preCollectItem(0, TestPasteTypePlugin::class, item)
             collector.collectError(1L, 0, RuntimeException("error"))
@@ -175,7 +176,7 @@ class PasteCollectorTest {
     @Test
     fun `completeCollect with partial errors releases remaining items`() =
         runTest {
-            val collector = PasteCollector(2, appInfo, pasteDao)
+            val collector = PasteCollector(2, appInfo, pasteDao, pasteReleaseService)
             val item0 = createTextPasteItem(text = "test0")
             val item1 = createTextPasteItem(text = "test1")
             collector.preCollectItem(0, TestPasteTypePlugin::class, item0)
@@ -187,17 +188,17 @@ class PasteCollectorTest {
             collector.completeCollect(1L)
 
             // Should still release since not all active indices errored
-            coVerify { pasteDao.releaseLocalPasteData(1L, any()) }
+            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any()) }
         }
 
     @Test
     fun `completeCollect with exception marks paste for deletion`() =
         runTest {
-            val collector = PasteCollector(1, appInfo, pasteDao)
+            val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService)
             val item = createTextPasteItem(text = "test")
             collector.preCollectItem(0, TestPasteTypePlugin::class, item)
 
-            coEvery { pasteDao.releaseLocalPasteData(any(), any()) } throws RuntimeException("release error")
+            coEvery { pasteReleaseService.releaseLocalPasteData(any(), any()) } throws RuntimeException("release error")
 
             collector.completeCollect(1L)
 

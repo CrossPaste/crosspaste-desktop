@@ -103,7 +103,7 @@ abstract class AbstractPasteboardService :
     }
 
     override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
-        pasteDao.releaseRemotePasteData(pasteData) { storePasteData ->
+        pasteReleaseService.releaseRemotePasteData(pasteData) { storePasteData ->
             remotePasteboardChannel
                 .trySend {
                     tryWritePasteboard(
@@ -122,7 +122,7 @@ abstract class AbstractPasteboardService :
         }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?> =
-        pasteDao.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
+        pasteReleaseService.releaseRemotePasteDataWithFile(pasteData.id) { storePasteData ->
             remotePasteboardChannel
                 .trySend {
                     tryWritePasteboard(
@@ -139,9 +139,6 @@ abstract class AbstractPasteboardService :
                     logger.error(e) { "Failed to send remote pasteboard task to channel" }
                 }
         }
-
-    override suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit?> =
-        pasteDao.markDeletePasteData(pasteData.id)
 
     @Synchronized
     override fun toggle() {

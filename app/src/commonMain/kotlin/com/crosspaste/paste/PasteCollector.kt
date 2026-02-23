@@ -17,6 +17,7 @@ class PasteCollector(
     itemCount: Int,
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
+    private val pasteReleaseService: PasteReleaseService,
     private val dragAndDrop: Boolean = false,
 ) {
 
@@ -120,7 +121,7 @@ class PasteCollector(
                                 }
                             }
                     }
-                    pasteDao.releaseLocalPasteData(id, pasteItems)
+                    pasteReleaseService.releaseLocalPasteData(id, pasteItems)
                 }.onFailure { e ->
                     logger.error(e) { "Failed to complete paste $id" }
                     markDeletePasteData(id)

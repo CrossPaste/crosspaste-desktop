@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.theme.AppUISize.large2X
@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 
 class DesktopPasteTagMenuService(
     private val copywriter: GlobalCopywriter,
-    private val pasteDao: PasteDao,
+    private val pasteTagDao: PasteTagDao,
 ) {
 
     fun menuItemsProvider(tagScope: PasteTagScope): () -> List<ContextMenuItem> =
@@ -40,10 +40,10 @@ class DesktopPasteTagMenuService(
                 ContextMenuItem(copywriter.getText("rename")) {
                     tagScope.startEditing()
                 },
-                TagColorsMenuItem(tagScope, pasteDao),
+                TagColorsMenuItem(tagScope, pasteTagDao),
                 ContextMenuDivider,
                 ContextMenuItem(copywriter.getText("delete")) {
-                    pasteDao.deletePasteTagBlock(tagScope.tag.id)
+                    pasteTagDao.deletePasteTagBlock(tagScope.tag.id)
                 },
             )
         }
@@ -51,7 +51,7 @@ class DesktopPasteTagMenuService(
 
 class TagColorsMenuItem(
     private val tagScope: PasteTagScope,
-    private val pasteDao: PasteDao,
+    private val pasteTagDao: PasteTagDao,
 ) : GenericContextMenuItem() {
     @Composable
     override fun Content(
@@ -76,7 +76,7 @@ class TagColorsMenuItem(
                     isSelected = isSelected,
                     onClick = {
                         scope.launch {
-                            pasteDao.updatePasteTagColor(tagScope.tag.id, colorVal)
+                            pasteTagDao.updatePasteTagColor(tagScope.tag.id, colorVal)
                         }
                         onDismissRequest()
                     },

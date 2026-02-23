@@ -265,7 +265,7 @@ class PullFileTaskExecutor(
         if (!needRetry) {
             logger.error { "exist pull chunk fail" }
             cleanupPullFiles(pasteData)
-            pasteboardService.clearRemotePasteboard(pasteData)
+            pasteDao.markDeletePasteData(pasteData.id)
             soundService.errorSound()
         }
 
