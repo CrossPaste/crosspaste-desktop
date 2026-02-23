@@ -42,7 +42,7 @@ import java.util.Optional
 import javax.imageio.ImageIO
 
 interface User32 : com.sun.jna.platform.win32.User32 {
-    interface WNDPROC : StdCallCallback {
+    fun interface WNDPROC : StdCallCallback {
         fun callback(
             hWnd: HWND?,
             uMsg: Int,
@@ -127,6 +127,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
     fun EnumClipboardFormats(format: Int): Int
 
+    fun RegisterClipboardFormatA(lpszFormat: String): Int
+
     fun GetClipboardFormatName(
         format: Int,
         lpszFormatName: CharArray,
@@ -148,6 +150,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
             ) as User32
         const val GWL_WNDPROC = -4
         const val WM_DESTROY = 0x0002
+        const val WM_RENDERFORMAT = 0x0305
+        const val WM_RENDERALLFORMATS = 0x0306
         const val WM_CHANGECBCHAIN = 0x030D
         const val WM_DRAWCLIPBOARD = 0x0308
 
