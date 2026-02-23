@@ -214,7 +214,7 @@ class WindowsLazyClipboard : AutoCloseable {
         val buffer = Memory(4096)
         val paths = mutableListOf<String>()
 
-        for (i in 0..count) {
+        for (i in 0 until count) {
             val len = currentResolver(i, buffer, 4096)
             if (len < 0) {
                 logger.error { "Resolver returned error for index $i" }
