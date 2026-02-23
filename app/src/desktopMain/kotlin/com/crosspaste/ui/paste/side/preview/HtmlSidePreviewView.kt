@@ -16,7 +16,7 @@ import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.utils.getColorUtils
+import com.crosspaste.utils.ColorAccessibility
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
 import org.koin.compose.koinInject
@@ -25,8 +25,6 @@ import org.koin.compose.koinInject
 fun PasteDataScope.HtmlSidePreviewView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
-
-    val colorUtils = getColorUtils()
 
     val backgroundColor by remember(pasteData.id) {
         mutableStateOf(Color(htmlPasteItem.getBackgroundColor()))
@@ -38,7 +36,7 @@ fun PasteDataScope.HtmlSidePreviewView() {
         } else {
             backgroundColor
         }
-    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(htmlBackground)) }
+    val isDark by remember(pasteData.id) { mutableStateOf(ColorAccessibility.isDarkColor(htmlBackground)) }
     val richTextColor =
         if (isDark == LocalThemeState.current.isCurrentThemeDark) {
             MaterialTheme.colorScheme.onBackground

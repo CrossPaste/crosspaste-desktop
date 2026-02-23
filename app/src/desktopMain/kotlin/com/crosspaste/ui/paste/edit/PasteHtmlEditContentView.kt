@@ -64,7 +64,7 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
-import com.crosspaste.utils.getColorUtils
+import com.crosspaste.utils.ColorAccessibility
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
@@ -93,7 +93,6 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     val originalHtml = remember(pasteData.id, pasteData.hash) { htmlPasteItem.html }
     val richTextState = rememberRichTextState()
 
-    val colorUtils = getColorUtils()
     val currentThemeState = LocalThemeState.current
     val colorScheme = MaterialTheme.colorScheme
 
@@ -118,7 +117,7 @@ fun PasteDataScope.PasteHtmlEditContentView() {
                     currentBackgroundColor
                 }
 
-            val isBgDark = colorUtils.isDarkColor(finalBg)
+            val isBgDark = ColorAccessibility.isDarkColor(finalBg)
             val finalTxt =
                 if (isBgDark == currentThemeState.isCurrentThemeDark) {
                     colorScheme.onBackground

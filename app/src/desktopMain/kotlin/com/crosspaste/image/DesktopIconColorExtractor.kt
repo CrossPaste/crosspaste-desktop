@@ -4,10 +4,10 @@ import androidx.compose.ui.graphics.Color
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.Box
-import com.crosspaste.utils.ColorUtils.hsvToRgb
-import com.crosspaste.utils.ColorUtils.isNearWhiteOrBlack
-import com.crosspaste.utils.ColorUtils.rgbToHsv
-import com.crosspaste.utils.ColorUtils.toHexString
+import com.crosspaste.utils.ColorConversion.hsvToRgb
+import com.crosspaste.utils.ColorConversion.isNearWhiteOrBlack
+import com.crosspaste.utils.ColorConversion.rgbToHsv
+import com.crosspaste.utils.ColorConversion.toHexString
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging

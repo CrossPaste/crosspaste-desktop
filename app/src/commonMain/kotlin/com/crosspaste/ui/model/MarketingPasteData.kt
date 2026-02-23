@@ -18,7 +18,7 @@ import com.crosspaste.paste.item.PasteItemProperties.TITLE
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform.Companion.MACOS
 import com.crosspaste.presist.FileInfoTree
-import com.crosspaste.utils.ColorUtils.parseHexColor
+import com.crosspaste.utils.ColorParser.parseHexColor
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.noOptionParent
