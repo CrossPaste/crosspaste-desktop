@@ -53,11 +53,27 @@ class WindowsNativePasteboardTest {
 
     private val systemClipboard by lazy { toolkit.systemClipboard }
 
+    /**
+     * Use native API to clear clipboard instead of JVM's setContents(StringSelection("")).
+     * JVM's setContents makes the JVM the clipboard owner, which causes stale cached
+     * transferable to be returned on subsequent getContents() calls even after native code
+     * has taken over the clipboard.
+     */
     private fun cleanupClipboard() {
-        try {
-            systemClipboard.setContents(StringSelection(""), null)
-        } catch (_: Exception) {
+        val user32 = User32.INSTANCE
+        if (user32.OpenClipboard(null)) {
+            user32.EmptyClipboard()
+            user32.CloseClipboard()
         }
+    }
+
+    /**
+     * After native clipboard write, flush the AWT event queue so the JVM processes
+     * WM_DESTROYCLIPBOARD and clears its cached owner transferable.
+     */
+    private fun awaitClipboardReady() {
+        SwingUtilities.invokeAndWait {}
+        Thread.sleep(50)
     }
 
     private fun pathResolver(paths: List<String>): (Int, Pointer, Int) -> Int =
@@ -120,6 +136,7 @@ class WindowsNativePasteboardTest {
             val resolver = pathResolver(listOf(tempFile.absolutePath))
             val seqNum = clipboard.writeFilesToClipboard(1, resolver)
             assertTrue(seqNum >= 0)
+            awaitClipboardReady()
 
             val contents = systemClipboard.getContents(null)
             assertNotNull(contents, "Clipboard contents should not be null")
@@ -146,6 +163,7 @@ class WindowsNativePasteboardTest {
             val resolver = pathResolver(tempFiles.map { it.absolutePath })
             val seqNum = clipboard.writeFilesToClipboard(tempFiles.size, resolver)
             assertTrue(seqNum >= 0)
+            awaitClipboardReady()
 
             val contents = systemClipboard.getContents(null)
             assertNotNull(contents)
@@ -207,6 +225,8 @@ class WindowsNativePasteboardTest {
                 clipboard.provideDataCallCount,
                 "WM_RENDERFORMAT should NOT be triggered during writeFilesToClipboard (lazy write)",
             )
+
+            awaitClipboardReady()
 
             // Now read from clipboard — this triggers WM_RENDERFORMAT
             val contents = systemClipboard.getContents(null)
