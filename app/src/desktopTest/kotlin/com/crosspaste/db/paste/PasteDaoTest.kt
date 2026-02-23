@@ -2,10 +2,8 @@ package com.crosspaste.db.paste
 
 import app.cash.turbine.test
 import com.crosspaste.app.AppInfo
-import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
-import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteState
@@ -52,8 +50,6 @@ class PasteDaoTest {
         }
     }
 
-    private val commonConfigManager: CommonConfigManager = mockk(relaxed = true)
-    private val currentPaste: CurrentPaste = mockk(relaxed = true)
     private val taskSubmitter: TaskSubmitter = mockk(relaxed = true)
     private val userDataPathProvider = mockk<com.crosspaste.path.UserDataPathProvider>(relaxed = true)
 
@@ -61,14 +57,13 @@ class PasteDaoTest {
 
     private val pasteDao = PasteDao(
         appInfo = appInfo,
-        commonConfigManager = commonConfigManager,
-        currentPaste = currentPaste,
         database = database,
-        pasteProcessPlugins = listOf(),
         searchContentService = searchContentService,
         taskSubmitter = taskSubmitter,
         userDataPathProvider = userDataPathProvider,
     )
+
+    private val pasteTagDao = PasteTagDao(database)
 
     private fun createTestPasteData(
         text: String = "hello world",
@@ -378,16 +373,16 @@ class PasteDaoTest {
 
     @Test
     fun `createPasteTag returns valid id`() = runTest {
-        val tagId = pasteDao.createPasteTag("important", 0xFF0000L)
+        val tagId = pasteTagDao.createPasteTag("important", 0xFF0000L)
         assertTrue(tagId > 0)
     }
 
     @Test
     fun `updatePasteTagName changes tag name`() = runTest {
-        val tagId = pasteDao.createPasteTag("old_name", 0xFF0000L)
-        pasteDao.updatePasteTagName(tagId, "new_name")
+        val tagId = pasteTagDao.createPasteTag("old_name", 0xFF0000L)
+        pasteTagDao.updatePasteTagName(tagId, "new_name")
         // Verify through flow
-        pasteDao.getAllTagsFlow().test {
+        pasteTagDao.getAllTagsFlow().test {
             val tags = awaitItem()
             val tag = tags.find { it.id == tagId }
             assertNotNull(tag)
@@ -398,9 +393,9 @@ class PasteDaoTest {
 
     @Test
     fun `updatePasteTagColor changes tag color`() = runTest {
-        val tagId = pasteDao.createPasteTag("tag", 0xFF0000L)
-        pasteDao.updatePasteTagColor(tagId, 0x00FF00L)
-        pasteDao.getAllTagsFlow().test {
+        val tagId = pasteTagDao.createPasteTag("tag", 0xFF0000L)
+        pasteTagDao.updatePasteTagColor(tagId, 0x00FF00L)
+        pasteTagDao.getAllTagsFlow().test {
             val tags = awaitItem()
             val tag = tags.find { it.id == tagId }
             assertNotNull(tag)
@@ -413,29 +408,29 @@ class PasteDaoTest {
     fun `switchPinPasteTagBlock toggles pin state`() = runTest {
         val pasteData = createTestPasteData()
         val pasteId = pasteDao.createPasteData(pasteData)
-        val tagId = pasteDao.createPasteTag("tag1", 0xFF0000L)
+        val tagId = pasteTagDao.createPasteTag("tag1", 0xFF0000L)
 
         // Initially not pinned
-        var pinned = pasteDao.getPasteTagsBlock(pasteId)
+        var pinned = pasteTagDao.getPasteTagsBlock(pasteId)
         assertFalse(pinned.contains(tagId))
 
         // Pin
-        pasteDao.switchPinPasteTagBlock(pasteId, tagId)
-        pinned = pasteDao.getPasteTagsBlock(pasteId)
+        pasteTagDao.switchPinPasteTagBlock(pasteId, tagId)
+        pinned = pasteTagDao.getPasteTagsBlock(pasteId)
         assertTrue(pinned.contains(tagId))
 
         // Unpin
-        pasteDao.switchPinPasteTagBlock(pasteId, tagId)
-        pinned = pasteDao.getPasteTagsBlock(pasteId)
+        pasteTagDao.switchPinPasteTagBlock(pasteId, tagId)
+        pinned = pasteTagDao.getPasteTagsBlock(pasteId)
         assertFalse(pinned.contains(tagId))
     }
 
     @Test
     fun `deletePasteTagBlock removes tag`() = runTest {
-        val tagId = pasteDao.createPasteTag("to_delete", 0xFF0000L)
-        pasteDao.deletePasteTagBlock(tagId)
+        val tagId = pasteTagDao.createPasteTag("to_delete", 0xFF0000L)
+        pasteTagDao.deletePasteTagBlock(tagId)
 
-        pasteDao.getAllTagsFlow().test {
+        pasteTagDao.getAllTagsFlow().test {
             val tags = awaitItem()
             assertNull(tags.find { it.id == tagId })
             cancelAndIgnoreRemainingEvents()
@@ -444,11 +439,11 @@ class PasteDaoTest {
 
     @Test
     fun `getMaxSortOrder returns max sort order`() = runTest {
-        val initialMax = pasteDao.getMaxSortOrder()
-        pasteDao.createPasteTag("tag1", 0xFF0000L)
-        val afterFirst = pasteDao.getMaxSortOrder()
-        pasteDao.createPasteTag("tag2", 0x00FF00L)
-        val afterSecond = pasteDao.getMaxSortOrder()
+        val initialMax = pasteTagDao.getMaxSortOrder()
+        pasteTagDao.createPasteTag("tag1", 0xFF0000L)
+        val afterFirst = pasteTagDao.getMaxSortOrder()
+        pasteTagDao.createPasteTag("tag2", 0x00FF00L)
+        val afterSecond = pasteTagDao.getMaxSortOrder()
 
         assertTrue(afterFirst > initialMax)
         assertTrue(afterSecond > afterFirst)
@@ -458,11 +453,11 @@ class PasteDaoTest {
 
     @Test
     fun `getAllTagsFlow emits on tag creation`() = runTest {
-        pasteDao.getAllTagsFlow().test {
+        pasteTagDao.getAllTagsFlow().test {
             val initial = awaitItem()
             assertTrue(initial.isEmpty())
 
-            pasteDao.createPasteTag("new_tag", 0xFF0000L)
+            pasteTagDao.createPasteTag("new_tag", 0xFF0000L)
 
             val updated = awaitItem()
             assertEquals(1, updated.size)

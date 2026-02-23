@@ -14,6 +14,7 @@ import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.OCRModule
 import com.crosspaste.notification.MessageType
@@ -47,6 +48,7 @@ class DesktopPasteMenuService(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
+    private val pasteTagDao: PasteTagDao,
     private val pasteSearchViewModel: PasteSearchViewModel,
     private val ocrModule: OCRModule,
     private val uiSupport: UISupport,
@@ -253,13 +255,13 @@ class DesktopPasteMenuService(
                     },
                 )
             } else {
-                val tagIdList = pasteDao.getPasteTagsBlock(pasteData.id)
+                val tagIdList = pasteTagDao.getPasteTagsBlock(pasteData.id)
 
                 tagList.map { tag ->
                     MaterialContextMenuItem(
                         label = tag.name,
                         onClick = {
-                            pasteDao.switchPinPasteTagBlock(pasteData.id, tag.id)
+                            pasteTagDao.switchPinPasteTagBlock(pasteData.id, tag.id)
                         },
                         leadingIcon = {
                             Box(

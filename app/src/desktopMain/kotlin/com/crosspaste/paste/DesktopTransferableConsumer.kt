@@ -9,6 +9,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 class DesktopTransferableConsumer(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
+    private val pasteReleaseService: PasteReleaseService,
     pasteTypePlugins: List<PasteTypePlugin>,
 ) : TransferableConsumer {
 
@@ -48,7 +49,8 @@ class DesktopTransferableConsumer(
                     return@logSuspendExecutionTime
                 }
 
-                val pasteCollector = PasteCollector(dataFlavorMap.size, appInfo, pasteDao, dragAndDrop)
+                val pasteCollector =
+                    PasteCollector(dataFlavorMap.size, appInfo, pasteDao, pasteReleaseService, dragAndDrop)
 
                 preCollect(dataFlavorMap, pasteTransferable, pasteCollector)
                 pasteCollector.createPrePasteData(source, remote = remote)?.also { id ->

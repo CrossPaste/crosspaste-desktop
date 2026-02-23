@@ -24,7 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteTagMenuService
 import com.crosspaste.paste.PasteTag
@@ -44,7 +44,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SearchTagsView() {
     val copywriter = koinInject<GlobalCopywriter>()
-    val pasteDao = koinInject<PasteDao>()
+    val pasteTagDao = koinInject<PasteTagDao>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val tagMenuService = koinInject<DesktopPasteTagMenuService>()
 
@@ -87,9 +87,9 @@ fun SearchTagsView() {
             if (editingMap[tag.id] == true) {
                 tagScope.EditableTagChip { name ->
                     if (name.isBlank()) {
-                        pasteDao.deletePasteTagBlock(tag.id)
+                        pasteTagDao.deletePasteTagBlock(tag.id)
                     } else {
-                        pasteDao.updatePasteTagName(tag.id, name)
+                        pasteTagDao.updatePasteTagName(tag.id, name)
                     }
                     tagScope.stopEditing()
                 }
@@ -116,7 +116,7 @@ fun SearchTagsView() {
                 scope.EditableTagChip { name ->
                     newTag = null
                     if (!name.isBlank()) {
-                        pasteDao.createPasteTag(name, it.color)
+                        pasteTagDao.createPasteTag(name, it.color)
                     }
                     PasteTagScope.resetEditing()
                 }
@@ -130,7 +130,7 @@ fun SearchTagsView() {
                         newTag =
                             createDefaultPasteTag(
                                 name = copywriter.getText("unnamed"),
-                                maxSortOrder = pasteDao.getMaxSortOrder(),
+                                maxSortOrder = pasteTagDao.getMaxSortOrder(),
                             )
                         PasteTagScope.resetEditing()
                     }

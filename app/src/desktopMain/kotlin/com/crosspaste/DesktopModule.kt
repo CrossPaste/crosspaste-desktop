@@ -45,6 +45,7 @@ import com.crosspaste.db.DesktopDriverFactory
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.secure.SecureDao
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
@@ -131,6 +132,7 @@ import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
 import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportService
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
@@ -318,27 +320,13 @@ class DesktopModule(
             single<PasteDao> {
                 PasteDao(
                     appInfo = get(),
-                    commonConfigManager = get(),
-                    currentPaste = get(),
                     database = get(),
-                    pasteProcessPlugins =
-                        listOf(
-                            RemoveInvalidPlugin,
-                            DistinctPlugin(get()),
-                            GenerateTextPlugin,
-                            GenerateUrlPlugin,
-                            TextToColorPlugin,
-                            FilesToImagesPlugin(get()),
-                            FileToUrlPlugin(get()),
-                            RemoveFolderImagePlugin(get()),
-                            RemoveHtmlImagePlugin(get()),
-                            SortPlugin,
-                        ),
                     searchContentService = get(),
                     taskSubmitter = get(),
                     userDataPathProvider = get(),
                 )
             }
+            single<PasteTagDao> { PasteTagDao(get()) }
             single<SecureIO> { SecureDao(get()) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoDao(get()) }
             single<TaskDao> { TaskDao(get()) }
@@ -349,8 +337,8 @@ class DesktopModule(
         module {
             single<ExceptionHandler> { DesktopExceptionHandler() }
             single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
-            single<McpToolProvider> { McpToolProvider(get(), get(), get()) }
             single<McpResourceProvider> { McpResourceProvider(get()) }
+            single<McpToolProvider> { McpToolProvider(get(), get(), get(), get()) }
             single<McpServer> {
                 DesktopMcpServer(
                     mcpPort = (get<DesktopConfigManager>().getCurrentConfig()).mcpServerPort,
@@ -465,10 +453,34 @@ class DesktopModule(
                 OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get())
             }
             single<DesktopPasteMenuService> {
-                DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get(), get())
+                DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
             }
             single<DesktopPasteTagMenuService> {
                 DesktopPasteTagMenuService(get(), get())
+            }
+            single<PasteReleaseService> {
+                PasteReleaseService(
+                    commonConfigManager = get(),
+                    currentPaste = get(),
+                    database = get(),
+                    pasteDao = get(),
+                    pasteProcessPlugins =
+                        listOf(
+                            RemoveInvalidPlugin,
+                            DistinctPlugin(get()),
+                            GenerateTextPlugin,
+                            GenerateUrlPlugin,
+                            TextToColorPlugin,
+                            FilesToImagesPlugin(get()),
+                            FileToUrlPlugin(get()),
+                            RemoveFolderImagePlugin(get()),
+                            RemoveHtmlImagePlugin(get()),
+                            SortPlugin,
+                        ),
+                    searchContentService = get(),
+                    taskSubmitter = get(),
+                    userDataPathProvider = get(),
+                )
             }
             single<GenerateImageService> { GenerateImageService() }
             single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
@@ -477,7 +489,18 @@ class DesktopModule(
                 if (headless) {
                     HeadlessPasteboardService(get(), get())
                 } else {
-                    getDesktopPasteboardService(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+                    getDesktopPasteboardService(
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                        get(),
+                    )
                 }
             }
             single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }
@@ -508,6 +531,7 @@ class DesktopModule(
             single<TaskSubmitter> { DesktopTaskSubmitter(get(), get(), get(), lazy { get() }) }
             single<TransferableConsumer> {
                 DesktopTransferableConsumer(
+                    get(),
                     get(),
                     get(),
                     listOf(
@@ -598,7 +622,7 @@ class DesktopModule(
                 if (marketingMode) {
                     MarketingPasteSearchViewModel(get())
                 } else {
-                    GeneralPasteSearchViewModel(get(), get())
+                    GeneralPasteSearchViewModel(get(), get(), get())
                 }
             }
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }

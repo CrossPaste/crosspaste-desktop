@@ -3,7 +3,6 @@ package com.crosspaste.paste
 import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.sound.SoundService
@@ -27,7 +26,7 @@ class MacosPasteboardService(
     override val notificationManager: NotificationManager,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
-    override val pasteDao: PasteDao,
+    override val pasteReleaseService: PasteReleaseService,
     override val soundService: SoundService,
     override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService() {

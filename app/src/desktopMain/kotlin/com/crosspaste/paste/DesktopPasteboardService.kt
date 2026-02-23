@@ -2,7 +2,6 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.sound.SoundService
@@ -14,7 +13,7 @@ fun getDesktopPasteboardService(
     notificationManager: NotificationManager,
     pasteConsumer: TransferableConsumer,
     pasteProducer: TransferableProducer,
-    pasteDao: PasteDao,
+    pasteReleaseService: PasteReleaseService,
     platform: Platform,
     soundService: SoundService,
     sourceExclusionService: DesktopSourceExclusionService,
@@ -27,7 +26,7 @@ fun getDesktopPasteboardService(
             notificationManager,
             pasteConsumer,
             pasteProducer,
-            pasteDao,
+            pasteReleaseService,
             soundService,
             sourceExclusionService,
         )
@@ -39,7 +38,7 @@ fun getDesktopPasteboardService(
             notificationManager,
             pasteConsumer,
             pasteProducer,
-            pasteDao,
+            pasteReleaseService,
             platform,
             soundService,
             sourceExclusionService,
@@ -52,7 +51,7 @@ fun getDesktopPasteboardService(
             notificationManager,
             pasteConsumer,
             pasteProducer,
-            pasteDao,
+            pasteReleaseService,
             soundService,
             sourceExclusionService,
         )

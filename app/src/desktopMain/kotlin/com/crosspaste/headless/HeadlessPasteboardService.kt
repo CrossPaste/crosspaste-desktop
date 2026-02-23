@@ -1,8 +1,8 @@
 package com.crosspaste.headless
 
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.utils.ioDispatcher
@@ -14,7 +14,7 @@ import kotlinx.coroutines.channels.Channel
 
 class HeadlessPasteboardService(
     override val configManager: CommonConfigManager,
-    override val pasteDao: PasteDao,
+    override val pasteReleaseService: PasteReleaseService,
 ) : PasteboardService {
 
     override val logger: KLogger = KotlinLogging.logger {}
@@ -65,19 +65,16 @@ class HeadlessPasteboardService(
         }
 
     override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
-        pasteDao.releaseRemotePasteData(pasteData) {
+        pasteReleaseService.releaseRemotePasteData(pasteData) {
             remotePasteboardChannel.trySend {
                 tryWritePasteboard(pasteData = it, localOnly = true)
             }
         }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?> =
-        pasteDao.releaseRemotePasteDataWithFile(pasteData.id) {
+        pasteReleaseService.releaseRemotePasteDataWithFile(pasteData.id) {
             remotePasteboardChannel.trySend {
                 tryWritePasteboard(pasteData = it, localOnly = true)
             }
         }
-
-    override suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit?> =
-        pasteDao.markDeletePasteData(pasteData.id)
 }

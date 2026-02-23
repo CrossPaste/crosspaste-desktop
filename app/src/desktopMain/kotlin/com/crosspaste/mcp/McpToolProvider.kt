@@ -3,6 +3,7 @@ package com.crosspaste.mcp
 import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteState
@@ -47,6 +48,7 @@ import okio.Path.Companion.toPath
 class McpToolProvider(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
+    private val pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
 ) {
     private val fileUtils = getFileUtils()
@@ -235,7 +237,7 @@ class McpToolProvider(
             name = "list_tags",
             description = "List all clipboard tags for organizing paste items.",
         ) { _ ->
-            val tags = pasteDao.getAllTagsFlow().first()
+            val tags = pasteTagDao.getAllTagsFlow().first()
             val text =
                 if (tags.isEmpty()) {
                     "No tags found."
