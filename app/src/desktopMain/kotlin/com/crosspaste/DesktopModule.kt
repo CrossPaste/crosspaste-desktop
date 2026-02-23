@@ -181,6 +181,7 @@ import com.crosspaste.share.DesktopAppShareService
 import com.crosspaste.sound.DesktopSoundService
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.DesktopQRCodeGenerator
+import com.crosspaste.sync.FilePullService
 import com.crosspaste.sync.GeneralNearbyDeviceManager
 import com.crosspaste.sync.GeneralSyncManager
 import com.crosspaste.sync.MarketingNearbyDeviceManager
@@ -508,6 +509,7 @@ class DesktopModule(
             single<PasteImportParamFactory<Path>> { DesktopPasteImportParamFactory() }
             single<PasteImportService> { PasteImportService(get(), get(), get(), get()) }
             single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
+            single<FilePullService> { FilePullService(get(), get(), get(), get()) }
             single<SearchContentService> { DesktopSearchContentService() }
             single<TaskExecutor> {
                 TaskExecutor(
@@ -520,7 +522,7 @@ class DesktopModule(
                             lazy { get<RenderingService<String>>(named("urlRendering")) },
                             get(),
                         ),
-                        PullFileTaskExecutor(get(), get(), get(), get(), get(), get(), get()),
+                        PullFileTaskExecutor(get(), get(), get(), get(), get()),
                         PullIconTaskExecutor(get(), get(), get(), get()),
                         SwitchLanguageTaskExecutor(get(), get()),
                         SyncPasteTaskExecutor(get(), get(), get(), get(), get(), get()),
