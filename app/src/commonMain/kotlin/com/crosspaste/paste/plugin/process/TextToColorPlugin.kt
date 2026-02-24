@@ -6,11 +6,11 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.utils.getColorUtils
+import com.crosspaste.utils.getColorParser
 
 object TextToColorPlugin : PasteProcessPlugin {
 
-    private val colorUtils = getColorUtils()
+    private val colorParser = getColorParser()
 
     override fun process(
         pasteCoordinate: PasteCoordinate,
@@ -19,7 +19,7 @@ object TextToColorPlugin : PasteProcessPlugin {
     ): List<PasteItem> {
         if (pasteItems.all { it !is ColorPasteItem }) {
             pasteItems.filterIsInstance<TextPasteItem>().firstOrNull()?.let {
-                colorUtils.toColor(it.text)?.let { color ->
+                colorParser.toColor(it.text)?.let { color ->
                     return pasteItems +
                         createColorPasteItem(
                             identifiers = it.identifiers,

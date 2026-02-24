@@ -1,7 +1,7 @@
 package com.crosspaste.utils
 
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.utils.ColorUtils.hslToColor
+import com.crosspaste.utils.ColorParser.hslToColor
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Element
 import com.helger.css.decl.CSSDeclaration

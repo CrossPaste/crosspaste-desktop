@@ -28,7 +28,7 @@ import com.crosspaste.paste.plugin.type.DesktopRtfTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopUrlTypePlugin
 import com.crosspaste.presist.SingleFileInfoTree
-import com.crosspaste.utils.ColorUtils
+import com.crosspaste.utils.ColorParser
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.HtmlUtils
 import com.crosspaste.utils.getCodecsUtils
@@ -366,7 +366,7 @@ class McpToolProvider(
                 }
                 "color" -> {
                     val color =
-                        ColorUtils.toColor(content)
+                        ColorParser.toColor(content)
                             ?: return Result.failure(
                                 IllegalArgumentException(
                                     "Invalid color value: '$content'. " +

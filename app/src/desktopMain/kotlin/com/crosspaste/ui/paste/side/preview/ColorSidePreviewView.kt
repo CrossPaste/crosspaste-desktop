@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.utils.ColorUtils.getBestTextColor
+import com.crosspaste.utils.ColorAccessibility.getBestTextColor
 
 @Composable
 fun PasteDataScope.ColorSidePreviewView() {

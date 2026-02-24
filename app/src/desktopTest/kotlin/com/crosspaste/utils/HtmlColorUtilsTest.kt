@@ -1,7 +1,7 @@
 package com.crosspaste.utils
 
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.utils.ColorUtils.toRGBString
+import com.crosspaste.utils.ColorConversion.toRGBString
 import kotlin.test.DefaultAsserter.assertEquals
 import kotlin.test.DefaultAsserter.assertNotNull
 import kotlin.test.DefaultAsserter.assertNull

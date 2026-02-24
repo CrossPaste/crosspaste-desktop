@@ -62,7 +62,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.DesktopAppUIFont
-import com.crosspaste.utils.ColorUtils.getBestTextColor
+import com.crosspaste.utils.ColorAccessibility.getBestTextColor
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.RelativeTime
 import kotlinx.coroutines.launch
