@@ -522,7 +522,7 @@ class DesktopModule(
                             lazy { get<RenderingService<String>>(named("urlRendering")) },
                             get(),
                         ),
-                        PullFileTaskExecutor(get(), get(), get(), get(), get()),
+                        PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
                         PullIconTaskExecutor(get(), get(), get(), get()),
                         SwitchLanguageTaskExecutor(get(), get()),
                         SyncPasteTaskExecutor(get(), get(), get(), get(), get(), get()),

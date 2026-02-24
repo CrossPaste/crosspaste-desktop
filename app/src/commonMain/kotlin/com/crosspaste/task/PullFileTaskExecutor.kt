@@ -9,6 +9,7 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
@@ -27,9 +28,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 class PullFileTaskExecutor(
     private val filePullService: FilePullService,
     private val pasteDao: PasteDao,
-    private val userDataPathProvider: UserDataPathProvider,
+    private val pasteSyncProcessManager: PasteSyncProcessManager<Long>,
     private val pasteboardService: PasteboardService,
     private val soundService: SoundService,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : SingleTypeTaskExecutor {
 
     companion object PullFileTaskExecutor {
@@ -91,9 +93,7 @@ class PullFileTaskExecutor(
                 )
 
             handleResult(result, pasteData, pullExtraInfo, pasteTask.modifyTime)
-        } ?: run {
-            SuccessPasteTaskResult()
-        }
+        } ?: SuccessPasteTaskResult()
     }
 
     private suspend fun handleResult(
@@ -149,6 +149,14 @@ class PullFileTaskExecutor(
             }
         }
 
+    /**
+     * Apply conflict-resolved file renames to the paste data model.
+     *
+     * When pulling files into a download directory, [FilePullService] may rename files
+     * to avoid conflicts (e.g. "a.txt" -> "a (1).txt"). This method propagates those
+     * renames into [PasteData.pasteAppearItem] and [PasteData.pasteCollection] so the
+     * stored metadata matches the actual filenames on disk.
+     */
     private fun applyRenameMapToPasteData(
         pasteData: PasteData,
         renameMap: Map<String, String>,
@@ -176,6 +184,7 @@ class PullFileTaskExecutor(
 
         if (!needRetry) {
             logger.error { "exist pull chunk fail" }
+            pasteSyncProcessManager.cleanProcess(pasteData.id)
             cleanupPullFiles(pasteData)
             pasteDao.markDeletePasteData(pasteData.id)
             soundService.errorSound()

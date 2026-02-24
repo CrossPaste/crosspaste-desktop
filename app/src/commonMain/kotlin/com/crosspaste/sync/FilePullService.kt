@@ -29,7 +29,19 @@ sealed class FilePullResult {
     data class Failure(
         val failedChunks: Map<Int, FailureResult>,
         val pullChunks: IntArray,
-    ) : FilePullResult()
+    ) : FilePullResult() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Failure) return false
+            return failedChunks == other.failedChunks && pullChunks.contentEquals(other.pullChunks)
+        }
+
+        override fun hashCode(): Int {
+            var result = failedChunks.hashCode()
+            result = 31 * result + pullChunks.contentHashCode()
+            return result
+        }
+    }
 
     data object Empty : FilePullResult()
 
@@ -60,6 +72,18 @@ class FilePullService(
         private val fileUtils: FileUtils = getFileUtils()
     }
 
+    /**
+     * Pull files from a remote device in chunks.
+     *
+     * @param pullChunks tracks per-chunk download status (0 = pending, 1 = done).
+     *   Empty on first attempt; on retry, carries forward the state from the previous attempt
+     *   so only failed chunks are re-downloaded.
+     *
+     * Note: `resolveConflicts` is set to `!isRetry` because filename conflict resolution
+     * (e.g. renaming "a.txt" to "a (1).txt") must only happen on the first pull.
+     * Retries must reuse the same resolved paths to keep the `FilesIndex` consistent
+     * with already-downloaded chunks.
+     */
     suspend fun pullFiles(
         appInstanceId: String,
         pasteId: Long,
@@ -87,6 +111,7 @@ class FilePullService(
         val filesIndex = filesIndexBuilder.build()
 
         if (filesIndex.getChunkCount() == 0) {
+            logger.warn { "No files to pull for pasteId $pasteId, remotePasteId $remotePasteId" }
             return FilePullResult.Empty
         }
 
@@ -94,8 +119,9 @@ class FilePullService(
             if (pullChunks.isEmpty()) {
                 IntArray(filesIndex.getChunkCount())
             } else {
-                if (pullChunks.size != filesIndex.getChunkCount()) {
-                    throw IllegalArgumentException("pullChunks size is not equal to chunkNum")
+                require(pullChunks.size == filesIndex.getChunkCount()) {
+                    "pasteId = $pasteId, Pull chunks count mismatch: " +
+                        "pullChunks.size=${pullChunks.size}, chunkCount=${filesIndex.getChunkCount()}"
                 }
                 pullChunks
             }
