@@ -41,7 +41,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.PasteData
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.ui.DesktopContext.BubbleWindowContext
@@ -125,7 +125,7 @@ private class BubbleShape(
 @Composable
 fun BubbleWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val pasteDao = koinInject<PasteDao>()
+    val pasteDao = koinInject<PasteDaoApi>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = getPlatformUtils().platform
@@ -307,7 +307,7 @@ fun BubbleWindow(windowIcon: Painter?) {
 @Composable
 private fun BubbleWindowContent(
     pasteId: Long,
-    pasteDao: PasteDao,
+    pasteDao: PasteDaoApi,
     onEscape: () -> Unit,
     tailCenterFraction: Float,
 ) {

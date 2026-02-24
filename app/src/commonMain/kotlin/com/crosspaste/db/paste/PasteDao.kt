@@ -27,7 +27,7 @@ class PasteDao(
     private val searchContentService: SearchContentService,
     private val taskSubmitter: TaskSubmitter,
     private val userDataPathProvider: UserDataPathProvider,
-) {
+) : PasteDaoApi {
 
     private val logger = KotlinLogging.logger {}
 
@@ -35,7 +35,7 @@ class PasteDao(
 
     private val markDeleteBatchNum = 50L
 
-    fun getNoDeletePasteDataBlock(id: Long): PasteData? {
+    override fun getNoDeletePasteDataBlock(id: Long): PasteData? {
         return pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.LOADING.toLong(), PasteState.LOADED.toLong()),
@@ -44,7 +44,7 @@ class PasteDao(
     }
 
     @Suppress("unused")
-    fun getNoDeletePasteDataFlow(id: Long): Flow<PasteData?> {
+    override fun getNoDeletePasteDataFlow(id: Long): Flow<PasteData?> {
         return pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.LOADING.toLong(), PasteState.LOADED.toLong()),
@@ -58,11 +58,11 @@ class PasteDao(
             .flowOn(ioDispatcher)
     }
 
-    suspend fun getNoDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
+    override suspend fun getNoDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
         getNoDeletePasteDataBlock(id)
     }
 
-    suspend fun getLoadingPasteData(id: Long): PasteData? = withContext(ioDispatcher) {
+    override suspend fun getLoadingPasteData(id: Long): PasteData? = withContext(ioDispatcher) {
         pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.LOADING.toLong()),
@@ -70,7 +70,7 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
-    fun getLoadedPasteDataBlock(id: Long): PasteData? {
+    override fun getLoadedPasteDataBlock(id: Long): PasteData? {
         return pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.LOADED.toLong()),
@@ -78,12 +78,12 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
-    suspend fun getLatestLoadedPasteData(): PasteData? = withContext(ioDispatcher) {
+    override suspend fun getLatestLoadedPasteData(): PasteData? = withContext(ioDispatcher) {
         pasteDatabaseQueries.getLatestLoadedPasteData(PasteData::mapper)
             .executeAsOneOrNull()
     }
 
-    suspend fun getDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
+    override suspend fun getDeletePasteData(id: Long): PasteData? = withContext(ioDispatcher) {
         pasteDatabaseQueries.getPasteData(
             id,
             listOf(PasteState.DELETED.toLong()),
@@ -91,14 +91,14 @@ class PasteDao(
         ).executeAsOneOrNull()
     }
 
-    suspend fun setFavorite(
+    override suspend fun setFavorite(
         pasteId: Long,
         favorite: Boolean,
     ): Unit = withContext(ioDispatcher) {
         pasteDatabaseQueries.updateFavorite(favorite, pasteId)
     }
 
-    suspend fun createPasteData(pasteData: PasteData, pasteState: Int? = null): Long = withContext(ioDispatcher) {
+    override suspend fun createPasteData(pasteData: PasteData, pasteState: Int?): Long = withContext(ioDispatcher) {
         database.transactionWithResult {
             pasteDatabaseQueries.createPasteDataEntity(
                 pasteData.appInstanceId,
@@ -121,7 +121,7 @@ class PasteDao(
         }
     }
 
-    suspend fun updateFilePath(pasteData: PasteData) = withContext(ioDispatcher) {
+    override suspend fun updateFilePath(pasteData: PasteData): Unit = withContext(ioDispatcher) {
         pasteDatabaseQueries.updateRemotePasteDataWithFile(
             pasteData.pasteAppearItem?.toJson(),
             pasteData.pasteCollection.toJson(),
@@ -149,7 +149,7 @@ class PasteDao(
         }
     }
 
-    suspend fun markAllDeleteExceptFavorite(): Result<Unit> {
+    override suspend fun markAllDeleteExceptFavorite(): Result<Unit> {
         return runCatching {
             batchMarkDelete {
                 pasteDatabaseQueries.queryNoFavorite(markDeleteBatchNum)
@@ -159,7 +159,7 @@ class PasteDao(
         }
     }
 
-    suspend fun markDeletePasteData(id: Long): Result<Unit> = withContext(ioDispatcher) {
+    override suspend fun markDeletePasteData(id: Long): Result<Unit> = withContext(ioDispatcher) {
         runCatching {
             taskSubmitter.submit {
                 database.transaction {
@@ -172,7 +172,7 @@ class PasteDao(
         }
     }
 
-    suspend fun cutPasteData(id: Long, delayMillis: Long) = withContext(ioDispatcher) {
+    override suspend fun cutPasteData(id: Long, delayMillis: Long): Unit = withContext(ioDispatcher) {
         runCatching {
             taskSubmitter.submit {
                 database.transaction {
@@ -185,7 +185,7 @@ class PasteDao(
         }
     }
 
-    suspend fun deletePasteData(id: Long) = withContext(ioDispatcher) {
+    override suspend fun deletePasteData(id: Long): Unit = withContext(ioDispatcher) {
         getDeletePasteData(id)?.let {
             it.clear(userDataPathProvider)
             pasteDatabaseQueries.deletePasteData(listOf(id))
@@ -193,7 +193,7 @@ class PasteDao(
     }
 
     @Suppress("unused")
-    fun getPasteDataFlow(limit: Long): Flow<List<PasteData>> {
+    override fun getPasteDataFlow(limit: Long): Flow<List<PasteData>> {
         return pasteDatabaseQueries.getPasteDataListLimit(limit, PasteData::mapper)
             .asFlow()
             .map { it.executeAsList() }
@@ -204,7 +204,7 @@ class PasteDao(
             .flowOn(ioDispatcher)
     }
 
-    fun getSameHashPasteDataIds(hash: String, pasteType: Int, excludeId: Long): List<Long> {
+    override fun getSameHashPasteDataIds(hash: String, pasteType: Int, excludeId: Long): List<Long> {
         return pasteDatabaseQueries.getSameHashPasteDataIds(
             hash,
             pasteType.toLong(),
@@ -213,16 +213,16 @@ class PasteDao(
         ).executeAsList()
     }
 
-    suspend fun markDeleteByCleanTime(
+    override suspend fun markDeleteByCleanTime(
         cleanTime: Long,
-        pasteType: Int? = null,
+        pasteType: Int?,
     ) {
         batchMarkDelete {
             pasteDatabaseQueries.queryByCleanTime(cleanTime, pasteType?.toLong(), markDeleteBatchNum)
         }
     }
 
-    suspend fun getSize(allOrFavorite: Boolean = false): Long = withContext(ioDispatcher) {
+    override suspend fun getSize(allOrFavorite: Boolean): Long = withContext(ioDispatcher) {
         if (allOrFavorite) {
             pasteDatabaseQueries.getSize().executeAsOne().SUM ?: 0L
         } else {
@@ -230,19 +230,19 @@ class PasteDao(
         }
     }
 
-    suspend fun getMinPasteDataCreateTime(): Long? = withContext(ioDispatcher) {
+    override suspend fun getMinPasteDataCreateTime(): Long? = withContext(ioDispatcher) {
         pasteDatabaseQueries.getMinCreateTime().executeAsOneOrNull()?.MIN
     }
 
-    suspend fun updateCreateTime(id: Long): Unit = withContext(ioDispatcher) {
+    override suspend fun updateCreateTime(id: Long): Unit = withContext(ioDispatcher) {
         pasteDatabaseQueries.updateCreateTime(id = id, time = DateUtils.nowEpochMilliseconds())
     }
 
-    suspend fun updatePasteAppearItem(
+    override suspend fun updatePasteAppearItem(
         id: Long,
         pasteItem: PasteItem,
         pasteSearchContent: String,
-        addedSize: Long = 0L,
+        addedSize: Long,
     ): Result<Unit> = withContext(ioDispatcher) {
         database.transactionWithResult {
             pasteDatabaseQueries.updatePasteAppearItem(
@@ -262,15 +262,15 @@ class PasteDao(
         }
     }
 
-    suspend fun updatePasteState(id: Long, pasteState: Int) = withContext(ioDispatcher) {
+    override suspend fun updatePasteState(id: Long, pasteState: Int): Unit = withContext(ioDispatcher) {
         pasteDatabaseQueries.updatePasteDataState(pasteState.toLong(), id)
     }
 
-    suspend fun getSizeByTimeLessThan(time: Long): Long = withContext(ioDispatcher) {
+    override suspend fun getSizeByTimeLessThan(time: Long): Long = withContext(ioDispatcher) {
         pasteDatabaseQueries.getSizeByTimeLessThan(time).executeAsOne().SUM ?: 0L
     }
 
-    suspend fun findCleanTimeByCumulativeSize(targetSize: Long): Long? = withContext(ioDispatcher) {
+    override suspend fun findCleanTimeByCumulativeSize(targetSize: Long): Long? = withContext(ioDispatcher) {
         var cumulativeSize = 0L
         var afterTime = -1L
         var afterId = -1L
@@ -335,13 +335,13 @@ class PasteDao(
         }
     }
 
-    suspend fun searchPasteData(
+    override suspend fun searchPasteData(
         searchTerms: List<String>,
-        local: Boolean? = null,
-        favorite: Boolean? = null,
-        pasteType: Int? = null,
-        sort: Boolean = true,
-        tag: Long? = null,
+        local: Boolean?,
+        favorite: Boolean?,
+        pasteType: Int?,
+        sort: Boolean,
+        tag: Long?,
         limit: Int,
     ): List<PasteData> = withContext(ioDispatcher) {
         logExecutionTime(logger, "searchPasteData") {
@@ -350,13 +350,13 @@ class PasteDao(
         }
     }
 
-    fun searchPasteDataFlow(
+    override fun searchPasteDataFlow(
         searchTerms: List<String>,
-        local: Boolean? = null,
-        favorite: Boolean? = null,
-        pasteType: Int? = null,
-        sort: Boolean = true,
-        tag: Long? = null,
+        local: Boolean?,
+        favorite: Boolean?,
+        pasteType: Int?,
+        sort: Boolean,
+        tag: Long?,
         limit: Int,
     ): Flow<List<PasteData>> {
         return logExecutionTime(logger, "searchPasteData") {
@@ -374,17 +374,17 @@ class PasteDao(
         }
     }
 
-    suspend fun searchBySource(source: String): List<PasteData> = withContext(ioDispatcher) {
+    override suspend fun searchBySource(source: String): List<PasteData> = withContext(ioDispatcher) {
         pasteDatabaseQueries.searchBySource(source, mapper = PasteData::mapper)
             .executeAsList()
     }
 
-    suspend fun getDistinctSources(): List<String> = withContext(ioDispatcher) {
+    override suspend fun getDistinctSources(): List<String> = withContext(ioDispatcher) {
         pasteDatabaseQueries.getDistinctSources(appInfo.appInstanceId)
             .executeAsList()
     }
 
-    suspend fun getPasteResourceInfo(favorite: Boolean? = null): PasteResourceInfo = withContext(ioDispatcher) {
+    override suspend fun getPasteResourceInfo(favorite: Boolean?): PasteResourceInfo = withContext(ioDispatcher) {
         val builder = PasteResourceInfoBuilder()
         val doAdd: (PasteData) -> Unit = { pasteData ->
             if (favorite == null || favorite == pasteData.favorite) {
@@ -405,8 +405,8 @@ class PasteDao(
         builder.build()
     }
 
-    suspend fun batchReadPasteData(
-        batchNum: Long = 1000L,
+    override suspend fun batchReadPasteData(
+        batchNum: Long,
         readPasteDataList: suspend (Long, Long) -> List<PasteData>,
         dealPasteData: (PasteData) -> Unit): Long = withContext(ioDispatcher) {
         var id = -1L
@@ -422,7 +422,7 @@ class PasteDao(
         count
     }
 
-    suspend fun getExportPasteData(
+    override suspend fun getExportPasteData(
         id: Long,
         limit: Long,
         pasteExportParam: PasteExportParam,
@@ -436,7 +436,7 @@ class PasteDao(
         ).executeAsList()
     }
 
-    suspend fun getExportNum(pasteExportParam: PasteExportParam): Long = withContext(ioDispatcher) {
+    override suspend fun getExportNum(pasteExportParam: PasteExportParam): Long = withContext(ioDispatcher) {
         pasteDatabaseQueries.getExportNum(
             pasteExportParam.types,
             pasteExportParam.onlyFavorite,

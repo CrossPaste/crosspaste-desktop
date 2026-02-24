@@ -1,15 +1,15 @@
 package com.crosspaste.paste
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import java.util.concurrent.atomic.AtomicReference
 
 class DesktopCurrentPaste(
-    private val lazyPasteDao: Lazy<PasteDao>,
+    private val lazyPasteDao: Lazy<PasteDaoApi>,
 ) : CurrentPaste() {
 
     private val currentId: AtomicReference<Long?> = AtomicReference<Long?>()
 
-    override val pasteDao: PasteDao by lazy { lazyPasteDao.value }
+    override val pasteDao: PasteDaoApi by lazy { lazyPasteDao.value }
 
     override suspend fun setPasteId(
         id: Long,

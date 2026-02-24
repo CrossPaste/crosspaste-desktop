@@ -1,6 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
@@ -16,7 +16,9 @@ class DeletePasteTaskExecutorTest {
 
     private val jsonUtils = getJsonUtils()
 
-    private fun createExecutor(pasteDao: PasteDao = mockk(relaxed = true)): Pair<DeletePasteTaskExecutor, PasteDao> {
+    private fun createExecutor(
+        pasteDao: PasteDaoApi = mockk(relaxed = true),
+    ): Pair<DeletePasteTaskExecutor, PasteDaoApi> {
         val executor = DeletePasteTaskExecutor(pasteDao)
         return executor to pasteDao
     }
@@ -61,7 +63,7 @@ class DeletePasteTaskExecutorTest {
     @Test
     fun `valid pasteDataId calls deletePasteData and returns success`() =
         runTest {
-            val pasteDao: PasteDao = mockk(relaxed = true)
+            val pasteDao: PasteDaoApi = mockk(relaxed = true)
             val (executor, _) = createExecutor(pasteDao)
             val task = createPasteTask(pasteDataId = 42L)
 
@@ -74,7 +76,7 @@ class DeletePasteTaskExecutorTest {
     @Test
     fun `exception during delete returns failure`() =
         runTest {
-            val pasteDao: PasteDao = mockk(relaxed = true)
+            val pasteDao: PasteDaoApi = mockk(relaxed = true)
             coEvery { pasteDao.deletePasteData(any()) } throws RuntimeException("DB error")
             val (executor, _) = createExecutor(pasteDao)
             val task = createPasteTask(pasteDataId = 1L)
@@ -88,7 +90,7 @@ class DeletePasteTaskExecutorTest {
     @Test
     fun `multiple deletes with same id are serialized via mutex`() =
         runTest {
-            val pasteDao: PasteDao = mockk(relaxed = true)
+            val pasteDao: PasteDaoApi = mockk(relaxed = true)
             val (executor, _) = createExecutor(pasteDao)
             val task1 = createPasteTask(pasteDataId = 1L)
             val task2 = createPasteTask(pasteDataId = 1L)

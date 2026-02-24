@@ -43,7 +43,7 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Bookmark
 import com.composables.icons.materialsymbols.roundedfilled.Bookmark
 import com.crosspaste.app.AppControl
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.paste.item.PasteItem
@@ -73,7 +73,7 @@ fun PasteDataScope.SidePasteTitleView() {
     val appControl = koinInject<AppControl>()
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
-    val pasteDao = koinInject<PasteDao>()
+    val pasteDao = koinInject<PasteDaoApi>()
     val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
 
     val pasteItem = getPasteItem(PasteItem::class)

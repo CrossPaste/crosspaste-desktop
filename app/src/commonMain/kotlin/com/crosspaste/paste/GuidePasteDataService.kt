@@ -2,7 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppLaunchState
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
@@ -19,7 +19,7 @@ abstract class GuidePasteDataService(
     private val appInfo: AppInfo,
     private val appLaunchState: AppLaunchState,
     private val copywriter: GlobalCopywriter,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val searchContentService: SearchContentService,
 ) {
 

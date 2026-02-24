@@ -3,7 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.Database
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemProperties
@@ -23,7 +23,7 @@ class PasteReleaseService(
     private val commonConfigManager: CommonConfigManager,
     private val currentPaste: CurrentPaste,
     private val database: Database,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
     private val searchContentService: SearchContentService,
     private val taskSubmitter: TaskSubmitter,

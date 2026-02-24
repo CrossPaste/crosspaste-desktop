@@ -1,6 +1,6 @@
 package com.crosspaste.paste
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
@@ -12,7 +12,7 @@ interface CacheManager {
 
     val dateUtils: DateUtils
 
-    val pasteDao: PasteDao
+    val pasteDao: PasteDaoApi
 
     val userDataPathProvider: UserDataPathProvider
 

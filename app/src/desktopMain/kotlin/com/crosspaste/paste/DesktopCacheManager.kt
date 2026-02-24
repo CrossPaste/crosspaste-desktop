@@ -1,6 +1,6 @@
 package com.crosspaste.paste
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.utils.DateUtils
@@ -11,7 +11,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.TimeUnit
 
 class DesktopCacheManager(
-    override val pasteDao: PasteDao,
+    override val pasteDao: PasteDaoApi,
     override val userDataPathProvider: UserDataPathProvider,
 ) : CacheManager {
 

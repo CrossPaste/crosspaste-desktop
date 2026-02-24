@@ -1,7 +1,7 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.utils.getJsonUtils
@@ -27,7 +27,7 @@ class PasteCollectorTest {
             appRevision = "abc",
             userName = "testUser",
         )
-    private val pasteDao: PasteDao = mockk(relaxed = true)
+    private val pasteDao: PasteDaoApi = mockk(relaxed = true)
     private val pasteReleaseService: PasteReleaseService = mockk(relaxed = true)
 
     private interface TestPasteTypePlugin : PasteTypePlugin

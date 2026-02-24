@@ -4,7 +4,7 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -43,7 +43,7 @@ class SyncPasteTaskExecutorTest {
                 userName = "testUser",
             )
         val configManager: CommonConfigManager = mockk(relaxed = true)
-        val pasteDao: PasteDao = mockk(relaxed = true)
+        val pasteDao: PasteDaoApi = mockk(relaxed = true)
         val pasteClientApi: PasteClientApi = mockk(relaxed = true)
         val syncManager: SyncManager = mockk(relaxed = true)
 

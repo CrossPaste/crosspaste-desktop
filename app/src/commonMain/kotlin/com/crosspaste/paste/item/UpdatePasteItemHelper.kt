@@ -1,6 +1,6 @@
 package com.crosspaste.paste.item
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.copy
@@ -8,7 +8,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
 import kotlinx.serialization.json.put
 
 class UpdatePasteItemHelper(
-    val pasteDao: PasteDao,
+    val pasteDao: PasteDaoApi,
     val searchContentService: SearchContentService,
 ) {
     suspend fun updateColor(

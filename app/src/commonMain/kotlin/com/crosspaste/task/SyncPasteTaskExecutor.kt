@@ -4,7 +4,7 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -36,7 +36,7 @@ class SyncPasteTaskExecutor(
     private val appControl: AppControl,
     private val appInfo: AppInfo,
     private val configManager: CommonConfigManager,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val pasteClientApi: PasteClientApi,
     private val syncManager: SyncManager,
 ) : SingleTypeTaskExecutor {

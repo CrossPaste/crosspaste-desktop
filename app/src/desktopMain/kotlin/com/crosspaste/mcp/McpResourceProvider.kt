@@ -1,6 +1,6 @@
 package com.crosspaste.mcp
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
@@ -11,7 +11,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
 
 class McpResourceProvider(
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
 ) {
 
     fun registerResources(server: Server) {

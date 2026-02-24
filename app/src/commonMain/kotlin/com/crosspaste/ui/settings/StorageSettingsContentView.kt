@@ -20,7 +20,7 @@ import com.composables.icons.materialsymbols.rounded.Percent
 import com.composables.icons.materialsymbols.rounded.Storage
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
@@ -36,7 +36,7 @@ import org.koin.compose.koinInject
 fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val pasteDao = koinInject<PasteDao>()
+    val pasteDao = koinInject<PasteDaoApi>()
     val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()

@@ -45,6 +45,7 @@ import com.crosspaste.db.DesktopDriverFactory
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.secure.SecureDao
 import com.crosspaste.db.secure.SecureIO
@@ -317,7 +318,7 @@ class DesktopModule(
         module {
             single<DriverFactory> { DesktopDriverFactory(get()) }
             single<Database> { createDatabase(get()) }
-            single<PasteDao> {
+            single<PasteDaoApi> {
                 PasteDao(
                     appInfo = get(),
                     database = get(),

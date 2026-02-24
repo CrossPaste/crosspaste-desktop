@@ -1,7 +1,7 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.notification.MessageType
@@ -24,7 +24,7 @@ import okio.Path
 
 class PasteImportService(
     private val notificationManager: NotificationManager,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val searchContentService: SearchContentService,
     private val userDataPathProvider: UserDataPathProvider,
 ) {

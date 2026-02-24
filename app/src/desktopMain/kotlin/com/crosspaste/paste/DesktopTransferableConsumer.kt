@@ -1,14 +1,14 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class DesktopTransferableConsumer(
     private val appInfo: AppInfo,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val pasteReleaseService: PasteReleaseService,
     pasteTypePlugins: List<PasteTypePlugin>,
 ) : TransferableConsumer {

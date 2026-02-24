@@ -1,7 +1,7 @@
 package com.crosspaste.task
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
@@ -25,7 +25,7 @@ import io.ktor.utils.io.*
 import okio.Path
 
 class PullIconTaskExecutor(
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val userDataPathProvider: UserDataPathProvider,
     private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,

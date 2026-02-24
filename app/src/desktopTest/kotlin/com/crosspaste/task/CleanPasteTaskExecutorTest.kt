@@ -3,7 +3,7 @@ package com.crosspaste.task
 import com.crosspaste.clean.CleanTime
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
@@ -21,7 +21,7 @@ class CleanPasteTaskExecutorTest {
     private val jsonUtils = getJsonUtils()
 
     private class TestDeps {
-        val pasteDao: PasteDao = mockk(relaxed = true)
+        val pasteDao: PasteDaoApi = mockk(relaxed = true)
         val configManager: CommonConfigManager = mockk(relaxed = true)
 
         init {

@@ -1,7 +1,7 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.copy
@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
 class PasteCollector(
     itemCount: Int,
     private val appInfo: AppInfo,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val pasteReleaseService: PasteReleaseService,
     private val dragAndDrop: Boolean = false,
 ) {

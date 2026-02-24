@@ -2,7 +2,7 @@ package com.crosspaste.mcp
 
 import androidx.compose.ui.graphics.toArgb
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
@@ -47,7 +47,7 @@ import okio.Path.Companion.toPath
 
 class McpToolProvider(
     private val appInfo: AppInfo,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
 ) {

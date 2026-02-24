@@ -36,7 +36,7 @@ import coil3.size.Precision
 import coil3.size.Scale
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaders
@@ -58,7 +58,7 @@ import org.koin.compose.koinInject
 fun SourceControlContentView() {
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val pasteDao = koinInject<PasteDao>()
+    val pasteDao = koinInject<PasteDaoApi>()
     val sourceExclusionService = koinInject<DesktopSourceExclusionService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 

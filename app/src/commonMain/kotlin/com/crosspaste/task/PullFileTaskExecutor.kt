@@ -1,6 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -35,7 +35,7 @@ import io.ktor.http.*
 import io.ktor.utils.io.*
 
 class PullFileTaskExecutor(
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val pullClientApi: PullClientApi,
     private val userDataPathProvider: UserDataPathProvider,
     private val pasteSyncProcessManager: PasteSyncProcessManager<Long>,

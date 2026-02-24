@@ -4,7 +4,7 @@ import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.HIDE_WINDOW
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
@@ -33,7 +33,7 @@ class DesktopShortKeysAction(
     private val currentPaste: CurrentPaste,
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
 ) : ShortcutKeysAction {
 
     private val logger = KotlinLogging.logger {}

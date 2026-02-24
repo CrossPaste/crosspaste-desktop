@@ -3,14 +3,14 @@ package com.crosspaste.ui.settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 
 class StorageStatisticsScope(
-    val pasteDao: PasteDao,
+    val pasteDao: PasteDaoApi,
     val scope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) {
 

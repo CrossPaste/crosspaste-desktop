@@ -2,7 +2,7 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.CacheManager
@@ -19,7 +19,7 @@ import io.ktor.utils.io.*
 fun Routing.pullRouting(
     appInfo: AppInfo,
     cacheManager: CacheManager,
-    pasteDao: PasteDao,
+    pasteDao: PasteDaoApi,
     syncRoutingApi: SyncRoutingApi,
     userDataPathProvider: UserDataPathProvider,
 ) {

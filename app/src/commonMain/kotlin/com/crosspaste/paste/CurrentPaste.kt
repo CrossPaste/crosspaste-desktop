@@ -1,13 +1,13 @@
 package com.crosspaste.paste
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 abstract class CurrentPaste {
 
     protected val logger = KotlinLogging.logger {}
 
-    abstract val pasteDao: PasteDao
+    abstract val pasteDao: PasteDaoApi
 
     abstract suspend fun setPasteId(
         id: Long,

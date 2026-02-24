@@ -1,6 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.DelayedDeleteExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
@@ -14,7 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class DelayedDeletePasteTaskExecutor(
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val scope: CoroutineScope = CoroutineScope(cpuDispatcher + SupervisorJob()),
 ) : SingleTypeTaskExecutor {
 

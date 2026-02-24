@@ -13,7 +13,7 @@ import com.composables.icons.materialsymbols.rounded.Check
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.OCRModule
@@ -47,7 +47,7 @@ class DesktopPasteMenuService(
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     private val pasteTagDao: PasteTagDao,
     private val pasteSearchViewModel: PasteSearchViewModel,
     private val ocrModule: OCRModule,

@@ -1,6 +1,6 @@
 package com.crosspaste.task
 
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskType
@@ -13,7 +13,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 class OpenGraphTaskExecutor(
     lazyUrlRenderingService: Lazy<RenderingService<String>>,
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
 ) : SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}

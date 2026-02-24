@@ -1,7 +1,7 @@
 package com.crosspaste.ui.model
 
 import androidx.lifecycle.viewModelScope
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteDaoApi
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteTag
@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class GeneralPasteSearchViewModel(
-    private val pasteDao: PasteDao,
+    private val pasteDao: PasteDaoApi,
     pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
 ) : PasteSearchViewModel() {
