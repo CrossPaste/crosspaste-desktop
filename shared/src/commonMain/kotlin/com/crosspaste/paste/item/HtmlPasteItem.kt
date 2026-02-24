@@ -43,6 +43,10 @@ class HtmlPasteItem(
         htmlUtils.getHtmlText(html) ?: ""
     }
 
+    val truncatedPreviewHtml by lazy {
+        htmlUtils.truncateForPreview(html)
+    }
+
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,

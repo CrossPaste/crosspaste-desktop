@@ -16,7 +16,6 @@ import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.utils.HtmlUtils
 import com.crosspaste.utils.getColorUtils
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
@@ -58,7 +57,7 @@ fun PasteDataScope.RtfSidePreviewView() {
         val state = rememberRichTextState()
 
         LaunchedEffect(rtfPasteItem.getHtml()) {
-            state.setHtml(HtmlUtils.truncateForPreview(rtfPasteItem.getHtml()))
+            state.setHtml(rtfPasteItem.truncatedPreviewHtml)
         }
 
         RichText(

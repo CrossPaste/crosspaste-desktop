@@ -16,7 +16,6 @@ import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.utils.HtmlUtils
 import com.crosspaste.utils.getColorUtils
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
@@ -58,7 +57,7 @@ fun PasteDataScope.HtmlSidePreviewView() {
         val state = rememberRichTextState()
 
         LaunchedEffect(htmlPasteItem.html) {
-            state.setHtml(HtmlUtils.truncateForPreview(htmlPasteItem.html))
+            state.setHtml(htmlPasteItem.truncatedPreviewHtml)
         }
         RichText(
             color = richTextColor,
