@@ -5,7 +5,7 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.FilesIndexBuilder
-import com.crosspaste.task.PullFileTaskExecutor
+import com.crosspaste.sync.FilePullService
 import com.crosspaste.utils.DateUtils
 
 interface CacheManager {
@@ -24,7 +24,7 @@ interface CacheManager {
                 dateUtils.getYMD(
                     dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
                 )
-            val filesIndexBuilder = FilesIndexBuilder(PullFileTaskExecutor.CHUNK_SIZE)
+            val filesIndexBuilder = FilesIndexBuilder(FilePullService.CHUNK_SIZE)
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             val pasteDataId = pasteData.id
             val appInstanceId = pasteData.appInstanceId

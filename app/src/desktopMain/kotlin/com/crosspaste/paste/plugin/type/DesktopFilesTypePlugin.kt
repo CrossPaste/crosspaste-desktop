@@ -131,7 +131,7 @@ class DesktopFilesTypePlugin(
                             userDataPathProvider,
                         )
                     if (fileUtils.copyPath(path, filePath).isSuccess) {
-                        fileInfoTrees[originFileName] = fileUtils.getFileInfoTree(filePath)
+                        fileInfoTrees[fileName] = fileUtils.getFileInfoTree(filePath)
                     } else {
                         throw IllegalStateException("Failed to copy file")
                     }
