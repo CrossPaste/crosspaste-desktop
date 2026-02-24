@@ -105,7 +105,7 @@ class EncryptUtilsTest {
     }
 
     @Test
-    fun `tampered ciphertext causes decryption failure`() {
+    fun `tampered ciphertext causes decryption failure or wrong plaintext`() {
         val key = EncryptUtils.generateAESKey()
         val data = "important data".toByteArray()
         val encrypted = EncryptUtils.encryptData(key, data)
@@ -114,8 +114,13 @@ class EncryptUtilsTest {
         val tampered = encrypted.copyOf()
         tampered[tampered.size - 1] = (tampered[tampered.size - 1].toInt() xor 0xFF).toByte()
 
+        // AES/CBC padding corruption either throws BadPaddingException or
+        // (with ~1/256 probability) produces a valid but wrong plaintext.
         val result = runCatching { EncryptUtils.decryptData(key, tampered) }
-        assertTrue(result.isFailure, "Tampered ciphertext should fail decryption")
+        assertTrue(
+            result.isFailure || !result.getOrThrow().contentEquals(data),
+            "Tampered ciphertext should either fail decryption or produce wrong plaintext",
+        )
     }
 
     @Test
