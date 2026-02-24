@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
     override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
-    private val syncResolver: SyncResolver,
+    private val syncResolver: SyncResolverApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
 ) : SyncManager {
 

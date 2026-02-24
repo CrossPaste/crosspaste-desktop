@@ -30,11 +30,12 @@ class SyncResolver(
     private val ratingPromptManager: RatingPromptManager,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
+    private val syncDeviceManager: SyncDeviceManager,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val telnetHelper: TelnetHelper,
     private val tokenCache: TokenCacheApi,
-) {
+) : SyncResolverApi {
 
     private val logger = KotlinLogging.logger {}
 
@@ -47,7 +48,7 @@ class SyncResolver(
             else -> error("Unknown SyncEvent type: $this")
         }
 
-    suspend fun emitEvent(event: SyncEvent) {
+    override suspend fun emitEvent(event: SyncEvent) {
         logger.debug { "Event: $event" }
         deviceMutex.withLock(event.appInstanceId()) {
             processEvent(event)
@@ -85,32 +86,32 @@ class SyncResolver(
                     }
 
                     is SyncEvent.UpdateAllowSend -> {
-                        syncRuntimeInfo.updateAllowSend(event.allowSend)
+                        syncDeviceManager.updateAllowSend(syncRuntimeInfo, event.allowSend)
                     }
 
                     is SyncEvent.UpdateAllowReceive -> {
-                        syncRuntimeInfo.updateAllowReceive(event.allowReceive)
+                        syncDeviceManager.updateAllowReceive(syncRuntimeInfo, event.allowReceive)
                     }
 
                     is SyncEvent.UpdateNoteName -> {
-                        syncRuntimeInfo.updateNoteName(event.noteName)
+                        syncDeviceManager.updateNoteName(syncRuntimeInfo, event.noteName)
                     }
 
                     is SyncEvent.ShowToken -> {
-                        syncRuntimeInfo.showToken()
+                        syncDeviceManager.showToken(syncRuntimeInfo)
                     }
 
                     is SyncEvent.NotifyExit -> {
-                        syncRuntimeInfo.notifyExit()
+                        syncDeviceManager.notifyExit(syncRuntimeInfo)
                         event.completionSignal.complete(Unit)
                     }
 
                     is SyncEvent.MarkExit -> {
-                        syncRuntimeInfo.markExit()
+                        syncDeviceManager.markExit(syncRuntimeInfo)
                     }
 
                     is SyncEvent.RemoveDevice -> {
-                        syncRuntimeInfo.removeDevice()
+                        syncDeviceManager.removeDevice(syncRuntimeInfo)
                     }
                 }
             } else {
@@ -436,71 +437,5 @@ class SyncResolver(
         hostInfoList: List<HostInfo>,
     ) {
         lazyPasteBonjourService.value.refreshTarget(appInstanceId, hostInfoList)
-    }
-
-    private suspend fun SyncRuntimeInfo.updateAllowSend(allowSend: Boolean) {
-        syncRuntimeInfoDao.updateAllowSend(this.copy(allowSend = allowSend))
-    }
-
-    private suspend fun SyncRuntimeInfo.updateAllowReceive(allowReceive: Boolean) {
-        syncRuntimeInfoDao.updateAllowReceive(this.copy(allowReceive = allowReceive))
-    }
-
-    private suspend fun SyncRuntimeInfo.updateNoteName(noteName: String) {
-        syncRuntimeInfoDao.updateNoteName(this.copy(noteName = noteName))
-    }
-
-    private suspend fun SyncRuntimeInfo.showToken() {
-        if (connectState == SyncState.UNVERIFIED) {
-            connectHostAddress?.let { host ->
-                val hostAndPort = HostAndPort(host, port)
-                val result =
-                    syncClientApi.showToken {
-                        buildUrl(hostAndPort)
-                    }
-                if (result is SuccessResult) {
-                    logger.info { "showToken success $host $port" }
-                } else {
-                    syncRuntimeInfoDao.updateConnectInfo(
-                        this.copy(
-                            connectState = SyncState.DISCONNECTED,
-                            modifyTime = nowEpochMilliseconds(),
-                        ),
-                    )
-                }
-            }
-        }
-    }
-
-    private suspend fun SyncRuntimeInfo.notifyExit() {
-        if (connectState == SyncState.CONNECTED) {
-            connectHostAddress?.let { host ->
-                val hostAndPort = HostAndPort(host, port)
-                syncClientApi.notifyExit {
-                    buildUrl(hostAndPort)
-                }
-            }
-        }
-    }
-
-    private suspend fun SyncRuntimeInfo.markExit() {
-        logger.info { "markExit $appInstanceId" }
-        syncRuntimeInfoDao.updateConnectInfo(
-            this.copy(
-                connectState = SyncState.DISCONNECTED,
-                modifyTime = nowEpochMilliseconds(),
-            ),
-        )
-    }
-
-    private suspend fun SyncRuntimeInfo.removeDevice() {
-        secureStore.deleteCryptPublicKey(appInstanceId)
-        syncRuntimeInfoDao.deleteSyncRuntimeInfo(appInstanceId)
-        connectHostAddress?.let { host ->
-            val hostAndPort = HostAndPort(host, port)
-            syncClientApi.notifyRemove {
-                buildUrl(hostAndPort)
-            }
-        }
     }
 }

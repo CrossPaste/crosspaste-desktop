@@ -187,8 +187,10 @@ import com.crosspaste.sync.MarketingNearbyDeviceManager
 import com.crosspaste.sync.MarketingSyncManager
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.QRCodeGenerator
+import com.crosspaste.sync.SyncDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
+import com.crosspaste.sync.SyncResolverApi
 import com.crosspaste.sync.TokenCache
 import com.crosspaste.sync.TokenCacheApi
 import com.crosspaste.task.CleanPasteTaskExecutor
@@ -403,13 +405,21 @@ class DesktopModule(
                     )
                 }
             }
-            single<SyncResolver> {
+            single<SyncDeviceManager> {
+                SyncDeviceManager(
+                    secureStore = get(),
+                    syncClientApi = get(),
+                    syncRuntimeInfoDao = get(),
+                )
+            }
+            single<SyncResolverApi> {
                 SyncResolver(
                     lazyPasteBonjourService = lazy { get() },
                     networkInterfaceService = get(),
                     ratingPromptManager = get(),
                     secureStore = get(),
                     syncClientApi = get(),
+                    syncDeviceManager = get(),
                     syncInfoFactory = get(),
                     syncRuntimeInfoDao = get(),
                     telnetHelper = get(),
