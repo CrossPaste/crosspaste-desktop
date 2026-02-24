@@ -69,7 +69,7 @@ class GeneralSyncManagerTest {
 
     data class Mocks(
         val deviceScopeFactory: DeviceScopeFactory,
-        val syncResolver: SyncResolver,
+        val syncResolver: SyncResolverApi,
         val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     )
 
