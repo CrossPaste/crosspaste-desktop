@@ -71,7 +71,7 @@ fun Routing.pullRouting(
                     return@let
                 }
 
-            logger.info { "filesIndex ${pullFileRequest.chunkIndex} $chunk" }
+            logger.debug { "filesIndex ${pullFileRequest.chunkIndex} $chunk" }
             val producer: suspend ByteWriteChannel.() -> Unit = {
                 fileUtils.readFilesChunk(chunk, this)
             }

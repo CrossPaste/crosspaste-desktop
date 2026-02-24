@@ -8,6 +8,7 @@ import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.serializer.RtfPasteItemSerializer
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getRtfUtils
 import kotlinx.serialization.Serializable
@@ -33,6 +34,7 @@ class RtfPasteItem(
 
     companion object {
         val fileUtils = getFileUtils()
+        val htmlUtils = getHtmlUtils()
         val jsonUtils = getJsonUtils()
         val rtfUtils = getRtfUtils()
 
@@ -45,6 +47,10 @@ class RtfPasteItem(
 
     private val rtfHtmlCache by lazy {
         rtfUtils.rtfToHtml(rtf) ?: ""
+    }
+
+    val truncatedPreviewHtml by lazy {
+        htmlUtils.truncateForPreview(getHtml())
     }
 
     constructor(jsonObject: JsonObject) : this(

@@ -3,7 +3,7 @@ package com.crosspaste.app
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
-import com.crosspaste.platform.windows.api.User32.Companion.isInstalledFromMicrosoftStore
+import com.crosspaste.platform.windows.WindowsProcessUtils.isInstalledFromMicrosoftStore
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -56,8 +56,8 @@ fun PasteDataScope.RtfSidePreviewView() {
     ) {
         val state = rememberRichTextState()
 
-        LaunchedEffect(rtfPasteItem.getHtml()) {
-            state.setHtml(rtfPasteItem.getHtml())
+        LaunchedEffect(rtfPasteItem.hash) {
+            state.setHtml(rtfPasteItem.truncatedPreviewHtml)
         }
 
         RichText(
