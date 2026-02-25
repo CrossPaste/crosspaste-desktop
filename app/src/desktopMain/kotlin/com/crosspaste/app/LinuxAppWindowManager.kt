@@ -60,6 +60,19 @@ class LinuxAppWindowManager(
             getAppName(linuxAppInfo)
         }
 
+    override fun getRunningAppNames(): List<String> =
+        runCatching {
+            X11Api
+                .getRunningWindows()
+                .map { linuxAppInfo ->
+                    getAppName(linuxAppInfo)
+                }.distinct()
+                .sorted()
+        }.getOrElse { e ->
+            logger.error(e) { "Failed to get running applications" }
+            emptyList()
+        }
+
     override fun getPrevAppName(): Flow<String?> =
         prevLinuxAppInfo.map { appInfo ->
             appInfo?.let {

@@ -29,6 +29,79 @@ public func getPasteboardChangeCount(currentChangeCount: Int,
     return newChangeCount
 }
 
+// MARK: - Lazy file pasteboard support (NSPasteboardItemDataProvider)
+
+private var provideDataCallCount: Int32 = 0
+private var activeProviders: [LazyFilePasteboardProvider] = []
+
+class LazyFilePasteboardProvider: NSObject, NSPasteboardItemDataProvider {
+    private let pathProvider: () -> String?
+
+    init(pathProvider: @escaping () -> String?) {
+        self.pathProvider = pathProvider
+        super.init()
+    }
+
+    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
+        if type == .fileURL, let path = pathProvider() {
+            provideDataCallCount += 1
+            let url = URL(fileURLWithPath: path)
+            item.setString(url.absoluteString, forType: .fileURL)
+        }
+    }
+
+    func pasteboardFinishedWithDataProvider(_ pasteboard: NSPasteboard) {
+    }
+}
+
+@_cdecl("writeFilesToPasteboard")
+public func writeFilesToPasteboard(
+    count: Int32,
+    resolver: @convention(c) (Int32, UnsafeMutablePointer<CChar>, Int32) -> Int32
+) -> Int {
+    guard count > 0 else { return -1 }
+
+    let pasteboard = NSPasteboard.general
+    pasteboard.clearContents()
+
+    activeProviders.removeAll()
+
+    var items: [NSPasteboardItem] = []
+    for i: Int32 in 0..<count {
+        let index = i
+        let pathProvider = { () -> String? in
+            let bufferSize: Int32 = 4096
+            let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: Int(bufferSize))
+            defer { buffer.deallocate() }
+            let length = resolver(index, buffer, bufferSize)
+            guard length >= 0 else { return nil }
+            return String(cString: buffer)
+        }
+        let provider = LazyFilePasteboardProvider(pathProvider: pathProvider)
+        activeProviders.append(provider)
+
+        let item = NSPasteboardItem()
+        // Lazy: data is provided via callback only when the pasteboard consumer reads it
+        item.setDataProvider(provider, forTypes: [.fileURL])
+        // Eager: mark as CrossPaste to prevent self-consumption in the polling loop
+        item.setData(Data(), forType: NSPasteboard.PasteboardType("com.crosspaste"))
+        items.append(item)
+    }
+
+    let success = pasteboard.writeObjects(items)
+    return success ? pasteboard.changeCount : -1
+}
+
+@_cdecl("getProvideDataCallCount")
+public func getProvideDataCallCount() -> Int32 {
+    return provideDataCallCount
+}
+
+@_cdecl("resetProvideDataCallCount")
+public func resetProvideDataCallCount() {
+    provideDataCallCount = 0
+}
+
 @_cdecl("getPassword")
 public func getPassword(service: UnsafePointer<CChar>, account: UnsafePointer<CChar>) -> UnsafePointer<CChar>? {
     let serviceString = String(cString: service)
@@ -349,6 +422,20 @@ public func getCurrentActiveAppInfo() -> UnsafePointer<CChar>? {
         }
     }
     return nil
+}
+
+@_cdecl("getRunningApplications")
+public func getRunningApplications() -> UnsafePointer<CChar>? {
+    let apps = NSWorkspace.shared.runningApplications
+    var result = [String]()
+    for app in apps {
+        guard app.activationPolicy == .regular,
+              let bundleId = app.bundleIdentifier,
+              let name = app.localizedName else { continue }
+        result.append("\(bundleId)\n\(name)")
+    }
+    if result.isEmpty { return nil }
+    return UnsafePointer<CChar>(strdup(result.joined(separator: "\n\n")))
 }
 
 @_cdecl("bringToFront")

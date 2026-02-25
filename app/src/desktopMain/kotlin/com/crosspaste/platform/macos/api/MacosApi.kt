@@ -14,6 +14,15 @@ interface MacosApi : Library {
         isCrossPaste: IntByReference,
     ): Int
 
+    fun writeFilesToPasteboard(
+        count: Int,
+        resolver: FileResolverCallback,
+    ): Int
+
+    fun getProvideDataCallCount(): Int
+
+    fun resetProvideDataCallCount()
+
     fun getPassword(
         service: String,
         account: String,
@@ -41,6 +50,8 @@ interface MacosApi : Library {
     fun getHardwareUUID(): Pointer?
 
     fun getCurrentActiveAppInfo(): Pointer?
+
+    fun getRunningApplications(): Pointer?
 
     fun saveAppIcon(
         bundleIdentifier: String,
@@ -135,4 +146,12 @@ fun interface MenuCallback : Callback {
 
 fun interface LeftClickCallback : Callback {
     fun invoke()
+}
+
+fun interface FileResolverCallback : Callback {
+    fun invoke(
+        index: Int,
+        buffer: Pointer,
+        bufferSize: Int,
+    ): Int
 }

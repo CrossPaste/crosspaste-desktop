@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.crosspaste.ui.theme.AppUISize.giant
-import com.crosspaste.utils.ColorUtils.lighten
+import com.crosspaste.utils.ColorAccessibility.lighten
 import com.crosspaste.utils.FileColors
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.safeIsDirectory

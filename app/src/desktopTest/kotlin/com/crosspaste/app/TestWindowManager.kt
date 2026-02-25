@@ -17,6 +17,8 @@ class TestWindowManager(
 
     override fun getCurrentActiveAppName(): String? = mockOS.currentApp
 
+    override fun getRunningAppNames(): List<String> = emptyList()
+
     override fun startWindowService() {}
 
     override fun stopWindowService() {}

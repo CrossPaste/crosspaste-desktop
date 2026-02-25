@@ -3,7 +3,6 @@ package com.crosspaste.paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
@@ -38,9 +37,10 @@ class WindowsPasteboardService(
     override val notificationManager: NotificationManager,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
-    override val pasteDao: PasteDao,
+    override val pasteReleaseService: PasteReleaseService,
     private val platform: Platform,
     override val soundService: SoundService,
+    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService(),
     User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
@@ -189,6 +189,11 @@ class WindowsPasteboardService(
                         appWindowManager.getCurrentActiveAppName()
                     }
                 }
+
+            if (sourceExclusionService.isExcluded(source)) {
+                logger.debug { "Ignoring excluded source: $source" }
+                return
+            }
 
             val contents =
                 controlUtils.blockExponentialBackoffUntilValid(

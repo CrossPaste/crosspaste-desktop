@@ -3,6 +3,7 @@ package com.crosspaste.net.routing
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.dto.cli.ConfigEntryDto
 import com.crosspaste.dto.cli.ConfigUpdateRequest
@@ -37,6 +38,7 @@ fun Routing.cliRouting(
     cliTokenManager: CliTokenManager,
     configManager: CommonConfigManager,
     pasteDao: PasteDao,
+    pasteTagDao: PasteTagDao,
     pasteboardService: PasteboardService,
     server: Server,
     syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -76,7 +78,7 @@ fun Routing.cliRouting(
         pasteRoutes(pasteDao, pasteboardService)
         deviceRoutes(syncRuntimeInfoDao)
         configRoutes(configManager)
-        tagRoutes(pasteDao)
+        tagRoutes(pasteTagDao)
         statusRoute(appInfo, configManager, pasteDao, server, syncRuntimeInfoDao)
     }
 }
@@ -276,9 +278,9 @@ private fun Route.configRoutes(configManager: CommonConfigManager) {
     }
 }
 
-private fun Route.tagRoutes(pasteDao: PasteDao) {
+private fun Route.tagRoutes(pasteTagDao: PasteTagDao) {
     get("/tags") {
-        val tags = pasteDao.getAllTagsFlow().first()
+        val tags = pasteTagDao.getAllTagsFlow().first()
         val summaries =
             tags.map { tag ->
                 TagSummary(id = tag.id, name = tag.name, color = tag.color)
@@ -288,9 +290,9 @@ private fun Route.tagRoutes(pasteDao: PasteDao) {
 
     post("/tags") {
         val request = call.receive<CreateTagRequest>()
-        val maxSortOrder = pasteDao.getMaxSortOrder()
+        val maxSortOrder = pasteTagDao.getMaxSortOrder()
         val color = request.color ?: PasteTag.getColor(maxSortOrder + 1)
-        val id = pasteDao.createPasteTag(request.name, color)
+        val id = pasteTagDao.createPasteTag(request.name, color)
         successResponse(call, TagSummary(id = id, name = request.name, color = color))
     }
 
@@ -300,7 +302,7 @@ private fun Route.tagRoutes(pasteDao: PasteDao) {
             failResponse(call, StandardErrorCode.CLI_INVALID_REQUEST.toErrorCode(), "Invalid tag ID")
             return@delete
         }
-        pasteDao.deletePasteTagBlock(id)
+        pasteTagDao.deletePasteTagBlock(id)
         successResponse(call)
     }
 }

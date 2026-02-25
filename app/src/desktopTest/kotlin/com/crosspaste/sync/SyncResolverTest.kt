@@ -42,6 +42,7 @@ class SyncResolverTest {
         val ratingPromptManager: RatingPromptManager = mockk(relaxed = true)
         val secureStore: SecureStore = mockk(relaxed = true)
         val syncClientApi: SyncClientApi = mockk(relaxed = true)
+        val syncDeviceManager: SyncDeviceManager = mockk(relaxed = true)
         val syncInfoFactory: SyncInfoFactory = mockk(relaxed = true)
         val syncRuntimeInfoDao: SyncRuntimeInfoDao = mockk(relaxed = true)
         val telnetHelper: TelnetHelper = mockk(relaxed = true)
@@ -58,6 +59,7 @@ class SyncResolverTest {
                 ratingPromptManager = ratingPromptManager,
                 secureStore = secureStore,
                 syncClientApi = syncClientApi,
+                syncDeviceManager = syncDeviceManager,
                 syncInfoFactory = syncInfoFactory,
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
                 telnetHelper = telnetHelper,
@@ -736,189 +738,7 @@ class SyncResolverTest {
             assertEquals(false, callbackResult)
         }
 
-    // ========== F. Simple delegate events ==========
-
-    @Test
-    fun updateAllowSend_delegatesToDao() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            val capturedInfo = slot<SyncRuntimeInfo>()
-            coEvery { deps.syncRuntimeInfoDao.updateAllowSend(capture(capturedInfo)) } returns null
-
-            resolver.emitEvent(SyncEvent.UpdateAllowSend(syncRuntimeInfo, false))
-
-            assertEquals(false, capturedInfo.captured.allowSend)
-        }
-
-    @Test
-    fun updateAllowReceive_delegatesToDao() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            val capturedInfo = slot<SyncRuntimeInfo>()
-            coEvery { deps.syncRuntimeInfoDao.updateAllowReceive(capture(capturedInfo)) } returns null
-
-            resolver.emitEvent(SyncEvent.UpdateAllowReceive(syncRuntimeInfo, false))
-
-            assertEquals(false, capturedInfo.captured.allowReceive)
-        }
-
-    @Test
-    fun updateNoteName_delegatesToDao() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            val capturedInfo = slot<SyncRuntimeInfo>()
-            coEvery { deps.syncRuntimeInfoDao.updateNoteName(capture(capturedInfo)) } returns null
-
-            resolver.emitEvent(SyncEvent.UpdateNoteName(syncRuntimeInfo, "My Device"))
-
-            assertEquals("My Device", capturedInfo.captured.noteName)
-        }
-
-    @Test
-    fun showToken_unverifiedAndSuccess_logsSuccess() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.syncClientApi.showToken(any()) } returns SuccessResult(true)
-
-            resolver.emitEvent(SyncEvent.ShowToken(syncRuntimeInfo))
-
-            coVerify { deps.syncClientApi.showToken(any()) }
-            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
-        }
-
-    @Test
-    fun showToken_unverifiedAndFails_setsDisconnected() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.syncClientApi.showToken(any()) } returns ConnectionRefused
-
-            val capturedInfo = slot<SyncRuntimeInfo>()
-            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
-
-            resolver.emitEvent(SyncEvent.ShowToken(syncRuntimeInfo))
-
-            assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
-        }
-
-    @Test
-    fun showToken_notUnverified_doesNothing() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            resolver.emitEvent(SyncEvent.ShowToken(syncRuntimeInfo))
-
-            coVerify(exactly = 0) { deps.syncClientApi.showToken(any()) }
-        }
-
-    @Test
-    fun notifyExit_connected_callsNotifyExit() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            resolver.emitEvent(SyncEvent.NotifyExit(syncRuntimeInfo))
-
-            coVerify { deps.syncClientApi.notifyExit(any()) }
-        }
-
-    @Test
-    fun notifyExit_notConnected_doesNotCallNotifyExit() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            resolver.emitEvent(SyncEvent.NotifyExit(syncRuntimeInfo))
-
-            coVerify(exactly = 0) { deps.syncClientApi.notifyExit(any()) }
-        }
-
-    @Test
-    fun markExit_setsDisconnected() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            val capturedInfo = slot<SyncRuntimeInfo>()
-            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
-
-            resolver.emitEvent(SyncEvent.MarkExit(syncRuntimeInfo))
-
-            assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
-        }
-
-    @Test
-    fun removeDevice_deletesKeyAndDbAndNotifiesRemove() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            resolver.emitEvent(SyncEvent.RemoveDevice(syncRuntimeInfo))
-
-            coVerify { deps.secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId) }
-            coVerify { deps.syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) }
-            coVerify { deps.syncClientApi.notifyRemove(any()) }
-        }
-
-    @Test
-    fun removeDevice_noConnectHostAddress_doesNotNotifyRemove() =
-        runTest {
-            val deps = TestDeps()
-            val resolver = deps.createResolver()
-            val syncRuntimeInfo =
-                createSyncRuntimeInfo(
-                    connectState = SyncState.CONNECTED,
-                    connectHostAddress = null,
-                )
-
-            deps.stubDbRead(syncRuntimeInfo)
-
-            resolver.emitEvent(SyncEvent.RemoveDevice(syncRuntimeInfo))
-
-            coVerify { deps.secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId) }
-            coVerify { deps.syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) }
-            coVerify(exactly = 0) { deps.syncClientApi.notifyRemove(any()) }
-        }
-
-    // ========== G. Event dispatch and callback ==========
+    // ========== F. Event dispatch and callback ==========
 
     @Test
     fun resolveConnection_disconnected_dispatchesToResolveDisconnected() =

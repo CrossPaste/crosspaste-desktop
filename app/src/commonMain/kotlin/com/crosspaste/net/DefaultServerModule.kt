@@ -5,6 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.cli.CliTokenManager
@@ -48,6 +49,7 @@ open class DefaultServerModule(
     private val networkInterfaceService: NetworkInterfaceService,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
+    private val pasteTagDao: PasteTagDao,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
     private val server: Lazy<Server>,
@@ -89,6 +91,7 @@ open class DefaultServerModule(
                     cliTokenManager,
                     configManager,
                     pasteDao,
+                    pasteTagDao,
                     pasteboardService,
                     server.value,
                     syncRuntimeInfoDao,
@@ -114,6 +117,7 @@ open class DefaultServerModule(
                 pullRouting(
                     appInfo,
                     cacheManager,
+                    pasteDao,
                     syncRoutingApi,
                     userDataPathProvider,
                 )

@@ -7,6 +7,7 @@ import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Display
 import com.sun.jna.platform.unix.X11.Window
+import com.sun.jna.ptr.NativeLongByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import java.nio.file.Path
@@ -117,6 +118,53 @@ interface X11Api : X11 {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 toPaste(display, keyCodes)
+            } finally {
+                INSTANCE.XCloseDisplay(display)
+            }
+        }
+
+        fun getRunningWindows(): List<LinuxAppInfo> {
+            val display = INSTANCE.XOpenDisplay(null) ?: return emptyList()
+            return try {
+                val rootWindow = INSTANCE.XDefaultRootWindow(display)
+                val sizeRef = NativeLongByReference()
+                val prop =
+                    WMCtrl.getProperty(
+                        display,
+                        rootWindow,
+                        X11.XA_WINDOW,
+                        "_NET_CLIENT_LIST",
+                        sizeRef,
+                    ) ?: return emptyList()
+                try {
+                    val byteSize = sizeRef.value.toLong()
+                    val count = (byteSize / Native.LONG_SIZE).toInt()
+                    if (count <= 0) return emptyList()
+
+                    val windowIds =
+                        when (Native.LONG_SIZE) {
+                            java.lang.Long.BYTES -> {
+                                prop.getLongArray(0, count).toList()
+                            }
+                            Integer.BYTES -> {
+                                prop.getIntArray(0, count).map { it.toLong() }
+                            }
+                            else -> emptyList()
+                        }
+
+                    windowIds.mapNotNull { id ->
+                        if (id == 0L) return@mapNotNull null
+                        val window = Window(id)
+                        WMCtrl.getWindowClass(display, window)?.let { (_, className) ->
+                            LinuxAppInfo(window, className)
+                        }
+                    }
+                } finally {
+                    INSTANCE.XFree(prop)
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "Failed to get running windows" }
+                emptyList()
             } finally {
                 INSTANCE.XCloseDisplay(display)
             }

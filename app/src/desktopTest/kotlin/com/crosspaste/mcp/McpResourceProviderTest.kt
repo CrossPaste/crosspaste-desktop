@@ -1,11 +1,9 @@
 package com.crosspaste.mcp
 
 import com.crosspaste.app.AppInfo
-import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteState
@@ -58,8 +56,6 @@ class McpResourceProviderTest {
                 }
         }
 
-    private val commonConfigManager: CommonConfigManager = mockk(relaxed = true)
-    private val currentPaste: CurrentPaste = mockk(relaxed = true)
     private val taskSubmitter: TaskSubmitter = mockk(relaxed = true)
     private val userDataPathProvider: UserDataPathProvider = mockk(relaxed = true)
 
@@ -68,10 +64,7 @@ class McpResourceProviderTest {
     private val pasteDao =
         PasteDao(
             appInfo = appInfo,
-            commonConfigManager = commonConfigManager,
-            currentPaste = currentPaste,
             database = database,
-            pasteProcessPlugins = listOf(),
             searchContentService = searchContentService,
             taskSubmitter = taskSubmitter,
             userDataPathProvider = userDataPathProvider,

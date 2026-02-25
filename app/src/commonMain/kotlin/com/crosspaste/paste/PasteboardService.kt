@@ -1,7 +1,6 @@
 package com.crosspaste.paste
 
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.item.PasteItem
 import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +13,7 @@ interface PasteboardService : PasteboardMonitor {
 
     var owner: Boolean
 
-    val pasteDao: PasteDao
+    val pasteReleaseService: PasteReleaseService
 
     val configManager: CommonConfigManager
 
@@ -53,6 +52,4 @@ interface PasteboardService : PasteboardMonitor {
     suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?>
 
     suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?>
-
-    suspend fun clearRemotePasteboard(pasteData: PasteData): Result<Unit?>
 }

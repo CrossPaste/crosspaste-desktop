@@ -7,8 +7,11 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.windows.WinAppInfo
 import com.crosspaste.platform.windows.WinAppInfoCaches
 import com.crosspaste.platform.windows.WindowFocusRecorder
-import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.platform.windows.WindowsFocusUtils
 import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
+import com.crosspaste.platform.windows.api.WndEnumProc
+import com.sun.jna.Native
+import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +30,7 @@ class WinAppWindowManager(
     val mainHWND: HWND?
         get() {
             if (_cachedMainHWND == null) {
-                _cachedMainHWND = User32.findPasteWindow(mainWindowTitle)
+                _cachedMainHWND = WindowsFocusUtils.findPasteWindow(mainWindowTitle)
             }
             return _cachedMainHWND
         }
@@ -35,7 +38,7 @@ class WinAppWindowManager(
     val searchHWND: HWND?
         get() {
             if (_cachedSearchHWND == null) {
-                _cachedSearchHWND = User32.findPasteWindow(searchWindowTitle)
+                _cachedSearchHWND = WindowsFocusUtils.findPasteWindow(searchWindowTitle)
             }
             return _cachedSearchHWND
         }
@@ -43,7 +46,7 @@ class WinAppWindowManager(
     val bubbleHWND: HWND?
         get() {
             if (_cachedBubbleHWND == null) {
-                _cachedBubbleHWND = User32.findPasteWindow(bubbleWindowTitle)
+                _cachedBubbleHWND = WindowsFocusUtils.findPasteWindow(bubbleWindowTitle)
             }
             return _cachedBubbleHWND
         }
@@ -60,6 +63,33 @@ class WinAppWindowManager(
     override fun getCurrentActiveAppName(): String? =
         WinAppInfo(INSTANCE.GetForegroundWindow()).getAppName(winAppInfoCaches)
 
+    override fun getRunningAppNames(): List<String> {
+        val appNames = mutableSetOf<String>()
+        val ignoredClasses = setOf("Shell_TrayWnd", "Shell_SecondaryTrayWnd")
+        val enumProc =
+            object : WndEnumProc {
+                override fun callback(
+                    hWnd: WinDef.HWND,
+                    lParam: com.sun.jna.Pointer?,
+                ): Boolean {
+                    if (INSTANCE.IsWindowVisible(hWnd)) {
+                        val titleLength = INSTANCE.GetWindowTextLengthW(hWnd)
+                        if (titleLength > 0) {
+                            val buffer = CharArray(512)
+                            INSTANCE.GetClassNameW(hWnd, buffer, 512)
+                            val className = Native.toString(buffer).trim()
+                            if (className !in ignoredClasses) {
+                                WinAppInfo(hWnd).getAppName(winAppInfoCaches)?.let { appNames.add(it) }
+                            }
+                        }
+                    }
+                    return true
+                }
+            }
+        INSTANCE.EnumWindows(enumProc, null)
+        return appNames.sorted()
+    }
+
     override fun startWindowService() {
         windowFocusRecorder.start()
     }
@@ -75,7 +105,7 @@ class WinAppWindowManager(
     override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
-        User32.bringToFront(
+        WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             mainHWND,
         )
@@ -90,7 +120,7 @@ class WinAppWindowManager(
     override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
         delay(500)
-        User32.bringToFront(
+        WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             searchHWND,
         )
@@ -98,7 +128,7 @@ class WinAppWindowManager(
 
     override suspend fun focusBubbleWindow() {
         delay(500)
-        User32.bringToFront(
+        WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             bubbleHWND,
         )
@@ -128,13 +158,13 @@ class WinAppWindowManager(
                 lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                     it.map { key -> key.rawCode }
                 } ?: listOf()
-            User32.bringToBackAndPaste(
+            WindowsFocusUtils.bringToBackAndPaste(
                 backHWND,
                 windowFocusRecorder.lastWinAppInfo.value?.hwnd,
                 keyCodes,
             )
         } else {
-            User32.backToBack(backHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
+            WindowsFocusUtils.backToBack(backHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
         }
     }
 
@@ -144,7 +174,7 @@ class WinAppWindowManager(
                 it.map { key -> key.rawCode }
             } ?: listOf()
 
-        User32.paste(keyCodes)
+        WindowsFocusUtils.paste(keyCodes)
     }
 
     override fun onMainComposeWindowChanged(window: ComposeWindow?) {

@@ -230,6 +230,8 @@ abstract class DesktopAppWindowManager(
 
     abstract fun getCurrentActiveAppName(): String?
 
+    abstract fun getRunningAppNames(): List<String>
+
     abstract suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 
     abstract suspend fun hideSearchWindowAndPaste(

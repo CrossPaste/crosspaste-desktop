@@ -16,7 +16,7 @@ import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.utils.getColorUtils
+import com.crosspaste.utils.ColorAccessibility
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
 import org.koin.compose.koinInject
@@ -25,8 +25,6 @@ import org.koin.compose.koinInject
 fun PasteDataScope.RtfSidePreviewView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val rtfPasteItem = getPasteItem(RtfPasteItem::class)
-
-    val colorUtils = getColorUtils()
 
     val backgroundColor by remember(pasteData.id) {
         mutableStateOf(Color(rtfPasteItem.getBackgroundColor()))
@@ -38,7 +36,7 @@ fun PasteDataScope.RtfSidePreviewView() {
         } else {
             backgroundColor
         }
-    val isDark by remember(pasteData.id) { mutableStateOf(colorUtils.isDarkColor(rtfBackground)) }
+    val isDark by remember(pasteData.id) { mutableStateOf(ColorAccessibility.isDarkColor(rtfBackground)) }
     val richTextColor =
         if (isDark == LocalThemeState.current.isCurrentThemeDark) {
             MaterialTheme.colorScheme.onBackground
@@ -56,8 +54,8 @@ fun PasteDataScope.RtfSidePreviewView() {
     ) {
         val state = rememberRichTextState()
 
-        LaunchedEffect(rtfPasteItem.getHtml()) {
-            state.setHtml(rtfPasteItem.getHtml())
+        LaunchedEffect(rtfPasteItem.hash) {
+            state.setHtml(rtfPasteItem.truncatedPreviewHtml)
         }
 
         RichText(

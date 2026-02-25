@@ -2,7 +2,6 @@ package com.crosspaste.paste
 
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.XFixes
@@ -31,8 +30,9 @@ class LinuxPasteboardService(
     override val notificationManager: NotificationManager,
     override val pasteConsumer: TransferableConsumer,
     override val pasteProducer: TransferableProducer,
-    override val pasteDao: PasteDao,
+    override val pasteReleaseService: PasteReleaseService,
     override val soundService: SoundService,
+    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService() {
 
     companion object {
@@ -134,6 +134,11 @@ class LinuxPasteboardService(
                         appWindowManager.getCurrentActiveAppName()
                     }.getOrNull()
             }
+
+        if (sourceExclusionService.isExcluded(source)) {
+            logger.debug { "Ignoring excluded source: $source" }
+            return
+        }
 
         val contents =
             controlUtils.exponentialBackoffUntilValid(

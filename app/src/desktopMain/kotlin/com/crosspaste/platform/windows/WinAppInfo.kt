@@ -2,7 +2,6 @@ package com.crosspaste.platform.windows
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.utils.getFileUtils
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
@@ -39,7 +38,7 @@ class WinAppInfoCaches(
             .maximumSize(100)
             .build { hwnd ->
                 runCatching {
-                    User32.getThreadId(hwnd)
+                    WindowsProcessUtils.getThreadId(hwnd)
                 }.getOrNull()
             }
 
@@ -49,7 +48,7 @@ class WinAppInfoCaches(
             .maximumSize(100)
             .build { hwnd ->
                 runCatching {
-                    User32.getExeFilePath(hwnd)
+                    WindowsProcessUtils.getExeFilePath(hwnd)
                 }.getOrNull()
             }
 
@@ -60,7 +59,7 @@ class WinAppInfoCaches(
             .build { hwnd ->
                 runCatching {
                     exeFilePathCache.get(hwnd)?.let { path ->
-                        User32.getFileDescription(path)?.let { appName ->
+                        WindowsProcessUtils.getFileDescription(path)?.let { appName ->
                             scope.launch {
                                 saveAppImage(path, appName)
                             }
@@ -77,7 +76,7 @@ class WinAppInfoCaches(
     ) {
         val iconPath = userDataPathProvider.resolve("$appName.png", AppFileType.ICON)
         if (!fileUtils.existFile(iconPath)) {
-            User32.extractAndSaveIcon(exeFilePath, iconPath)
+            WindowsIconUtils.extractAndSaveIcon(exeFilePath, iconPath)
         }
     }
 

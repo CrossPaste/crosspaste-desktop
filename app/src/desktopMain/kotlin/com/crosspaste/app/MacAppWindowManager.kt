@@ -43,6 +43,20 @@ class MacAppWindowManager(
             null
         }
 
+    override fun getRunningAppNames(): List<String> =
+        runCatching {
+            MacAppUtils
+                .getRunningApplications()
+                .map { (bundleId, name) ->
+                    ioScope.launch { saveImagePathByApp(bundleId, name) }
+                    name
+                }.distinct()
+                .sorted()
+        }.getOrElse { e ->
+            logger.error(e) { "Failed to get running applications" }
+            emptyList()
+        }
+
     private fun createMacAppInfo(info: String): MacAppInfo? {
         val result = info.split("\n", limit = 2)
         if (result.size == 2) {
