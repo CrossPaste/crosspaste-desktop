@@ -1,6 +1,7 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
+import com.crosspaste.db.paste.PasteDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -8,7 +9,6 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
-import io.ktor.client.call.*
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -42,19 +42,29 @@ class HistoryCommand : CliktCommand(name = "history") {
     private val favorite by option("--favorite", "-f", help = "Show only favorites").flag()
 
     override fun run() =
-        runWithClient { client ->
-            var path = "/cli/paste/list?limit=$limit"
-            type?.let { path += "&type=$it" }
-            if (favorite) path += "&favorite=true"
+        runWithDao {
+            val pasteDao = getDao<PasteDao>()
+            val pasteType = resolveTypeFilter(type)
+            val favoriteFilter = if (favorite) true else null
 
-            val response = client.get(path)
-            handleResponse(response) { resp ->
-                val list = resp.body<PasteListResponse>()
-                if (ctx.json) {
-                    echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
-                } else {
-                    printList(list)
-                }
+            val results =
+                pasteDao.searchPasteData(
+                    searchTerms = listOf(),
+                    favorite = favoriteFilter,
+                    pasteType = pasteType,
+                    limit = limit,
+                )
+            val total = pasteDao.getActiveCount()
+            val list =
+                PasteListResponse(
+                    items = results.map { it.toSummaryDto() },
+                    total = total,
+                )
+
+            if (ctx.json) {
+                echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
+            } else {
+                printList(list)
             }
         }
 

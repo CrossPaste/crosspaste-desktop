@@ -2,27 +2,44 @@ package com.crosspaste.cli.commands
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.parameters.arguments.argument
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-
-@Serializable
-data class CopyRequest(
-    val text: String,
-)
+import kotlinx.cinterop.ExperimentalForeignApi
+import platform.posix.fputs
+import platform.posix.pclose
+import platform.posix.popen
+import kotlin.experimental.ExperimentalNativeApi
 
 class CopyCommand : CliktCommand(name = "copy") {
 
-    override fun help(context: Context): String = "Copy text to the clipboard via CrossPaste"
+    override fun help(context: Context): String = "Copy text to the system clipboard"
 
     private val text by argument(help = "Text to copy to clipboard")
 
-    override fun run() =
-        runWithClient { client ->
-            val body = Json.encodeToString(CopyRequest.serializer(), CopyRequest(text = text))
-            val response = client.post("/cli/clipboard/write", body)
-            handleResponse(response) {
-                echo("Copied to clipboard.")
-            }
+    override fun run() {
+        try {
+            copyToSystemClipboard(text)
+            echo("Copied to clipboard.")
+        } catch (e: Exception) {
+            echo("Error: ${e.message}", err = true)
+            throw ProgramResult(1)
         }
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
+private fun copyToSystemClipboard(text: String) {
+    val command =
+        when (Platform.osFamily) {
+            OsFamily.MACOSX -> "pbcopy"
+            OsFamily.LINUX -> "xclip -selection clipboard"
+            OsFamily.WINDOWS -> "clip.exe"
+            else -> error("Unsupported platform for clipboard operations")
+        }
+    val pipe = popen(command, "w") ?: error("Failed to run '$command'. Is it installed?")
+    fputs(text, pipe)
+    val exitCode = pclose(pipe)
+    if (exitCode != 0) {
+        error("Clipboard command '$command' failed (exit $exitCode)")
+    }
 }

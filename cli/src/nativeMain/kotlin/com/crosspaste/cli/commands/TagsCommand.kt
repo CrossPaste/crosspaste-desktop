@@ -1,28 +1,23 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
+import com.crosspaste.db.paste.PasteTagDao
+import com.crosspaste.paste.PasteTag
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.long
-import io.ktor.client.call.*
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
 
 @Serializable
 data class TagSummary(
     val id: Long,
     val name: String,
     val color: Long,
-)
-
-@Serializable
-data class CreateTagRequest(
-    val name: String,
-    val color: Long? = null,
 )
 
 class TagsCommand : CliktCommand(name = "tags") {
@@ -39,20 +34,20 @@ class TagsCommand : CliktCommand(name = "tags") {
 
     override fun run() {
         if (currentContext.invokedSubcommand != null) return
-        runWithClient { client ->
-            val response = client.get("/cli/tags")
-            handleResponse(response) { resp ->
-                val tags = resp.body<List<TagSummary>>()
-                if (ctx.json) {
-                    echo(
-                        cliJson.encodeToString(
-                            ListSerializer(TagSummary.serializer()),
-                            tags,
-                        ),
-                    )
-                } else {
-                    printTags(tags)
-                }
+        runWithDao {
+            val tagDao = getDao<PasteTagDao>()
+            val tags = tagDao.getAllTagsFlow().first()
+            val summaries = tags.map { TagSummary(id = it.id, name = it.name, color = it.color) }
+
+            if (ctx.json) {
+                echo(
+                    cliJson.encodeToString(
+                        ListSerializer(TagSummary.serializer()),
+                        summaries,
+                    ),
+                )
+            } else {
+                printTags(summaries)
             }
         }
     }
@@ -77,17 +72,12 @@ class TagCreateCommand : CliktCommand(name = "create") {
     private val name by argument(help = "Tag name")
 
     override fun run() =
-        runWithClient { client ->
-            val body =
-                Json.encodeToString(
-                    CreateTagRequest.serializer(),
-                    CreateTagRequest(name = name),
-                )
-            val response = client.post("/cli/tags", body)
-            handleResponse(response) { resp ->
-                val tag = resp.body<TagSummary>()
-                echo("Tag '${tag.name}' created (id=${tag.id}).")
-            }
+        runWithDao {
+            val tagDao = getDao<PasteTagDao>()
+            val maxSortOrder = tagDao.getMaxSortOrder()
+            val color = PasteTag.getColor(maxSortOrder + 1)
+            val newId = tagDao.createPasteTag(name, color)
+            echo("Tag '$name' created (id=$newId).")
         }
 }
 
@@ -98,10 +88,9 @@ class TagDeleteCommand : CliktCommand(name = "delete") {
     private val id by argument(help = "Tag ID to delete").long()
 
     override fun run() =
-        runWithClient { client ->
-            val response = client.delete("/cli/tags/$id")
-            handleResponse(response) {
-                echo("Tag #$id deleted.")
-            }
+        runWithDao {
+            val tagDao = getDao<PasteTagDao>()
+            tagDao.deletePasteTagBlock(id)
+            echo("Tag #$id deleted.")
         }
 }

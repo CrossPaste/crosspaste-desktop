@@ -1,10 +1,10 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
+import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
-import io.ktor.client.call.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 
@@ -29,20 +29,34 @@ class DevicesCommand : CliktCommand(name = "devices") {
     private val ctx by requireObject<CliContext>()
 
     override fun run() =
-        runWithClient { client ->
-            val response = client.get("/cli/devices")
-            handleResponse(response) { resp ->
-                val devices = resp.body<List<DeviceSummary>>()
-                if (ctx.json) {
-                    echo(
-                        cliJson.encodeToString(
-                            ListSerializer(DeviceSummary.serializer()),
-                            devices,
-                        ),
+        runWithDao {
+            val syncDao = getDao<SyncRuntimeInfoDao>()
+            val infos = syncDao.getAllSyncRuntimeInfos()
+            val devices =
+                infos.map { info ->
+                    DeviceSummary(
+                        appInstanceId = info.appInstanceId,
+                        deviceName = info.deviceName,
+                        noteName = info.noteName,
+                        platform = info.platform.name,
+                        appVersion = info.appVersion,
+                        connectState = info.connectState,
+                        connectHostAddress = info.connectHostAddress,
+                        port = info.port,
+                        allowSend = info.allowSend,
+                        allowReceive = info.allowReceive,
                     )
-                } else {
-                    printDevices(devices)
                 }
+
+            if (ctx.json) {
+                echo(
+                    cliJson.encodeToString(
+                        ListSerializer(DeviceSummary.serializer()),
+                        devices,
+                    ),
+                )
+            } else {
+                printDevices(devices)
             }
         }
 
