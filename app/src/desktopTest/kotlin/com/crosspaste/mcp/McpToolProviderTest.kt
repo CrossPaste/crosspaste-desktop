@@ -3,8 +3,8 @@ package com.crosspaste.mcp
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
-import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteTagDao
+import com.crosspaste.db.paste.SqlPasteDao
+import com.crosspaste.db.paste.SqlPasteTagDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteState
@@ -63,7 +63,7 @@ class McpToolProviderTest {
     private val database = createDatabase(TestDriverFactory())
 
     private val pasteDao =
-        PasteDao(
+        SqlPasteDao(
             appInfo = appInfo,
             database = database,
             searchContentService = searchContentService,
@@ -71,7 +71,7 @@ class McpToolProviderTest {
             userDataPathProvider = userDataPathProvider,
         )
 
-    private val pasteTagDao = PasteTagDao(database)
+    private val pasteTagDao = SqlPasteTagDao(database)
 
     private val provider =
         McpToolProvider(

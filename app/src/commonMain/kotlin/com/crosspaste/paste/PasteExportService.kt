@@ -149,8 +149,8 @@ class PasteExportService(
                     .getPasteAppearItems()
                     .filterIsInstance<PasteFiles>()
                     .filter { pasteFiles ->
-                        pasteExportParam.maxFileSize?.let {
-                            pasteFiles.size <= pasteExportParam.maxFileSize
+                        pasteExportParam.maxFileSize?.let { maxSize ->
+                            pasteFiles.size <= maxSize
                         } != false
                     }
 

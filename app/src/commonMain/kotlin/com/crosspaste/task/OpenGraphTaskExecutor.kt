@@ -28,7 +28,7 @@ class OpenGraphTaskExecutor(
         runCatching {
             pasteTask.pasteDataId?.let { pasteDataId ->
                 mutex.withLock(pasteDataId) {
-                    pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
+                    pasteDao.getNoDeletePasteData(pasteDataId)?.let { pasteData ->
                         urlRenderingService.render(pasteData)
                     }
                 }

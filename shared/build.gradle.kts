@@ -21,6 +21,16 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.sqlDelight)
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName = "com.crosspaste"
+            dialect("app.cash.sqldelight:sqlite-3-25-dialect:${libs.versions.sqldelight.get()}")
+        }
+    }
 }
 
 ktlint {
@@ -57,11 +67,19 @@ kotlin {
             implementation(libs.ksoup)
             implementation(libs.ktor.io)
             implementation(libs.okio)
+            api(libs.sqldelight.coroutines.extensions)
         }
 
         val desktopMain by getting {
             dependencies {
                 implementation(libs.cryptography.provider.jdk)
+                implementation(libs.sqlite.driver)
+            }
+        }
+
+        val nativeAppMain by getting {
+            dependencies {
+                implementation(libs.sqlite.native.driver)
             }
         }
 

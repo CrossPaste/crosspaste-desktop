@@ -55,7 +55,7 @@ class PasteDaoTest {
 
     private val database = createDatabase(TestDriverFactory())
 
-    private val pasteDao = PasteDao(
+    private val pasteDao = SqlPasteDao(
         appInfo = appInfo,
         database = database,
         searchContentService = searchContentService,
@@ -63,7 +63,7 @@ class PasteDaoTest {
         userDataPathProvider = userDataPathProvider,
     )
 
-    private val pasteTagDao = PasteTagDao(database)
+    private val pasteTagDao = SqlPasteTagDao(database)
 
     private fun createTestPasteData(
         text: String = "hello world",

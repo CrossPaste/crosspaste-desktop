@@ -28,4 +28,5 @@ plugins {
 }
 
 include(":app")
+include(":cli")
 include(":shared")

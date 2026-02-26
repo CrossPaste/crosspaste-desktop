@@ -1,9 +1,11 @@
 package com.crosspaste.sync
 
+import com.crosspaste.db.sync.ConnectInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.filter
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -256,7 +258,13 @@ class GeneralSyncManager(
         host: String?,
     ) {
         realTimeSyncScope.launch {
-            syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, host)
+            val connectInfo =
+                host?.let { h ->
+                    syncInfo.endpointInfo.hostInfoList.firstOrNull { it.filter(h) }?.let {
+                        ConnectInfo(it.networkPrefixLength, it.hostAddress)
+                    }
+                }
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, connectInfo)
         }
     }
 

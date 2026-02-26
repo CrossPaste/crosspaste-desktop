@@ -45,4 +45,8 @@ jobs:
             ${{ runner.os }}-konan-    
 
       - name: Build with Gradle
-        run: ./gradlew build
+        # Build desktop app (full build + tests) and compile CLI code.
+        # CLI native linking is skipped in CI because Kotlin/Native's LLVM linker
+        # has GLIBC compatibility issues with ubuntu-latest's sqlite3.
+        # CLI binary linking is handled in the release workflow.
+        run: ./gradlew app:build cli:compileKotlinNative

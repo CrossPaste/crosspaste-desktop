@@ -1,0 +1,39 @@
+---
+#include <string.h>
+#include <stdlib.h>
+
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#endif
+
+const char* get_executable_path(void) {
+    static char path[4096];
+#if defined(__APPLE__)
+    uint32_t size = sizeof(path);
+    if (_NSGetExecutablePath(path, &size) == 0) {
+        char* resolved = realpath(path, NULL);
+        if (resolved) {
+            strncpy(path, resolved, sizeof(path) - 1);
+            path[sizeof(path) - 1] = '\0';
+            free(resolved);
+        }
+        return path;
+    }
+#elif defined(__linux__)
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+    if (len > 0) {
+        path[len] = '\0';
+        return path;
+    }
+#elif defined(_WIN32)
+    DWORD len = GetModuleFileNameA(NULL, path, sizeof(path));
+    if (len > 0 && len < sizeof(path)) {
+        return path;
+    }
+#endif
+    return NULL;
+}

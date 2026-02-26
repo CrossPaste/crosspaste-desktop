@@ -42,15 +42,15 @@ class PullIconTaskExecutor(
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val baseExtraInfo: BaseExtraInfo = TaskUtils.getExtraInfo(pasteTask, BaseExtraInfo::class)
 
-        if (pasteTask.pasteDataId == null) {
-            return createFailurePasteTaskResult(
-                baseExtraInfo = baseExtraInfo,
-                errorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
-                errorMessage = "Paste data ID is null",
-            )
-        }
+        val pasteDataId =
+            pasteTask.pasteDataId
+                ?: return createFailurePasteTaskResult(
+                    baseExtraInfo = baseExtraInfo,
+                    errorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
+                    errorMessage = "Paste data ID is null",
+                )
 
-        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
+        return pasteDao.getNoDeletePasteData(pasteDataId)?.let { pasteData ->
             pasteData.source?.let { source ->
                 mutex.withLock(source) {
                     runCatching {

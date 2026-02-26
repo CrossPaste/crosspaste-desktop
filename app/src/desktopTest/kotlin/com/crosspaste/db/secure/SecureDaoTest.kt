@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 class SecureDaoTest {
 
     private val database = createDatabase(TestDriverFactory())
-    private val secureDao = SecureDao(database)
+    private val secureDao = SqlSecureDao(database)
 
     // --- Save and retrieve ---
 
