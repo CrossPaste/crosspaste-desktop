@@ -47,7 +47,7 @@ class SyncRuntimeInfoDaoTest {
 
     private val database = createDatabase(TestDriverFactory())
 
-    private val syncRuntimeInfoDao = SyncRuntimeInfoDao(database)
+    private val syncRuntimeInfoDao = SqlSyncRuntimeInfoDao(database)
 
     @Test
     fun `getAllSyncRuntimeInfosFlow reacts to update function`() = runTest {

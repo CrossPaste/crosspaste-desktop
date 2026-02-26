@@ -49,7 +49,7 @@ class DesktopServerModule(
         secureStore,
         syncApi,
         syncInfoFactory,
-    syncRoutingApi,
+        syncRoutingApi,
         serverEncryptPluginFactory,
         serverDecryptionPluginFactory,
         userDataPathProvider,

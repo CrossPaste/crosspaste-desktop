@@ -11,6 +11,7 @@ import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.paste.SqlPasteTagDao
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.secure.SqlSecureDao
+import com.crosspaste.db.sync.SqlSyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.task.SqlTaskDao
 import com.crosspaste.db.task.TaskDao
@@ -100,7 +101,7 @@ class DesktopModule(
             }
             single<PasteTagDao> { SqlPasteTagDao(get()) }
             single<SecureIO> { SqlSecureDao(get()) }
-            single<SyncRuntimeInfoDao> { SyncRuntimeInfoDao(get()) }
+            single<SyncRuntimeInfoDao> { SqlSyncRuntimeInfoDao(get()) }
             single<TaskDao> { SqlTaskDao(get()) }
         }
 
