@@ -6,7 +6,9 @@ import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 
-class SqlTaskDao(private val database: Database) : TaskDao {
+class SqlTaskDao(
+    private val database: Database,
+) : TaskDao {
 
     private val jsonUtils = getJsonUtils()
 
@@ -35,13 +37,14 @@ class SqlTaskDao(private val database: Database) : TaskDao {
         pasteDataId: Long?,
         taskType: Int,
         extraInfo: PasteTaskExtraInfo,
-    ): Long = withContext(ioDispatcher) {
-        createTaskBlock(
-            pasteDataId,
-            taskType,
-            extraInfo,
-        )
-    }
+    ): Long =
+        withContext(ioDispatcher) {
+            createTaskBlock(
+                pasteDataId,
+                taskType,
+                extraInfo,
+            )
+        }
 
     override suspend fun executingTask(taskId: Long) {
         withContext(ioDispatcher) {
@@ -53,7 +56,10 @@ class SqlTaskDao(private val database: Database) : TaskDao {
         }
     }
 
-    override suspend fun successTask(taskId: Long, newExtraInfo: String?) {
+    override suspend fun successTask(
+        taskId: Long,
+        newExtraInfo: String?,
+    ) {
         withContext(ioDispatcher) {
             newExtraInfo?.let {
                 pasteTaskDatabaseQueries.finishTaskWithExtraInfo(
@@ -72,7 +78,11 @@ class SqlTaskDao(private val database: Database) : TaskDao {
         }
     }
 
-    override suspend fun failureTask(taskId: Long, needRetry: Boolean, newExtraInfo: String?) {
+    override suspend fun failureTask(
+        taskId: Long,
+        needRetry: Boolean,
+        newExtraInfo: String?,
+    ) {
         withContext(ioDispatcher) {
             newExtraInfo?.let {
                 pasteTaskDatabaseQueries.finishTaskWithExtraInfo(
@@ -91,19 +101,20 @@ class SqlTaskDao(private val database: Database) : TaskDao {
         }
     }
 
-    override suspend fun getTask(taskId: Long): PasteTask? = withContext(ioDispatcher) {
-        pasteTaskDatabaseQueries.getTask(taskId).executeAsOneOrNull()?.let {
-            PasteTask(
-                taskId = it.taskId,
-                pasteDataId = it.pasteDataId,
-                taskType = it.taskType,
-                status = it.status,
-                createTime = it.createTime,
-                modifyTime = it.modifyTime,
-                extraInfo = it.extraInfo,
-            )
+    override suspend fun getTask(taskId: Long): PasteTask? =
+        withContext(ioDispatcher) {
+            pasteTaskDatabaseQueries.getTask(taskId).executeAsOneOrNull()?.let {
+                PasteTask(
+                    taskId = it.taskId,
+                    pasteDataId = it.pasteDataId,
+                    taskType = it.taskType,
+                    status = it.status,
+                    createTime = it.createTime,
+                    modifyTime = it.modifyTime,
+                    extraInfo = it.extraInfo,
+                )
+            }
         }
-    }
 
     override suspend fun cleanSuccessTask(time: Long) {
         withContext(ioDispatcher) {

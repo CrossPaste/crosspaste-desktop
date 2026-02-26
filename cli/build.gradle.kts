@@ -71,6 +71,8 @@ kotlin {
             executable {
                 entryPoint = "com.crosspaste.cli.main"
                 baseName = "crosspaste-cli"
+                // Link system sqlite3 library required by SQLDelight native driver
+                linkerOpts("-lsqlite3")
                 // Workaround for Clikt duplicate symbol bug in Kotlin/Native
                 // See: https://github.com/ajalt/clikt/issues/598
                 // Apple ld does not support --allow-multiple-definition (GNU ld only)
@@ -84,6 +86,7 @@ kotlin {
     sourceSets {
         val nativeMain by getting {
             dependencies {
+                implementation(project(":shared"))
                 implementation(libs.clikt)
                 implementation(libs.koin.core)
                 implementation(libs.kotlinx.coroutines.core)

@@ -19,43 +19,56 @@ class SqlPasteTagDao(
 
     private val tagDatabaseQueries = database.tagDatabaseQueries
 
-    override fun getAllTagsFlow(): Flow<List<PasteTag>> {
-        return tagDatabaseQueries.getAllTags(PasteTag::mapper)
+    override fun getAllTagsFlow(): Flow<List<PasteTag>> =
+        tagDatabaseQueries
+            .getAllTags(PasteTag::mapper)
             .asFlow()
             .map { it.executeAsList() }
             .catch { e ->
                 logger.error(e) { "Error executing getAllTagsFlow query: ${e.message}" }
                 emit(listOf())
-            }
-            .flowOn(ioDispatcher)
-    }
+            }.flowOn(ioDispatcher)
 
-    override suspend fun getMaxSortOrder(): Long = withContext(ioDispatcher) {
-        tagDatabaseQueries.maxSortOrder().executeAsOne()
-    }
-
-    override suspend fun createPasteTag(name: String, color: Long): Long = withContext(ioDispatcher) {
-        database.transactionWithResult {
-            val maxSortOrder = tagDatabaseQueries.maxSortOrder().executeAsOne()
-            val newSortOrder = maxSortOrder + 1
-            tagDatabaseQueries.createTag(name, color, newSortOrder)
-            tagDatabaseQueries.getLastId().executeAsOne()
+    override suspend fun getMaxSortOrder(): Long =
+        withContext(ioDispatcher) {
+            tagDatabaseQueries.maxSortOrder().executeAsOne()
         }
-    }
 
-    override suspend fun updatePasteTagName(id: Long, name: String) {
+    override suspend fun createPasteTag(
+        name: String,
+        color: Long,
+    ): Long =
+        withContext(ioDispatcher) {
+            database.transactionWithResult {
+                val maxSortOrder = tagDatabaseQueries.maxSortOrder().executeAsOne()
+                val newSortOrder = maxSortOrder + 1
+                tagDatabaseQueries.createTag(name, color, newSortOrder)
+                tagDatabaseQueries.getLastId().executeAsOne()
+            }
+        }
+
+    override suspend fun updatePasteTagName(
+        id: Long,
+        name: String,
+    ) {
         withContext(ioDispatcher) {
             tagDatabaseQueries.updateTagName(name, id)
         }
     }
 
-    override suspend fun updatePasteTagColor(id: Long, color: Long) {
+    override suspend fun updatePasteTagColor(
+        id: Long,
+        color: Long,
+    ) {
         withContext(ioDispatcher) {
             tagDatabaseQueries.updateTagColor(color, id)
         }
     }
 
-    override fun switchPinPasteTagBlock(pasteDataId: Long, pasteTagId: Long) {
+    override fun switchPinPasteTagBlock(
+        pasteDataId: Long,
+        pasteTagId: Long,
+    ) {
         database.transaction {
             val pinned = tagDatabaseQueries.isPinnedPasteTag(pasteDataId, pasteTagId).executeAsOne()
             if (pinned) {
@@ -66,19 +79,24 @@ class SqlPasteTagDao(
         }
     }
 
-    override fun getPasteTagsBlock(pasteDataId: Long): List<Long> {
-        return tagDatabaseQueries.getPasteTags(pasteDataId).executeAsList()
-    }
+    override fun getPasteTagsBlock(pasteDataId: Long): List<Long> =
+        tagDatabaseQueries.getPasteTags(pasteDataId).executeAsList()
 
     override fun deletePasteTagBlock(id: Long) {
         tagDatabaseQueries.deleteTag(id)
     }
 
-    private fun pinPasteTag(pasteDataId: Long, pasteTagId: Long) {
+    private fun pinPasteTag(
+        pasteDataId: Long,
+        pasteTagId: Long,
+    ) {
         tagDatabaseQueries.pinPasteTag(pasteDataId, pasteTagId)
     }
 
-    private fun unPinPasteTag(pasteDataId: Long, pasteTagId: Long) {
+    private fun unPinPasteTag(
+        pasteDataId: Long,
+        pasteTagId: Long,
+    ) {
         tagDatabaseQueries.unPinPasteTag(pasteDataId, pasteTagId)
     }
 }
