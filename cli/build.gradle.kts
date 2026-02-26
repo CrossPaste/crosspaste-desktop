@@ -73,6 +73,10 @@ kotlin {
                 baseName = "crosspaste-cli"
                 // Link system sqlite3 library required by SQLDelight native driver
                 linkerOpts("-lsqlite3")
+                // On Linux, ld.lld needs explicit library search paths
+                if (!isMacosTarget && !isMingwX64) {
+                    linkerOpts("-L/usr/lib", "-L/usr/lib/x86_64-linux-gnu", "-L/usr/lib/aarch64-linux-gnu")
+                }
                 // Workaround for Clikt duplicate symbol bug in Kotlin/Native
                 // See: https://github.com/ajalt/clikt/issues/598
                 // Apple ld does not support --allow-multiple-definition (GNU ld only)
