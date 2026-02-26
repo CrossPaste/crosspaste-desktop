@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import okio.FileSystem
 import okio.Path
 
@@ -59,7 +62,7 @@ data class CliReadOnlyAppConfig(
 }
 
 /**
- * Read-only ConfigManager for CLI. Loads config from the desktop app's appConfig.json.
+ * ConfigManager for CLI. Reads/writes the desktop app's appConfig.json.
  */
 class CliConfigManager(
     nativePathProvider: NativePlatformPathProvider,
@@ -71,42 +74,69 @@ class CliConfigManager(
             isLenient = true
         }
 
-    private val appConfig: AppConfig =
-        run {
-            val configPath = nativePathProvider.getDefaultUserDataPath().resolve("appConfig.json")
-            try {
-                val content = FileSystem.SYSTEM.read(configPath) { readUtf8() }
-                json.decodeFromString<CliReadOnlyAppConfig>(content)
-            } catch (_: Exception) {
-                CliReadOnlyAppConfig()
-            }
+    private val prettyJson =
+        Json {
+            prettyPrint = true
         }
+
+    private val configPath: okio.Path =
+        nativePathProvider.getDefaultUserDataPath().resolve("appConfig.json")
+
+    private val _config = MutableStateFlow<AppConfig>(loadConfigFromFile())
 
     override val deviceUtils: DeviceUtils =
         object : DeviceUtils {
-            override fun createAppInstanceId(): String = appConfig.appInstanceId
+            override fun createAppInstanceId(): String = _config.value.appInstanceId
 
             override fun getDeviceId(): String = ""
 
             override fun getDeviceName(): String = "CLI"
         }
 
-    override val config: StateFlow<AppConfig> = MutableStateFlow(appConfig)
+    override val config: StateFlow<AppConfig> = _config
 
-    override fun loadConfig(): AppConfig = appConfig
+    override fun loadConfig(): AppConfig = _config.value
+
+    private fun loadConfigFromFile(): AppConfig =
+        try {
+            val content = FileSystem.SYSTEM.read(configPath) { readUtf8() }
+            json.decodeFromString<CliReadOnlyAppConfig>(content)
+        } catch (_: Exception) {
+            CliReadOnlyAppConfig()
+        }
 
     override fun updateConfig(
         key: String,
         value: Any,
     ) {
-        // CLI is read-only
+        val rawMap =
+            try {
+                val content = FileSystem.SYSTEM.read(configPath) { readUtf8() }
+                json.parseToJsonElement(content).jsonObject.toMutableMap()
+            } catch (_: Exception) {
+                mutableMapOf()
+            }
+
+        rawMap[key] =
+            when (value) {
+                is Boolean -> JsonPrimitive(value)
+                is Int -> JsonPrimitive(value)
+                is Long -> JsonPrimitive(value)
+                is String -> JsonPrimitive(value)
+                else -> JsonPrimitive(value.toString())
+            }
+
+        val newContent =
+            prettyJson.encodeToString(JsonObject.serializer(), JsonObject(rawMap))
+        FileSystem.SYSTEM.write(configPath) { writeUtf8(newContent) }
+        _config.value = loadConfigFromFile()
     }
 
     override fun updateConfig(
         keys: List<String>,
         values: List<Any>,
     ) {
-        // CLI is read-only
+        keys.zip(values).forEach { (k, v) -> updateConfig(k, v) }
     }
 }
 

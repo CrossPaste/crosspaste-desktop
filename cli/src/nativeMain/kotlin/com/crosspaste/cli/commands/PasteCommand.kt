@@ -1,13 +1,13 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
+import com.crosspaste.db.paste.PasteDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.types.long
-import io.ktor.client.call.*
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -32,16 +32,25 @@ class PasteCommand : CliktCommand(name = "paste") {
     private val id by argument(help = "Paste ID to show (omit for most recent)").long().optional()
 
     override fun run() =
-        runWithClient { client ->
-            val path = if (id != null) "/cli/paste/$id" else "/cli/paste/current"
-            val response = client.get(path)
-            handleResponse(response) { resp ->
-                val detail = resp.body<PasteDetailResponse>()
-                if (ctx.json) {
-                    echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
+        runWithDao {
+            val pasteDao = getDao<PasteDao>()
+            val pasteData =
+                if (id != null) {
+                    pasteDao.getNoDeletePasteData(id!!)
                 } else {
-                    printDetail(detail)
+                    pasteDao.getLatestLoadedPasteData()
                 }
+
+            if (pasteData == null) {
+                echo("Paste not found.", err = true)
+                return@runWithDao
+            }
+
+            val detail = pasteData.toDetailResponse()
+            if (ctx.json) {
+                echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
+            } else {
+                printDetail(detail)
             }
         }
 

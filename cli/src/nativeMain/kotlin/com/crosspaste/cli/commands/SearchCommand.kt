@@ -1,6 +1,8 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
+import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.paste.SearchContentService
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -8,7 +10,6 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
-import io.ktor.client.call.*
 
 class SearchCommand : CliktCommand(name = "search") {
 
@@ -23,18 +24,28 @@ class SearchCommand : CliktCommand(name = "search") {
     private val type by option("--type", "-t", help = "Filter by type (text, link, image, file, html, rtf, color)")
 
     override fun run() =
-        runWithClient { client ->
-            var path = "/cli/paste/search?q=${encodeQuery(query)}&limit=$limit"
-            type?.let { path += "&type=$it" }
+        runWithDao {
+            val pasteDao = getDao<PasteDao>()
+            val searchContentService = getDao<SearchContentService>()
+            val searchTerms = searchContentService.createSearchTerms(query)
+            val pasteType = resolveTypeFilter(type)
 
-            val response = client.get(path)
-            handleResponse(response) { resp ->
-                val list = resp.body<PasteListResponse>()
-                if (ctx.json) {
-                    echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
-                } else {
-                    printResults(list)
-                }
+            val results =
+                pasteDao.searchPasteData(
+                    searchTerms = searchTerms,
+                    pasteType = pasteType,
+                    limit = limit,
+                )
+            val list =
+                PasteListResponse(
+                    items = results.map { it.toSummaryDto() },
+                    total = results.size.toLong(),
+                )
+
+            if (ctx.json) {
+                echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
+            } else {
+                printResults(list)
             }
         }
 
@@ -57,5 +68,3 @@ class SearchCommand : CliktCommand(name = "search") {
         }
     }
 }
-
-private fun encodeQuery(query: String): String = query.replace(" ", "%20").replace("&", "%26").replace("=", "%3D")

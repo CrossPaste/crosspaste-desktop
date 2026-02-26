@@ -1,16 +1,12 @@
 package com.crosspaste.cli.commands
 
-import com.crosspaste.cli.api.AppNotRunningException
-import com.crosspaste.cli.api.CliClient
+import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteType
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.ProgramResult
-import io.ktor.client.call.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import org.koin.core.Koin
 import org.koin.mp.KoinPlatform
 
 const val CLI_VERSION = "1.2.7"
@@ -21,70 +17,50 @@ val cliJson =
         prettyPrint = true
     }
 
-fun CliktCommand.runWithClient(block: suspend (CliClient) -> Unit) {
-    val koin = KoinPlatform.getKoin()
-    val client =
-        try {
-            koin.get<CliClient>()
-        } catch (_: AppNotRunningException) {
-            if (!attemptAutoStart(koin)) {
-                throw ProgramResult(1)
-            }
-            try {
-                koin.get<CliClient>()
-            } catch (_: AppNotRunningException) {
-                echo("CrossPaste is not running.", err = true)
-                throw ProgramResult(1)
-            }
-        }
-
+fun CliktCommand.runWithDao(block: suspend () -> Unit) {
     runBlocking {
-        client.use {
-            try {
-                block(it)
-            } catch (_: AppNotRunningException) {
-                if (!attemptAutoStart(koin)) {
-                    throw ProgramResult(1)
-                }
-                val retryClient =
-                    try {
-                        koin.get<CliClient>()
-                    } catch (_: AppNotRunningException) {
-                        echo("CrossPaste is not running.", err = true)
-                        throw ProgramResult(1)
-                    }
-                retryClient.use { freshClient ->
-                    block(freshClient)
-                }
-            } catch (e: ProgramResult) {
-                throw e
-            } catch (e: Exception) {
-                echo("Error: ${e.message}", err = true)
-                throw ProgramResult(1)
-            }
+        try {
+            block()
+        } catch (e: ProgramResult) {
+            throw e
+        } catch (e: Exception) {
+            echo("Error: ${e.message}", err = true)
+            throw ProgramResult(1)
         }
     }
 }
 
-private fun CliktCommand.attemptAutoStart(koin: Koin): Boolean {
-    val autoStarter = koin.get<AppAutoStarter>()
-    return runBlocking {
-        autoStarter.startAndWait { message, isError -> echo(message, err = isError) }
-    }
-}
+inline fun <reified T> CliktCommand.getDao(): T = KoinPlatform.getKoin().get()
 
-suspend fun CliktCommand.handleResponse(
-    response: HttpResponse,
-    onSuccess: suspend (HttpResponse) -> Unit,
-) {
-    if (response.status == HttpStatusCode.OK) {
-        onSuccess(response)
-    } else {
-        val body = response.body<String>()
-        echo("Error: ${response.status} - $body", err = true)
-        throw ProgramResult(1)
+fun PasteData.toSummaryDto(): PasteSummaryDto =
+    PasteSummaryDto(
+        id = id,
+        typeName = getTypeName(),
+        source = source,
+        size = size,
+        favorite = favorite,
+        createTime = createTime,
+        preview = getSummary("Loading...", ""),
+        remote = remote,
+    )
+
+fun PasteData.toDetailResponse(): PasteDetailResponse =
+    PasteDetailResponse(
+        id = id,
+        typeName = getTypeName(),
+        source = source,
+        size = size,
+        favorite = favorite,
+        createTime = createTime,
+        remote = remote,
+        hash = hash,
+        content = pasteAppearItem?.getSummary(),
+    )
+
+fun resolveTypeFilter(type: String?): Int? =
+    type?.let { name ->
+        PasteType.TYPES.firstOrNull { it.name.equals(name, ignoreCase = true) }?.type
     }
-}
 
 @OptIn(ExperimentalForeignApi::class)
 fun formatRelativeTime(epochMillis: Long): String {
