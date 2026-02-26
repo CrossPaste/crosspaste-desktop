@@ -48,23 +48,23 @@ class PullFileTaskExecutor(
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val pullExtraInfo: PullExtraInfo = TaskUtils.getExtraInfo(pasteTask, PullExtraInfo::class)
 
-        if (pasteTask.pasteDataId == null) {
-            return TaskUtils.createFailurePasteTaskResult(
-                logger = logger,
-                retryHandler = { false },
-                startTime = pasteTask.modifyTime,
-                fails =
-                    listOf(
-                        createFailureResult(
-                            StandardErrorCode.PULL_FILE_TASK_FAIL,
-                            "pasteDataId is null",
+        val pasteDataId =
+            pasteTask.pasteDataId
+                ?: return TaskUtils.createFailurePasteTaskResult(
+                    logger = logger,
+                    retryHandler = { false },
+                    startTime = pasteTask.modifyTime,
+                    fails =
+                        listOf(
+                            createFailureResult(
+                                StandardErrorCode.PULL_FILE_TASK_FAIL,
+                                "pasteDataId is null",
+                            ),
                         ),
-                    ),
-                extraInfo = pullExtraInfo,
-            )
-        }
+                    extraInfo = pullExtraInfo,
+                )
 
-        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
+        return pasteDao.getNoDeletePasteData(pasteDataId)?.let { pasteData ->
             val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
             if (fileItems.size != 1) {
                 return@let doFailure(

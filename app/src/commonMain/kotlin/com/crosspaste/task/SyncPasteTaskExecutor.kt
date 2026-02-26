@@ -52,11 +52,11 @@ class SyncPasteTaskExecutor(
     override suspend fun doExecuteTask(pasteTask: PasteTask): PasteTaskResult {
         val syncExtraInfo: SyncExtraInfo = TaskUtils.getExtraInfo(pasteTask, SyncExtraInfo::class)
 
-        if (pasteTask.pasteDataId == null) {
-            return createEmptyResult(syncExtraInfo)
-        }
+        val pasteDataId =
+            pasteTask.pasteDataId
+                ?: return createEmptyResult(syncExtraInfo)
 
-        return pasteDao.getNoDeletePasteData(pasteTask.pasteDataId)?.let { pasteData ->
+        return pasteDao.getNoDeletePasteData(pasteDataId)?.let { pasteData ->
             // Check if sync is enabled for this paste type
             if (!isSyncEnabledForPasteType(pasteData)) {
                 logger.debug { "Sync disabled for paste type: ${pasteData.getType().name}" }

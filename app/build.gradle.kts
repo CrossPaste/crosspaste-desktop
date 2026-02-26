@@ -32,7 +32,6 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ktlint)
-    alias(libs.plugins.sqlDelight)
 }
 
 buildscript {
@@ -41,15 +40,6 @@ buildscript {
     }
     dependencies {
         classpath(libs.yaml)
-    }
-}
-
-sqldelight {
-    databases {
-        create("Database") {
-            packageName = "com.crosspaste"
-            dialect("app.cash.sqldelight:sqlite-3-25-dialect:2.2.1")
-        }
     }
 }
 
@@ -123,7 +113,6 @@ kotlin {
             implementation(libs.okio)
             implementation(libs.richeditor)
             implementation(libs.semver)
-            implementation(libs.sqldelight.coroutines.extensions)
         }
 
         val desktopMain by getting

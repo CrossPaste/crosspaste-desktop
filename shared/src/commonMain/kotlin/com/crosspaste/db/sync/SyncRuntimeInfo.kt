@@ -50,19 +50,20 @@ data class SyncRuntimeInfo(
             allowReceive: Boolean,
             createTime: Long,
             modifyTime: Long,
-        ): SyncRuntimeInfo {
-            return SyncRuntimeInfo(
+        ): SyncRuntimeInfo =
+            SyncRuntimeInfo(
                 appInstanceId = appInstanceId,
                 appVersion = appVersion,
                 userName = userName,
                 deviceId = deviceId,
                 deviceName = deviceName,
-                platform = Platform(
-                    name = platformName,
-                    arch = platformArch,
-                    bitMode = platformBitMode.toInt(),
-                    version = platformVersion,
-                ),
+                platform =
+                    Platform(
+                        name = platformName,
+                        arch = platformArch,
+                        bitMode = platformBitMode.toInt(),
+                        version = platformVersion,
+                    ),
                 hostInfoList = jsonUtils.JSON.decodeFromString(hostInfo),
                 port = port.toInt(),
                 noteName = noteName,
@@ -74,10 +75,9 @@ data class SyncRuntimeInfo(
                 createTime = createTime,
                 modifyTime = modifyTime,
             )
-        }
 
-        fun createSyncRuntimeInfo(syncInfo: SyncInfo): SyncRuntimeInfo {
-            return SyncRuntimeInfo(
+        fun createSyncRuntimeInfo(syncInfo: SyncInfo): SyncRuntimeInfo =
+            SyncRuntimeInfo(
                 appInstanceId = syncInfo.appInfo.appInstanceId,
                 appVersion = syncInfo.appInfo.appVersion,
                 userName = syncInfo.appInfo.userName,
@@ -87,7 +87,6 @@ data class SyncRuntimeInfo(
                 hostInfoList = syncInfo.endpointInfo.hostInfoList,
                 port = syncInfo.endpointInfo.port,
             )
-        }
 
         fun hostInfoListEqual(
             hostInfoList: List<HostInfo>,
@@ -97,7 +96,13 @@ data class SyncRuntimeInfo(
                 return false
             }
             val sortHostInfoList = hostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
-            val otherSortHostInfoList = otherHostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
+            val otherSortHostInfoList =
+                otherHostInfoList.sortedWith {
+                    o1,
+                    o2,
+                    ->
+                    o1.hostAddress.compareTo(o2.hostAddress)
+                }
             for (i in 0 until hostInfoList.size) {
                 if (sortHostInfoList[i].hostAddress != otherSortHostInfoList[i].hostAddress) {
                     return false
@@ -107,9 +112,7 @@ data class SyncRuntimeInfo(
         }
     }
 
-    fun getDeviceDisplayName(): String {
-        return noteName ?: deviceName
-    }
+    fun getDeviceDisplayName(): String = noteName ?: deviceName
 
     fun diffSyncInfo(syncInfo: SyncInfo): Boolean {
         if (port != syncInfo.endpointInfo.port) {

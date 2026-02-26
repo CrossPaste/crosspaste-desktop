@@ -4,7 +4,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
-import com.crosspaste.db.task.TaskDao
+import com.crosspaste.db.task.SqlTaskDao
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
 import com.crosspaste.presist.OneFilePersist
@@ -40,7 +40,7 @@ class GlobalCopywriterTest {
 
         val database = createDatabase(TestDriverFactory())
 
-        val taskDao = TaskDao(database)
+        val taskDao = SqlTaskDao(database)
 
         val copywriter = DesktopGlobalCopywriter(configManager, lazy { TaskExecutor(listOf(), taskDao) }, taskDao)
         assertEquals(EN, copywriter.language())

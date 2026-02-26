@@ -3,11 +3,7 @@ package com.crosspaste.net
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
-import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteTagDao
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
-import com.crosspaste.net.cli.CliTokenManager
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
@@ -26,20 +22,15 @@ class DesktopServerModule(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
     cacheManager: CacheManager,
-    cliTokenManager: CliTokenManager,
-    configManager: CommonConfigManager,
     exceptionHandler: ExceptionHandler,
     nearbyDeviceManager: NearbyDeviceManager,
     networkInterfaceService: NetworkInterfaceService,
     pasteboardService: PasteboardService,
     pasteDao: PasteDao,
-    pasteTagDao: PasteTagDao,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
-    server: Lazy<Server>,
     syncApi: SyncApi,
     syncInfoFactory: SyncInfoFactory,
-    syncRuntimeInfoDao: SyncRuntimeInfoDao,
     syncRoutingApi: SyncRoutingApi,
     serverEncryptPluginFactory: ServerEncryptPluginFactory,
     serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
@@ -49,21 +40,16 @@ class DesktopServerModule(
         appInfo,
         appTokenApi,
         cacheManager,
-        cliTokenManager,
-        configManager,
         exceptionHandler,
         nearbyDeviceManager,
         networkInterfaceService,
         pasteboardService,
         pasteDao,
-        pasteTagDao,
         secureKeyPairSerializer,
         secureStore,
-        server,
         syncApi,
         syncInfoFactory,
-        syncRuntimeInfoDao,
-        syncRoutingApi,
+    syncRoutingApi,
         serverEncryptPluginFactory,
         serverDecryptionPluginFactory,
         userDataPathProvider,

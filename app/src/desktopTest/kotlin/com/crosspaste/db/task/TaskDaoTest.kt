@@ -11,7 +11,7 @@ import kotlin.test.assertNull
 class TaskDaoTest {
 
     private val database = createDatabase(TestDriverFactory())
-    private val taskDao = TaskDao(database)
+    private val taskDao = SqlTaskDao(database)
 
     // --- Task creation ---
 

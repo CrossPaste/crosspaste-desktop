@@ -130,6 +130,7 @@ ph-css = { module = "com.helger:ph-css", version.ref = "ph-css" }
 richeditor = { module = "com.mohamedrejeb.richeditor:richeditor-compose", version.ref = "richeditor" }
 semver = { module = "io.github.z4kn4fein:semver", version.ref = "semver" }
 sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+sqlite-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 native-tray = { module = "io.github.kdroidfilter:composenativetray-jvm", version.ref = "native-tray" }
 tesseract-platform = { module = "org.bytedeco:tesseract-platform", version.ref = "tesseract-platform" }

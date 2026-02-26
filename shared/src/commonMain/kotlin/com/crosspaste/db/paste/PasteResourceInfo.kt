@@ -81,8 +81,8 @@ class PasteResourceInfoBuilder {
         }
     }
 
-    fun build(): PasteResourceInfo {
-        return PasteResourceInfo(
+    fun build(): PasteResourceInfo =
+        PasteResourceInfo(
             pasteCount,
             pasteSize,
             textCount,
@@ -100,5 +100,4 @@ class PasteResourceInfoBuilder {
             fileCount,
             fileSize,
         )
-    }
 }

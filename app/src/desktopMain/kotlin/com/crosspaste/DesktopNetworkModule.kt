@@ -22,7 +22,6 @@ import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.TelnetHelper
-import com.crosspaste.net.cli.CliTokenManager
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -45,7 +44,6 @@ import org.koin.dsl.module
 
 fun desktopNetworkModule(marketingMode: Boolean): Module =
     module {
-        single<CliTokenManager> { CliTokenManager(get()) }
         single<ExceptionHandler> { DesktopExceptionHandler() }
         single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
         single<McpResourceProvider> { McpResourceProvider(get()) }
@@ -87,20 +85,15 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 appInfo = get(),
                 appTokenApi = get(),
                 cacheManager = get(),
-                cliTokenManager = get(),
-                configManager = get(),
                 exceptionHandler = get(),
                 nearbyDeviceManager = get(),
                 networkInterfaceService = get(),
                 pasteboardService = get(),
                 pasteDao = get(),
-                pasteTagDao = get(),
                 secureKeyPairSerializer = get(),
                 secureStore = get(),
-                server = lazy { get<Server>() },
                 syncApi = get(),
                 syncInfoFactory = get(),
-                syncRuntimeInfoDao = get(),
                 syncRoutingApi = get(),
                 serverEncryptPluginFactory = get(),
                 serverDecryptionPluginFactory = get(),

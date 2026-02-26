@@ -4,7 +4,7 @@ import com.crosspaste.Database
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 
-class SecureDao(private val database: Database): SecureIO {
+class SqlSecureDao(private val database: Database) : SecureIO {
 
     private val secureDatabaseQueries = database.secureDatabaseQueries
 

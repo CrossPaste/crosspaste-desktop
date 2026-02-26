@@ -63,7 +63,7 @@ class PasteDaoTest {
         userDataPathProvider = userDataPathProvider,
     )
 
-    private val pasteTagDao = PasteTagDao(database)
+    private val pasteTagDao = SqlPasteTagDao(database)
 
     private fun createTestPasteData(
         text: String = "hello world",

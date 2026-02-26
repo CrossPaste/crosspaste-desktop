@@ -8,9 +8,11 @@ import com.crosspaste.db.DriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
-import com.crosspaste.db.secure.SecureDao
+import com.crosspaste.db.paste.SqlPasteTagDao
 import com.crosspaste.db.secure.SecureIO
+import com.crosspaste.db.secure.SqlSecureDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
+import com.crosspaste.db.task.SqlTaskDao
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.headless.headlessUiModule
 import com.crosspaste.headless.headlessViewModelModule
@@ -96,10 +98,10 @@ class DesktopModule(
                     userDataPathProvider = get(),
                 )
             }
-            single<PasteTagDao> { PasteTagDao(get()) }
-            single<SecureIO> { SecureDao(get()) }
+            single<PasteTagDao> { SqlPasteTagDao(get()) }
+            single<SecureIO> { SqlSecureDao(get()) }
             single<SyncRuntimeInfoDao> { SyncRuntimeInfoDao(get()) }
-            single<TaskDao> { TaskDao(get()) }
+            single<TaskDao> { SqlTaskDao(get()) }
         }
 
     override fun networkModule() = desktopNetworkModule(marketingMode)
