@@ -55,7 +55,7 @@ class PasteDaoTest {
 
     private val database = createDatabase(TestDriverFactory())
 
-    private val pasteDao = PasteDao(
+    private val pasteDao = SqlPasteDao(
         appInfo = appInfo,
         database = database,
         searchContentService = searchContentService,

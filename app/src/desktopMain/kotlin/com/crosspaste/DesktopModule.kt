@@ -8,6 +8,7 @@ import com.crosspaste.db.DriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
+import com.crosspaste.db.paste.SqlPasteDao
 import com.crosspaste.db.paste.SqlPasteTagDao
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.secure.SqlSecureDao
@@ -91,7 +92,7 @@ class DesktopModule(
             single<DriverFactory> { DesktopDriverFactory(get()) }
             single<Database> { createDatabase(get()) }
             single<PasteDao> {
-                PasteDao(
+                SqlPasteDao(
                     appInfo = get(),
                     database = get(),
                     searchContentService = get(),
