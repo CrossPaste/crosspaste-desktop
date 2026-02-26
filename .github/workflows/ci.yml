@@ -44,5 +44,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-konan-    
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
       - name: Build with Gradle
         run: ./gradlew build
