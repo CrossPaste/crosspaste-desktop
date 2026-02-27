@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
+import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -37,7 +38,7 @@ import com.composables.icons.materialsymbols.rounded.Broken_image
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.coil.ImageItem
-import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.path.UserDataPathProvider
@@ -60,7 +61,7 @@ import java.awt.image.BufferedImage
 
 @Composable
 fun PasteDataScope.ImageSidePreviewView() {
-    val imageLoaders = koinInject<ImageLoaders>()
+    val userImageLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.USER_IMAGE)
     val imageHandler = koinInject<ImageHandler<BufferedImage>>()
     val platformContext = koinInject<PlatformContext>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
@@ -134,7 +135,7 @@ fun PasteDataScope.ImageSidePreviewView() {
             SubcomposeAsyncImage(
                 modifier = Modifier.wrapContentSize(),
                 model = request,
-                imageLoader = imageLoaders.userImageLoader,
+                imageLoader = userImageLoader,
                 contentDescription = "imageType",
                 contentScale = ContentScale.Fit,
                 content = {

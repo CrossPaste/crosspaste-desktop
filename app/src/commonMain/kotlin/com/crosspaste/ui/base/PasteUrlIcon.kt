@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -15,7 +16,7 @@ import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
-import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.image.coil.UrlItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.ui.LocalThemeExtState
@@ -25,7 +26,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.PasteUrlIcon(size: Dp = large2X) {
-    val imageLoaders = koinInject<ImageLoaders>()
+    val faviconImageLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.FAVICON)
     val platformContext = koinInject<PlatformContext>()
 
     val urlPasteItem = getPasteItem(UrlPasteItem::class)
@@ -53,7 +54,7 @@ fun PasteDataScope.PasteUrlIcon(size: Dp = large2X) {
     SubcomposeAsyncImage(
         modifier = Modifier.size(size),
         model = model,
-        imageLoader = imageLoaders.faviconImageLoader,
+        imageLoader = faviconImageLoader,
         contentDescription = "Paste Icon",
         content = {
             val state by this.painter.state.collectAsState()

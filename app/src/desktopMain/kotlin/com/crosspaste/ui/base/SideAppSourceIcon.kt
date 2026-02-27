@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -17,7 +18,7 @@ import coil3.request.transformations
 import coil3.size.Precision
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.CropTransformationFactory.create
-import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
@@ -30,7 +31,7 @@ fun PasteDataScope.SideAppSourceIcon(
     defaultIcon: @Composable () -> Unit = {},
 ) {
     val syncManager = koinInject<SyncManager>()
-    val imageLoaders = koinInject<ImageLoaders>()
+    val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
     val platform = koinInject<Platform>()
     val platformContext = koinInject<PlatformContext>()
 
@@ -65,7 +66,7 @@ fun PasteDataScope.SideAppSourceIcon(
     SubcomposeAsyncImage(
         modifier = modifier,
         model = model,
-        imageLoader = imageLoaders.appSourceLoader,
+        imageLoader = appSourceLoader,
         contentDescription = "Paste Icon",
         content = {
             val state by this.painter.state.collectAsState()

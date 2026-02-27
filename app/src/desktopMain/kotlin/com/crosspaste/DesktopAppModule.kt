@@ -1,5 +1,8 @@
 package com.crosspaste
 
+import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.memory.MemoryCache
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppExitService
@@ -33,7 +36,15 @@ import com.crosspaste.image.DesktopThumbnailLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.ThumbnailLoader
-import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.AppSourceFactory
+import com.crosspaste.image.coil.AppSourceKeyer
+import com.crosspaste.image.coil.FaviconFactory
+import com.crosspaste.image.coil.GenerateImageFactory
+import com.crosspaste.image.coil.GenerateImageKeyer
+import com.crosspaste.image.coil.ImageKeyer
+import com.crosspaste.image.coil.ImageLoaderQualifiers
+import com.crosspaste.image.coil.UrlKeyer
+import com.crosspaste.image.coil.UserImageFactory
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.module.ModuleDownloadManager
 import com.crosspaste.module.ModuleManager
@@ -107,7 +118,51 @@ fun desktopAppModule(
         single<FileExtImageLoader> { DesktopFileExtLoader(get(), get(), get()) }
         single<FilePersist> { FilePersist }
         single<ImageHandler<BufferedImage>> { DesktopImageHandler }
-        single<ImageLoaders> { ImageLoaders(get(), get(), get(), get(), get(), get()) }
+        single<MemoryCache> {
+            MemoryCache
+                .Builder()
+                .strongReferencesEnabled(true)
+                .weakReferencesEnabled(true)
+                .maxSizeBytes(256L * 1024L * 1024L)
+                .maxSizePercent(get<PlatformContext>(), 0.85)
+                .build()
+        }
+        single<ImageLoader>(ImageLoaderQualifiers.GENERATE_IMAGE) {
+            ImageLoader
+                .Builder(get<PlatformContext>())
+                .components {
+                    add(GenerateImageFactory(get()))
+                        .add(GenerateImageKeyer())
+                }.memoryCache { get<MemoryCache>() }
+                .build()
+        }
+        single<ImageLoader>(ImageLoaderQualifiers.FAVICON) {
+            ImageLoader
+                .Builder(get<PlatformContext>())
+                .components {
+                    add(FaviconFactory(get()))
+                        .add(UrlKeyer())
+                }.memoryCache { get<MemoryCache>() }
+                .build()
+        }
+        single<ImageLoader>(ImageLoaderQualifiers.APP_SOURCE) {
+            ImageLoader
+                .Builder(get<PlatformContext>())
+                .components {
+                    add(AppSourceFactory(get()))
+                        .add(AppSourceKeyer())
+                }.memoryCache { get<MemoryCache>() }
+                .build()
+        }
+        single<ImageLoader>(ImageLoaderQualifiers.USER_IMAGE) {
+            ImageLoader
+                .Builder(get<PlatformContext>())
+                .components {
+                    add(UserImageFactory(get()))
+                        .add(ImageKeyer())
+                }.memoryCache { get<MemoryCache>() }
+                .build()
+        }
         single<KLogger> { klogger }
         single<LocaleUtils> { DesktopLocaleUtils }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
