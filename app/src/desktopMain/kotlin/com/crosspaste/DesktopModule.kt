@@ -8,6 +8,8 @@ import com.crosspaste.db.DriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
+import com.crosspaste.db.paste.QueryPasteTag
+import com.crosspaste.db.paste.SearchPasteData
 import com.crosspaste.db.paste.SqlPasteDao
 import com.crosspaste.db.paste.SqlPasteTagDao
 import com.crosspaste.db.secure.SecureIO
@@ -101,6 +103,8 @@ class DesktopModule(
                 )
             }
             single<PasteTagDao> { SqlPasteTagDao(get()) }
+            single<QueryPasteTag> { get<PasteTagDao>() }
+            single<SearchPasteData> { get<PasteDao>() }
             single<SecureIO> { SqlSecureDao(get()) }
             single<SyncRuntimeInfoDao> { SqlSyncRuntimeInfoDao(get()) }
             single<TaskDao> { SqlTaskDao(get()) }
