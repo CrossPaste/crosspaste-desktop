@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -22,7 +23,7 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import coil3.size.Scale
 import com.crosspaste.image.coil.AppSourceItem
-import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
@@ -45,7 +46,7 @@ fun PasteDataScope.AppSourceIcon(
         }
 
         val iconStyle = koinInject<IconStyle>()
-        val imageLoaders = koinInject<ImageLoaders>()
+        val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
         val platformContext = koinInject<PlatformContext>()
         val density = LocalDensity.current
 
@@ -80,7 +81,7 @@ fun PasteDataScope.AppSourceIcon(
                     .fillMaxSize()
                     .scale(visualScale),
             model = model,
-            imageLoader = imageLoaders.appSourceLoader,
+            imageLoader = appSourceLoader,
             contentDescription = "App Source Icon",
             contentScale = ContentScale.Fit,
         ) {

@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -39,7 +40,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.coil.AppSourceItem
-import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.paste.DesktopSourceExclusionService
 import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.settings.SettingSectionCard
@@ -171,7 +172,7 @@ private fun SourceAppIcon(
     size: Dp = large2X,
 ) {
     val iconStyle = koinInject<IconStyle>()
-    val imageLoaders = koinInject<ImageLoaders>()
+    val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
     val platformContext = koinInject<PlatformContext>()
     val density = LocalDensity.current
 
@@ -214,7 +215,7 @@ private fun SourceAppIcon(
                     .fillMaxSize()
                     .scale(visualScale),
             model = model,
-            imageLoader = imageLoaders.appSourceLoader,
+            imageLoader = appSourceLoader,
             contentDescription = source,
             contentScale = ContentScale.Fit,
         ) {

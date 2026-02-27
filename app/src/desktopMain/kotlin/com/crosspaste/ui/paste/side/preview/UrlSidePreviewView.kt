@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -23,7 +24,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import com.crosspaste.image.coil.GenerateImageItem
-import com.crosspaste.image.coil.ImageLoaders
+import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
@@ -39,7 +40,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.UrlSidePreviewView() {
-    val imageLoaders = koinInject<ImageLoaders>()
+    val generateImageLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.GENERATE_IMAGE)
     val platformContext = koinInject<PlatformContext>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
 
@@ -102,7 +103,7 @@ fun PasteDataScope.UrlSidePreviewView() {
             SubcomposeAsyncImage(
                 modifier = Modifier.fillMaxSize(),
                 model = request,
-                imageLoader = imageLoaders.generateImageLoader,
+                imageLoader = generateImageLoader,
                 contentDescription = "url preview",
                 contentScale = ContentScale.Fit,
                 content = {
