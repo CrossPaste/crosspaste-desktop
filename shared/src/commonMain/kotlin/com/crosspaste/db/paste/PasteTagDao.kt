@@ -1,11 +1,6 @@
 package com.crosspaste.db.paste
 
-import com.crosspaste.paste.PasteTag
-import kotlinx.coroutines.flow.Flow
-
-interface PasteTagDao {
-
-    fun getAllTagsFlow(): Flow<List<PasteTag>>
+interface PasteTagDao : QueryPasteTag {
 
     suspend fun getMaxSortOrder(): Long
 

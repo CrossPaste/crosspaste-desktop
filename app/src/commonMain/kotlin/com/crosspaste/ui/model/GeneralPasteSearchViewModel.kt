@@ -1,8 +1,8 @@
 package com.crosspaste.ui.model
 
 import androidx.lifecycle.viewModelScope
-import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteTagDao
+import com.crosspaste.db.paste.QueryPasteTag
+import com.crosspaste.db.paste.SearchPasteData
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.SearchContentService
@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class GeneralPasteSearchViewModel(
-    private val pasteDao: PasteDao,
-    pasteTagDao: PasteTagDao,
+    private val searchPasteData: SearchPasteData,
+    queryPasteTag: QueryPasteTag,
     private val searchContentService: SearchContentService,
 ) : PasteSearchViewModel() {
 
@@ -26,7 +26,7 @@ class GeneralPasteSearchViewModel(
     override val convertTerm: (String) -> List<String> = searchContentService::createSearchTerms
 
     override val tagList: StateFlow<List<PasteTag>> =
-        pasteTagDao
+        queryPasteTag
             .getAllTagsFlow()
             .stateIn(
                 scope = viewModelScope,
@@ -40,7 +40,7 @@ class GeneralPasteSearchViewModel(
             .distinctUntilChanged()
             .flatMapLatest { params ->
                 logger.info { "to searchPasteDataFlow $params" }
-                pasteDao
+                searchPasteData
                     .searchPasteDataFlow(
                         searchTerms = params.searchTerms,
                         favorite = if (params.favorite) true else null,

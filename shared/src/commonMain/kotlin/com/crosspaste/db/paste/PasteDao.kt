@@ -5,7 +5,7 @@ import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.item.PasteItem
 import kotlinx.coroutines.flow.Flow
 
-interface PasteDao {
+interface PasteDao : SearchPasteData {
 
     fun getNoDeletePasteDataBlock(id: Long): PasteData?
 
@@ -80,28 +80,6 @@ interface PasteDao {
     suspend fun getSizeByTimeLessThan(time: Long): Long
 
     suspend fun findCleanTimeByCumulativeSize(targetSize: Long): Long?
-
-    suspend fun searchPasteData(
-        searchTerms: List<String>,
-        local: Boolean? = null,
-        favorite: Boolean? = null,
-        pasteType: Int? = null,
-        sort: Boolean = true,
-        tag: Long? = null,
-        limit: Int,
-    ): List<PasteData>
-
-    fun searchPasteDataFlow(
-        searchTerms: List<String>,
-        local: Boolean? = null,
-        favorite: Boolean? = null,
-        pasteType: Int? = null,
-        sort: Boolean = true,
-        tag: Long? = null,
-        limit: Int,
-    ): Flow<List<PasteData>>
-
-    suspend fun searchBySource(source: String): List<PasteData>
 
     suspend fun getDistinctSources(): List<String>
 
