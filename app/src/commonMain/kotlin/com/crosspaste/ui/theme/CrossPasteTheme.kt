@@ -7,10 +7,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.base.withCustomFonts
+import com.crosspaste.ui.theme.ThemeState.Companion.createThemeState
 import org.koin.compose.koinInject
 
 object CrossPasteTheme {
@@ -29,15 +31,32 @@ object CrossPasteTheme {
             themeDetector.setSystemInDark(isSystemInDark)
         }
 
-        val themeExt = ThemeExt.buildThemeExt(themeState.isCurrentThemeDark)
+        // Use Compose-detected isSystemInDark directly to avoid theme flash on startup.
+        // DesktopThemeDetector initializes isSystemInDark to false, and the LaunchedEffect
+        // above corrects it asynchronously — but that causes one frame of wrong theme.
+        val effectiveThemeState =
+            remember(themeState, isSystemInDark) {
+                if (themeState.isSystemInDark != isSystemInDark) {
+                    createThemeState(
+                        themeColor = themeState.themeColor,
+                        isFollowSystem = themeState.isFollowSystem,
+                        isUserInDark = themeState.isUserInDark,
+                        isSystemInDark = isSystemInDark,
+                    )
+                } else {
+                    themeState
+                }
+            }
+
+        val themeExt = ThemeExt.buildThemeExt(effectiveThemeState.isCurrentThemeDark)
 
         CompositionLocalProvider(LocalThemeExtState provides themeExt) {
             MaterialTheme(
-                colorScheme = themeState.colorScheme,
+                colorScheme = effectiveThemeState.colorScheme,
                 typography = MaterialTheme.typography.withCustomFonts(userSelectedFont),
             ) {
                 CompositionLocalProvider(
-                    LocalThemeState provides themeState,
+                    LocalThemeState provides effectiveThemeState,
                 ) {
                     content()
                 }
