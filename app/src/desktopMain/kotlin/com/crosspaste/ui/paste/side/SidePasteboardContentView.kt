@@ -108,18 +108,28 @@ fun SidePasteboardContentView() {
         }
     }
 
+    // Reset scroll position when window hides, so next open starts at position 0
+    // without any visible scroll-back.
+    LaunchedEffect(searchWindowInfo.show) {
+        if (!searchWindowInfo.show) {
+            pasteSelectionViewModel.initSelectIndex()
+            searchListState.scrollToItem(0)
+        } else {
+            isCtrlPressed = false
+            isShiftPressed = false
+        }
+    }
+
+    // Reset scroll position when search parameters change while window is visible.
     LaunchedEffect(
-        searchWindowInfo.show,
         inputSearch,
         searchBaseParams.favorite,
         searchBaseParams.sort,
         searchBaseParams.pasteType,
     ) {
-        pasteSelectionViewModel.initSelectIndex()
-        searchListState.scrollToItem(0)
         if (searchWindowInfo.show) {
-            isCtrlPressed = false
-            isShiftPressed = false
+            pasteSelectionViewModel.initSelectIndex()
+            searchListState.scrollToItem(0)
         }
     }
 
