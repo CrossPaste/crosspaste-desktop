@@ -116,8 +116,7 @@ fun SidePasteboardContentView() {
         searchBaseParams.pasteType,
     ) {
         pasteSelectionViewModel.initSelectIndex()
-        delay(32)
-        searchListState.animateScrollToItem(0)
+        searchListState.scrollToItem(0)
         if (searchWindowInfo.show) {
             isCtrlPressed = false
             isShiftPressed = false
