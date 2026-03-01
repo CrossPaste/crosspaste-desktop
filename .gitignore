@@ -24,6 +24,7 @@ app/build/
 app/dylib/
 app/jbr/
 logs/
+kotlin-js-store/
 node_modules/
 output*/
 /.claude/commands/
