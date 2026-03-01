@@ -18,9 +18,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
@@ -89,7 +89,10 @@ fun SidePasteboardContentView() {
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
 
-    val searchListState = rememberLazyListState()
+    // Recreate scroll state on each show/hide transition so every window open starts at position 0.
+    // scrollToItem(0) is unreliable when the window is hidden because the layout engine skips
+    // hidden windows, so we create a fresh LazyListState instead.
+    val searchListState = remember(searchWindowInfo.show) { LazyListState() }
     pasteSelectionViewModel.searchListState = searchListState
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
@@ -108,19 +111,24 @@ fun SidePasteboardContentView() {
         }
     }
 
+    // Reset key modifier state when the window opens.
+    LaunchedEffect(searchWindowInfo.show) {
+        if (searchWindowInfo.show) {
+            isCtrlPressed = false
+            isShiftPressed = false
+        }
+    }
+
+    // Reset selection and scroll position when search parameters change while window is visible.
     LaunchedEffect(
-        searchWindowInfo.show,
         inputSearch,
         searchBaseParams.favorite,
         searchBaseParams.sort,
         searchBaseParams.pasteType,
     ) {
-        pasteSelectionViewModel.initSelectIndex()
-        delay(32)
-        searchListState.animateScrollToItem(0)
         if (searchWindowInfo.show) {
-            isCtrlPressed = false
-            isShiftPressed = false
+            pasteSelectionViewModel.initSelectIndex()
+            searchListState.scrollToItem(0)
         }
     }
 
