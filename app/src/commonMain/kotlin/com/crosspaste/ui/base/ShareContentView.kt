@@ -57,8 +57,7 @@ fun ShareContentView() {
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .padding(xxLarge),
+                    .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             OutlinedCard(
@@ -123,8 +122,6 @@ fun ShareContentView() {
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(xxLarge))
         }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -37,9 +38,9 @@ import com.crosspaste.ui.devices.PairingCodeContentView
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.devices.TokenView
 import com.crosspaste.ui.extension.ExtensionContentView
-import com.crosspaste.ui.extension.mcp.McpScreen
-import com.crosspaste.ui.extension.ocr.OCRScreen
-import com.crosspaste.ui.extension.sourcecontrol.SourceControlScreen
+import com.crosspaste.ui.extension.mcp.McpContentView
+import com.crosspaste.ui.extension.ocr.OCRContentView
+import com.crosspaste.ui.extension.sourcecontrol.SourceControlContentView
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.settings.DesktopNetworkSettingsContentView
@@ -50,6 +51,8 @@ import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.settings.StoragePathManager
 import com.crosspaste.ui.settings.StorageSettingsContentView
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.channels.Channel
 
 class DesktopScreenProvider(
@@ -162,13 +165,13 @@ class DesktopScreenProvider(
                     exitTransition = { slideOutRight() },
                     enterTransition = { slideInLeft() },
                 ) {
-                    OCRScreen()
+                    OCRSettingsScreen()
                 }
                 composable<SourceControl>(
                     exitTransition = { slideOutRight() },
                     enterTransition = { slideInLeft() },
                 ) {
-                    SourceControlScreen()
+                    SourceControlSettingsScreen()
                 }
             }
             composable<Import> { ImportScreen() }
@@ -200,22 +203,37 @@ class DesktopScreenProvider(
     }
 
     @Composable
-    private fun ScreenLayout(content: @Composable BoxScope.() -> Unit) {
+    override fun ScreenLayout(
+        horizontal: Dp,
+        top: Dp,
+        bottom: Dp,
+        content: @Composable BoxScope.() -> Unit,
+    ) {
         Box(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
+                    .padding(horizontal = horizontal)
+                    .padding(top = top, bottom = bottom),
         ) {
             content()
         }
     }
 
     @Composable
+    private fun DesktopScreenLayout(content: @Composable BoxScope.() -> Unit) {
+        ScreenLayout(
+            horizontal = medium,
+            top = zero,
+            bottom = medium,
+            content = content,
+        )
+    }
+
+    @Composable
     private fun AboutScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             AboutContentView()
         }
     }
@@ -240,7 +258,7 @@ class DesktopScreenProvider(
                 remember(currentSyncRuntimeInfo) {
                     deviceScopeFactory.createDeviceScope(currentSyncRuntimeInfo)
                 }
-            ScreenLayout {
+            DesktopScreenLayout {
                 scope.DeviceDetailContentView()
             }
         }
@@ -253,7 +271,7 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ExportScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             CompositionLocalProvider(LocalSmallSettingItemState provides true) {
                 PasteExportContentView()
             }
@@ -262,19 +280,35 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ExtensionScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             ExtensionContentView()
         }
     }
 
     @Composable
     private fun McpSettingsScreen() {
-        McpScreen()
+        DesktopScreenLayout {
+            McpContentView()
+        }
+    }
+
+    @Composable
+    private fun OCRSettingsScreen() {
+        DesktopScreenLayout {
+            OCRContentView()
+        }
+    }
+
+    @Composable
+    private fun SourceControlSettingsScreen() {
+        DesktopScreenLayout {
+            SourceControlContentView()
+        }
     }
 
     @Composable
     private fun ImportScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             PasteImportContentView()
         }
     }
@@ -301,7 +335,7 @@ class DesktopScreenProvider(
                 remember(nearbyDeviceDetail) {
                     syncScopeFactory.createSyncScope(nearbyDeviceInfo)
                 }
-            ScreenLayout {
+            DesktopScreenLayout {
                 scope.NearbyDeviceDetailContentView()
             }
         }
@@ -309,14 +343,14 @@ class DesktopScreenProvider(
 
     @Composable
     private fun PairingCodeScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             PairingCodeContentView()
         }
     }
 
     @Composable
     private fun ShortcutKeysScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             CompositionLocalProvider(LocalSmallSettingItemState provides true) {
                 ShortcutKeysContentView()
             }
@@ -325,14 +359,14 @@ class DesktopScreenProvider(
 
     @Composable
     private fun SettingsScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             SettingsContentView()
         }
     }
 
     @Composable
     private fun PasteboardSettingsScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             CompositionLocalProvider(LocalSmallSettingItemState provides true) {
                 PasteboardSettingsContentView {
                     DesktopPasteboardSettingsContentView(platform)
@@ -343,7 +377,7 @@ class DesktopScreenProvider(
 
     @Composable
     private fun NetworkSettingsScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             CompositionLocalProvider(LocalSmallSettingItemState provides true) {
                 DesktopNetworkSettingsContentView()
             }
@@ -352,7 +386,7 @@ class DesktopScreenProvider(
 
     @Composable
     private fun StorageSettingsScreen() {
-        ScreenLayout {
+        DesktopScreenLayout {
             CompositionLocalProvider(LocalSmallSettingItemState provides true) {
                 StorageSettingsContentView(storagePathManager)
             }
@@ -361,7 +395,13 @@ class DesktopScreenProvider(
 
     @Composable
     private fun ShareScreen() {
-        ShareContentView()
+        ScreenLayout(
+            horizontal = xxLarge,
+            top = xxLarge,
+            bottom = xxLarge,
+        ) {
+            ShareContentView()
+        }
     }
 
     @Composable
