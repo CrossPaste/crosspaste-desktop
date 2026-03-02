@@ -111,7 +111,7 @@ class GeneralNearbyDeviceManagerTest {
             advanceUntilIdle()
             assertTrue(manager.nearbySyncInfos.value.isNotEmpty())
 
-            manager.removeDevice(syncInfo)
+            manager.removeDevice("other-app-1")
             advanceUntilIdle()
 
             assertTrue(manager.nearbySyncInfos.value.isEmpty())
@@ -125,8 +125,7 @@ class GeneralNearbyDeviceManagerTest {
             val deps = TestDeps(childScope)
             val manager = deps.createManager(childScope)
 
-            val syncInfo = createSyncInfo(appInstanceId = "non-existent")
-            manager.removeDevice(syncInfo)
+            manager.removeDevice("non-existent")
             advanceUntilIdle()
 
             // Should not throw and should not call trackSignificantAction
