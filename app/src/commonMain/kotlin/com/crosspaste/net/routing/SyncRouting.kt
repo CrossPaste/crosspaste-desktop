@@ -101,7 +101,11 @@ fun Routing.syncRouting(
     }
 
     get("/sync/showToken") {
+        val appInstanceId = call.request.headers["appInstanceId"]
         val host = call.request.host()
+        if (appInstanceId != null) {
+            appTokenApi.addPendingVerifier(appInstanceId)
+        }
         appTokenApi.startRefresh(showToken = true)
         logger.info { "show token requested from $host" }
         successResponse(call)
@@ -178,6 +182,10 @@ fun Routing.syncRouting(
             }.onSuccess { trustResponse ->
                 val host = call.request.headers["crosspaste-host"]
                 trustSyncInfo(appInstanceId, host)
+                appTokenApi.removePendingVerifier(appInstanceId)
+                if (appTokenApi.showToken.value) {
+                    appTokenApi.stopRefresh(hideToken = false)
+                }
                 successResponse(call, trustResponse)
             }.onFailure { e ->
                 logger.error(e) { "Trust request failed for $appInstanceId" }

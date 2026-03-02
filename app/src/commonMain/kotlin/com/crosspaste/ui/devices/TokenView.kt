@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,7 +34,9 @@ import androidx.compose.ui.window.PopupProperties
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.db.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
@@ -49,9 +52,30 @@ import org.koin.compose.koinInject
 @Composable
 fun TokenView(intOffset: IntOffset) {
     val appTokenApi = koinInject<AppTokenApi>()
+    val syncManager = koinInject<SyncManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val appSizeValue = LocalAppSizeValueState.current
     val showToken by appTokenApi.showToken.collectAsState()
+
+    // Auto-close token view when all pending verifiers have completed verification
+    // (either trust succeeded, went offline, or disconnected)
+    val pending by appTokenApi.pendingVerifiers.collectAsState()
+    val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
+
+    val allResolved =
+        showToken &&
+            pending.isNotEmpty() &&
+            pending.all { verifierId ->
+                val info = syncRuntimeInfos.find { it.appInstanceId == verifierId }
+                info != null && info.connectState != SyncState.UNVERIFIED
+            }
+
+    LaunchedEffect(allResolved) {
+        if (allResolved) {
+            pending.forEach { appTokenApi.removePendingVerifier(it) }
+            appTokenApi.stopRefresh(hideToken = true)
+        }
+    }
 
     if (showToken) {
         Popup(

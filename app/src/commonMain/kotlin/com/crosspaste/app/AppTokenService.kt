@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -33,6 +34,10 @@ abstract class AppTokenService : AppTokenApi {
     private val _showToken = MutableStateFlow(false)
 
     override val showToken: StateFlow<Boolean> = _showToken.asStateFlow()
+
+    private val _pendingVerifiers = MutableStateFlow<Set<String>>(emptySet())
+
+    override val pendingVerifiers: StateFlow<Set<String>> = _pendingVerifiers.asStateFlow()
 
     private val _token = MutableStateFlow(charArrayOf('0', '0', '0', '0', '0', '0'))
 
@@ -92,6 +97,18 @@ abstract class AppTokenService : AppTokenApi {
                     _showToken.value = false
                 }
             }
+        }
+    }
+
+    override fun addPendingVerifier(appInstanceId: String) {
+        _pendingVerifiers.update { currentSet ->
+            currentSet + appInstanceId
+        }
+    }
+
+    override fun removePendingVerifier(appInstanceId: String) {
+        _pendingVerifiers.update { currentSet ->
+            currentSet - appInstanceId
         }
     }
 
