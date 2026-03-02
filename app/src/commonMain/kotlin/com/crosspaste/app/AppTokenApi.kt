@@ -12,9 +12,15 @@ interface AppTokenApi {
 
     val refresh: StateFlow<Boolean>
 
+    val pendingVerifiers: StateFlow<Set<String>>
+
     fun sameToken(token: Int): Boolean
 
     fun startRefresh(showToken: Boolean)
 
     fun stopRefresh(hideToken: Boolean)
+
+    fun addPendingVerifier(appInstanceId: String)
+
+    fun removePendingVerifier(appInstanceId: String)
 }
