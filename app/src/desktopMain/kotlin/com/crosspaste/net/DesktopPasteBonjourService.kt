@@ -123,6 +123,12 @@ class DesktopPasteBonjourService(
                     jmdnsMap
                         .map { (hostAddress, jmdns) ->
                             async {
+                                // Force fresh multicast PTR queries by re-registering the listener.
+                                // This resets JmDNS's internal state machine, triggering real
+                                // network broadcasts instead of just searching the local cache.
+                                jmdns.removeServiceListener(SERVICE_TYPE, serviceListener)
+                                jmdns.addServiceListener(SERVICE_TYPE, serviceListener)
+
                                 val services = jmdns.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
                                 logger.debug { "Interface $hostAddress found ${services.size} services" }
 
@@ -248,10 +254,14 @@ class DesktopServiceListener(
             return
         }
         runCatching {
-            val map: Map<String, ByteArray> = mutableMapOf()
-            ByteWrangler.readProperties(map, textBytes)
-            val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
-            nearbyDeviceManager.removeDevice(syncInfo)
+            val serviceName = event.info.name
+            if (serviceName.startsWith("crosspaste@")) {
+                logger.debug { "Processing service removed: $serviceName" }
+                serviceName.split("@").takeIf { it.size == 3 }?.let { parts ->
+                    val appInstanceId = parts[1]
+                    nearbyDeviceManager.removeDevice(appInstanceId)
+                }
+            }
         }.onFailure { e ->
             logger.debug(e) { "Failed to decode service removed event: ${event.info}" }
         }

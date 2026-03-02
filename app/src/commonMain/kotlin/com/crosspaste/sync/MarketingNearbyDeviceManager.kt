@@ -49,7 +49,7 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
     override fun addDevice(syncInfo: SyncInfo) {
     }
 
-    override fun removeDevice(syncInfo: SyncInfo) {
+    override fun removeDevice(appInstanceId: String) {
     }
 
     override fun startSearching() {

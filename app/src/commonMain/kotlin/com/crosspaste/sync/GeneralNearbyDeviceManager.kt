@@ -104,9 +104,8 @@ class GeneralNearbyDeviceManager(
         }
     }
 
-    override fun removeDevice(syncInfo: SyncInfo) {
-        val appInstanceId = syncInfo.appInfo.appInstanceId
-        logger.info { "Service removed: $syncInfo" }
+    override fun removeDevice(appInstanceId: String) {
+        logger.info { "Service removed: $appInstanceId" }
         var removed = false
         syncInfos.update { current ->
             if (current.containsKey(appInstanceId)) {
