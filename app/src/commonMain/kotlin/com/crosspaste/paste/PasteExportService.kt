@@ -202,7 +202,6 @@ class PasteExportService(
                             "compress export file fail",
                         )
                     }
-                bufferedSink.flush()
             } finally {
                 runCatching { bufferedSink.close() }
             }
