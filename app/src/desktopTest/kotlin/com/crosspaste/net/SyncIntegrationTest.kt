@@ -198,6 +198,9 @@ class SyncIntegrationTest {
             a.start()
             b.start()
             c.start()
+            // Allow Netty event loops to stabilize after starting 3 servers
+            // in the same JVM to avoid ClosedReadChannelException from resource contention
+            kotlinx.coroutines.delay(200)
 
             // B trusts A
             trustBToA(a, b)
