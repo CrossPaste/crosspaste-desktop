@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,10 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.DialogProperties
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Delete
 import com.composables.icons.materialsymbols.rounded.Tag
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AnimatedSegmentedControl
 import com.crosspaste.ui.base.IconData
@@ -42,6 +45,7 @@ import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.massive
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
@@ -242,39 +246,94 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
                 title = "clear_non_favorite_pasteboards",
                 icon = IconData(MaterialSymbols.Rounded.Delete, themeExt.redIconColor),
                 trailingContent = {
-                    if (!cleaning) {
-                        Button(
-                            onClick = {
-                                cleaning = true
-                                scope.launch {
-                                    pasteDao
-                                        .markAllDeleteExceptFavorite()
-                                        .apply {
-                                            cleaning = false
-                                        }
+                    Button(
+                        onClick = {
+                            cleaning = true
+                            scope.launch {
+                                try {
+                                    pasteDao.markAllDeleteExceptFavorite()
+                                } finally {
+                                    cleaning = false
+                                    refresh()
                                 }
-                            },
-                            modifier = Modifier.height(xxLarge),
-                            contentPadding = PaddingValues(horizontal = small2X),
-                            colors =
-                                buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError,
-                                ),
-                        ) {
-                            Text(
-                                copywriter.getText("manual_clear"),
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    } else {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(medium),
-                            color = MaterialTheme.colorScheme.primary,
+                            }
+                        },
+                        enabled = !cleaning,
+                        modifier = Modifier.height(xxLarge),
+                        contentPadding = PaddingValues(horizontal = small2X),
+                        colors =
+                            buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                            ),
+                    ) {
+                        Text(
+                            copywriter.getText("manual_clear"),
+                            style = MaterialTheme.typography.labelSmall,
                         )
                     }
                 },
             )
         }
     }
+
+    if (cleaning) {
+        CleaningProgressDialog(copywriter)
+    }
+}
+
+@Composable
+private fun CleaningProgressDialog(copywriter: GlobalCopywriter) {
+    val appSizeValue = LocalAppSizeValueState.current
+
+    AlertDialog(
+        modifier = Modifier.width(appSizeValue.dialogWidth),
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
+        onDismissRequest = {},
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = tiny),
+            ) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(xLarge),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+                Spacer(modifier = Modifier.width(medium))
+                Text(
+                    text = copywriter.getText("cleaning_in_progress"),
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = tiny),
+                verticalArrangement = Arrangement.spacedBy(xLarge),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = copywriter.getText("cleaning_in_progress_desc"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
+                )
+                CircularProgressIndicator()
+            }
+        },
+        confirmButton = {},
+    )
 }
