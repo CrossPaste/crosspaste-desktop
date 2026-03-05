@@ -23,7 +23,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SectionHeader(
     text: String,
-    backgroundColor: Color = Color.Transparent,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     topPadding: Dp = 0.dp,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
