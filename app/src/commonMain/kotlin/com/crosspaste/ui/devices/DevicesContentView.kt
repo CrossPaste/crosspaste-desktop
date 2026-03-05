@@ -1,6 +1,7 @@
 package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +34,7 @@ import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.titanic
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
@@ -93,8 +95,8 @@ fun DevicesContentView() {
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = medium)
-                    .padding(bottom = medium),
+                    .padding(horizontal = medium),
+            contentPadding = PaddingValues(bottom = titanic),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             if (syncRuntimeInfos.isNotEmpty()) {
