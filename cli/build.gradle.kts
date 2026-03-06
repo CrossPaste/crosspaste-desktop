@@ -43,20 +43,20 @@ kotlin {
     val nativeTarget =
         if (cliTarget != null) {
             when (cliTarget) {
-                "macosArm64" -> macosArm64("native")
-                "macosX64" -> macosX64("native")
-                "linuxArm64" -> linuxArm64("native")
-                "linuxX64" -> linuxX64("native")
-                "mingwX64" -> mingwX64("native")
+                "macosArm64" -> macosArm64("cliNative")
+                "macosX64" -> macosX64("cliNative")
+                "linuxArm64" -> linuxArm64("cliNative")
+                "linuxX64" -> linuxX64("cliNative")
+                "mingwX64" -> mingwX64("cliNative")
                 else -> throw GradleException("Unsupported CLI target: $cliTarget")
             }
         } else {
             when {
-                hostOs == "Mac OS X" && isArm64 -> macosArm64("native")
-                hostOs == "Mac OS X" && !isArm64 -> macosX64("native")
-                hostOs == "Linux" && isArm64 -> linuxArm64("native")
-                hostOs == "Linux" && !isArm64 -> linuxX64("native")
-                isMingwX64 -> mingwX64("native")
+                hostOs == "Mac OS X" && isArm64 -> macosArm64("cliNative")
+                hostOs == "Mac OS X" && !isArm64 -> macosX64("cliNative")
+                hostOs == "Linux" && isArm64 -> linuxArm64("cliNative")
+                hostOs == "Linux" && !isArm64 -> linuxX64("cliNative")
+                isMingwX64 -> mingwX64("cliNative")
                 else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
             }
         }
@@ -88,7 +88,7 @@ kotlin {
     }
 
     sourceSets {
-        val nativeMain by getting {
+        val cliNativeMain by getting {
             dependencies {
                 implementation(project(":shared"))
                 implementation(libs.clikt)

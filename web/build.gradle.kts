@@ -28,7 +28,7 @@ ktlint {
 }
 
 kotlin {
-    js("web", IR) {
+    js("webJs", IR) {
         browser {
             commonWebpackConfig {
                 outputFileName = "crosspaste-web.js"
