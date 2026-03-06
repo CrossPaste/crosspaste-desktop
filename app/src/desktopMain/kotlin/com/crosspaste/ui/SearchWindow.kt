@@ -78,20 +78,21 @@ fun SearchWindow(windowIcon: Painter?) {
     // only supports class property initializers, not local variables inside functions.
     val ignoreFocusLoss = remember { AtomicBoolean(true) }
 
-    LaunchedEffect(searchWindowInfo, animationProgress, appSizeValue) {
-        // Update size and placement if they change
+    // Compute and apply the effective window position synchronously during composition.
+    // This ensures the Window composable always sees the correct off-screen position on the
+    // same frame where visible becomes true, preventing the flash when macOS recreates the
+    // native window after reclaiming it during long background periods.
+    // Similar to the theme flash fix (9086f28): compute effective state before rendering.
+    remember(searchWindowInfo, animationProgress, appSizeValue) {
         windowState.placement = searchWindowInfo.state.placement
         windowState.size = searchWindowInfo.state.size
-
-        // Calculate the dynamic Y position based on animation
-        // Assume the target position is the 'visible' state (progress = 0f)
-        val targetX = searchWindowInfo.state.position.x
-        val targetY =
-            searchWindowInfo.state.position.y +
-                (appSizeValue.sideSearchWindowHeight * animationProgress)
-
-        // Apply the position update to the stable state object
-        windowState.position = WindowPosition(x = targetX, y = targetY)
+        windowState.position =
+            WindowPosition(
+                x = searchWindowInfo.state.position.x,
+                y =
+                    searchWindowInfo.state.position.y +
+                        (appSizeValue.sideSearchWindowHeight * animationProgress),
+            )
     }
 
     LaunchedEffect(searchWindowInfo.show) {
