@@ -4,7 +4,7 @@ import okio.BufferedSink
 
 abstract class PasteExportParam(
     val types: Set<Long>,
-    val onlyFavorite: Boolean,
+    val onlyTagged: Boolean,
     val maxFileSize: Long?,
 ) {
 

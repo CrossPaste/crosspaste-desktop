@@ -29,7 +29,6 @@ class NativeDriverFactory(
             )
         driver.execute(null, "PRAGMA journal_mode=WAL", 0)
         driver.execute(null, "PRAGMA synchronous=NORMAL", 0)
-        Database.Schema.create(driver)
         sqlDriver = driver
         return driver
     }

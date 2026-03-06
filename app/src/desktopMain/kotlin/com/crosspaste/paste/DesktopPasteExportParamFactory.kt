@@ -5,8 +5,8 @@ import okio.Path
 class DesktopPasteExportParamFactory : PasteExportParamFactory<Path> {
     override fun createPasteExportParam(
         types: Set<Long>,
-        onlyFavorite: Boolean,
+        onlyTagged: Boolean,
         maxFileSize: Long?,
         exportPath: Path,
-    ): PasteExportParam = DesktopPasteExportParam(types, onlyFavorite, maxFileSize, exportPath)
+    ): PasteExportParam = DesktopPasteExportParam(types, onlyTagged, maxFileSize, exportPath)
 }

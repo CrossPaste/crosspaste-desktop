@@ -130,7 +130,7 @@ abstract class GuidePasteDataService(
     fun initData() =
         runBlocking {
             if (isFirstLaunch()) {
-                if (pasteDao.getSize(allOrFavorite = true) == 0L) {
+                if (pasteDao.getSize(allOrTagged = true) == 0L) {
                     saveData()
                 }
             }

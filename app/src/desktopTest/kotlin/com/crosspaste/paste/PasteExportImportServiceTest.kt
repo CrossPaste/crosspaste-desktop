@@ -329,7 +329,7 @@ class PasteExportImportServiceTest {
             val exportParam =
                 DesktopPasteExportParam(
                     types = PasteType.TYPES.map { it.type.toLong() }.toSet(),
-                    onlyFavorite = false,
+                    onlyTagged = false,
                     maxFileSize = null,
                     exportPath = exportDir.toOkioPath(),
                 )

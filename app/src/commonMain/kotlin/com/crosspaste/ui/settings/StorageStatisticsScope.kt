@@ -40,7 +40,7 @@ class StorageStatisticsScope(
     var fileCount: Long? by mutableStateOf(null)
     var fileFormatSize: String? by mutableStateOf(null)
 
-    var allOrFavorite by mutableStateOf(true)
+    var allOrTagged by mutableStateOf(true)
 
     var cleaning by mutableStateOf(false)
 
@@ -48,11 +48,12 @@ class StorageStatisticsScope(
         runCatching {
             val pasteResourceInfo =
                 pasteDao.getPasteResourceInfo(
-                    if (allOrFavorite) {
-                        null
-                    } else {
-                        true
-                    },
+                    tagged =
+                        if (allOrTagged) {
+                            null
+                        } else {
+                            true
+                        },
                 )
             pasteCount = pasteResourceInfo.pasteCount
             pasteFormatSize = fileUtils.formatBytes(pasteResourceInfo.pasteSize)

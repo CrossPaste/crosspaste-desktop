@@ -50,7 +50,6 @@ class PasteSearchViewModelTest {
     fun `initial search base params have default values`() {
         val vm = TestSearchViewModel()
         val params = vm.searchBaseParams.value
-        assertFalse(params.favorite)
         assertNull(params.pasteType)
         assertTrue(params.sort)
         assertNull(params.tag)
@@ -62,26 +61,6 @@ class PasteSearchViewModelTest {
         val vm = TestSearchViewModel()
         vm.updateInputSearch("hello")
         assertEquals("hello", vm.inputSearch.value)
-        assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, vm.searchBaseParams.value.limit)
-    }
-
-    @Test
-    fun `switchFavorite toggles favorite flag`() {
-        val vm = TestSearchViewModel()
-        assertFalse(vm.searchBaseParams.value.favorite)
-
-        vm.switchFavorite()
-        assertTrue(vm.searchBaseParams.value.favorite)
-
-        vm.switchFavorite()
-        assertFalse(vm.searchBaseParams.value.favorite)
-    }
-
-    @Test
-    fun `switchFavorite resets limit to batch size`() {
-        val vm = TestSearchViewModel()
-        // Artificially change limit won't work directly, but switchFavorite always resets it
-        vm.switchFavorite()
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, vm.searchBaseParams.value.limit)
     }
 
@@ -169,7 +148,6 @@ class PasteSearchViewModelTest {
 
         // Change everything
         vm.updateInputSearch("test")
-        vm.switchFavorite()
         vm.switchSort()
         vm.updatePasteType(2)
         vm.updateTag(99L)
@@ -178,20 +156,18 @@ class PasteSearchViewModelTest {
 
         assertEquals("", vm.inputSearch.value)
         val params = vm.searchBaseParams.value
-        assertFalse(params.favorite)
         assertNull(params.pasteType)
         assertTrue(params.sort)
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, params.limit)
     }
 
     @Test
-    fun `resetSearch does not clear tag`() {
+    fun `resetSearch clears tag`() {
         val vm = TestSearchViewModel()
         vm.updateTag(5L)
         vm.resetSearch()
-        // Note: resetSearch only resets favorite, pasteType, sort, limit
-        // tag is NOT reset by resetSearch (per the source code)
-        assertEquals(5L, vm.searchBaseParams.value.tag)
+        // resetSearch resets pasteType, sort, tag, and limit
+        assertNull(vm.searchBaseParams.value.tag)
     }
 
     @Test

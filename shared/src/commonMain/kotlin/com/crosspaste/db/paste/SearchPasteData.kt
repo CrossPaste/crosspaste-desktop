@@ -8,7 +8,6 @@ interface SearchPasteData {
     suspend fun searchPasteData(
         searchTerms: List<String>,
         local: Boolean? = null,
-        favorite: Boolean? = null,
         pasteType: Int? = null,
         sort: Boolean = true,
         tag: Long? = null,
@@ -18,7 +17,6 @@ interface SearchPasteData {
     fun searchPasteDataFlow(
         searchTerms: List<String>,
         local: Boolean? = null,
-        favorite: Boolean? = null,
         pasteType: Int? = null,
         sort: Boolean = true,
         tag: Long? = null,

@@ -123,7 +123,6 @@ class McpToolProviderTest {
     private suspend fun insertTestPasteData(
         text: String = "hello world",
         source: String? = null,
-        favorite: Boolean = false,
     ): Long {
         val textItem =
             createTextPasteItem(
@@ -133,7 +132,7 @@ class McpToolProviderTest {
         val pasteData =
             PasteData(
                 appInstanceId = "test-instance",
-                favorite = favorite,
+                favorite = false,
                 pasteAppearItem = textItem,
                 pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.TEXT_TYPE.type,
@@ -187,14 +186,15 @@ class McpToolProviderTest {
         }
 
     @Test
-    fun `search_clipboard filters by favorite`() =
+    fun `search_clipboard filters by tag`() =
         runTest {
             val server = createServer()
-            insertTestPasteData("normal item", favorite = false)
-            insertTestPasteData("favorite item", favorite = true)
-            val result = callTool(server, "search_clipboard", mapOf("favorite" to true))
+            insertTestPasteData("normal item")
+            val taggedId = insertTestPasteData("tagged item")
+            val tagId = pasteTagDao.createPasteTag("Favorite", 0xFF007AFF)
+            pasteTagDao.switchPinPasteTagBlock(taggedId, tagId)
+            val result = callTool(server, "search_clipboard", mapOf("tag" to "Favorite"))
             assertTrue(result.contains("Found 1 clipboard item"))
-            assertTrue(result.contains("Favorite: true"))
         }
 
     // ========== get_paste_item ==========

@@ -76,7 +76,7 @@ fun PasteExportContentView() {
     var colorTypeSelected by remember { mutableStateOf(true) }
 
     // State for additional filters
-    var favoritesSelected by remember { mutableStateOf(false) }
+    var taggedSelected by remember { mutableStateOf(false) }
     var sizeFilterSelected by remember { mutableStateOf(false) }
 
     val config by configManager.config.collectAsState()
@@ -131,7 +131,7 @@ fun PasteExportContentView() {
                                         rtfTypeSelected,
                                         colorTypeSelected,
                                     ),
-                                favoritesSelected = favoritesSelected,
+                                taggedSelected = taggedSelected,
                                 sizeFilterSelected = sizeFilterSelected,
                                 maxFileSize = maxFileSize,
                                 fileUtils = fileUtils,
@@ -313,9 +313,9 @@ fun PasteExportContentView() {
             item {
                 SettingSectionCard {
                     SettingListSwitchItem(
-                        title = "export_favorites_only",
-                        checked = favoritesSelected,
-                        onCheckedChange = { favoritesSelected = it },
+                        title = "export_tagged_only",
+                        checked = taggedSelected,
+                        onCheckedChange = { taggedSelected = it },
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListSwitchItem(
@@ -352,7 +352,7 @@ fun PasteExportContentView() {
 private fun handleExportClick(
     appFileChooser: AppFileChooser,
     types: Set<Long>,
-    favoritesSelected: Boolean,
+    taggedSelected: Boolean,
     sizeFilterSelected: Boolean,
     maxFileSize: Long,
     fileUtils: FileUtils,
@@ -365,7 +365,7 @@ private fun handleExportClick(
         val pasteExportParam =
             pasteExportParamFactory.createPasteExportParam(
                 types = types,
-                onlyFavorite = favoritesSelected,
+                onlyTagged = taggedSelected,
                 maxFileSize =
                     if (sizeFilterSelected) {
                         fileUtils.bytesSize(maxFileSize)

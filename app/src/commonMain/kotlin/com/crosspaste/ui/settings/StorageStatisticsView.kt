@@ -61,20 +61,20 @@ fun StorageStatisticsScope.StorageStatisticsHeader() {
 
     SectionHeader("storage_statistics") {
         val all = copywriter.getText("all")
-        val favorite = copywriter.getText("favorite")
+        val tagged = copywriter.getText("tagged")
         val selectedItem =
-            if (allOrFavorite) {
+            if (allOrTagged) {
                 all
             } else {
-                favorite
+                tagged
             }
 
         AnimatedSegmentedControl(
-            items = listOf(all, favorite),
+            items = listOf(all, tagged),
             selectedItem = selectedItem,
             onItemSelected = {
                 scope.launch {
-                    allOrFavorite = it == all
+                    allOrTagged = it == all
                     refresh()
                 }
             },
@@ -243,7 +243,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
             HorizontalDivider()
 
             SettingListItem(
-                title = "clear_non_favorite_pasteboards",
+                title = "clear_untagged_pasteboards",
                 icon = IconData(MaterialSymbols.Rounded.Delete, themeExt.redIconColor),
                 trailingContent = {
                     Button(
@@ -251,7 +251,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
                             cleaning = true
                             scope.launch {
                                 try {
-                                    pasteDao.markAllDeleteExceptFavorite()
+                                    pasteDao.markAllDeleteExceptTagged()
                                 } finally {
                                     cleaning = false
                                     refresh()
@@ -326,7 +326,7 @@ private fun CleaningProgressDialog(copywriter: GlobalCopywriter) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = copywriter.getText("cleaning_in_progress_desc"),
+                    text = copywriter.getText("cleaning_untagged_in_progress_desc"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,

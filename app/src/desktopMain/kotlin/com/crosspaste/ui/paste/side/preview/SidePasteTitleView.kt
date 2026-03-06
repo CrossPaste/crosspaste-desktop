@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,11 +18,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.material3.IconButtonDefaults.iconButtonColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,17 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Bookmark
-import com.composables.icons.materialsymbols.roundedfilled.Bookmark
-import com.crosspaste.app.AppControl
-import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.paste.item.PasteItem
@@ -51,16 +45,12 @@ import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.LocalThemeState
-import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
 import com.crosspaste.ui.base.lightSideBarColors
+import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.tiny4X
-import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.ColorAccessibility.getBestTextColor
 import com.crosspaste.utils.DateUtils
@@ -70,10 +60,9 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PasteDataScope.SidePasteTitleView() {
-    val appControl = koinInject<AppControl>()
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
-    val pasteDao = koinInject<PasteDao>()
+    val pasteTagDao = koinInject<PasteTagDao>()
     val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
 
     val pasteItem = getPasteItem(PasteItem::class)
@@ -95,8 +84,17 @@ fun PasteDataScope.SidePasteTitleView() {
         )
     }
 
-    var favorite by remember(pasteData.id) {
-        mutableStateOf(pasteData.favorite)
+    val tagList by koinInject<PasteSearchViewModel>().tagList.collectAsState()
+    val favoriteTag =
+        remember(tagList) {
+            tagList.firstOrNull { it.name == "Favorite" }
+        }
+    var hasFavoriteTag by remember(pasteData.id) {
+        mutableStateOf(
+            favoriteTag?.let { tag ->
+                pasteTagDao.getPasteTagsBlock(pasteData.id).contains(tag.id)
+            } ?: false,
+        )
     }
 
     val onBackground by remember(background) {
@@ -228,30 +226,6 @@ fun PasteDataScope.SidePasteTitleView() {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                }
-                Spacer(Modifier.width(tiny4X))
-                GeneralIconButton(
-                    imageVector =
-                        if (favorite) {
-                            MaterialSymbols.RoundedFilled.Bookmark
-                        } else {
-                            MaterialSymbols.Rounded.Bookmark
-                        },
-                    colors =
-                        iconButtonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = onBackground,
-                        ),
-                    buttonSize = xLarge,
-                    iconSize = large2X,
-                    shape = tiny2XRoundedCornerShape,
-                ) {
-                    if (appControl.isFavoriteEnabled()) {
-                        scope.launch {
-                            pasteDao.setFavorite(pasteData.id, !favorite)
-                            favorite = !favorite
-                        }
-                    }
                 }
             }
 

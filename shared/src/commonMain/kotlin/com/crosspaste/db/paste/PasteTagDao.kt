@@ -1,5 +1,7 @@
 package com.crosspaste.db.paste
 
+import com.crosspaste.paste.PasteTag
+
 interface PasteTagDao : QueryPasteTag {
 
     suspend fun getMaxSortOrder(): Long
@@ -27,4 +29,6 @@ interface PasteTagDao : QueryPasteTag {
     fun getPasteTagsBlock(pasteDataId: Long): List<Long>
 
     fun deletePasteTagBlock(id: Long)
+
+    fun getAllTagsBlock(): List<PasteTag>
 }

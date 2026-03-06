@@ -9,8 +9,6 @@ class DesktopAppControl(
 
     private val fileUtils = getFileUtils()
 
-    override fun isFavoriteEnabled(): Boolean = true
-
     override fun isEncryptionEnabled(): Boolean = true
 
     override fun isDeviceConnectionEnabled(deviceCount: Int): Boolean = true

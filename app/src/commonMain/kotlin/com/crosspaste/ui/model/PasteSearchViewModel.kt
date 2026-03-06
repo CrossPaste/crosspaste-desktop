@@ -30,7 +30,6 @@ abstract class PasteSearchViewModel : ViewModel() {
     private val _searchBaseParams =
         MutableStateFlow(
             SearchBaseParams(
-                favorite = false,
                 pasteType = null,
                 sort = true,
                 tag = null,
@@ -60,7 +59,6 @@ abstract class PasteSearchViewModel : ViewModel() {
 
             SearchParams(
                 searchTerms = searchTerms,
-                favorite = searchBaseParams.favorite,
                 pasteType = searchBaseParams.pasteType,
                 sort = searchBaseParams.sort,
                 tag = searchBaseParams.tag,
@@ -76,15 +74,6 @@ abstract class PasteSearchViewModel : ViewModel() {
         _inputSearch.value = input
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
-                limit = QUERY_BATCH_SIZE,
-            )
-        _loadAll.value = false
-    }
-
-    fun switchFavorite() {
-        _searchBaseParams.value =
-            _searchBaseParams.value.copy(
-                favorite = !_searchBaseParams.value.favorite,
                 limit = QUERY_BATCH_SIZE,
             )
         _loadAll.value = false
@@ -160,9 +149,9 @@ abstract class PasteSearchViewModel : ViewModel() {
         _inputSearch.value = ""
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
-                favorite = false,
                 pasteType = null,
                 sort = true,
+                tag = null,
                 limit = QUERY_BATCH_SIZE,
             )
         _loadAll.value = false

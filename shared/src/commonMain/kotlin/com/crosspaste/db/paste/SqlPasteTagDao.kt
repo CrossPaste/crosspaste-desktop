@@ -86,6 +86,8 @@ class SqlPasteTagDao(
         tagDatabaseQueries.deleteTag(id)
     }
 
+    override fun getAllTagsBlock(): List<PasteTag> = tagDatabaseQueries.getAllTags(PasteTag::mapper).executeAsList()
+
     private fun pinPasteTag(
         pasteDataId: Long,
         pasteTagId: Long,

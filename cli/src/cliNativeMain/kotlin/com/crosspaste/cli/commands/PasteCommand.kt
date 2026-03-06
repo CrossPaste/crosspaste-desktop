@@ -16,7 +16,7 @@ data class PasteDetailResponse(
     val typeName: String,
     val source: String?,
     val size: Long,
-    val favorite: Boolean,
+    val tagged: Boolean,
     val createTime: Long,
     val remote: Boolean,
     val hash: String,
@@ -55,7 +55,7 @@ class PasteCommand : CliktCommand(name = "paste") {
         }
 
     private fun printDetail(detail: PasteDetailResponse) {
-        val fav = if (detail.favorite) " [fav]" else ""
+        val fav = if (detail.tagged) " [tagged]" else ""
         val remote = if (detail.remote) " (remote)" else ""
         echo("Paste #${detail.id}$fav$remote")
         echo("  Type:    ${detail.typeName}")

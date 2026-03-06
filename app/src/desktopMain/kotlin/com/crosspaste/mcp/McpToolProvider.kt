@@ -77,9 +77,9 @@ class McpToolProvider(
                                 put("type", "string")
                                 put("description", "Filter by paste type: text, link, image, rtf, html, color, file")
                             }
-                            putJsonObject("favorite") {
-                                put("type", "boolean")
-                                put("description", "Filter by favorite status")
+                            putJsonObject("tag") {
+                                put("type", "string")
+                                put("description", "Filter by tag name (e.g. 'Favorite')")
                             }
                             putJsonObject("limit") {
                                 put("type", "integer")
@@ -98,12 +98,15 @@ class McpToolProvider(
                     ?.get("type")
                     ?.jsonPrimitive
                     ?.content
-            val favorite =
+            val tagName =
                 request.arguments
-                    ?.get("favorite")
+                    ?.get("tag")
                     ?.jsonPrimitive
                     ?.content
-                    ?.toBooleanStrictOrNull()
+            val tagId =
+                tagName?.let { name ->
+                    pasteTagDao.getAllTagsBlock().firstOrNull { it.name == name }?.id
+                }
             val limit =
                 request.arguments
                     ?.get("limit")
@@ -124,9 +127,9 @@ class McpToolProvider(
             val results =
                 pasteDao.searchPasteData(
                     searchTerms = searchTerms,
-                    favorite = favorite,
                     pasteType = pasteType?.type,
                     sort = true,
+                    tag = tagId,
                     limit = limit,
                 )
 
