@@ -75,7 +75,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
             OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get())
         }
         single<DesktopPasteMenuService> {
-            DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+            DesktopPasteMenuService(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
         }
         single<DesktopPasteTagMenuService> {
             DesktopPasteTagMenuService(get(), get())
