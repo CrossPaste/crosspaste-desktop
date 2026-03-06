@@ -95,15 +95,15 @@ jobs:
 
       - name: Build CLI for macOS aarch64
         run: |
-          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosArm64
+          ./gradlew :cli:linkReleaseExecutableCliNative -Pcli.target=macosArm64
           mkdir -p cli/build/cli-binaries/macos-aarch64
-          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-aarch64/crosspaste-cli
+          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-aarch64/crosspaste-cli
 
       - name: Build CLI for macOS x64
         run: |
-          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=macosX64
+          ./gradlew :cli:linkReleaseExecutableCliNative -Pcli.target=macosX64
           mkdir -p cli/build/cli-binaries/macos-x64
-          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-x64/crosspaste-cli
+          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-x64/crosspaste-cli
 
       - name: Upload CLI macOS binaries
         uses: actions/upload-artifact@v4
@@ -144,9 +144,9 @@ jobs:
       - name: Build CLI for Windows x64
         shell: bash
         run: |
-          ./gradlew :cli:linkReleaseExecutableNative -Pcli.target=mingwX64
+          ./gradlew :cli:linkReleaseExecutableCliNative -Pcli.target=mingwX64
           mkdir -p cli/build/cli-binaries/windows-x64
-          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.exe cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
+          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.exe cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
 
       - name: Upload CLI Windows binary
         uses: actions/upload-artifact@v4
@@ -283,7 +283,7 @@ jobs:
       - name: Stage CLI Linux binary
         run: |
           mkdir -p cli/build/cli-binaries/linux-x64
-          cp cli/build/bin/native/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/linux-x64/crosspaste-cli
+          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/linux-x64/crosspaste-cli
 
       - name: Check Dylib Files
         run: |
