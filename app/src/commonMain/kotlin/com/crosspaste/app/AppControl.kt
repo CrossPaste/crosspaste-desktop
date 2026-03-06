@@ -17,4 +17,8 @@ interface AppControl {
     suspend fun completeReceiveOperation()
 
     fun isFileSizeSyncEnabled(size: Long): Boolean
+
+    fun isCreateTagEnabled(): Boolean
+
+    fun isPinTagEnabled(): Boolean
 }

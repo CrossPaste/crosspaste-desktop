@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Check
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
@@ -43,6 +44,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class DesktopPasteMenuService(
+    private val appControl: AppControl,
     appWindowManager: AppWindowManager,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
@@ -261,7 +263,9 @@ class DesktopPasteMenuService(
                     MaterialContextMenuItem(
                         label = tag.name,
                         onClick = {
-                            pasteTagDao.switchPinPasteTagBlock(pasteData.id, tag.id)
+                            if (appControl.isPinTagEnabled()) {
+                                pasteTagDao.switchPinPasteTagBlock(pasteData.id, tag.id)
+                            }
                         },
                         leadingIcon = {
                             Box(

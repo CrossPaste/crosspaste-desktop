@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
+import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteTagMenuService
@@ -43,6 +44,7 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SearchTagsView() {
+    val appControl = koinInject<AppControl>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteTagDao = koinInject<PasteTagDao>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
@@ -126,13 +128,15 @@ fun SearchTagsView() {
         item {
             AssistChip(
                 onClick = {
-                    scope.launch {
-                        newTag =
-                            createDefaultPasteTag(
-                                name = copywriter.getText("unnamed"),
-                                maxSortOrder = pasteTagDao.getMaxSortOrder(),
-                            )
-                        PasteTagScope.resetEditing()
+                    if (appControl.isCreateTagEnabled()) {
+                        scope.launch {
+                            newTag =
+                                createDefaultPasteTag(
+                                    name = copywriter.getText("unnamed"),
+                                    maxSortOrder = pasteTagDao.getMaxSortOrder(),
+                                )
+                            PasteTagScope.resetEditing()
+                        }
                     }
                 },
                 label = {

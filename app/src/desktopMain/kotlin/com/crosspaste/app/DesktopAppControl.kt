@@ -30,4 +30,8 @@ class DesktopAppControl(
     override fun isFileSizeSyncEnabled(size: Long): Boolean =
         !configManager.getCurrentConfig().enabledSyncFileSizeLimit ||
             fileUtils.bytesSize(configManager.getCurrentConfig().maxSyncFileSize) > size
+
+    override fun isCreateTagEnabled(): Boolean = true
+
+    override fun isPinTagEnabled(): Boolean = true
 }
