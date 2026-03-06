@@ -97,14 +97,6 @@ class SqlPasteDao(
                 ).executeAsOneOrNull()
         }
 
-    override suspend fun setFavorite(
-        pasteId: Long,
-        favorite: Boolean,
-    ): Unit =
-        withContext(ioDispatcher) {
-            pasteDatabaseQueries.updateFavorite(favorite, pasteId)
-        }
-
     override suspend fun createPasteData(
         pasteData: PasteData,
         pasteState: Int?,
@@ -164,13 +156,13 @@ class SqlPasteDao(
             }
         }
 
-    override suspend fun markAllDeleteExceptFavorite(): Result<Unit> =
+    override suspend fun markAllDeleteExceptTagged(): Result<Unit> =
         runCatching {
             batchMarkDelete {
-                pasteDatabaseQueries.queryNoFavorite(markDeleteBatchNum)
+                pasteDatabaseQueries.queryNoTag(markDeleteBatchNum)
             }
         }.onFailure { e ->
-            logger.error(e) { "Mark all delete except favorite failed" }
+            logger.error(e) { "Mark all delete except tagged failed" }
         }
 
     override suspend fun markDeletePasteData(id: Long): Result<Unit> =
@@ -252,12 +244,12 @@ class SqlPasteDao(
             pasteDatabaseQueries.getActiveCount().executeAsOne()
         }
 
-    override suspend fun getSize(allOrFavorite: Boolean): Long =
+    override suspend fun getSize(allOrTagged: Boolean): Long =
         withContext(ioDispatcher) {
-            if (allOrFavorite) {
+            if (allOrTagged) {
                 pasteDatabaseQueries.getSize().executeAsOne().SUM ?: 0L
             } else {
-                pasteDatabaseQueries.getFavoriteSize().executeAsOne().SUM ?: 0L
+                pasteDatabaseQueries.getTaggedSize().executeAsOne().SUM ?: 0L
             }
         }
 
@@ -320,7 +312,7 @@ class SqlPasteDao(
             while (true) {
                 val batch =
                     pasteDatabaseQueries
-                        .getOldestNonFavoriteCreateTimeAndSize(afterTime, afterId, batchSize)
+                        .getOldestUntaggedCreateTimeAndSize(afterTime, afterId, batchSize)
                         .executeAsList()
                 if (batch.isEmpty()) break
                 for (row in batch) {
@@ -339,7 +331,6 @@ class SqlPasteDao(
     private fun createSearchPasteQuery(
         searchTerms: List<String>,
         local: Boolean? = null,
-        favorite: Boolean? = null,
         pasteType: Int? = null,
         sort: Boolean = true,
         tagId: Long? = null,
@@ -354,7 +345,6 @@ class SqlPasteDao(
             pasteDatabaseQueries.complexSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,
-                favorite = favorite,
                 pasteType = pasteType?.toLong(),
                 searchQuery = searchQuery,
                 sort = sort,
@@ -368,7 +358,6 @@ class SqlPasteDao(
             pasteDatabaseQueries.simpleSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,
-                favorite = favorite,
                 pasteType = pasteType?.toLong(),
                 sort = sort,
                 tagId = tagId,
@@ -381,7 +370,6 @@ class SqlPasteDao(
     override suspend fun searchPasteData(
         searchTerms: List<String>,
         local: Boolean?,
-        favorite: Boolean?,
         pasteType: Int?,
         sort: Boolean,
         tag: Long?,
@@ -390,14 +378,13 @@ class SqlPasteDao(
         withContext(ioDispatcher) {
             logExecutionTime(logger, "searchPasteData") {
                 logger.info { "Performing search for: $searchTerms" }
-                createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, tag, limit).executeAsList()
+                createSearchPasteQuery(searchTerms, local, pasteType, sort, tag, limit).executeAsList()
             }
         }
 
     override fun searchPasteDataFlow(
         searchTerms: List<String>,
         local: Boolean?,
-        favorite: Boolean?,
         pasteType: Int?,
         sort: Boolean,
         tag: Long?,
@@ -405,16 +392,16 @@ class SqlPasteDao(
     ): Flow<List<PasteData>> =
         logExecutionTime(logger, "searchPasteData") {
             logger.info { "Performing search for: $searchTerms" }
-            createSearchPasteQuery(searchTerms, local, favorite, pasteType, sort, tag, limit)
+            createSearchPasteQuery(searchTerms, local, pasteType, sort, tag, limit)
                 .asFlow()
                 .map { it.executeAsList() }
                 .catch { e ->
                     logger.error(e) {
                         "Error executing search query: ${e.message}\n" +
-                            "searchTerms=$searchTerms local=$local favorite=$favorite " +
+                            "searchTerms=$searchTerms local=$local " +
                             "pasteType=$pasteType sort=$sort"
                     }
-                    emit(searchPasteData(listOf(), local, favorite, pasteType, sort, tag, limit))
+                    emit(searchPasteData(listOf(), local, pasteType, sort, tag, limit))
                 }.flowOn(ioDispatcher)
         }
 
@@ -432,11 +419,40 @@ class SqlPasteDao(
                 .executeAsList()
         }
 
-    override suspend fun getPasteResourceInfo(favorite: Boolean?): PasteResourceInfo =
+    override suspend fun getPasteResourceInfo(tagged: Boolean?): PasteResourceInfo =
         withContext(ioDispatcher) {
+            val taggedPasteIds: Set<Long>? =
+                if (tagged != null) {
+                    val ids = mutableSetOf<Long>()
+                    batchReadPasteData(
+                        readPasteDataList = { id, limit ->
+                            pasteDatabaseQueries
+                                .getBatchPasteData(id, limit, PasteData::mapper)
+                                .executeAsList()
+                        },
+                        dealPasteData = { pasteData ->
+                            val hasTags =
+                                database.tagDatabaseQueries
+                                    .getPasteTags(pasteData.id)
+                                    .executeAsList()
+                                    .isNotEmpty()
+                            if (hasTags) ids.add(pasteData.id)
+                        },
+                    )
+                    ids
+                } else {
+                    null
+                }
+
             val builder = PasteResourceInfoBuilder()
             val doAdd: (PasteData) -> Unit = { pasteData ->
-                if (favorite == null || favorite == pasteData.favorite) {
+                val include =
+                    when (tagged) {
+                        null -> true
+                        true -> taggedPasteIds?.contains(pasteData.id) == true
+                        false -> taggedPasteIds?.contains(pasteData.id) != true
+                    }
+                if (include) {
                     pasteData.pasteAppearItem?.let {
                         builder.add(it)
                     }
@@ -485,7 +501,7 @@ class SqlPasteDao(
                 .getBatchExportPasteData(
                     id,
                     pasteExportParam.types,
-                    pasteExportParam.onlyFavorite,
+                    pasteExportParam.onlyTagged,
                     limit,
                     PasteData::mapper,
                 ).executeAsList()
@@ -496,7 +512,7 @@ class SqlPasteDao(
             pasteDatabaseQueries
                 .getExportNum(
                     pasteExportParam.types,
-                    pasteExportParam.onlyFavorite,
+                    pasteExportParam.onlyTagged,
                 ).executeAsOne()
         }
 }

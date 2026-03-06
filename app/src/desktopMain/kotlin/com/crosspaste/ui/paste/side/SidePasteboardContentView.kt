@@ -122,7 +122,6 @@ fun SidePasteboardContentView() {
     // Reset selection and scroll position when search parameters change while window is visible.
     LaunchedEffect(
         inputSearch,
-        searchBaseParams.favorite,
         searchBaseParams.sort,
         searchBaseParams.pasteType,
     ) {

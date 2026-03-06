@@ -63,7 +63,7 @@ SELECT * FROM PasteDataEntity
 WHERE id > :id AND
 pasteState != -1 AND
 pasteType IN :types AND
-CASE WHEN :onlyFavorite THEN favorite = 1 ELSE TRUE END
+CASE WHEN :onlyTagged THEN EXISTS (SELECT 1 FROM PasteTagEntity WHERE PasteTagEntity.pasteId = PasteDataEntity.id) ELSE TRUE END
 ORDER BY id ASC
 LIMIT :limit;
 
@@ -71,7 +71,7 @@ getExportNum:
 SELECT count(*) FROM PasteDataEntity
 WHERE pasteState != -1 AND
 pasteType IN :types AND
-CASE WHEN :onlyFavorite THEN favorite = 1 ELSE TRUE END;
+CASE WHEN :onlyTagged THEN EXISTS (SELECT 1 FROM PasteTagEntity WHERE PasteTagEntity.pasteId = PasteDataEntity.id) ELSE TRUE END;
 
 getPasteData:
 SELECT * FROM PasteDataEntity WHERE id = :id AND pasteState IN :states;
@@ -82,12 +82,13 @@ SELECT * FROM PasteDataEntity WHERE pasteState != -1 ORDER BY createTime DESC, i
 getLatestLoadedPasteData:
 SELECT * FROM PasteDataEntity WHERE pasteState = 1 ORDER BY createTime DESC, id DESC LIMIT 1;
 
-updateFavorite:
-UPDATE PasteDataEntity SET favorite = ? WHERE id = ?;
-
-queryNoFavorite:
+queryNoTag:
 SELECT id FROM PasteDataEntity
-WHERE favorite = 0 AND pasteState != -1
+WHERE pasteState != -1
+  AND NOT EXISTS (
+      SELECT 1 FROM PasteTagEntity
+      WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+  )
 ORDER BY createTime DESC
 LIMIT ?;
 
@@ -96,7 +97,6 @@ SELECT id
 FROM PasteDataEntity
 WHERE createTime < :cleanTime
   AND pasteState != -1
-  AND favorite = 0
   AND (:pasteType IS NULL OR pasteType = :pasteType)
   AND NOT EXISTS (
       SELECT 1 FROM PasteTagEntity
@@ -118,9 +118,13 @@ getSize:
 SELECT SUM(size) FROM PasteDataEntity
 WHERE pasteState != -1;
 
-getFavoriteSize:
+getTaggedSize:
 SELECT SUM(size) FROM PasteDataEntity
-WHERE favorite = 1 AND pasteState != -1;
+WHERE pasteState != -1
+  AND EXISTS (
+      SELECT 1 FROM PasteTagEntity
+      WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+  );
 
 getMinCreateTime:
 SELECT MIN(createTime) FROM PasteDataEntity
@@ -130,9 +134,13 @@ getSizeByTimeLessThan:
 SELECT SUM(size) FROM PasteDataEntity
 WHERE createTime < :time AND pasteState != -1;
 
-getOldestNonFavoriteCreateTimeAndSize:
+getOldestUntaggedCreateTimeAndSize:
 SELECT id, createTime, size FROM PasteDataEntity
-WHERE pasteState != -1 AND favorite = 0
+WHERE pasteState != -1
+  AND NOT EXISTS (
+      SELECT 1 FROM PasteTagEntity
+      WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+  )
   AND (createTime > :afterTime OR (createTime = :afterTime AND id > :afterId))
 ORDER BY createTime ASC, id ASC
 LIMIT :limit;
@@ -141,7 +149,6 @@ getSameHashPasteDataIds:
 SELECT id FROM PasteDataEntity
 WHERE hash = :hash AND
     pasteType = :pasteType AND
-    favorite = 0 AND
     pasteState != -1 AND
     createTime > :createTime AND
     id != :id AND
@@ -160,10 +167,6 @@ WHERE
             ELSE appInstanceId != :appInstanceId
         END
             ELSE TRUE
-        END AND
-        CASE WHEN :favorite IS NOT NULL
-          THEN favorite = :favorite
-          ELSE TRUE
         END AND
         CASE WHEN :pasteType IS NOT NULL
           THEN pasteType = :pasteType
@@ -192,10 +195,6 @@ SELECT PasteDataEntity.*
                 THEN appInstanceId = :appInstanceId
                 ELSE appInstanceId != :appInstanceId
             END
-            ELSE TRUE
-        END AND
-        CASE WHEN :favorite IS NOT NULL
-            THEN favorite = :favorite
             ELSE TRUE
         END AND
         CASE WHEN :pasteType IS NOT NULL

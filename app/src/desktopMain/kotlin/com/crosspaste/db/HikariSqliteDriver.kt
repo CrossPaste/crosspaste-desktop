@@ -1,12 +1,13 @@
 package com.crosspaste.db
 
 import app.cash.sqldelight.Query
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.JdbcDriver
 import java.sql.Connection
 import javax.sql.DataSource
 
 class HikariSqliteDriver(
-    private val dataSource: DataSource
+    private val dataSource: DataSource,
 ) : JdbcDriver() {
 
     private val listeners = linkedMapOf<String, MutableSet<Query.Listener>>()
@@ -41,5 +42,16 @@ class HikariSqliteDriver(
 
     override fun closeConnection(connection: Connection) {
         connection.close()
+    }
+
+    fun getVersion(): Long {
+        val mapper = { cursor: app.cash.sqldelight.db.SqlCursor ->
+            QueryResult.Value(if (cursor.next().value) cursor.getLong(0) else null)
+        }
+        return executeQuery(null, "PRAGMA user_version", mapper, 0, null).value ?: 0L
+    }
+
+    fun setVersion(version: Long) {
+        execute(null, "PRAGMA user_version = $version", 0, null).value
     }
 }

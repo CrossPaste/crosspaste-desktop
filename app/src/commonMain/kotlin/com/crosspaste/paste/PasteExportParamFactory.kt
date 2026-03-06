@@ -4,7 +4,7 @@ interface PasteExportParamFactory<T> {
 
     fun createPasteExportParam(
         types: Set<Long>,
-        onlyFavorite: Boolean,
+        onlyTagged: Boolean,
         maxFileSize: Long?,
         exportPath: T,
     ): PasteExportParam

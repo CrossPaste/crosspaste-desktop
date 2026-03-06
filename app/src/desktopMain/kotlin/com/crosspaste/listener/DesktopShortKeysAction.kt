@@ -167,7 +167,6 @@ class DesktopShortKeysAction(
                 pasteDao.searchPasteData(
                     searchTerms = listOf(),
                     local = local,
-                    favorite = null,
                     limit = 1,
                 )
 

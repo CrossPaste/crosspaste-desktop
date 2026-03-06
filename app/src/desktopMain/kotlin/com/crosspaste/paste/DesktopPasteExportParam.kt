@@ -7,10 +7,10 @@ import okio.buffer
 
 class DesktopPasteExportParam(
     types: Set<Long>,
-    onlyFavorite: Boolean,
+    onlyTagged: Boolean,
     maxFileSize: Long?,
     private val exportPath: Path,
-) : PasteExportParam(types, onlyFavorite, maxFileSize) {
+) : PasteExportParam(types, onlyTagged, maxFileSize) {
 
     private val fileUtils = getFileUtils()
 

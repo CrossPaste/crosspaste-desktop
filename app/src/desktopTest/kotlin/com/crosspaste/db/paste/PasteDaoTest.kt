@@ -155,30 +155,6 @@ class PasteDaoTest {
         assertTrue(id2 != id3)
     }
 
-    // --- Favorite ---
-
-    @Test
-    fun `setFavorite true marks paste as favorite`() = runTest {
-        val pasteData = createTestPasteData(favorite = false)
-        val id = pasteDao.createPasteData(pasteData)
-
-        pasteDao.setFavorite(id, true)
-        val retrieved = pasteDao.getNoDeletePasteData(id)
-        assertNotNull(retrieved)
-        assertTrue(retrieved.favorite)
-    }
-
-    @Test
-    fun `setFavorite false removes favorite`() = runTest {
-        val pasteData = createTestPasteData(favorite = true)
-        val id = pasteDao.createPasteData(pasteData)
-
-        pasteDao.setFavorite(id, false)
-        val retrieved = pasteDao.getNoDeletePasteData(id)
-        assertNotNull(retrieved)
-        assertFalse(retrieved.favorite)
-    }
-
     // --- Update state ---
 
     @Test
@@ -272,18 +248,18 @@ class PasteDaoTest {
     }
 
     @Test
-    fun `searchPasteData with favorite filter`() = runTest {
-        val id1 = pasteDao.createPasteData(createTestPasteData(text = "fav item"))
+    fun `searchPasteData with tag filter`() = runTest {
+        val id1 = pasteDao.createPasteData(createTestPasteData(text = "tagged item"))
         pasteDao.createPasteData(createTestPasteData(text = "normal item"))
-        pasteDao.setFavorite(id1, true)
+        val tagId = pasteTagDao.createPasteTag("Favorite", 0xFF007AFF)
+        pasteTagDao.switchPinPasteTagBlock(id1, tagId)
 
         val results = pasteDao.searchPasteData(
             searchTerms = listOf(),
-            favorite = true,
+            tag = tagId,
             limit = 100,
         )
         assertEquals(1, results.size)
-        assertTrue(results[0].favorite)
     }
 
     @Test
@@ -321,25 +297,26 @@ class PasteDaoTest {
         pasteDao.createPasteData(paste1)
         pasteDao.createPasteData(paste2)
 
-        val totalSize = pasteDao.getSize(allOrFavorite = true)
+        val totalSize = pasteDao.getSize(allOrTagged = true)
         assertEquals(paste1.size + paste2.size, totalSize)
     }
 
     @Test
-    fun `getSize with allOrFavorite false returns only favorite size`() = runTest {
+    fun `getSize with allOrTagged false returns only tagged size`() = runTest {
         val paste1 = createTestPasteData(text = "hello")
         val paste2 = createTestPasteData(text = "world")
         val id1 = pasteDao.createPasteData(paste1)
         pasteDao.createPasteData(paste2)
-        pasteDao.setFavorite(id1, true)
+        val tagId = pasteTagDao.createPasteTag("Favorite", 0xFF007AFF)
+        pasteTagDao.switchPinPasteTagBlock(id1, tagId)
 
-        val favoriteSize = pasteDao.getSize(allOrFavorite = false)
-        assertEquals(paste1.size, favoriteSize)
+        val taggedSize = pasteDao.getSize(allOrTagged = false)
+        assertEquals(paste1.size, taggedSize)
     }
 
     @Test
     fun `getSize returns 0 for empty database`() = runTest {
-        assertEquals(0L, pasteDao.getSize(allOrFavorite = true))
+        assertEquals(0L, pasteDao.getSize(allOrTagged = true))
     }
 
     @Test

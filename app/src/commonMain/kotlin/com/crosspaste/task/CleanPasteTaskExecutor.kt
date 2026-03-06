@@ -59,11 +59,11 @@ class CleanPasteTaskExecutor(
         if (config.enableThresholdCleanup) {
             runCatching {
                 cleanLock.withLock {
-                    val allSize = pasteDao.getSize(true)
-                    val favoriteSize = pasteDao.getSize(false)
-                    val noFavoriteSize = allSize - favoriteSize
-                    if (noFavoriteSize > config.maxStorage * 1024 * 1024) {
-                        val cleanSize = noFavoriteSize * config.cleanupPercentage / 100
+                    val allSize = pasteDao.getSize(allOrTagged = true)
+                    val taggedSize = pasteDao.getSize(allOrTagged = false)
+                    val untaggedSize = allSize - taggedSize
+                    if (untaggedSize > config.maxStorage * 1024 * 1024) {
+                        val cleanSize = untaggedSize * config.cleanupPercentage / 100
                         deleteStorageOfApproximateSize(cleanSize)
                     }
                 }

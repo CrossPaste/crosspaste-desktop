@@ -21,11 +21,6 @@ interface PasteDao : SearchPasteData {
 
     suspend fun getDeletePasteData(id: Long): PasteData?
 
-    suspend fun setFavorite(
-        pasteId: Long,
-        favorite: Boolean,
-    )
-
     suspend fun createPasteData(
         pasteData: PasteData,
         pasteState: Int? = null,
@@ -33,7 +28,7 @@ interface PasteDao : SearchPasteData {
 
     suspend fun updateFilePath(pasteData: PasteData)
 
-    suspend fun markAllDeleteExceptFavorite(): Result<Unit>
+    suspend fun markAllDeleteExceptTagged(): Result<Unit>
 
     suspend fun markDeletePasteData(id: Long): Result<Unit>
 
@@ -59,7 +54,7 @@ interface PasteDao : SearchPasteData {
 
     suspend fun getActiveCount(): Long
 
-    suspend fun getSize(allOrFavorite: Boolean = false): Long
+    suspend fun getSize(allOrTagged: Boolean = false): Long
 
     suspend fun getMinPasteDataCreateTime(): Long?
 
@@ -83,7 +78,7 @@ interface PasteDao : SearchPasteData {
 
     suspend fun getDistinctSources(): List<String>
 
-    suspend fun getPasteResourceInfo(favorite: Boolean? = null): PasteResourceInfo
+    suspend fun getPasteResourceInfo(tagged: Boolean? = null): PasteResourceInfo
 
     suspend fun batchReadPasteData(
         batchNum: Long = 1000L,

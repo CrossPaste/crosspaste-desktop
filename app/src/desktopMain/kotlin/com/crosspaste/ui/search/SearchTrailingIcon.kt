@@ -37,10 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Bookmark
 import com.composables.icons.materialsymbols.rounded.Vertical_align_bottom
 import com.composables.icons.materialsymbols.rounded.Vertical_align_top
-import com.composables.icons.materialsymbols.roundedfilled.Bookmark
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
@@ -55,7 +53,6 @@ import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
-import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
@@ -117,28 +114,6 @@ fun SearchTrailingIcon() {
             shape = tiny2XRoundedCornerShape,
         ) {
             pasteSearchViewModel.switchSort()
-        }
-
-        Spacer(modifier = Modifier.width(tiny4X))
-
-        GeneralIconButton(
-            imageVector =
-                if (searchBaseParams.favorite) {
-                    MaterialSymbols.RoundedFilled.Bookmark
-                } else {
-                    MaterialSymbols.Rounded.Bookmark
-                },
-            desc = "whether_to_search_only_favorites",
-            colors =
-                iconButtonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                ),
-            buttonSize = xLarge,
-            iconSize = large2X,
-            shape = tiny2XRoundedCornerShape,
-        ) {
-            pasteSearchViewModel.switchFavorite()
         }
 
         Spacer(modifier = Modifier.width(tiny2X))

@@ -1,0 +1,13 @@
+-- Migrate favorite boolean to tag-based system.
+-- Create a "Favorite" tag only if one doesn't already exist and there are favorited items.
+INSERT INTO TagEntity (name, color, sortOrder)
+SELECT 'Favorite', 4278218495, COALESCE((SELECT MAX(sortOrder) FROM TagEntity), 0) + 1
+WHERE NOT EXISTS (SELECT 1 FROM TagEntity WHERE name = 'Favorite')
+AND EXISTS (SELECT 1 FROM PasteDataEntity WHERE favorite = 1 AND pasteState != -1);
+
+-- Associate all favorited paste items with the "Favorite" tag, skipping existing associations.
+INSERT OR IGNORE INTO PasteTagEntity (pasteId, tagId)
+SELECT pd.id, (SELECT id FROM TagEntity WHERE name = 'Favorite' LIMIT 1)
+FROM PasteDataEntity pd
+WHERE pd.favorite = 1 AND pd.pasteState != -1
+AND (SELECT id FROM TagEntity WHERE name = 'Favorite') IS NOT NULL;

@@ -1,5 +1,6 @@
 package com.crosspaste.cli.commands
 
+import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
 import com.github.ajalt.clikt.core.CliktCommand
@@ -32,30 +33,34 @@ fun CliktCommand.runWithDao(block: suspend () -> Unit) {
 
 inline fun <reified T> CliktCommand.getDao(): T = KoinPlatform.getKoin().get()
 
-fun PasteData.toSummaryDto(): PasteSummaryDto =
-    PasteSummaryDto(
+fun PasteData.toSummaryDto(): PasteSummaryDto {
+    val pasteTagDao = KoinPlatform.getKoin().get<PasteTagDao>()
+    return PasteSummaryDto(
         id = id,
         typeName = getTypeName(),
         source = source,
         size = size,
-        favorite = favorite,
+        tagged = pasteTagDao.getPasteTagsBlock(id).isNotEmpty(),
         createTime = createTime,
         preview = getSummary("Loading...", ""),
         remote = remote,
     )
+}
 
-fun PasteData.toDetailResponse(): PasteDetailResponse =
-    PasteDetailResponse(
+fun PasteData.toDetailResponse(): PasteDetailResponse {
+    val pasteTagDao = KoinPlatform.getKoin().get<PasteTagDao>()
+    return PasteDetailResponse(
         id = id,
         typeName = getTypeName(),
         source = source,
         size = size,
-        favorite = favorite,
+        tagged = pasteTagDao.getPasteTagsBlock(id).isNotEmpty(),
         createTime = createTime,
         remote = remote,
         hash = hash,
         content = pasteAppearItem?.getSummary(),
     )
+}
 
 fun resolveTypeFilter(type: String?): Int? =
     type?.let { name ->
