@@ -49,4 +49,4 @@ jobs:
         # CLI native linking is skipped in CI because Kotlin/Native's LLVM linker
         # has GLIBC compatibility issues with ubuntu-latest's sqlite3.
         # CLI binary linking is handled in the release workflow.
-        run: ./gradlew app:build cli:compileKotlinNative
+        run: ./gradlew app:build cli:compileKotlinCliNative
