@@ -1,40 +1,39 @@
 package com.crosspaste.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.composables.icons.fontawesome.FontAwesome
+import com.composables.icons.fontawesome.brands.Github
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Auto_awesome
-import com.composables.icons.materialsymbols.rounded.Chevron_right
+import com.composables.icons.materialsymbols.rounded.Favorite
 import com.composables.icons.materialsymbols.rounded.Feedback
 import com.composables.icons.materialsymbols.rounded.Language
 import com.composables.icons.materialsymbols.rounded.Mail
@@ -44,20 +43,21 @@ import com.crosspaste.app.AppUrls
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.CrossPasteLogoView
+import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.base.x
+import com.crosspaste.ui.settings.SettingListItem
+import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.giant
-import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
-import com.crosspaste.ui.theme.AppUISize.tiny3X
-import com.crosspaste.ui.theme.AppUISize.tiny4X
-import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.xxLargeRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
+
+private const val GITHUB_URL = "https://github.com/CrossPaste"
+private const val TWITTER_URL = "https://x.com/CrossPaste"
 
 @Composable
 fun AboutContentView() {
@@ -66,23 +66,22 @@ fun AboutContentView() {
     val uiSupport = koinInject<UISupport>()
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
-    Surface(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-        shape = xxLargeRoundedCornerShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = tiny4X,
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Brand Section
         Column(
             modifier =
                 Modifier
-                    .padding(horizontal = medium, vertical = xxLarge),
+                    .fillMaxWidth()
+                    .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             CrossPasteLogoView(
                 size = giant,
@@ -107,147 +106,188 @@ fun AboutContentView() {
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
-            Surface(
+            Text(
                 modifier = Modifier.padding(top = tiny),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                text = "Version ${appInfo.displayVersion()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            // Social Links
+            Row(
+                modifier = Modifier.padding(top = medium),
+                horizontalArrangement = Arrangement.spacedBy(medium),
+            ) {
+                SocialLinkButton(
+                    icon = FontAwesome.Brands.Github,
+                    onClick = { uiSupport.openUrlInBrowser(GITHUB_URL) },
+                )
+                SocialLinkButton(
+                    icon = x(),
+                    onClick = { uiSupport.openUrlInBrowser(TWITTER_URL) },
+                )
+                SocialLinkButton(
+                    icon = MaterialSymbols.Rounded.Language,
+                    onClick = { uiSupport.openCrossPasteWebInBrowser() },
+                )
+            }
+        }
+
+        // Resources Section
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(small),
+        ) {
+            Text(
+                text = copywriter.getText("resources"),
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SettingSectionCard {
+                SettingListItem(
+                    title = "official_website",
+                    subtitle = "official_website_desc",
+                    icon = IconData(MaterialSymbols.Rounded.Language, themeExt.blueIconColor),
+                ) {
+                    uiSupport.openCrossPasteWebInBrowser()
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "newbie_tutorial",
+                    subtitle = "newbie_tutorial_desc",
+                    icon = IconData(MaterialSymbols.Rounded.School, themeExt.greenIconColor),
+                ) {
+                    uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "change_log",
+                    subtitle = "change_log_desc",
+                    icon = IconData(MaterialSymbols.Rounded.Auto_awesome, themeExt.purpleIconColor),
+                ) {
+                    uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(xxLarge))
+
+        // Support Section
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(small),
+        ) {
+            Text(
+                text = copywriter.getText("support"),
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SettingSectionCard {
+                SettingListItem(
+                    title = "feedback",
+                    subtitle = "feedback_desc",
+                    icon = IconData(MaterialSymbols.Rounded.Feedback, themeExt.amberIconColor),
+                ) {
+                    uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl)
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "contact_us",
+                    subtitle = "contact_us_desc",
+                    icon = IconData(MaterialSymbols.Rounded.Mail, themeExt.cyanIconColor),
+                ) {
+                    uiSupport.openEmailClient("compile.future@gmail.com")
+                }
+            }
+        }
+
+        // Footer
+        Column(
+            modifier = Modifier.padding(vertical = medium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(tiny),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    modifier = Modifier.padding(horizontal = medium, vertical = tiny3X),
-                    text = "v${appInfo.displayVersion()}",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    text = "Made with",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Favorite,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = Color(0xFFEF4444),
+                )
+                Text(
+                    text = "by CrossPaste Team",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
-            Spacer(modifier = Modifier.height(xxLarge))
-
-            // 3. Info Items List
-            AboutInfoList(uiSupport, appUrls, copywriter)
-
-            Spacer(modifier = Modifier.height(xLarge))
-
-            // 4. Footer
             Text(
-                text = "COMPILE FUTURE",
+                text = "\u00A9 2024 Compile Future",
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 2.sp,
-                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
                     ),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
 @Composable
-fun AboutInfoList(
-    uiSupport: UISupport,
-    appUrls: AppUrls,
-    copywriter: GlobalCopywriter,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        AboutInfoItem(
-            icon = MaterialSymbols.Rounded.Language,
-            title = copywriter.getText("official_website"),
-            onClick = { uiSupport.openCrossPasteWebInBrowser() },
-        )
-        HorizontalDivider(
-            modifier = Modifier.padding(horizontal = medium, vertical = tiny3X),
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-        )
-        AboutInfoItem(
-            icon = MaterialSymbols.Rounded.School,
-            title = copywriter.getText("newbie_tutorial"),
-            onClick = { uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard") },
-        )
-        AboutInfoItem(
-            icon = MaterialSymbols.Rounded.Auto_awesome,
-            title = copywriter.getText("change_log"),
-            onClick = { uiSupport.openUrlInBrowser(appUrls.changeLogUrl) },
-        )
-        HorizontalDivider(
-            modifier = Modifier.padding(horizontal = medium, vertical = tiny3X),
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-        )
-        AboutInfoItem(
-            icon = MaterialSymbols.Rounded.Feedback,
-            title = copywriter.getText("feedback"),
-            onClick = { uiSupport.openUrlInBrowser(appUrls.issueTrackerUrl) },
-        )
-        AboutInfoItem(
-            icon = MaterialSymbols.Rounded.Mail,
-            title = copywriter.getText("contact_us"),
-            onClick = { uiSupport.openEmailClient("compile.future@gmail.com") },
-        )
-    }
-}
-
-@Composable
-fun AboutInfoItem(
+private fun SocialLinkButton(
     icon: ImageVector,
-    title: String,
     onClick: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    // Smooth scale feedback on press
-    val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "scale")
-
-    Surface(
+    Box(
         modifier =
             Modifier
-                .fillMaxWidth()
-                .scale(scale)
-                .clip(mediumRoundedCornerShape)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = LocalIndication.current,
-                    onClick = onClick,
-                ),
-        color = Color.Transparent,
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .padding(horizontal = medium, vertical = small2X),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(xxxLarge),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(large2X),
-                )
-            }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
 
-            Text(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(start = tiny),
-                text = title,
-                style =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Icon(
-                imageVector = MaterialSymbols.Rounded.Chevron_right,
-                contentDescription = null,
-                modifier = Modifier.size(large2X),
-                tint = MaterialTheme.colorScheme.outline,
-            )
-        }
+@Composable
+private fun SocialLinkButton(
+    icon: Painter,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
