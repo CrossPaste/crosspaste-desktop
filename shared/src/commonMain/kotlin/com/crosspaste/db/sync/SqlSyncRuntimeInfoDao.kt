@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class SqlSyncRuntimeInfoDao(
@@ -19,6 +21,8 @@ class SqlSyncRuntimeInfoDao(
     private val jsonUtils = getJsonUtils()
 
     private val syncRuntimeInfoDatabaseQueries = database.syncRuntimeInfoDatabaseQueries
+
+    private val writeMutex = Mutex()
 
     private val updateNotifier = Channel<String>(Channel.UNLIMITED)
 
@@ -72,8 +76,10 @@ class SqlSyncRuntimeInfoDao(
     ): String? =
         withContext(ioDispatcher) {
             val change =
-                database.transactionWithResult {
-                    updateAction(syncRuntimeInfo)
+                writeMutex.withLock {
+                    database.transactionWithResult {
+                        updateAction(syncRuntimeInfo)
+                    }
                 }
             if (change) {
                 updateNotifier.trySend(syncRuntimeInfo.appInstanceId)
@@ -129,9 +135,11 @@ class SqlSyncRuntimeInfoDao(
     override suspend fun deleteSyncRuntimeInfo(appInstanceId: String) {
         withContext(ioDispatcher) {
             val deleted =
-                database.transactionWithResult {
-                    syncRuntimeInfoDatabaseQueries.deleteSyncRuntimeInfo(appInstanceId)
-                    syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+                writeMutex.withLock {
+                    database.transactionWithResult {
+                        syncRuntimeInfoDatabaseQueries.deleteSyncRuntimeInfo(appInstanceId)
+                        syncRuntimeInfoDatabaseQueries.change().executeAsOne() > 0
+                    }
                 }
             if (deleted) {
                 updateNotifier.trySend(appInstanceId)
@@ -147,89 +155,98 @@ class SqlSyncRuntimeInfoDao(
     ) {
         withContext(ioDispatcher) {
             val changed =
-                database.transactionWithResult {
-                    val now = nowEpochMilliseconds()
-                    val existing =
-                        syncRuntimeInfoDatabaseQueries
-                            .getSyncRuntimeInfo(
-                                syncInfo.appInfo.appInstanceId,
-                                SyncRuntimeInfo::mapper,
-                            ).executeAsOneOrNull()
+                writeMutex.withLock {
+                    database.transactionWithResult {
+                        val now = nowEpochMilliseconds()
+                        val existing =
+                            syncRuntimeInfoDatabaseQueries
+                                .getSyncRuntimeInfo(
+                                    syncInfo.appInfo.appInstanceId,
+                                    SyncRuntimeInfo::mapper,
+                                ).executeAsOneOrNull()
 
-                    if (existing != null) {
-                        val hostInfoList = (existing.hostInfoList + syncInfo.endpointInfo.hostInfoList).distinct()
+                        if (existing != null) {
+                            val hostInfoList = (existing.hostInfoList + syncInfo.endpointInfo.hostInfoList).distinct()
 
-                        val connectNetworkPrefixLength: Long? = connectInfo?.networkPrefixLength?.toLong()
-                        val connectHostAddress: String? = connectInfo?.hostAddress
-                        val connectState: Long = if (connectInfo != null) SyncState.CONNECTED.toLong() else -1L
+                            val connectNetworkPrefixLength: Long? = connectInfo?.networkPrefixLength?.toLong()
+                            val connectHostAddress: String? = connectInfo?.hostAddress
+                            val connectState: Long = if (connectInfo != null) SyncState.CONNECTED.toLong() else -1L
 
-                        val hostInfoChanged =
-                            !SyncRuntimeInfo.hostInfoListEqual(
-                                existing.hostInfoList,
-                                hostInfoList,
-                            )
-                        val syncInfoChanged = existing.diffSyncInfo(syncInfo)
-                        val connectChanged =
-                            connectInfo != null &&
-                                (
-                                    existing.connectHostAddress != connectHostAddress ||
-                                        existing.connectNetworkPrefixLength?.toLong() != connectNetworkPrefixLength ||
-                                        existing.connectState.toLong() != connectState
+                            val hostInfoChanged =
+                                !SyncRuntimeInfo.hostInfoListEqual(
+                                    existing.hostInfoList,
+                                    hostInfoList,
                                 )
+                            val syncInfoChanged = existing.diffSyncInfo(syncInfo)
+                            val connectChanged =
+                                connectInfo != null &&
+                                    (
+                                        existing.connectHostAddress != connectHostAddress ||
+                                            existing.connectNetworkPrefixLength?.toLong() !=
+                                            connectNetworkPrefixLength ||
+                                            existing.connectState.toLong() != connectState
+                                    )
 
-                        if (!hostInfoChanged && !syncInfoChanged && !connectChanged) {
-                            return@transactionWithResult false
+                            if (!hostInfoChanged && !syncInfoChanged && !connectChanged) {
+                                return@transactionWithResult false
+                            }
+
+                            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(hostInfoList)
+                            syncRuntimeInfoDatabaseQueries.updateSyncInfo(
+                                syncInfo.appInfo.appVersion,
+                                syncInfo.appInfo.userName,
+                                syncInfo.endpointInfo.deviceId,
+                                syncInfo.endpointInfo.deviceName,
+                                syncInfo.endpointInfo.platform.name,
+                                syncInfo.endpointInfo.platform.arch,
+                                syncInfo.endpointInfo.platform.bitMode
+                                    .toLong(),
+                                syncInfo.endpointInfo.platform.version,
+                                hostInfoArrayJson,
+                                syncInfo.endpointInfo.port.toLong(),
+                                syncInfo.endpointInfo.port.toLong(),
+                                connectNetworkPrefixLength,
+                                connectHostAddress,
+                                connectState,
+                                connectState,
+                                now,
+                                syncInfo.appInfo.appInstanceId,
+                            )
+                            true
+                        } else {
+                            val connectNetworkPrefixLength: Long? = connectInfo?.networkPrefixLength?.toLong()
+                            val connectHostAddress: String? = connectInfo?.hostAddress
+                            val connectState: Long =
+                                if (connectInfo !=
+                                    null
+                                ) {
+                                    SyncState.CONNECTED.toLong()
+                                } else {
+                                    SyncState.DISCONNECTED.toLong()
+                                }
+
+                            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
+                            syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
+                                syncInfo.appInfo.appInstanceId,
+                                syncInfo.appInfo.appVersion,
+                                syncInfo.appInfo.userName,
+                                syncInfo.endpointInfo.deviceId,
+                                syncInfo.endpointInfo.deviceName,
+                                syncInfo.endpointInfo.platform.name,
+                                syncInfo.endpointInfo.platform.arch,
+                                syncInfo.endpointInfo.platform.bitMode
+                                    .toLong(),
+                                syncInfo.endpointInfo.platform.version,
+                                hostInfoArrayJson,
+                                syncInfo.endpointInfo.port.toLong(),
+                                connectNetworkPrefixLength,
+                                connectHostAddress,
+                                connectState,
+                                now,
+                                now,
+                            )
+                            true
                         }
-
-                        val hostInfoArrayJson = jsonUtils.JSON.encodeToString(hostInfoList)
-                        syncRuntimeInfoDatabaseQueries.updateSyncInfo(
-                            syncInfo.appInfo.appVersion,
-                            syncInfo.appInfo.userName,
-                            syncInfo.endpointInfo.deviceId,
-                            syncInfo.endpointInfo.deviceName,
-                            syncInfo.endpointInfo.platform.name,
-                            syncInfo.endpointInfo.platform.arch,
-                            syncInfo.endpointInfo.platform.bitMode
-                                .toLong(),
-                            syncInfo.endpointInfo.platform.version,
-                            hostInfoArrayJson,
-                            syncInfo.endpointInfo.port.toLong(),
-                            syncInfo.endpointInfo.port.toLong(),
-                            connectNetworkPrefixLength,
-                            connectHostAddress,
-                            connectState,
-                            connectState,
-                            now,
-                            syncInfo.appInfo.appInstanceId,
-                        )
-                        true
-                    } else {
-                        val connectNetworkPrefixLength: Long? = connectInfo?.networkPrefixLength?.toLong()
-                        val connectHostAddress: String? = connectInfo?.hostAddress
-                        val connectState: Long =
-                            if (connectInfo != null) SyncState.CONNECTED.toLong() else SyncState.DISCONNECTED.toLong()
-
-                        val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
-                        syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
-                            syncInfo.appInfo.appInstanceId,
-                            syncInfo.appInfo.appVersion,
-                            syncInfo.appInfo.userName,
-                            syncInfo.endpointInfo.deviceId,
-                            syncInfo.endpointInfo.deviceName,
-                            syncInfo.endpointInfo.platform.name,
-                            syncInfo.endpointInfo.platform.arch,
-                            syncInfo.endpointInfo.platform.bitMode
-                                .toLong(),
-                            syncInfo.endpointInfo.platform.version,
-                            hostInfoArrayJson,
-                            syncInfo.endpointInfo.port.toLong(),
-                            connectNetworkPrefixLength,
-                            connectHostAddress,
-                            connectState,
-                            now,
-                            now,
-                        )
-                        true
                     }
                 }
 

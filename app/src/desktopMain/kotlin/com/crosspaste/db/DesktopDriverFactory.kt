@@ -32,8 +32,7 @@ class DesktopDriverFactory(
                 isAutoCommit = true
                 poolName = "CrossPastePool"
 
-                addDataSourceProperty("busy_timeout", "10000")
-                connectionInitSql = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"
+                connectionInitSql = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=10000;"
             }
 
         val hikariDataSource = HikariDataSource(config)
