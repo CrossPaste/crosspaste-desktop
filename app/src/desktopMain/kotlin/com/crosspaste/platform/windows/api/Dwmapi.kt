@@ -18,7 +18,13 @@ interface Dwmapi : StdCallLibrary {
         val INSTANCE: Dwmapi = Native.load("dwmapi", Dwmapi::class.java)
 
         const val DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+        const val DWMWA_WINDOW_CORNER_PREFERENCE = 33
         const val DWMWA_SYSTEMBACKDROP_TYPE = 38
+
+        const val DWMWCP_DEFAULT = 0
+        const val DWMWCP_DONOTROUND = 1
+        const val DWMWCP_ROUND = 2
+        const val DWMWCP_ROUNDSMALL = 3
 
         const val DWMSBT_AUTO = 0
         const val DWMSBT_NONE = 1
