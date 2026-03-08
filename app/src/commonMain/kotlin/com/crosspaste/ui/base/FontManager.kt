@@ -7,7 +7,14 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.font.FontFamily
 import com.crosspaste.config.CommonConfigManager
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 object FontSources {
@@ -30,27 +37,35 @@ abstract class FontManager(
             )
     }
 
-    val availableFonts by lazy {
-        buildList {
-            addAll(getSystemFonts())
-            addAll(userDefinedFonts())
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private val _selectableFonts = MutableStateFlow(listOf(defaultFontInfo))
+
+    val selectableFontsFlow: StateFlow<List<FontInfo>> = _selectableFonts.asStateFlow()
+
+    val selectableFonts: List<FontInfo> get() = _selectableFonts.value
+
+    init {
+        scope.launch {
+            val fonts =
+                buildList {
+                    add(defaultFontInfo)
+                    addAll(getSystemFonts())
+                    addAll(userDefinedFonts())
+                }
+            _selectableFonts.value = fonts
         }
     }
 
     abstract fun getFontByUri(uri: String): FontFamily?
 
-    val selectableFonts =
-        buildList {
-            add(defaultFontInfo)
-            addAll(availableFonts)
-        }
-
     val currentFontInfo =
-        configManager.config
-            .map { it.font }
-            .map { font ->
-                getCurrentFontInfo(font)
-            }
+        combine(
+            configManager.config,
+            _selectableFonts,
+        ) { config, fonts ->
+            fonts.find { it.uri == config.font } ?: defaultFontInfo
+        }
 
     fun getCurrentFontInfo(font: String = configManager.config.value.font): FontInfo =
         selectableFonts.find { it.uri == font }
@@ -59,7 +74,7 @@ abstract class FontManager(
     fun setFont(fontId: String?) {
         val fontId = fontId ?: DEFAULT_FONT_ID
         val font =
-            availableFonts
+            selectableFonts
                 .find { it.id == fontId }
                 ?: defaultFontInfo
 
@@ -79,9 +94,7 @@ abstract class FontManager(
      * Returns a list of user-defined fonts.
      * or custom fonts that bundled with the application.
      */
-    open fun userDefinedFonts(): List<FontInfo> {
-        return emptyList() // Override this method if needed
-    }
+    open fun userDefinedFonts(): List<FontInfo> = emptyList()
 }
 
 /**
@@ -113,12 +126,7 @@ fun FontInfo.customFontOrNull(): FontFamily? =
         }?.fontFamily
 
 fun Typography.withCustomFonts(fontInfo: FontInfo): Typography {
-    val customFontFamily = fontInfo.customFontOrNull()
-    if (customFontFamily == null) {
-        // do nothing if no custom font is selected by user
-        // the default font is already FontFamily.Default
-        return this
-    }
+    val customFontFamily = fontInfo.customFontOrNull() ?: return this
     return copy(
         displayLarge = displayLarge.copy(fontFamily = customFontFamily),
         displayMedium = displayMedium.copy(fontFamily = customFontFamily),
