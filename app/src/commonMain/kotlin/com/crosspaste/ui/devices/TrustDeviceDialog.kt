@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +44,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.em
@@ -58,6 +56,7 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
+import com.crosspaste.ui.base.numberKeyboardOptions
 import com.crosspaste.ui.theme.AppUIFont.generalBodyTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -318,8 +317,7 @@ fun TokenInputBox(
                 textStyle = mergedTextStyle,
                 singleLine = true,
                 keyboardOptions =
-                    KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Number,
+                    numberKeyboardOptions(
                         imeAction = if (index == focusRequesters.size - 1) ImeAction.Done else ImeAction.Next,
                     ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
