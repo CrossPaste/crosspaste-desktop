@@ -113,10 +113,8 @@ class DesktopStoragePathManager : StoragePathManager {
                                         duration = null,
                                     )
                                 }
-                                val chooseText = copywriter.getText("selecting_storage_directory")
                                 appFileChooser.openFileChooser(
                                     FileSelectionMode.DIRECTORY_ONLY,
-                                    chooseText,
                                     currentStoragePath,
                                 ) { path ->
 
