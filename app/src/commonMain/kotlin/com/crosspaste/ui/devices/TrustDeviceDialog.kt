@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +40,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.em
@@ -56,7 +52,6 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
-import com.crosspaste.ui.base.numberKeyboardOptions
 import com.crosspaste.ui.theme.AppUIFont.generalBodyTextStyle
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -292,7 +287,7 @@ fun TokenInputBox(
                     shape = shape,
                 ).onKeyEvent {
                     if (isLoading) return@onKeyEvent false
-                    handleKeyEvent(it, token, index, focusRequesters, confirmAction, cancelAction)
+                    handleKeyEvent(it, confirmAction, cancelAction)
                 },
         shape = shape,
         color = containerColor,
@@ -302,33 +297,24 @@ fun TokenInputBox(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxSize(),
         ) {
-            BasicTextField(
+            PlatformTokenTextField(
                 value = token,
                 enabled = !isLoading,
+                index = index,
+                tokenCount = focusRequesters.size,
                 onValueChange = {
                     if (it.length <= 1) {
                         onValueChange(it)
                     }
                 },
-                modifier =
-                    Modifier
-                        .focusRequester(focusRequester)
-                        .wrapContentSize(),
-                textStyle = mergedTextStyle,
-                singleLine = true,
-                keyboardOptions =
-                    numberKeyboardOptions(
-                        imeAction = if (index == focusRequesters.size - 1) ImeAction.Done else ImeAction.Next,
-                    ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { innerTextField ->
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.defaultMinSize(minWidth = xxxLarge),
-                    ) {
-                        innerTextField()
+                onBackspaceWhenEmpty = {
+                    if (index > 0) {
+                        focusRequesters[index - 1].requestFocus()
                     }
                 },
+                modifier = Modifier.focusRequester(focusRequester),
+                textStyle = mergedTextStyle,
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             )
         }
     }
@@ -342,9 +328,6 @@ fun TokenInputBox(
 
 fun handleKeyEvent(
     event: KeyEvent,
-    token: String,
-    index: Int,
-    focusRequesters: List<FocusRequester>,
     confirmAction: () -> Unit,
     cancelAction: () -> Unit,
 ): Boolean =
@@ -356,14 +339,6 @@ fun handleKeyEvent(
         Key.Escape -> {
             cancelAction()
             true
-        }
-        Key.Backspace -> {
-            if (token.isEmpty() && index > 0) {
-                focusRequesters[index - 1].requestFocus()
-                true
-            } else {
-                false
-            }
         }
         else -> false
     }
