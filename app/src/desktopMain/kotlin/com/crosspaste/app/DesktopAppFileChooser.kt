@@ -24,7 +24,6 @@ class DesktopAppFileChooser(
 
     override fun openFileChooser(
         fileSelectionMode: FileSelectionMode,
-        title: String?,
         initPath: Path?,
         cancel: (() -> Unit)?,
         action: (Any) -> Unit,
@@ -38,7 +37,6 @@ class DesktopAppFileChooser(
                             FileSelectionMode.FILE_ONLY -> {
                                 FileKit
                                     .openFilePicker(
-                                        title = title,
                                         directory = initPath?.let { path -> PlatformFile(path.toFile()) },
                                     )?.let { platformFile ->
                                         action(platformFile.file.toOkioPath(true))
@@ -49,7 +47,6 @@ class DesktopAppFileChooser(
                             FileSelectionMode.DIRECTORY_ONLY -> {
                                 FileKit
                                     .openDirectoryPicker(
-                                        title = title,
                                         directory = initPath?.let { path -> PlatformFile(path.toFile()) },
                                     )?.let { platformFile ->
                                         action(platformFile.file.toOkioPath(true))
@@ -75,7 +72,6 @@ class DesktopAppFileChooser(
     ) {
         openFileChooser(
             fileSelectionMode = FileSelectionMode.DIRECTORY_ONLY,
-            null,
             initPath,
             cancel,
             action,
@@ -89,7 +85,6 @@ class DesktopAppFileChooser(
     ) {
         openFileChooser(
             fileSelectionMode = FileSelectionMode.FILE_ONLY,
-            null,
             initPath,
             cancel,
             action,
