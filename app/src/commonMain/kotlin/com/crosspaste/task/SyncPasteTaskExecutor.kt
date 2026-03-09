@@ -115,6 +115,12 @@ class SyncPasteTaskExecutor(
             syncManager.getSyncHandlers().filter { (key, handler) ->
                 handler.currentSyncRuntimeInfo.allowSend &&
                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
+                    (
+                        syncExtraInfo.targetAppInstanceIds.isEmpty() ||
+                            syncExtraInfo.targetAppInstanceIds.contains(
+                                key,
+                            )
+                    ) &&
                     (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
             }
         } else {

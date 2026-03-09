@@ -8,6 +8,8 @@ import kotlinx.serialization.Serializable
 class SyncExtraInfo(
     @SerialName("appInstanceId")
     val appInstanceId: String,
+    @SerialName("targetAppInstanceIds")
+    val targetAppInstanceIds: Set<String> = emptySet(),
 ) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")
