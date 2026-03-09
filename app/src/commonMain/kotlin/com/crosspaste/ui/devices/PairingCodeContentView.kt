@@ -19,7 +19,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -60,6 +63,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
@@ -98,65 +102,65 @@ fun PairingCodeContentView() {
         }
     }
 
-    Column(
+    BoxWithConstraints(
         modifier =
             Modifier
                 .fillMaxSize()
                 .clip(xLargeRoundedCornerShape)
-                .background(MaterialTheme.colorScheme.surfaceContainer)
-                .padding(horizontal = xxLarge, vertical = medium),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+                .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
-        Spacer(modifier = Modifier.height(xLarge))
+        // QR code ~65% of available width, capped for readability
+        val qrDisplaySize = (maxWidth * 0.65f).coerceIn(120.dp, 320.dp)
 
-        Box(
+        Column(
             modifier =
                 Modifier
-                    .size(xxxxLarge)
-                    .clip(mediumRoundedCornerShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = xxLarge, vertical = medium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = MaterialSymbols.Rounded.Qr_code_scanner,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(xxLarge),
+            Spacer(modifier = Modifier.height(xLarge))
+
+            Box(
+                modifier =
+                    Modifier
+                        .size(xxxxLarge)
+                        .clip(mediumRoundedCornerShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Qr_code_scanner,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(xxLarge),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(medium))
+
+            Text(
+                text = copywriter.getText("qr_scan_title"),
+                style =
+                    MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    ),
+                textAlign = TextAlign.Center,
             )
-        }
 
-        Spacer(modifier = Modifier.height(medium))
+            Spacer(modifier = Modifier.height(tiny))
 
-        Text(
-            text = copywriter.getText("qr_scan_title"),
-            style =
-                MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-            textAlign = TextAlign.Center,
-        )
+            Text(
+                text = copywriter.getText("qr_scan_instruction"),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
 
-        Spacer(modifier = Modifier.height(tiny))
-
-        Text(
-            text = copywriter.getText("qr_scan_instruction"),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-
-        BoxWithConstraints(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .padding(vertical = xLarge),
-            contentAlignment = Alignment.Center,
-        ) {
-            // Adapt QR code size to fit available space, keeping it square
-            val containerPadding = medium + tiny5X
-            val qrDisplaySize = (minOf(maxWidth, maxHeight) - containerPadding * 2).coerceIn(120.dp, 400.dp)
+            Spacer(modifier = Modifier.height(xxxLarge))
 
             Box(
                 modifier =
@@ -182,39 +186,34 @@ fun PairingCodeContentView() {
                     LoadingSpinner(size = qrDisplaySize)
                 }
             }
-        }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(tiny3X),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Verified_user,
-                        contentDescription = null,
-                        tint = LocalThemeExtState.current.success.onContainer,
-                        modifier = Modifier.size(medium),
-                    )
-                    Spacer(modifier = Modifier.height(tiny3X))
-                    Text(
-                        text = copywriter.getText("qr_security_protection"),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Spacer(modifier = Modifier.height(xxxLarge))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Verified_user,
+                    contentDescription = null,
+                    tint = LocalThemeExtState.current.success.color,
+                    modifier = Modifier.size(medium),
+                )
+                Spacer(modifier = Modifier.width(tiny3X))
+                Text(
+                    text = copywriter.getText("qr_security_protection"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
+
+            Spacer(modifier = Modifier.height(tiny))
+
+            Text(
+                text = copywriter.getText("qr_expiry_info", ((1 - refreshProgress) * 30).roundToInt().toString()),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
+                color = MaterialTheme.colorScheme.outline,
+            )
+
+            Spacer(modifier = Modifier.height(xLarge))
         }
-
-        Spacer(modifier = Modifier.height(medium))
-
-        Text(
-            text = copywriter.getText("qr_expiry_info", ((1 - refreshProgress) * 30).roundToInt().toString()),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
-            color = MaterialTheme.colorScheme.outline,
-        )
-
-        Spacer(modifier = Modifier.height(xLarge))
     }
 }
 
