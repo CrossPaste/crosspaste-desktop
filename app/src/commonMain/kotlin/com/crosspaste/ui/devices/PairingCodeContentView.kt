@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,10 +38,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Autorenew
@@ -49,7 +50,7 @@ import com.composables.icons.materialsymbols.rounded.Verified_user
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
-import com.crosspaste.ui.LocalAppSizeValueState
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -71,11 +72,8 @@ fun PairingCodeContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val qrCodeGenerator = koinInject<QRCodeGenerator>()
 
-    val appSizeValue = LocalAppSizeValueState.current
-    val density = LocalDensity.current
-
-    val width = with(density) { appSizeValue.qrCodeSize.width.roundToPx() }
-    val height = with(density) { appSizeValue.qrCodeSize.height.roundToPx() }
+    // Fixed bitmap resolution - QR codes scale well as they are pixel-art-like
+    val qrBitmapSize = 512
 
     var qrImage: ImageBitmap? by remember { mutableStateOf(null) }
 
@@ -89,7 +87,7 @@ fun PairingCodeContentView() {
             withContext(ioDispatcher) {
                 qrCodeGenerator
                     .generateQRCode(token)
-                    .toImage(width, height) as ImageBitmap
+                    .toImage(qrBitmapSize, qrBitmapSize) as ImageBitmap
             }
     }
 
@@ -110,7 +108,7 @@ fun PairingCodeContentView() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(xLarge))
 
         Box(
             modifier =
@@ -149,30 +147,40 @@ fun PairingCodeContentView() {
             textAlign = TextAlign.Center,
         )
 
-        Box(
+        BoxWithConstraints(
             modifier =
                 Modifier
-                    .padding(vertical = xLarge)
-                    .shadow(tiny3X, xLargeRoundedCornerShape)
-                    .border(
-                        width = tiny5X,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = xLargeRoundedCornerShape,
-                    ).background(Color.White)
-                    .padding(medium),
+                    .weight(1f)
+                    .padding(vertical = xLarge),
             contentAlignment = Alignment.Center,
         ) {
-            qrImage?.let {
-                Image(
-                    modifier =
-                        Modifier
-                            .size(appSizeValue.qrCodeSize)
-                            .clip(RoundedCornerShape(small2X)),
-                    bitmap = it,
-                    contentDescription = "QR Code",
-                )
-            } ?: run {
-                LoadingSpinner(size = appSizeValue.qrCodeSize.width)
+            // Adapt QR code size to fit available space, keeping it square
+            val containerPadding = medium + tiny5X
+            val qrDisplaySize = (minOf(maxWidth, maxHeight) - containerPadding * 2).coerceIn(120.dp, 400.dp)
+
+            Box(
+                modifier =
+                    Modifier
+                        .shadow(tiny3X, xLargeRoundedCornerShape)
+                        .border(
+                            width = tiny5X,
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                            shape = xLargeRoundedCornerShape,
+                        ).background(Color.White),
+                contentAlignment = Alignment.Center,
+            ) {
+                qrImage?.let {
+                    Image(
+                        modifier =
+                            Modifier
+                                .size(qrDisplaySize)
+                                .clip(RoundedCornerShape(small2X)),
+                        bitmap = it,
+                        contentDescription = "QR Code",
+                    )
+                } ?: run {
+                    LoadingSpinner(size = qrDisplaySize)
+                }
             }
         }
 
@@ -185,7 +193,7 @@ fun PairingCodeContentView() {
                     Icon(
                         imageVector = MaterialSymbols.Rounded.Verified_user,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = LocalThemeExtState.current.success.onContainer,
                         modifier = Modifier.size(medium),
                     )
                     Spacer(modifier = Modifier.height(tiny3X))
@@ -206,7 +214,7 @@ fun PairingCodeContentView() {
             color = MaterialTheme.colorScheme.outline,
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(xLarge))
     }
 }
 
