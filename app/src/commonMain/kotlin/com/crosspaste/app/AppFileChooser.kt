@@ -9,7 +9,6 @@ interface AppFileChooser {
 
     fun openFileChooser(
         fileSelectionMode: FileSelectionMode,
-        title: String? = null,
         initPath: Path? = null,
         cancel: (() -> Unit)? = null,
         action: (Any) -> Unit,
