@@ -41,7 +41,6 @@ import com.sun.jna.platform.win32.WinDef
 import org.jetbrains.jewel.window.DecoratedWindow
 import org.jetbrains.jewel.window.TitleBar
 import org.koin.compose.koinInject
-import java.awt.geom.RoundRectangle2D
 
 @Composable
 fun MainWindow(windowIcon: Painter?) {
@@ -83,24 +82,12 @@ fun MainWindow(windowIcon: Painter?) {
             // Set window reference for manager
             appWindowManager.mainComposeWindow = window
 
-            // Apply rounded corners on Windows and Linux
-            var shapeListener: java.awt.event.ComponentAdapter? = null
+            // Apply rounded corners on Windows (Win11 Build 22000+, silently ignored on older versions)
             if (platform.isWindows()) {
                 applyWindowsRoundedCorners(window)
-            } else if (platform.isLinux()) {
-                applyLinuxRoundedCorners(window)
-                installLinuxBorderGlassPane(window)
-                shapeListener =
-                    object : java.awt.event.ComponentAdapter() {
-                        override fun componentResized(e: java.awt.event.ComponentEvent) {
-                            applyLinuxRoundedCorners(e.component as java.awt.Window)
-                        }
-                    }
-                window.addComponentListener(shapeListener)
             }
 
             onDispose {
-                shapeListener?.let { window.removeComponentListener(it) }
                 appWindowManager.mainComposeWindow = null
             }
         }
@@ -167,47 +154,4 @@ private fun applyWindowsRoundedCorners(window: java.awt.Window) {
         cornerPreference,
         4,
     )
-}
-
-private const val LINUX_CORNER_ARC = 20.0
-
-private fun applyLinuxRoundedCorners(window: java.awt.Window) {
-    val bounds = window.bounds
-    window.shape =
-        RoundRectangle2D.Double(
-            0.0,
-            0.0,
-            bounds.width.toDouble(),
-            bounds.height.toDouble(),
-            LINUX_CORNER_ARC,
-            LINUX_CORNER_ARC,
-        )
-}
-
-private fun installLinuxBorderGlassPane(window: java.awt.Window) {
-    val frame = window as? javax.swing.JFrame ?: return
-    val glassPane =
-        object : javax.swing.JComponent() {
-            override fun paintComponent(g: java.awt.Graphics) {
-                val g2 = g as java.awt.Graphics2D
-                g2.setRenderingHint(
-                    java.awt.RenderingHints.KEY_ANTIALIASING,
-                    java.awt.RenderingHints.VALUE_ANTIALIAS_ON,
-                )
-                g2.color = java.awt.Color(128, 128, 128, 80)
-                g2.draw(
-                    RoundRectangle2D.Double(
-                        0.5,
-                        0.5,
-                        width - 1.0,
-                        height - 1.0,
-                        LINUX_CORNER_ARC,
-                        LINUX_CORNER_ARC,
-                    ),
-                )
-            }
-        }
-    glassPane.isOpaque = false
-    glassPane.isVisible = true
-    frame.glassPane = glassPane
 }
