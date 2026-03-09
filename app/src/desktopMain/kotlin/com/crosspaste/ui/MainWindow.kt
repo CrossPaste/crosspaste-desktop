@@ -27,6 +27,7 @@ import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.MainWindowContext
 import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.settings.GrantAccessibilityDialog
@@ -34,6 +35,9 @@ import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.sun.jna.Memory
+import com.sun.jna.Native
+import com.sun.jna.platform.win32.WinDef
 import org.jetbrains.jewel.window.DecoratedWindow
 import org.jetbrains.jewel.window.TitleBar
 import org.koin.compose.koinInject
@@ -81,12 +85,14 @@ fun MainWindow(windowIcon: Painter?) {
 
             // Apply rounded corners on Windows and Linux
             var shapeListener: java.awt.event.ComponentAdapter? = null
-            if (platform.isWindows() || platform.isLinux()) {
-                applyRoundedCorners(window)
+            if (platform.isWindows()) {
+                applyWindowsRoundedCorners(window)
+            } else if (platform.isLinux()) {
+                applyLinuxRoundedCorners(window)
                 shapeListener =
                     object : java.awt.event.ComponentAdapter() {
                         override fun componentResized(e: java.awt.event.ComponentEvent) {
-                            applyRoundedCorners(e.component as java.awt.Window)
+                            applyLinuxRoundedCorners(e.component as java.awt.Window)
                         }
                     }
                 window.addComponentListener(shapeListener)
@@ -151,9 +157,20 @@ fun MainWindow(windowIcon: Painter?) {
     }
 }
 
-private const val CORNER_ARC = 20.0
+private fun applyWindowsRoundedCorners(window: java.awt.Window) {
+    val hwnd = WinDef.HWND(Native.getWindowPointer(window))
+    val cornerPreference = Memory(4).apply { setInt(0, Dwmapi.DWMWCP_ROUND) }
+    Dwmapi.INSTANCE.DwmSetWindowAttribute(
+        hwnd,
+        Dwmapi.DWMWA_WINDOW_CORNER_PREFERENCE,
+        cornerPreference,
+        4,
+    )
+}
 
-private fun applyRoundedCorners(window: java.awt.Window) {
+private const val LINUX_CORNER_ARC = 20.0
+
+private fun applyLinuxRoundedCorners(window: java.awt.Window) {
     val bounds = window.bounds
     window.shape =
         RoundRectangle2D.Double(
@@ -161,7 +178,7 @@ private fun applyRoundedCorners(window: java.awt.Window) {
             0.0,
             bounds.width.toDouble(),
             bounds.height.toDouble(),
-            CORNER_ARC,
-            CORNER_ARC,
+            LINUX_CORNER_ARC,
+            LINUX_CORNER_ARC,
         )
 }
