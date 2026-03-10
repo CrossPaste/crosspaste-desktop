@@ -89,6 +89,24 @@ class DesktopTaskBuilder(
         return this
     }
 
+    override fun addTargetedSyncTask(
+        id: Long,
+        appInstanceId: String,
+        targetAppInstanceId: String,
+        fileSize: Long,
+    ): TaskBuilder {
+        if (appControl.isFileSizeSyncEnabled(fileSize)) {
+            taskIds.add(
+                taskDao.createTaskBlock(
+                    id,
+                    TaskType.SYNC_PASTE_TASK,
+                    SyncExtraInfo(appInstanceId, setOf(targetAppInstanceId)),
+                ),
+            )
+        }
+        return this
+    }
+
     override fun addRelaySyncTask(
         id: Long,
         appInstanceId: String,

@@ -11,11 +11,13 @@ import androidx.compose.ui.graphics.Color
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Check
 import com.crosspaste.app.AppControl
+import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
+import com.crosspaste.db.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.OCRModule
 import com.crosspaste.notification.MessageType
@@ -25,6 +27,8 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.sync.SyncManager
+import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteDataScope
@@ -45,6 +49,7 @@ import kotlinx.coroutines.launch
 
 class DesktopPasteMenuService(
     private val appControl: AppControl,
+    private val appInfo: AppInfo,
     appWindowManager: AppWindowManager,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
@@ -53,6 +58,8 @@ class DesktopPasteMenuService(
     private val pasteTagDao: PasteTagDao,
     private val pasteSearchViewModel: PasteSearchViewModel,
     private val ocrModule: OCRModule,
+    private val syncManager: SyncManager,
+    private val taskSubmitter: TaskSubmitter,
     private val uiSupport: UISupport,
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteMenuService {
@@ -289,6 +296,35 @@ class DesktopPasteMenuService(
             }
         }
 
+    private fun createSyncToMenuItem(pasteData: PasteData): ContextMenuItem =
+        ContextMenuGroup(copywriter.getText("sync_to")) {
+            val connectedDevices =
+                syncManager.realTimeSyncRuntimeInfos.value.filter {
+                    it.connectState == SyncState.CONNECTED
+                }
+            if (connectedDevices.isEmpty()) {
+                listOf(
+                    ContextMenuItem(copywriter.getText("no_connected_devices")) {
+                    },
+                )
+            } else {
+                connectedDevices.map { syncRuntimeInfo ->
+                    ContextMenuItem(syncRuntimeInfo.getDeviceDisplayName()) {
+                        menuScope.launch {
+                            taskSubmitter.submit {
+                                addTargetedSyncTask(
+                                    id = pasteData.id,
+                                    appInstanceId = appInfo.appInstanceId,
+                                    targetAppInstanceId = syncRuntimeInfo.appInstanceId,
+                                    fileSize = pasteData.size,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     private fun createExtractTextContextMenuItem(pasteData: PasteData): ContextMenuItem =
         ContextMenuItem(copywriter.getText("extract_text")) {
             menuScope.launch {
@@ -326,6 +362,7 @@ class DesktopPasteMenuService(
             createCopyContextMenuItem(pasteData),
             createOpenContextMenuItem(pasteData),
             createPinTagMenuItem(pasteData),
+            createSyncToMenuItem(pasteData),
             ContextMenuDivider,
             createDeleteContextMenuItem(pasteData),
         )
@@ -339,6 +376,7 @@ class DesktopPasteMenuService(
             }
             add(createOpenContextMenuItem(pasteData))
             add(createPinTagMenuItem(pasteData))
+            add(createSyncToMenuItem(pasteData))
             add(ContextMenuDivider)
             add(createDeleteContextMenuItem(pasteData))
         }
@@ -348,6 +386,7 @@ class DesktopPasteMenuService(
             createCopyContextMenuItem(pasteData),
             createEditContextMenuItem(pasteData),
             createPinTagMenuItem(pasteData),
+            createSyncToMenuItem(pasteData),
             ContextMenuDivider,
             createDeleteContextMenuItem(pasteData),
         )
@@ -362,6 +401,7 @@ class DesktopPasteMenuService(
             add(createEditContextMenuItem(pasteData))
             add(createExtractTextContextMenuItem(pasteData))
             add(createPinTagMenuItem(pasteData))
+            add(createSyncToMenuItem(pasteData))
             add(ContextMenuDivider)
             add(createDeleteContextMenuItem(pasteData))
         }
