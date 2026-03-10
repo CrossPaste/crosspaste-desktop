@@ -23,15 +23,9 @@ interface TaskBuilder {
 
     fun addSyncTask(
         id: Long,
-        appInstanceId: String,
         fileSize: Long,
-    ): TaskBuilder
-
-    fun addTargetedSyncTask(
-        id: Long,
         appInstanceId: String,
-        targetAppInstanceId: String,
-        fileSize: Long,
+        targetAppInstanceId: String? = null,
     ): TaskBuilder
 
     fun addRelaySyncTask(

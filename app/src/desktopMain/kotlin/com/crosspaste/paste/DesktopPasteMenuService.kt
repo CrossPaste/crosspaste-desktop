@@ -312,11 +312,11 @@ class DesktopPasteMenuService(
                     ContextMenuItem(syncRuntimeInfo.getDeviceDisplayName()) {
                         menuScope.launch {
                             taskSubmitter.submit {
-                                addTargetedSyncTask(
+                                addSyncTask(
                                     id = pasteData.id,
+                                    fileSize = pasteData.size,
                                     appInstanceId = appInfo.appInstanceId,
                                     targetAppInstanceId = syncRuntimeInfo.appInstanceId,
-                                    fileSize = pasteData.size,
                                 )
                             }
                         }

@@ -115,7 +115,7 @@ class PasteReleaseService(
                 currentPaste.setPasteId(id)
                 taskSubmitter.submit {
                     addRenderingTask(id, pasteType)
-                    addSyncTask(id, pasteData.appInstanceId, maxFileSize)
+                    addSyncTask(id, maxFileSize, pasteData.appInstanceId)
 
                     if (pasteType.isFile() || pasteType.isImage()) {
                         if ((firstItem as PasteFiles).isRefFiles()) {

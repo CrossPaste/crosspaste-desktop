@@ -74,33 +74,17 @@ class DesktopTaskBuilder(
 
     override fun addSyncTask(
         id: Long,
-        appInstanceId: String,
         fileSize: Long,
+        appInstanceId: String,
+        targetAppInstanceId: String?,
     ): TaskBuilder {
         if (appControl.isFileSizeSyncEnabled(fileSize)) {
+            val targetIds = targetAppInstanceId?.let { setOf(it) } ?: setOf()
             taskIds.add(
                 taskDao.createTaskBlock(
                     id,
                     TaskType.SYNC_PASTE_TASK,
-                    SyncExtraInfo(appInstanceId),
-                ),
-            )
-        }
-        return this
-    }
-
-    override fun addTargetedSyncTask(
-        id: Long,
-        appInstanceId: String,
-        targetAppInstanceId: String,
-        fileSize: Long,
-    ): TaskBuilder {
-        if (appControl.isFileSizeSyncEnabled(fileSize)) {
-            taskIds.add(
-                taskDao.createTaskBlock(
-                    id,
-                    TaskType.SYNC_PASTE_TASK,
-                    SyncExtraInfo(appInstanceId, setOf(targetAppInstanceId)),
+                    SyncExtraInfo(appInstanceId, targetIds),
                 ),
             )
         }
