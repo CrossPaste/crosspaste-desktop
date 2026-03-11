@@ -36,17 +36,5 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
-      - name: Cache Kotlin Native dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.konan
-          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-konan-    
-
       - name: Build with Gradle
-        # Build desktop app (full build + tests) and compile CLI code.
-        # CLI native linking is skipped in CI because Kotlin/Native's LLVM linker
-        # has GLIBC compatibility issues with ubuntu-latest's sqlite3.
-        # CLI binary linking is handled in the release workflow.
-        run: ./gradlew app:build cli:compileKotlinCliNative
+        run: ./gradlew app:build
