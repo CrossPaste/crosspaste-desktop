@@ -311,6 +311,9 @@ jobs:
           node ./.github/scripts/processJarFiles.js "tesseract-.*-macosx-arm64.jar" generated.conveyor.conf
           node ./.github/scripts/processJarFiles.js "tesseract-.*-macosx-x86_64.jar" generated.conveyor.conf
 
+      - name: Check for duplicate JAR versions
+        run: node ./.github/scripts/checkDuplicateJars.js generated.conveyor.conf
+
       - name: Prepare Conveyor
         run: |
           echo "${{ secrets.DEVELOPER_ID_APPLICATION }}" | base64 --decode > developerID_application.p12
