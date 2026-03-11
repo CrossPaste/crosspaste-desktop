@@ -138,7 +138,16 @@ kotlin {
             implementation(libs.jnativehook)
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.classic)
-            implementation(libs.material.menu)
+            implementation(
+                libs.material.menu
+                    .get()
+                    .toString(),
+            ) {
+                // This library transitively depends on an old Compose Desktop (desktop:1.7.3),
+                // which pulls in skiko-awt-runtime-linux-x64:0.8.18 conflicting with current 0.9.x.
+                // We already have the correct Compose Desktop dependency, so exclude its transitive one.
+                exclude(group = "org.jetbrains.compose.desktop")
+            }
             implementation(libs.mcp.server)
             implementation(libs.metadata.extractor)
             implementation(libs.native.tray)
@@ -177,6 +186,49 @@ dependencies {
     macAarch64(libs.compose.desktop.macos.arm64)
     windowsAmd64(libs.compose.desktop.windows.x64)
     linuxAmd64(libs.compose.desktop.linux.x64)
+}
+
+// Force Conveyor platform configurations to align transitive dependency versions with the main build.
+// Without this, platform configs (macAmd64, windowsAmd64, etc.) resolve independently and may
+// include older transitive versions (e.g., kotlinx-serialization-core 1.7.3 instead of 1.10.0),
+// causing AbstractMethodError / NoSuchMethodError at runtime in MSIX packages.
+afterEvaluate {
+    val conveyorPlatformConfigs =
+        listOf(
+            "macAmd64",
+            "macAarch64",
+            "windowsAmd64",
+            "windowsAarch64",
+            "linuxAmd64",
+            "linuxAmd64Muslc",
+            "linuxAarch64",
+            "linuxAarch64Muslc",
+        )
+    val serializationVersion =
+        libs.versions.kotlinx.serialization
+            .get()
+    val kotlinVersion =
+        libs.versions.kotlin
+            .asProvider()
+            .get()
+    configurations.matching { it.name in conveyorPlatformConfigs }.configureEach {
+        resolutionStrategy {
+            force("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
+            force("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$serializationVersion")
+            force(
+                libs.kotlinx.coroutines.core
+                    .get()
+                    .toString(),
+            )
+            force("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+        }
+        // Exclude AndroidX artifacts that duplicate JetBrains Compose Multiplatform ones.
+        // The platform configs pull in androidx.* originals, while the main build uses
+        // org.jetbrains.* re-published versions, causing duplicate classes on the classpath.
+        exclude(group = "androidx.compose.runtime")
+        exclude(group = "androidx.lifecycle")
+        exclude(group = "androidx.savedstate")
+    }
 }
 
 tasks.register<Copy>("copyDevProperties") {
