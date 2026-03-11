@@ -46,13 +46,26 @@ kotlin {
     val isArm64 = System.getProperty("os.arch") == "aarch64"
     val isMingwX64 = hostOs.startsWith("Windows")
 
-    when {
-        hostOs == "Mac OS X" && isArm64 -> macosArm64("nativeApp")
-        hostOs == "Mac OS X" && !isArm64 -> macosX64("nativeApp")
-        hostOs == "Linux" && isArm64 -> linuxArm64("nativeApp")
-        hostOs == "Linux" && !isArm64 -> linuxX64("nativeApp")
-        isMingwX64 -> mingwX64("nativeApp")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+    val cliTarget = project.findProperty("cli.target") as? String
+
+    if (cliTarget != null) {
+        when (cliTarget) {
+            "macosArm64" -> macosArm64("nativeApp")
+            "macosX64" -> macosX64("nativeApp")
+            "linuxArm64" -> linuxArm64("nativeApp")
+            "linuxX64" -> linuxX64("nativeApp")
+            "mingwX64" -> mingwX64("nativeApp")
+            else -> throw GradleException("Unsupported CLI target: $cliTarget")
+        }
+    } else {
+        when {
+            hostOs == "Mac OS X" && isArm64 -> macosArm64("nativeApp")
+            hostOs == "Mac OS X" && !isArm64 -> macosX64("nativeApp")
+            hostOs == "Linux" && isArm64 -> linuxArm64("nativeApp")
+            hostOs == "Linux" && !isArm64 -> linuxX64("nativeApp")
+            isMingwX64 -> mingwX64("nativeApp")
+            else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+        }
     }
 
     sourceSets {

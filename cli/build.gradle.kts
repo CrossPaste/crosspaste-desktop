@@ -89,6 +89,11 @@ kotlin {
 
     sourceSets {
         val cliNativeMain by getting {
+            if (isMingwX64) {
+                kotlin.srcDir("src/mingwNativeMain/kotlin")
+            } else {
+                kotlin.srcDir("src/posixNativeMain/kotlin")
+            }
             dependencies {
                 implementation(project(":shared"))
                 implementation(libs.clikt)

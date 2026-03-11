@@ -1,13 +1,10 @@
 package com.crosspaste.cli.commands
 
+import com.crosspaste.cli.platform.pipeToCommand
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.parameters.arguments.argument
-import kotlinx.cinterop.ExperimentalForeignApi
-import platform.posix.fputs
-import platform.posix.pclose
-import platform.posix.popen
 import kotlin.experimental.ExperimentalNativeApi
 
 class CopyCommand : CliktCommand(name = "copy") {
@@ -27,7 +24,7 @@ class CopyCommand : CliktCommand(name = "copy") {
     }
 }
 
-@OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
+@OptIn(ExperimentalNativeApi::class)
 private fun copyToSystemClipboard(text: String) {
     val command =
         when (Platform.osFamily) {
@@ -36,10 +33,5 @@ private fun copyToSystemClipboard(text: String) {
             OsFamily.WINDOWS -> "clip.exe"
             else -> error("Unsupported platform for clipboard operations")
         }
-    val pipe = popen(command, "w") ?: error("Failed to run '$command'. Is it installed?")
-    fputs(text, pipe)
-    val exitCode = pclose(pipe)
-    if (exitCode != 0) {
-        error("Clipboard command '$command' failed (exit $exitCode)")
-    }
+    pipeToCommand(command, text)
 }
