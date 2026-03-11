@@ -85,77 +85,8 @@ jobs:
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
             '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
 
-      - name: Cache Kotlin Native dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.konan
-          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-konan-
-
-      - name: Build CLI for macOS aarch64
-        run: |
-          ./gradlew :cli:linkReleaseExecutableCliNative -Pcli.target=macosArm64
-          mkdir -p cli/build/cli-binaries/macos-aarch64
-          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-aarch64/crosspaste-cli
-
-      - name: Build CLI for macOS x64
-        run: |
-          ./gradlew :cli:linkReleaseExecutableCliNative -Pcli.target=macosX64
-          mkdir -p cli/build/cli-binaries/macos-x64
-          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/macos-x64/crosspaste-cli
-
-      - name: Upload CLI macOS binaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: cli-macos
-          path: cli/build/cli-binaries/
-
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          check-latest: true
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: >
-            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
-            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
-
-      - name: Cache Kotlin Native dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.konan
-          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-konan-
-
-      - name: Build CLI for Windows x64
-        shell: bash
-        run: |
-          ./gradlew :cli:linkReleaseExecutableCliNative -Pcli.target=mingwX64
-          mkdir -p cli/build/cli-binaries/windows-x64
-          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.exe cli/build/cli-binaries/windows-x64/crosspaste-cli.exe
-
-      - name: Upload CLI Windows binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: cli-windows
-          path: cli/build/cli-binaries/
-
   build-ubuntu:
-    needs: [check-dylib-cache, build-macos, build-windows]
+    needs: [check-dylib-cache, build-macos]
     runs-on: ubuntu-latest
     env:
       APPLE_ASP: ${{ secrets.APPLE_ASP }}
@@ -243,14 +174,6 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
-      - name: Cache Kotlin Native dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.konan
-          key: ${{ runner.os }}-konan-${{ hashFiles('**/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-konan-
-
       - name: Restore dylib cache for x86_64
         uses: actions/cache/restore@v4
         with:
@@ -265,25 +188,8 @@ jobs:
           key: mac-dylib-darwin-aarch64-${{ hashFiles('**/*.swift', '**/dylib-mini-sys.properties') }}
           enableCrossOsArchive: true
 
-      - name: Download CLI macOS binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: cli-macos
-          path: cli/build/cli-binaries/
-
-      - name: Download CLI Windows binary
-        uses: actions/download-artifact@v4
-        with:
-          name: cli-windows
-          path: cli/build/cli-binaries/
-
       - name: Build with Gradle
-        run: ./gradlew build
-
-      - name: Stage CLI Linux binary
-        run: |
-          mkdir -p cli/build/cli-binaries/linux-x64
-          cp cli/build/bin/cliNative/releaseExecutable/crosspaste-cli.kexe cli/build/cli-binaries/linux-x64/crosspaste-cli
+        run: ./gradlew app:build
 
       - name: Check Dylib Files
         run: |
