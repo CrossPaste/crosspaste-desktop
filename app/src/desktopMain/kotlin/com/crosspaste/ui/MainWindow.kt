@@ -82,9 +82,12 @@ fun MainWindow(windowIcon: Painter?) {
             // Set window reference for manager
             appWindowManager.mainComposeWindow = window
 
-            // Apply rounded corners on Windows (Win11 Build 22000+, silently ignored on older versions)
             if (platform.isWindows()) {
+                // Apply rounded corners on Windows (Win11 Build 22000+, silently ignored on older versions)
                 applyWindowsRoundedCorners(window)
+                // Remove minimize button — as a tray app, minimize is unnecessary
+                // and its hit area overlaps with the notification popup close button.
+                removeWindowsMinimizeButton(window)
             }
 
             onDispose {
@@ -155,3 +158,12 @@ private fun applyWindowsRoundedCorners(window: java.awt.Window) {
         4,
     )
 }
+
+private fun removeWindowsMinimizeButton(window: java.awt.Window) {
+    val hwnd = WinDef.HWND(Native.getWindowPointer(window))
+    val user32 = com.sun.jna.platform.win32.User32.INSTANCE
+    val style = user32.GetWindowLong(hwnd, com.sun.jna.platform.win32.User32.GWL_STYLE)
+    user32.SetWindowLong(hwnd, com.sun.jna.platform.win32.User32.GWL_STYLE, style and WS_MINIMIZEBOX.inv())
+}
+
+private const val WS_MINIMIZEBOX = 0x00020000
