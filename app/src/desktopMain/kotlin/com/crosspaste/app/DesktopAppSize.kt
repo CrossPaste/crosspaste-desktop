@@ -10,6 +10,7 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.contains
@@ -161,6 +162,8 @@ class DesktopAppSize(
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
             huge + tiny
+        } else if (platform.isWindows()) {
+            medium
         } else {
             small3X
         }
