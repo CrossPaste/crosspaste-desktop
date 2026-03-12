@@ -127,6 +127,7 @@ kotlin {
             implementation(libs.icu4j)
             implementation(libs.imageio.core)
             implementation(libs.imageio.jpeg)
+            implementation(libs.jbr.api)
             implementation(libs.jewel.decorated.window)
             implementation(libs.jewel.foundation)
             implementation(libs.jewel.int.ui.decorated.window)

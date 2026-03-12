@@ -17,6 +17,7 @@ hot-reload = "1.1.0-alpha05"
 icons-material-symbols = "2.2.1"
 icu4j = "78.2"
 imageio = "3.13.1"
+jbr-api = "1.5.0"
 jewel = "0.33.0-253.29795"
 jmdns = "3.6.3"
 jna = "5.18.1"
@@ -80,6 +81,7 @@ icons-material-symbols-rounded-filled = { module = "com.composables:icons-materi
 icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "imageio" }
 imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "imageio" }
+jbr-api = { module = "org.jetbrains.runtime:jbr-api", version.ref = "jbr-api" }
 jewel-decorated-window = { module = "org.jetbrains.jewel:jewel-decorated-window", version.ref = "jewel" }
 jewel-foundation = { module = "org.jetbrains.jewel:jewel-foundation", version.ref = "jewel" }
 jewel-int-ui-decorated-window = { module = "org.jetbrains.jewel:jewel-int-ui-decorated-window", version.ref = "jewel" }
