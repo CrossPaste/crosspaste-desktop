@@ -161,8 +161,6 @@ class DesktopAppSize(
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
             huge + tiny
-        } else if (platform.isWindows()) {
-            80.dp
         } else {
             small3X
         }
