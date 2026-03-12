@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,8 +37,8 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.jetbrains.JBR
 import com.jetbrains.WindowDecorations.CustomTitleBar
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import org.koin.compose.koinInject
+import javax.swing.JComponent
 
 @Composable
 fun NotificationHost() {
@@ -144,40 +145,96 @@ private fun NotificationItemWrapper(
  * The notification popup can visually overlap these buttons, but clicks are intercepted
  * by the native hit test (WM_NCHITTEST) before reaching Compose.
  *
- * This guard continuously sets [CustomTitleBar.forceHitTest] to true while notifications
- * are visible, preventing native buttons from capturing clicks in the overlap area.
- * Jewel's internal handler naturally restores normal behavior once the guard stops.
+ * This guard replaces the active CustomTitleBar with one that has [CustomTitleBar.forceHitTest]
+ * permanently set to true, preventing native buttons from capturing clicks.
+ * On dispose, the original CustomTitleBar is restored so Jewel's handler resumes control.
  */
 @Composable
 private fun TitleBarHitTestGuard(
     window: ComposeWindow?,
     active: Boolean,
 ) {
-    LaunchedEffect(active, window) {
-        if (!active || window == null) return@LaunchedEffect
-        if (!JBR.isAvailable()) return@LaunchedEffect
+    val isDark = LocalThemeState.current.isCurrentThemeDark
 
-        val titleBar = findCustomTitleBar(window) ?: return@LaunchedEffect
+    DisposableEffect(active, window) {
+        if (!active || window == null) return@DisposableEffect onDispose {}
+        if (!JBR.isAvailable()) return@DisposableEffect onDispose {}
 
-        while (isActive) {
-            titleBar.forceHitTest(true)
-            delay(4)
+        val decorations = JBR.getWindowDecorations()
+        val originalTitleBar = findCustomTitleBar(window.rootPane)
+
+        val guardTitleBar = decorations.createCustomTitleBar()
+        if (originalTitleBar != null) {
+            guardTitleBar.height = originalTitleBar.height
+            guardTitleBar.putProperties(originalTitleBar.properties)
+        } else {
+            guardTitleBar.height = TITLE_BAR_HEIGHT
+            guardTitleBar.putProperty("controls.dark", isDark)
+        }
+        guardTitleBar.forceHitTest(true)
+        decorations.setCustomTitleBar(window, guardTitleBar)
+
+        onDispose {
+            if (originalTitleBar != null) {
+                decorations.setCustomTitleBar(window, originalTitleBar)
+            } else {
+                val normalTitleBar = decorations.createCustomTitleBar()
+                normalTitleBar.height = TITLE_BAR_HEIGHT
+                normalTitleBar.putProperty("controls.dark", isDark)
+                decorations.setCustomTitleBar(window, normalTitleBar)
+            }
         }
     }
 }
 
-private val TITLE_BAR_PROPERTY_KEYS =
-    listOf(
-        "jetbrains.awt.customTitleBar",
-        "jetbrains.awt.windowCustomTitleBar",
-        "customTitleBar",
-    )
+private const val TITLE_BAR_HEIGHT = 64f
 
-private fun findCustomTitleBar(window: ComposeWindow): CustomTitleBar? {
-    val rootPane = window.rootPane ?: return null
-    for (key in TITLE_BAR_PROPERTY_KEYS) {
+/**
+ * Find the CustomTitleBar associated with this window by scanning
+ * the rootPane's client properties via known keys and reflection fallback.
+ */
+private fun findCustomTitleBar(rootPane: javax.swing.JRootPane?): CustomTitleBar? {
+    if (rootPane == null) return null
+    // Try known JBR client property keys
+    for (key in KNOWN_TITLE_BAR_KEYS) {
         val value = rootPane.getClientProperty(key)
         if (value is CustomTitleBar) return value
     }
-    return null
+    // Fallback: scan all client properties via reflection
+    return scanClientProperties(rootPane)
 }
+
+private val KNOWN_TITLE_BAR_KEYS =
+    listOf(
+        "jetbrains.awt.customTitleBar",
+        "jetbrains.awt.windowCustomTitleBar",
+        "JetBrains.CustomTitleBar",
+        "customTitleBar",
+    )
+
+/**
+ * Use reflection to scan JComponent's internal client property storage
+ * for a [CustomTitleBar] instance, regardless of the property key.
+ */
+@Suppress("UNCHECKED_CAST")
+private fun scanClientProperties(component: JComponent): CustomTitleBar? =
+    try {
+        val cpField = JComponent::class.java.getDeclaredField("clientProperties")
+        cpField.isAccessible = true
+        val arrayTable = cpField.get(component) ?: return null
+
+        val tableField = arrayTable.javaClass.getDeclaredField("table")
+        tableField.isAccessible = true
+        when (val table = tableField.get(arrayTable)) {
+            is Array<*> -> {
+                // ArrayTable single-entry: Object[2] = {key, value}
+                if (table.size >= 2 && table[1] is CustomTitleBar) table[1] as CustomTitleBar else null
+            }
+            is java.util.Hashtable<*, *> -> {
+                table.values.firstOrNull { it is CustomTitleBar } as? CustomTitleBar
+            }
+            else -> null
+        }
+    } catch (_: Exception) {
+        null
+    }
