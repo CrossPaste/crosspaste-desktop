@@ -17,6 +17,7 @@ import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.mockk
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
@@ -116,7 +117,8 @@ class McpToolProviderTest {
             }
         val handler = server.tools[name]?.handler ?: error("Tool '$name' not found")
         val request = CallToolRequest(CallToolRequestParams(name = name, arguments = jsonArgs))
-        val result = handler(request)
+        val mockConnection = mockk<ClientConnection>()
+        val result = handler(mockConnection, request)
         return (result.content.first() as TextContent).text
     }
 

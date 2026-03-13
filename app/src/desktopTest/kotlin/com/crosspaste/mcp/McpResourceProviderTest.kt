@@ -18,6 +18,7 @@ import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.mockk
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
@@ -98,7 +99,8 @@ class McpResourceProviderTest {
     ): String {
         val handler = server.resources[uri]?.readHandler ?: error("Resource '$uri' not found")
         val request = ReadResourceRequest(ReadResourceRequestParams(uri = uri))
-        val result = handler(request)
+        val mockConnection = mockk<ClientConnection>()
+        val result = handler(mockConnection, request)
         return (result.contents.first() as TextResourceContents).text
     }
 
