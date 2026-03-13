@@ -48,13 +48,18 @@ class EncryptUtilsTest {
     }
 
     @Test
-    fun `decrypt with wrong key throws exception`() {
+    fun `decrypt with wrong key fails or produces wrong plaintext`() {
         val key1 = EncryptUtils.generateAESKey()
         val key2 = EncryptUtils.generateAESKey()
         val data = "secret message".toByteArray()
         val encrypted = EncryptUtils.encryptData(key1, data)
+        // AES/CBC with wrong key usually throws BadPaddingException, but with ~1/256
+        // probability the padding happens to be valid and decryption "succeeds" with garbage.
         val result = runCatching { EncryptUtils.decryptData(key2, encrypted) }
-        assertTrue(result.isFailure, "Decrypting with wrong key should fail")
+        assertTrue(
+            result.isFailure || !result.getOrThrow().contentEquals(data),
+            "Decrypting with wrong key should either fail or produce different plaintext",
+        )
     }
 
     @Test
