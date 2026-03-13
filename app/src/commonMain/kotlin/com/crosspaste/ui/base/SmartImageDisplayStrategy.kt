@@ -44,6 +44,22 @@ class SmartImageDisplayStrategy(
         }
     }
 
+    override fun computeRequestSize(
+        srcSize: Size,
+        dstSize: Size,
+    ): Size {
+        val scaleX = dstSize.width / srcSize.width
+        val scaleY = dstSize.height / srcSize.height
+        val ratioDifference = abs(scaleX - scaleY) / max(scaleX, scaleY)
+        val scale =
+            if (ratioDifference < aspectRatioDifferenceThreshold) {
+                max(scaleX, scaleY)
+            } else {
+                min(scaleX, scaleY)
+            }
+        return Size(srcSize.width * scale, srcSize.height * scale)
+    }
+
     private object CropContentScale : ContentScale {
         override fun computeScaleFactor(
             srcSize: Size,

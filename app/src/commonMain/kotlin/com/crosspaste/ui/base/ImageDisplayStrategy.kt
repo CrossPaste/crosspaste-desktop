@@ -20,6 +20,19 @@ interface ImageDisplayStrategy {
     ): DisplayResult
 
     /**
+     * Calculates the optimal decode size for image loading, ensuring the decoded
+     * image is large enough for the chosen display strategy (e.g. crop vs fit).
+     *
+     * @param srcSize The dimensions of the source image.
+     * @param dstSize The dimensions of the destination display area.
+     * @return The size at which the image should be decoded.
+     */
+    fun computeRequestSize(
+        srcSize: Size,
+        dstSize: Size,
+    ): Size
+
+    /**
      * Result of the display strategy calculation.
      *
      * @property contentScale How the image should be scaled.

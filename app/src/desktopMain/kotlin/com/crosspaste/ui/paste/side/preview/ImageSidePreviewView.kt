@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -121,19 +121,32 @@ fun PasteDataScope.ImageSidePreviewView() {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
+            val imgSize = intSize
+            val requestSize =
+                remember(targetSizePx, imgSize) {
+                    if (imgSize != null && imgSize.width > 0 && imgSize.height > 0) {
+                        smartImageDisplayStrategy.computeRequestSize(
+                            srcSize = Size(imgSize.width.toFloat(), imgSize.height.toFloat()),
+                            dstSize = targetSizePx,
+                        )
+                    } else {
+                        targetSizePx
+                    }
+                }
+
             val request =
-                remember(pasteFileCoordinate, targetSizePx) {
+                remember(pasteFileCoordinate, requestSize) {
                     ImageRequest
                         .Builder(platformContext)
                         .data(ImageItem(pasteFileCoordinate, false))
-                        .size(width = targetSizePx.width.toInt(), height = targetSizePx.height.toInt())
+                        .size(width = requestSize.width.toInt(), height = requestSize.height.toInt())
                         .precision(Precision.INEXACT)
                         .crossfade(true)
                         .build()
                 }
 
             SubcomposeAsyncImage(
-                modifier = Modifier.wrapContentSize(),
+                modifier = Modifier.fillMaxSize().clipToBounds(),
                 model = request,
                 imageLoader = userImageLoader,
                 contentDescription = "imageType",
