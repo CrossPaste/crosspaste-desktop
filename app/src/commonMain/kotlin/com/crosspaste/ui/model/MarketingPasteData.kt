@@ -36,7 +36,7 @@ open class MarketingPasteData(
 
     private val color =
         run {
-            val colorHex = "#FFA6D6D6"
+            val colorHex = "#A6D6D6FF"
             val pasteItem =
                 createColorPasteItem(
                     color = parseHexColor(colorHex)!!.toArgb(),
