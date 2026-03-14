@@ -142,6 +142,26 @@ function modifyConfig(filePath, config = {}) {
             }
         }
 
+        // Create missing target sections and append remaining items
+        Object.entries(itemsToMove).forEach(([key, value]) => {
+            if (value.length > 0) {
+                console.log(`📝 Creating missing section: ${key} with ${value.length} items`);
+                result.push('');
+                result.push(`${key} = \${${key}} [`);
+                const indent = '    ';
+                value.forEach((item, index) => {
+                    let newPath = item;
+                    config.pathReplacements.forEach(replacement => {
+                        newPath = newPath.replace(replacement.from, replacement.to);
+                    });
+                    const isLast = index === value.length - 1;
+                    result.push(`${indent}${newPath}${isLast ? '' : ','}`);
+                });
+                result.push(']');
+                movedCount += value.length;
+            }
+        });
+
         // Write output file
         const outputPath = config.output || filePath;
         fs.writeFileSync(outputPath, result.join('\n'), 'utf8');
@@ -155,13 +175,6 @@ function modifyConfig(filePath, config = {}) {
         console.log(`\n📊 Statistics:`);
         console.log(`   Deleted: ${deletedCount} items`);
         console.log(`   Moved: ${movedCount} items`);
-
-        // Warn about items that could not be moved
-        Object.entries(itemsToMove).forEach(([key, value]) => {
-            if (value.length > 0) {
-                console.log(`⚠️  Warning: ${value.length} items for ${key} were not moved (section not found)`);
-            }
-        });
 
     } catch (error) {
         console.error('❌ Error:', error);
