@@ -201,11 +201,14 @@ class SecureMessageProcessorTest {
             val modifiedEncrypted = encrypted.clone()
             modifiedEncrypted[i] = (modifiedEncrypted[i] + 1).toByte()
 
-            runCatching {
-                bProcessor.decrypt(modifiedEncrypted)
-            }.onFailure { e ->
-                println("Expected exception with modified data at position $i: ${e.javaClass.name} - ${e.message}")
-            }
+            // AES/CBC with tampered ciphertext usually throws an exception, but with
+            // ~1/256 probability the padding remains valid and decryption "succeeds"
+            // with garbage plaintext.
+            val result = runCatching { bProcessor.decrypt(modifiedEncrypted) }
+            assertTrue(
+                result.isFailure || !result.getOrThrow().contentEquals(message),
+                "Modified data at position $i should either fail decryption or produce different plaintext",
+            )
         }
     }
 
@@ -333,15 +336,20 @@ class SecureMessageProcessorTest {
         val message = "Test message".encodeToByteArray()
         val encrypted = aProcessor.encrypt(message)
 
-        val exception =
-            assertFailsWith<PasteException> {
-                wrongProcessor.decrypt(encrypted)
-            }
-
+        // AES/CBC with wrong key usually throws an exception (wrapped as PasteException),
+        // but with ~1/256 probability the padding remains valid and decryption "succeeds"
+        // with garbage plaintext.
+        val result = runCatching { wrongProcessor.decrypt(encrypted) }
         assertTrue(
-            exception.match(StandardErrorCode.DECRYPT_FAIL),
-            "Decryption with wrong key pair should throw DECRYPT_FAIL exception",
+            result.isFailure || !result.getOrThrow().contentEquals(message),
+            "Decryption with wrong key pair should either fail or produce different plaintext",
         )
+        if (result.isFailure) {
+            assertTrue(
+                result.exceptionOrNull() is PasteException,
+                "Exception should be PasteException",
+            )
+        }
     }
 
     @Test
