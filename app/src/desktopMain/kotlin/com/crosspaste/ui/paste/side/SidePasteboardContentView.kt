@@ -104,10 +104,11 @@ fun SidePasteboardContentView() {
     var isShiftPressed by remember { mutableStateOf(false) }
     var isCtrlPressed by remember { mutableStateOf(false) }
 
-    val showToStart by remember {
+    val showToStart by remember(searchListState) {
         derivedStateOf {
             // Show "to start" button when scrolled beyond three screens
-            searchListState.firstVisibleItemIndex >= searchListState.layoutInfo.visibleItemsInfo.size * 3
+            val visibleSize = searchListState.layoutInfo.visibleItemsInfo.size
+            visibleSize > 0 && searchListState.firstVisibleItemIndex >= visibleSize * 3
         }
     }
 
