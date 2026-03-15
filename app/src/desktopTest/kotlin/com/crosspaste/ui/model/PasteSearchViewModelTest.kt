@@ -130,8 +130,7 @@ class PasteSearchViewModelTest {
         val vm = TestSearchViewModel()
         // limit defaults to QUERY_BATCH_SIZE (50)
         vm.checkLoadAll(30) // 30 < 50 → all loaded
-        // tryAddLimit should return false when loadAll is true
-        assertFalse(vm.tryAddLimit())
+        assertTrue(vm.loadAll.value)
     }
 
     @Test
@@ -139,7 +138,7 @@ class PasteSearchViewModelTest {
         val vm = TestSearchViewModel()
         vm.checkLoadAll(PasteSearchViewModel.QUERY_BATCH_SIZE) // exactly 50
         // loadAll should NOT be set because size >= limit means more data may exist
-        assertTrue(vm.tryAddLimit())
+        assertFalse(vm.loadAll.value)
     }
 
     @Test
@@ -171,10 +170,13 @@ class PasteSearchViewModelTest {
     }
 
     @Test
-    fun `tryAddLimit returns false when loadAll is true`() {
+    fun `tryAddLimit is no-op when loadAll is true`() {
         val vm = TestSearchViewModel()
         vm.checkLoadAll(10) // sets loadAll = true
-        assertFalse(vm.tryAddLimit())
+        val limitBefore = vm.searchBaseParams.value.limit
+        vm.tryAddLimit()
+        // limit should not change when loadAll is true
+        assertEquals(limitBefore, vm.searchBaseParams.value.limit)
     }
 
     @Test
