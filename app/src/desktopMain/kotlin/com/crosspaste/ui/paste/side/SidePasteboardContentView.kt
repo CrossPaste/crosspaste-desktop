@@ -9,19 +9,23 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
@@ -64,6 +68,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
@@ -88,6 +93,7 @@ fun SidePasteboardContentView() {
     val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
+    val loadAll by pasteSearchViewModel.loadAll.collectAsState()
 
     // Recreate scroll state on each show/hide transition so every window open starts at position 0.
     // scrollToItem(0) is unreliable when the window is hidden because the layout engine skips
@@ -187,13 +193,18 @@ fun SidePasteboardContentView() {
             searchListState.layoutInfo.visibleItemsInfo
         }.distinctUntilChanged().collect { visibleItems ->
             if (visibleItems.isNotEmpty()) {
-                // Prepare content within 2 times the screen
-                if (latestSearchResult.value.size - visibleItems.last().index < visibleItems.size) {
-                    pasteSearchViewModel.tryAddLimit()
+                // Only consider data items, exclude the loading indicator item
+                val lastDataItem = visibleItems.lastOrNull { it.index < latestSearchResult.value.size }
+                if (lastDataItem != null) {
+                    // Prepare content within 2 times the screen
+                    if (latestSearchResult.value.size - lastDataItem.index < visibleItems.size) {
+                        pasteSearchViewModel.tryAddLimit()
+                    }
                 }
             }
 
-            showScrollbar = latestSearchResult.value.size > visibleItems.size
+            val dataItemCount = visibleItems.count { it.index < latestSearchResult.value.size }
+            showScrollbar = latestSearchResult.value.size > dataItemCount
             if (showScrollbar) {
                 scrollJob?.cancel()
                 scrollJob =
@@ -326,6 +337,32 @@ fun SidePasteboardContentView() {
 
                     if (index == searchResult.size - 1) {
                         Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
+                    }
+                }
+
+                if (searchResult.isNotEmpty() && !loadAll) {
+                    item(key = "loading_indicator") {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .width(appSizeValue.sidePasteSize.width)
+                                    .fillMaxHeight(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(xxLarge),
+                                    strokeWidth = tiny2X,
+                                    color =
+                                        MaterialTheme.colorScheme
+                                            .contentColorFor(AppUIColors.appBackground)
+                                            .copy(alpha = 0.5f),
+                                )
+                            }
+                        }
                     }
                 }
             }
