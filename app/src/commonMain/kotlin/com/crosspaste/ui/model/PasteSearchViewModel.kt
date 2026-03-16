@@ -6,14 +6,14 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteTag
 import com.crosspaste.utils.getDateUtils
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlin.concurrent.Volatile
 
 abstract class PasteSearchViewModel : ViewModel() {
@@ -41,11 +41,13 @@ abstract class PasteSearchViewModel : ViewModel() {
 
     private val _loadAll = MutableStateFlow(false)
 
+    val loadAll: StateFlow<Boolean> = _loadAll.asStateFlow()
+
     abstract val convertTerm: (String) -> List<String>
 
     @Volatile
     private var lastLoadTime = 0L
-    private val loadMoreMutex = Mutex()
+    private var pendingLoadJob: Job? = null
 
     private val dateUtils = getDateUtils()
 
@@ -72,6 +74,7 @@ abstract class PasteSearchViewModel : ViewModel() {
 
     fun updateInputSearch(input: String) {
         _inputSearch.value = input
+        pendingLoadJob?.cancel()
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
                 limit = QUERY_BATCH_SIZE,
@@ -87,6 +90,7 @@ abstract class PasteSearchViewModel : ViewModel() {
     }
 
     fun updatePasteType(pasteType: Int?) {
+        pendingLoadJob?.cancel()
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
                 pasteType = pasteType,
@@ -96,6 +100,7 @@ abstract class PasteSearchViewModel : ViewModel() {
     }
 
     fun updateTag(tag: Long?) {
+        pendingLoadJob?.cancel()
         _searchBaseParams.value =
             if (_searchBaseParams.value.tag != tag) {
                 _searchBaseParams.value.copy(
@@ -111,22 +116,18 @@ abstract class PasteSearchViewModel : ViewModel() {
         _loadAll.value = false
     }
 
-    fun tryAddLimit(): Boolean {
-        if (_loadAll.value) {
-            return false
-        }
+    fun tryAddLimit() {
+        if (_loadAll.value) return
+        if (pendingLoadJob?.isActive == true) return
 
-        val currentTime = dateUtils.nowEpochMilliseconds()
+        pendingLoadJob =
+            viewModelScope.launch {
+                val elapsed = dateUtils.nowEpochMilliseconds() - lastLoadTime
+                if (elapsed < LOAD_MORE_THROTTLE_MS) {
+                    delay(LOAD_MORE_THROTTLE_MS - elapsed)
+                }
 
-        if (currentTime - lastLoadTime < LOAD_MORE_THROTTLE_MS) {
-            return false
-        }
-
-        viewModelScope.launch {
-            loadMoreMutex.withLock {
-                if (!_loadAll.value &&
-                    dateUtils.nowEpochMilliseconds() - lastLoadTime >= LOAD_MORE_THROTTLE_MS
-                ) {
+                if (!_loadAll.value) {
                     lastLoadTime = dateUtils.nowEpochMilliseconds()
                     _searchBaseParams.value =
                         _searchBaseParams.value.copy(
@@ -134,9 +135,6 @@ abstract class PasteSearchViewModel : ViewModel() {
                         )
                 }
             }
-        }
-
-        return true
     }
 
     fun checkLoadAll(size: Int) {
@@ -147,6 +145,7 @@ abstract class PasteSearchViewModel : ViewModel() {
 
     fun resetSearch() {
         _inputSearch.value = ""
+        pendingLoadJob?.cancel()
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
                 pasteType = null,
