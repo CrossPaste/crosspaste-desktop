@@ -33,7 +33,6 @@ class MultiImagesPlugin(
                     .forEach {
                         it.clear(
                             clearResource = true,
-                            pasteCoordinate = pasteCoordinate,
                             userDataPathProvider = userDataPathProvider,
                         )
                     }
@@ -50,7 +49,6 @@ class MultiImagesPlugin(
                 pasteItems.forEach {
                     it.clear(
                         clearResource = false,
-                        pasteCoordinate = pasteCoordinate,
                         userDataPathProvider = userDataPathProvider,
                     )
                 }

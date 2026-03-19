@@ -55,7 +55,6 @@ class FirstPlugin(
         } else {
             for (pasteAppearItem in pasteItems.drop(1)) {
                 pasteAppearItem.clear(
-                    pasteCoordinate = pasteCoordinate,
                     userDataPathProvider = userDataPathProvider,
                 )
             }

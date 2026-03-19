@@ -22,7 +22,6 @@ class RemoveHtmlImagePlugin(
                 if (isSingleImgInBody(html)) {
                     htmlItem.clear(
                         clearResource = true,
-                        pasteCoordinate = pasteCoordinate,
                         userDataPathProvider = userDataPathProvider,
                     )
                     return pasteItems.filter { item -> item != htmlItem }

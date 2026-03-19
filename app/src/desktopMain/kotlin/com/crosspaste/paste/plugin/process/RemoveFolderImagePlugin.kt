@@ -26,7 +26,6 @@ class RemoveFolderImagePlugin(
                     ) {
                         imageItem.clear(
                             clearResource = true,
-                            pasteCoordinate = pasteCoordinate,
                             userDataPathProvider = userDataPathProvider,
                         )
                         return pasteItems.filter { item -> item != imageItem }

@@ -59,7 +59,6 @@ class FilesToImagesPlugin(
                     val fileInfoTreeMap = pasteAppearItem.fileInfoTreeMap
                     pasteAppearItem.clear(
                         clearResource = false,
-                        pasteCoordinate = pasteCoordinate,
                         userDataPathProvider = userDataPathProvider,
                     )
                     createImagesPasteItem(

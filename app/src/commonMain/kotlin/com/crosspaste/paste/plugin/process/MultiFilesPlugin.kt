@@ -29,7 +29,6 @@ class MultiFilesPlugin(
             pasteItems.forEach {
                 it.clear(
                     clearResource = false,
-                    pasteCoordinate = pasteCoordinate,
                     userDataPathProvider = userDataPathProvider,
                 )
             }

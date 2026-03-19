@@ -7,11 +7,10 @@ import com.crosspaste.path.UserDataPathProvider
 
 fun PasteCollection.clear(
     clearResource: Boolean = true,
-    pasteCoordinate: PasteCoordinate,
     userDataPathProvider: UserDataPathProvider,
 ) {
     pasteItems.forEach {
-        it.clear(clearResource, pasteCoordinate, userDataPathProvider)
+        it.clear(clearResource, userDataPathProvider)
     }
 }
 

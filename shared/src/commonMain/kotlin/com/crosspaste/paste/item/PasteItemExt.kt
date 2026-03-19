@@ -26,27 +26,18 @@ fun UrlPasteItem.getRenderingFilePath(
 
 fun PasteItem.clear(
     clearResource: Boolean = true,
-    pasteCoordinate: PasteCoordinate,
     userDataPathProvider: UserDataPathProvider,
 ) {
     when (this) {
-        is FilesPasteItem -> {
-            if (clearResource && basePath == null) {
-                for (path in getFilePaths(userDataPathProvider)) {
+        is FilesPasteItem, is ImagesPasteItem -> {
+            val pasteFiles = this as PasteFiles
+            if (clearResource && pasteFiles.basePath == null) {
+                for (path in pasteFiles.getFilePaths(userDataPathProvider)) {
                     fileUtils.deleteFile(path)
                 }
             }
         }
-        is ImagesPasteItem -> {
-            if (clearResource && basePath == null) {
-                for (path in getFilePaths(userDataPathProvider)) {
-                    fileUtils.deleteFile(path)
-                }
-            }
-        }
-        else -> {
-            // default do nothing
-        }
+        else -> {}
     }
 }
 
