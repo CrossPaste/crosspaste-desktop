@@ -10,6 +10,7 @@ import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.clear
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.extractSearchContent
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
@@ -116,7 +117,7 @@ class SqlPasteDao(
                     pasteData.createTime,
                     searchContentService.createSearchContent(
                         pasteData.source,
-                        pasteData.pasteAppearItem?.getSearchContent(),
+                        pasteData.pasteAppearItem?.extractSearchContent(),
                     ),
                     (pasteState ?: pasteData.pasteState).toLong(),
                     pasteData.remote,
@@ -132,7 +133,7 @@ class SqlPasteDao(
                 pasteData.pasteCollection.toJson(),
                 searchContentService.createSearchContent(
                     pasteData.source,
-                    pasteData.pasteAppearItem?.getSearchContent(),
+                    pasteData.pasteAppearItem?.extractSearchContent(),
                 ),
                 pasteData.id,
             )
