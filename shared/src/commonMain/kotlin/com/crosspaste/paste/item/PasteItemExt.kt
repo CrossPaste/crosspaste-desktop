@@ -15,28 +15,6 @@ fun PasteItem.getRenderingFilePath(
     userDataPathProvider: UserDataPathProvider,
 ): Path? =
     when (this) {
-        is HtmlPasteItem -> {
-            getMarketingPath()?.toPath() ?: run {
-                val basePath = userDataPathProvider.resolve(appFileType = AppFileType.HTML)
-                val relativePath =
-                    fileUtils.createPasteRelativePath(
-                        pasteCoordinate = pasteCoordinate,
-                        fileName = HtmlPasteItem.HTML2IMAGE,
-                    )
-                userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-            }
-        }
-        is RtfPasteItem -> {
-            getMarketingPath()?.toPath() ?: run {
-                val basePath = userDataPathProvider.resolve(appFileType = AppFileType.RTF)
-                val relativePath =
-                    fileUtils.createPasteRelativePath(
-                        pasteCoordinate = pasteCoordinate,
-                        fileName = RtfPasteItem.RTF2IMAGE,
-                    )
-                userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-            }
-        }
         is UrlPasteItem -> {
             getMarketingPath()?.toPath() ?: run {
                 val basePath = userDataPathProvider.resolve(appFileType = AppFileType.OPEN_GRAPH)
@@ -68,20 +46,6 @@ fun PasteItem.clear(
             if (clearResource && basePath == null) {
                 for (path in getFilePaths(userDataPathProvider)) {
                     fileUtils.deleteFile(path)
-                }
-            }
-        }
-        is HtmlPasteItem -> {
-            if (clearResource) {
-                getRenderingFilePath(pasteCoordinate, userDataPathProvider)?.also { resourceFilePath ->
-                    fileUtils.deleteFile(resourceFilePath)
-                }
-            }
-        }
-        is RtfPasteItem -> {
-            if (clearResource) {
-                getRenderingFilePath(pasteCoordinate, userDataPathProvider)?.also { resourceFilePath ->
-                    fileUtils.deleteFile(resourceFilePath)
                 }
             }
         }

@@ -20,13 +20,8 @@ class HtmlPasteItem(
     override val html: String,
     override val size: Long,
     override val extraInfo: JsonObject? = null,
-    var relativePath: String? = null,
 ) : PasteItem,
     PasteHtml {
-
-    companion object {
-        const val HTML2IMAGE = "html2Image.png"
-    }
 
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),

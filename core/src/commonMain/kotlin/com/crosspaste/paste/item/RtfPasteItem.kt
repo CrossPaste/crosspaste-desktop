@@ -20,13 +20,8 @@ class RtfPasteItem(
     override val rtf: String,
     override val size: Long,
     override val extraInfo: JsonObject? = null,
-    var relativePath: String? = null,
 ) : PasteItem,
     PasteRtf {
-
-    companion object {
-        const val RTF2IMAGE = "rtf2Image.png"
-    }
 
     constructor(jsonObject: JsonObject) : this(
         identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),

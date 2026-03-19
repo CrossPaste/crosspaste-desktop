@@ -5,7 +5,6 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.exception.standardErrorCodeMap
 import com.crosspaste.net.PasteClient
 import com.crosspaste.paste.PasteData
-import com.crosspaste.paste.prepareForSync
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
@@ -24,7 +23,6 @@ class PasteClientApi(
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
-        pasteData.prepareForSync()
         val response =
             pasteClient.post(
                 message = pasteData,

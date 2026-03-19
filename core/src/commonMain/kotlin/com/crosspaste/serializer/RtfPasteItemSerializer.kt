@@ -26,7 +26,6 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
             element<String>("rtf")
             element<Long>("size")
             element<JsonElement?>("extraInfo")
-            element<String>("relativePath", isOptional = true)
         }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -100,8 +99,6 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
         enc.encodeStringElement(descriptor, 2, value.rtf)
         enc.encodeLongElement(descriptor, 3, value.size)
         enc.encodeNullableSerializableElement(descriptor, 4, String.serializer(), value.extraInfo.toString())
-        // To be compatible with older versions, we must set this field
-        enc.encodeStringElement(descriptor, 5, value.relativePath ?: "")
         enc.endStructure(descriptor)
     }
 }
