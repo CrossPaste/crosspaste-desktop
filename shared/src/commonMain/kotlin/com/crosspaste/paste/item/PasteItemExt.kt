@@ -80,41 +80,9 @@ fun PasteItem.bindItem(
 private val htmlUtils by lazy { getHtmlUtils() }
 private val rtfUtils by lazy { getRtfUtils() }
 
-fun HtmlPasteItem.getParsedText(): String = htmlUtils.getHtmlText(html) ?: ""
-
 val HtmlPasteItem.truncatedPreviewHtml: String
     get() = htmlUtils.truncateForPreview(html)
-
-fun RtfPasteItem.getParsedText(): String = rtfUtils.getText(rtf) ?: ""
-
-fun RtfPasteItem.getRtfHtml(): String = rtfUtils.rtfToHtml(rtf) ?: ""
 
 val RtfPasteItem.truncatedPreviewHtml: String
     get() = rtfUtils.rtfToHtml(rtf)?.let { htmlUtils.truncateForPreview(it) } ?: ""
 
-/**
- * Returns parsed search content for items that need text extraction.
- * For HtmlPasteItem: returns parsed text from HTML
- * For RtfPasteItem: returns parsed text from RTF
- * For all others: delegates to getSearchContent()
- */
-fun PasteItem.getParsedSearchContent(): String? =
-    when (this) {
-        is HtmlPasteItem -> getParsedText().lowercase().ifEmpty { null }
-        is RtfPasteItem -> getParsedText().lowercase().ifEmpty { null }
-        else -> getSearchContent()
-    }
-
-/**
- * Validates the paste item with file system checks for file-based items.
- */
-fun PasteItem.isValidWithFileCheck(): Boolean =
-    when (this) {
-        is FilesPasteItem -> isValid() && hasExistingFiles()
-        is ImagesPasteItem -> isValid() && hasExistingFiles()
-        is HtmlPasteItem -> isValid() && getParsedText().isNotEmpty()
-        is RtfPasteItem -> {
-            isValid() && getParsedText().isNotEmpty() && getRtfHtml().isNotEmpty()
-        }
-        else -> isValid()
-    }
