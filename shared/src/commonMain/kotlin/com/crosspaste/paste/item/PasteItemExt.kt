@@ -86,3 +86,14 @@ val HtmlPasteItem.truncatedPreviewHtml: String
 val RtfPasteItem.truncatedPreviewHtml: String
     get() = rtfUtils.rtfToHtml(rtf)?.let { htmlUtils.truncateForPreview(it) } ?: ""
 
+/**
+ * Extract plain-text search content from a PasteItem.
+ * For HtmlPasteItem/RtfPasteItem, parses the markup to get readable text.
+ * For all others, delegates to [PasteItem.getSearchContent].
+ */
+fun PasteItem.extractSearchContent(): String? =
+    when (this) {
+        is HtmlPasteItem -> htmlUtils.getHtmlText(html)?.lowercase()
+        is RtfPasteItem -> rtfUtils.getText(rtf)?.lowercase()
+        else -> getSearchContent()
+    }

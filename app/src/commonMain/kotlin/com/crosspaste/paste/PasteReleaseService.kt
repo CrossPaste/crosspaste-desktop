@@ -9,6 +9,7 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.bindItem
+import com.crosspaste.paste.item.extractSearchContent
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskBuilder
@@ -104,7 +105,7 @@ class PasteReleaseService(
                         pasteSearchContent =
                             searchContentService.createSearchContent(
                                 pasteData.source,
-                                firstItem.getSearchContent(),
+                                firstItem.extractSearchContent(),
                             ),
                         size = size,
                         hash = hash,
