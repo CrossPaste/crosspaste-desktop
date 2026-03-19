@@ -4,6 +4,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.clear
 import com.crosspaste.path.UserDataPathProvider
 
 class MultiImagesPlugin(
@@ -32,7 +33,6 @@ class MultiImagesPlugin(
                     .forEach {
                         it.clear(
                             clearResource = true,
-                            pasteCoordinate = pasteCoordinate,
                             userDataPathProvider = userDataPathProvider,
                         )
                     }
@@ -49,7 +49,6 @@ class MultiImagesPlugin(
                 pasteItems.forEach {
                     it.clear(
                         clearResource = false,
-                        pasteCoordinate = pasteCoordinate,
                         userDataPathProvider = userDataPathProvider,
                     )
                 }

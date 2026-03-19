@@ -79,9 +79,9 @@ class SyncTest : KoinTest {
                 userName = "client-user",
             )
 
-        private val serverSecureKeyPair = generateSecureKeyPair()
+        private val serverSecureKeyPair = runBlocking { generateSecureKeyPair() }
 
-        private val clientSecureKeyPair = generateSecureKeyPair()
+        private val clientSecureKeyPair = runBlocking { generateSecureKeyPair() }
 
         private val platform = getPlatformUtils().platform
 
@@ -206,13 +206,17 @@ class SyncTest : KoinTest {
             runBlocking {
                 serverSecureIO.serializedPublicKey(clientAppInfo.appInstanceId)
             },
-            secureKeyPairSerializer.encodeCryptPublicKey(clientSecureKeyPair.cryptKeyPair.publicKey),
+            runBlocking {
+                secureKeyPairSerializer.encodeCryptPublicKey(clientSecureKeyPair.cryptKeyPair.publicKey)
+            },
         )
         assertContentEquals(
             runBlocking {
                 clientSecureIO.serializedPublicKey(serverAppInfo.appInstanceId)
             },
-            secureKeyPairSerializer.encodeCryptPublicKey(serverSecureKeyPair.cryptKeyPair.publicKey),
+            runBlocking {
+                secureKeyPairSerializer.encodeCryptPublicKey(serverSecureKeyPair.cryptKeyPair.publicKey)
+            },
         )
 
         result =

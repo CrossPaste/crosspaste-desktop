@@ -2,7 +2,7 @@ package com.crosspaste.db.task
 
 import com.crosspaste.Database
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
-import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.SharedJsonUtils
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
 
@@ -10,7 +10,7 @@ class SqlTaskDao(
     private val database: Database,
 ) : TaskDao {
 
-    private val jsonUtils = getJsonUtils()
+    private val taskJson = SharedJsonUtils.JSON
 
     private val pasteTaskDatabaseQueries = database.pasteTaskDatabaseQueries
 
@@ -27,7 +27,7 @@ class SqlTaskDao(
                 TaskStatus.PREPARING,
                 now,
                 now,
-                jsonUtils.JSON.encodeToString(extraInfo),
+                taskJson.encodeToString(extraInfo),
             )
             pasteTaskDatabaseQueries.getLastId().executeAsOne()
         }

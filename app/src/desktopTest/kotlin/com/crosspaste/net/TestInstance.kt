@@ -22,6 +22,7 @@ import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.getPlatformUtils
+import kotlinx.coroutines.runBlocking
 
 class TestInstance(
     val appInstanceId: String,
@@ -51,7 +52,7 @@ class TestInstance(
             userName = userName,
         )
 
-    val secureKeyPair: SecureKeyPair = generateSecureKeyPair()
+    val secureKeyPair: SecureKeyPair = runBlocking { generateSecureKeyPair() }
     val secureIO: MemorySecureIO = MemorySecureIO()
 
     val secureStore: SecureStore =

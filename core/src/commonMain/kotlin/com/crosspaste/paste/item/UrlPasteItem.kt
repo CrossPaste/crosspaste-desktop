@@ -1,0 +1,70 @@
+package com.crosspaste.paste.item
+
+import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
+import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItemProperties.TITLE
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
+import kotlinx.serialization.json.put
+
+@Serializable
+@SerialName("url")
+class UrlPasteItem(
+    override val identifiers: List<String>,
+    override val hash: String,
+    override val size: Long,
+    override val url: String,
+    override val extraInfo: JsonObject? = null,
+) : PasteItem,
+    PasteUrl {
+
+    companion object {
+        const val OPEN_GRAPH_IMAGE = "openGraphImage.png"
+    }
+
+    constructor(jsonObject: JsonObject) : this(
+        identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
+        hash = jsonObject["hash"]!!.jsonPrimitive.content,
+        size = jsonObject["size"]!!.jsonPrimitive.long,
+        url = jsonObject["url"]!!.jsonPrimitive.content,
+        extraInfo = getExtraInfoFromJson(jsonObject),
+    )
+
+    override fun getPasteType(): PasteType = PasteType.URL_TYPE
+
+    override fun getSearchContent(): String = url.lowercase()
+
+    override fun getSummary(): String = url
+
+    override fun copy(extraInfo: JsonObject?): UrlPasteItem =
+        createUrlPasteItem(
+            identifiers = identifiers,
+            url = url,
+            extraInfo = extraInfo,
+        )
+
+    override fun getTitle(): String? =
+        extraInfo?.let {
+            it[TITLE]?.jsonPrimitive?.content
+        }
+
+    override fun isValid(): Boolean =
+        hash.isNotEmpty() &&
+            size > 0 &&
+            url.isNotEmpty()
+
+    override fun toJson(): String =
+        buildJsonObject {
+            put("type", getPasteType().type)
+            put("identifiers", identifiers.joinToString(","))
+            put("hash", hash)
+            put("size", size)
+            put("url", url)
+            extraInfo?.let { put("extraInfo", it) }
+        }.toString()
+}

@@ -4,6 +4,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.clear
 import com.crosspaste.path.UserDataPathProvider
 
 class MultiFilesPlugin(
@@ -28,7 +29,6 @@ class MultiFilesPlugin(
             pasteItems.forEach {
                 it.clear(
                     clearResource = false,
-                    pasteCoordinate = pasteCoordinate,
                     userDataPathProvider = userDataPathProvider,
                 )
             }

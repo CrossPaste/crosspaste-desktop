@@ -5,6 +5,8 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.getAppFileType
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder

@@ -4,9 +4,11 @@ import com.crosspaste.Database
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.paste.bindItems
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemProperties
+import com.crosspaste.paste.item.bindItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskBuilder
@@ -181,8 +183,8 @@ class PasteReleaseService(
                     val pasteAppearItem = pasteData.pasteAppearItem
                     val pasteCollection = pasteData.pasteCollection
 
-                    val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate, syncToDownload)
-                    val newPasteCollection = pasteCollection.bind(pasteCoordinate, syncToDownload)
+                    val newPasteAppearItem = pasteAppearItem?.bindItem(pasteCoordinate, syncToDownload)
+                    val newPasteCollection = pasteCollection.bindItems(pasteCoordinate, syncToDownload)
 
                     val newPasteData =
                         pasteData.copy(

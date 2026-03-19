@@ -15,32 +15,28 @@ versionProperties.load(
 group = "com.crosspaste"
 version = versionProperties.getProperty("version")
 
-plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.ktlint)
+tasks.register<Exec>("npmInstall") {
+    workingDir = projectDir
+    commandLine("npm", "install")
+    inputs.file("package.json")
+    outputs.dir("node_modules")
 }
 
-ktlint {
-    verbose = true
-    android = false
-    ignoreFailures = false
+tasks.register<Exec>("npmBuild") {
+    dependsOn("npmInstall", ":core:jsBrowserProductionLibraryDistribution")
+    workingDir = projectDir
+    commandLine("npm", "run", "build")
+    inputs.dir("src")
+    inputs.file("manifest.json")
+    inputs.file("vite.config.ts")
+    inputs.file("tsconfig.json")
+    outputs.dir("dist")
 }
 
-kotlin {
-    js("webJs", IR) {
-        browser {
-            commonWebpackConfig {
-                outputFileName = "crosspaste-web.js"
-            }
-        }
-        binaries.executable()
-    }
+tasks.register<Delete>("clean") {
+    delete("dist", "node_modules")
+}
 
-    sourceSets {
-        commonMain.dependencies {
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
-        }
-    }
+tasks.register("build") {
+    dependsOn("npmBuild")
 }

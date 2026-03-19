@@ -5,6 +5,8 @@ import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.item.clear
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DesktopFileUtils.fileSystem
 import com.crosspaste.utils.extension
@@ -33,7 +35,6 @@ class FileToUrlPlugin(
                     val url = extractUrlFromFile(filePaths[0])
                     if (url != null) {
                         pasteAppearItem.clear(
-                            pasteCoordinate = pasteCoordinate,
                             userDataPathProvider = userDataPathProvider,
                         )
                         if (pasteItems.any { it is UrlPasteItem && it.url == url }) {

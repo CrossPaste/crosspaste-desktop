@@ -3,6 +3,8 @@ package com.crosspaste.paste.plugin.process
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.clear
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.isDirectory
 
@@ -24,7 +26,6 @@ class RemoveFolderImagePlugin(
                     ) {
                         imageItem.clear(
                             clearResource = true,
-                            pasteCoordinate = pasteCoordinate,
                             userDataPathProvider = userDataPathProvider,
                         )
                         return pasteItems.filter { item -> item != imageItem }

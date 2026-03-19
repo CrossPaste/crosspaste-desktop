@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.RtfPasteItem
+import com.crosspaste.paste.item.truncatedPreviewHtml
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
