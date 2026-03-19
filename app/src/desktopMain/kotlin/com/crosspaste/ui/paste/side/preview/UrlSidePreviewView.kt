@@ -55,7 +55,7 @@ fun PasteDataScope.UrlSidePreviewView() {
                 pasteData.getPasteCoordinate(),
                 userDataPathProvider,
             )
-        } ?: return
+        }
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val density = LocalDensity.current

@@ -35,7 +35,7 @@ class OpenGraphService<Image>(
                 urlPasteItem.getRenderingFilePath(
                     pasteData.getPasteCoordinate(),
                     userDataPathProvider,
-                ) ?: return
+                )
 
             if (fileUtils.existFile(openGraphImage)) {
                 logger.info { "Open graph image file exists" }

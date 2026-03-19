@@ -10,23 +10,18 @@ import okio.Path.Companion.toPath
 
 private val fileUtils = getFileUtils()
 
-fun PasteItem.getRenderingFilePath(
+fun UrlPasteItem.getRenderingFilePath(
     pasteCoordinate: PasteCoordinate,
     userDataPathProvider: UserDataPathProvider,
-): Path? =
-    when (this) {
-        is UrlPasteItem -> {
-            getMarketingPath()?.toPath() ?: run {
-                val basePath = userDataPathProvider.resolve(appFileType = AppFileType.OPEN_GRAPH)
-                val relativePath =
-                    fileUtils.createPasteRelativePath(
-                        pasteCoordinate = pasteCoordinate,
-                        fileName = UrlPasteItem.OPEN_GRAPH_IMAGE,
-                    )
-                userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
-            }
-        }
-        else -> null
+): Path =
+    getMarketingPath()?.toPath() ?: run {
+        val basePath = userDataPathProvider.resolve(appFileType = AppFileType.OPEN_GRAPH)
+        val relativePath =
+            fileUtils.createPasteRelativePath(
+                pasteCoordinate = pasteCoordinate,
+                fileName = UrlPasteItem.OPEN_GRAPH_IMAGE,
+            )
+        userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 
 fun PasteItem.clear(
