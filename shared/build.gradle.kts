@@ -33,6 +33,10 @@ sqldelight {
     }
 }
 
+composeCompiler {
+    stabilityConfigurationFile = rootProject.layout.projectDirectory.file("compose-stability.conf")
+}
+
 ktlint {
     verbose = true
     android = false
