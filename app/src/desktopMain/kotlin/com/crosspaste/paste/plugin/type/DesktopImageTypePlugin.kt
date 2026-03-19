@@ -14,6 +14,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin.Companion.FILE_LIST_ID
 import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin.Companion.HTML_ID
 import com.crosspaste.paste.toPasteDataFlavor

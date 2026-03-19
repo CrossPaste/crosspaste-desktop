@@ -7,6 +7,7 @@ import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.item.getRenderingFilePath
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.fleeksoft.ksoup.Ksoup
@@ -34,7 +35,7 @@ class OpenGraphService<Image>(
                 urlPasteItem.getRenderingFilePath(
                     pasteData.getPasteCoordinate(),
                     userDataPathProvider,
-                )
+                ) ?: return
 
             if (fileUtils.existFile(openGraphImage)) {
                 logger.info { "Open graph image file exists" }

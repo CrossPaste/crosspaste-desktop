@@ -18,7 +18,7 @@ class GeneralSecureStoreTest {
 
     private val serializer = SecureKeyPairSerializer()
 
-    private fun createStore(): Pair<GeneralSecureStore, MemorySecureIO> {
+    private suspend fun createStore(): Pair<GeneralSecureStore, MemorySecureIO> {
         val keyPair = generateSecureKeyPair()
         val secureIO = MemorySecureIO()
         val store = GeneralSecureStore(keyPair, serializer, secureIO)
@@ -26,12 +26,13 @@ class GeneralSecureStoreTest {
     }
 
     @Test
-    fun `secureKeyPair is accessible`() {
-        val (store, _) = createStore()
-        assertNotNull(store.secureKeyPair)
-        assertNotNull(store.secureKeyPair.signKeyPair)
-        assertNotNull(store.secureKeyPair.cryptKeyPair)
-    }
+    fun `secureKeyPair is accessible`() =
+        runBlocking {
+            val (store, _) = createStore()
+            assertNotNull(store.secureKeyPair)
+            assertNotNull(store.secureKeyPair.signKeyPair)
+            assertNotNull(store.secureKeyPair.cryptKeyPair)
+        }
 
     @Test
     fun `saveCryptPublicKey stores key`() =

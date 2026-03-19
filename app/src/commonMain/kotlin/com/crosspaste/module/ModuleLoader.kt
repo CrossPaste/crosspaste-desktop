@@ -6,6 +6,7 @@ import com.crosspaste.utils.CodecsUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.Loader
 import com.crosspaste.utils.RetryUtils
+import com.crosspaste.utils.sha256
 import okio.Path
 
 interface ModuleLoader : Loader<ModuleLoaderConfig, Boolean> {

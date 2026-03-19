@@ -14,6 +14,7 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteRtf
 import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.extension

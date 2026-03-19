@@ -3,6 +3,7 @@ package com.crosspaste.paste.plugin.process
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.clear
 import com.crosspaste.path.UserDataPathProvider
 
 class DistinctPlugin(

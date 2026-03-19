@@ -8,6 +8,7 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.clear
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter

@@ -13,6 +13,8 @@ import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.getAppFileType
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.FilePullResult

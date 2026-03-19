@@ -26,6 +26,7 @@ import coil3.size.Precision
 import com.crosspaste.image.coil.GenerateImageItem
 import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.item.getRenderingFilePath
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteUrlIcon
@@ -54,7 +55,7 @@ fun PasteDataScope.UrlSidePreviewView() {
                 pasteData.getPasteCoordinate(),
                 userDataPathProvider,
             )
-        }
+        } ?: return
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val density = LocalDensity.current

@@ -41,6 +41,8 @@ import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteImages
+import com.crosspaste.paste.item.getFilePaths
+import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.ImageFileFormat

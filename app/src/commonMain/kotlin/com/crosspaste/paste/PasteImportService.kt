@@ -6,7 +6,10 @@ import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.bindItems
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.bindItem
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getCodecsUtils
@@ -141,8 +144,8 @@ class PasteImportService(
             val pasteAppearItem = pasteData.pasteAppearItem
             val pasteCollection = pasteData.pasteCollection
 
-            val newPasteAppearItem = pasteAppearItem?.bind(pasteCoordinate)
-            val newPasteCollection = pasteCollection.bind(pasteCoordinate)
+            val newPasteAppearItem = pasteAppearItem?.bindItem(pasteCoordinate)
+            val newPasteCollection = pasteCollection.bindItems(pasteCoordinate)
 
             val importPasteData =
                 pasteData.copy(

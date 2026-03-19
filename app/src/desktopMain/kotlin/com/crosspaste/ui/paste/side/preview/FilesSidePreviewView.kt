@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.item.getFilePaths
+import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.CountBadgeAuto
 import com.crosspaste.ui.base.MultiFileIcon
