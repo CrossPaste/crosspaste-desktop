@@ -48,7 +48,8 @@ class SerializerTest {
         assertEquals(textPasteItem.text, newTextPasteItem.text)
         assertEquals(textPasteItem.hash, newTextPasteItem.hash)
         assertEquals(textPasteItem.identifiers, newTextPasteItem.identifiers)
-        assertEquals(pasteData.pasteSearchContent, newPasteData.pasteSearchContent)
+        // pasteSearchContent is transient and not serialized; deserializer sets it to null
+        assertEquals(null, newPasteData.pasteSearchContent)
         assertEquals(pasteData.pasteType, newPasteData.pasteType)
         assertEquals(pasteData.hash, newPasteData.hash)
         assertEquals(PasteState.LOADING, newPasteData.pasteState)

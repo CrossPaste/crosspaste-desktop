@@ -10,7 +10,7 @@ import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.clear
 import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.extractSearchContent
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
@@ -26,6 +26,7 @@ import kotlinx.coroutines.withContext
 class SqlPasteDao(
     private val appInfo: AppInfo,
     private val database: Database,
+    private val pasteItemReader: PasteItemReader,
     private val searchContentService: SearchContentService,
     private val taskSubmitter: TaskSubmitter,
     private val userDataPathProvider: UserDataPathProvider,
@@ -117,7 +118,7 @@ class SqlPasteDao(
                     pasteData.createTime,
                     searchContentService.createSearchContent(
                         pasteData.source,
-                        pasteData.pasteAppearItem?.extractSearchContent(),
+                        pasteData.pasteAppearItem?.let { pasteItemReader.getSearchContent(it) },
                     ),
                     (pasteState ?: pasteData.pasteState).toLong(),
                     pasteData.remote,
@@ -133,7 +134,7 @@ class SqlPasteDao(
                 pasteData.pasteCollection.toJson(),
                 searchContentService.createSearchContent(
                     pasteData.source,
-                    pasteData.pasteAppearItem?.extractSearchContent(),
+                    pasteData.pasteAppearItem?.let { pasteItemReader.getSearchContent(it) },
                 ),
                 pasteData.id,
             )

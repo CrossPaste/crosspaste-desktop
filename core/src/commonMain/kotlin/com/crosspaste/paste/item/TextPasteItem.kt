@@ -32,10 +32,6 @@ class TextPasteItem(
 
     override fun getPasteType(): PasteType = PasteType.TEXT_TYPE
 
-    override fun getSearchContent(): String = text.lowercase()
-
-    override fun getSummary(): String = text
-
     override fun copy(extraInfo: JsonObject?): TextPasteItem =
         createTextPasteItem(
             identifiers = identifiers,

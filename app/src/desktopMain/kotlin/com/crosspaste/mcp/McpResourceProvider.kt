@@ -1,6 +1,7 @@
 package com.crosspaste.mcp
 
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
@@ -12,6 +13,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
 
 class McpResourceProvider(
     private val pasteDao: PasteDao,
+    private val pasteDataHelper: PasteDataHelper,
 ) {
 
     fun registerResources(server: Server) {
@@ -118,7 +120,7 @@ class McpResourceProvider(
                 }
             }
             else -> {
-                appendLine(pasteData.getSummary("Loading...", "Unknown"))
+                appendLine(pasteDataHelper.getSummary(pasteData, "Loading...", "Unknown"))
             }
         }
     }

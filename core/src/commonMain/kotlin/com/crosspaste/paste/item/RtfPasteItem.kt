@@ -31,10 +31,6 @@ class RtfPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getText(): String = rtf
-
-    override fun getHtml(): String = ""
-
     override fun getBackgroundColor(): Int =
         extraInfo?.let { json ->
             runCatching {
@@ -52,10 +48,6 @@ class RtfPasteItem(
         )
 
     override fun getPasteType(): PasteType = PasteType.RTF_TYPE
-
-    override fun getSearchContent(): String = rtf.lowercase()
-
-    override fun getSummary(): String = rtf
 
     override fun isValid(): Boolean =
         hash.isNotEmpty() &&

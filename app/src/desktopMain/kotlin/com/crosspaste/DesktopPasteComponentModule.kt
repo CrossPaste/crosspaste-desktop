@@ -17,6 +17,7 @@ import com.crosspaste.paste.DesktopSourceExclusionService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.GuidePasteDataService
+import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
 import com.crosspaste.paste.PasteImportParamFactory
@@ -28,6 +29,8 @@ import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.paste.getDesktopPasteboardService
+import com.crosspaste.paste.item.DefaultPasteItemReader
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.plugin.process.DistinctPlugin
 import com.crosspaste.paste.plugin.process.FileToUrlPlugin
@@ -102,11 +105,12 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 currentPaste = get(),
                 database = get(),
                 pasteDao = get(),
+                pasteItemReader = get(),
                 pasteProcessPlugins =
                     listOf(
                         RemoveInvalidPlugin,
                         DistinctPlugin(get()),
-                        GenerateTextPlugin,
+                        GenerateTextPlugin(get()),
                         GenerateUrlPlugin,
                         TextToColorPlugin,
                         FilesToImagesPlugin(get()),
@@ -121,7 +125,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
             )
         }
         single<GenerateImageService> { GenerateImageService() }
-        single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get()) }
+        single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get(), get()) }
         single<DesktopSourceExclusionService> { DesktopSourceExclusionService(get()) }
         single<PasteboardService> {
             if (headless) {
@@ -144,8 +148,10 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }
         single<PasteExportService> { PasteExportService(get(), get(), get()) }
         single<PasteImportParamFactory<Path>> { DesktopPasteImportParamFactory() }
-        single<PasteImportService> { PasteImportService(get(), get(), get(), get()) }
+        single<PasteImportService> { PasteImportService(get(), get(), get(), get(), get()) }
         single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
+        single<PasteItemReader> { DefaultPasteItemReader() }
+        single<PasteDataHelper> { PasteDataHelper(get()) }
         single<SearchContentService> { DesktopSearchContentService() }
         single<TaskExecutor> {
             TaskExecutor(
@@ -196,6 +202,6 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
             )
         }
         single<UpdatePasteItemHelper> {
-            UpdatePasteItemHelper(get(), get())
+            UpdatePasteItemHelper(get(), get(), get())
         }
     }

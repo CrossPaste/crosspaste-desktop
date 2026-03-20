@@ -31,8 +31,6 @@ class HtmlPasteItem(
         extraInfo = getExtraInfoFromJson(jsonObject),
     )
 
-    override fun getText(): String = html
-
     override fun getBackgroundColor(): Int =
         extraInfo?.let { json ->
             runCatching {
@@ -48,10 +46,6 @@ class HtmlPasteItem(
         )
 
     override fun getPasteType(): PasteType = PasteType.HTML_TYPE
-
-    override fun getSearchContent(): String = getText()
-
-    override fun getSummary(): String = getText()
 
     override fun isValid(): Boolean =
         hash.isNotEmpty() &&

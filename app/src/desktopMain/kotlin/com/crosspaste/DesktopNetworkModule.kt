@@ -46,8 +46,8 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
     module {
         single<ExceptionHandler> { DesktopExceptionHandler() }
         single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
-        single<McpResourceProvider> { McpResourceProvider(get()) }
-        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get()) }
+        single<McpResourceProvider> { McpResourceProvider(get(), get()) }
+        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get(), get(), get()) }
         single<McpServer> {
             DesktopMcpServer(
                 mcpPort = (get<DesktopConfigManager>().getCurrentConfig()).mcpServerPort,

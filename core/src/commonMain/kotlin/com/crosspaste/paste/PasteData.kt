@@ -104,16 +104,6 @@ data class PasteData(
                 pasteState.toInt(),
                 remote,
             )
-
-        fun buildRawSearchContent(
-            source: String?,
-            pasteItemSearchContent: String?,
-        ): String? =
-            source?.let {
-                pasteItemSearchContent?.let {
-                    "${source.lowercase()} $pasteItemSearchContent"
-                } ?: source.lowercase()
-            } ?: pasteItemSearchContent
     }
 
     fun getType(): PasteType = PasteType.fromType(pasteType)
@@ -173,39 +163,6 @@ data class PasteData(
 
     fun getPasteCoordinate(id: Long? = null): PasteCoordinate =
         PasteCoordinate(id ?: this.id, appInstanceId, createTime)
-
-    fun getSummary(
-        loading: String,
-        unknown: String,
-    ): String =
-        if (this.pasteState == PasteState.LOADING) {
-            loading
-        } else {
-            val type = PasteType.fromType(this.pasteType)
-            when (type) {
-                PasteType.TEXT_TYPE,
-                PasteType.COLOR_TYPE,
-                PasteType.URL_TYPE,
-                PasteType.FILE_TYPE,
-                PasteType.IMAGE_TYPE,
-                -> {
-                    this.pasteAppearItem?.getSummary() ?: unknown
-                }
-                PasteType.HTML_TYPE,
-                PasteType.RTF_TYPE,
-                -> {
-                    getPasteAppearItems().firstOrNull { it is PasteText }?.let {
-                        val pasteText = it as PasteText
-                        pasteText.text.trim()
-                    } ?: run {
-                        pasteAppearItem?.getSummary() ?: unknown
-                    }
-                }
-                else -> {
-                    unknown
-                }
-            }
-        }
 
     fun toJson(): String =
         buildJsonObject {

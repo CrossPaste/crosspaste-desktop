@@ -6,6 +6,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
@@ -19,6 +20,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteColor
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
@@ -48,6 +50,8 @@ import okio.Path.Companion.toPath
 class McpToolProvider(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
+    private val pasteDataHelper: PasteDataHelper,
+    private val pasteItemReader: PasteItemReader,
     private val pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
 ) {
@@ -147,7 +151,7 @@ class McpToolProvider(
                             appendLine("Favorite: ${item.favorite}")
                             appendLine("Size: ${item.size} bytes")
                             appendLine("Created: ${item.createTime}")
-                            appendLine("Summary: ${item.getSummary("Loading...", "Unknown")}")
+                            appendLine("Summary: ${pasteDataHelper.getSummary(item, "Loading...", "Unknown")}")
                             appendLine()
                         }
                     }
@@ -497,11 +501,13 @@ class McpToolProvider(
                 if (text != null) {
                     sb.appendLine((text as PasteText).text)
                 } else {
-                    sb.appendLine(pasteData.pasteAppearItem?.getSummary() ?: "(no text representation)")
+                    val summary = pasteData.pasteAppearItem?.let { pasteItemReader.getSummary(it) }
+                    sb.appendLine(summary?.ifEmpty { null } ?: "(no text representation)")
                 }
             }
             else -> {
-                sb.appendLine(pasteData.pasteAppearItem?.getSummary() ?: "(unknown content)")
+                val summary = pasteData.pasteAppearItem?.let { pasteItemReader.getSummary(it) }
+                sb.appendLine(summary?.ifEmpty { null } ?: "(unknown content)")
             }
         }
     }

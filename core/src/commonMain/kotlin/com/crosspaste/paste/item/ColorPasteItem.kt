@@ -32,10 +32,6 @@ class ColorPasteItem(
 
     override fun getPasteType(): PasteType = PasteType.COLOR_TYPE
 
-    override fun getSearchContent(): String = toHexString()
-
-    override fun getSummary(): String = toHexString()
-
     override fun copy(extraInfo: JsonObject?): ColorPasteItem =
         createColorPasteItem(
             identifiers = identifiers,
