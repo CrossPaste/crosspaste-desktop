@@ -2,6 +2,7 @@ package com.crosspaste.paste.plugin.process
 
 import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
 import com.crosspaste.paste.item.PasteItem
@@ -16,18 +17,21 @@ class GenerateTextPluginTest {
     @Suppress("unused")
     private val jsonUtils = getJsonUtils()
 
+    private val pasteItemReader = DefaultPasteItemReader()
+    private val plugin = GenerateTextPlugin(pasteItemReader)
+
     private val coord = PasteCoordinate(id = 1L, appInstanceId = "test")
 
     @Test
     fun `empty list returns empty`() {
-        val result = GenerateTextPlugin.process(coord, emptyList(), null)
+        val result = plugin.process(coord, emptyList(), null)
         assertTrue(result.isEmpty())
     }
 
     @Test
     fun `list with text only returns unchanged`() {
         val textItem = createTextPasteItem(text = "hello")
-        val result = GenerateTextPlugin.process(coord, listOf(textItem), null)
+        val result = plugin.process(coord, listOf(textItem), null)
         assertEquals(1, result.size)
         assertTrue(result[0] is TextPasteItem)
     }
@@ -36,7 +40,7 @@ class GenerateTextPluginTest {
     fun `html without text generates text item`() {
         val htmlItem = createHtmlPasteItem(html = "<p>hello world</p>")
         val items: List<PasteItem> = listOf(htmlItem)
-        val result = GenerateTextPlugin.process(coord, items, null)
+        val result = plugin.process(coord, items, null)
         assertEquals(2, result.size)
         assertTrue(result.any { it is HtmlPasteItem })
         assertTrue(result.any { it is TextPasteItem })
@@ -47,7 +51,7 @@ class GenerateTextPluginTest {
         val htmlItem = createHtmlPasteItem(html = "<p>hello</p>")
         val textItem = createTextPasteItem(text = "existing")
         val items: List<PasteItem> = listOf(htmlItem, textItem)
-        val result = GenerateTextPlugin.process(coord, items, null)
+        val result = plugin.process(coord, items, null)
         assertEquals(2, result.size)
         // No new text item added
         assertEquals(1, result.count { it is TextPasteItem })
@@ -56,7 +60,7 @@ class GenerateTextPluginTest {
     @Test
     fun `text-only list returns unchanged`() {
         val textItem = createTextPasteItem(text = "plain text")
-        val result = GenerateTextPlugin.process(coord, listOf(textItem), null)
+        val result = plugin.process(coord, listOf(textItem), null)
         assertEquals(1, result.size)
         assertTrue(result[0] is TextPasteItem)
     }
@@ -65,7 +69,7 @@ class GenerateTextPluginTest {
     fun `generated text from html has content`() {
         val htmlItem = createHtmlPasteItem(html = "<b>bold text</b>")
         val items: List<PasteItem> = listOf(htmlItem)
-        val result = GenerateTextPlugin.process(coord, items, null)
+        val result = plugin.process(coord, items, null)
         val textItem = result.filterIsInstance<TextPasteItem>().first()
         assertTrue(textItem.text.isNotEmpty())
     }

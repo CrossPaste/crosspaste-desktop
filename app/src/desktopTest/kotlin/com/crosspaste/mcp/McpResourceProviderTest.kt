@@ -6,11 +6,13 @@ import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.SqlPasteDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
+import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopUrlTypePlugin
 import com.crosspaste.path.UserDataPathProvider
@@ -62,16 +64,21 @@ class McpResourceProviderTest {
 
     private val database = createDatabase(TestDriverFactory())
 
+    private val pasteItemReader = DefaultPasteItemReader()
+
     private val pasteDao =
         SqlPasteDao(
             appInfo = appInfo,
             database = database,
+            pasteItemReader = pasteItemReader,
             searchContentService = searchContentService,
             taskSubmitter = taskSubmitter,
             userDataPathProvider = userDataPathProvider,
         )
 
-    private val provider = McpResourceProvider(pasteDao)
+    private val pasteDataHelper = PasteDataHelper(pasteItemReader)
+
+    private val provider = McpResourceProvider(pasteDao, pasteDataHelper)
 
     private fun createServer(): Server {
         val server =

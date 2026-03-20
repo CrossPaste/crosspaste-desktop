@@ -37,10 +37,6 @@ class UrlPasteItem(
 
     override fun getPasteType(): PasteType = PasteType.URL_TYPE
 
-    override fun getSearchContent(): String = url.lowercase()
-
-    override fun getSummary(): String = url
-
     override fun copy(extraInfo: JsonObject?): UrlPasteItem =
         createUrlPasteItem(
             identifiers = identifiers,

@@ -2,7 +2,9 @@ package com.crosspaste.cli.commands
 
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.PasteItemReader
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.ProgramResult
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -35,6 +37,7 @@ inline fun <reified T> CliktCommand.getDao(): T = KoinPlatform.getKoin().get()
 
 fun PasteData.toSummaryDto(): PasteSummaryDto {
     val pasteTagDao = KoinPlatform.getKoin().get<PasteTagDao>()
+    val pasteDataHelper = KoinPlatform.getKoin().get<PasteDataHelper>()
     return PasteSummaryDto(
         id = id,
         typeName = getTypeName(),
@@ -42,13 +45,14 @@ fun PasteData.toSummaryDto(): PasteSummaryDto {
         size = size,
         tagged = pasteTagDao.getPasteTagsBlock(id).isNotEmpty(),
         createTime = createTime,
-        preview = getSummary("Loading...", ""),
+        preview = pasteDataHelper.getSummary(this, "Loading...", ""),
         remote = remote,
     )
 }
 
 fun PasteData.toDetailResponse(): PasteDetailResponse {
     val pasteTagDao = KoinPlatform.getKoin().get<PasteTagDao>()
+    val pasteItemReader = KoinPlatform.getKoin().get<PasteItemReader>()
     return PasteDetailResponse(
         id = id,
         typeName = getTypeName(),
@@ -58,7 +62,7 @@ fun PasteData.toDetailResponse(): PasteDetailResponse {
         createTime = createTime,
         remote = remote,
         hash = hash,
-        content = pasteAppearItem?.getSummary(),
+        content = pasteAppearItem?.let { pasteItemReader.getSummary(it) },
     )
 }
 

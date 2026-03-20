@@ -7,10 +7,12 @@ import com.crosspaste.db.paste.SqlPasteDao
 import com.crosspaste.db.paste.SqlPasteTagDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
@@ -63,10 +65,13 @@ class McpToolProviderTest {
 
     private val database = createDatabase(TestDriverFactory())
 
+    private val pasteItemReader = DefaultPasteItemReader()
+
     private val pasteDao =
         SqlPasteDao(
             appInfo = appInfo,
             database = database,
+            pasteItemReader = pasteItemReader,
             searchContentService = searchContentService,
             taskSubmitter = taskSubmitter,
             userDataPathProvider = userDataPathProvider,
@@ -74,10 +79,14 @@ class McpToolProviderTest {
 
     private val pasteTagDao = SqlPasteTagDao(database)
 
+    private val pasteDataHelper = PasteDataHelper(pasteItemReader)
+
     private val provider =
         McpToolProvider(
             appInfo = appInfo,
             pasteDao = pasteDao,
+            pasteDataHelper = pasteDataHelper,
+            pasteItemReader = pasteItemReader,
             pasteTagDao = pasteTagDao,
             searchContentService = searchContentService,
         )

@@ -64,16 +64,6 @@ data class ImagesPasteItem(
 
     override fun getPasteType(): PasteType = PasteType.IMAGE_TYPE
 
-    override fun getSearchContent(): String =
-        fileInfoTreeMap.keys.joinToString(separator = " ") {
-            it.lowercase()
-        }
-
-    override fun getSummary(): String =
-        relativePathList.joinToString(separator = ", ") {
-            it.substringAfterLast("/")
-        }
-
     override fun applyRenameMap(renameMap: Map<String, String>): ImagesPasteItem {
         val (newRelativePathList, newFileInfoTreeMap) = computeRenamedFileData(renameMap)
         return copy(relativePathList = newRelativePathList, fileInfoTreeMap = newFileInfoTreeMap)

@@ -10,6 +10,7 @@ import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.task.TaskSubmitter
@@ -55,9 +56,12 @@ class PasteDaoTest {
 
     private val database = createDatabase(TestDriverFactory())
 
+    private val pasteItemReader = DefaultPasteItemReader()
+
     private val pasteDao = SqlPasteDao(
         appInfo = appInfo,
         database = database,
+        pasteItemReader = pasteItemReader,
         searchContentService = searchContentService,
         taskSubmitter = taskSubmitter,
         userDataPathProvider = userDataPathProvider,

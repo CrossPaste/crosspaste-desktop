@@ -9,6 +9,7 @@ import kotlinx.serialization.json.put
 
 class UpdatePasteItemHelper(
     val pasteDao: PasteDao,
+    val pasteItemReader: PasteItemReader,
     val searchContentService: SearchContentService,
 ) {
     suspend fun updateColor(
@@ -29,7 +30,7 @@ class UpdatePasteItemHelper(
                 pasteSearchContent =
                     searchContentService.createSearchContent(
                         pasteData.source,
-                        newPasteItem.getSearchContent(),
+                        pasteItemReader.getSearchContent(newPasteItem),
                     ),
             ).map {
                 newPasteItem
@@ -58,7 +59,7 @@ class UpdatePasteItemHelper(
                 pasteSearchContent =
                     searchContentService.createSearchContent(
                         pasteData.source,
-                        newPasteItem.getSearchContent(),
+                        pasteItemReader.getSearchContent(newPasteItem),
                     ),
                 addedSize = newPasteItem.size - htmlPasteItem.size,
             ).map {
@@ -79,7 +80,7 @@ class UpdatePasteItemHelper(
                 pasteSearchContent =
                     searchContentService.createSearchContent(
                         pasteData.source,
-                        newPasteItem.getSearchContent(),
+                        pasteItemReader.getSearchContent(newPasteItem),
                     ),
                 addedSize = newPasteItem.size - textPasteItem.size,
             ).map {
@@ -104,9 +105,9 @@ class UpdatePasteItemHelper(
                 pasteSearchContent =
                     searchContentService.createSearchContent(
                         pasteData.source,
-                        listOf(
+                        listOfNotNull(
                             title,
-                            newUrlPasteItem.getSearchContent(),
+                            pasteItemReader.getSearchContent(newUrlPasteItem),
                         ),
                     ),
                 addedSize = title.length.toLong(),
@@ -133,10 +134,10 @@ class UpdatePasteItemHelper(
                 pasteSearchContent =
                     searchContentService.createSearchContent(
                         pasteData.source,
-                        listOf(
+                        listOfNotNull(
                             name,
-                            newPasteItem.getSearchContent(),
-                        ).mapNotNull { it },
+                            pasteItemReader.getSearchContent(newPasteItem),
+                        ),
                     ),
                 addedSize = name.length.toLong(),
             ).map {

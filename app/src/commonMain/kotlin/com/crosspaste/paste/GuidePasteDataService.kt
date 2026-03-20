@@ -7,6 +7,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.utils.getCodecsUtils
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -20,6 +21,7 @@ abstract class GuidePasteDataService(
     private val appLaunchState: AppLaunchState,
     private val copywriter: GlobalCopywriter,
     private val pasteDao: PasteDao,
+    private val pasteItemReader: PasteItemReader,
     private val searchContentService: SearchContentService,
 ) {
 
@@ -62,7 +64,7 @@ abstract class GuidePasteDataService(
                                 pasteSearchContent =
                                     searchContentService.createSearchContent(
                                         pasteData.source,
-                                        pasteItem.getSearchContent(),
+                                        pasteItemReader.getSearchContent(pasteItem),
                                     ),
                                 addedSize = newPasteItem.size - oldSize,
                             )

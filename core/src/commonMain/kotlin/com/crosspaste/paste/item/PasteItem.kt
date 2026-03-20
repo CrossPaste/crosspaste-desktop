@@ -92,14 +92,10 @@ sealed interface PasteItem {
 
     fun getPasteType(): PasteType
 
-    fun getSearchContent(): String?
-
     fun getUserEditName(): String? =
         extraInfo?.let { extraInfo ->
             extraInfo[PasteItemProperties.NAME]?.jsonPrimitive?.content
         }
-
-    fun getSummary(): String
 
     fun getMarketingPath(): String? =
         extraInfo?.let { extraInfo ->

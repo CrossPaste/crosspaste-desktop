@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.truncatedPreviewHtml
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -25,6 +25,7 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteDataScope.HtmlSidePreviewView() {
     val copywriter = koinInject<GlobalCopywriter>()
+    val pasteItemReader = koinInject<PasteItemReader>()
     val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
 
     val backgroundColor by remember(pasteData.id) {
@@ -45,10 +46,12 @@ fun PasteDataScope.HtmlSidePreviewView() {
             MaterialTheme.colorScheme.background
         }
 
+    val charCount by remember(pasteData.id) { mutableStateOf(pasteItemReader.getText(htmlPasteItem).length) }
+
     SidePasteLayoutView(
         pasteBottomContent = {
             BottomGradient(
-                text = copywriter.getText("character_count", "${htmlPasteItem.getText().length}"),
+                text = copywriter.getText("character_count", "$charCount"),
                 backgroundColor = htmlBackground,
             )
         },
@@ -56,7 +59,7 @@ fun PasteDataScope.HtmlSidePreviewView() {
         val state = rememberRichTextState()
 
         LaunchedEffect(htmlPasteItem.hash) {
-            state.setHtml(htmlPasteItem.truncatedPreviewHtml)
+            pasteItemReader.getPreviewHtml(htmlPasteItem)?.let { state.setHtml(it) }
         }
         RichText(
             color = richTextColor,

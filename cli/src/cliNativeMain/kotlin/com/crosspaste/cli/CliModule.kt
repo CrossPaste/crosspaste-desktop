@@ -19,7 +19,10 @@ import com.crosspaste.db.sync.SqlSyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.task.SqlTaskDao
 import com.crosspaste.db.task.TaskDao
+import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.item.DefaultPasteItemReader
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
@@ -57,6 +60,8 @@ val cliDatabaseModule =
         single<Database> { createDatabase(get()) }
 
         // No-op services for CLI
+        single<PasteItemReader> { DefaultPasteItemReader() }
+        single<PasteDataHelper> { PasteDataHelper(get()) }
         single<SearchContentService> { NoOpSearchContentService() }
         single<TaskSubmitter> { NoOpTaskSubmitter() }
 
@@ -65,6 +70,7 @@ val cliDatabaseModule =
             SqlPasteDao(
                 appInfo = get(),
                 database = get(),
+                pasteItemReader = get(),
                 searchContentService = get(),
                 taskSubmitter = get(),
                 userDataPathProvider = get(),

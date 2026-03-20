@@ -9,6 +9,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createRtfPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getCodecsUtils
@@ -364,6 +365,6 @@ class PasteExportImportServiceTest {
             val restored = PasteData.fromJson(json)
             assertNotNull(restored)
             assertEquals(PasteType.TEXT_TYPE.type, restored.pasteType)
-            assertEquals("service export test", restored.pasteAppearItem?.getSummary())
+            assertEquals("service export test", (restored.pasteAppearItem as? PasteText)?.text)
         }
 }

@@ -97,6 +97,7 @@ class DesktopModule(
                 SqlPasteDao(
                     appInfo = get(),
                     database = get(),
+                    pasteItemReader = get(),
                     searchContentService = get(),
                     taskSubmitter = get(),
                     userDataPathProvider = get(),

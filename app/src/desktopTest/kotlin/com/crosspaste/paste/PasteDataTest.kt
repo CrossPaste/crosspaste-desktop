@@ -3,9 +3,9 @@ package com.crosspaste.paste
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.utils.DateUtils
-import com.crosspaste.utils.getJsonUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 
 class PasteDataTest {
 
-    private val jsonUtils = getJsonUtils()
+    private val pasteDataHelper = PasteDataHelper(DefaultPasteItemReader())
 
     private fun createTestPasteData(
         text: String = "test",
@@ -188,38 +188,37 @@ class PasteDataTest {
         assertEquals(100, coord.id)
     }
 
-    // --- getSummary ---
+    // --- getSummary (via PasteDataHelper) ---
 
     @Test
     fun `getSummary returns loading string when LOADING`() {
         val pd = createTestPasteData(pasteState = PasteState.LOADING)
-        assertEquals("Loading...", pd.getSummary("Loading...", "Unknown"))
+        assertEquals("Loading...", pasteDataHelper.getSummary(pd, "Loading...", "Unknown"))
     }
 
     @Test
     fun `getSummary returns text content for TEXT type`() {
         val pd = createTestPasteData(text = "hello world")
-        val summary = pd.getSummary("Loading...", "Unknown")
+        val summary = pasteDataHelper.getSummary(pd, "Loading...", "Unknown")
         assertEquals("hello world", summary)
     }
 
     @Test
-    fun `getSummary for HTML type prefers text item from collection`() {
+    fun `getSummary for HTML type extracts text from html`() {
         val htmlItem = createHtmlPasteItem(html = "<p>Hello</p>")
-        val textItem = createTextPasteItem(text = "Hello plain")
         val pd =
             PasteData(
                 appInstanceId = "test",
                 pasteAppearItem = htmlItem,
-                pasteCollection = PasteCollection(listOf(textItem)),
+                pasteCollection = PasteCollection(listOf()),
                 pasteType = PasteType.HTML_TYPE.type,
                 size = htmlItem.size,
                 hash = htmlItem.hash,
                 pasteState = PasteState.LOADED,
                 createTime = DateUtils.nowEpochMilliseconds(),
             )
-        val summary = pd.getSummary("Loading...", "Unknown")
-        assertEquals("Hello plain", summary)
+        val summary = pasteDataHelper.getSummary(pd, "Loading...", "Unknown")
+        assertTrue(summary.contains("Hello"))
     }
 
     // --- toJson / fromJson roundtrip ---
@@ -245,31 +244,5 @@ class PasteDataTest {
     @Test
     fun `fromJson returns null for empty json`() {
         assertNull(PasteData.fromJson("{}"))
-    }
-
-    // --- buildRawSearchContent ---
-
-    @Test
-    fun `buildRawSearchContent with both source and content`() {
-        val result = PasteData.buildRawSearchContent("Chrome", "hello")
-        assertEquals("chrome hello", result)
-    }
-
-    @Test
-    fun `buildRawSearchContent with source only`() {
-        val result = PasteData.buildRawSearchContent("Chrome", null)
-        assertEquals("chrome", result)
-    }
-
-    @Test
-    fun `buildRawSearchContent with content only`() {
-        val result = PasteData.buildRawSearchContent(null, "hello")
-        assertEquals("hello", result)
-    }
-
-    @Test
-    fun `buildRawSearchContent with both null`() {
-        val result = PasteData.buildRawSearchContent(null, null)
-        assertNull(result)
     }
 }

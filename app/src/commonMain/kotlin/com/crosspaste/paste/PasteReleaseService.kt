@@ -4,12 +4,11 @@ import com.crosspaste.Database
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.paste.bindItems
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemProperties
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.bindItem
-import com.crosspaste.paste.item.extractSearchContent
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskBuilder
@@ -27,6 +26,7 @@ class PasteReleaseService(
     private val currentPaste: CurrentPaste,
     private val database: Database,
     private val pasteDao: PasteDao,
+    private val pasteItemReader: PasteItemReader,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
     private val searchContentService: SearchContentService,
     private val taskSubmitter: TaskSubmitter,
@@ -105,7 +105,7 @@ class PasteReleaseService(
                         pasteSearchContent =
                             searchContentService.createSearchContent(
                                 pasteData.source,
-                                firstItem.extractSearchContent(),
+                                pasteItemReader.getSearchContent(firstItem),
                             ),
                         size = size,
                         hash = hash,

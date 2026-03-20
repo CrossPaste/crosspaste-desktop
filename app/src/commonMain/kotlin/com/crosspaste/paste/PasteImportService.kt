@@ -6,8 +6,8 @@ import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.paste.bindItems
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.bindItem
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
@@ -28,6 +28,7 @@ import okio.Path
 class PasteImportService(
     private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
+    private val pasteItemReader: PasteItemReader,
     private val searchContentService: SearchContentService,
     private val userDataPathProvider: UserDataPathProvider,
 ) {
@@ -155,7 +156,7 @@ class PasteImportService(
                     pasteSearchContent =
                         searchContentService.createSearchContent(
                             pasteData.source,
-                            newPasteAppearItem?.getSearchContent(),
+                            newPasteAppearItem?.let { pasteItemReader.getSearchContent(it) },
                         ),
                 )
 
