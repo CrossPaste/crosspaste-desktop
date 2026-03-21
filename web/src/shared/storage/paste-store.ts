@@ -82,6 +82,15 @@ export const PasteStore = {
     return items;
   },
 
+  /** Delete a single paste by hash */
+  async deleteByHash(hash: string): Promise<boolean> {
+    const db = await getDb();
+    const existing = await db.get(STORE_NAME, hash);
+    if (!existing) return false;
+    await db.delete(STORE_NAME, hash);
+    return true;
+  },
+
   /** Clear all stored pastes */
   async clear(): Promise<void> {
     const db = await getDb();

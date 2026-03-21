@@ -4,7 +4,7 @@ import { PasteCard } from "./PasteCard";
 import { EmptyState } from "./EmptyState";
 
 export function PasteGrid() {
-  const { items, loading, hasMore, loadMore } = usePasteList();
+  const { items, loading, hasMore, loadMore, deletePaste } = usePasteList();
   const observer = useRef<IntersectionObserver | null>(null);
 
   const lastItemRef = useCallback(
@@ -35,7 +35,7 @@ export function PasteGrid() {
           ref={index === items.length - 1 ? lastItemRef : undefined}
           style={{ breakInside: "avoid", marginBottom: "8px" }}
         >
-          <PasteCard data={item} />
+          <PasteCard data={item} onDelete={() => deletePaste(item.hash)} />
         </div>
       ))}
       {loading && (

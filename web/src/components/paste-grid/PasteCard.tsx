@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Copy, Trash2 } from "lucide-react";
 import type { PasteData } from "@/shared/models/paste-data";
 import { PasteType } from "@/shared/models/paste-item";
 import { PasteCardHeader } from "./PasteCardHeader";
@@ -9,6 +10,7 @@ import { FilePreview } from "./FilePreview";
 import { ColorPreview } from "./ColorPreview";
 import { HtmlPreview } from "./HtmlPreview";
 import { DesktopPrompt } from "./DesktopPrompt";
+import { useI18n } from "@/shared/i18n/use-i18n";
 import type {
   PasteItem,
   TextPasteItem,
@@ -25,6 +27,7 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface Props {
   data: PasteData;
+  onDelete?: () => void;
 }
 
 function renderPreview(item: PasteItem) {
@@ -48,8 +51,11 @@ function renderPreview(item: PasteItem) {
   }
 }
 
-export function PasteCard({ data }: Props) {
+export function PasteCard({ data, onDelete }: Props) {
+  const t = useI18n();
   const displayItem = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = useCallback(async () => {
     if (!displayItem) return;
@@ -95,10 +101,34 @@ export function PasteCard({ data }: Props) {
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      handleCopy();
+      const maxY = window.innerHeight - 90;
+      const maxX = window.innerWidth - 160;
+      setContextMenu({
+        x: Math.min(e.clientX, maxX),
+        y: Math.min(e.clientY, maxY),
+      });
     },
-    [handleCopy],
+    [],
   );
+
+  // Close context menu on click outside or Escape
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+    window.addEventListener("mousedown", handleClick);
+    window.addEventListener("keydown", handleEsc);
+    return () => {
+      window.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("keydown", handleEsc);
+    };
+  }, [contextMenu]);
 
   if (!displayItem) return null;
 
@@ -107,17 +137,51 @@ export function PasteCard({ data }: Props) {
   }
 
   return (
-    <div
-      onClick={handleCopy}
-      onContextMenu={handleContextMenu}
-      className="rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
-    >
-      <PasteCardHeader
-        pasteType={data.pasteType}
-        source={data.source}
-        receivedAt={data.receivedAt}
-      />
-      <div className="px-3 pb-3">{renderPreview(displayItem)}</div>
-    </div>
+    <>
+      <div
+        onClick={handleCopy}
+        onContextMenu={handleContextMenu}
+        className="rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
+      >
+        <PasteCardHeader
+          pasteType={data.pasteType}
+          source={data.source}
+          receivedAt={data.receivedAt}
+        />
+        <div className="px-3 pb-3">{renderPreview(displayItem)}</div>
+      </div>
+
+      {/* Right-click Context Menu */}
+      {contextMenu && (
+        <div
+          ref={menuRef}
+          className="fixed z-50 min-w-[140px] rounded-xl bg-m3-surface-bright shadow-lg border border-m3-outline-variant/20 py-1"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            onClick={() => {
+              setContextMenu(null);
+              handleCopy();
+            }}
+            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
+          >
+            <Copy size={16} className="text-m3-on-surface-variant" />
+            <span>{t("copy")}</span>
+          </button>
+          {onDelete && (
+            <button
+              onClick={() => {
+                setContextMenu(null);
+                onDelete();
+              }}
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-error hover:bg-m3-error-container/30 transition-colors"
+            >
+              <Trash2 size={16} />
+              <span>{t("delete")}</span>
+            </button>
+          )}
+        </div>
+      )}
+    </>
   );
 }

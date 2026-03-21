@@ -50,13 +50,17 @@ export function usePasteList() {
     busyRef.current = false;
   }, []);
 
+  const deletePaste = useCallback(async (hash: string) => {
+    await chrome.runtime.sendMessage({ type: "DELETE_PASTE", hash });
+  }, []);
+
   // Initial load
   useEffect(() => {
     loadMore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Listen for new paste notifications → full reload
+  // Listen for paste notifications → full reload
   useEffect(() => {
     const listener = (message: Record<string, unknown>) => {
       if (message.type === "PASTE_UPDATED") {
@@ -67,5 +71,5 @@ export function usePasteList() {
     return () => chrome.runtime.onMessage.removeListener(listener);
   }, [reload]);
 
-  return { items, loading, hasMore, loadMore };
+  return { items, loading, hasMore, loadMore, deletePaste };
 }

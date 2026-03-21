@@ -469,6 +469,15 @@ async function handleMessage(
       return { success: true };
     }
 
+    case "DELETE_PASTE": {
+      const hash = message.hash as string;
+      const deleted = await PasteStore.deleteByHash(hash);
+      if (deleted) {
+        broadcastToSidePanel({ type: "PASTE_UPDATED" });
+      }
+      return { success: deleted };
+    }
+
     default:
       return { error: "Unknown message type" };
   }
