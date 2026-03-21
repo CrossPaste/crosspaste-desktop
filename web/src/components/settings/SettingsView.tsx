@@ -19,8 +19,7 @@ import {
   getLanguageName,
 } from "@/shared/i18n/use-i18n";
 import { useTheme, type ThemeMode } from "@/shared/theme/use-theme";
-
-const APP_VERSION = "1.2.9";
+import { APP_VERSION } from "@/shared/app/version.generated";
 
 const LINKS = {
   github: "https://github.com/CrossPaste/crosspaste-desktop",

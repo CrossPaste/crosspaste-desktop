@@ -16,6 +16,32 @@ versionProperties.load(
 group = "com.crosspaste"
 version = versionProperties.getProperty("version")
 
+tasks.register("generateVersion") {
+    val versionFile =
+        project.projectDir
+            .toPath()
+            .parent
+            .resolve("app/src/desktopMain/resources/crosspaste-version.properties")
+            .toFile()
+    val outputFile = project.file("src/shared/app/version.generated.ts")
+
+    inputs.file(versionFile)
+    outputs.file(outputFile)
+
+    doLast {
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(
+            """
+            |// Auto-generated from app/src/desktopMain/resources/crosspaste-version.properties
+            |// Do not edit manually — run ./gradlew :web:generateVersion to regenerate
+            |
+            |export const APP_VERSION = "${versionProperties.getProperty("version")}";
+            |
+            """.trimMargin(),
+        )
+    }
+}
+
 tasks.register("generateI18n") {
     val i18nDir =
         project.projectDir
@@ -78,7 +104,7 @@ tasks.register<Exec>("npmInstall") {
 }
 
 tasks.register<Exec>("npmBuild") {
-    dependsOn("npmInstall", "generateI18n", ":core:jsBrowserProductionLibraryDistribution")
+    dependsOn("npmInstall", "generateVersion", "generateI18n", ":core:jsBrowserProductionLibraryDistribution")
     workingDir = projectDir
     commandLine("npm", "run", "build")
     inputs.dir("src")
