@@ -27,6 +27,7 @@ tasks.register<Exec>("npmBuild") {
     workingDir = projectDir
     commandLine("npm", "run", "build")
     inputs.dir("src")
+    inputs.dir("public")
     inputs.file("manifest.json")
     inputs.file("vite.config.ts")
     inputs.file("tsconfig.json")
