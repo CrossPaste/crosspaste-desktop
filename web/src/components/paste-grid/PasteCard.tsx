@@ -27,6 +27,7 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface Props {
   data: PasteData;
+  onClick?: () => void;
   onDelete?: () => void;
 }
 
@@ -51,7 +52,7 @@ function renderPreview(item: PasteItem) {
   }
 }
 
-export function PasteCard({ data, onDelete }: Props) {
+export function PasteCard({ data, onClick, onDelete }: Props) {
   const t = useI18n();
   const displayItem = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -139,7 +140,7 @@ export function PasteCard({ data, onDelete }: Props) {
   return (
     <>
       <div
-        onClick={handleCopy}
+        onClick={onClick}
         onContextMenu={handleContextMenu}
         className="rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
       >

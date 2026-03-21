@@ -17,6 +17,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "Enter the 6-digit pairing code shown on the desktop app.",
     re_enter: "Re-enter",
     verification_failed_retry: "Verification failed, please try again",
+    time: "Time",
   },
   de: {
     clipboard: "Zwischenablage",
@@ -32,6 +33,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "Erneut eingeben",
     verification_failed_retry:
       "Überprüfung fehlgeschlagen, bitte erneut versuchen",
+    time: "Zeit",
   },
   es: {
     clipboard: "Portapapeles",
@@ -47,6 +49,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "Reingresar",
     verification_failed_retry:
       "Verificación fallida, por favor intente de nuevo",
+    time: "Hora",
   },
   fr: {
     clipboard: "Presse-papiers",
@@ -62,6 +65,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "Re-saisir",
     verification_failed_retry:
       "Vérification échouée, veuillez réessayer",
+    time: "Heure",
   },
   ja: {
     clipboard: "クリップボード",
@@ -76,6 +80,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "デスクトップアプリに表示されている6桁のペアリングコードを入力してください。",
     re_enter: "再入力",
     verification_failed_retry: "認証に失敗しました。もう一度お試しください",
+    time: "時間",
   },
   ko: {
     clipboard: "클립보드",
@@ -89,6 +94,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "데스크톱 앱에 표시된 6자리 페어링 코드를 입력하세요.",
     re_enter: "다시 입력",
     verification_failed_retry: "인증 실패, 다시 시도해주세요",
+    time: "시간",
   },
   zh: {
     clipboard: "剪贴板",
@@ -101,6 +107,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_pairing_code_desc: "请输入桌面端显示的 6 位配对码。",
     re_enter: "重新输入",
     verification_failed_retry: "验证失败，请重新输入",
+    time: "时间",
   },
   zh_hant: {
     clipboard: "剪貼簿",
@@ -113,5 +120,6 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_pairing_code_desc: "請輸入桌面端顯示的 6 位配對碼。",
     re_enter: "重新輸入",
     verification_failed_retry: "驗證失敗，請重新輸入",
+    time: "時間",
   },
 };
