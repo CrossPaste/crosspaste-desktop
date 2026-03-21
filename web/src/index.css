@@ -3,6 +3,7 @@
 @theme {
   /* M3 Surface */
   --color-m3-surface: #FFFFFF;
+  --color-m3-surface-bright: #FFFFFF;
   --color-m3-surface-container: #F6F7F8;
   --color-m3-surface-container-high: #F0F0F0;
   --color-m3-on-surface: #1A1A1A;
@@ -32,6 +33,7 @@
 
 .dark {
   --color-m3-surface: #0A0A0A;
+  --color-m3-surface-bright: #1A1A1A;
   --color-m3-surface-container: #171717;
   --color-m3-surface-container-high: #1F1F1F;
   --color-m3-on-surface: #FAFAFA;
