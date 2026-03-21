@@ -1,4 +1,5 @@
 import { Clipboard, MonitorSmartphone } from "lucide-react";
+import { useI18n } from "@/shared/i18n/use-i18n";
 
 type Tab = "devices" | "clipboard";
 
@@ -7,16 +8,18 @@ interface Props {
   onTabChange: (tab: Tab) => void;
 }
 
-const tabs: { id: Tab; label: string; Icon: typeof Clipboard }[] = [
-  { id: "clipboard", label: "剪贴板", Icon: Clipboard },
-  { id: "devices", label: "设备", Icon: MonitorSmartphone },
+const tabs: { id: Tab; labelKey: string; Icon: typeof Clipboard }[] = [
+  { id: "clipboard", labelKey: "clipboard", Icon: Clipboard },
+  { id: "devices", labelKey: "devices", Icon: MonitorSmartphone },
 ];
 
 export function Header({ activeTab, onTabChange }: Props) {
+  const t = useI18n();
+
   return (
     <header className="flex items-center justify-center px-4 py-3 bg-m3-surface">
       <div className="flex items-center gap-2 rounded-full bg-m3-surface-container p-1">
-        {tabs.map(({ id, label, Icon }) => {
+        {tabs.map(({ id, labelKey, Icon }) => {
           const isActive = activeTab === id;
           return (
             <button
@@ -29,7 +32,7 @@ export function Header({ activeTab, onTabChange }: Props) {
               }`}
             >
               <Icon size={18} />
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
             </button>
           );
         })}

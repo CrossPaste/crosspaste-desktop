@@ -1,5 +1,6 @@
 import { RefreshCw } from "lucide-react";
 import { DeviceCard } from "./DeviceCard";
+import { useI18n } from "@/shared/i18n/use-i18n";
 import type { SyncInfo } from "@/shared/models/sync-info";
 
 interface Props {
@@ -17,11 +18,13 @@ export function NearbyDevicesSection({
   onLink,
   refreshing,
 }: Props) {
+  const t = useI18n();
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-base font-semibold text-m3-on-surface">
-          附近的设备
+          {t("nearby_devices")}
         </span>
         <button
           onClick={onRefresh}
@@ -44,7 +47,7 @@ export function NearbyDevicesSection({
       ))}
       {devices.length === 0 && (
         <div className="flex items-center justify-center py-8 text-sm text-m3-on-surface-variant">
-          未发现附近设备
+          {t("nearby_devices_not_found")}
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useI18n } from "@/shared/i18n/use-i18n";
 
 interface Props {
   onComplete: (token: number) => void;
@@ -8,6 +9,7 @@ interface Props {
 const DIGIT_COUNT = 6;
 
 export function TokenInput({ onComplete, disabled }: Props) {
+  const t = useI18n();
   const [digits, setDigits] = useState<string[]>(Array(DIGIT_COUNT).fill(""));
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -76,7 +78,7 @@ export function TokenInput({ onComplete, disabled }: Props) {
           onClick={reset}
           className="text-xs text-m3-primary hover:underline"
         >
-          重新输入
+          {t("re_enter")}
         </button>
       )}
     </div>

@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type { SyncInfo } from "@/shared/models/sync-info";
+import { useI18n } from "@/shared/i18n/use-i18n";
 
 type DeviceStatus = "synced" | "error" | "nearby";
 
@@ -53,6 +54,7 @@ export function DeviceCard({
   onEditNote,
   onRemove,
 }: Props) {
+  const t = useI18n();
   const { endpointInfo } = syncInfo;
   const platformName = endpointInfo.platform.name;
   const IconComponent = PLATFORM_ICON[platformName] ?? Monitor;
@@ -66,7 +68,6 @@ export function DeviceCard({
   const handleContextMenu = (e: React.MouseEvent) => {
     if (!hasContextMenu) return;
     e.preventDefault();
-    // Clamp position to avoid menu going off-screen
     const maxY = window.innerHeight - 100;
     const maxX = window.innerWidth - 180;
     setContextMenu({
@@ -128,7 +129,7 @@ export function DeviceCard({
           <div className="flex items-center gap-1 rounded-md bg-m3-success-container px-2 py-1 shrink-0">
             <RefreshCw size={10} className="text-m3-success" />
             <span className="text-[10px] font-medium text-m3-success leading-none">
-              同步正常
+              {t("sync_status_synced")}
             </span>
           </div>
         )}
@@ -138,7 +139,7 @@ export function DeviceCard({
             <div className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1">
               <CircleX size={10} className="text-m3-error" />
               <span className="text-[10px] font-medium text-m3-error leading-none">
-                连接失败
+                {t("sync_status_disconnected")}
               </span>
             </div>
             {onRetry && (
@@ -190,7 +191,7 @@ export function DeviceCard({
               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
             >
               <Edit size={16} className="text-m3-on-surface-variant" />
-              <span>添加备注</span>
+              <span>{t("add_note")}</span>
             </button>
           )}
           {onRemove && (
@@ -202,7 +203,7 @@ export function DeviceCard({
               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-error hover:bg-m3-error-container/30 transition-colors"
             >
               <Trash2 size={16} />
-              <span>删除设备</span>
+              <span>{t("remove_device")}</span>
             </button>
           )}
         </div>

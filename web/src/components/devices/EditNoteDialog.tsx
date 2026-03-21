@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Edit } from "lucide-react";
+import { useI18n } from "@/shared/i18n/use-i18n";
 
 interface Props {
   deviceName: string;
@@ -14,6 +15,7 @@ export function EditNoteDialog({
   onConfirm,
   onClose,
 }: Props) {
+  const t = useI18n();
   const [note, setNote] = useState(currentNote);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,7 +39,7 @@ export function EditNoteDialog({
           <div className="flex items-center gap-3">
             <Edit size={18} className="text-m3-primary" />
             <span className="text-lg font-semibold text-m3-on-surface">
-              设备备注
+              {t("device_note")}
             </span>
           </div>
           <button
@@ -49,9 +51,7 @@ export function EditNoteDialog({
         </div>
 
         <p className="text-sm text-m3-on-surface-variant mb-4">
-          为{" "}
-          <span className="font-medium text-m3-on-surface">{deviceName}</span>{" "}
-          添加备注名称
+          {t("add_note_for", deviceName)}
         </p>
 
         <input
@@ -60,7 +60,7 @@ export function EditNoteDialog({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="输入备注名称"
+          placeholder={t("enter_note_name")}
           className="w-full px-3 py-2.5 text-sm rounded-xl border border-m3-outline-variant bg-m3-surface text-m3-on-surface placeholder:text-m3-outline focus:outline-none focus:ring-2 focus:ring-m3-primary focus:border-transparent mb-5"
         />
 
@@ -69,13 +69,13 @@ export function EditNoteDialog({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors"
           >
-            取消
+            {t("cancel")}
           </button>
           <button
             onClick={() => onConfirm(note.trim())}
             className="px-4 py-2 text-sm font-medium text-white rounded-xl bg-m3-primary hover:opacity-90 transition-colors"
           >
-            确认
+            {t("confirm")}
           </button>
         </div>
       </div>

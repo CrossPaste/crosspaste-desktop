@@ -4,6 +4,7 @@ import { MyDevicesSection } from "./MyDevicesSection";
 import { NearbyDevicesSection } from "./NearbyDevicesSection";
 import { AddDeviceDialog } from "./AddDeviceDialog";
 import { EditNoteDialog } from "./EditNoteDialog";
+import { useI18n } from "@/shared/i18n/use-i18n";
 import type { DeviceInfo } from "@/shared/hooks/use-connection";
 import type { SyncInfo } from "@/shared/models/sync-info";
 
@@ -22,6 +23,7 @@ export function DevicesView({
   onRemoveDevice,
   onUpdateNote,
 }: Props) {
+  const t = useI18n();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingDevice, setEditingDevice] = useState<DeviceInfo | null>(null);
   const [nearbyDevices] = useState<SyncInfo[]>([]);
@@ -33,10 +35,10 @@ export function DevicesView({
       return {
         success: result.success,
         syncInfo: result.syncInfo,
-        error: result.success ? undefined : "连接失败，请检查 IP 和端口是否正确",
+        error: result.success ? undefined : t("connection_failed_check"),
       };
     },
-    [onConnect],
+    [onConnect, t],
   );
 
   const handleRefreshNearby = useCallback(() => {
@@ -70,7 +72,7 @@ export function DevicesView({
           className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-m3-success-container text-m3-success shadow-lg hover:shadow-xl transition-shadow"
         >
           <Plus size={20} />
-          <span className="text-sm font-medium">添加设备</span>
+          <span className="text-sm font-medium">{t("add_device_manually")}</span>
         </button>
       </div>
 

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Plus, X, Laptop, Smartphone, Monitor } from "lucide-react";
 import { TokenInput } from "@/components/connection/TokenInput";
+import { useI18n } from "@/shared/i18n/use-i18n";
 import type { SyncInfo } from "@/shared/models/sync-info";
 
 type Phase = "input" | "token";
@@ -36,6 +37,7 @@ const PLATFORM_ICON: Record<string, typeof Laptop> = {
 };
 
 export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
+  const t = useI18n();
   const [phase, setPhase] = useState<Phase>("input");
   const [ip, setIp] = useState("");
   const [port, setPort] = useState("13129");
@@ -48,7 +50,6 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (!open) {
-      // Delay reset so close animation can play
       const timer = setTimeout(() => {
         setPhase("input");
         setIp("");
@@ -71,9 +72,9 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
       setSyncInfo(result.syncInfo ?? null);
       setPhase("token");
     } else {
-      setError(result.error ?? "连接失败，请检查 IP 和端口是否正确");
+      setError(result.error ?? t("connection_failed_check"));
     }
-  }, [ip, port, inputValid, loading, onConnect]);
+  }, [ip, port, inputValid, loading, onConnect, t]);
 
   const handlePair = useCallback(async (token: number) => {
     setLoading(true);
@@ -83,9 +84,9 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
     if (result.success) {
       onClose();
     } else {
-      setError(result.error ?? "验证失败，请重新输入");
+      setError(result.error ?? t("verification_failed_retry"));
     }
-  }, [onPair, onClose]);
+  }, [onPair, onClose, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && inputValid && !loading) {
@@ -108,7 +109,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
           <div className="flex items-center gap-3">
             <Plus size={20} className="text-m3-primary" />
             <span className="text-lg font-semibold text-m3-on-surface">
-              添加设备
+              {t("add_device_manually")}
             </span>
           </div>
           <button onClick={onClose} className="p-1 rounded-md hover:bg-m3-surface-container">
@@ -120,7 +121,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
           <>
             {/* Description */}
             <p className="text-sm text-m3-on-surface-variant mb-5 leading-relaxed">
-              输入目标设备的 IP 地址和端口号来手动连接设备。
+              {t("add_device_manually_desc")}
             </p>
 
             {/* IP / Port Fields */}
@@ -139,7 +140,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
               </div>
               <div>
                 <label className="block text-xs font-medium text-m3-on-surface-variant mb-1.5">
-                  端口
+                  {t("port")}
                 </label>
                 <input
                   type="text"
@@ -163,14 +164,14 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors"
               >
-                取消
+                {t("cancel")}
               </button>
               <button
                 onClick={handleConnect}
                 disabled={!inputValid || loading}
                 className="px-4 py-2 text-sm font-medium text-white rounded-xl bg-m3-primary hover:opacity-90 disabled:opacity-40 transition-colors"
               >
-                {loading ? "连接中…" : "连接"}
+                {loading ? t("connecting") : t("connect")}
               </button>
             </div>
           </>
@@ -195,7 +196,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
 
             {/* Token Input */}
             <p className="text-sm text-m3-on-surface-variant mb-4 leading-relaxed">
-              请输入桌面端显示的 6 位配对码。
+              {t("enter_pairing_code_desc")}
             </p>
 
             <div className="mb-5">
@@ -216,7 +217,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
                 onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors"
               >
-                取消
+                {t("cancel")}
               </button>
             </div>
           </>
