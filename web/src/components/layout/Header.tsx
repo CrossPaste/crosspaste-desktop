@@ -1,7 +1,7 @@
-import { Clipboard, MonitorSmartphone } from "lucide-react";
+import { Clipboard, MonitorSmartphone, Settings } from "lucide-react";
 import { useI18n } from "@/shared/i18n/use-i18n";
 
-type Tab = "devices" | "clipboard";
+export type Tab = "clipboard" | "devices" | "settings";
 
 interface Props {
   activeTab: Tab;
@@ -11,6 +11,7 @@ interface Props {
 const tabs: { id: Tab; labelKey: string; Icon: typeof Clipboard }[] = [
   { id: "clipboard", labelKey: "clipboard", Icon: Clipboard },
   { id: "devices", labelKey: "devices", Icon: MonitorSmartphone },
+  { id: "settings", labelKey: "settings", Icon: Settings },
 ];
 
 export function Header({ activeTab, onTabChange }: Props) {
