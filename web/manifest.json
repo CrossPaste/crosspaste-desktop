@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "CrossPaste",
+  "description": "Clipboard sync with CrossPaste desktop",
+  "version": "0.1.0",
+  "permissions": ["storage", "sidePanel", "alarms", "offscreen", "clipboardRead", "clipboardWrite"],
+  "host_permissions": ["http://*/*"],
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "icons": {
+    "16": "public/icons/icon-16.png",
+    "48": "public/icons/icon-48.png",
+    "128": "public/icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Open CrossPaste"
+  }
+}
