@@ -19,6 +19,7 @@ interface Props {
   syncInfo: SyncInfo;
   status: DeviceStatus;
   noteName?: string;
+  onClick?: () => void;
   onRetry?: () => void;
   onBlock?: () => void;
   onLink?: () => void;
@@ -48,6 +49,7 @@ export function DeviceCard({
   syncInfo,
   status,
   noteName,
+  onClick,
   onRetry,
   onBlock,
   onLink,
@@ -99,8 +101,9 @@ export function DeviceCard({
   return (
     <>
       <div
+        onClick={onClick}
         onContextMenu={handleContextMenu}
-        className="flex items-center gap-3.5 rounded-[14px] bg-m3-surface-container p-4"
+        className={`flex items-center gap-3.5 rounded-[14px] bg-m3-surface-container p-4${onClick ? " cursor-pointer hover:bg-m3-surface-container-high transition-colors" : ""}`}
       >
         {/* Device Icon */}
         <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-m3-surface shrink-0">
