@@ -50,8 +50,8 @@ export function usePasteList() {
     busyRef.current = false;
   }, []);
 
-  const deletePaste = useCallback(async (hash: string) => {
-    await chrome.runtime.sendMessage({ type: "DELETE_PASTE", hash });
+  const deletePaste = useCallback(async (pasteId: number) => {
+    await chrome.runtime.sendMessage({ type: "DELETE_PASTE", pasteId });
   }, []);
 
   // Initial load

@@ -6,6 +6,8 @@ export interface PasteCollection {
 }
 
 export interface PasteData {
+  /** Auto-increment key assigned by IndexedDB (only present when read from store) */
+  _id?: number;
   id: number;
   appInstanceId: string;
   favorite: boolean;

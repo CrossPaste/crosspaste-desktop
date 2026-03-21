@@ -470,8 +470,8 @@ async function handleMessage(
     }
 
     case "DELETE_PASTE": {
-      const hash = message.hash as string;
-      const deleted = await PasteStore.deleteByHash(hash);
+      const pasteId = message.pasteId as number;
+      const deleted = await PasteStore.deleteById(pasteId);
       if (deleted) {
         broadcastToSidePanel({ type: "PASTE_UPDATED" });
       }

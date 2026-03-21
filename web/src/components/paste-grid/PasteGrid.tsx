@@ -31,11 +31,14 @@ export function PasteGrid() {
     <div className="p-2" style={{ columns: "160px auto", columnGap: "8px" }}>
       {items.map((item, index) => (
         <div
-          key={item.hash}
+          key={item._id ?? item.hash}
           ref={index === items.length - 1 ? lastItemRef : undefined}
           style={{ breakInside: "avoid", marginBottom: "8px" }}
         >
-          <PasteCard data={item} onDelete={() => deletePaste(item.hash)} />
+          <PasteCard
+            data={item}
+            onDelete={item._id ? () => deletePaste(item._id!) : undefined}
+          />
         </div>
       ))}
       {loading && (
