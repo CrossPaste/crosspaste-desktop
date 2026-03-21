@@ -5,6 +5,7 @@ import { SyncApi } from "@/shared/api/sync";
 import { PullApi } from "@/shared/api/pull";
 import { CrossPasteHash } from "@/shared/core";
 import type { SyncInfo } from "@/shared/models/sync-info";
+import { detectPasteType } from "@/shared/paste/paste-type-detector";
 
 // ─── Per-device runtime status ──────────────────────────────────────────
 
@@ -77,23 +78,21 @@ async function pollClipboard(): Promise<void> {
 async function handleClipboardChange(text: string): Promise<void> {
   const hash = CrossPasteHash.hashText(text);
   const appInstanceId = await getAppInstanceId();
+  const size = new TextEncoder().encode(text).length;
+
+  const { pasteType, pasteItem } = detectPasteType(text);
+  pasteItem.hash = hash;
+  pasteItem.size = size;
 
   const pasteData = {
     id: Date.now(),
     appInstanceId,
     favorite: false,
-    pasteAppearItem: {
-      type: "text" as const,
-      identifiers: ["text/plain"],
-      hash,
-      size: new TextEncoder().encode(text).length,
-      text,
-      extraInfo: null,
-    },
+    pasteAppearItem: pasteItem,
     pasteCollection: { pasteItems: [] },
-    pasteType: 0,
+    pasteType,
     source: "Chrome",
-    size: new TextEncoder().encode(text).length,
+    size,
     hash,
     receivedAt: Date.now(),
   };
