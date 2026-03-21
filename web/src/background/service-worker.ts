@@ -27,6 +27,7 @@ let offscreenReady = false;
 const CLIPBOARD_POLL_ALARM = "clipboard-poll";
 const CLIPBOARD_POLL_INTERVAL = 0.05; // ~3 seconds
 const STORAGE_KEY_LAST_TEXT = "clipboard_lastText";
+const STORAGE_KEY_LAST_IMAGE_HASH = "clipboard_lastImageHash";
 
 async function ensureOffscreen(): Promise<void> {
   if (offscreenReady) return;
@@ -57,25 +58,49 @@ async function setLastClipboardText(text: string): Promise<void> {
   await chrome.storage.session.set({ [STORAGE_KEY_LAST_TEXT]: text });
 }
 
+async function getLastImageHash(): Promise<string> {
+  const result = await chrome.storage.session.get(STORAGE_KEY_LAST_IMAGE_HASH);
+  return (result[STORAGE_KEY_LAST_IMAGE_HASH] as string) ?? "";
+}
+
+async function setLastImageHash(hash: string): Promise<void> {
+  await chrome.storage.session.set({ [STORAGE_KEY_LAST_IMAGE_HASH]: hash });
+}
+
 async function pollClipboard(): Promise<void> {
   try {
     await ensureOffscreen();
 
     const response = await chrome.runtime.sendMessage({ type: "READ_CLIPBOARD" });
     const text = response?.text as string | null;
+    const imageDataUrl = response?.imageDataUrl as string | null;
+
+    // Image takes priority over text
+    if (imageDataUrl) {
+      const imageHash = CrossPasteHash.hashText(imageDataUrl);
+      const lastImageHash = await getLastImageHash();
+      if (imageHash !== lastImageHash) {
+        await setLastImageHash(imageHash);
+        await handleImageClipboard(imageDataUrl, imageHash);
+      }
+      return;
+    }
+
     if (!text || text.length === 0) return;
 
     const lastText = await getLastClipboardText();
     if (text === lastText) return;
 
     await setLastClipboardText(text);
-    await handleClipboardChange(text);
+    // Clear image hash so that re-copying the same image after text is detected
+    await setLastImageHash("");
+    await handleTextClipboard(text);
   } catch {
     offscreenReady = false;
   }
 }
 
-async function handleClipboardChange(text: string): Promise<void> {
+async function handleTextClipboard(text: string): Promise<void> {
   const hash = CrossPasteHash.hashText(text);
   const appInstanceId = await getAppInstanceId();
   const size = new TextEncoder().encode(text).length;
@@ -91,6 +116,43 @@ async function handleClipboardChange(text: string): Promise<void> {
     pasteAppearItem: pasteItem,
     pasteCollection: { pasteItems: [] },
     pasteType,
+    source: "Chrome",
+    size,
+    hash,
+    receivedAt: Date.now(),
+  };
+
+  const isNew = await PasteStore.addIfNew(pasteData);
+  if (isNew) {
+    broadcastToSidePanel({ type: "PASTE_UPDATED" });
+  }
+}
+
+async function handleImageClipboard(
+  imageDataUrl: string,
+  hash: string,
+): Promise<void> {
+  const appInstanceId = await getAppInstanceId();
+  // Estimate size from base64 data
+  const base64Part = imageDataUrl.split(",")[1] ?? "";
+  const size = Math.round((base64Part.length * 3) / 4);
+
+  const pasteData = {
+    id: Date.now(),
+    appInstanceId,
+    favorite: false,
+    pasteAppearItem: {
+      type: "images" as const,
+      identifiers: ["image/png"],
+      hash,
+      size,
+      count: 1,
+      relativePathList: ["clipboard-image.png"],
+      fileInfoTreeMap: {},
+      dataUrl: imageDataUrl,
+    },
+    pasteCollection: { pasteItems: [] },
+    pasteType: 4, // IMAGE
     source: "Chrome",
     size,
     hash,

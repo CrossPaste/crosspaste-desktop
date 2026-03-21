@@ -4,6 +4,23 @@ import { formatSize } from "@/shared/utils/format";
 export function ImagePreview({ item }: { item: ImagesPasteItem }) {
   const fileName = item.relativePathList?.[0] ?? "image";
 
+  // Inline image data — show actual thumbnail
+  if (item.dataUrl) {
+    return (
+      <div className="flex flex-col gap-2">
+        <img
+          src={item.dataUrl}
+          alt={fileName}
+          className="w-full max-h-40 object-contain rounded-lg bg-m3-surface"
+        />
+        <p className="text-[10px] text-m3-on-surface-variant">
+          {formatSize(item.size)}
+        </p>
+      </div>
+    );
+  }
+
+  // File-path based image (pulled from desktop) — show metadata only
   return (
     <div className="flex items-center gap-2">
       <svg

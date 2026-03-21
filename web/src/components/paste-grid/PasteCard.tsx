@@ -53,6 +53,25 @@ export function PasteCard({ data }: Props) {
 
   const handleCopy = useCallback(async () => {
     if (!displayItem) return;
+
+    // Image with inline data — copy as image blob
+    if (displayItem.type === PasteType.IMAGE) {
+      const dataUrl = (displayItem as ImagesPasteItem).dataUrl;
+      if (dataUrl) {
+        try {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          await navigator.clipboard.write([
+            new ClipboardItem({ [blob.type]: blob }),
+          ]);
+        } catch {
+          // Fallback: do nothing
+        }
+        return;
+      }
+      return;
+    }
+
     let text = "";
     switch (displayItem.type) {
       case PasteType.TEXT:

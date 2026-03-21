@@ -97,6 +97,8 @@ export interface ImagesPasteItem extends PasteItemBase {
   basePath?: string;
   relativePathList: string[];
   fileInfoTreeMap: Record<string, unknown>;
+  /** Inline image data URL for locally captured clipboard images */
+  dataUrl?: string;
 }
 
 export interface RtfPasteItem extends PasteItemBase {
