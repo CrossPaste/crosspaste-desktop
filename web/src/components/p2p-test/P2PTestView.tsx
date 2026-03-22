@@ -62,7 +62,7 @@ function CodeDisplay({ code, label }: { code: string; label: string }) {
     <div className="flex flex-col gap-1.5">
       <span className="text-xs font-medium text-m3-on-surface-variant">{label}</span>
       <div className="flex items-start gap-2">
-        <div className="flex-1 bg-m3-surface-container-highest rounded-lg p-2.5 font-mono text-[11px] text-m3-on-surface break-all leading-relaxed select-all">
+        <div className="flex-1 max-h-24 overflow-y-auto bg-m3-surface-container-highest rounded-lg p-2.5 font-mono text-[10px] text-m3-on-surface break-all leading-relaxed select-all">
           {formatCode(code)}
         </div>
         <button
@@ -303,7 +303,7 @@ export function P2PTestView({ onBack }: Props) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col min-h-0 px-5 pb-5 gap-4">
+      <div className="flex-1 overflow-y-auto px-5 pb-5 flex flex-col gap-4">
         {/* Error */}
         {error && (
           <div className="bg-m3-error-container rounded-lg px-3 py-2 text-xs text-m3-error">
