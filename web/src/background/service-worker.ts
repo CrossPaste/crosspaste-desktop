@@ -1,11 +1,12 @@
 import { ConnectionStore, type ConnectionConfig } from "@/shared/storage/connection-store";
 import { DeviceStore, type StoredDevice } from "@/shared/storage/device-store";
 import { PasteStore } from "@/shared/storage/paste-store";
+import { BlobStore } from "@/shared/storage/blob-store";
 import { SyncApi } from "@/shared/api/sync";
 import { PullApi } from "@/shared/api/pull";
 import { CrossPasteHash } from "@/shared/core";
 import type { SyncInfo } from "@/shared/models/sync-info";
-import { detectPasteType } from "@/shared/paste/paste-type-detector";
+import { collectPasteItems } from "@/shared/paste/paste-collector";
 
 // ─── Per-device runtime status ──────────────────────────────────────────
 
@@ -24,10 +25,11 @@ let connectingState: {
 
 let offscreenReady = false;
 
-const CLIPBOARD_POLL_ALARM = "clipboard-poll";
-const CLIPBOARD_POLL_INTERVAL = 0.05; // ~3 seconds
-const STORAGE_KEY_LAST_TEXT = "clipboard_lastText";
-const STORAGE_KEY_LAST_IMAGE_HASH = "clipboard_lastImageHash";
+const CLIPBOARD_POLL_INTERVAL_MS = 1000; // 1 second
+const STORAGE_KEY_LAST_HASH = "clipboard_lastHash";
+
+/** Hashes of the last self-written clipboard content to skip on next poll (localOnly). */
+let localCopyHashes: Set<string> | null = null;
 
 async function ensureOffscreen(): Promise<void> {
   if (offscreenReady) return;
@@ -49,22 +51,24 @@ async function ensureOffscreen(): Promise<void> {
   offscreenReady = true;
 }
 
-async function getLastClipboardText(): Promise<string> {
-  const result = await chrome.storage.session.get(STORAGE_KEY_LAST_TEXT);
-  return (result[STORAGE_KEY_LAST_TEXT] as string) ?? "";
+async function getLastHash(): Promise<string> {
+  const result = await chrome.storage.session.get(STORAGE_KEY_LAST_HASH);
+  return (result[STORAGE_KEY_LAST_HASH] as string) ?? "";
 }
 
-async function setLastClipboardText(text: string): Promise<void> {
-  await chrome.storage.session.set({ [STORAGE_KEY_LAST_TEXT]: text });
+async function setLastHash(hash: string): Promise<void> {
+  await chrome.storage.session.set({ [STORAGE_KEY_LAST_HASH]: hash });
 }
 
-async function getLastImageHash(): Promise<string> {
-  const result = await chrome.storage.session.get(STORAGE_KEY_LAST_IMAGE_HASH);
-  return (result[STORAGE_KEY_LAST_IMAGE_HASH] as string) ?? "";
-}
-
-async function setLastImageHash(hash: string): Promise<void> {
-  await chrome.storage.session.set({ [STORAGE_KEY_LAST_IMAGE_HASH]: hash });
+/** Convert a data URL to ArrayBuffer */
+function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
+  const base64 = dataUrl.split(",")[1] ?? "";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
 }
 
 async function pollClipboard(): Promise<void> {
@@ -72,103 +76,66 @@ async function pollClipboard(): Promise<void> {
     await ensureOffscreen();
 
     const response = await chrome.runtime.sendMessage({ type: "READ_CLIPBOARD" });
-    const text = response?.text as string | null;
-    const imageDataUrl = response?.imageDataUrl as string | null;
+    const collected = collectPasteItems(response, CrossPasteHash.hashText);
+    if (!collected) return;
 
-    // Image takes priority over text
-    if (imageDataUrl) {
-      const imageHash = CrossPasteHash.hashText(imageDataUrl);
-      const lastImageHash = await getLastImageHash();
-      if (imageHash !== lastImageHash) {
-        await setLastImageHash(imageHash);
-        await handleImageClipboard(imageDataUrl, imageHash);
-      }
+    // Deduplicate by appear item hash
+    const lastHash = await getLastHash();
+    if (collected.hash === lastHash) return;
+
+    await setLastHash(collected.hash);
+
+    // Skip self-written clipboard content (localOnly).
+    // Check all item hashes because the appear item might differ after
+    // clipboard round-trip (e.g. text "FAACBF" detected as color on re-read).
+    if (localCopyHashes !== null && localCopyHashes.has(collected.hash)) {
+      localCopyHashes = null;
       return;
     }
 
-    if (!text || text.length === 0) return;
+    // Store file blobs separately
+    if (collected.fileBlobs.length > 0) {
+      const blobFiles = collected.fileBlobs.map((f) => ({
+        name: f.name,
+        data: dataUrlToArrayBuffer(f.dataUrl),
+      }));
+      await BlobStore.putAll(collected.hash, blobFiles);
+    }
 
-    const lastText = await getLastClipboardText();
-    if (text === lastText) return;
+    const appInstanceId = await getAppInstanceId();
+    const pasteData = {
+      id: Date.now(),
+      appInstanceId,
+      favorite: false,
+      pasteAppearItem: collected.pasteAppearItem,
+      pasteCollection: collected.pasteCollection,
+      pasteType: collected.pasteType,
+      source: "Chrome",
+      size: collected.size,
+      hash: collected.hash,
+      pasteState: 1, // LOADED
+      receivedAt: Date.now(),
+    };
 
-    await setLastClipboardText(text);
-    // Clear image hash so that re-copying the same image after text is detected
-    await setLastImageHash("");
-    await handleTextClipboard(text);
+    const newId = await PasteStore.createPasteData(pasteData);
+    if (newId !== null) {
+      const deleted = await PasteStore.markDeleteSameHash(newId, collected.hash);
+      for (const h of deleted) await BlobStore.deleteForPaste(h);
+      const evicted = await PasteStore.evictOverLimit();
+      for (const h of evicted) await BlobStore.deleteForPaste(h);
+      broadcastToSidePanel({ type: "PASTE_UPDATED" });
+    }
   } catch {
     offscreenReady = false;
   }
 }
 
-async function handleTextClipboard(text: string): Promise<void> {
-  const hash = CrossPasteHash.hashText(text);
-  const appInstanceId = await getAppInstanceId();
-  const size = new TextEncoder().encode(text).length;
-
-  const { pasteType, pasteItem } = detectPasteType(text);
-  pasteItem.hash = hash;
-  pasteItem.size = size;
-
-  const pasteData = {
-    id: Date.now(),
-    appInstanceId,
-    favorite: false,
-    pasteAppearItem: pasteItem,
-    pasteCollection: { pasteItems: [] },
-    pasteType,
-    source: "Chrome",
-    size,
-    hash,
-    receivedAt: Date.now(),
-  };
-
-  const isNew = await PasteStore.addIfNew(pasteData);
-  if (isNew) {
-    broadcastToSidePanel({ type: "PASTE_UPDATED" });
-  }
-}
-
-async function handleImageClipboard(
-  imageDataUrl: string,
-  hash: string,
-): Promise<void> {
-  const appInstanceId = await getAppInstanceId();
-  // Estimate size from base64 data
-  const base64Part = imageDataUrl.split(",")[1] ?? "";
-  const size = Math.round((base64Part.length * 3) / 4);
-
-  const pasteData = {
-    id: Date.now(),
-    appInstanceId,
-    favorite: false,
-    pasteAppearItem: {
-      type: "images" as const,
-      identifiers: ["image/png"],
-      hash,
-      size,
-      count: 1,
-      relativePathList: ["clipboard-image.png"],
-      fileInfoTreeMap: {},
-      dataUrl: imageDataUrl,
-    },
-    pasteCollection: { pasteItems: [] },
-    pasteType: 4, // IMAGE
-    source: "Chrome",
-    size,
-    hash,
-    receivedAt: Date.now(),
-  };
-
-  const isNew = await PasteStore.addIfNew(pasteData);
-  if (isNew) {
-    broadcastToSidePanel({ type: "PASTE_UPDATED" });
-  }
-}
-
 function startClipboardPolling(): void {
-  chrome.alarms.create(CLIPBOARD_POLL_ALARM, {
-    periodInMinutes: CLIPBOARD_POLL_INTERVAL,
-  });
+  async function loop() {
+    await pollClipboard();
+    setTimeout(loop, CLIPBOARD_POLL_INTERVAL_MS);
+  }
+  loop();
 }
 
 // ─── Identity ───────────────────────────────────────────────────────────
@@ -220,16 +187,15 @@ async function syncAllDevices(): Promise<void> {
         targetAppInstanceId: device.targetAppInstanceId,
       });
       if (data) {
-        const isNew = await PasteStore.addIfNew(data);
-        if (isNew) {
+        const newId = await PasteStore.createPasteData(data);
+        if (newId !== null) {
+          const deleted = await PasteStore.markDeleteSameHash(newId, data.hash);
+          for (const h of deleted) await BlobStore.deleteForPaste(h);
+          const evicted = await PasteStore.evictOverLimit();
+          for (const h of evicted) await BlobStore.deleteForPaste(h);
           broadcastToSidePanel({ type: "PASTE_UPDATED" });
-
-          if (data.pasteType === 0 && data.pasteAppearItem) {
-            const textItem = data.pasteAppearItem as { text?: string };
-            if (textItem.text) {
-              await setLastClipboardText(textItem.text);
-            }
-          }
+          // Update last hash so polling doesn't re-capture synced content
+          await setLastHash(data.hash);
         }
       }
       if (deviceStatuses.get(device.targetAppInstanceId) !== "synced") {
@@ -345,8 +311,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     await syncAllDevices();
   } else if (alarm.name === "heartbeat") {
     await sendHeartbeats();
-  } else if (alarm.name === CLIPBOARD_POLL_ALARM) {
-    await pollClipboard();
   }
 });
 
@@ -469,13 +433,22 @@ async function handleMessage(
       return { success: true };
     }
 
+    case "LOCAL_COPY": {
+      const hashes = message.hashes as string[];
+      localCopyHashes = hashes && hashes.length > 0 ? new Set(hashes) : null;
+      return { success: true };
+    }
+
     case "DELETE_PASTE": {
       const pasteId = message.pasteId as number;
-      const deleted = await PasteStore.deleteById(pasteId);
-      if (deleted) {
+      const hash = await PasteStore.deleteById(pasteId);
+      if (hash !== null) {
+        await BlobStore.deleteForPaste(hash);
+        // Purge DELETED records periodically
+        await PasteStore.purgeDeleted();
         broadcastToSidePanel({ type: "PASTE_UPDATED" });
       }
-      return { success: deleted };
+      return { success: hash !== null };
     }
 
     default:
