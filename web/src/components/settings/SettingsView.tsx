@@ -3,6 +3,7 @@ import {
   Globe,
   Palette,
   Info,
+  Wifi,
   ChevronDown,
   ChevronRight,
   Check,
@@ -16,6 +17,7 @@ import {
 import { useTheme, type ThemeMode } from "@/shared/theme/use-theme";
 import { APP_VERSION } from "@/shared/app/version.generated";
 import { AboutView } from "./AboutView";
+import { P2PTestView } from "@/components/p2p-test/P2PTestView";
 
 // ─── Segmented Control ──────────────────────────────────────────────────
 
@@ -106,10 +108,15 @@ export function SettingsView() {
   const t = useI18n();
   const { language } = useLanguageSettings();
   const [showAbout, setShowAbout] = useState(false);
+  const [showP2PTest, setShowP2PTest] = useState(false);
   const [showLanguages, setShowLanguages] = useState(false);
 
   if (showAbout) {
     return <AboutView onBack={() => setShowAbout(false)} />;
+  }
+
+  if (showP2PTest) {
+    return <P2PTestView onBack={() => setShowP2PTest(false)} />;
   }
 
   return (
@@ -165,6 +172,27 @@ export function SettingsView() {
             <ThemeSegmentedControl />
           </div>
         </div>
+
+        <Divider />
+
+        {/* P2P Test */}
+        <button
+          onClick={() => setShowP2PTest(true)}
+          className="flex items-center gap-3.5 px-4 py-3 hover:bg-m3-surface-container-high transition-colors"
+        >
+          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-settings-green-bg shrink-0">
+            <Wifi size={18} className="text-settings-green" />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
+            <span className="text-sm font-medium text-m3-on-surface">
+              P2P Test
+            </span>
+            <span className="text-xs text-m3-on-surface-variant">
+              WebRTC DataChannel
+            </span>
+          </div>
+          <ChevronRight size={18} className="text-m3-on-surface-variant" />
+        </button>
 
         <Divider />
 
