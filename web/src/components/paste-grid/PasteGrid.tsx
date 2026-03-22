@@ -3,52 +3,17 @@ import { usePasteList } from "@/shared/hooks/use-paste-list";
 import { PasteCard } from "./PasteCard";
 import { PasteDetailView } from "./PasteDetailView";
 import { EmptyState } from "./EmptyState";
-import { PasteType } from "@/shared/models/paste-item";
-import type {
-  TextPasteItem,
-  UrlPasteItem,
-  HtmlPasteItem,
-  ImagesPasteItem,
-  ColorPasteItem,
-} from "@/shared/models/paste-item";
 import type { PasteData } from "@/shared/models/paste-data";
-import { argbToHex } from "@/shared/utils/color";
+import { copyPasteData } from "@/shared/clipboard/clipboard-writer";
+import { NotificationManager } from "@/shared/notification/notification-manager";
 
-function copyItem(data: PasteData) {
-  const item = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
-  if (!item) return;
-
-  if (item.type === PasteType.IMAGE) {
-    const dataUrl = (item as ImagesPasteItem).dataUrl;
-    if (dataUrl) {
-      fetch(dataUrl)
-        .then((res) => res.blob())
-        .then((blob) =>
-          navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]),
-        )
-        .catch(() => {});
-    }
-    return;
+async function copyItem(data: PasteData) {
+  try {
+    await copyPasteData(data);
+    NotificationManager.success("Copied");
+  } catch {
+    NotificationManager.error("Copy failed");
   }
-
-  let text = "";
-  switch (item.type) {
-    case PasteType.TEXT:
-      text = (item as TextPasteItem).text;
-      break;
-    case PasteType.URL:
-      text = (item as UrlPasteItem).url;
-      break;
-    case PasteType.HTML:
-      text = (item as HtmlPasteItem).html;
-      break;
-    case PasteType.COLOR:
-      text = argbToHex((item as ColorPasteItem).color);
-      break;
-    default:
-      return;
-  }
-  navigator.clipboard.writeText(text);
 }
 
 export function PasteGrid() {

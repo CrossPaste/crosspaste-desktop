@@ -43,6 +43,8 @@
   --color-settings-red-bg: #FEE2E2;
   --color-settings-cyan: #06B6D4;
   --color-settings-cyan-bg: #CFFAFE;
+  --color-scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --color-scrollbar-thumb-hover: rgba(0, 0, 0, 0.35);
 }
 
 .dark {
@@ -82,4 +84,25 @@
   --color-settings-red-bg: rgba(239, 68, 68, 0.15);
   --color-settings-cyan: #22D3EE;
   --color-settings-cyan-bg: rgba(6, 182, 212, 0.15);
+  --color-scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --color-scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+}
+
+/* Thin scrollbar with transparent track */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
 }

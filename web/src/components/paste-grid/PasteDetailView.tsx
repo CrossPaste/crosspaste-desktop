@@ -13,6 +13,7 @@ import type {
   RtfPasteItem,
 } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
+import { isDarkColor } from "@/shared/utils/html-color";
 import { argbToHex, argbToComponents } from "@/shared/utils/color";
 import { formatSize } from "@/shared/utils/format";
 import { relativeTime } from "@/shared/utils/date";
@@ -57,48 +58,16 @@ function DetailContent({ item }: { item: PasteItem }) {
       );
 
     case PasteType.HTML:
-      return (
-        <div className="rounded-lg border border-m3-outline-variant overflow-hidden">
-          <iframe
-            srcDoc={(item as HtmlPasteItem).html}
-            className="w-full min-h-[120px] bg-white"
-            sandbox=""
-            title="HTML preview"
-          />
-        </div>
-      );
+      // Rendered in a custom container by PasteDetailView (not here)
+      return null;
 
-    case PasteType.IMAGE: {
-      const img = item as ImagesPasteItem;
-      if (img.dataUrl) {
-        return (
-          <img
-            src={img.dataUrl}
-            alt="clipboard image"
-            className="w-full rounded-lg bg-m3-surface-container"
-          />
-        );
-      }
-      const fileName = img.relativePathList?.[0] ?? "image";
-      return (
-        <p className="text-sm text-m3-on-surface-variant">
-          {fileName} ({img.count} {img.count > 1 ? "images" : "image"})
-        </p>
-      );
-    }
+    case PasteType.IMAGE:
+      // Rendered in a custom container by PasteDetailView (not here)
+      return null;
 
-    case PasteType.FILE: {
-      const files = item as FilesPasteItem;
-      return (
-        <div className="flex flex-col gap-1">
-          {files.relativePathList.map((path, i) => (
-            <p key={i} className="text-sm text-m3-on-surface font-mono break-all">
-              {path}
-            </p>
-          ))}
-        </div>
-      );
-    }
+    case PasteType.FILE:
+      // Rendered in a custom container by PasteDetailView (not here)
+      return null;
 
     case PasteType.RTF:
       return (
@@ -107,27 +76,110 @@ function DetailContent({ item }: { item: PasteItem }) {
         </pre>
       );
 
-    case PasteType.COLOR: {
-      const color = (item as ColorPasteItem).color;
-      const hex = argbToHex(color);
-      const { a, r, g, b } = argbToComponents(color);
-      return (
-        <div className="flex flex-col gap-3">
-          <div
-            className="w-full h-24 rounded-xl border border-m3-outline-variant"
-            style={{ backgroundColor: hex }}
-          />
-          <div className="flex flex-col gap-1 text-sm font-mono text-m3-on-surface">
-            <p>HEX: {hex}</p>
-            <p>RGBA: rgba({r}, {g}, {b}, {(a / 255).toFixed(2)})</p>
-          </div>
-        </div>
-      );
-    }
+    case PasteType.COLOR:
+      // Rendered in a custom container by PasteDetailView (not here)
+      return null;
 
     default:
       return null;
   }
+}
+
+function FileDetailContent({ item }: { item: FilesPasteItem }) {
+  const name = item.relativePathList?.[0] ?? "file";
+  return (
+    <div className="flex-1 min-h-0 rounded-[14px] bg-m3-surface-container flex flex-col items-center justify-center gap-2">
+      <svg className="w-12 h-12 text-m3-on-surface-variant" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+      </svg>
+      <span className="text-sm text-m3-on-surface-variant truncate max-w-[80%]">{name}</span>
+      {item.count > 1 && (
+        <span className="text-xs text-m3-outline">{item.count} files</span>
+      )}
+    </div>
+  );
+}
+
+function ImageDetailContent({ item }: { item: ImagesPasteItem }) {
+  if (item.dataUrl) {
+    return (
+      <div className="flex-1 min-h-0 rounded-[14px] bg-m3-surface-container flex items-center justify-center overflow-hidden">
+        <img
+          src={item.dataUrl}
+          alt="clipboard image"
+          className="w-full max-h-full object-contain"
+        />
+      </div>
+    );
+  }
+  const fileName = item.relativePathList?.[0] ?? "image";
+  return (
+    <div className="flex-1 min-h-0 rounded-[14px] bg-m3-surface-container flex items-center justify-center">
+      <p className="text-sm text-m3-on-surface-variant">
+        {fileName} ({item.count} {item.count > 1 ? "images" : "image"})
+      </p>
+    </div>
+  );
+}
+
+function ColorDetailContent({ item }: { item: ColorPasteItem }) {
+  const color = item.color;
+  const hex = argbToHex(color);
+  const { a, r, g, b } = argbToComponents(color);
+  const textColor = isDarkColor(color) ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.75)";
+
+  return (
+    <div
+      className="flex-1 min-h-0 rounded-[14px] flex flex-col items-center justify-center"
+      style={{ backgroundColor: hex }}
+    >
+      <p className="text-lg font-semibold font-mono" style={{ color: textColor }}>
+        {hex}
+      </p>
+      <p className="text-sm font-mono mt-1" style={{ color: textColor, opacity: 0.7 }}>
+        rgba({r}, {g}, {b}, {(a / 255).toFixed(2)})
+      </p>
+    </div>
+  );
+}
+
+function HtmlDetailContent({ item }: { item: HtmlPasteItem }) {
+  const extraInfo = item.extraInfo as { background?: number } | undefined;
+  const bgArgb = extraInfo?.background ?? null;
+  let bgStyle: string | undefined;
+  let textStyle: string | undefined;
+  if (bgArgb !== null) {
+    const a = (bgArgb >>> 24) & 0xff;
+    const r = (bgArgb >> 16) & 0xff;
+    const g = (bgArgb >> 8) & 0xff;
+    const b = bgArgb & 0xff;
+    if (a > 0) {
+      bgStyle = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+      textStyle = isDarkColor(bgArgb) ? "#f5f5f5" : "#1a1a1a";
+    }
+  }
+  const bodyStyles = ["margin: 0", "padding: 8px"];
+  if (bgStyle) bodyStyles.push(`background-color: ${bgStyle}`);
+  if (textStyle) bodyStyles.push(`color: ${textStyle}`);
+  const isDark = bgArgb !== null ? isDarkColor(bgArgb) : false;
+  const thumbColor = isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)";
+  const thumbHover = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
+  const scrollbarCss = `::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:${thumbColor};border-radius:2px}::-webkit-scrollbar-thumb:hover{background:${thumbHover}}`;
+  const srcDoc = `<html><head><style>${scrollbarCss} body { ${bodyStyles.join("; ")} }</style></head><body>${item.html}</body></html>`;
+
+  return (
+    <div
+      className="flex-1 min-h-0 rounded-[14px] overflow-hidden"
+      style={bgStyle ? { backgroundColor: bgStyle } : undefined}
+    >
+      <iframe
+        srcDoc={srcDoc}
+        sandbox=""
+        className="w-full h-full border-0"
+        title="HTML preview"
+      />
+    </div>
+  );
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -192,24 +244,32 @@ export function PasteDetailView({ data, onBack, onCopy, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 pb-6">
-        <div className="flex flex-col gap-4">
-          {/* Full content */}
-          <div className="rounded-[14px] bg-m3-surface-container p-4">
+      {/* Content + Metadata */}
+      <div className="flex-1 flex flex-col min-h-0 px-5 pb-6 gap-4">
+        {/* Full content — fills available space */}
+        {typeValue === PasteType.HTML ? (
+          <HtmlDetailContent item={displayItem as HtmlPasteItem} />
+        ) : typeValue === PasteType.COLOR ? (
+          <ColorDetailContent item={displayItem as ColorPasteItem} />
+        ) : typeValue === PasteType.IMAGE ? (
+          <ImageDetailContent item={displayItem as ImagesPasteItem} />
+        ) : typeValue === PasteType.FILE ? (
+          <FileDetailContent item={displayItem as FilesPasteItem} />
+        ) : (
+          <div className="flex-1 min-h-0 rounded-[14px] bg-m3-surface-container p-4 overflow-y-auto">
             <DetailContent item={displayItem} />
           </div>
+        )}
 
-          {/* Metadata */}
-          <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden divide-y divide-m3-outline-variant/30">
-            {data.source && (
-              <InfoRow label={t("source")} value={data.source} />
-            )}
-            <InfoRow label={t("size")} value={formatSize(data.size)} />
-            {data.receivedAt && (
-              <InfoRow label={t("time")} value={relativeTime(data.receivedAt)} />
-            )}
-          </div>
+        {/* Metadata — pinned to bottom */}
+        <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden divide-y divide-m3-outline-variant/30 shrink-0">
+          {data.source && (
+            <InfoRow label={t("source")} value={data.source} />
+          )}
+          <InfoRow label={t("size")} value={formatSize(data.size)} />
+          {data.receivedAt && (
+            <InfoRow label={t("time")} value={relativeTime(data.receivedAt)} />
+          )}
         </div>
       </div>
     </div>

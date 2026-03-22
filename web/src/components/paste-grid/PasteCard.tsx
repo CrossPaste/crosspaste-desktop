@@ -16,6 +16,9 @@ import type {
 import { argbToHex, argbToRgba } from "@/shared/utils/color";
 import { formatSize } from "@/shared/utils/format";
 import { relativeTime } from "@/shared/utils/date";
+import { isDarkColor } from "@/shared/utils/html-color";
+import { copyPasteData } from "@/shared/clipboard/clipboard-writer";
+import { NotificationManager } from "@/shared/notification/notification-manager";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -128,12 +131,43 @@ function ColorContent({ item }: { item: ColorPasteItem }) {
 }
 
 function HtmlContent({ item }: { item: HtmlPasteItem }) {
+  const extraInfo = item.extraInfo as { background?: number } | undefined;
+  const bgArgb = extraInfo?.background ?? null;
+
+  let bgStyle: string | undefined;
+  let textStyle: string | undefined;
+  if (bgArgb !== null) {
+    const a = (bgArgb >>> 24) & 0xff;
+    const r = (bgArgb >> 16) & 0xff;
+    const g = (bgArgb >> 8) & 0xff;
+    const b = bgArgb & 0xff;
+    if (a > 0) {
+      bgStyle = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+      textStyle = isDarkColor(bgArgb) ? "#f5f5f5" : "#1a1a1a";
+    }
+  }
+
+  const bodyStyles = [
+    "margin: 0",
+    "padding: 4px",
+    "font-size: 11px",
+    "overflow: hidden",
+  ];
+  if (bgStyle) bodyStyles.push(`background-color: ${bgStyle}`);
+  if (textStyle) bodyStyles.push(`color: ${textStyle}`);
+
+  const srcDoc = `<html><head><style>body { ${bodyStyles.join("; ")} } ::-webkit-scrollbar { display: none }</style></head><body>${item.html}</body></html>`;
+
   return (
-    <div className="flex-1 overflow-hidden p-1">
+    <div
+      className="flex-1 overflow-hidden"
+      style={bgStyle ? { backgroundColor: bgStyle } : undefined}
+    >
       <iframe
-        srcDoc={item.html}
+        srcDoc={srcDoc}
         sandbox=""
-        className="w-full h-full border-0 rounded bg-white pointer-events-none"
+        scrolling="no"
+        className="w-full h-full border-0 pointer-events-none"
         title="HTML"
       />
     </div>
@@ -183,30 +217,13 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = useCallback(async () => {
-    if (!displayItem) return;
-
-    if (displayItem.type === PasteType.IMAGE) {
-      const dataUrl = (displayItem as ImagesPasteItem).dataUrl;
-      if (dataUrl) {
-        try {
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
-          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-        } catch { /* noop */ }
-      }
-      return;
+    try {
+      await copyPasteData(data);
+      NotificationManager.success("Copied");
+    } catch {
+      NotificationManager.error("Copy failed");
     }
-
-    let text = "";
-    switch (displayItem.type) {
-      case PasteType.TEXT: text = (displayItem as TextPasteItem).text; break;
-      case PasteType.URL: text = (displayItem as UrlPasteItem).url; break;
-      case PasteType.HTML: text = (displayItem as HtmlPasteItem).html; break;
-      case PasteType.COLOR: text = argbToHex((displayItem as ColorPasteItem).color); break;
-      default: return;
-    }
-    await navigator.clipboard.writeText(text);
-  }, [displayItem]);
+  }, [data]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
