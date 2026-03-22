@@ -101,12 +101,11 @@ export function PasteGrid() {
   }
 
   return (
-    <div className="p-2" style={{ columns: "160px auto", columnGap: "8px" }}>
+    <div className="p-2 grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))" }}>
       {items.map((item, index) => (
         <div
           key={item._id ?? item.hash}
           ref={index === items.length - 1 ? lastItemRef : undefined}
-          style={{ breakInside: "avoid", marginBottom: "8px" }}
         >
           <PasteCard
             data={item}
@@ -116,7 +115,7 @@ export function PasteGrid() {
         </div>
       ))}
       {loading && (
-        <div className="flex justify-center py-4" style={{ breakInside: "avoid" }}>
+        <div className="col-span-full flex justify-center py-4">
           <div className="w-5 h-5 border-2 border-m3-primary border-t-transparent rounded-full animate-spin" />
         </div>
       )}

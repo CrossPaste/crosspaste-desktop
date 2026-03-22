@@ -1,15 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Copy, Trash2 } from "lucide-react";
 import type { PasteData } from "@/shared/models/paste-data";
-import { PasteType } from "@/shared/models/paste-item";
-import { PasteCardHeader } from "./PasteCardHeader";
-import { TextPreview } from "./TextPreview";
-import { UrlPreview } from "./UrlPreview";
-import { ImagePreview } from "./ImagePreview";
-import { FilePreview } from "./FilePreview";
-import { ColorPreview } from "./ColorPreview";
-import { HtmlPreview } from "./HtmlPreview";
-import { DesktopPrompt } from "./DesktopPrompt";
+import { PasteType, PASTE_TYPE_FROM_INT, PASTE_TYPE_LABELS } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type {
   PasteItem,
@@ -21,9 +13,10 @@ import type {
   ColorPasteItem,
   RtfPasteItem,
 } from "@/shared/models/paste-item";
-import { argbToHex } from "@/shared/utils/color";
+import { argbToHex, argbToRgba } from "@/shared/utils/color";
+import { formatSize } from "@/shared/utils/format";
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE = 5 * 1024 * 1024;
 
 interface Props {
   data: PasteData;
@@ -31,26 +24,121 @@ interface Props {
   onDelete?: () => void;
 }
 
-function renderPreview(item: PasteItem) {
+// ─── Type Badge Colors ──────────────────────────────────────────────────
+
+const TYPE_COLORS: Record<number, string> = {
+  0: "bg-m3-primary-container/80 text-m3-on-primary-container",
+  1: "bg-m3-success-container/80 text-m3-success",
+  2: "bg-m3-warning-container/80 text-m3-warning",
+  3: "bg-m3-primary-container/80 text-m3-primary",
+  4: "bg-m3-error-container/80 text-m3-error",
+  5: "bg-m3-warning-container/80 text-m3-warning",
+  6: "bg-m3-warning-container/80 text-m3-warning",
+};
+
+// ─── Square Content Renderers ───────────────────────────────────────────
+
+function TextContent({ item }: { item: TextPasteItem }) {
+  return (
+    <p className="text-[11px] text-m3-on-surface whitespace-pre-wrap break-words font-mono leading-relaxed line-clamp-6">
+      {item.text}
+    </p>
+  );
+}
+
+function UrlContent({ item }: { item: UrlPasteItem }) {
+  return (
+    <p className="text-[11px] text-m3-primary break-all line-clamp-6">
+      {item.url}
+    </p>
+  );
+}
+
+function ImageContent({ item }: { item: ImagesPasteItem }) {
+  if (item.dataUrl) {
+    return (
+      <img
+        src={item.dataUrl}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+    );
+  }
+  const name = item.relativePathList?.[0] ?? "image";
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-1 text-m3-on-surface-variant">
+      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+      </svg>
+      <span className="text-[10px] truncate max-w-full px-2">{name}</span>
+    </div>
+  );
+}
+
+function ColorContent({ item }: { item: ColorPasteItem }) {
+  const hex = argbToHex(item.color);
+  const rgba = argbToRgba(item.color);
+  return (
+    <>
+      <div className="absolute inset-0" style={{ backgroundColor: rgba }} />
+      <div className="absolute bottom-0 inset-x-0 bg-black/40 px-2 py-1.5 backdrop-blur-sm">
+        <p className="text-[10px] font-mono text-white">{hex}</p>
+      </div>
+    </>
+  );
+}
+
+function HtmlContent({ item }: { item: HtmlPasteItem }) {
+  return (
+    <iframe
+      srcDoc={item.html}
+      sandbox=""
+      className="absolute inset-0 w-full h-full border-0 bg-white pointer-events-none"
+      title="HTML"
+    />
+  );
+}
+
+function FileContent({ item }: { item: FilesPasteItem }) {
+  const name = item.relativePathList?.[0] ?? "file";
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-1 text-m3-on-surface-variant">
+      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+      </svg>
+      <span className="text-[10px] truncate max-w-full px-2">{name}</span>
+      <span className="text-[9px] text-m3-outline">{item.count > 1 ? `${item.count} files` : formatSize(item.size)}</span>
+    </div>
+  );
+}
+
+function renderSquareContent(item: PasteItem) {
   switch (item.type) {
     case PasteType.TEXT:
-      return <TextPreview item={item as TextPasteItem} />;
+      return <TextContent item={item as TextPasteItem} />;
     case PasteType.URL:
-      return <UrlPreview item={item as UrlPasteItem} />;
-    case PasteType.HTML:
-      return <HtmlPreview item={item as HtmlPasteItem} />;
-    case PasteType.FILE:
-      return <FilePreview item={item as FilesPasteItem} />;
+      return <UrlContent item={item as UrlPasteItem} />;
     case PasteType.IMAGE:
-      return <ImagePreview item={item as ImagesPasteItem} />;
-    case PasteType.RTF:
-      return <TextPreview item={{ ...item, type: PasteType.TEXT, text: (item as RtfPasteItem).rtf } as unknown as TextPasteItem} />;
+      return <ImageContent item={item as ImagesPasteItem} />;
     case PasteType.COLOR:
-      return <ColorPreview item={item as ColorPasteItem} />;
+      return <ColorContent item={item as ColorPasteItem} />;
+    case PasteType.HTML:
+      return <HtmlContent item={item as HtmlPasteItem} />;
+    case PasteType.FILE:
+      return <FileContent item={item as FilesPasteItem} />;
+    case PasteType.RTF:
+      return <TextContent item={{ ...item, type: PasteType.TEXT, text: (item as RtfPasteItem).rtf } as TextPasteItem} />;
     default:
-      return <p className="text-xs text-m3-on-surface-variant">Unknown type</p>;
+      return null;
   }
 }
+
+// Full-bleed types: content fills the entire card (no padding)
+function isFullBleed(type: string): boolean {
+  return type === PasteType.IMAGE || type === PasteType.COLOR || type === PasteType.HTML;
+}
+
+// ─── PasteCard ──────────────────────────────────────────────────────────
 
 export function PasteCard({ data, onClick, onDelete }: Props) {
   const t = useI18n();
@@ -61,64 +149,40 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   const handleCopy = useCallback(async () => {
     if (!displayItem) return;
 
-    // Image with inline data — copy as image blob
     if (displayItem.type === PasteType.IMAGE) {
       const dataUrl = (displayItem as ImagesPasteItem).dataUrl;
       if (dataUrl) {
         try {
           const res = await fetch(dataUrl);
           const blob = await res.blob();
-          await navigator.clipboard.write([
-            new ClipboardItem({ [blob.type]: blob }),
-          ]);
-        } catch {
-          // Fallback: do nothing
-        }
-        return;
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+        } catch { /* noop */ }
       }
       return;
     }
 
     let text = "";
     switch (displayItem.type) {
-      case PasteType.TEXT:
-        text = (displayItem as TextPasteItem).text;
-        break;
-      case PasteType.URL:
-        text = (displayItem as UrlPasteItem).url;
-        break;
-      case PasteType.HTML:
-        text = (displayItem as HtmlPasteItem).html;
-        break;
-      case PasteType.COLOR:
-        text = argbToHex((displayItem as ColorPasteItem).color);
-        break;
-      default:
-        return;
+      case PasteType.TEXT: text = (displayItem as TextPasteItem).text; break;
+      case PasteType.URL: text = (displayItem as UrlPasteItem).url; break;
+      case PasteType.HTML: text = (displayItem as HtmlPasteItem).html; break;
+      case PasteType.COLOR: text = argbToHex((displayItem as ColorPasteItem).color); break;
+      default: return;
     }
     await navigator.clipboard.writeText(text);
   }, [displayItem]);
 
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      const maxY = window.innerHeight - 90;
-      const maxX = window.innerWidth - 160;
-      setContextMenu({
-        x: Math.min(e.clientX, maxX),
-        y: Math.min(e.clientY, maxY),
-      });
-    },
-    [],
-  );
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const maxY = window.innerHeight - 90;
+    const maxX = window.innerWidth - 160;
+    setContextMenu({ x: Math.min(e.clientX, maxX), y: Math.min(e.clientY, maxY) });
+  }, []);
 
-  // Close context menu on click outside or Escape
   useEffect(() => {
     if (!contextMenu) return;
     const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setContextMenu(null);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setContextMenu(null);
     };
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setContextMenu(null);
@@ -132,27 +196,34 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   }, [contextMenu]);
 
   if (!displayItem) return null;
+  if (data.size > MAX_SIZE) return null;
 
-  if (data.size > MAX_SIZE) {
-    return <DesktopPrompt />;
-  }
+  const fullBleed = isFullBleed(displayItem.type);
+  const typeValue = PASTE_TYPE_FROM_INT[data.pasteType];
+  const typeLabel = typeValue ? PASTE_TYPE_LABELS[typeValue] : "";
+  const badgeColor = TYPE_COLORS[data.pasteType] ?? "";
 
   return (
     <>
       <div
         onClick={onClick}
         onContextMenu={handleContextMenu}
-        className="rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
+        className="relative aspect-square rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
       >
-        <PasteCardHeader
-          pasteType={data.pasteType}
-          source={data.source}
-          receivedAt={data.receivedAt}
-        />
-        <div className="px-3 pb-3">{renderPreview(displayItem)}</div>
+        {/* Content */}
+        <div className={fullBleed ? "absolute inset-0" : "absolute inset-0 p-2.5 pt-7"}>
+          {renderSquareContent(displayItem)}
+        </div>
+
+        {/* Type Badge - overlay top-left */}
+        {typeLabel && (
+          <span className={`absolute top-2 left-2 text-[9px] font-medium px-1.5 py-0.5 rounded-md z-10 ${badgeColor}`}>
+            {typeLabel}
+          </span>
+        )}
       </div>
 
-      {/* Right-click Context Menu */}
+      {/* Context Menu */}
       {contextMenu && (
         <div
           ref={menuRef}
@@ -160,10 +231,7 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           <button
-            onClick={() => {
-              setContextMenu(null);
-              handleCopy();
-            }}
+            onClick={() => { setContextMenu(null); handleCopy(); }}
             className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
           >
             <Copy size={16} className="text-m3-on-surface-variant" />
@@ -171,10 +239,7 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
           </button>
           {onDelete && (
             <button
-              onClick={() => {
-                setContextMenu(null);
-                onDelete();
-              }}
+              onClick={() => { setContextMenu(null); onDelete(); }}
               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-error hover:bg-m3-error-container/30 transition-colors"
             >
               <Trash2 size={16} />
