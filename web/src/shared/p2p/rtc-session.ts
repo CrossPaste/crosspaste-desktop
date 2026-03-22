@@ -5,12 +5,7 @@
  * Designed for LAN use — no STUN/TURN servers.
  */
 
-import {
-  extractCompact,
-  encodeCompact,
-  decodeCompact,
-  buildSDP,
-} from "./rtc-codec";
+import { encodeSDP, decodeSDP } from "./rtc-codec";
 
 export interface RTCSessionCallbacks {
   onStateChange: (state: SessionState) => void;
@@ -53,11 +48,9 @@ export class RTCSession {
 
     const sdp = this.pc.localDescription!.sdp;
     console.log("[P2P] Local offer SDP:\n", sdp);
-    const compact = extractCompact(sdp);
-    console.log("[P2P] Extracted compact:", JSON.stringify(compact));
-    const code = encodeCompact(compact);
+    console.log("[P2P] signalingState after offer:", this.pc.signalingState);
 
-    this.cb.onLocalCode(code);
+    this.cb.onLocalCode(encodeSDP(sdp));
     this.cb.onStateChange("waiting-for-peer");
   }
 
@@ -65,23 +58,20 @@ export class RTCSession {
   async acceptAnswer(code: string): Promise<void> {
     if (!this.pc) throw new Error("No active connection");
 
+    console.log("[P2P] signalingState before setRemoteDescription(answer):", this.pc.signalingState);
+
+    if (this.pc.signalingState !== "have-local-offer") {
+      throw new Error(
+        `Cannot accept answer: PC is in "${this.pc.signalingState}" state (expected "have-local-offer"). Try resetting and starting over.`,
+      );
+    }
+
     this.cb.onStateChange("connecting");
 
-    const remote = decodeCompact(code);
-    // Answerer uses setup:active, offerer uses setup:actpass
-    const sdp = buildSDP(remote, "answer");
+    const sdp = decodeSDP(code);
     console.log("[P2P] Remote answer SDP:\n", sdp);
+
     await this.pc.setRemoteDescription({ type: "answer", sdp });
-
-    // Add the remote candidate explicitly
-    await this.pc.addIceCandidate(
-      new RTCIceCandidate({
-        candidate: `candidate:1 1 udp 2130706431 ${remote.i} ${remote.o} typ host`,
-        sdpMid: "0",
-        sdpMLineIndex: 0,
-      }),
-    );
-
     this.watchConnection();
   }
 
@@ -89,34 +79,23 @@ export class RTCSession {
   async acceptOffer(code: string): Promise<void> {
     this.cb.onStateChange("gathering");
 
-    const remote = decodeCompact(code);
-
     this.pc = new RTCPeerConnection({ iceServers: [] });
     this.setupDCFromRemote();
 
-    const offerSdp = buildSDP(remote, "offer");
+    const offerSdp = decodeSDP(code);
     console.log("[P2P] Remote offer SDP:\n", offerSdp);
-    await this.pc.setRemoteDescription({ type: "offer", sdp: offerSdp });
 
-    // Add the remote candidate explicitly
-    await this.pc.addIceCandidate(
-      new RTCIceCandidate({
-        candidate: `candidate:1 1 udp 2130706431 ${remote.i} ${remote.o} typ host`,
-        sdpMid: "0",
-        sdpMLineIndex: 0,
-      }),
-    );
+    await this.pc.setRemoteDescription({ type: "offer", sdp: offerSdp });
 
     const answer = await this.pc.createAnswer();
     await this.pc.setLocalDescription(answer);
 
     await this.waitForICE();
 
-    const sdp = this.pc.localDescription!.sdp;
-    const compact = extractCompact(sdp);
-    const answerCode = encodeCompact(compact);
+    const answerSdp = this.pc.localDescription!.sdp;
+    console.log("[P2P] Local answer SDP:\n", answerSdp);
 
-    this.cb.onLocalCode(answerCode);
+    this.cb.onLocalCode(encodeSDP(answerSdp));
     this.cb.onStateChange("connecting");
     this.watchConnection();
   }
@@ -178,7 +157,6 @@ export class RTCSession {
 
     return new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        // Check if we have at least one host candidate
         const sdp = pc.localDescription?.sdp ?? "";
         if (sdp.includes("typ host")) {
           resolve();
@@ -200,10 +178,10 @@ export class RTCSession {
   private watchConnection(): void {
     const pc = this.pc!;
     pc.oniceconnectionstatechange = () => {
+      console.log("[P2P] ICE connection state:", pc.iceConnectionState);
       switch (pc.iceConnectionState) {
         case "connected":
         case "completed":
-          // DataChannel onopen will trigger "connected" state
           break;
         case "disconnected":
           this.cb.onStateChange("disconnected");

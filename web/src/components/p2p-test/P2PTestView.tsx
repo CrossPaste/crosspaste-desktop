@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { ArrowLeft, Copy, Check, Send, Wifi, WifiOff } from "lucide-react";
 import { RTCSession, type SessionState } from "@/shared/p2p/rtc-session";
-import { formatCode, unformatCode } from "@/shared/p2p/rtc-codec";
+import { formatCode } from "@/shared/p2p/rtc-codec";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -92,7 +92,7 @@ function CodeInput({
   const [value, setValue] = useState("");
 
   const handleSubmit = () => {
-    const cleaned = unformatCode(value);
+    const cleaned = value.replace(/[\s\n]/g, "").trim();
     if (cleaned) onSubmit(cleaned);
   };
 
