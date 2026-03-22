@@ -15,6 +15,7 @@ import type {
 } from "@/shared/models/paste-item";
 import { argbToHex, argbToRgba } from "@/shared/utils/color";
 import { formatSize } from "@/shared/utils/format";
+import { relativeTime } from "@/shared/utils/date";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -26,47 +27,81 @@ interface Props {
 
 // ─── Type Badge Colors ──────────────────────────────────────────────────
 
-const TYPE_COLORS: Record<number, string> = {
-  0: "bg-m3-primary-container/80 text-m3-on-primary-container",
-  1: "bg-m3-success-container/80 text-m3-success",
-  2: "bg-m3-warning-container/80 text-m3-warning",
-  3: "bg-m3-primary-container/80 text-m3-primary",
-  4: "bg-m3-error-container/80 text-m3-error",
-  5: "bg-m3-warning-container/80 text-m3-warning",
-  6: "bg-m3-warning-container/80 text-m3-warning",
+const TYPE_BADGE: Record<number, { bg: string; text: string }> = {
+  0: { bg: "bg-m3-primary-container", text: "text-m3-on-primary-container" },
+  1: { bg: "bg-m3-success-container", text: "text-m3-success" },
+  2: { bg: "bg-m3-warning-container", text: "text-m3-warning" },
+  3: { bg: "bg-m3-primary-container", text: "text-m3-primary" },
+  4: { bg: "bg-m3-error-container", text: "text-m3-error" },
+  5: { bg: "bg-m3-warning-container", text: "text-m3-warning" },
+  6: { bg: "bg-m3-warning-container", text: "text-m3-warning" },
 };
 
-// ─── Square Content Renderers ───────────────────────────────────────────
+// ─── Title Bar ──────────────────────────────────────────────────────────
+
+function GridTitle({ data }: { data: PasteData }) {
+  const typeValue = PASTE_TYPE_FROM_INT[data.pasteType];
+  const label = typeValue ? PASTE_TYPE_LABELS[typeValue] : "";
+  const badge = TYPE_BADGE[data.pasteType];
+
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 py-2 bg-m3-surface-container-high shrink-0">
+      {/* Type Badge */}
+      {label && badge && (
+        <span
+          className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${badge.bg} ${badge.text} truncate`}
+        >
+          {label}
+        </span>
+      )}
+
+      {/* Time */}
+      {data.receivedAt && (
+        <span className="text-[9px] text-m3-on-surface-variant ml-auto shrink-0">
+          {relativeTime(data.receivedAt)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Content Renderers ──────────────────────────────────────────────────
 
 function TextContent({ item }: { item: TextPasteItem }) {
   return (
-    <p className="text-[11px] text-m3-on-surface whitespace-pre-wrap break-words font-mono leading-relaxed line-clamp-6">
-      {item.text}
-    </p>
+    <div className="p-2.5 overflow-hidden flex-1">
+      <p className="text-[11px] text-m3-on-surface whitespace-pre-wrap break-words font-mono leading-relaxed line-clamp-[8]">
+        {item.text}
+      </p>
+    </div>
   );
 }
 
 function UrlContent({ item }: { item: UrlPasteItem }) {
   return (
-    <p className="text-[11px] text-m3-primary break-all line-clamp-6">
-      {item.url}
-    </p>
+    <div className="p-2.5 overflow-hidden flex-1 flex flex-col">
+      <p className="text-[11px] text-m3-primary break-all line-clamp-[8]">
+        {item.url}
+      </p>
+    </div>
   );
 }
 
 function ImageContent({ item }: { item: ImagesPasteItem }) {
   if (item.dataUrl) {
     return (
-      <img
-        src={item.dataUrl}
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+      <div className="flex-1 overflow-hidden">
+        <img
+          src={item.dataUrl}
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      </div>
     );
   }
   const name = item.relativePathList?.[0] ?? "image";
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-1 text-m3-on-surface-variant">
+    <div className="flex-1 flex flex-col items-center justify-center gap-1 text-m3-on-surface-variant">
       <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
       </svg>
@@ -79,30 +114,36 @@ function ColorContent({ item }: { item: ColorPasteItem }) {
   const hex = argbToHex(item.color);
   const rgba = argbToRgba(item.color);
   return (
-    <>
-      <div className="absolute inset-0" style={{ backgroundColor: rgba }} />
-      <div className="absolute bottom-0 inset-x-0 bg-black/40 px-2 py-1.5 backdrop-blur-sm">
-        <p className="text-[10px] font-mono text-white">{hex}</p>
+    <div className="flex-1 flex flex-col items-center justify-center gap-2">
+      <div
+        className="w-12 h-12 rounded-xl border border-m3-outline-variant"
+        style={{ backgroundColor: rgba }}
+      />
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-[11px] font-semibold font-mono text-m3-on-surface">{hex}</span>
+        <span className="text-[9px] font-mono text-m3-on-surface-variant">{rgba}</span>
       </div>
-    </>
+    </div>
   );
 }
 
 function HtmlContent({ item }: { item: HtmlPasteItem }) {
   return (
-    <iframe
-      srcDoc={item.html}
-      sandbox=""
-      className="absolute inset-0 w-full h-full border-0 bg-white pointer-events-none"
-      title="HTML"
-    />
+    <div className="flex-1 overflow-hidden p-1">
+      <iframe
+        srcDoc={item.html}
+        sandbox=""
+        className="w-full h-full border-0 rounded bg-white pointer-events-none"
+        title="HTML"
+      />
+    </div>
   );
 }
 
 function FileContent({ item }: { item: FilesPasteItem }) {
   const name = item.relativePathList?.[0] ?? "file";
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-1 text-m3-on-surface-variant">
+    <div className="flex-1 flex flex-col items-center justify-center gap-1 text-m3-on-surface-variant">
       <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
       </svg>
@@ -112,7 +153,7 @@ function FileContent({ item }: { item: FilesPasteItem }) {
   );
 }
 
-function renderSquareContent(item: PasteItem) {
+function renderContent(item: PasteItem) {
   switch (item.type) {
     case PasteType.TEXT:
       return <TextContent item={item as TextPasteItem} />;
@@ -131,11 +172,6 @@ function renderSquareContent(item: PasteItem) {
     default:
       return null;
   }
-}
-
-// Full-bleed types: content fills the entire card (no padding)
-function isFullBleed(type: string): boolean {
-  return type === PasteType.IMAGE || type === PasteType.COLOR || type === PasteType.HTML;
 }
 
 // ─── PasteCard ──────────────────────────────────────────────────────────
@@ -198,29 +234,18 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   if (!displayItem) return null;
   if (data.size > MAX_SIZE) return null;
 
-  const fullBleed = isFullBleed(displayItem.type);
-  const typeValue = PASTE_TYPE_FROM_INT[data.pasteType];
-  const typeLabel = typeValue ? PASTE_TYPE_LABELS[typeValue] : "";
-  const badgeColor = TYPE_COLORS[data.pasteType] ?? "";
-
   return (
     <>
       <div
         onClick={onClick}
         onContextMenu={handleContextMenu}
-        className="relative aspect-square rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
+        className="flex flex-col aspect-square rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
       >
-        {/* Content */}
-        <div className={fullBleed ? "absolute inset-0" : "absolute inset-0 p-2.5 pt-7"}>
-          {renderSquareContent(displayItem)}
-        </div>
+        {/* Title Bar */}
+        <GridTitle data={data} />
 
-        {/* Type Badge - overlay top-left */}
-        {typeLabel && (
-          <span className={`absolute top-2 left-2 text-[9px] font-medium px-1.5 py-0.5 rounded-md z-10 ${badgeColor}`}>
-            {typeLabel}
-          </span>
-        )}
+        {/* Content */}
+        {renderContent(displayItem)}
       </div>
 
       {/* Context Menu */}
