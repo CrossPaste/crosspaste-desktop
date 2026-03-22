@@ -52,7 +52,9 @@ export class RTCSession {
     await this.waitForICE();
 
     const sdp = this.pc.localDescription!.sdp;
+    console.log("[P2P] Local offer SDP:\n", sdp);
     const compact = extractCompact(sdp);
+    console.log("[P2P] Extracted compact:", JSON.stringify(compact));
     const code = encodeCompact(compact);
 
     this.cb.onLocalCode(code);
@@ -68,7 +70,7 @@ export class RTCSession {
     const remote = decodeCompact(code);
     // Answerer uses setup:active, offerer uses setup:actpass
     const sdp = buildSDP(remote, "answer");
-
+    console.log("[P2P] Remote answer SDP:\n", sdp);
     await this.pc.setRemoteDescription({ type: "answer", sdp });
 
     // Add the remote candidate explicitly
@@ -93,6 +95,7 @@ export class RTCSession {
     this.setupDCFromRemote();
 
     const offerSdp = buildSDP(remote, "offer");
+    console.log("[P2P] Remote offer SDP:\n", offerSdp);
     await this.pc.setRemoteDescription({ type: "offer", sdp: offerSdp });
 
     // Add the remote candidate explicitly

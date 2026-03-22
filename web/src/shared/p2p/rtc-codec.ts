@@ -110,8 +110,7 @@ export function buildSDP(c: CompactSDP, _type: "offer" | "answer"): string {
     "a=group:BUNDLE 0",
     "a=extmap-allow-mixed",
     "a=msid-semantic: WMS",
-    "",
-    `m=application ${c.o} UDP/DTLS/SCTP webrtc-datachannel`,
+    "m=application 9 UDP/DTLS/SCTP webrtc-datachannel",
     `c=IN IP4 ${c.i}`,
     `a=ice-ufrag:${c.u}`,
     `a=ice-pwd:${c.p}`,
@@ -121,11 +120,11 @@ export function buildSDP(c: CompactSDP, _type: "offer" | "answer"): string {
     "a=mid:0",
     "a=sctp-port:5000",
     "a=max-message-size:262144",
-    `a=candidate:1 1 udp 2130706431 ${c.i} ${c.o} typ host`,
-    "",
+    `a=candidate:1 1 udp 2130706431 ${c.i} ${c.o} typ host generation 0`,
   ];
 
-  return lines.join("\r\n");
+  // SDP must end with \r\n
+  return lines.join("\r\n") + "\r\n";
 }
 
 // ─── Format helpers ──────────────────────────────────────────────────────
