@@ -1,16 +1,11 @@
+import { useState } from "react";
 import {
   Globe,
-  Check,
-  Sun,
-  Moon,
-  Monitor,
   Palette,
   Info,
-  ExternalLink,
-  BookOpen,
-  FileText,
-  MessageSquare,
-  Mail,
+  ChevronDown,
+  ChevronRight,
+  Check,
 } from "lucide-react";
 import {
   useI18n,
@@ -20,218 +15,87 @@ import {
 } from "@/shared/i18n/use-i18n";
 import { useTheme, type ThemeMode } from "@/shared/theme/use-theme";
 import { APP_VERSION } from "@/shared/app/version.generated";
+import { AboutView } from "./AboutView";
 
-const LINKS = {
-  github: "https://github.com/CrossPaste/crosspaste-desktop",
-  website: "https://crosspaste.com",
-  changelog: "https://crosspaste.com/changelog",
-  tutorial: "https://crosspaste.com/tutorial",
-  feedback: "https://github.com/CrossPaste/crosspaste-desktop/issues",
-  email: "mailto:compile.future@gmail.com",
-};
+// ─── Segmented Control ──────────────────────────────────────────────────
 
-function openUrl(url: string) {
-  chrome.tabs.create({ url });
-}
-
-// ─── Theme Selector ─────────────────────────────────────────────────────
-
-const THEME_OPTIONS: { mode: ThemeMode; labelKey: string; Icon: typeof Sun }[] = [
-  { mode: "light", labelKey: "light", Icon: Sun },
-  { mode: "system", labelKey: "system", Icon: Monitor },
-  { mode: "dark", labelKey: "dark", Icon: Moon },
+const THEME_OPTIONS: { mode: ThemeMode; labelKey: string }[] = [
+  { mode: "light", labelKey: "light" },
+  { mode: "system", labelKey: "system" },
+  { mode: "dark", labelKey: "dark" },
 ];
 
-function ThemeSection() {
+function ThemeSegmentedControl() {
   const t = useI18n();
   const { themeMode, setThemeMode } = useTheme();
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Palette size={18} className="text-m3-on-surface-variant" />
-        <span className="text-base font-semibold text-m3-on-surface">
-          {t("theme")}
-        </span>
-      </div>
-
-      <div className="flex rounded-[14px] bg-m3-surface-container p-1 gap-1">
-        {THEME_OPTIONS.map(({ mode, labelKey, Icon }) => {
-          const isActive = themeMode === mode;
-          return (
-            <button
-              key={mode}
-              onClick={() => setThemeMode(mode)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-m3-primary text-white"
-                  : "text-m3-on-surface-variant hover:text-m3-on-surface"
-              }`}
-            >
-              <Icon size={16} />
-              <span>{t(labelKey)}</span>
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex rounded-[10px] bg-m3-outline-variant/30 p-0.5 gap-0.5">
+      {THEME_OPTIONS.map(({ mode, labelKey }) => {
+        const isActive = themeMode === mode;
+        return (
+          <button
+            key={mode}
+            onClick={(e) => {
+              e.stopPropagation();
+              setThemeMode(mode);
+            }}
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-[8px] text-xs font-medium transition-colors ${
+              isActive
+                ? "bg-m3-surface text-m3-on-surface shadow-sm"
+                : "text-m3-on-surface-variant hover:text-m3-on-surface"
+            }`}
+          >
+            {isActive && <Check size={12} />}
+            <span>{t(labelKey)}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Language Selector ──────────────────────────────────────────────────
+// ─── Language Dropdown ──────────────────────────────────────────────────
 
-function LanguageSection() {
-  const t = useI18n();
+function LanguageDropdown({ onClose }: { onClose: () => void }) {
   const { language, setLanguage } = useLanguageSettings();
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Globe size={18} className="text-m3-on-surface-variant" />
-        <span className="text-base font-semibold text-m3-on-surface">
-          {t("language")}
-        </span>
-      </div>
-
-      <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden">
-        {SUPPORTED_LANGUAGES.map((code) => {
-          const isActive = code === language;
-          return (
-            <button
-              key={code}
-              onClick={() => setLanguage(code)}
-              className={`flex items-center justify-between px-4 py-3 text-sm transition-colors ${
-                isActive
-                  ? "bg-m3-primary-container text-m3-on-primary-container"
-                  : "text-m3-on-surface hover:bg-m3-surface-container-high"
-              }`}
+    <div className="flex flex-col">
+      {SUPPORTED_LANGUAGES.map((code) => {
+        const isActive = code === language;
+        return (
+          <button
+            key={code}
+            onClick={() => {
+              setLanguage(code);
+              onClose();
+            }}
+            className={`flex items-center justify-between pl-[66px] pr-4 py-2.5 text-sm transition-colors ${
+              isActive
+                ? "bg-m3-primary-container/50"
+                : "hover:bg-m3-surface-container-high"
+            }`}
+          >
+            <span
+              className={`font-medium ${isActive ? "text-m3-primary" : "text-m3-on-surface"}`}
             >
-              <span className="font-medium">{getLanguageName(code)}</span>
-              {isActive && <Check size={16} className="text-m3-primary" />}
-            </button>
-          );
-        })}
-      </div>
+              {getLanguageName(code)}
+            </span>
+            {isActive && <Check size={14} className="text-m3-primary" />}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-// ─── About Section ──────────────────────────────────────────────────────
+// ─── Divider ────────────────────────────────────────────────────────────
 
-function LinkItem({
-  icon: Icon,
-  iconColor,
-  label,
-  desc,
-  url,
-}: {
-  icon: typeof ExternalLink;
-  iconColor: string;
-  label: string;
-  desc: string;
-  url: string;
-}) {
+function Divider() {
   return (
-    <button
-      onClick={() => openUrl(url)}
-      className="flex items-center gap-3 px-4 py-3 text-left text-sm text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
-    >
-      <Icon size={18} className={iconColor} />
-      <div className="flex-1 min-w-0">
-        <p className="font-medium">{label}</p>
-        <p className="text-xs text-m3-on-surface-variant">{desc}</p>
-      </div>
-      <ExternalLink size={14} className="text-m3-outline shrink-0" />
-    </button>
-  );
-}
-
-function AboutSection() {
-  const t = useI18n();
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <Info size={18} className="text-m3-on-surface-variant" />
-        <span className="text-base font-semibold text-m3-on-surface">
-          {t("about")}
-        </span>
-      </div>
-
-      {/* Logo & Version */}
-      <div className="flex flex-col items-center gap-3 py-4">
-        <img
-          src="/public/icons/icon-128.png"
-          alt="CrossPaste"
-          className="w-16 h-16 rounded-2xl"
-        />
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-lg font-bold text-m3-on-surface">
-            CrossPaste
-          </span>
-          <span className="text-xs text-m3-on-surface-variant">
-            {t("app_version")} {APP_VERSION}
-          </span>
-        </div>
-      </div>
-
-      {/* Resources */}
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wide px-1">
-          {t("resources")}
-        </span>
-        <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden">
-          <LinkItem
-            icon={Globe}
-            iconColor="text-m3-primary"
-            label={t("official_website")}
-            desc={t("official_website_desc")}
-            url={LINKS.website}
-          />
-          <LinkItem
-            icon={BookOpen}
-            iconColor="text-m3-success"
-            label={t("newbie_tutorial")}
-            desc={t("newbie_tutorial_desc")}
-            url={LINKS.tutorial}
-          />
-          <LinkItem
-            icon={FileText}
-            iconColor="text-m3-warning"
-            label={t("change_log")}
-            desc={t("change_log_desc")}
-            url={LINKS.changelog}
-          />
-        </div>
-      </div>
-
-      {/* Support */}
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wide px-1">
-          {t("support")}
-        </span>
-        <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden">
-          <LinkItem
-            icon={MessageSquare}
-            iconColor="text-m3-error"
-            label={t("feedback")}
-            desc={t("feedback_desc")}
-            url={LINKS.feedback}
-          />
-          <LinkItem
-            icon={Mail}
-            iconColor="text-m3-primary"
-            label={t("contact_us")}
-            desc={t("contact_us_desc")}
-            url={LINKS.email}
-          />
-        </div>
-      </div>
-
-      {/* Footer */}
-      <p className="text-center text-[10px] text-m3-outline py-2">
-        © 2024 Compile Future
-      </p>
+    <div className="pl-[66px]">
+      <div className="h-px bg-m3-outline-variant/50" />
     </div>
   );
 }
@@ -239,11 +103,93 @@ function AboutSection() {
 // ─── Main View ──────────────────────────────────────────────────────────
 
 export function SettingsView() {
+  const t = useI18n();
+  const { language } = useLanguageSettings();
+  const [showAbout, setShowAbout] = useState(false);
+  const [showLanguages, setShowLanguages] = useState(false);
+
+  if (showAbout) {
+    return <AboutView onBack={() => setShowAbout(false)} />;
+  }
+
   return (
-    <div className="flex flex-col gap-6 h-full overflow-y-auto px-5 py-4">
-      <ThemeSection />
-      <LanguageSection />
-      <AboutSection />
+    <div className="flex flex-col gap-2 h-full overflow-y-auto px-5 py-4">
+      {/* Section Title */}
+      <span className="text-[13px] font-semibold text-m3-on-surface-variant">
+        {t("general")}
+      </span>
+
+      {/* Settings Card */}
+      <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden">
+        {/* Language */}
+        <button
+          onClick={() => setShowLanguages(!showLanguages)}
+          className="flex items-center gap-3.5 px-4 py-3 hover:bg-m3-surface-container-high transition-colors"
+        >
+          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-indigo-100 dark:bg-indigo-900/50 shrink-0">
+            <Globe size={18} className="text-indigo-500 dark:text-indigo-400" />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
+            <span className="text-sm font-medium text-m3-on-surface">
+              {t("language")}
+            </span>
+            <span className="text-xs text-m3-on-surface-variant">
+              {getLanguageName(language)}
+            </span>
+          </div>
+          <ChevronDown
+            size={18}
+            className={`text-m3-on-surface-variant transition-transform ${showLanguages ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {/* Language dropdown */}
+        {showLanguages && (
+          <>
+            <Divider />
+            <LanguageDropdown onClose={() => setShowLanguages(false)} />
+          </>
+        )}
+
+        <Divider />
+
+        {/* Theme */}
+        <div className="flex items-center gap-3.5 px-4 py-3">
+          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-purple-100 dark:bg-purple-900/50 shrink-0">
+            <Palette
+              size={18}
+              className="text-purple-500 dark:text-purple-400"
+            />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-m3-on-surface">
+              {t("theme")}
+            </span>
+            <ThemeSegmentedControl />
+          </div>
+        </div>
+
+        <Divider />
+
+        {/* About */}
+        <button
+          onClick={() => setShowAbout(true)}
+          className="flex items-center gap-3.5 px-4 py-3 hover:bg-m3-surface-container-high transition-colors"
+        >
+          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-blue-100 dark:bg-blue-900/50 shrink-0">
+            <Info size={18} className="text-blue-500 dark:text-blue-400" />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
+            <span className="text-sm font-medium text-m3-on-surface">
+              {t("about")}
+            </span>
+            <span className="text-xs text-m3-on-surface-variant">
+              v{APP_VERSION}
+            </span>
+          </div>
+          <ChevronRight size={18} className="text-m3-on-surface-variant" />
+        </button>
+      </div>
     </div>
   );
 }
