@@ -1,6 +1,8 @@
 import { openDB, type IDBPDatabase } from "idb";
 import type { PasteData } from "@/shared/models/paste-data";
 import { PasteState } from "@/shared/models/paste-data";
+import { PASTE_TYPE_FROM_INT } from "@/shared/models/paste-item";
+import type { PasteItem } from "@/shared/models/paste-item";
 
 const DB_NAME = "crosspaste";
 const STORE_NAME = "pastes";
@@ -160,10 +162,57 @@ export const PasteStore = {
     return entry.hash;
   },
 
+  /** Move a paste to the top by updating its receivedAt to now. Returns its hash. */
+  async moveToTop(id: number): Promise<string | null> {
+    const db = await getDb();
+    const entry = await db.get(STORE_NAME, id);
+    if (!entry) return null;
+    const paste = entry as PasteData;
+    paste.receivedAt = Date.now();
+    await db.put(STORE_NAME, paste);
+    return paste.hash;
+  },
+
   /** Clear all stored pastes */
   async clear(): Promise<void> {
     const db = await getDb();
     await db.clear(STORE_NAME);
+  },
+
+  /** Search LOADED items with optional text query and type filter */
+  async searchItems(
+    query: string,
+    pasteType: number | null,
+    offset: number,
+    limit: number,
+  ): Promise<PasteData[]> {
+    const db = await getDb();
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const index = tx.store.index("receivedAt");
+    const items: PasteData[] = [];
+    const lowerQuery = query.toLowerCase();
+
+    let cursor = await index.openCursor(null, "prev");
+    let skipped = 0;
+
+    while (cursor && items.length < limit) {
+      const entry = cursor.value as PasteData;
+      if (entry.pasteState === PasteState.LOADED) {
+        const matchesType = pasteType === null || entry.pasteType === pasteType;
+        const matchesQuery = !lowerQuery || matchPasteText(entry, lowerQuery);
+
+        if (matchesType && matchesQuery) {
+          if (skipped >= offset) {
+            items.push(entry);
+          } else {
+            skipped++;
+          }
+        }
+      }
+      cursor = await cursor.continue();
+    }
+
+    return items;
   },
 
   /** Get total LOADED item count */
@@ -174,3 +223,46 @@ export const PasteStore = {
     return stateIndex.count(PasteState.LOADED);
   },
 };
+
+/** Extract searchable text from a PasteItem */
+function extractItemText(item: PasteItem): string {
+  switch (item.type) {
+    case "text":
+      return item.text;
+    case "url":
+      return item.url;
+    case "html":
+      return item.html;
+    case "files":
+    case "images":
+      return item.relativePathList.join(" ");
+    case "color":
+      return item.color.toString(16);
+    case "rtf":
+      return item.rtf;
+    default:
+      return "";
+  }
+}
+
+/** Check if a PasteData matches a lowercase query string */
+function matchPasteText(data: PasteData, lowerQuery: string): boolean {
+  // Check source
+  if (data.source?.toLowerCase().includes(lowerQuery)) return true;
+
+  // Check type label
+  const typeLabel = PASTE_TYPE_FROM_INT[data.pasteType];
+  if (typeLabel?.toLowerCase().includes(lowerQuery)) return true;
+
+  // Check appear item
+  if (data.pasteAppearItem) {
+    if (extractItemText(data.pasteAppearItem).toLowerCase().includes(lowerQuery)) return true;
+  }
+
+  // Check collection items
+  for (const item of data.pasteCollection.pasteItems) {
+    if (extractItemText(item).toLowerCase().includes(lowerQuery)) return true;
+  }
+
+  return false;
+}

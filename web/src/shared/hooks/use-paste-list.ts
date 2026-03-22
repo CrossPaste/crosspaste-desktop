@@ -3,12 +3,23 @@ import type { PasteData } from "@/shared/models/paste-data";
 
 const PAGE_SIZE = 30;
 
-async function fetchPastes(offset: number, limit: number): Promise<PasteData[]> {
+interface SearchParams {
+  query: string;
+  pasteType: number | null;
+}
+
+async function fetchPastes(
+  offset: number,
+  limit: number,
+  params: SearchParams,
+): Promise<PasteData[]> {
   try {
     const result = (await chrome.runtime.sendMessage({
       type: "GET_PASTES",
       offset,
       limit,
+      query: params.query,
+      pasteType: params.pasteType,
     })) as { items: PasteData[] };
     return result.items ?? [];
   } catch {
@@ -16,19 +27,21 @@ async function fetchPastes(offset: number, limit: number): Promise<PasteData[]> 
   }
 }
 
-export function usePasteList() {
+export function usePasteList(searchParams: SearchParams) {
   const [items, setItems] = useState<PasteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(0);
   const busyRef = useRef(false);
+  const paramsRef = useRef(searchParams);
+  paramsRef.current = searchParams;
 
   const loadMore = useCallback(async () => {
     if (busyRef.current || !hasMore) return;
     busyRef.current = true;
     setLoading(true);
 
-    const newItems = await fetchPastes(offsetRef.current, PAGE_SIZE);
+    const newItems = await fetchPastes(offsetRef.current, PAGE_SIZE, paramsRef.current);
     setItems((prev) => [...prev, ...newItems]);
     offsetRef.current += newItems.length;
     if (newItems.length < PAGE_SIZE) setHasMore(false);
@@ -41,7 +54,7 @@ export function usePasteList() {
     busyRef.current = true;
     offsetRef.current = 0;
 
-    const newItems = await fetchPastes(0, PAGE_SIZE);
+    const newItems = await fetchPastes(0, PAGE_SIZE, paramsRef.current);
 
     setItems(newItems);
     offsetRef.current = newItems.length;
@@ -54,11 +67,13 @@ export function usePasteList() {
     await chrome.runtime.sendMessage({ type: "DELETE_PASTE", pasteId });
   }, []);
 
-  // Initial load
+  // Reload when search params change
   useEffect(() => {
-    loadMore();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setLoading(true);
+    offsetRef.current = 0;
+    setHasMore(true);
+    reload().then(() => setLoading(false));
+  }, [searchParams.query, searchParams.pasteType, reload]);
 
   // Listen for paste notifications → full reload
   useEffect(() => {

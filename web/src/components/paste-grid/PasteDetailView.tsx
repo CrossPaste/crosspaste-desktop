@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { ArrowLeft, Copy, Trash2 } from "lucide-react";
 import type { PasteData } from "@/shared/models/paste-data";
-import { PasteType, PASTE_TYPE_FROM_INT, PASTE_TYPE_LABELS } from "@/shared/models/paste-item";
+import { PasteType, PASTE_TYPE_FROM_INT, PASTE_TYPE_I18N_KEYS } from "@/shared/models/paste-item";
 import type {
   PasteItem,
   TextPasteItem,
@@ -195,7 +195,8 @@ export function PasteDetailView({ data, onBack, onCopy, onDelete }: Props) {
   const t = useI18n();
   const displayItem = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
   const typeValue = PASTE_TYPE_FROM_INT[data.pasteType];
-  const typeLabel = typeValue ? PASTE_TYPE_LABELS[typeValue] : "Unknown";
+  const i18nKey = typeValue ? PASTE_TYPE_I18N_KEYS[typeValue] : null;
+  const typeLabel = i18nKey ? t(i18nKey) : "Unknown";
   const colorClass = TYPE_COLORS[data.pasteType] ?? "bg-m3-surface text-m3-on-surface-variant";
 
   const handleCopy = useCallback(

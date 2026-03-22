@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Copy, Trash2 } from "lucide-react";
 import type { PasteData } from "@/shared/models/paste-data";
-import { PasteType, PASTE_TYPE_FROM_INT, PASTE_TYPE_LABELS } from "@/shared/models/paste-item";
+import { PasteType, PASTE_TYPE_FROM_INT, PASTE_TYPE_I18N_KEYS } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type {
   PasteItem,
@@ -43,8 +43,10 @@ const TYPE_BADGE: Record<number, { bg: string; text: string }> = {
 // ─── Title Bar ──────────────────────────────────────────────────────────
 
 function GridTitle({ data }: { data: PasteData }) {
+  const t = useI18n();
   const typeValue = PASTE_TYPE_FROM_INT[data.pasteType];
-  const label = typeValue ? PASTE_TYPE_LABELS[typeValue] : "";
+  const i18nKey = typeValue ? PASTE_TYPE_I18N_KEYS[typeValue] : null;
+  const label = i18nKey ? t(i18nKey) : "";
   const badge = TYPE_BADGE[data.pasteType];
 
   return (

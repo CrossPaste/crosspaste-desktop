@@ -28,8 +28,6 @@ let offscreenReady = false;
 const CLIPBOARD_POLL_INTERVAL_MS = 1000; // 1 second
 const STORAGE_KEY_LAST_HASH = "clipboard_lastHash";
 
-/** Hashes of the last self-written clipboard content to skip on next poll (localOnly). */
-let localCopyHashes: Set<string> | null = null;
 
 async function ensureOffscreen(): Promise<void> {
   if (offscreenReady) return;
@@ -84,14 +82,6 @@ async function pollClipboard(): Promise<void> {
     if (collected.hash === lastHash) return;
 
     await setLastHash(collected.hash);
-
-    // Skip self-written clipboard content (localOnly).
-    // Check all item hashes because the appear item might differ after
-    // clipboard round-trip (e.g. text "FAACBF" detected as color on re-read).
-    if (localCopyHashes !== null && localCopyHashes.has(collected.hash)) {
-      localCopyHashes = null;
-      return;
-    }
 
     // Store file blobs separately
     if (collected.fileBlobs.length > 0) {
@@ -425,7 +415,12 @@ async function handleMessage(
     case "GET_PASTES": {
       const offset = (message.offset as number) ?? 0;
       const limit = (message.limit as number) ?? 50;
-      const items = await PasteStore.getItems(offset, limit);
+      const query = (message.query as string) ?? "";
+      const pasteType = message.pasteType as number | null ?? null;
+
+      const items = (query || pasteType !== null)
+        ? await PasteStore.searchItems(query, pasteType, offset, limit)
+        : await PasteStore.getItems(offset, limit);
       return { items };
     }
 
@@ -434,9 +429,13 @@ async function handleMessage(
     }
 
     case "LOCAL_COPY": {
-      const hashes = message.hashes as string[];
-      localCopyHashes = hashes && hashes.length > 0 ? new Set(hashes) : null;
-      return { success: true };
+      const pasteId = message.pasteId as number;
+      const hash = await PasteStore.moveToTop(pasteId);
+      if (hash) {
+        await setLastHash(hash);
+        broadcastToSidePanel({ type: "PASTE_UPDATED" });
+      }
+      return { success: hash !== null };
     }
 
     case "DELETE_PASTE": {

@@ -39,6 +39,7 @@ export const PASTE_TYPE_FROM_INT: Record<number, PasteTypeValue> = {
   [PasteTypeInt.COLOR]: PasteType.COLOR,
 };
 
+/** Static English labels (kept for non-UI contexts like search matching) */
 export const PASTE_TYPE_LABELS: Record<PasteTypeValue, string> = {
   [PasteType.TEXT]: "Text",
   [PasteType.URL]: "Link",
@@ -47,6 +48,17 @@ export const PASTE_TYPE_LABELS: Record<PasteTypeValue, string> = {
   [PasteType.IMAGE]: "Image",
   [PasteType.RTF]: "RTF",
   [PasteType.COLOR]: "Color",
+};
+
+/** i18n translation keys for each paste type */
+export const PASTE_TYPE_I18N_KEYS: Record<PasteTypeValue, string> = {
+  [PasteType.TEXT]: "text",
+  [PasteType.URL]: "link",
+  [PasteType.HTML]: "html",
+  [PasteType.FILE]: "file",
+  [PasteType.IMAGE]: "image",
+  [PasteType.RTF]: "rtf",
+  [PasteType.COLOR]: "color",
 };
 
 export const PASTE_TYPE_COLORS: Record<PasteTypeValue, string> = {

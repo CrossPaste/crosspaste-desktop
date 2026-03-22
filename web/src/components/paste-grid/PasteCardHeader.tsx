@@ -1,7 +1,8 @@
 import {
-  PASTE_TYPE_LABELS,
   PASTE_TYPE_FROM_INT,
+  PASTE_TYPE_I18N_KEYS,
 } from "@/shared/models/paste-item";
+import { useI18n } from "@/shared/i18n/use-i18n";
 import { relativeTime } from "@/shared/utils/date";
 
 interface Props {
@@ -21,8 +22,10 @@ const TYPE_COLORS: Record<number, string> = {
 };
 
 export function PasteCardHeader({ pasteType, source, receivedAt }: Props) {
+  const t = useI18n();
   const typeValue = PASTE_TYPE_FROM_INT[pasteType];
-  const label = typeValue ? PASTE_TYPE_LABELS[typeValue] : "Unknown";
+  const i18nKey = typeValue ? PASTE_TYPE_I18N_KEYS[typeValue] : null;
+  const label = i18nKey ? t(i18nKey) : "Unknown";
   const colorClass = TYPE_COLORS[pasteType] ?? "bg-m3-surface text-m3-on-surface-variant";
 
   return (
