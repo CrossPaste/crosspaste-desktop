@@ -101,7 +101,7 @@ export function PasteGrid() {
   }
 
   return (
-    <div className="p-2 grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))" }}>
+    <div className="p-2 grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
       {items.map((item, index) => (
         <div
           key={item._id ?? item.hash}
