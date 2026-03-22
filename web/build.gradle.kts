@@ -96,9 +96,11 @@ tasks.register("generateI18n") {
     }
 }
 
+val npmCmd = if (org.gradle.internal.os.OperatingSystem.current().isWindows) "npm.cmd" else "npm"
+
 tasks.register<Exec>("npmInstall") {
     workingDir = projectDir
-    commandLine("npm", "install")
+    commandLine(npmCmd, "install")
     inputs.file("package.json")
     outputs.dir("node_modules")
 }
@@ -106,7 +108,7 @@ tasks.register<Exec>("npmInstall") {
 tasks.register<Exec>("npmBuild") {
     dependsOn("npmInstall", "generateVersion", "generateI18n", ":core:jsBrowserProductionLibraryDistribution")
     workingDir = projectDir
-    commandLine("npm", "run", "build")
+    commandLine(npmCmd, "run", "build")
     inputs.dir("src")
     inputs.dir("public")
     inputs.file("manifest.json")
