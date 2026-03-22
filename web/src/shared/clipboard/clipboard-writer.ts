@@ -30,6 +30,9 @@ function getPlainText(item: PasteItem): string | null {
  * Copy a PasteData back to the system clipboard, restoring all available formats.
  * Mirrors desktop DesktopTransferableProducer: writes all items (appear + collection)
  * as their respective MIME types so paste targets receive the best format.
+ *
+ * Before writing, notifies the service worker to move the paste to the top
+ * and set lastHash, so the next poll deduplicates and skips re-recording.
  */
 export async function copyPasteData(data: PasteData): Promise<void> {
   const allItems: PasteItem[] = [];
@@ -72,17 +75,13 @@ export async function copyPasteData(data: PasteData): Promise<void> {
 
   if (Object.keys(blobs).length === 0) return;
 
-  // Collect all item hashes so the service worker can skip this content
-  // when polling (localOnly). The appear item might change after clipboard
-  // round-trip (e.g. text detected as color), so we send all hashes.
-  const allHashes: string[] = [];
-  for (const item of allItems) {
-    if (item.hash) allHashes.push(item.hash);
+  // Move paste to top and set lastHash before writing clipboard.
+  // The poller's lastHash dedup will then skip the re-read content.
+  if (data._id) {
+    await chrome.runtime
+      .sendMessage({ type: "LOCAL_COPY", pasteId: data._id })
+      .catch(() => {});
   }
 
-  // Await to ensure the service worker processes this before the next poll
-  await chrome.runtime
-    .sendMessage({ type: "LOCAL_COPY", hashes: allHashes })
-    .catch(() => {});
   await navigator.clipboard.write([new ClipboardItem(blobs)]);
 }
