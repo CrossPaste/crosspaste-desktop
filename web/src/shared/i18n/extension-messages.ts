@@ -8,8 +8,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   en: {
     clipboard: "Clipboard",
     connect: "Connect",
+    connect_code: "Connection Code",
     connecting: "Connecting…",
-    connection_failed_check: "Connection failed, please check the IP and port",
+    connection_failed_check: "Connection failed, please check the connection code",
     device_note: "Device Note",
     add_note_for: "Add note for %s",
     enter_note_name: "Enter note name",
@@ -22,9 +23,10 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   de: {
     clipboard: "Zwischenablage",
     connect: "Verbinden",
+    connect_code: "Verbindungscode",
     connecting: "Verbindung wird hergestellt…",
     connection_failed_check:
-      "Verbindung fehlgeschlagen, bitte IP und Port überprüfen",
+      "Verbindung fehlgeschlagen, bitte Verbindungscode überprüfen",
     device_note: "Gerätenotiz",
     add_note_for: "Notiz hinzufügen für %s",
     enter_note_name: "Notizname eingeben",
@@ -38,9 +40,10 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   es: {
     clipboard: "Portapapeles",
     connect: "Conectar",
+    connect_code: "Código de conexión",
     connecting: "Conectando…",
     connection_failed_check:
-      "Conexión fallida, por favor verifica la IP y el puerto",
+      "Conexión fallida, por favor verifica el código de conexión",
     device_note: "Nota del dispositivo",
     add_note_for: "Agregar nota para %s",
     enter_note_name: "Ingrese nombre de nota",
@@ -54,9 +57,10 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   fr: {
     clipboard: "Presse-papiers",
     connect: "Connecter",
+    connect_code: "Code de connexion",
     connecting: "Connexion…",
     connection_failed_check:
-      "Échec de la connexion, veuillez vérifier l'IP et le port",
+      "Échec de la connexion, veuillez vérifier le code de connexion",
     device_note: "Note de l'appareil",
     add_note_for: "Ajouter une note pour %s",
     enter_note_name: "Entrez le nom de la note",
@@ -70,9 +74,10 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   ja: {
     clipboard: "クリップボード",
     connect: "接続",
+    connect_code: "接続コード",
     connecting: "接続中…",
     connection_failed_check:
-      "接続に失敗しました。IPとポートを確認してください",
+      "接続に失敗しました。接続コードを確認してください",
     device_note: "デバイスメモ",
     add_note_for: "%s のメモを追加",
     enter_note_name: "メモ名を入力",
@@ -85,8 +90,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   ko: {
     clipboard: "클립보드",
     connect: "연결",
+    connect_code: "연결 코드",
     connecting: "연결 중…",
-    connection_failed_check: "연결 실패, IP와 포트를 확인하세요",
+    connection_failed_check: "연결 실패, 연결 코드를 확인하세요",
     device_note: "기기 메모",
     add_note_for: "%s 메모 추가",
     enter_note_name: "메모 이름 입력",
@@ -99,8 +105,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   zh: {
     clipboard: "剪贴板",
     connect: "连接",
+    connect_code: "连接码",
     connecting: "连接中…",
-    connection_failed_check: "连接失败，请检查 IP 和端口是否正确",
+    connection_failed_check: "连接失败，请检查连接码是否正确",
     device_note: "设备备注",
     add_note_for: "为 %s 添加备注名称",
     enter_note_name: "输入备注名称",
@@ -112,8 +119,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   zh_hant: {
     clipboard: "剪貼簿",
     connect: "連線",
+    connect_code: "連線碼",
     connecting: "連線中…",
-    connection_failed_check: "連線失敗，請確認 IP 和連接埠是否正確",
+    connection_failed_check: "連線失敗，請確認連線碼是否正確",
     device_note: "裝置備註",
     add_note_for: "為 %s 新增備註名稱",
     enter_note_name: "輸入備註名稱",

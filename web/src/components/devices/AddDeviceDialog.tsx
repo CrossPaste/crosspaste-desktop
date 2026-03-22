@@ -3,6 +3,7 @@ import { Plus, X, Laptop, Smartphone, Monitor } from "lucide-react";
 import { TokenInput } from "@/components/connection/TokenInput";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type { SyncInfo } from "@/shared/models/sync-info";
+import { decodeConnectCode, isConnectCode } from "@/shared/utils/connect-code";
 
 type Phase = "input" | "token";
 
@@ -39,21 +40,32 @@ const PLATFORM_ICON: Record<string, typeof Laptop> = {
 export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
   const t = useI18n();
   const [phase, setPhase] = useState<Phase>("input");
-  const [ip, setIp] = useState("");
-  const [port, setPort] = useState("13129");
+  const [connectCode, setConnectCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncInfo, setSyncInfo] = useState<SyncInfo | null>(null);
 
-  const inputValid = isValidIp(ip) && isValidPort(port);
+  // Auto-format: insert dash after 5 chars
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^0-9A-Za-z-]/g, "");
+    const digits = raw.replace(/-/g, "");
+    if (digits.length > 10) return;
+    if (digits.length > 5) {
+      raw = digits.slice(0, 5) + "-" + digits.slice(5);
+    } else {
+      raw = digits;
+    }
+    setConnectCode(raw.toUpperCase());
+  };
+
+  const codeReady = isConnectCode(connectCode);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (!open) {
       const timer = setTimeout(() => {
         setPhase("input");
-        setIp("");
-        setPort("13129");
+        setConnectCode("");
         setLoading(false);
         setError(null);
         setSyncInfo(null);
@@ -63,18 +75,42 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
   }, [open]);
 
   const handleConnect = useCallback(async () => {
-    if (!inputValid || loading) return;
+    if (loading) return;
     setLoading(true);
     setError(null);
-    const result = await onConnect(ip, parseInt(port, 10));
-    setLoading(false);
-    if (result.success) {
-      setSyncInfo(result.syncInfo ?? null);
-      setPhase("token");
-    } else {
-      setError(result.error ?? t("connection_failed_check"));
+
+    try {
+      let host: string;
+      let port: number;
+
+      if (isConnectCode(connectCode)) {
+        const decoded = decodeConnectCode(connectCode);
+        host = decoded.ip;
+        port = decoded.port;
+      } else {
+        // Fallback: try parsing as ip:port
+        const parts = connectCode.split(":");
+        host = parts[0];
+        port = parseInt(parts[1] ?? "13129", 10);
+        if (!isValidIp(host) || !isValidPort(String(port))) {
+          setError(t("connection_failed_check"));
+          setLoading(false);
+          return;
+        }
+      }
+
+      const result = await onConnect(host, port);
+      if (result.success) {
+        setSyncInfo(result.syncInfo ?? null);
+        setPhase("token");
+      } else {
+        setError(result.error ?? t("connection_failed_check"));
+      }
+    } catch {
+      setError(t("connection_failed_check"));
     }
-  }, [ip, port, inputValid, loading, onConnect, t]);
+    setLoading(false);
+  }, [connectCode, loading, onConnect, t]);
 
   const handlePair = useCallback(async (token: number) => {
     setLoading(true);
@@ -89,7 +125,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
   }, [onPair, onClose, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && inputValid && !loading) {
+    if (e.key === "Enter" && codeReady && !loading) {
       handleConnect();
     }
   };
@@ -124,31 +160,20 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
               {t("add_device_manually_desc")}
             </p>
 
-            {/* IP / Port Fields */}
+            {/* Connection Code Input */}
             <div className="flex flex-col gap-3 mb-5" onKeyDown={handleKeyDown}>
               <div>
                 <label className="block text-xs font-medium text-m3-on-surface-variant mb-1.5">
-                  IP
+                  {t("connect_code")}
                 </label>
                 <input
                   type="text"
-                  value={ip}
-                  onChange={(e) => setIp(e.target.value)}
-                  placeholder="192.168.0.10"
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-m3-outline-variant bg-m3-surface text-m3-on-surface placeholder:text-m3-outline focus:outline-none focus:ring-2 focus:ring-m3-primary focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-m3-on-surface-variant mb-1.5">
-                  {t("port")}
-                </label>
-                <input
-                  type="text"
-                  value={port}
-                  onChange={(e) => setPort(e.target.value)}
-                  placeholder="13129"
-                  inputMode="numeric"
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-m3-outline-variant bg-m3-surface text-m3-on-surface placeholder:text-m3-outline focus:outline-none focus:ring-2 focus:ring-m3-primary focus:border-transparent"
+                  value={connectCode}
+                  onChange={handleCodeChange}
+                  placeholder="XXXXX-XXXXX"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="w-full px-3 py-2.5 text-center text-lg font-mono font-semibold tracking-[0.15em] rounded-xl border border-m3-outline-variant bg-m3-surface text-m3-on-surface placeholder:text-m3-outline placeholder:font-normal placeholder:text-sm placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-m3-primary focus:border-transparent"
                 />
               </div>
             </div>
@@ -168,7 +193,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
               </button>
               <button
                 onClick={handleConnect}
-                disabled={!inputValid || loading}
+                disabled={!codeReady || loading}
                 className="px-4 py-2 text-sm font-medium text-white rounded-xl bg-m3-primary hover:opacity-90 disabled:opacity-40 transition-colors"
               >
                 {loading ? t("connecting") : t("connect")}
