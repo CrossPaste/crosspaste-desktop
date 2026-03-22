@@ -87,7 +87,7 @@ function isUrl(text: string): boolean {
  * Parse a color string and return a 32-bit ARGB integer, or null if not a color.
  * Supports: #RGB, #RRGGBB, #RRGGBBAA, rgb(), rgba(), hsl(), hsla()
  */
-function parseColor(text: string): number | null {
+export function parseColor(text: string): number | null {
   // Hex colors
   const hex = parseHexColor(text);
   if (hex !== null) return hex;
@@ -103,39 +103,51 @@ function parseColor(text: string): number | null {
   return null;
 }
 
+/**
+ * Parse hex color, matching desktop ColorParser.parseHexColor exactly.
+ * Accepts with or without # prefix.
+ * With #: 3,4,6,8 digits. Without #: 6,8 digits only (avoids "ABC" false positives).
+ */
 function parseHexColor(text: string): number | null {
-  const match = text.match(/^#([0-9a-f]{3,8})$/i);
-  if (!match) return null;
-  const hex = match[1];
+  const hasHash = text.startsWith("#");
+  const cleanHex = hasHash ? text.slice(1) : text;
+
+  // Without # prefix, only accept 6 or 8 digit hex
+  if (!hasHash && cleanHex.length !== 6 && cleanHex.length !== 8) return null;
+
+  // Validate all chars are hex
+  if (!/^[0-9a-f]+$/i.test(cleanHex)) return null;
 
   let r: number, g: number, b: number, a = 255;
 
-  switch (hex.length) {
+  switch (cleanHex.length) {
     case 3: // #RGB
-      r = parseInt(hex[0] + hex[0], 16);
-      g = parseInt(hex[1] + hex[1], 16);
-      b = parseInt(hex[2] + hex[2], 16);
+      r = parseInt(cleanHex[0] + cleanHex[0], 16);
+      g = parseInt(cleanHex[1] + cleanHex[1], 16);
+      b = parseInt(cleanHex[2] + cleanHex[2], 16);
       break;
     case 4: // #RGBA
-      r = parseInt(hex[0] + hex[0], 16);
-      g = parseInt(hex[1] + hex[1], 16);
-      b = parseInt(hex[2] + hex[2], 16);
-      a = parseInt(hex[3] + hex[3], 16);
+      r = parseInt(cleanHex[0] + cleanHex[0], 16);
+      g = parseInt(cleanHex[1] + cleanHex[1], 16);
+      b = parseInt(cleanHex[2] + cleanHex[2], 16);
+      a = parseInt(cleanHex[3] + cleanHex[3], 16);
       break;
-    case 6: // #RRGGBB
-      r = parseInt(hex.slice(0, 2), 16);
-      g = parseInt(hex.slice(2, 4), 16);
-      b = parseInt(hex.slice(4, 6), 16);
+    case 6: // RRGGBB
+      r = parseInt(cleanHex.slice(0, 2), 16);
+      g = parseInt(cleanHex.slice(2, 4), 16);
+      b = parseInt(cleanHex.slice(4, 6), 16);
       break;
-    case 8: // #RRGGBBAA
-      r = parseInt(hex.slice(0, 2), 16);
-      g = parseInt(hex.slice(2, 4), 16);
-      b = parseInt(hex.slice(4, 6), 16);
-      a = parseInt(hex.slice(6, 8), 16);
+    case 8: // RRGGBBAA
+      r = parseInt(cleanHex.slice(0, 2), 16);
+      g = parseInt(cleanHex.slice(2, 4), 16);
+      b = parseInt(cleanHex.slice(4, 6), 16);
+      a = parseInt(cleanHex.slice(6, 8), 16);
       break;
     default:
       return null;
   }
+
+  if (isNaN(r) || isNaN(g) || isNaN(b) || isNaN(a)) return null;
 
   return toArgb(a, r, g, b);
 }
