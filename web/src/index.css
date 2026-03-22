@@ -29,6 +29,20 @@
   /* M3 Outline */
   --color-m3-outline: #9CA3AF;
   --color-m3-outline-variant: #E5E7EB;
+
+  /* Settings Icon Colors */
+  --color-settings-indigo: #6366F1;
+  --color-settings-indigo-bg: #EEF2FF;
+  --color-settings-purple: #A855F7;
+  --color-settings-purple-bg: #F3E8FF;
+  --color-settings-blue: #3B82F6;
+  --color-settings-blue-bg: #DBEAFE;
+  --color-settings-green: #22C55E;
+  --color-settings-green-bg: #DCFCE7;
+  --color-settings-red: #EF4444;
+  --color-settings-red-bg: #FEE2E2;
+  --color-settings-cyan: #06B6D4;
+  --color-settings-cyan-bg: #CFFAFE;
 }
 
 .dark {
@@ -54,4 +68,18 @@
 
   --color-m3-outline: #6B7280;
   --color-m3-outline-variant: #374151;
+
+  /* Settings Icon Colors */
+  --color-settings-indigo: #818CF8;
+  --color-settings-indigo-bg: rgba(99, 102, 241, 0.15);
+  --color-settings-purple: #C084FC;
+  --color-settings-purple-bg: rgba(168, 85, 247, 0.15);
+  --color-settings-blue: #60A5FA;
+  --color-settings-blue-bg: rgba(59, 130, 246, 0.15);
+  --color-settings-green: #4ADE80;
+  --color-settings-green-bg: rgba(34, 197, 94, 0.15);
+  --color-settings-red: #F87171;
+  --color-settings-red-bg: rgba(239, 68, 68, 0.15);
+  --color-settings-cyan: #22D3EE;
+  --color-settings-cyan-bg: rgba(6, 182, 212, 0.15);
 }

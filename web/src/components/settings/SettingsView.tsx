@@ -126,8 +126,8 @@ export function SettingsView() {
           onClick={() => setShowLanguages(!showLanguages)}
           className="flex items-center gap-3.5 px-4 py-3 hover:bg-m3-surface-container-high transition-colors"
         >
-          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-indigo-100 dark:bg-indigo-900/50 shrink-0">
-            <Globe size={18} className="text-indigo-500 dark:text-indigo-400" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-settings-indigo-bg shrink-0">
+            <Globe size={18} className="text-settings-indigo" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
             <span className="text-sm font-medium text-m3-on-surface">
@@ -155,11 +155,8 @@ export function SettingsView() {
 
         {/* Theme */}
         <div className="flex items-center gap-3.5 px-4 py-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-purple-100 dark:bg-purple-900/50 shrink-0">
-            <Palette
-              size={18}
-              className="text-purple-500 dark:text-purple-400"
-            />
+          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-settings-purple-bg shrink-0">
+            <Palette size={18} className="text-settings-purple" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col gap-1.5">
             <span className="text-sm font-medium text-m3-on-surface">
@@ -176,8 +173,8 @@ export function SettingsView() {
           onClick={() => setShowAbout(true)}
           className="flex items-center gap-3.5 px-4 py-3 hover:bg-m3-surface-container-high transition-colors"
         >
-          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-blue-100 dark:bg-blue-900/50 shrink-0">
-            <Info size={18} className="text-blue-500 dark:text-blue-400" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-settings-blue-bg shrink-0">
+            <Info size={18} className="text-settings-blue" />
           </div>
           <div className="flex-1 min-w-0 flex flex-col gap-0.5 text-left">
             <span className="text-sm font-medium text-m3-on-surface">

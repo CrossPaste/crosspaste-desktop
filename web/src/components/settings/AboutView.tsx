@@ -126,24 +126,24 @@ export function AboutView({ onBack }: Props) {
             <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden">
               <LinkItem
                 icon={Globe}
-                iconBg="bg-blue-100 dark:bg-blue-900/50"
-                iconColor="text-blue-500 dark:text-blue-400"
+                iconBg="bg-settings-blue-bg"
+                iconColor="text-settings-blue"
                 label={t("official_website")}
                 desc={t("official_website_desc")}
                 url={LINKS.website}
               />
               <LinkItem
                 icon={BookOpen}
-                iconBg="bg-green-100 dark:bg-green-900/50"
-                iconColor="text-green-500 dark:text-green-400"
+                iconBg="bg-settings-green-bg"
+                iconColor="text-settings-green"
                 label={t("newbie_tutorial")}
                 desc={t("newbie_tutorial_desc")}
                 url={LINKS.tutorial}
               />
               <LinkItem
                 icon={FileText}
-                iconBg="bg-purple-100 dark:bg-purple-900/50"
-                iconColor="text-purple-500 dark:text-purple-400"
+                iconBg="bg-settings-purple-bg"
+                iconColor="text-settings-purple"
                 label={t("change_log")}
                 desc={t("change_log_desc")}
                 url={LINKS.changelog}
@@ -160,16 +160,16 @@ export function AboutView({ onBack }: Props) {
             <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden">
               <LinkItem
                 icon={MessageSquare}
-                iconBg="bg-red-100 dark:bg-red-900/50"
-                iconColor="text-red-500 dark:text-red-400"
+                iconBg="bg-settings-red-bg"
+                iconColor="text-settings-red"
                 label={t("feedback")}
                 desc={t("feedback_desc")}
                 url={LINKS.feedback}
               />
               <LinkItem
                 icon={Mail}
-                iconBg="bg-cyan-100 dark:bg-cyan-900/50"
-                iconColor="text-cyan-500 dark:text-cyan-400"
+                iconBg="bg-settings-cyan-bg"
+                iconColor="text-settings-cyan"
                 label={t("contact_us")}
                 desc={t("contact_us_desc")}
                 url={LINKS.email}
