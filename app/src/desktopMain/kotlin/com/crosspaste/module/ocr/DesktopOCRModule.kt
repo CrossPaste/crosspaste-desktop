@@ -11,6 +11,7 @@ import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.FA
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.FR
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.JA
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.KO
+import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.PT
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH_HANT
 import com.crosspaste.i18n.GlobalCopywriter
@@ -51,6 +52,7 @@ class DesktopOCRModule(
                 ES -> "spa"
                 FA -> "fas"
                 FR -> "fra"
+                PT -> "por"
                 KO -> "kor"
                 JA -> "jpn"
                 ZH -> "chi_sim"
@@ -65,6 +67,7 @@ class DesktopOCRModule(
                 "spa" -> ES
                 "fas" -> FA
                 "fra" -> FR
+                "por" -> PT
                 "kor" -> KO
                 "jpn" -> JA
                 "chi_sim" -> ZH
