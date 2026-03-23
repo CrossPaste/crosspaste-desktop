@@ -298,3 +298,26 @@ done < "$INPUT_FILE"
 
 echo "-----------------------------------------"
 echo "Summary: Processed $TOTAL_COUNT, Updated $SUCCESS_COUNT, Skipped $SKIPPED_COUNT."
+
+# ==========================================
+# COMPLETENESS CHECK: warn if any existing
+# .properties files were not covered by input
+# ==========================================
+MISSING_LANGS=()
+shopt -s nullglob
+for file in "$I18N_DIR"/*.properties; do
+    lang=$(basename "$file" .properties)
+    if ! grep -q "^${lang}=" "$INPUT_FILE" && ! grep -q "^$(echo "$lang" | sed 's/_/-/g')=" "$INPUT_FILE"; then
+        MISSING_LANGS+=("$lang")
+    fi
+done
+shopt -u nullglob
+
+if [ ${#MISSING_LANGS[@]} -gt 0 ]; then
+    echo ""
+    echo "⚠️  Warning: The following languages were NOT included in the input file:"
+    for ml in "${MISSING_LANGS[@]}"; do
+        echo "    - $ml (${I18N_DIR}/${ml}.properties)"
+    done
+    echo "   Consider adding translations for these languages to ensure completeness."
+fi
