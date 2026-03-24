@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.util.Properties
 import java.util.concurrent.TimeUnit
+import javax.swing.SwingUtilities
 
 class DesktopAppUpdateService(
     appInfo: AppInfo,
@@ -93,16 +94,21 @@ class DesktopAppUpdateService(
 
     private fun SoftwareUpdateController.tryTriggerUpdateUI(): Boolean =
         try {
-            when (canTriggerUpdateCheckUI()) {
-                SoftwareUpdateController.Availability.AVAILABLE -> {
-                    triggerUpdateCheckUI()
-                    true
-                }
-                else -> {
-                    logger.warn { "SoftwareUpdateController is not available, cannot trigger update check UI" }
-                    false
-                }
+            var result = false
+            SwingUtilities.invokeAndWait {
+                result =
+                    when (canTriggerUpdateCheckUI()) {
+                        SoftwareUpdateController.Availability.AVAILABLE -> {
+                            triggerUpdateCheckUI()
+                            true
+                        }
+                        else -> {
+                            logger.warn { "SoftwareUpdateController is not available, cannot trigger update check UI" }
+                            false
+                        }
+                    }
             }
+            result
         } catch (e: Exception) {
             logger.error(e) { "Failed to trigger update check UI" }
             false
