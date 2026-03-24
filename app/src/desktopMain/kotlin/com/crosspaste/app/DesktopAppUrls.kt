@@ -13,4 +13,6 @@ object DesktopAppUrls : AppUrls {
     override val checkMetadataUrl: String = appUrlsProperties.getProperty("check-metadata-url")
 
     override val issueTrackerUrl: String = appUrlsProperties.getProperty("issue-tracker-url")
+
+    override val promoteUrl: String = appUrlsProperties.getProperty("promote-url")
 }
