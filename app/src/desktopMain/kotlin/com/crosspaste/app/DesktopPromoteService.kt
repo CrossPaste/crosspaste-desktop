@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
-class DesktopMobilePromoteService(
+class DesktopPromoteService(
     private val appUrls: AppUrls,
     private val resourcesClient: ResourcesClient,
-) : MobilePromoteService {
+) : PromoteService {
 
     private val logger = KotlinLogging.logger {}
 
@@ -26,10 +26,10 @@ class DesktopMobilePromoteService(
 
     private val coroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
 
-    private val _config: MutableStateFlow<MobilePromoteConfig> =
-        MutableStateFlow(MobilePromoteConfig())
+    private val _config: MutableStateFlow<PromoteConfig> =
+        MutableStateFlow(PromoteConfig())
 
-    override val config: StateFlow<MobilePromoteConfig> = _config
+    override val config: StateFlow<PromoteConfig> = _config
 
     private var fetchJob: Job? = null
 
@@ -47,18 +47,18 @@ class DesktopMobilePromoteService(
     private suspend fun fetchConfig() {
         runCatching {
             resourcesClient
-                .request(appUrls.mobilePromoteUrl)
+                .request(appUrls.promoteUrl)
                 .getOrNull()
                 ?.let { response ->
                     val jsonString =
                         response.getBody().toInputStream().use { inputStream ->
                             inputStream.bufferedReader().readText()
                         }
-                    _config.value = json.decodeFromString<MobilePromoteConfig>(jsonString)
-                    logger.info { "Mobile promote config loaded successfully" }
+                    _config.value = json.decodeFromString<PromoteConfig>(jsonString)
+                    logger.info { "Promote config loaded successfully" }
                 }
         }.onFailure { e ->
-            logger.warn { "Failed to fetch mobile promote config: ${e.message}" }
+            logger.warn { "Failed to fetch promote config: ${e.message}" }
         }
     }
 }

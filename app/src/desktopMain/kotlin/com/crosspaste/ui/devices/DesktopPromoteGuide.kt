@@ -20,7 +20,7 @@ import com.composables.icons.fontawesome.brands.Apple
 import com.composables.icons.fontawesome.brands.GooglePlay
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Download
-import com.crosspaste.app.MobilePromoteService
+import com.crosspaste.app.PromoteService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -28,12 +28,12 @@ import com.crosspaste.ui.theme.AppUISize.small2X
 import org.koin.compose.koinInject
 
 @Composable
-fun DesktopMobilePromoteGuide() {
+fun DesktopPromoteGuide() {
     val copyWriter = koinInject<GlobalCopywriter>()
-    val mobilePromoteService = koinInject<MobilePromoteService>()
+    val promoteService = koinInject<PromoteService>()
     val uiSupport = koinInject<UISupport>()
 
-    val promoteConfig by mobilePromoteService.config.collectAsState()
+    val promoteConfig by promoteService.config.collectAsState()
     val ios = promoteConfig.promote.ios
     val android = promoteConfig.promote.android
     val domestic = promoteConfig.promote.domestic

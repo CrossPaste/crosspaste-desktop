@@ -30,7 +30,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.ShareContentView
-import com.crosspaste.ui.devices.DesktopMobilePromoteGuide
+import com.crosspaste.ui.devices.DesktopPromoteGuide
 import com.crosspaste.ui.devices.DeviceDetailContentView
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.DevicesContentView
@@ -268,7 +268,7 @@ class DesktopScreenProvider(
     @Composable
     private fun DevicesScreen() {
         DevicesContentView(
-            guideContent = { DesktopMobilePromoteGuide() },
+            guideContent = { DesktopPromoteGuide() },
         )
     }
 

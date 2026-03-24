@@ -14,5 +14,5 @@ object DesktopAppUrls : AppUrls {
 
     override val issueTrackerUrl: String = appUrlsProperties.getProperty("issue-tracker-url")
 
-    override val mobilePromoteUrl: String = appUrlsProperties.getProperty("mobile-promote-url")
+    override val promoteUrl: String = appUrlsProperties.getProperty("promote-url")
 }

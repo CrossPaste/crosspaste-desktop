@@ -10,5 +10,5 @@ interface AppUrls {
 
     val issueTrackerUrl: String
 
-    val mobilePromoteUrl: String
+    val promoteUrl: String
 }
