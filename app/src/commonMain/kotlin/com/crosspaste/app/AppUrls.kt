@@ -9,4 +9,6 @@ interface AppUrls {
     val checkMetadataUrl: String
 
     val issueTrackerUrl: String
+
+    val mobilePromoteUrl: String
 }

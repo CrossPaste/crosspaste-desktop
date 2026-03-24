@@ -21,6 +21,7 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.MobilePromoteService
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
@@ -156,6 +157,7 @@ class CrossPaste {
                     koin.get<CleanScheduler>().start()
                     koin.get<AppStartUpService>().followConfig()
                     koin.get<AppUpdateService>().start()
+                    koin.get<MobilePromoteService>().start()
                     koin.get<GuidePasteDataService>().initData()
 
                     if (!headless) {
@@ -211,6 +213,7 @@ class CrossPaste {
                     val jobs =
                         buildList {
                             add(async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } })
+                            add(async { stopService<MobilePromoteService>("MobilePromoteService") { it.stop() } })
                             add(async { stopService<TaskExecutor>("TaskExecutor") { it.shutdown() } })
                             add(
                                 async {

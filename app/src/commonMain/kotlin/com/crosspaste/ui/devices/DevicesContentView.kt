@@ -40,7 +40,7 @@ import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
-fun DevicesContentView() {
+fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
     val copywriter = koinInject<GlobalCopywriter>()
     val deviceScopeFactory = koinInject<DeviceScopeFactory>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
@@ -157,7 +157,7 @@ fun DevicesContentView() {
                 }
             } else {
                 item(key = "empty_nearby_devices") {
-                    NotFoundNearByDevices()
+                    NotFoundNearByDevices(guideContent = guideContent)
                 }
             }
         }
