@@ -335,9 +335,10 @@ class SyncResolver(
         host: String,
         port: Int,
     ) {
-        val remotePairingVersion = getRemotePairingVersion(appInstanceId)
-        val skipTokenCache = SyncApi.supportsSASPairing(remotePairingVersion)
-        if (!skipTokenCache && trustByTokenCache()) {
+        // Always attempt token cache first — it serves the QR-code scan flow
+        // where the token is delivered via physical proximity (camera), which is
+        // secure regardless of pairing protocol version.
+        if (trustByTokenCache()) {
             logger.info { "trustByTokenCache success $host $port" }
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
