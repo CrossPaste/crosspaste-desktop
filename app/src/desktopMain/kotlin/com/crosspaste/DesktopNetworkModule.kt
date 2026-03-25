@@ -124,8 +124,8 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         }
         single<SyncResolverApi> {
             SyncResolver(
+                lazyNearbyDeviceManager = lazy { get() },
                 lazyPasteBonjourService = lazy { get() },
-                nearbyDeviceManager = get(),
                 networkInterfaceService = get(),
                 ratingPromptManager = get(),
                 secureKeyPairSerializer = get(),

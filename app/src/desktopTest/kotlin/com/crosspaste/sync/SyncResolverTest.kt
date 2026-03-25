@@ -61,8 +61,8 @@ class SyncResolverTest {
 
         fun createResolver(): SyncResolver =
             SyncResolver(
+                lazyNearbyDeviceManager = lazy { nearbyDeviceManager },
                 lazyPasteBonjourService = lazy { pasteBonjourService },
-                nearbyDeviceManager = nearbyDeviceManager,
                 networkInterfaceService = networkInterfaceService,
                 ratingPromptManager = ratingPromptManager,
                 secureKeyPairSerializer = secureKeyPairSerializer,

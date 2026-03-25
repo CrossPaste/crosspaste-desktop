@@ -29,8 +29,8 @@ import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SyncResolver(
+    private val lazyNearbyDeviceManager: Lazy<NearbyDeviceManager>,
     private val lazyPasteBonjourService: Lazy<PasteBonjourService>,
-    private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
     private val ratingPromptManager: RatingPromptManager,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
@@ -48,7 +48,7 @@ class SyncResolver(
     private val deviceMutex = StripedMutex()
 
     private fun getRemotePairingVersion(appInstanceId: String): Int? =
-        nearbyDeviceManager.nearbySyncInfos.value
+        lazyNearbyDeviceManager.value.nearbySyncInfos.value
             .firstOrNull { it.appInfo.appInstanceId == appInstanceId }
             ?.appInfo
             ?.pairingVersion
