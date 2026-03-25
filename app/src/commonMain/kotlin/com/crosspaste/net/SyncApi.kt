@@ -4,6 +4,11 @@ object SyncApi {
 
     const val VERSION: Int = 3
 
+    const val PAIRING_VERSION: Int = 2
+
+    fun supportsSASPairing(remotePairingVersion: Int?): Boolean =
+        remotePairingVersion != null && remotePairingVersion >= 2
+
     val SCHEMA =
         """
         [
@@ -58,6 +63,16 @@ object SyncApi {
             "path": "/sync/trust",
             "method": "post",
             "receive": "TrustRequest"
+          },
+          {
+            "path": "/sync/trust/v2/exchange",
+            "method": "post",
+            "receive": "KeyExchangeRequest"
+          },
+          {
+            "path": "/sync/trust/v2/confirm",
+            "method": "post",
+            "receive": "TrustConfirmRequest"
           }
         ]
         """.trimIndent()

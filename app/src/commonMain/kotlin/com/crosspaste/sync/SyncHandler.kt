@@ -43,6 +43,8 @@ interface SyncHandler {
         callback: (Boolean) -> Unit,
     )
 
+    suspend fun exchangeKeysForPairing()
+
     suspend fun showToken()
 
     suspend fun notifyExit()

@@ -48,6 +48,8 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Key
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.net.SyncApi
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
@@ -103,8 +105,20 @@ fun DeviceScope.TrustDeviceDialog() {
         }
     }
 
+    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
+
     LaunchedEffect(Unit) {
-        syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]?.showToken()
+        val handler = syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
+        val remotePairingVersion =
+            nearbyDeviceManager.nearbySyncInfos.value
+                .firstOrNull { it.appInfo.appInstanceId == syncRuntimeInfo.appInstanceId }
+                ?.appInfo
+                ?.pairingVersion
+        if (SyncApi.supportsSASPairing(remotePairingVersion)) {
+            handler?.exchangeKeysForPairing()
+        } else {
+            handler?.showToken()
+        }
     }
 
     AlertDialog(

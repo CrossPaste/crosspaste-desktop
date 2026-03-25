@@ -18,6 +18,7 @@ import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPair
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
@@ -78,12 +79,15 @@ class TestInstance(
     private val syncInfoFactory =
         SyncInfoFactory(appInfo, endpointInfoFactory)
 
+    private val pendingKeyExchangeStore = PendingKeyExchangeStore()
+
     private val serverModule =
         TestServerModule(
             appInfo = appInfo,
             appTokenApi = appTokenApi,
             exceptionHandler = exceptionHandler,
             networkInterfaceService = networkInterfaceService,
+            pendingKeyExchangeStore = pendingKeyExchangeStore,
             secureKeyPairSerializer = secureKeyPairSerializer,
             secureStore = secureStore,
             serverEncryptPluginFactory = ServerEncryptPluginFactory(secureStore),

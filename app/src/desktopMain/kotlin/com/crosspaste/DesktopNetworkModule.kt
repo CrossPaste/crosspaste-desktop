@@ -33,6 +33,7 @@ import com.crosspaste.sync.GeneralSyncManager
 import com.crosspaste.sync.MarketingNearbyDeviceManager
 import com.crosspaste.sync.MarketingSyncManager
 import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.SyncDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
@@ -65,6 +66,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get()) }
         single<ResourcesClient> { DesktopResourcesClient(get(), get()) }
         single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
+        single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
         single<PasteClient> { PasteClient(get(), get(), get()) }
         single<PullClientApi> { PullClientApi(get(), get()) }
         single<PasteClientApi> { PasteClientApi(get(), get()) }
@@ -88,6 +90,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 exceptionHandler = get(),
                 nearbyDeviceManager = get(),
                 networkInterfaceService = get(),
+                pendingKeyExchangeStore = get(),
                 pasteboardService = get(),
                 pasteDao = get(),
                 secureKeyPairSerializer = get(),
@@ -122,8 +125,10 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<SyncResolverApi> {
             SyncResolver(
                 lazyPasteBonjourService = lazy { get() },
+                nearbyDeviceManager = get(),
                 networkInterfaceService = get(),
                 ratingPromptManager = get(),
+                secureKeyPairSerializer = get(),
                 secureStore = get(),
                 syncClientApi = get(),
                 syncDeviceManager = get(),

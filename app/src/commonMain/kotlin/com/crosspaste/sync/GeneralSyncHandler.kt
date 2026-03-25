@@ -199,6 +199,10 @@ class GeneralSyncHandler(
         emitEvent(SyncEvent.TrustByToken(currentSyncRuntimeInfo, token, callback))
     }
 
+    override suspend fun exchangeKeysForPairing() {
+        emitEvent(SyncEvent.ExchangeKeysForPairing(currentSyncRuntimeInfo))
+    }
+
     override suspend fun showToken() {
         emitEvent(SyncEvent.ShowToken(currentSyncRuntimeInfo))
     }

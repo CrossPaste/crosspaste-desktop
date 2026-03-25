@@ -9,6 +9,7 @@ import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.getJsonUtils
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -20,6 +21,7 @@ class TestServerModule(
     private val appTokenApi: AppTokenApi,
     private val exceptionHandler: ExceptionHandler,
     private val networkInterfaceService: NetworkInterfaceService,
+    private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
@@ -41,6 +43,7 @@ class TestServerModule(
                     appTokenApi,
                     exceptionHandler,
                     networkInterfaceService,
+                    pendingKeyExchangeStore,
                     secureKeyPairSerializer,
                     secureStore,
                     syncApi,

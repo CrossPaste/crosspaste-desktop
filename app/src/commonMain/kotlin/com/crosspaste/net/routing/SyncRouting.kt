@@ -2,7 +2,11 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.dto.secure.KeyExchangeRequest
+import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.dto.secure.PairingResponse
+import com.crosspaste.dto.secure.TrustConfirmRequest
+import com.crosspaste.dto.secure.TrustConfirmResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
@@ -13,6 +17,8 @@ import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.PendingKeyExchange
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.failResponse
@@ -28,6 +34,7 @@ fun Routing.syncRouting(
     appTokenApi: AppTokenApi,
     exceptionHandler: ExceptionHandler,
     networkInterfaceService: NetworkInterfaceService,
+    pendingKeyExchangeStore: PendingKeyExchangeStore,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
     syncApi: SyncApi,
@@ -189,6 +196,133 @@ fun Routing.syncRouting(
                 successResponse(call, trustResponse)
             }.onFailure { e ->
                 logger.error(e) { "Trust request failed for $appInstanceId" }
+                failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
+            }
+        }
+    }
+
+    post("/sync/trust/v2/exchange") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            runCatching {
+                val request = call.receive(KeyExchangeRequest::class)
+
+                val receiveSignPublicKey =
+                    secureKeyPairSerializer.decodeSignPublicKey(request.signPublicKey)
+
+                val verifyResult =
+                    CryptographyUtils.verifyKeyExchangeRequest(
+                        receiveSignPublicKey,
+                        request,
+                    )
+
+                if (!verifyResult) {
+                    logger.warn { "v2 exchange verify fail for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
+                    return@post
+                }
+
+                val localCryptPublicKey =
+                    secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
+                val localSignPublicKey =
+                    secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+
+                val sas =
+                    CryptographyUtils.computeSAS(
+                        localCryptPublicKey,
+                        request.cryptPublicKey,
+                    )
+
+                val currentTimestamp = nowEpochMilliseconds()
+
+                pendingKeyExchangeStore.put(
+                    appInstanceId,
+                    PendingKeyExchange(
+                        signPublicKey = request.signPublicKey,
+                        cryptPublicKey = request.cryptPublicKey,
+                        sas = sas,
+                        timestamp = currentTimestamp,
+                    ),
+                )
+
+                appTokenApi.setSASToken(sas)
+                appTokenApi.addPendingVerifier(appInstanceId)
+                appTokenApi.startRefresh(showToken = true)
+
+                val signature =
+                    CryptographyUtils.signKeyExchangeResponse(
+                        secureStore.secureKeyPair.signKeyPair.privateKey,
+                        localSignPublicKey,
+                        localCryptPublicKey,
+                        currentTimestamp,
+                    )
+
+                KeyExchangeResponse(
+                    signPublicKey = localSignPublicKey,
+                    cryptPublicKey = localCryptPublicKey,
+                    timestamp = currentTimestamp,
+                    signature = signature,
+                )
+            }.onSuccess { response ->
+                successResponse(call, response)
+            }.onFailure { e ->
+                logger.error(e) { "v2 exchange failed for $appInstanceId" }
+                failResponse(call, StandardErrorCode.EXCHANGE_FAIL.toErrorCode())
+            }
+        }
+    }
+
+    post("/sync/trust/v2/confirm") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            runCatching {
+                val request = call.receive(TrustConfirmRequest::class)
+
+                val pending = pendingKeyExchangeStore.get(appInstanceId)
+                if (pending == null) {
+                    logger.warn { "v2 confirm: no pending exchange for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
+                    return@post
+                }
+
+                val receiveSignPublicKey =
+                    secureKeyPairSerializer.decodeSignPublicKey(pending.signPublicKey)
+
+                val verifyResult =
+                    CryptographyUtils.verifyTrustConfirm(
+                        receiveSignPublicKey,
+                        request,
+                    )
+
+                if (!verifyResult) {
+                    logger.warn { "v2 confirm verify fail for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
+                    return@post
+                }
+
+                secureStore.saveCryptPublicKey(appInstanceId, pending.cryptPublicKey)
+
+                val currentTimestamp = nowEpochMilliseconds()
+                val signature =
+                    CryptographyUtils.signTrustConfirm(
+                        secureStore.secureKeyPair.signKeyPair.privateKey,
+                        currentTimestamp,
+                    )
+
+                pendingKeyExchangeStore.remove(appInstanceId)
+
+                TrustConfirmResponse(
+                    timestamp = currentTimestamp,
+                    signature = signature,
+                )
+            }.onSuccess { response ->
+                val host = call.request.headers["crosspaste-host"]
+                trustSyncInfo(appInstanceId, host)
+                appTokenApi.removePendingVerifier(appInstanceId)
+                if (appTokenApi.showToken.value) {
+                    appTokenApi.stopRefresh(hideToken = false)
+                }
+                successResponse(call, response)
+            }.onFailure { e ->
+                logger.error(e) { "v2 confirm failed for $appInstanceId" }
                 failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
             }
         }

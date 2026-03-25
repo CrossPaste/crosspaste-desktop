@@ -26,9 +26,11 @@ import com.crosspaste.sync.SyncTestFixtures.createSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createUnverifiedSyncRuntimeInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,8 +40,13 @@ class SyncResolverTest {
 
     private class TestDeps {
         val pasteBonjourService: PasteBonjourService = mockk(relaxed = true)
+        val nearbyDeviceManager: NearbyDeviceManager =
+            mockk(relaxed = true) {
+                every { nearbySyncInfos } returns MutableStateFlow(emptyList())
+            }
         val networkInterfaceService: NetworkInterfaceService = mockk(relaxed = true)
         val ratingPromptManager: RatingPromptManager = mockk(relaxed = true)
+        val secureKeyPairSerializer: com.crosspaste.secure.SecureKeyPairSerializer = mockk(relaxed = true)
         val secureStore: SecureStore = mockk(relaxed = true)
         val syncClientApi: SyncClientApi = mockk(relaxed = true)
         val syncDeviceManager: SyncDeviceManager = mockk(relaxed = true)
@@ -55,8 +62,10 @@ class SyncResolverTest {
         fun createResolver(): SyncResolver =
             SyncResolver(
                 lazyPasteBonjourService = lazy { pasteBonjourService },
+                nearbyDeviceManager = nearbyDeviceManager,
                 networkInterfaceService = networkInterfaceService,
                 ratingPromptManager = ratingPromptManager,
+                secureKeyPairSerializer = secureKeyPairSerializer,
                 secureStore = secureStore,
                 syncClientApi = syncClientApi,
                 syncDeviceManager = syncDeviceManager,

@@ -11,6 +11,7 @@ data class AppInfo(
     val appVersion: String,
     val appRevision: String,
     val userName: String,
+    val pairingVersion: Int? = null,
 ) {
 
     fun displayVersion(): String = "$appVersion${if (appRevision == "Unknown") "" else " ($appRevision)"}"

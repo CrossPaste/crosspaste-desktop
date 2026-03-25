@@ -41,6 +41,9 @@ class MarketingSyncHandler(
     ) {
     }
 
+    override suspend fun exchangeKeysForPairing() {
+    }
+
     override suspend fun showToken() {
     }
 
