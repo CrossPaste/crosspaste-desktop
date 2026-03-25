@@ -40,6 +40,29 @@ class SyncDeviceManager(
         syncRuntimeInfoDao.updateNoteName(syncRuntimeInfo.copy(noteName = noteName))
     }
 
+    suspend fun exchangeKeysForPairing(syncRuntimeInfo: SyncRuntimeInfo) {
+        if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
+            syncRuntimeInfo.connectHostAddress?.let { host ->
+                val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+                val result =
+                    syncClientApi.exchangeKeys(syncRuntimeInfo.appInstanceId) {
+                        buildUrl(hostAndPort)
+                    }
+                if (result is SuccessResult) {
+                    logger.info { "exchangeKeysForPairing success $host ${syncRuntimeInfo.port}" }
+                } else {
+                    logger.warn { "exchangeKeysForPairing failed $host ${syncRuntimeInfo.port}" }
+                    syncRuntimeInfoDao.updateConnectInfo(
+                        syncRuntimeInfo.copy(
+                            connectState = SyncState.DISCONNECTED,
+                            modifyTime = nowEpochMilliseconds(),
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
     suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo) {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->

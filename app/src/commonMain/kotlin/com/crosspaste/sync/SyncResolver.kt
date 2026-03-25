@@ -5,9 +5,11 @@ import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
+import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
+import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.VersionRelation
@@ -17,7 +19,9 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.filter
+import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.StripedMutex
@@ -25,9 +29,11 @@ import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SyncResolver(
+    private val lazyNearbyDeviceManager: Lazy<NearbyDeviceManager>,
     private val lazyPasteBonjourService: Lazy<PasteBonjourService>,
     private val networkInterfaceService: NetworkInterfaceService,
     private val ratingPromptManager: RatingPromptManager,
+    private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
     private val syncDeviceManager: SyncDeviceManager,
@@ -40,6 +46,12 @@ class SyncResolver(
     private val logger = KotlinLogging.logger {}
 
     private val deviceMutex = StripedMutex()
+
+    private fun getRemotePairingVersion(appInstanceId: String): Int? =
+        lazyNearbyDeviceManager.value.nearbySyncInfos.value
+            .firstOrNull { it.appInfo.appInstanceId == appInstanceId }
+            ?.appInfo
+            ?.pairingVersion
 
     private fun SyncEvent.appInstanceId(): String =
         when (this) {
@@ -95,6 +107,10 @@ class SyncResolver(
 
                     is SyncEvent.UpdateNoteName -> {
                         syncDeviceManager.updateNoteName(syncRuntimeInfo, event.noteName)
+                    }
+
+                    is SyncEvent.ExchangeKeysForPairing -> {
+                        syncDeviceManager.exchangeKeysForPairing(syncRuntimeInfo)
                     }
 
                     is SyncEvent.ShowToken -> {
@@ -319,6 +335,9 @@ class SyncResolver(
         host: String,
         port: Int,
     ) {
+        // Always attempt token cache first — it serves the QR-code scan flow
+        // where the token is delivered via physical proximity (camera), which is
+        // secure regardless of pairing protocol version.
         if (trustByTokenCache()) {
             logger.info { "trustByTokenCache success $host $port" }
             syncRuntimeInfoDao.updateConnectInfo(
@@ -395,41 +414,129 @@ class SyncResolver(
         callback: (Boolean) -> Unit,
     ) {
         if (connectState == SyncState.UNVERIFIED) {
-            connectHostAddress?.let { host ->
-                val hostAndPort = HostAndPort(host, port)
-                val result =
-                    syncClientApi.trust(appInstanceId, host, token) {
-                        buildUrl(hostAndPort)
-                    }
-
-                if (result is SuccessResult) {
-                    val hostInfoList =
-                        networkInterfaceService
-                            .getCurrentUseNetworkInterfaces()
-                            .map { it.toHostInfo() }
-                            .filter { it.filter(host) }
-                    val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
-                    syncClientApi.heartbeat(
-                        syncInfo = syncInfo,
-                        targetAppInstanceId = appInstanceId,
-                    ) {
-                        buildUrl(HostAndPort(host, port))
-                    }
-                    syncRuntimeInfoDao.updateConnectInfo(
-                        this.copy(
-                            connectState = SyncState.CONNECTED,
-                            modifyTime = nowEpochMilliseconds(),
-                        ),
-                    )
-                    callback(true)
-                    ratingPromptManager.trackSignificantAction()
-                } else {
-                    callback(false)
-                }
-            } ?: callback(false)
+            val remotePairingVersion = getRemotePairingVersion(appInstanceId)
+            if (SyncApi.supportsSASPairing(remotePairingVersion)) {
+                trustByTokenV2(token, callback)
+            } else {
+                trustByTokenV1(token, callback)
+            }
         } else {
             callback(false)
         }
+    }
+
+    private suspend fun SyncRuntimeInfo.trustByTokenV1(
+        token: Int,
+        callback: (Boolean) -> Unit,
+    ) {
+        connectHostAddress?.let { host ->
+            val hostAndPort = HostAndPort(host, port)
+            val result =
+                syncClientApi.trust(appInstanceId, host, token) {
+                    buildUrl(hostAndPort)
+                }
+
+            if (result is SuccessResult) {
+                val hostInfoList =
+                    networkInterfaceService
+                        .getCurrentUseNetworkInterfaces()
+                        .map { it.toHostInfo() }
+                        .filter { it.filter(host) }
+                val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
+                syncClientApi.heartbeat(
+                    syncInfo = syncInfo,
+                    targetAppInstanceId = appInstanceId,
+                ) {
+                    buildUrl(HostAndPort(host, port))
+                }
+                syncRuntimeInfoDao.updateConnectInfo(
+                    this.copy(
+                        connectState = SyncState.CONNECTED,
+                        modifyTime = nowEpochMilliseconds(),
+                    ),
+                )
+                callback(true)
+                ratingPromptManager.trackSignificantAction()
+            } else {
+                callback(false)
+            }
+        } ?: callback(false)
+    }
+
+    private suspend fun SyncRuntimeInfo.trustByTokenV2(
+        token: Int,
+        callback: (Boolean) -> Unit,
+    ) {
+        connectHostAddress?.let { host ->
+            val hostAndPort = HostAndPort(host, port)
+
+            // Step 1: Exchange keys
+            val exchangeResult =
+                syncClientApi.exchangeKeys(appInstanceId) {
+                    buildUrl(hostAndPort)
+                }
+
+            if (exchangeResult !is SuccessResult) {
+                logger.warn { "v2 key exchange failed for $appInstanceId" }
+                callback(false)
+                return
+            }
+
+            val response: KeyExchangeResponse? = exchangeResult.getResult()
+            if (response == null) {
+                logger.warn { "v2 key exchange response verification failed for $appInstanceId" }
+                callback(false)
+                return
+            }
+
+            // Step 2: Compute local SAS and compare with user-entered token
+            val localCryptPublicKey =
+                secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
+            val localSAS =
+                CryptographyUtils.computeSAS(localCryptPublicKey, response.cryptPublicKey)
+
+            if (token != localSAS) {
+                logger.warn { "v2 SAS mismatch for $appInstanceId: expected $localSAS, got $token (possible MITM)" }
+                callback(false)
+                return
+            }
+
+            // Step 3: Confirm trust
+            val confirmResult =
+                syncClientApi.trustV2Confirm(appInstanceId, host) {
+                    buildUrl(hostAndPort)
+                }
+
+            if (confirmResult !is SuccessResult) {
+                logger.warn { "v2 trust confirm failed for $appInstanceId" }
+                callback(false)
+                return
+            }
+
+            // Step 4: Save remote key locally and send heartbeat
+            secureStore.saveCryptPublicKey(appInstanceId, response.cryptPublicKey)
+
+            val hostInfoList =
+                networkInterfaceService
+                    .getCurrentUseNetworkInterfaces()
+                    .map { it.toHostInfo() }
+                    .filter { it.filter(host) }
+            val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
+            syncClientApi.heartbeat(
+                syncInfo = syncInfo,
+                targetAppInstanceId = appInstanceId,
+            ) {
+                buildUrl(HostAndPort(host, port))
+            }
+            syncRuntimeInfoDao.updateConnectInfo(
+                this.copy(
+                    connectState = SyncState.CONNECTED,
+                    modifyTime = nowEpochMilliseconds(),
+                ),
+            )
+            callback(true)
+            ratingPromptManager.trackSignificantAction()
+        } ?: callback(false)
     }
 
     private fun refreshSyncInfo(

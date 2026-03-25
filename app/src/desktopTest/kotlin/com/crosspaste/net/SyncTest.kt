@@ -24,6 +24,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
@@ -116,6 +117,7 @@ class SyncTest : KoinTest {
                         get(),
                     )
                 }
+                single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
                 single<SyncApi> { SyncApi }
                 single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
                     DesktopServerFactory()
@@ -127,6 +129,7 @@ class SyncTest : KoinTest {
                         appTokenApi = get(),
                         exceptionHandler = get(),
                         networkInterfaceService = get(),
+                        pendingKeyExchangeStore = get(),
                         secureKeyPairSerializer = get(),
                         secureStore = get(named("serverSecureStore")),
                         serverEncryptPluginFactory = get(),

@@ -18,6 +18,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
@@ -40,6 +41,7 @@ open class DefaultServerModule(
     private val exceptionHandler: ExceptionHandler,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
+    private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
@@ -81,6 +83,7 @@ open class DefaultServerModule(
                     appTokenApi,
                     exceptionHandler,
                     networkInterfaceService,
+                    pendingKeyExchangeStore,
                     secureKeyPairSerializer,
                     secureStore,
                     syncApi,

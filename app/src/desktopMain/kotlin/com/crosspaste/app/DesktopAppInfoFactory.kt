@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.net.SyncApi
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -36,6 +37,7 @@ class DesktopAppInfoFactory(
             appVersion = getVersion(),
             appRevision = getRevision(),
             userName = getUserName(),
+            pairingVersion = SyncApi.PAIRING_VERSION,
         )
     }
 

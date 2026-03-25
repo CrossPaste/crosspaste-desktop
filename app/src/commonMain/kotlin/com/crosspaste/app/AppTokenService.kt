@@ -39,6 +39,8 @@ abstract class AppTokenService : AppTokenApi {
 
     override val pendingVerifiers: StateFlow<Set<String>> = _pendingVerifiers.asStateFlow()
 
+    private var _sasMode = false
+
     private val _token = MutableStateFlow(charArrayOf('0', '0', '0', '0', '0', '0'))
 
     override val token: StateFlow<CharArray> = _token.asStateFlow()
@@ -70,6 +72,12 @@ abstract class AppTokenService : AppTokenApi {
                 .concatToString()
                 .toInt()
 
+    override fun setSASToken(sas: Int) {
+        val padded = sas.toString().padStart(6, '0')
+        _token.value = padded.toCharArray()
+        _sasMode = true
+    }
+
     override fun startRefresh(showToken: Boolean) {
         scope.launch {
             lock.withLock {
@@ -95,6 +103,7 @@ abstract class AppTokenService : AppTokenApi {
                 if (refreshCounter == 0) {
                     _refresh.value = false
                     _showToken.value = false
+                    _sasMode = false
                 }
             }
         }
@@ -113,7 +122,9 @@ abstract class AppTokenService : AppTokenApi {
     }
 
     private fun refreshToken() {
-        _token.value = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
+        if (!_sasMode) {
+            _token.value = CharArray(6) { (Random.nextInt(10) + '0'.code).toChar() }
+        }
         _refreshProgress.value = 0.0f
     }
 }

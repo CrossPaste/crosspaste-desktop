@@ -16,6 +16,8 @@ interface AppTokenApi {
 
     fun sameToken(token: Int): Boolean
 
+    fun setSASToken(sas: Int)
+
     fun startRefresh(showToken: Boolean)
 
     fun stopRefresh(hideToken: Boolean)

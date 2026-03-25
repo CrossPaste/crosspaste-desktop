@@ -1,6 +1,10 @@
 package com.crosspaste.net.clientapi
 
+import com.crosspaste.dto.secure.KeyExchangeRequest
+import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.dto.secure.PairingRequest
+import com.crosspaste.dto.secure.TrustConfirmRequest
+import com.crosspaste.dto.secure.TrustConfirmResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
@@ -136,6 +140,90 @@ class SyncClientApi(
                 logger.warn { "verifyResult is false" }
                 false
             }
+        })
+
+    suspend fun exchangeKeys(
+        targetAppInstanceId: String,
+        toUrl: URLBuilder.() -> Unit,
+    ): ClientApiResult =
+        request(logger, exceptionHandler, request = {
+            val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+            val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
+            val timestamp = nowEpochMilliseconds()
+            val signature =
+                CryptographyUtils.signKeyExchangeRequest(
+                    secureStore.secureKeyPair.signKeyPair.privateKey,
+                    signPublicKey,
+                    cryptPublicKey,
+                    timestamp,
+                )
+            val request =
+                KeyExchangeRequest(
+                    signPublicKey = signPublicKey,
+                    cryptPublicKey = cryptPublicKey,
+                    timestamp = timestamp,
+                    signature = signature,
+                )
+            pasteClient.post(
+                request,
+                typeInfo<KeyExchangeRequest>(),
+                urlBuilder = {
+                    toUrl()
+                    buildUrl("sync", "trust", "v2", "exchange")
+                },
+            )
+        }, transformData = {
+            val response = it.body<KeyExchangeResponse>()
+
+            val receiveSignPublicKey =
+                secureKeyPairSerializer.decodeSignPublicKey(response.signPublicKey)
+            val verifyResult =
+                CryptographyUtils.verifyKeyExchangeResponse(
+                    receiveSignPublicKey,
+                    response,
+                )
+
+            if (verifyResult) {
+                response
+            } else {
+                logger.warn { "exchangeKeys: signature verification failed" }
+                null
+            }
+        })
+
+    suspend fun trustV2Confirm(
+        targetAppInstanceId: String,
+        host: String,
+        toUrl: URLBuilder.() -> Unit,
+    ): ClientApiResult =
+        request(logger, exceptionHandler, request = {
+            val timestamp = nowEpochMilliseconds()
+            val signature =
+                CryptographyUtils.signTrustConfirm(
+                    secureStore.secureKeyPair.signKeyPair.privateKey,
+                    timestamp,
+                )
+            val request =
+                TrustConfirmRequest(
+                    timestamp = timestamp,
+                    signature = signature,
+                )
+            pasteClient.post(
+                request,
+                typeInfo<TrustConfirmRequest>(),
+                headersBuilder = {
+                    append("crosspaste-host", host)
+                },
+                urlBuilder = {
+                    toUrl()
+                    buildUrl("sync", "trust", "v2", "confirm")
+                },
+            )
+        }, transformData = {
+            val response = it.body<TrustConfirmResponse>()
+            // Save remote crypt public key is done in the server-side confirm handler
+            // Here we just verify the response signature
+            true
         })
 
     suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult =
