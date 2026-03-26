@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 
 class GeneralSyncHandler(
     syncRuntimeInfo: SyncRuntimeInfo,
@@ -169,7 +170,7 @@ class GeneralSyncHandler(
 
             emitEvent(SyncEvent.ResolveConnection(currentSyncRuntimeInfo, callback))
 
-            withTimeoutOrNull(5000) {
+            withTimeoutOrNull(5.seconds) {
                 completionSignal.await()
             }
 
@@ -210,7 +211,7 @@ class GeneralSyncHandler(
     override suspend fun notifyExit() {
         val completionSignal = CompletableDeferred<Unit>()
         emitEvent(SyncEvent.NotifyExit(currentSyncRuntimeInfo, completionSignal))
-        withTimeoutOrNull(5000) {
+        withTimeoutOrNull(5.seconds) {
             completionSignal.await()
         }
         cancelScope()
