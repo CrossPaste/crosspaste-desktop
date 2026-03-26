@@ -19,6 +19,11 @@ class DesktopDeviceScope(
 ) : DeviceScope {
 
     @Composable
+    override fun TrustDeviceView() {
+        TrustDeviceDialog()
+    }
+
+    @Composable
     override fun DeviceConnectView() {
         val navigationManager = koinInject<NavigationManager>()
 
