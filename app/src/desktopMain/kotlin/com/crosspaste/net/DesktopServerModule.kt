@@ -3,6 +3,7 @@ package com.crosspaste.net
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
@@ -23,6 +24,7 @@ class DesktopServerModule(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
     cacheManager: CacheManager,
+    configManager: CommonConfigManager,
     exceptionHandler: ExceptionHandler,
     nearbyDeviceManager: NearbyDeviceManager,
     networkInterfaceService: NetworkInterfaceService,
@@ -42,6 +44,7 @@ class DesktopServerModule(
         appInfo,
         appTokenApi,
         cacheManager,
+        configManager,
         exceptionHandler,
         nearbyDeviceManager,
         networkInterfaceService,

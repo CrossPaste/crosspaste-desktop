@@ -4,7 +4,10 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.TestAppTokenService
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.ReadWriteConfig
+import com.crosspaste.config.TestAppConfig
+import com.crosspaste.config.TestConfigManager
 import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.db.secure.SecureIO
@@ -117,6 +120,7 @@ class SyncTest : KoinTest {
                         get(),
                     )
                 }
+                single<CommonConfigManager> { TestConfigManager(get(), TestAppConfig()) }
                 single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
                 single<SyncApi> { SyncApi }
                 single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
@@ -127,6 +131,7 @@ class SyncTest : KoinTest {
                     TestServerModule(
                         appInfo = get(named("serverAppInfo")),
                         appTokenApi = get(),
+                        configManager = get(),
                         exceptionHandler = get(),
                         networkInterfaceService = get(),
                         pendingKeyExchangeStore = get(),

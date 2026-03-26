@@ -2,6 +2,7 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
@@ -19,6 +20,7 @@ import io.ktor.server.routing.*
 class TestServerModule(
     private val appInfo: AppInfo,
     private val appTokenApi: AppTokenApi,
+    private val configManager: CommonConfigManager,
     private val exceptionHandler: ExceptionHandler,
     private val networkInterfaceService: NetworkInterfaceService,
     private val pendingKeyExchangeStore: PendingKeyExchangeStore,
@@ -41,6 +43,7 @@ class TestServerModule(
                 syncRouting(
                     appInfo,
                     appTokenApi,
+                    configManager,
                     exceptionHandler,
                     networkInterfaceService,
                     pendingKeyExchangeStore,

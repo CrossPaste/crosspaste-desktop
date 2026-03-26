@@ -51,19 +51,19 @@ import com.composables.icons.materialsymbols.rounded.Autorenew
 import com.composables.icons.materialsymbols.rounded.Qr_code_scanner
 import com.composables.icons.materialsymbols.rounded.Verified_user
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.settings.SettingListSwitchItem
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
-import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.withContext
@@ -73,6 +73,7 @@ import kotlin.math.roundToInt
 @Composable
 fun PairingCodeContentView() {
     val appTokenApi = koinInject<AppTokenApi>()
+    val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val qrCodeGenerator = koinInject<QRCodeGenerator>()
 
@@ -117,12 +118,10 @@ fun PairingCodeContentView() {
                 Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = xxLarge, vertical = medium),
+                    .padding(horizontal = xxLarge, vertical = tiny),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Spacer(modifier = Modifier.height(xLarge))
-
             Box(
                 modifier =
                     Modifier
@@ -160,7 +159,7 @@ fun PairingCodeContentView() {
                 textAlign = TextAlign.Center,
             )
 
-            Spacer(modifier = Modifier.height(xxxLarge))
+            Spacer(modifier = Modifier.height(medium))
 
             Box(
                 modifier =
@@ -187,7 +186,7 @@ fun PairingCodeContentView() {
                 }
             }
 
-            Spacer(modifier = Modifier.height(xxxLarge))
+            Spacer(modifier = Modifier.height(medium))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -212,7 +211,18 @@ fun PairingCodeContentView() {
                 color = MaterialTheme.colorScheme.outline,
             )
 
-            Spacer(modifier = Modifier.height(xLarge))
+            Spacer(modifier = Modifier.height(medium))
+
+            val config by configManager.config.collectAsState()
+
+            SettingListSwitchItem(
+                title = "allow_remote_show_pairing_code",
+                checked = config.enableRemoteShowPairingCode,
+            ) {
+                configManager.updateConfig("enableRemoteShowPairingCode", it)
+            }
+
+            Spacer(modifier = Modifier.height(tiny))
         }
     }
 }

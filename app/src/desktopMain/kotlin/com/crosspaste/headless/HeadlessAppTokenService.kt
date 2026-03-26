@@ -10,4 +10,8 @@ class HeadlessAppTokenService : AppTokenService() {
     override fun preShowToken() {
         logger.info { "Token: ${token.value.concatToString()}" }
     }
+
+    override fun preShowPairingCode() {
+        logger.info { "Show pairing code requested" }
+    }
 }

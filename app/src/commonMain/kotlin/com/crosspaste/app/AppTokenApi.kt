@@ -25,4 +25,6 @@ interface AppTokenApi {
     fun addPendingVerifier(appInstanceId: String)
 
     fun removePendingVerifier(appInstanceId: String)
+
+    fun showPairingCode()
 }

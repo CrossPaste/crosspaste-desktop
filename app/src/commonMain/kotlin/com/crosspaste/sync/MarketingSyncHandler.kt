@@ -47,6 +47,9 @@ class MarketingSyncHandler(
     override suspend fun showToken() {
     }
 
+    override suspend fun showPairingCode() {
+    }
+
     override suspend fun notifyExit() {
     }
 

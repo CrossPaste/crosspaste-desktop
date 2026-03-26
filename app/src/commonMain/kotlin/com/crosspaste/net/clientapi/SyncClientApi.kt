@@ -234,6 +234,14 @@ class SyncClientApi(
             })
         }, transformData = { true })
 
+    suspend fun showPairingCode(toUrl: URLBuilder.() -> Unit): ClientApiResult =
+        request(logger, exceptionHandler, request = {
+            pasteClient.get(urlBuilder = {
+                toUrl()
+                buildUrl("sync", "showPairingCode")
+            })
+        }, transformData = { true })
+
     suspend fun notifyExit(toUrl: URLBuilder.() -> Unit) {
         request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
