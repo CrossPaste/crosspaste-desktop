@@ -67,7 +67,7 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
             remember(it) {
                 deviceScopeFactory.createDeviceScope(it)
             }
-        scope.TrustDeviceDialog()
+        scope.TrustDeviceView()
     }
 
     InnerScaffold(

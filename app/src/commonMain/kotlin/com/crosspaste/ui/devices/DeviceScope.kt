@@ -15,4 +15,7 @@ interface DeviceScope : PlatformScope {
 
     @Composable
     fun DeviceConnectView()
+
+    @Composable
+    fun TrustDeviceView()
 }
