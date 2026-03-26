@@ -208,6 +208,10 @@ class GeneralSyncHandler(
         emitEvent(SyncEvent.ShowToken(currentSyncRuntimeInfo))
     }
 
+    override suspend fun showPairingCode() {
+        emitEvent(SyncEvent.ShowPairingCode(currentSyncRuntimeInfo))
+    }
+
     override suspend fun notifyExit() {
         val completionSignal = CompletableDeferred<Unit>()
         emitEvent(SyncEvent.NotifyExit(currentSyncRuntimeInfo, completionSignal))

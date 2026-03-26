@@ -87,6 +87,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 appInfo = get(),
                 appTokenApi = get(),
                 cacheManager = get(),
+                configManager = get(),
                 exceptionHandler = get(),
                 nearbyDeviceManager = get(),
                 networkInterfaceService = get(),

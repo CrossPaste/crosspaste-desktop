@@ -59,7 +59,7 @@ fun desktopUiModule(): Module =
         single<ActiveGraphicsDevice> { get<DesktopAppSize>() }
         single<AppFileChooser> { DesktopAppFileChooser(get()) }
         single<AppSize> { get<DesktopAppSize>() }
-        single<AppTokenApi> { DesktopAppTokenService(get()) }
+        single<AppTokenApi> { DesktopAppTokenService(get(), get()) }
         single<AppWindowManager> { get<DesktopAppWindowManager>() }
         single<DesktopAppSize> { DesktopAppSize(get()) }
         single<DesktopAppWindowManager> {

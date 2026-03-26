@@ -66,6 +66,8 @@ abstract class AppTokenService : AppTokenApi {
 
     abstract fun preShowToken()
 
+    abstract fun preShowPairingCode()
+
     override fun sameToken(token: Int): Boolean =
         token ==
             this.token.value
@@ -119,6 +121,10 @@ abstract class AppTokenService : AppTokenApi {
         _pendingVerifiers.update { currentSet ->
             currentSet - appInstanceId
         }
+    }
+
+    override fun showPairingCode() {
+        preShowPairingCode()
     }
 
     private fun refreshToken() {

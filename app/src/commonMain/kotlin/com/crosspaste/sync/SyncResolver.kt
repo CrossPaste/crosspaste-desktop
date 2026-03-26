@@ -117,6 +117,10 @@ class SyncResolver(
                         syncDeviceManager.showToken(syncRuntimeInfo)
                     }
 
+                    is SyncEvent.ShowPairingCode -> {
+                        syncDeviceManager.showPairingCode(syncRuntimeInfo)
+                    }
+
                     is SyncEvent.NotifyExit -> {
                         syncDeviceManager.notifyExit(syncRuntimeInfo)
                         event.completionSignal.complete(Unit)

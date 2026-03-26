@@ -3,6 +3,7 @@ package com.crosspaste.net
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.ExceptionHandler
@@ -38,6 +39,7 @@ open class DefaultServerModule(
     private val appInfo: AppInfo,
     private val appTokenApi: AppTokenApi,
     private val cacheManager: CacheManager,
+    private val configManager: CommonConfigManager,
     private val exceptionHandler: ExceptionHandler,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
@@ -81,6 +83,7 @@ open class DefaultServerModule(
                 syncRouting(
                     appInfo,
                     appTokenApi,
+                    configManager,
                     exceptionHandler,
                     networkInterfaceService,
                     pendingKeyExchangeStore,

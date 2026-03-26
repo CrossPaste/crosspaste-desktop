@@ -3,6 +3,8 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.TestAppTokenService
+import com.crosspaste.config.TestAppConfig
+import com.crosspaste.config.TestConfigManager
 import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -85,6 +87,7 @@ class TestInstance(
         TestServerModule(
             appInfo = appInfo,
             appTokenApi = appTokenApi,
+            configManager = TestConfigManager(deviceUtils, TestAppConfig(appInstanceId = appInstanceId)),
             exceptionHandler = exceptionHandler,
             networkInterfaceService = networkInterfaceService,
             pendingKeyExchangeStore = pendingKeyExchangeStore,

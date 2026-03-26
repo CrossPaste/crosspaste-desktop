@@ -40,6 +40,7 @@ interface AppConfig {
     val enableSyncImage: Boolean
     val enableSyncFile: Boolean
     val enableSyncColor: Boolean
+    val enableRemoteShowPairingCode: Boolean
 
     fun copy(
         key: String,

@@ -47,6 +47,8 @@ interface SyncHandler {
 
     suspend fun showToken()
 
+    suspend fun showPairingCode()
+
     suspend fun notifyExit()
 
     suspend fun markExit()

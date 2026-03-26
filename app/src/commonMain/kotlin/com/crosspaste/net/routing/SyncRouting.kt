@@ -2,6 +2,7 @@ package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.secure.KeyExchangeRequest
 import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.dto.secure.PairingResponse
@@ -32,6 +33,7 @@ import io.ktor.server.routing.*
 fun Routing.syncRouting(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
+    configManager: CommonConfigManager,
     exceptionHandler: ExceptionHandler,
     networkInterfaceService: NetworkInterfaceService,
     pendingKeyExchangeStore: PendingKeyExchangeStore,
@@ -115,6 +117,18 @@ fun Routing.syncRouting(
         }
         appTokenApi.startRefresh(showToken = true)
         logger.info { "show token requested from $host" }
+        successResponse(call)
+    }
+
+    get("/sync/showPairingCode") {
+        val host = call.request.host()
+        if (!configManager.getCurrentConfig().enableRemoteShowPairingCode) {
+            logger.info { "show pairing code rejected (disabled) from $host" }
+            failResponse(call, StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_DISABLED.toErrorCode())
+            return@get
+        }
+        appTokenApi.showPairingCode()
+        logger.info { "show pairing code requested from $host" }
         successResponse(call)
     }
 
