@@ -11,6 +11,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration.Companion.seconds
 
 interface SyncRoutingApi {
 
@@ -29,7 +30,7 @@ interface SyncRoutingApi {
         // Ensure that all notifications are completed before exiting, with a timeout
         runBlocking {
             runCatching {
-                withTimeout(5000) {
+                withTimeout(5.seconds) {
                     getSyncHandlers()
                         .values
                         .map { syncHandler ->

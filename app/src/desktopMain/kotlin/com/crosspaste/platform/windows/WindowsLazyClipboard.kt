@@ -23,6 +23,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
 class WindowsLazyClipboard : AutoCloseable {
@@ -102,14 +103,14 @@ class WindowsLazyClipboard : AutoCloseable {
             }
 
         runBlocking {
-            withTimeout(5000) { ready.await() }
+            withTimeout(5.seconds) { ready.await() }
         }
     }
 
     override fun close() {
         hwnd?.let { user32.PostMessage(it, WM_CLOSE, null, null) }
         runBlocking {
-            withTimeoutOrNull(3000) { messageLoopJob?.join() }
+            withTimeoutOrNull(3.seconds) { messageLoopJob?.join() }
         }
         scope.cancel()
         windowDispatcher.close()
@@ -130,7 +131,7 @@ class WindowsLazyClipboard : AutoCloseable {
 
         user32.PostMessage(w, WM_WRITE_FILES, null, null)
         return runBlocking {
-            withTimeoutOrNull(5000) { deferred.await() } ?: -1
+            withTimeoutOrNull(5.seconds) { deferred.await() } ?: -1
         }
     }
 

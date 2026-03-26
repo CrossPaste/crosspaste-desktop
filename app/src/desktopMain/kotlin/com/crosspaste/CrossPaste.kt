@@ -69,6 +69,7 @@ import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
 import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.seconds
 
 class CrossPaste {
 
@@ -208,7 +209,7 @@ class CrossPaste {
         }
 
         private suspend fun shutdownAllServices() {
-            withTimeoutOrNull(5000L) {
+            withTimeoutOrNull(5.seconds) {
                 supervisorScope {
                     val jobs =
                         buildList {

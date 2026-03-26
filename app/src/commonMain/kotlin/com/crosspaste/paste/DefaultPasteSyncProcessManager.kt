@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration.Companion.seconds
 
 class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
@@ -54,7 +55,7 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
                     .map { task ->
                         async {
                             semaphore.withPermit {
-                                withTimeout(60_000L) {
+                                withTimeout(60.seconds) {
                                     val result = task()
                                     if (result.second is SuccessResult) {
                                         process.success(result.first)
