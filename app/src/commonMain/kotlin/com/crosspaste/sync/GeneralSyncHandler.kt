@@ -55,7 +55,7 @@ class GeneralSyncHandler(
 
         job =
             syncPollingManager.startPollingResolve {
-                emitEvent(SyncEvent.ResolveConnection(currentSyncRuntimeInfo, createCallback()))
+                emitEvent(SyncEvent.Resolve(currentSyncRuntimeInfo, createCallback()))
             }
     }
 
@@ -74,21 +74,8 @@ class GeneralSyncHandler(
     }
 
     private suspend fun handleFirstValue(syncRuntimeInfo: SyncRuntimeInfo) {
-        when (syncRuntimeInfo.connectState) {
-            SyncState.DISCONNECTED,
-            SyncState.INCOMPATIBLE,
-            SyncState.UNMATCHED,
-            SyncState.UNVERIFIED,
-            -> {
-                emitEvent(SyncEvent.ResolveDisconnected(syncRuntimeInfo, createCallback()))
-            }
-            SyncState.CONNECTING -> {
-                emitEvent(SyncEvent.ResolveConnecting(syncRuntimeInfo, createCallback()))
-            }
-            SyncState.CONNECTED -> {
-                emitEvent(SyncEvent.ResolveConnection(syncRuntimeInfo, createCallback()))
-            }
-        }
+        // The resolver handles all states — just emit a unified Resolve event
+        emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createCallback()))
     }
 
     private suspend fun handleValueChange(
@@ -96,7 +83,7 @@ class GeneralSyncHandler(
         current: SyncRuntimeInfo,
     ) {
         if (current.port != previous.port) {
-            emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
+            emitEvent(SyncEvent.Resolve(current, createCallback()))
             return
         }
 
@@ -104,7 +91,7 @@ class GeneralSyncHandler(
             current.connectHostAddress != null &&
             previous.connectHostAddress != current.connectHostAddress
         ) {
-            emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
+            emitEvent(SyncEvent.Resolve(current, createCallback()))
             return
         }
 
@@ -118,7 +105,7 @@ class GeneralSyncHandler(
                     // let polling handle retry with backoff to avoid tight retry loops
                     // (e.g. NOT_MATCH_APP_INSTANCE_ID on dual-boot machines).
                     if (previous.connectState == SyncState.CONNECTED) {
-                        emitEvent(SyncEvent.ResolveDisconnected(current, createCallback()))
+                        emitEvent(SyncEvent.Resolve(current, createCallback()))
                     }
                 }
                 SyncState.INCOMPATIBLE,
@@ -129,12 +116,13 @@ class GeneralSyncHandler(
                     emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId, current.hostInfoList))
                 }
                 SyncState.CONNECTING -> {
-                    emitEvent(SyncEvent.ResolveConnecting(current, createCallback()))
+                    // No event needed — the resolver completes the full
+                    // discover → authenticate flow in a single pass.
+                    // Polling handles stuck CONNECTING state (e.g. after app restart).
                 }
 
                 SyncState.CONNECTED -> {
                     syncPollingManager.reset()
-                    emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
                 }
             }
             return
@@ -142,7 +130,7 @@ class GeneralSyncHandler(
 
         if (!hostInfoListEqual(previous.hostInfoList, current.hostInfoList)) {
             if (current.connectState == SyncState.CONNECTED) {
-                emitEvent(SyncEvent.ResolveConnection(current, createCallback()))
+                emitEvent(SyncEvent.Resolve(current, createCallback()))
             }
         }
 
@@ -168,7 +156,7 @@ class GeneralSyncHandler(
                     },
                 )
 
-            emitEvent(SyncEvent.ResolveConnection(currentSyncRuntimeInfo, callback))
+            emitEvent(SyncEvent.Resolve(currentSyncRuntimeInfo, callback))
 
             withTimeoutOrNull(5.seconds) {
                 completionSignal.await()
@@ -178,7 +166,7 @@ class GeneralSyncHandler(
         }
 
     override suspend fun forceResolve() {
-        emitEvent(SyncEvent.ForceResolveConnection(currentSyncRuntimeInfo, createCallback()))
+        emitEvent(SyncEvent.ForceResolve(currentSyncRuntimeInfo, createCallback()))
     }
 
     override suspend fun updateAllowSend(allowSend: Boolean) {

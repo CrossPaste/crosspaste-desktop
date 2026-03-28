@@ -14,36 +14,20 @@ sealed interface SyncEvent {
         val callback: ResolveCallback
     }
 
-    data class ResolveDisconnected(
+    data class Resolve(
         override val syncRuntimeInfo: SyncRuntimeInfo,
         override val callback: ResolveCallback,
     ) : SyncRunTimeInfoEvent,
         CallbackEvent {
-        override fun toString(): String = "ResolveDisconnected ${syncRuntimeInfo.appInstanceId}"
+        override fun toString(): String = "Resolve ${syncRuntimeInfo.appInstanceId}"
     }
 
-    data class ResolveConnecting(
+    data class ForceResolve(
         override val syncRuntimeInfo: SyncRuntimeInfo,
         override val callback: ResolveCallback,
     ) : SyncRunTimeInfoEvent,
         CallbackEvent {
-        override fun toString(): String = "ResolveConnecting ${syncRuntimeInfo.appInstanceId}"
-    }
-
-    data class ResolveConnection(
-        override val syncRuntimeInfo: SyncRuntimeInfo,
-        override val callback: ResolveCallback,
-    ) : SyncRunTimeInfoEvent,
-        CallbackEvent {
-        override fun toString(): String = "ResolveConnection ${syncRuntimeInfo.appInstanceId}"
-    }
-
-    data class ForceResolveConnection(
-        override val syncRuntimeInfo: SyncRuntimeInfo,
-        override val callback: ResolveCallback,
-    ) : SyncRunTimeInfoEvent,
-        CallbackEvent {
-        override fun toString(): String = "ForceResolveConnection ${syncRuntimeInfo.appInstanceId}"
+        override fun toString(): String = "ForceResolve ${syncRuntimeInfo.appInstanceId}"
     }
 
     data class TrustByToken(
