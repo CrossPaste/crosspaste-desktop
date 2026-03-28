@@ -202,8 +202,8 @@ fun Routing.syncRouting(
                 )
             }.onSuccess { trustResponse ->
                 val host = call.request.headers["crosspaste-host"]
-                trustSyncInfo(appInstanceId, host)
                 appTokenApi.removePendingVerifier(appInstanceId)
+                trustSyncInfo(appInstanceId, host)
                 if (appTokenApi.showToken.value) {
                     appTokenApi.stopRefresh(hideToken = false)
                 }
@@ -329,8 +329,8 @@ fun Routing.syncRouting(
                 )
             }.onSuccess { response ->
                 val host = call.request.headers["crosspaste-host"]
-                trustSyncInfo(appInstanceId, host)
                 appTokenApi.removePendingVerifier(appInstanceId)
+                trustSyncInfo(appInstanceId, host)
                 if (appTokenApi.showToken.value) {
                     appTokenApi.stopRefresh(hideToken = false)
                 }
