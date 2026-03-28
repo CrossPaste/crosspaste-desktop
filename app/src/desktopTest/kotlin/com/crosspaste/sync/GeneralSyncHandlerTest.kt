@@ -42,7 +42,7 @@ class GeneralSyncHandlerTest {
     // ========== A. handleFirstValue (initial state) ==========
 
     @Test
-    fun handleFirstValue_disconnected_emitsResolveDisconnected() =
+    fun handleFirstValue_disconnected_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -51,12 +51,12 @@ class GeneralSyncHandlerTest {
             GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveDisconnected })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleFirstValue_incompatible_emitsResolveDisconnected() =
+    fun handleFirstValue_incompatible_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -65,12 +65,12 @@ class GeneralSyncHandlerTest {
             GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveDisconnected })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleFirstValue_unmatched_emitsResolveDisconnected() =
+    fun handleFirstValue_unmatched_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -79,12 +79,12 @@ class GeneralSyncHandlerTest {
             GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveDisconnected })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleFirstValue_unverified_emitsResolveDisconnected() =
+    fun handleFirstValue_unverified_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -93,12 +93,12 @@ class GeneralSyncHandlerTest {
             GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveDisconnected })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleFirstValue_connecting_emitsResolveConnecting() =
+    fun handleFirstValue_connecting_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -107,12 +107,12 @@ class GeneralSyncHandlerTest {
             GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnecting })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleFirstValue_connected_emitsResolveConnection() =
+    fun handleFirstValue_connected_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -121,14 +121,14 @@ class GeneralSyncHandlerTest {
             GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnection })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     // ========== B. handleValueChange (state transitions) ==========
 
     @Test
-    fun handleValueChange_portChange_emitsResolveConnection() =
+    fun handleValueChange_portChange_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -141,12 +141,12 @@ class GeneralSyncHandlerTest {
             handler.updateSyncRuntimeInfo(syncRuntimeInfo.copy(port = 13130))
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnection })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleValueChange_hostAddressChange_emitsResolveConnection() =
+    fun handleValueChange_hostAddressChange_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -159,7 +159,7 @@ class GeneralSyncHandlerTest {
             handler.updateSyncRuntimeInfo(syncRuntimeInfo.copy(connectHostAddress = "192.168.1.101"))
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnection })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
@@ -182,7 +182,7 @@ class GeneralSyncHandlerTest {
         }
 
     @Test
-    fun handleValueChange_stateToConnecting_emitsResolveConnecting() =
+    fun handleValueChange_stateToConnecting_noEventEmitted() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -200,12 +200,12 @@ class GeneralSyncHandlerTest {
             )
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnecting })
+            assertTrue(emitter.events.none { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleValueChange_stateToConnected_emitsResolveConnection() =
+    fun handleValueChange_stateToConnected_noResolveEvent() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -218,12 +218,12 @@ class GeneralSyncHandlerTest {
             handler.updateSyncRuntimeInfo(syncRuntimeInfo.copy(connectState = SyncState.CONNECTED))
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnection })
+            assertTrue(emitter.events.none { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     @Test
-    fun handleValueChange_hostInfoListChangeWhileConnected_emitsResolveConnection() =
+    fun handleValueChange_hostInfoListChangeWhileConnected_emitsResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -240,14 +240,14 @@ class GeneralSyncHandlerTest {
             )
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnection })
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 
     // ========== C. API delegation ==========
 
     @Test
-    fun forceResolve_emitsForceResolveConnection() =
+    fun forceResolve_emitsForceResolve() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -260,7 +260,7 @@ class GeneralSyncHandlerTest {
             handler.forceResolve()
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.any { it is SyncEvent.ForceResolveConnection })
+            assertTrue(emitter.events.any { it is SyncEvent.ForceResolve })
             childScope.cancel()
         }
 
@@ -380,7 +380,7 @@ class GeneralSyncHandlerTest {
         }
 
     @Test
-    fun getConnectHostAddress_noAddress_emitsResolveConnectionAndWaits() =
+    fun getConnectHostAddress_noAddress_emitsResolveAndWaits() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -394,8 +394,8 @@ class GeneralSyncHandlerTest {
             // the result will be null (no address resolved within timeout)
             val address = handler.getConnectHostAddress()
 
-            // It should have emitted a ResolveConnection event
-            assertTrue(emitter.events.any { it is SyncEvent.ResolveConnection })
+            // It should have emitted a Resolve event
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             assertNull(address)
             childScope.cancel()
         }

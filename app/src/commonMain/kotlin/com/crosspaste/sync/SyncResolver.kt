@@ -77,20 +77,12 @@ class SyncResolver(
                         ?: return@runCatching
 
                 when (event) {
-                    is SyncEvent.ResolveDisconnected -> {
-                        syncRuntimeInfo.resolveDisconnected(event.callback)
+                    is SyncEvent.Resolve -> {
+                        syncRuntimeInfo.resolve(event.callback)
                     }
 
-                    is SyncEvent.ResolveConnecting -> {
-                        syncRuntimeInfo.resolveConnecting(event.callback)
-                    }
-
-                    is SyncEvent.ResolveConnection -> {
-                        syncRuntimeInfo.resolveConnection(event.callback)
-                    }
-
-                    is SyncEvent.ForceResolveConnection -> {
-                        syncRuntimeInfo.forceResolveConnection(event.callback)
+                    is SyncEvent.ForceResolve -> {
+                        syncRuntimeInfo.forceResolve(event.callback)
                     }
 
                     is SyncEvent.TrustByToken -> {
@@ -154,123 +146,192 @@ class SyncResolver(
         }
     }
 
-    private suspend fun SyncRuntimeInfo.resolveDisconnected(callback: ResolveCallback) {
-        logger.info { "Resolve disconnected $appInstanceId" }
-        telnetHelper.switchHost(hostInfoList, port)?.let { pair ->
-            val (hostInfo, versionRelation) = pair
-            logger.info { "$appInstanceId $hostInfo to connecting, versionRelation: $versionRelation" }
+    // ──────────────────────────────────────────────────────────────
+    // Unified resolution: dispatches by current state, completes the
+    // full discover → authenticate flow in a single pass to avoid
+    // unnecessary intermediate state persistence and event round-trips.
+    // ──────────────────────────────────────────────────────────────
 
-            callback.updateVersionRelation(versionRelation)
-            val isEqualVersion = versionRelation == VersionRelation.EQUAL_TO
-
-            if (isEqualVersion) {
-                syncRuntimeInfoDao.updateConnectInfo(
-                    this.copy(
-                        connectHostAddress = hostInfo.hostAddress,
-                        connectNetworkPrefixLength = hostInfo.networkPrefixLength,
-                        connectState = SyncState.CONNECTING,
-                        modifyTime = nowEpochMilliseconds(),
-                    ),
-                )
-            } else {
-                syncRuntimeInfoDao.updateConnectInfo(
-                    this.copy(
-                        connectHostAddress = hostInfo.hostAddress,
-                        connectNetworkPrefixLength = hostInfo.networkPrefixLength,
-                        connectState = SyncState.INCOMPATIBLE,
-                        modifyTime = nowEpochMilliseconds(),
-                    ),
-                )
+    private suspend fun SyncRuntimeInfo.resolve(callback: ResolveCallback) {
+        logger.info { "Resolve $appInstanceId (state=$connectState)" }
+        when (connectState) {
+            SyncState.DISCONNECTED,
+            SyncState.INCOMPATIBLE,
+            -> {
+                discoverAndConnect(callback)
             }
-        } ?: run {
-            logger.info { "$appInstanceId to disconnected, hostInfoList: $hostInfoList" }
-            syncRuntimeInfoDao.updateConnectInfo(
-                this.copy(
-                    connectState = SyncState.DISCONNECTED,
-                    modifyTime = nowEpochMilliseconds(),
-                ),
-            )
+
+            SyncState.CONNECTING,
+            SyncState.UNMATCHED,
+            -> {
+                connectHostAddress?.let { host ->
+                    authenticate(host, connectNetworkPrefixLength, callback)
+                } ?: discoverAndConnect(callback)
+            }
+
+            SyncState.UNVERIFIED -> {
+                resolveUnverified(callback)
+            }
+
+            SyncState.CONNECTED -> {
+                verifyConnection(callback)
+            }
         }
     }
 
-    private suspend fun SyncRuntimeInfo.resolveConnecting(callback: ResolveCallback) {
-        logger.info { "Resolve connecting $appInstanceId" }
-        this.connectHostAddress?.let { host ->
-            if (secureStore.existCryptPublicKey(appInstanceId)) {
-                val state = heartbeat(host, port, appInstanceId, callback)
+    /**
+     * Phase 1: Discover a reachable host and attempt full connection
+     * in one pass (telnet + heartbeat without an event round-trip).
+     */
+    private suspend fun SyncRuntimeInfo.discoverAndConnect(callback: ResolveCallback) {
+        val result =
+            telnetHelper.switchHost(hostInfoList, port) ?: run {
+                logger.info { "$appInstanceId no reachable host, hostInfoList: $hostInfoList" }
+                updateConnectState(SyncState.DISCONNECTED)
+                return
+            }
 
-                when (state) {
-                    SyncState.CONNECTED -> {
-                        logger.info { "heartbeat success $appInstanceId $host $port" }
-                        syncRuntimeInfoDao.updateConnectInfo(
-                            this.copy(
-                                connectState = SyncState.CONNECTED,
-                                modifyTime = nowEpochMilliseconds(),
-                            ),
-                        )
-                        // track significant action
-                        ratingPromptManager.trackSignificantAction()
-                        return@resolveConnecting
-                    }
-                    SyncState.UNMATCHED -> {
-                        logger.info {
-                            "heartbeat fail and connectState is unmatched, need to re verify $appInstanceId $host $port"
-                        }
-                        secureStore.deleteCryptPublicKey(appInstanceId)
-                        tryUseTokenCache(host, port)
-                    }
-                    SyncState.INCOMPATIBLE -> {
-                        logger.info {
-                            "heartbeat success and connectState is incompatible $appInstanceId $host $port"
-                        }
-                        syncRuntimeInfoDao.updateConnectInfo(
-                            this.copy(
-                                connectState = SyncState.INCOMPATIBLE,
-                                modifyTime = nowEpochMilliseconds(),
-                            ),
-                        )
-                    }
+        val (hostInfo, versionRelation) = result
+        callback.updateVersionRelation(versionRelation)
 
-                    else -> {
-                        syncRuntimeInfoDao.updateConnectInfo(
-                            this.copy(
-                                connectState = SyncState.DISCONNECTED,
-                                modifyTime = nowEpochMilliseconds(),
-                            ),
-                        )
-                    }
+        if (versionRelation != VersionRelation.EQUAL_TO) {
+            logger.info { "$appInstanceId version incompatible: $versionRelation" }
+            updateConnectState(SyncState.INCOMPATIBLE, hostInfo.hostAddress, hostInfo.networkPrefixLength)
+            return
+        }
+
+        // Host found and version compatible — set CONNECTING for UI feedback
+        logger.info { "$appInstanceId ${hostInfo.hostAddress} to connecting" }
+        updateConnectState(SyncState.CONNECTING, hostInfo.hostAddress, hostInfo.networkPrefixLength)
+
+        // Immediately attempt authentication (no event round-trip)
+        authenticate(hostInfo.hostAddress, hostInfo.networkPrefixLength, callback)
+    }
+
+    /**
+     * Phase 2: Attempt authentication via existing key or token cache.
+     * Called directly after discovery or when resuming from CONNECTING state.
+     */
+    private suspend fun SyncRuntimeInfo.authenticate(
+        host: String,
+        networkPrefixLength: Short?,
+        callback: ResolveCallback,
+    ) {
+        if (secureStore.existCryptPublicKey(appInstanceId)) {
+            val state = heartbeat(host, port, appInstanceId, callback)
+            when (state) {
+                SyncState.CONNECTED -> {
+                    logger.info { "heartbeat success $appInstanceId $host $port" }
+                    updateConnectState(SyncState.CONNECTED, host, networkPrefixLength)
+                    ratingPromptManager.trackSignificantAction()
                 }
-            } else {
-                logger.info { "not exist $appInstanceId public key, need to verify $host $port" }
-                tryUseTokenCache(host, port)
+
+                SyncState.UNMATCHED -> {
+                    logger.info { "heartbeat key mismatch $appInstanceId, re-authenticating" }
+                    secureStore.deleteCryptPublicKey(appInstanceId)
+                    tryTokenCacheOrUnverified(host, networkPrefixLength)
+                }
+
+                SyncState.INCOMPATIBLE -> {
+                    updateConnectState(SyncState.INCOMPATIBLE, host, networkPrefixLength)
+                }
+
+                else -> {
+                    updateConnectState(SyncState.DISCONNECTED)
+                }
             }
-        } ?: run {
-            logger.info { "$appInstanceId ${platform.name} to disconnected" }
-            syncRuntimeInfoDao.updateConnectInfo(
-                this.copy(
-                    connectState = SyncState.DISCONNECTED,
-                    modifyTime = nowEpochMilliseconds(),
-                ),
-            )
-        }
-    }
-
-    private suspend fun SyncRuntimeInfo.resolveConnection(callback: ResolveCallback) {
-        logger.info { "Resolve connection $appInstanceId" }
-        if (connectState == SyncState.DISCONNECTED ||
-            connectState == SyncState.INCOMPATIBLE
-        ) {
-            resolveDisconnected(callback)
         } else {
-            resolveConnecting(callback)
+            logger.info { "$appInstanceId no public key, checking token cache" }
+            tryTokenCacheOrUnverified(host, networkPrefixLength)
         }
     }
 
-    private suspend fun SyncRuntimeInfo.forceResolveConnection(callback: ResolveCallback) {
-        logger.info { "Force resolve connection $appInstanceId" }
-        refreshSyncInfo(appInstanceId, hostInfoList)
-        resolveConnection(callback)
+    /**
+     * Phase 3: Try QR-scan token cache first; fall back to UNVERIFIED
+     * so the user can manually enter a pairing code.
+     */
+    private suspend fun SyncRuntimeInfo.tryTokenCacheOrUnverified(
+        host: String,
+        networkPrefixLength: Short?,
+    ) {
+        if (trustByTokenCache()) {
+            logger.info { "trustByTokenCache success $host $port" }
+            updateConnectState(SyncState.CONNECTED, host, networkPrefixLength)
+            ratingPromptManager.trackSignificantAction()
+        } else {
+            // Verify host is still reachable before showing UNVERIFIED to user
+            telnetHelper.telnet(host, port)?.let { versionRelation ->
+                if (versionRelation == VersionRelation.EQUAL_TO) {
+                    logger.info { "$appInstanceId to unverified $host $port" }
+                    updateConnectState(SyncState.UNVERIFIED, host, networkPrefixLength)
+                } else {
+                    updateConnectState(SyncState.INCOMPATIBLE, host, networkPrefixLength)
+                }
+            } ?: updateConnectState(SyncState.DISCONNECTED)
+        }
     }
+
+    /**
+     * Handle UNVERIFIED state during polling: check if a QR token arrived
+     * or if the host is still reachable.
+     */
+    private suspend fun SyncRuntimeInfo.resolveUnverified(callback: ResolveCallback) {
+        connectHostAddress?.let { host ->
+            // Check token cache first — user may have scanned QR while waiting
+            if (trustByTokenCache()) {
+                logger.info { "trustByTokenCache success (from unverified) $host $port" }
+                updateConnectState(SyncState.CONNECTED, host, connectNetworkPrefixLength)
+                ratingPromptManager.trackSignificantAction()
+                return
+            }
+            // Verify host still reachable; only update DB if state changes
+            telnetHelper.telnet(host, port)?.let { versionRelation ->
+                callback.updateVersionRelation(versionRelation)
+                if (versionRelation != VersionRelation.EQUAL_TO) {
+                    updateConnectState(SyncState.INCOMPATIBLE, host, connectNetworkPrefixLength)
+                }
+                // If still EQUAL_TO, stay UNVERIFIED — no DB write needed
+            } ?: updateConnectState(SyncState.DISCONNECTED)
+        } ?: updateConnectState(SyncState.DISCONNECTED)
+    }
+
+    /**
+     * Verify an existing CONNECTED device is still healthy.
+     */
+    private suspend fun SyncRuntimeInfo.verifyConnection(callback: ResolveCallback) {
+        connectHostAddress?.let { host ->
+            val state = heartbeat(host, port, appInstanceId, callback)
+            when (state) {
+                SyncState.CONNECTED -> {
+                    // Still connected — no state change needed
+                }
+
+                SyncState.UNMATCHED -> {
+                    logger.info { "connection key mismatch $appInstanceId, re-authenticating" }
+                    secureStore.deleteCryptPublicKey(appInstanceId)
+                    tryTokenCacheOrUnverified(host, connectNetworkPrefixLength)
+                }
+
+                SyncState.INCOMPATIBLE -> {
+                    updateConnectState(SyncState.INCOMPATIBLE, host, connectNetworkPrefixLength)
+                }
+
+                else -> {
+                    updateConnectState(SyncState.DISCONNECTED)
+                }
+            }
+        } ?: updateConnectState(SyncState.DISCONNECTED)
+    }
+
+    private suspend fun SyncRuntimeInfo.forceResolve(callback: ResolveCallback) {
+        logger.info { "Force resolve $appInstanceId" }
+        refreshSyncInfo(appInstanceId, hostInfoList)
+        resolve(callback)
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Low-level operations (heartbeat, trust, token cache)
+    // ──────────────────────────────────────────────────────────────
 
     private suspend fun heartbeat(
         host: String,
@@ -335,55 +396,6 @@ class SyncResolver(
         }
     }
 
-    private suspend fun SyncRuntimeInfo.tryUseTokenCache(
-        host: String,
-        port: Int,
-    ) {
-        // Always attempt token cache first — it serves the QR-code scan flow
-        // where the token is delivered via physical proximity (camera), which is
-        // secure regardless of pairing protocol version.
-        if (trustByTokenCache()) {
-            logger.info { "trustByTokenCache success $host $port" }
-            syncRuntimeInfoDao.updateConnectInfo(
-                this.copy(
-                    connectState = SyncState.CONNECTED,
-                    modifyTime = nowEpochMilliseconds(),
-                ),
-            )
-            ratingPromptManager.trackSignificantAction()
-        } else {
-            connectHostAddress?.let {
-                telnetHelper.telnet(it, port)?.let { versionRelation ->
-                    if (versionRelation == VersionRelation.EQUAL_TO) {
-                        logger.info { "telnet success $host $port" }
-                        syncRuntimeInfoDao.updateConnectInfo(
-                            this.copy(
-                                connectState = SyncState.UNVERIFIED,
-                                modifyTime = nowEpochMilliseconds(),
-                            ),
-                        )
-                    } else {
-                        logger.info { "telnet fail $host $port" }
-                        syncRuntimeInfoDao.updateConnectInfo(
-                            this.copy(
-                                connectState = SyncState.INCOMPATIBLE,
-                                modifyTime = nowEpochMilliseconds(),
-                            ),
-                        )
-                    }
-                    return@tryUseTokenCache
-                }
-            }
-            syncRuntimeInfoDao.updateConnectInfo(
-                this.copy(
-                    connectState = SyncState.DISCONNECTED,
-                    modifyTime = nowEpochMilliseconds(),
-                ),
-            )
-        }
-    }
-
-    // try to use camera to scan token to trust
     private suspend fun SyncRuntimeInfo.trustByTokenCache(): Boolean {
         tokenCache.getToken(appInstanceId)?.let { token ->
             connectHostAddress?.let { host ->
@@ -541,6 +553,25 @@ class SyncResolver(
             callback(true)
             ratingPromptManager.trackSignificantAction()
         } ?: callback(false)
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────
+
+    private suspend fun SyncRuntimeInfo.updateConnectState(
+        state: Int,
+        hostAddress: String? = connectHostAddress,
+        networkPrefixLength: Short? = connectNetworkPrefixLength,
+    ) {
+        syncRuntimeInfoDao.updateConnectInfo(
+            this.copy(
+                connectHostAddress = hostAddress,
+                connectNetworkPrefixLength = networkPrefixLength,
+                connectState = state,
+                modifyTime = nowEpochMilliseconds(),
+            ),
+        )
     }
 
     private fun refreshSyncInfo(
