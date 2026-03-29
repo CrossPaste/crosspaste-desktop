@@ -205,7 +205,7 @@ class GeneralSyncHandlerTest {
         }
 
     @Test
-    fun handleValueChange_stateToConnected_noResolveEvent() =
+    fun handleValueChange_stateToConnected_emitsResolveToVerify() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -218,7 +218,10 @@ class GeneralSyncHandlerTest {
             handler.updateSyncRuntimeInfo(syncRuntimeInfo.copy(connectState = SyncState.CONNECTED))
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            assertTrue(emitter.events.none { it is SyncEvent.Resolve })
+            // CONNECTED transition emits Resolve to immediately verify connectivity,
+            // covering the server-side trust flow where trustSyncInfo() writes CONNECTED
+            // without the local device ever having sent a heartbeat.
+            assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             childScope.cancel()
         }
 

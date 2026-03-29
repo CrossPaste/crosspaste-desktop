@@ -123,6 +123,10 @@ class GeneralSyncHandler(
 
                 SyncState.CONNECTED -> {
                     syncPollingManager.reset()
+                    // Immediately verify the connection. This covers the server-side
+                    // trust flow where trustSyncInfo() writes CONNECTED to DB without
+                    // the local device ever having sent a heartbeat to the remote peer.
+                    emitEvent(SyncEvent.Resolve(current, createCallback()))
                 }
             }
             return
