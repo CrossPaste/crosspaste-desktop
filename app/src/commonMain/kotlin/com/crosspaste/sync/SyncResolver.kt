@@ -182,10 +182,14 @@ class SyncResolver(
     /**
      * Phase 1: Discover a reachable host and attempt full connection
      * in one pass (telnet + heartbeat without an event round-trip).
+     *
+     * Uses a fast-then-slow strategy: if a previously connected address
+     * exists, try it first with a short timeout. On failure, fall back
+     * to probing the full address list with a longer timeout.
      */
     private suspend fun SyncRuntimeInfo.discoverAndConnect(callback: ResolveCallback) {
         val result =
-            telnetHelper.switchHost(hostInfoList, port) ?: run {
+            discoverReachableHost() ?: run {
                 logger.info { "$appInstanceId no reachable host, hostInfoList: $hostInfoList" }
                 updateConnectState(SyncState.DISCONNECTED)
                 return
@@ -327,6 +331,28 @@ class SyncResolver(
         logger.info { "Force resolve $appInstanceId" }
         refreshSyncInfo(appInstanceId, hostInfoList)
         resolve(callback)
+    }
+
+    /**
+     * Fast-then-slow host discovery: try the last known address first
+     * with a short timeout, then fall back to probing all addresses
+     * with a longer timeout.
+     */
+    private suspend fun SyncRuntimeInfo.discoverReachableHost(): Pair<HostInfo, VersionRelation>? {
+        // Fast path: try the previously connected address first
+        connectHostAddress?.let { lastHost ->
+            val lastHostInfo = hostInfoList.firstOrNull { it.hostAddress == lastHost }
+            if (lastHostInfo != null) {
+                logger.info { "$appInstanceId fast probe $lastHost:$port" }
+                telnetHelper.telnet(lastHost, port, TelnetHelper.FAST_TIMEOUT)?.let { version ->
+                    return@discoverReachableHost Pair(lastHostInfo, version)
+                }
+                logger.info { "$appInstanceId fast probe failed, falling back to full list" }
+            }
+        }
+
+        // Slow path: try all addresses in parallel with a longer timeout
+        return telnetHelper.switchHost(hostInfoList, port, TelnetHelper.SLOW_TIMEOUT)
     }
 
     // ──────────────────────────────────────────────────────────────

@@ -15,18 +15,24 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration.Companion.milliseconds
 
 class TelnetHelper(
     private val pasteClient: PasteClient,
     private val syncApi: SyncApi,
 ) {
 
+    companion object {
+        const val FAST_TIMEOUT = 500L
+        const val SLOW_TIMEOUT = 2000L
+    }
+
     private val logger = KotlinLogging.logger {}
 
     suspend fun switchHost(
         hostInfoList: List<HostInfo>,
         port: Int,
-        timeout: Long = 500L,
+        timeout: Long = FAST_TIMEOUT,
     ): Pair<HostInfo, VersionRelation>? {
         if (hostInfoList.isEmpty()) return null
 
@@ -51,7 +57,7 @@ class TelnetHelper(
         }
 
         return try {
-            withTimeout(timeout) { result.await() }
+            withTimeout(timeout.milliseconds) { result.await() }
         } catch (_: TimeoutCancellationException) {
             null
         } finally {
@@ -62,7 +68,7 @@ class TelnetHelper(
     suspend fun telnet(
         hostAddress: String,
         port: Int,
-        timeout: Long = 500L,
+        timeout: Long = FAST_TIMEOUT,
     ): VersionRelation? =
         runCatching {
             val hostAndPort = HostAndPort(hostAddress, port)
