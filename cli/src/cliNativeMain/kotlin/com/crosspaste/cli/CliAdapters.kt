@@ -54,6 +54,7 @@ data class CliReadOnlyAppConfig(
     override val enableSyncImage: Boolean = true,
     override val enableSyncFile: Boolean = true,
     override val enableSyncColor: Boolean = true,
+    override val enableRemoteShowPairingCode: Boolean = true,
 ) : AppConfig {
     override fun copy(
         key: String,
