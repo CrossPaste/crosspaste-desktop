@@ -16,8 +16,12 @@ import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.net.filter
+import com.crosspaste.net.ws.WsEnvelope
+import com.crosspaste.net.ws.WsMessageType
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.HostAndPort
@@ -38,7 +42,9 @@ class SyncPasteTaskExecutor(
     private val configManager: CommonConfigManager,
     private val pasteDao: PasteDao,
     private val pasteClientApi: PasteClientApi,
+    private val secureStore: SecureStore,
     private val syncManager: SyncManager,
+    private val wsSessionManager: WsSessionManager,
 ) : SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}
@@ -195,21 +201,56 @@ class SyncPasteTaskExecutor(
         val port = syncRuntimeInfo.port
         val targetAppInstanceId = syncRuntimeInfo.appInstanceId
 
-        return if (appControl.isSendEnabled()) {
-            val hostAndPort = HostAndPort(hostAddress, port)
-            pasteClientApi.sendPaste(
-                pasteData,
-                targetAppInstanceId,
-            ) {
-                buildUrl(hostAndPort)
-            }
-        } else {
-            createFailureResult(
+        if (!appControl.isSendEnabled()) {
+            return createFailureResult(
                 StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP,
                 "Failed to send paste to $handlerKey",
             )
         }
+
+        // Prefer WebSocket if available — lower latency, no new connection
+        if (wsSessionManager.isConnected(targetAppInstanceId)) {
+            val wsSendResult = trySendViaWebSocket(targetAppInstanceId, pasteData)
+            if (wsSendResult != null) return wsSendResult
+        }
+
+        // Fallback to HTTP
+        val hostAndPort = HostAndPort(hostAddress, port)
+        return pasteClientApi.sendPaste(
+            pasteData,
+            targetAppInstanceId,
+        ) {
+            buildUrl(hostAndPort)
+        }
     }
+
+    private suspend fun trySendViaWebSocket(
+        targetAppInstanceId: String,
+        pasteData: PasteData,
+    ): ClientApiResult? =
+        runCatching {
+            val jsonBytes = getJsonUtils().JSON.encodeToString(pasteData).encodeToByteArray()
+            val encrypt = configManager.getCurrentConfig().enableEncryptSync
+            val payload =
+                if (encrypt) {
+                    secureStore.getMessageProcessor(targetAppInstanceId).encrypt(jsonBytes)
+                } else {
+                    jsonBytes
+                }
+            val envelope =
+                WsEnvelope(
+                    type = WsMessageType.PASTE_PUSH,
+                    payload = payload,
+                    encrypted = encrypt,
+                )
+            if (wsSessionManager.send(targetAppInstanceId, envelope)) {
+                SuccessResult()
+            } else {
+                null // WebSocket send failed, fall back to HTTP
+            }
+        }.onFailure { e ->
+            logger.warn(e) { "WebSocket paste send failed for $targetAppInstanceId, falling back to HTTP" }
+        }.getOrNull()
 
     private fun processResults(
         results: Map<String, ClientApiResult>,

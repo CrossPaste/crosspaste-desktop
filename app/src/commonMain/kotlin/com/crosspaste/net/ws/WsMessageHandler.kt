@@ -6,17 +6,19 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class WsMessageHandler(
     private val lazyAppControl: Lazy<AppControl>,
     private val lazyPasteboardService: Lazy<PasteboardService>,
-    private val secureStore: SecureStore,
     private val lazySyncRoutingApi: Lazy<SyncRoutingApi>,
+    private val secureStore: SecureStore,
     private val wsSessionManager: WsSessionManager,
-    private val scope: CoroutineScope,
+    private val scope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
 ) {
     private val appControl: AppControl get() = lazyAppControl.value
     private val pasteboardService: PasteboardService get() = lazyPasteboardService.value
@@ -84,8 +86,13 @@ class WsMessageHandler(
         }
 
         runCatching {
-            val decrypted = secureStore.getMessageProcessor(appInstanceId).decrypt(envelope.payload)
-            val pasteData = json.decodeFromString<PasteData>(decrypted.decodeToString())
+            val payloadBytes =
+                if (envelope.encrypted) {
+                    secureStore.getMessageProcessor(appInstanceId).decrypt(envelope.payload)
+                } else {
+                    envelope.payload
+                }
+            val pasteData = json.decodeFromString<PasteData>(payloadBytes.decodeToString())
 
             scope.launch {
                 pasteboardService.tryWriteRemotePasteboard(pasteData)

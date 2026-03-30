@@ -57,7 +57,7 @@ class MarketingSyncManager : SyncManager {
     override val unverifiedSyncRuntimeInfo: StateFlow<SyncRuntimeInfo?> =
         MutableStateFlow(null)
 
-    override fun start() {
+    override suspend fun start() {
         internalSyncHandlers.putAll(
             syncRuntimeInfos.map { syncRuntimeInfo ->
                 syncRuntimeInfo.appInstanceId to createSyncHandler(syncRuntimeInfo)
@@ -65,7 +65,7 @@ class MarketingSyncManager : SyncManager {
         )
     }
 
-    override fun stop() {
+    override suspend fun stop() {
     }
 
     private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()

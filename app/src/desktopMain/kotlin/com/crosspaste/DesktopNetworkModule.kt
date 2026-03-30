@@ -41,10 +41,10 @@ import com.crosspaste.sync.SyncDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
 import com.crosspaste.sync.SyncResolverApi
-import com.crosspaste.utils.ioDispatcher
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.server.netty.NettyApplicationEngine
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -88,22 +88,21 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
             DesktopServerFactory()
         }
         single<WsSessionManager> {
-            WsSessionManager(lazySyncManager = lazy { get() })
+            WsSessionManager()
         }
         single<WsMessageHandler> {
             WsMessageHandler(
                 lazyAppControl = lazy { get() },
                 lazyPasteboardService = lazy { get() },
-                secureStore = get(),
                 lazySyncRoutingApi = lazy { get() },
+                secureStore = get(),
                 wsSessionManager = get(),
-                scope = CoroutineScope(ioDispatcher + SupervisorJob()),
             )
         }
         single<WsClientConnector> {
             val wsHttpClient =
-                io.ktor.client.HttpClient(io.ktor.client.engine.cio.CIO) {
-                    install(io.ktor.client.plugins.websocket.WebSockets) {
+                HttpClient(CIO) {
+                    install(WebSockets) {
                         pingIntervalMillis = 30_000
                     }
                 }
@@ -148,6 +147,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 GeneralSyncManager(
                     syncResolver = get(),
                     syncRuntimeInfoDao = get(),
+                    wsSessionManager = get(),
                 )
             }
         }

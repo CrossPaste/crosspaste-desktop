@@ -3,6 +3,7 @@ package com.crosspaste.net.ws
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
@@ -60,6 +61,7 @@ class WsModuleDependencyTest : KoinTest {
             module {
                 // Stubs for dependencies outside the cycle
                 single<AppControl> { mockk(relaxed = true) }
+                single<CommonConfigManager> { mockk(relaxed = true) }
                 single<AppInfo> { mockk(relaxed = true) { every { appInstanceId } returns "test" } }
                 single<Platform> { mockk(relaxed = true) { every { isDesktop() } returns true } }
                 single<NearbyDeviceManager> { mockk(relaxed = true) }
@@ -79,16 +81,15 @@ class WsModuleDependencyTest : KoinTest {
 
                 // The actual components under test — mirrors DesktopNetworkModule wiring
                 single<WsSessionManager> {
-                    WsSessionManager(lazySyncManager = lazy { get() })
+                    WsSessionManager()
                 }
                 single<WsMessageHandler> {
                     WsMessageHandler(
                         lazyAppControl = lazy { get() },
                         lazyPasteboardService = lazy { get() },
-                        secureStore = get(),
                         lazySyncRoutingApi = lazy { get() },
+                        secureStore = get(),
                         wsSessionManager = get(),
-                        scope = CoroutineScope(ioDispatcher + SupervisorJob()),
                     )
                 }
                 single<WsClientConnector> {

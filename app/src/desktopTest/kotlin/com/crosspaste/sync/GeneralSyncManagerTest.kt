@@ -4,6 +4,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import io.mockk.coEvery
@@ -42,6 +43,7 @@ class GeneralSyncManagerTest {
             realTimeSyncScope = scope,
             syncResolver = mocks.syncResolver,
             syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
+            wsSessionManager = WsSessionManager(),
         )
 
     private fun createTestSyncRuntimeInfo(

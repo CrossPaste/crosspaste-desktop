@@ -1,16 +1,19 @@
 package com.crosspaste.net.ws
 
-import com.crosspaste.sync.SyncManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
-import kotlinx.coroutines.launch
 
-class WsSessionManager(
-    private val lazySyncManager: Lazy<SyncManager>,
-) {
+class WsSessionManager {
+
     private val logger = KotlinLogging.logger {}
 
     private val sessions: MutableMap<String, WsSession> = ConcurrentMap()
+
+    private var onSessionClosed: ((String) -> Unit)? = null
+
+    fun setOnSessionClosed(callback: (String) -> Unit) {
+        onSessionClosed = callback
+    }
 
     fun registerSession(
         appInstanceId: String,
@@ -30,9 +33,23 @@ class WsSessionManager(
         }
     }
 
+    fun notifySessionClosed(appInstanceId: String) {
+        unregisterSession(appInstanceId)
+        onSessionClosed?.invoke(appInstanceId)
+    }
+
     fun getSession(appInstanceId: String): WsSession? = sessions[appInstanceId]
 
     fun isConnected(appInstanceId: String): Boolean = sessions[appInstanceId]?.isActive == true
+
+    suspend fun closeAll() {
+        sessions.keys.toList().forEach { appInstanceId ->
+            sessions.remove(appInstanceId)?.let { session ->
+                runCatching { session.close("App shutting down") }
+                    .onFailure { e -> logger.warn(e) { "Error closing WS session for $appInstanceId" } }
+            }
+        }
+    }
 
     suspend fun send(
         appInstanceId: String,
@@ -44,24 +61,7 @@ class WsSessionManager(
             true
         }.onFailure { e ->
             logger.warn(e) { "WebSocket send failed for $appInstanceId" }
-            unregisterSession(appInstanceId)
-            onSessionClosed(appInstanceId)
+            notifySessionClosed(appInstanceId)
         }.getOrDefault(false)
     }
-
-    fun notifySessionClosed(appInstanceId: String) {
-        unregisterSession(appInstanceId)
-        onSessionClosed(appInstanceId)
-    }
-
-    private fun onSessionClosed(appInstanceId: String) {
-        val syncManager = lazySyncManager.value
-        syncManager.getSyncHandler(appInstanceId)?.let { handler ->
-            syncManager.realTimeSyncScope.launch {
-                handler.forceResolve()
-            }
-        }
-    }
-
-    fun getAllSessions(): Map<String, WsSession> = sessions.toMap()
 }

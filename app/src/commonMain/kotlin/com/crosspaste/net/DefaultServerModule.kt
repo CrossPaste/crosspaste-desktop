@@ -13,6 +13,9 @@ import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.pasteRouting
 import com.crosspaste.net.routing.pullRouting
 import com.crosspaste.net.routing.syncRouting
+import com.crosspaste.net.routing.wsRouting
+import com.crosspaste.net.ws.WsMessageHandler
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
@@ -54,6 +57,8 @@ open class DefaultServerModule(
     private val serverEncryptPluginFactory: ServerEncryptPluginFactory,
     private val serverDecryptionPluginFactory: ServerDecryptionPluginFactory,
     private val userDataPathProvider: UserDataPathProvider,
+    private val wsMessageHandler: WsMessageHandler,
+    private val wsSessionManager: WsSessionManager,
 ) : ServerModule {
 
     private val logger = KotlinLogging.logger {}
@@ -69,6 +74,11 @@ open class DefaultServerModule(
                     failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
                 }
                 exceptionHandler.handler()()
+            }
+            install(io.ktor.server.websocket.WebSockets) {
+                pingPeriodMillis = 30_000
+                timeoutMillis = 15_000
+                maxFrameSize = 1024 * 1024
             }
             install(serverEncryptPluginFactory.createPlugin())
             install(serverDecryptionPluginFactory.createPlugin())
@@ -106,6 +116,12 @@ open class DefaultServerModule(
                     pasteDao,
                     syncRoutingApi,
                     userDataPathProvider,
+                )
+                wsRouting(
+                    appInfo,
+                    secureStore,
+                    wsSessionManager,
+                    wsMessageHandler,
                 )
             }
         }

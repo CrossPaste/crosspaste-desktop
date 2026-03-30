@@ -14,8 +14,10 @@ import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
@@ -45,7 +47,12 @@ class SyncPasteTaskExecutorTest {
         val configManager: CommonConfigManager = mockk(relaxed = true)
         val pasteDao: PasteDao = mockk(relaxed = true)
         val pasteClientApi: PasteClientApi = mockk(relaxed = true)
+        val secureStore: SecureStore = mockk(relaxed = true)
         val syncManager: SyncManager = mockk(relaxed = true)
+        val wsSessionManager: WsSessionManager =
+            mockk(relaxed = true) {
+                every { isConnected(any()) } returns false
+            }
 
         init {
             val config = mockk<AppConfig>(relaxed = true)
@@ -68,7 +75,9 @@ class SyncPasteTaskExecutorTest {
                 configManager = configManager,
                 pasteDao = pasteDao,
                 pasteClientApi = pasteClientApi,
+                secureStore = secureStore,
                 syncManager = syncManager,
+                wsSessionManager = wsSessionManager,
             )
     }
 

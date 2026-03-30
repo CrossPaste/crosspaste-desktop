@@ -10,9 +10,9 @@ interface SyncManager : SyncRoutingApi {
 
     val unverifiedSyncRuntimeInfo: StateFlow<SyncRuntimeInfo?>
 
-    fun start()
+    suspend fun start()
 
-    fun stop()
+    suspend fun stop()
 
     fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler
 

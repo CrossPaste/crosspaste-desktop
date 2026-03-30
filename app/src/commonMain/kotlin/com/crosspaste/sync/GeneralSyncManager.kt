@@ -6,6 +6,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.filter
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -34,6 +35,7 @@ class GeneralSyncManager(
     override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
     private val syncResolver: SyncResolverApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val wsSessionManager: WsSessionManager,
 ) : SyncManager {
 
     private val logger = KotlinLogging.logger {}
@@ -70,8 +72,16 @@ class GeneralSyncManager(
 
     private var syncRuntimeInfosJob: Job? = null
 
-    override fun start() {
+    override suspend fun start() {
         if (!started.compareAndSet(expect = false, update = true)) return
+
+        wsSessionManager.setOnSessionClosed { appInstanceId ->
+            internalSyncHandlers[appInstanceId]?.let { handler ->
+                realTimeSyncScope.launch {
+                    handler.forceResolve()
+                }
+            }
+        }
 
         realTimeSyncScope.launch {
             for (event in eventChannel) {
@@ -84,10 +94,12 @@ class GeneralSyncManager(
         startCollectingSyncRuntimeInfosFlow()
     }
 
-    override fun stop() {
+    override suspend fun stop() {
         if (!started.compareAndSet(expect = true, update = false)) return
 
         notifyExit()
+
+        wsSessionManager.closeAll()
 
         syncRuntimeInfosJob?.cancel()
         syncRuntimeInfosJob = null
@@ -106,6 +118,7 @@ class GeneralSyncManager(
 
                     deleteSet.forEach { appInstanceId ->
                         internalSyncHandlers.remove(appInstanceId)?.cancelScope()
+                        wsSessionManager.unregisterSession(appInstanceId)
                     }
 
                     newSet.forEach { appInstanceId ->

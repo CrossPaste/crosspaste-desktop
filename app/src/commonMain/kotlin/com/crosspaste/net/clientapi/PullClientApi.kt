@@ -11,7 +11,6 @@ import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.reflect.*
-import io.ktor.utils.io.*
 
 class PullClientApi(
     private val pasteClient: PasteClient,
@@ -62,6 +61,7 @@ class PullClientApi(
         return result(response, "icon", response.request.url)
     }
 
+    @Suppress("unused")
     suspend fun pullLatestPaste(
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
