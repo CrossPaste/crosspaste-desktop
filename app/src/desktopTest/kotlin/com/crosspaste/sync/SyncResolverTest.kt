@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -19,6 +20,9 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.clientapi.UnknownError
+import com.crosspaste.net.ws.WsClientConnector
+import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.platform.Platform
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createConnectingSyncRuntimeInfo
@@ -54,6 +58,19 @@ class SyncResolverTest {
         val syncRuntimeInfoDao: SyncRuntimeInfoDao = mockk(relaxed = true)
         val telnetHelper: TelnetHelper = mockk(relaxed = true)
         val tokenCache: FakeTokenCache = FakeTokenCache()
+        val appInfo: AppInfo =
+            mockk(relaxed = true) {
+                every { appInstanceId } returns "local-test-id"
+            }
+        val localPlatform: Platform =
+            mockk(relaxed = true) {
+                every { isDesktop() } returns true
+            }
+        val wsClientConnector: WsClientConnector = mockk(relaxed = true)
+        val wsSessionManager: WsSessionManager =
+            mockk(relaxed = true) {
+                every { isConnected(any()) } returns false
+            }
 
         fun stubDbRead(syncRuntimeInfo: SyncRuntimeInfo) {
             coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) } returns syncRuntimeInfo
@@ -61,6 +78,8 @@ class SyncResolverTest {
 
         fun createResolver(): SyncResolver =
             SyncResolver(
+                appInfo = appInfo,
+                localPlatform = localPlatform,
                 lazyNearbyDeviceManager = lazy { nearbyDeviceManager },
                 lazyPasteBonjourService = lazy { pasteBonjourService },
                 networkInterfaceService = networkInterfaceService,
@@ -73,6 +92,8 @@ class SyncResolverTest {
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
                 telnetHelper = telnetHelper,
                 tokenCache = tokenCache,
+                wsClientConnector = wsClientConnector,
+                wsSessionManager = wsSessionManager,
             )
     }
 

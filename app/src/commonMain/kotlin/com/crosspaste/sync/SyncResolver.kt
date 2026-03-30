@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -19,6 +20,10 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.filter
+import com.crosspaste.net.ws.WsClientConnector
+import com.crosspaste.net.ws.WsConnectionPolicy
+import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.platform.Platform
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils
@@ -29,6 +34,8 @@ import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SyncResolver(
+    private val appInfo: AppInfo,
+    private val localPlatform: Platform,
     private val lazyNearbyDeviceManager: Lazy<NearbyDeviceManager>,
     private val lazyPasteBonjourService: Lazy<PasteBonjourService>,
     private val networkInterfaceService: NetworkInterfaceService,
@@ -41,6 +48,8 @@ class SyncResolver(
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val telnetHelper: TelnetHelper,
     private val tokenCache: TokenCacheApi,
+    private val wsClientConnector: WsClientConnector,
+    private val wsSessionManager: WsSessionManager,
 ) : SyncResolverApi {
 
     private val logger = KotlinLogging.logger {}
@@ -228,6 +237,7 @@ class SyncResolver(
                     logger.info { "heartbeat success $appInstanceId $host $port" }
                     updateConnectState(SyncState.CONNECTED, host, networkPrefixLength)
                     ratingPromptManager.trackSignificantAction()
+                    attemptWebSocketUpgrade(host, port)
                 }
 
                 SyncState.UNMATCHED -> {
@@ -301,8 +311,14 @@ class SyncResolver(
 
     /**
      * Verify an existing CONNECTED device is still healthy.
+     * If a WebSocket session is active, skip the HTTP heartbeat —
+     * the WebSocket ping/pong handles liveness.
      */
     private suspend fun SyncRuntimeInfo.verifyConnection(callback: ResolveCallback) {
+        if (wsSessionManager.isConnected(appInstanceId)) {
+            logger.debug { "WebSocket active for $appInstanceId, skipping HTTP heartbeat" }
+            return
+        }
         connectHostAddress?.let { host ->
             val state = heartbeat(host, port, appInstanceId, callback)
             when (state) {
@@ -353,6 +369,39 @@ class SyncResolver(
 
         // Slow path: try all addresses in parallel with a longer timeout
         return telnetHelper.switchHost(hostInfoList, port, TelnetHelper.SLOW_TIMEOUT)
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // WebSocket upgrade (opportunistic, non-blocking)
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Attempt to upgrade the connection to WebSocket after HTTP CONNECTED.
+     * This is a best-effort, non-blocking operation:
+     * - If the remote device supports WebSocket, a persistent bidirectional
+     *   channel is established, replacing HTTP heartbeat polling.
+     * - If the remote is an older version without /ws/sync, the attempt
+     *   silently fails and HTTP polling continues as before.
+     */
+    private fun SyncRuntimeInfo.attemptWebSocketUpgrade(
+        host: String,
+        port: Int,
+    ) {
+        if (wsSessionManager.isConnected(appInstanceId)) return
+
+        if (!WsConnectionPolicy.shouldInitiate(
+                localAppInstanceId = appInfo.appInstanceId,
+                localPlatform = localPlatform,
+                remoteAppInstanceId = appInstanceId,
+                remotePlatform = platform,
+            )
+        ) {
+            logger.debug { "WebSocket: not initiator for $appInstanceId, waiting for inbound" }
+            return
+        }
+
+        logger.info { "Attempting WebSocket upgrade to $appInstanceId at $host:$port" }
+        wsClientConnector.connectAsync(host, port, appInstanceId)
     }
 
     // ──────────────────────────────────────────────────────────────

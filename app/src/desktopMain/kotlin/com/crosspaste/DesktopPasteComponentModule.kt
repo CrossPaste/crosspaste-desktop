@@ -167,7 +167,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                     PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
                     PullIconTaskExecutor(get(), get(), get(), get()),
                     SwitchLanguageTaskExecutor(get(), get()),
-                    SyncPasteTaskExecutor(get(), get(), get(), get(), get(), get()),
+                    SyncPasteTaskExecutor(get(), get(), get(), get(), get(), get(), get(), get()),
                 ),
                 get(),
             )

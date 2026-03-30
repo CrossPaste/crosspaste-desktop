@@ -28,6 +28,9 @@ import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.net.ws.WsClientConnector
+import com.crosspaste.net.ws.WsMessageHandler
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.sync.GeneralNearbyDeviceManager
 import com.crosspaste.sync.GeneralSyncManager
 import com.crosspaste.sync.MarketingNearbyDeviceManager
@@ -38,6 +41,9 @@ import com.crosspaste.sync.SyncDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
 import com.crosspaste.sync.SyncResolverApi
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.server.netty.NettyApplicationEngine
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -81,6 +87,32 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
             DesktopServerFactory()
         }
+        single<WsSessionManager> {
+            WsSessionManager()
+        }
+        single<WsMessageHandler> {
+            WsMessageHandler(
+                lazyAppControl = lazy { get() },
+                lazyPasteboardService = lazy { get() },
+                lazySyncRoutingApi = lazy { get() },
+                secureStore = get(),
+                wsSessionManager = get(),
+            )
+        }
+        single<WsClientConnector> {
+            val wsHttpClient =
+                HttpClient(CIO) {
+                    install(WebSockets) {
+                        pingIntervalMillis = 30_000
+                    }
+                }
+            WsClientConnector(
+                appInfo = get(),
+                client = wsHttpClient,
+                wsSessionManager = get(),
+                wsMessageHandler = get(),
+            )
+        }
         single<ServerModule> {
             DesktopServerModule(
                 appControl = get(),
@@ -102,6 +134,8 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 serverEncryptPluginFactory = get(),
                 serverDecryptionPluginFactory = get(),
                 userDataPathProvider = get(),
+                wsMessageHandler = get(),
+                wsSessionManager = get(),
             )
         }
         single<SyncApi> { SyncApi }
@@ -113,6 +147,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 GeneralSyncManager(
                     syncResolver = get(),
                     syncRuntimeInfoDao = get(),
+                    wsSessionManager = get(),
                 )
             }
         }
@@ -125,6 +160,8 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         }
         single<SyncResolverApi> {
             SyncResolver(
+                appInfo = get(),
+                localPlatform = get(),
                 lazyNearbyDeviceManager = lazy { get() },
                 lazyPasteBonjourService = lazy { get() },
                 networkInterfaceService = get(),
@@ -137,6 +174,8 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 syncRuntimeInfoDao = get(),
                 telnetHelper = get(),
                 tokenCache = get(),
+                wsClientConnector = get(),
+                wsSessionManager = get(),
             )
         }
         single<SyncRoutingApi> { get<SyncManager>() }
