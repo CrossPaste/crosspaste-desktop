@@ -94,13 +94,12 @@ interface PasteDao : SearchPasteData {
 
     suspend fun getExportNum(pasteExportParam: PasteExportParam): Long
 
-    suspend fun getRecentPasteDataAfterId(
-        id: Long,
-        limit: Long,
-    ): List<PasteData>
+    suspend fun getRecentPasteDataByAppInstanceId(limit: Long): List<PasteData>
 
     suspend fun getRecentPasteDataAfterCreateTime(
         createTime: Long,
         limit: Long,
     ): List<PasteData>
+
+    suspend fun getMaxCreateTimeByRemoteAppInstanceId(): Map<String, Long>
 }

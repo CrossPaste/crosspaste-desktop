@@ -519,15 +519,11 @@ class SqlPasteDao(
                 ).executeAsOne()
         }
 
-    override suspend fun getRecentPasteDataAfterId(
-        id: Long,
-        limit: Long,
-    ): List<PasteData> =
+    override suspend fun getRecentPasteDataByAppInstanceId(limit: Long): List<PasteData> =
         withContext(ioDispatcher) {
             pasteDatabaseQueries
-                .getRecentPasteDataAfterById(
+                .getRecentPasteDataByAppInstanceId(
                     appInfo.appInstanceId,
-                    id,
                     limit,
                     PasteData::mapper,
                 ).executeAsList()
@@ -545,5 +541,14 @@ class SqlPasteDao(
                     limit,
                     PasteData::mapper,
                 ).executeAsList()
+        }
+
+    override suspend fun getMaxCreateTimeByRemoteAppInstanceId(): Map<String, Long> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries
+                .getMaxCreateTimeByRemoteAppInstanceId()
+                .executeAsList()
+                .mapNotNull { row -> row.maxCreateTime?.let { row.appInstanceId to it } }
+                .toMap()
         }
 }

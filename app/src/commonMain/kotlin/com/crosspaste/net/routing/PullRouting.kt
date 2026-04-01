@@ -130,18 +130,14 @@ fun Routing.pullRouting(
                 return@let
             }
 
-            val id = call.request.queryParameters["id"]?.toLongOrNull()
             val createTime = call.request.queryParameters["createTime"]?.toLongOrNull()
-            val limit = call.request.queryParameters["limit"]?.toLongOrNull() ?: 10L
+            val limit = (call.request.queryParameters["limit"]?.toLongOrNull() ?: 10L).coerceAtMost(50L)
 
             val pasteDataList =
-                if (id != null) {
-                    pasteDao.getRecentPasteDataAfterId(id, limit)
-                } else if (createTime != null) {
+                if (createTime != null) {
                     pasteDao.getRecentPasteDataAfterCreateTime(createTime, limit)
                 } else {
-                    failResponse(call, StandardErrorCode.INVALID_PARAMETER.toErrorCode())
-                    return@let
+                    pasteDao.getRecentPasteDataByAppInstanceId(limit)
                 }
 
             logger.debug { "pull pasteBatch by ($fromAppInstanceId): ${pasteDataList.size} items" }
@@ -174,7 +170,7 @@ fun Routing.pullRouting(
             }
 
             val pasteData =
-                pasteDao.getLatestLoadedPasteData() ?: run {
+                pasteDao.getRecentPasteDataByAppInstanceId(1).firstOrNull() ?: run {
                     logger.debug { "no paste data available for $fromAppInstanceId" }
                     failResponse(call, StandardErrorCode.SYNC_PASTE_NOT_FOUND_DATA.toErrorCode())
                     return@let

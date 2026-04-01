@@ -5,6 +5,7 @@ import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.sync.PastePullService
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.successResponse
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 fun Routing.pasteRouting(
     appControl: AppControl,
     pasteboardService: PasteboardService,
+    pastePullService: PastePullService,
     pasteRoutingScope: CoroutineScope,
     syncRoutingApi: SyncRoutingApi,
 ) {
@@ -47,9 +49,12 @@ fun Routing.pasteRouting(
                 val pasteData = call.receive<PasteData>()
 
                 pasteRoutingScope.launch {
-                    pasteboardService.tryWriteRemotePasteboard(
-                        pasteData,
-                    )
+                    pasteboardService
+                        .tryWriteRemotePasteboard(
+                            pasteData,
+                        ).onSuccess {
+                            pastePullService.updateMaxCreateTime(appInstanceId, pasteData.createTime)
+                        }
                 }
                 logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
                 appControl.completeReceiveOperation()

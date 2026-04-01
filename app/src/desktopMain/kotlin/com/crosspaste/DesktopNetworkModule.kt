@@ -126,6 +126,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 pendingKeyExchangeStore = get(),
                 pasteboardService = get(),
                 pasteDao = get(),
+                pastePullService = get(),
                 secureKeyPairSerializer = get(),
                 secureStore = get(),
                 syncApi = get(),
