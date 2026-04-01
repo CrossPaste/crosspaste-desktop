@@ -93,4 +93,14 @@ interface PasteDao : SearchPasteData {
     ): List<PasteData>
 
     suspend fun getExportNum(pasteExportParam: PasteExportParam): Long
+
+    suspend fun getRecentPasteDataAfterId(
+        id: Long,
+        limit: Long,
+    ): List<PasteData>
+
+    suspend fun getRecentPasteDataAfterCreateTime(
+        createTime: Long,
+        limit: Long,
+    ): List<PasteData>
 }

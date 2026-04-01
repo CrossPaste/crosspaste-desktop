@@ -26,6 +26,10 @@ object SyncApi {
             "method": "get"
           },
           {
+            "path": "/pull/pasteBatch",
+            "method": "get"
+          },
+          {
             "path": "/sync/heartbeat",
             "method": "get"
           },

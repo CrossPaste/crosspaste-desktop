@@ -518,4 +518,32 @@ class SqlPasteDao(
                     pasteExportParam.onlyTagged,
                 ).executeAsOne()
         }
+
+    override suspend fun getRecentPasteDataAfterId(
+        id: Long,
+        limit: Long,
+    ): List<PasteData> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries
+                .getRecentPasteDataAfterById(
+                    appInfo.appInstanceId,
+                    id,
+                    limit,
+                    PasteData::mapper,
+                ).executeAsList()
+        }
+
+    override suspend fun getRecentPasteDataAfterCreateTime(
+        createTime: Long,
+        limit: Long,
+    ): List<PasteData> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries
+                .getRecentPasteDataAfterByCreateTime(
+                    appInfo.appInstanceId,
+                    createTime,
+                    limit,
+                    PasteData::mapper,
+                ).executeAsList()
+        }
 }
