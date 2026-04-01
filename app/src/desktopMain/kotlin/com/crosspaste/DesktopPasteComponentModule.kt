@@ -52,6 +52,7 @@ import com.crosspaste.paste.plugin.type.UrlTypePlugin
 import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.FilePullService
+import com.crosspaste.sync.PastePullService
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.CleanTaskTaskExecutor
 import com.crosspaste.task.DelayedDeletePasteTaskExecutor
@@ -99,6 +100,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
             DesktopPasteTagMenuService(get(), get())
         }
         single<FilePullService> { FilePullService(get(), get(), get(), get()) }
+        single<PastePullService> { PastePullService(get(), get(), get(), get()) }
         single<PasteReleaseService> {
             PasteReleaseService(
                 commonConfigManager = get(),

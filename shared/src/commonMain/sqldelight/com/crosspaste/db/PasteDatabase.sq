@@ -270,5 +270,26 @@ WHERE pasteState != -1;
 getDistinctSources:
 SELECT DISTINCT source FROM PasteDataEntity WHERE source IS NOT NULL AND pasteState != -1 AND appInstanceId = :appInstanceId;
 
+getRecentPasteDataByAppInstanceId:
+SELECT * FROM PasteDataEntity
+WHERE appInstanceId = :appInstanceId
+  AND pasteState = 1
+ORDER BY id DESC, createTime DESC
+LIMIT :limit;
+
+getRecentPasteDataAfterByCreateTime:
+SELECT * FROM PasteDataEntity
+WHERE appInstanceId = :appInstanceId
+  AND pasteState = 1
+  AND createTime > :afterCreateTime
+ORDER BY id DESC, createTime DESC
+LIMIT :limit;
+
+getMaxCreateTimeByRemoteAppInstanceId:
+SELECT appInstanceId, MAX(createTime) AS maxCreateTime
+FROM PasteDataEntity
+WHERE remote = 1 AND pasteState != -1
+GROUP BY appInstanceId;
+
 change:
 SELECT changes() AS changes;

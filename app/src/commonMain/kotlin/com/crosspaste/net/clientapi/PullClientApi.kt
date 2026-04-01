@@ -99,6 +99,49 @@ class PullClientApi(
         }
     }
 
+    suspend fun pullPasteBatch(
+        targetAppInstanceId: String,
+        createTime: Long?,
+        limit: Long,
+        toUrl: URLBuilder.() -> Unit,
+    ): ClientApiResult {
+        val response =
+            pasteClient.get(
+                headersBuilder = {
+                    append("targetAppInstanceId", targetAppInstanceId)
+                    if (configManager.getCurrentConfig().enableEncryptSync) {
+                        append("secure", "1")
+                    }
+                },
+                urlBuilder = {
+                    toUrl()
+                    buildUrl("pull", "pasteBatch")
+                    if (createTime != null) {
+                        parameters.append("createTime", createTime.toString())
+                    }
+                    parameters.append("limit", limit.toString())
+                },
+            )
+
+        return if (response.status.value == 200) {
+            logger.debug { "Success to pull paste batch from $targetAppInstanceId" }
+            SuccessResult(response.body<List<PasteData>>())
+        } else {
+            runCatching {
+                val failResponse = response.body<FailResponse>()
+                createFailureResult(
+                    StandardErrorCode.SYNC_PASTE_ERROR,
+                    "Fail to pull paste batch from $targetAppInstanceId: ${response.status.value} $failResponse",
+                )
+            }.getOrElse {
+                createFailureResult(
+                    StandardErrorCode.SYNC_PASTE_ERROR,
+                    "Fail to pull paste batch from $targetAppInstanceId: ${response.status.value}",
+                )
+            }
+        }
+    }
+
     private suspend fun result(
         response: HttpResponse,
         api: String,

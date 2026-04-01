@@ -39,6 +39,7 @@ import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
+import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
@@ -149,6 +150,7 @@ class CrossPaste {
                     }
                     koin.get<QRCodeGenerator>()
                     koin.get<SyncManager>().start()
+                    koin.get<PastePullService>().init()
                     koin.get<Server>().start()
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
