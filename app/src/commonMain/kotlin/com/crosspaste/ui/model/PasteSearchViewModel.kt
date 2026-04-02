@@ -30,7 +30,7 @@ abstract class PasteSearchViewModel : ViewModel() {
     private val _searchBaseParams =
         MutableStateFlow(
             SearchBaseParams(
-                pasteType = null,
+                pasteTypeList = listOf(),
                 sort = true,
                 tag = null,
                 limit = QUERY_BATCH_SIZE,
@@ -61,7 +61,7 @@ abstract class PasteSearchViewModel : ViewModel() {
 
             SearchParams(
                 searchTerms = searchTerms,
-                pasteType = searchBaseParams.pasteType,
+                pasteTypeList = searchBaseParams.pasteTypeList,
                 sort = searchBaseParams.sort,
                 tag = searchBaseParams.tag,
                 limit = searchBaseParams.limit,
@@ -89,11 +89,11 @@ abstract class PasteSearchViewModel : ViewModel() {
             )
     }
 
-    fun updatePasteType(pasteType: Int?) {
+    fun updatePasteType(pasteTypeList: List<Int>) {
         pendingLoadJob?.cancel()
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
-                pasteType = pasteType,
+                pasteTypeList = pasteTypeList,
                 limit = QUERY_BATCH_SIZE,
             )
         _loadAll.value = false
@@ -148,7 +148,7 @@ abstract class PasteSearchViewModel : ViewModel() {
         pendingLoadJob?.cancel()
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
-                pasteType = null,
+                pasteTypeList = listOf(),
                 sort = true,
                 tag = null,
                 limit = QUERY_BATCH_SIZE,

@@ -157,6 +157,9 @@ WHERE hash = :hash AND
         WHERE PasteTagEntity.pasteId = PasteDataEntity.id
     );
 
+-- pasteType filter: filterByPasteType=TRUE means no type filter (return all types);
+-- filterByPasteType=FALSE applies the IN clause to match any of the given types.
+-- This supports mobile clients that need to query multiple paste types in one request.
 simpleSearch:
 SELECT * FROM PasteDataEntity
 WHERE
@@ -168,10 +171,7 @@ WHERE
         END
             ELSE TRUE
         END AND
-        CASE WHEN :pasteType IS NOT NULL
-          THEN pasteType = :pasteType
-          ELSE TRUE
-        END AND
+        (:filterByPasteType OR (pasteType IN ?)) AND
         CASE WHEN :tagId IS NOT NULL
             THEN EXISTS (
                 SELECT 1 FROM PasteTagEntity
@@ -197,10 +197,7 @@ SELECT PasteDataEntity.*
             END
             ELSE TRUE
         END AND
-        CASE WHEN :pasteType IS NOT NULL
-            THEN pasteType = :pasteType
-            ELSE TRUE
-        END AND
+        (:filterByPasteType OR (pasteType IN ?)) AND
         CASE WHEN :tagId IS NOT NULL
             THEN EXISTS (
                 SELECT 1 FROM PasteTagEntity

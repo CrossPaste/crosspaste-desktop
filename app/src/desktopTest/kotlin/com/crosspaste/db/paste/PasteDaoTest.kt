@@ -285,7 +285,7 @@ class PasteDaoTest {
 
         val textResults = pasteDao.searchPasteData(
             searchTerms = listOf(),
-            pasteType = PasteType.TEXT_TYPE.type,
+            pasteTypeList = listOf(PasteType.TEXT_TYPE.type),
             limit = 100,
         )
         assertEquals(1, textResults.size)

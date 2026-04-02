@@ -44,7 +44,7 @@ class GeneralPasteSearchViewModel(
                     .searchPasteDataFlow(
                         searchTerms = params.searchTerms,
                         sort = params.sort,
-                        pasteType = params.pasteType,
+                        pasteTypeList = params.pasteTypeList,
                         tag = params.tag,
                         limit = params.limit,
                     ).map { pasteDataList ->

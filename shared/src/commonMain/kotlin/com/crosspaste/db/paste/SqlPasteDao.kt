@@ -7,6 +7,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.PasteState
+import com.crosspaste.paste.PasteType.Companion.INVALID_TYPE
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.clear
 import com.crosspaste.paste.item.PasteItem
@@ -334,12 +335,17 @@ class SqlPasteDao(
     private fun createSearchPasteQuery(
         searchTerms: List<String>,
         local: Boolean? = null,
-        pasteType: Int? = null,
+        pasteTypeList: List<Int> = listOf(),
         sort: Boolean = true,
         tagId: Long? = null,
         limit: Int,
     ): Query<PasteData> {
         val appInstanceId: String? = local?.let { appInfo.appInstanceId }
+        // filterByPasteType=true (list empty) → skip type filter, return all types.
+        // filterByPasteType=false (list non-empty) → apply IN clause for OR-matching multiple types.
+        // A dummy value is used when the list is empty because SQLDelight's IN clause requires a non-empty collection.
+        val filterByPasteType = pasteTypeList.isEmpty()
+        val pasteTypeLongList = pasteTypeList.ifEmpty { listOf(INVALID_TYPE.type) }.map { it.toLong() }
 
         return if (searchTerms.isNotEmpty()) {
             val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "$it*" }})"
@@ -348,7 +354,8 @@ class SqlPasteDao(
             pasteDatabaseQueries.complexSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,
-                pasteType = pasteType?.toLong(),
+                filterByPasteType = filterByPasteType,
+                pasteType = pasteTypeLongList,
                 searchQuery = searchQuery,
                 sort = sort,
                 tagId = tagId,
@@ -361,7 +368,8 @@ class SqlPasteDao(
             pasteDatabaseQueries.simpleSearch(
                 local = local == true,
                 appInstanceId = appInstanceId,
-                pasteType = pasteType?.toLong(),
+                filterByPasteType = filterByPasteType,
+                pasteType = pasteTypeLongList,
                 sort = sort,
                 tagId = tagId,
                 number = limit.toLong(),
@@ -373,7 +381,7 @@ class SqlPasteDao(
     override suspend fun searchPasteData(
         searchTerms: List<String>,
         local: Boolean?,
-        pasteType: Int?,
+        pasteTypeList: List<Int>,
         sort: Boolean,
         tag: Long?,
         limit: Int,
@@ -381,30 +389,30 @@ class SqlPasteDao(
         withContext(ioDispatcher) {
             logExecutionTime(logger, "searchPasteData") {
                 logger.info { "Performing search for: $searchTerms" }
-                createSearchPasteQuery(searchTerms, local, pasteType, sort, tag, limit).executeAsList()
+                createSearchPasteQuery(searchTerms, local, pasteTypeList, sort, tag, limit).executeAsList()
             }
         }
 
     override fun searchPasteDataFlow(
         searchTerms: List<String>,
         local: Boolean?,
-        pasteType: Int?,
+        pasteTypeList: List<Int>,
         sort: Boolean,
         tag: Long?,
         limit: Int,
     ): Flow<List<PasteData>> =
         logExecutionTime(logger, "searchPasteData") {
             logger.info { "Performing search for: $searchTerms" }
-            createSearchPasteQuery(searchTerms, local, pasteType, sort, tag, limit)
+            createSearchPasteQuery(searchTerms, local, pasteTypeList, sort, tag, limit)
                 .asFlow()
                 .map { it.executeAsList() }
                 .catch { e ->
                     logger.error(e) {
                         "Error executing search query: ${e.message}\n" +
                             "searchTerms=$searchTerms local=$local " +
-                            "pasteType=$pasteType sort=$sort"
+                            "pasteTypeList=$pasteTypeList sort=$sort"
                     }
-                    emit(searchPasteData(listOf(), local, pasteType, sort, tag, limit))
+                    emit(searchPasteData(listOf(), local, pasteTypeList, sort, tag, limit))
                 }.flowOn(ioDispatcher)
         }
 

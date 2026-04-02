@@ -50,7 +50,7 @@ class PasteSearchViewModelTest {
     fun `initial search base params have default values`() {
         val vm = TestSearchViewModel()
         val params = vm.searchBaseParams.value
-        assertNull(params.pasteType)
+        assertTrue(params.pasteTypeList.isEmpty())
         assertTrue(params.sort)
         assertNull(params.tag)
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, params.limit)
@@ -88,19 +88,22 @@ class PasteSearchViewModelTest {
     @Test
     fun `updatePasteType sets paste type and resets limit`() {
         val vm = TestSearchViewModel()
-        vm.updatePasteType(3)
-        assertEquals(3, vm.searchBaseParams.value.pasteType)
+        vm.updatePasteType(listOf(3))
+        assertEquals(listOf(3), vm.searchBaseParams.value.pasteTypeList)
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, vm.searchBaseParams.value.limit)
     }
 
     @Test
-    fun `updatePasteType with null clears filter`() {
+    fun `updatePasteType with empty list clears filter`() {
         val vm = TestSearchViewModel()
-        vm.updatePasteType(3)
-        assertEquals(3, vm.searchBaseParams.value.pasteType)
+        vm.updatePasteType(listOf(3))
+        assertEquals(listOf(3), vm.searchBaseParams.value.pasteTypeList)
 
-        vm.updatePasteType(null)
-        assertNull(vm.searchBaseParams.value.pasteType)
+        vm.updatePasteType(listOf())
+        assertTrue(
+            vm.searchBaseParams.value.pasteTypeList
+                .isEmpty(),
+        )
     }
 
     @Test
@@ -148,14 +151,14 @@ class PasteSearchViewModelTest {
         // Change everything
         vm.updateInputSearch("test")
         vm.switchSort()
-        vm.updatePasteType(2)
+        vm.updatePasteType(listOf(2))
         vm.updateTag(99L)
 
         vm.resetSearch()
 
         assertEquals("", vm.inputSearch.value)
         val params = vm.searchBaseParams.value
-        assertNull(params.pasteType)
+        assertTrue(params.pasteTypeList.isEmpty())
         assertTrue(params.sort)
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, params.limit)
     }

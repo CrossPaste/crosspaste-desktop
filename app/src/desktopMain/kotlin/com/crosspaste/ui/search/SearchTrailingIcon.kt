@@ -71,7 +71,7 @@ fun SearchTrailingIcon() {
 
     var showTypes by remember { mutableStateOf(false) }
 
-    var currentType = searchBaseParams.pasteType?.let { PasteType.fromType(it) }
+    var currentType = searchBaseParams.pasteTypeList.singleOrNull()?.let { PasteType.fromType(it) }
 
     val textStyle =
         MaterialTheme.typography.labelLarge.copy(
@@ -172,13 +172,13 @@ fun SearchTrailingIcon() {
                                 .clip(tiny2XRoundedCornerShape)
                                 .background(MaterialTheme.colorScheme.surfaceBright),
                     ) {
-                        if (searchBaseParams.pasteType != null) {
+                        if (searchBaseParams.pasteTypeList.isNotEmpty()) {
                             MenuItemView(
                                 text = copywriter.getText("all_types"),
                                 textStyle = textStyle,
                                 paddingValues = paddingValues,
                             ) {
-                                pasteSearchViewModel.updatePasteType(null)
+                                pasteSearchViewModel.updatePasteType(listOf())
                                 currentType = null
                                 showTypes = false
                             }
@@ -193,7 +193,7 @@ fun SearchTrailingIcon() {
                                     paddingValues = paddingValues,
                                     background = MaterialTheme.colorScheme.surfaceBright,
                                 ) {
-                                    pasteSearchViewModel.updatePasteType(pasteType.type)
+                                    pasteSearchViewModel.updatePasteType(listOf(pasteType.type))
                                     currentType = pasteType
                                     showTypes = false
                                 }
