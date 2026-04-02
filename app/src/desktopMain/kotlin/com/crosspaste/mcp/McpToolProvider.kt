@@ -131,7 +131,7 @@ class McpToolProvider(
             val results =
                 pasteDao.searchPasteData(
                     searchTerms = searchTerms,
-                    pasteType = pasteType?.type,
+                    pasteTypeList = listOfNotNull(pasteType?.type),
                     sort = true,
                     tag = tagId,
                     limit = limit,

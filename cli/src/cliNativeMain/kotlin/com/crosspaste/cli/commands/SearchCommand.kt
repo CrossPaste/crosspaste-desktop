@@ -32,7 +32,7 @@ class SearchCommand : CliktCommand(name = "search") {
             val pasteTagDao = getDao<PasteTagDao>()
             val searchContentService = getDao<SearchContentService>()
             val searchTerms = searchContentService.createSearchTerms(query)
-            val pasteType = resolveTypeFilter(type)
+            val pasteTypeList = listOfNotNull(resolveTypeFilter(type))
 
             val tagId: Long? =
                 tag?.let { name ->
@@ -45,7 +45,7 @@ class SearchCommand : CliktCommand(name = "search") {
             val results =
                 pasteDao.searchPasteData(
                     searchTerms = searchTerms,
-                    pasteType = pasteType,
+                    pasteTypeList = pasteTypeList,
                     tag = tagId,
                     limit = limit,
                 )

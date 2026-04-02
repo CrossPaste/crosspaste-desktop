@@ -130,7 +130,7 @@ fun SidePasteboardContentView() {
     LaunchedEffect(
         inputSearch,
         searchBaseParams.sort,
-        searchBaseParams.pasteType,
+        searchBaseParams.pasteTypeList,
     ) {
         if (searchWindowInfo.show) {
             pasteSelectionViewModel.initSelectIndex()

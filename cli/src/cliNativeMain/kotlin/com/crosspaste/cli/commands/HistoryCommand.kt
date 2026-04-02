@@ -45,7 +45,7 @@ class HistoryCommand : CliktCommand(name = "history") {
         runWithDao {
             val pasteDao = getDao<PasteDao>()
             val pasteTagDao = getDao<PasteTagDao>()
-            val pasteType = resolveTypeFilter(type)
+            val pasteTypeList = listOfNotNull(resolveTypeFilter(type))
 
             val tagId: Long? =
                 tag?.let { name ->
@@ -58,7 +58,7 @@ class HistoryCommand : CliktCommand(name = "history") {
             val results =
                 pasteDao.searchPasteData(
                     searchTerms = listOf(),
-                    pasteType = pasteType,
+                    pasteTypeList = pasteTypeList,
                     tag = tagId,
                     limit = limit,
                 )

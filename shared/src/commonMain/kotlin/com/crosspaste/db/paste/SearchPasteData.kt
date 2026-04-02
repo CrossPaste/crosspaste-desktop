@@ -5,10 +5,17 @@ import kotlinx.coroutines.flow.Flow
 
 interface SearchPasteData {
 
+    /**
+     * Search paste data with optional type filtering.
+     *
+     * [pasteTypeList] accepts multiple paste types for OR-matching (SQL `IN` clause),
+     * allowing mobile clients to query several types in a single request.
+     * An empty list means no type filter (returns all types).
+     */
     suspend fun searchPasteData(
         searchTerms: List<String>,
         local: Boolean? = null,
-        pasteType: Int? = null,
+        pasteTypeList: List<Int> = listOf(),
         sort: Boolean = true,
         tag: Long? = null,
         limit: Int,
@@ -17,7 +24,7 @@ interface SearchPasteData {
     fun searchPasteDataFlow(
         searchTerms: List<String>,
         local: Boolean? = null,
-        pasteType: Int? = null,
+        pasteTypeList: List<Int> = listOf(),
         sort: Boolean = true,
         tag: Long? = null,
         limit: Int,
