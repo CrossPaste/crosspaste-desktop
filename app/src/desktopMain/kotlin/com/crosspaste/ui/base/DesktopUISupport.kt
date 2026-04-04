@@ -1,9 +1,8 @@
 package com.crosspaste.ui.base
 
 import com.crosspaste.app.AppFileType
-import com.crosspaste.app.AppUrls
+import com.crosspaste.app.CrossPasteWebService
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -34,7 +33,7 @@ import java.net.URI
 import javax.swing.JColorChooser
 
 class DesktopUISupport(
-    private val appUrls: AppUrls,
+    override val crossPasteWebService: CrossPasteWebService,
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val platform: Platform,
@@ -50,6 +49,12 @@ class DesktopUISupport(
 
     private val htmlUtils = getHtmlUtils()
 
+    init {
+        actionScope.launch {
+            crossPasteWebService.refresh()
+        }
+    }
+
     override fun openUrlInBrowser(url: String) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             Desktop.getDesktop().browse(URI(url))
@@ -62,14 +67,7 @@ class DesktopUISupport(
         }
     }
 
-    override fun getCrossPasteWebUrl(path: String): String {
-        val webPath =
-            when (val language = copywriter.language()) {
-                ZH -> path
-                else -> "$language/$path"
-            }
-        return "${appUrls.homeUrl}/$webPath"
-    }
+    override fun getCrossPasteWebUrl(path: String): String = crossPasteWebService.getWebUrl(copywriter.language(), path)
 
     override fun openEmailClient(email: String?) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {

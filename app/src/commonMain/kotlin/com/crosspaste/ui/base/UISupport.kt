@@ -1,9 +1,12 @@
 package com.crosspaste.ui.base
 
+import com.crosspaste.app.CrossPasteWebService
 import com.crosspaste.paste.PasteData
 import okio.Path
 
 interface UISupport {
+
+    val crossPasteWebService: CrossPasteWebService
 
     fun openUrlInBrowser(url: String)
 
