@@ -22,7 +22,7 @@ fun headlessUiModule() =
         single<RatingPromptManager> { DesktopRatingPromptManager() }
         single<SoundService> { HeadlessSoundService() }
         single<TokenCacheApi> { TokenCache }
-        single<UISupport> { HeadlessUISupport() }
+        single<UISupport> { HeadlessUISupport(get()) }
     }
 
 fun headlessViewModelModule() = module {}

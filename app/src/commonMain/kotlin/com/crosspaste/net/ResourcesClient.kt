@@ -2,6 +2,7 @@ package com.crosspaste.net
 
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
@@ -27,6 +28,8 @@ class ClientResponse(
 ) {
 
     suspend fun getBody(): ByteReadChannel = response.bodyAsChannel()
+
+    suspend fun getBodyAsText(): String = response.bodyAsText()
 
     fun getContentLength(): Long = response.contentLength() ?: -1L
 

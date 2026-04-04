@@ -1,11 +1,14 @@
 package com.crosspaste.headless
 
+import com.crosspaste.app.CrossPasteWebService
 import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.base.UISupport
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
 
-class HeadlessUISupport : UISupport {
+class HeadlessUISupport(
+    override val crossPasteWebService: CrossPasteWebService,
+) : UISupport {
 
     private val logger = KotlinLogging.logger {}
 
@@ -13,7 +16,7 @@ class HeadlessUISupport : UISupport {
         logger.info { "Headless mode: cannot open URL in browser: $url" }
     }
 
-    override fun getCrossPasteWebUrl(path: String): String = "https://crosspaste.com/$path"
+    override fun getCrossPasteWebUrl(path: String): String = crossPasteWebService.getWebUrl("en", path)
 
     override fun openEmailClient(email: String?) {
         logger.info { "Headless mode: cannot open email client" }
