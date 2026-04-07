@@ -91,7 +91,9 @@ fun <T> SegmentedControlSettingsRow(
     optionLabel: (T) -> String = { it.toString() },
 ) {
     val segmentedRow: @Composable () -> Unit = {
-        SingleChoiceSegmentedButtonRow {
+        SingleChoiceSegmentedButtonRow(
+            modifier = if (twoLine) Modifier.fillMaxWidth().padding(horizontal = medium) else Modifier,
+        ) {
             options.forEachIndexed { index, item ->
                 SegmentedButton(
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
