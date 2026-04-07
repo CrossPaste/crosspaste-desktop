@@ -5,6 +5,7 @@ import com.crosspaste.exception.StandardErrorCode
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.AES
 import dev.whyoleg.cryptography.algorithms.ECDH
+import dev.whyoleg.cryptography.operations.IvCipher
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SecureMessageProcessor(
@@ -16,7 +17,7 @@ class SecureMessageProcessor(
 
     private val provider = CryptographyProvider.Default
 
-    private val cipher: AES.IvCipher
+    private val cipher: IvCipher
 
     init {
         val aes = provider.get(AES.CBC)
