@@ -84,6 +84,7 @@ SQLDelight manages database schema in `.sq` files:
 - **Package structure**: Organized by feature domain under `com.crosspaste`
 - **Platform files**: Use `.desktop.kt` suffix for platform-specific implementations
 - **Utility usage**: Always check `com.crosspaste.utils` and prefer existing utility classes (e.g., FileUtils, DateUtils, StringUtils) instead of implementing new ones.
+- **UI sizing**: When adding size/dimension constants in UI code, prefer using values defined in `com.crosspaste.ui.theme.AppUISize` instead of inline literal `dp`/`sp` values.
 
 ## Key Technical Details
 

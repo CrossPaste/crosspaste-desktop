@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,16 +28,17 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
 @Composable
 fun SettingCheckboxView(
-    list: List<String>,
+    count: Int,
     getCurrentCheckboxValue: (Int) -> Boolean,
     onChange: (Int, Boolean) -> Unit,
+    content: @Composable (Int) -> Unit,
     trailingContent: @Composable ((Int) -> Unit)? = null,
 ) {
-    list.forEachIndexed { index, content ->
+    repeat(count) { index ->
         SettingCheckboxItemView(
-            content = content,
             getCurrentCheckboxValue = { getCurrentCheckboxValue(index) },
             onChange = { onChange(index, it) },
+            content = { content(index) },
             trailingContent = trailingContent?.let { { it(index) } },
         )
     }
@@ -46,9 +46,9 @@ fun SettingCheckboxView(
 
 @Composable
 fun SettingCheckboxItemView(
-    content: String,
     getCurrentCheckboxValue: () -> Boolean,
     onChange: (Boolean) -> Unit,
+    content: @Composable () -> Unit,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
     val isSmallItem = LocalSmallSettingItemState.current
@@ -68,11 +68,7 @@ fun SettingCheckboxItemView(
             horizontalArrangement = Arrangement.spacedBy(small2X),
         ) {
             CompactCheckbox(checked = checked)
-            Text(
-                text = content,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            content()
         }
         trailingContent?.invoke()
     }

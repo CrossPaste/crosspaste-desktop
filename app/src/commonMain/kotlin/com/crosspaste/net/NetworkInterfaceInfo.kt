@@ -6,6 +6,7 @@ data class NetworkInterfaceInfo(
     val name: String,
     val networkPrefixLength: Short,
     val hostAddress: String,
+    val isLikelyVirtual: Boolean = false,
 ) {
     fun toHostInfo(): HostInfo =
         HostInfo(
