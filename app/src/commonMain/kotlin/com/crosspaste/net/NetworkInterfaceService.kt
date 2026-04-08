@@ -10,6 +10,8 @@ interface NetworkInterfaceService {
 
     fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo>
 
+    fun getSortedNetworkInterfaceInfo(): List<NetworkInterfaceInfo>
+
     fun getPreferredNetworkInterface(): NetworkInterfaceInfo?
 
     fun clearProviderCache()

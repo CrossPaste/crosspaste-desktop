@@ -14,4 +14,6 @@ class TestNetworkInterfaceService(
     override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> = testNetworkInterfaces
 
     override fun getPreferredNetworkInterface(): NetworkInterfaceInfo? = testPreferredInterface
+
+    fun testSortAddresses(addresses: List<NetworkInterfaceInfo>): List<NetworkInterfaceInfo> = sortAddresses(addresses)
 }
