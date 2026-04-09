@@ -2,6 +2,7 @@ package com.crosspaste.app
 
 import com.crosspaste.net.ResourcesClient
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.util.collections.ConcurrentMap
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -29,8 +30,7 @@ class CrossPasteWebService(
             ignoreUnknownKeys = true
         }
 
-    @Volatile
-    private var localePathMap: Map<String, String> = emptyMap()
+    private var localePathMap: Map<String, String> = ConcurrentMap()
 
     suspend fun refresh() {
         runCatching {
