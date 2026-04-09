@@ -85,6 +85,7 @@ SQLDelight manages database schema in `.sq` files:
 - **Platform files**: Use `.desktop.kt` suffix for platform-specific implementations
 - **Utility usage**: Always check `com.crosspaste.utils` and prefer existing utility classes (e.g., FileUtils, DateUtils, StringUtils) instead of implementing new ones.
 - **UI sizing**: When adding size/dimension constants in UI code, prefer using values defined in `com.crosspaste.ui.theme.AppUISize` instead of inline literal `dp`/`sp` values.
+- **Thread-safe collections**: In `commonMain` code, prefer thread-safe Map/Set from `io.ktor.util.collections` (e.g., `ConcurrentMap`, `ConcurrentSet`) over platform-specific concurrent collections.
 
 ## Key Technical Details
 
