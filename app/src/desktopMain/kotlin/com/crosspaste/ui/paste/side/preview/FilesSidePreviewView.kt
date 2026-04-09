@@ -6,9 +6,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -18,7 +19,6 @@ import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.ui.base.CountBadgeAuto
 import com.crosspaste.ui.base.MultiFileIcon
 import com.crosspaste.ui.paste.FileBottomSolid
 import com.crosspaste.ui.paste.FileDisplayInfo
@@ -40,7 +40,7 @@ fun PasteDataScope.FilesSidePreviewView() {
 
     val filesPasteItem = getPasteItem(FilesPasteItem::class)
 
-    val fileCount by remember(pasteData.id) { mutableStateOf(filesPasteItem.getDirectChildrenCount()) }
+    val fileCount = remember(pasteData.id) { filesPasteItem.getDirectChildrenCount() }
 
     val filePaths = remember(filesPasteItem) { filesPasteItem.getFilePaths(userDataPathProvider) }
     if (filePaths.isEmpty()) {
@@ -95,13 +95,14 @@ fun PasteDataScope.FilesSidePreviewView() {
             )
 
             if (fileCount > 1L) {
-                Box(
+                val label = remember(fileCount) { if (fileCount > 99) "99+" else fileCount.toString() }
+                Badge(
                     modifier =
                         Modifier
                             .align(Alignment.TopEnd)
                             .padding(top = medium, end = medium),
                 ) {
-                    CountBadgeAuto(count = fileCount)
+                    Text(label)
                 }
             }
         }

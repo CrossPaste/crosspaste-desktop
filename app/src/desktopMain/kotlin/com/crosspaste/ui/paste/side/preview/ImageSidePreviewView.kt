@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Badge
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -53,6 +55,7 @@ import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.gigantic
+import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -74,6 +77,8 @@ fun PasteDataScope.ImageSidePreviewView() {
     val copywriter = koinInject<GlobalCopywriter>()
 
     val imagePasteItem = getPasteItem(PasteImages::class)
+
+    val imageCount = remember(pasteData.id) { imagePasteItem.getDirectChildrenCount() }
 
     val isInDownloads = remember(imagePasteItem) { imagePasteItem.isInDownloads() }
 
@@ -195,6 +200,18 @@ fun PasteDataScope.ImageSidePreviewView() {
                     }
                 },
             )
+
+            if (imageCount > 1L) {
+                val label = remember(imageCount) { if (imageCount > 99) "99+" else imageCount.toString() }
+                Badge(
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = medium, end = medium),
+                ) {
+                    Text(label)
+                }
+            }
 
             Column(
                 modifier =
