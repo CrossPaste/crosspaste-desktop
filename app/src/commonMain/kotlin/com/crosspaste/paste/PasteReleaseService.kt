@@ -118,7 +118,12 @@ class PasteReleaseService(
                 currentPaste.setPasteId(id)
                 taskSubmitter.submit {
                     addRenderingTask(id, pasteType)
-                    addSyncTask(id, maxFileSize, pasteData.appInstanceId)
+                    // Skip syncing for remote clipboard data (e.g., Apple Universal Clipboard / Handoff).
+                    // These items are already from another device, so re-syncing them would cause
+                    // unnecessary duplication or sync loops.
+                    if (!pasteData.remote) {
+                        addSyncTask(id, maxFileSize, pasteData.appInstanceId)
+                    }
 
                     if (pasteType.isFile() || pasteType.isImage()) {
                         if ((firstItem as PasteFiles).isRefFiles()) {
