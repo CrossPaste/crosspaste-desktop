@@ -57,7 +57,7 @@ fun McpContentView() {
             DesktopMcpServer.DEFAULT_PORT
         }
 
-    val mcpCommand = "claude mcp add crosspaste --transport sse http://localhost:$displayPort/sse"
+    val mcpCommand = "claude mcp add crosspaste --transport sse http://localhost:$displayPort/"
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
