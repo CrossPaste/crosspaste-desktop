@@ -20,7 +20,6 @@ import com.composables.icons.fontawesome.brands.Apple
 import com.composables.icons.fontawesome.brands.GooglePlay
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Download
-import com.crosspaste.app.AppUrls
 import com.crosspaste.app.PromoteService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.UISupport
@@ -30,7 +29,6 @@ import org.koin.compose.koinInject
 
 @Composable
 fun DesktopPromoteGuide() {
-    val appUrls = koinInject<AppUrls>()
     val copyWriter = koinInject<GlobalCopywriter>()
     val promoteService = koinInject<PromoteService>()
     val uiSupport = koinInject<UISupport>()
@@ -100,7 +98,7 @@ fun DesktopPromoteGuide() {
                     },
                     topText = copyWriter.getText("get_domestic_app"),
                     bottomText = "CrossPaste",
-                    onClick = { uiSupport.openUrlInBrowser("${appUrls.homeUrl}/${domestic.path}") },
+                    onClick = { uiSupport.openCrossPasteWebInBrowser(domestic.path) },
                 )
             }
         }
