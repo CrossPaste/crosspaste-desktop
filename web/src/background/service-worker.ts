@@ -4,13 +4,21 @@ import { PasteStore } from "@/shared/storage/paste-store";
 import { BlobStore } from "@/shared/storage/blob-store";
 import { SyncApi } from "@/shared/api/sync";
 import { PullApi } from "@/shared/api/pull";
-import { CrossPasteHash } from "@/shared/core";
+import { CrossPasteHash, CrossPasteJson } from "@/shared/core";
 import type { SyncInfo } from "@/shared/models/sync-info";
 import { collectPasteItems } from "@/shared/paste/paste-collector";
+import { WsManager } from "@/shared/ws/ws-manager";
+import { createWsMessageHandler } from "@/shared/ws/ws-message-handler";
+import { WsMessageType } from "@/shared/ws/ws-types";
+import type { WsEnvelope } from "@/shared/ws/ws-types";
 
 // ─── Per-device runtime status ──────────────────────────────────────────
 
 const deviceStatuses = new Map<string, "synced" | "error">();
+
+// ─── WebSocket manager (initialized in initialize()) ────────────────────
+
+let wsManager: WsManager | null = null;
 
 // ─── Current connection attempt ─────────────────────────────────────────
 
@@ -114,6 +122,33 @@ async function pollClipboard(): Promise<void> {
       const evicted = await PasteStore.evictOverLimit();
       for (const h of evicted) await BlobStore.deleteForPaste(h);
       broadcastToSidePanel({ type: "PASTE_UPDATED" });
+
+      // Push via WebSocket to all connected devices
+      if (wsManager) {
+        let normalizedPayload: Uint8Array;
+        try {
+          // Round-trip through Kotlin serializer to ensure wire format compatibility
+          const normalized = CrossPasteJson.parsePasteData(JSON.stringify(pasteData));
+          normalizedPayload = new TextEncoder().encode(normalized);
+        } catch (e) {
+          console.error("[WS] Failed to normalize pasteData for push:", e);
+          return;
+        }
+        const envelope: WsEnvelope = {
+          type: WsMessageType.PASTE_PUSH,
+          payload: normalizedPayload,
+          encrypted: false,
+        };
+        const devices = await DeviceStore.getAll();
+        for (const device of devices) {
+          if (!device.trusted) continue;
+          if (wsManager.isConnected(device.targetAppInstanceId)) {
+            wsManager.send(device.targetAppInstanceId, envelope).catch(() => {
+              // WS send failed, desktop will poll on its own
+            });
+          }
+        }
+      }
     }
   } catch {
     offscreenReady = false;
@@ -169,6 +204,8 @@ async function syncAllDevices(): Promise<void> {
 
   for (const device of devices) {
     if (!device.trusted) continue;
+    // Skip HTTP polling for devices with active WebSocket connections
+    if (wsManager?.isConnected(device.targetAppInstanceId)) continue;
     try {
       const data = await PullApi.pullPaste({
         host: device.host,
@@ -205,6 +242,8 @@ async function sendHeartbeats(): Promise<void> {
 
   for (const device of devices) {
     if (!device.trusted) continue;
+    // Skip HTTP heartbeat for devices with active WebSocket connections
+    if (wsManager?.isConnected(device.targetAppInstanceId)) continue;
     try {
       await SyncApi.heartbeat({
         host: device.host,
@@ -232,11 +271,13 @@ async function sendHeartbeats(): Promise<void> {
 function startSyncAlarms(): void {
   chrome.alarms.create("sync-paste", { periodInMinutes: 0.5 });
   chrome.alarms.create("heartbeat", { periodInMinutes: 1 });
+  chrome.alarms.create("ws-reconnect", { periodInMinutes: 0.5 });
 }
 
 function stopSyncAlarms(): void {
   chrome.alarms.clear("sync-paste");
   chrome.alarms.clear("heartbeat");
+  chrome.alarms.clear("ws-reconnect");
 }
 
 // ─── Migration from legacy single-device format ────────────────────────
@@ -273,6 +314,41 @@ async function migrateFromLegacy(): Promise<void> {
 
 // ─── Startup ────────────────────────────────────────────────────────────
 
+async function initializeWebSocket(): Promise<void> {
+  const appInstanceId = await getAppInstanceId();
+  wsManager = new WsManager(appInstanceId);
+
+  const wsMessageHandler = createWsMessageHandler({
+    sendToDevice: async (targetId, envelope) => {
+      await wsManager?.send(targetId, envelope);
+    },
+    updateDeviceStatus: (targetId, status) => {
+      if (deviceStatuses.get(targetId) !== status) {
+        deviceStatuses.set(targetId, status);
+        broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+      }
+    },
+    broadcastToSidePanel,
+    getLastHash,
+    setLastHash,
+  });
+
+  wsManager.onMessage = (targetId, envelope) => {
+    wsMessageHandler.handleMessage(targetId, envelope).catch((e) => {
+      console.error(`[WS] Failed to handle message from ${targetId}:`, e);
+    });
+  };
+
+  wsManager.onStatusChange = (targetId, status) => {
+    if (status === "ws_connected") {
+      deviceStatuses.set(targetId, "synced");
+    }
+    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+  };
+
+  await wsManager.connectAllDevices();
+}
+
 async function initialize(): Promise<void> {
   await getAppInstanceId();
   await ensureOffscreen();
@@ -288,6 +364,7 @@ async function initialize(): Promise<void> {
       deviceStatuses.set(d.targetAppInstanceId, "synced");
     });
     startSyncAlarms();
+    await initializeWebSocket();
   }
 }
 
@@ -301,6 +378,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     await syncAllDevices();
   } else if (alarm.name === "heartbeat") {
     await sendHeartbeats();
+  } else if (alarm.name === "ws-reconnect") {
+    if (wsManager) {
+      await wsManager.connectAllDevices();
+    }
   }
 });
 
@@ -379,6 +460,15 @@ async function handleMessage(
         });
 
         deviceStatuses.set(connectingState.targetAppInstanceId, "synced");
+
+        // Attempt WebSocket upgrade after pairing
+        if (!wsManager) {
+          await initializeWebSocket();
+        } else {
+          const device = await DeviceStore.get(connectingState.targetAppInstanceId);
+          if (device) await wsManager.connectDevice(device);
+        }
+
         connectingState = null;
 
         startSyncAlarms();
@@ -392,6 +482,7 @@ async function handleMessage(
 
     case "REMOVE_DEVICE": {
       const targetId = message.targetAppInstanceId as string;
+      wsManager?.disconnectDevice(targetId);
       await DeviceStore.remove(targetId);
       deviceStatuses.delete(targetId);
 
@@ -448,6 +539,10 @@ async function handleMessage(
         broadcastToSidePanel({ type: "PASTE_UPDATED" });
       }
       return { success: hash !== null };
+    }
+
+    case "GET_WS_STATUS": {
+      return { statuses: wsManager?.getConnectionStates() ?? {} };
     }
 
     default:

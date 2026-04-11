@@ -28,6 +28,7 @@ kotlin-js-store/
 node_modules/
 output*/
 /.claude/commands/
+/.claude/skills/
 /code-review/
 /ai/
 /.claude/skills/ui-ux-pro-max/

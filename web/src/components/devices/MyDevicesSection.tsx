@@ -24,6 +24,7 @@ export function MyDevicesSection({ devices, onClick, onEditNote, onRemove }: Pro
           key={device.targetAppInstanceId}
           syncInfo={device.syncInfo}
           status={device.status === "synced" ? "synced" : "error"}
+          wsStatus={device.wsStatus}
           noteName={device.noteName}
           onClick={() => onClick?.(device)}
           onEditNote={() => onEditNote?.(device)}

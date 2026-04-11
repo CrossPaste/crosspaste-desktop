@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import type { SyncInfo } from "@/shared/models/sync-info";
 import type { StoredDevice } from "@/shared/storage/device-store";
+import type { WsConnectionStatus } from "@/shared/ws/ws-types";
 
 export interface DeviceInfo extends StoredDevice {
   status: "synced" | "error";
+  wsStatus?: WsConnectionStatus;
 }
 
 async function sendMessage(
@@ -16,8 +18,18 @@ export function useConnection() {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
 
   const loadDevices = useCallback(async () => {
-    const response = await sendMessage({ type: "GET_DEVICES" });
-    setDevices((response as { devices: DeviceInfo[] }).devices);
+    const [devResponse, wsResponse] = await Promise.all([
+      sendMessage({ type: "GET_DEVICES" }),
+      sendMessage({ type: "GET_WS_STATUS" }),
+    ]);
+    const devs = (devResponse as { devices: DeviceInfo[] }).devices;
+    const statuses = (wsResponse as { statuses: Record<string, WsConnectionStatus> }).statuses;
+    setDevices(
+      devs.map((d) => ({
+        ...d,
+        wsStatus: statuses[d.targetAppInstanceId],
+      })),
+    );
   }, []);
 
   useEffect(() => {
