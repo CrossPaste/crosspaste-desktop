@@ -20,6 +20,7 @@ import com.composables.icons.fontawesome.brands.Apple
 import com.composables.icons.fontawesome.brands.GooglePlay
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Download
+import com.crosspaste.app.AppUrls
 import com.crosspaste.app.PromoteService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.UISupport
@@ -29,17 +30,18 @@ import org.koin.compose.koinInject
 
 @Composable
 fun DesktopPromoteGuide() {
+    val appUrls = koinInject<AppUrls>()
     val copyWriter = koinInject<GlobalCopywriter>()
     val promoteService = koinInject<PromoteService>()
     val uiSupport = koinInject<UISupport>()
 
     val promoteConfig by promoteService.config.collectAsState()
     val ios = promoteConfig.promote.ios
-    val android = promoteConfig.promote.android
-    val domestic = promoteConfig.promote.domestic
+    val googlePlay = promoteConfig.promote.android.googlePlay
+    val domestic = promoteConfig.promote.android.domestic
     val isChinese = copyWriter.getAbridge().startsWith("zh")
     val showDomestic = domestic.enabled && isChinese
-    val showPromote = ios.enabled || android.enabled || showDomestic
+    val showPromote = ios.enabled || googlePlay.enabled || showDomestic
 
     if (showPromote) {
         Spacer(modifier = Modifier.height(medium))
@@ -71,7 +73,7 @@ fun DesktopPromoteGuide() {
                     onClick = { uiSupport.openUrlInBrowser(ios.url) },
                 )
             }
-            if (android.enabled) {
+            if (googlePlay.enabled) {
                 StoreBadge(
                     icon = {
                         Icon(
@@ -83,7 +85,7 @@ fun DesktopPromoteGuide() {
                     },
                     topText = "GET IT ON",
                     bottomText = "Google Play",
-                    onClick = { uiSupport.openUrlInBrowser(android.url) },
+                    onClick = { uiSupport.openUrlInBrowser(googlePlay.url) },
                 )
             }
             if (showDomestic) {
@@ -98,7 +100,7 @@ fun DesktopPromoteGuide() {
                     },
                     topText = copyWriter.getText("get_domestic_app"),
                     bottomText = "CrossPaste",
-                    onClick = { uiSupport.openUrlInBrowser(domestic.url) },
+                    onClick = { uiSupport.openUrlInBrowser("${appUrls.homeUrl}/${domestic.path}") },
                 )
             }
         }
