@@ -1,0 +1,6 @@
+node_modules/
+dist/
+
+# Override root-level package*.json ignore
+!package.json
+!package-lock.json
