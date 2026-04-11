@@ -48,6 +48,137 @@ const PLATFORM_ICON_COLOR: Record<string, string> = {
   iPad: "text-m3-primary",
 };
 
+function DeviceStatusBadge({
+  status,
+  wsStatus,
+  onRetry,
+  onBlock,
+  onLink,
+}: {
+  status: DeviceStatus;
+  wsStatus?: WsConnectionStatus;
+  onRetry?: () => void;
+  onBlock?: () => void;
+  onLink?: () => void;
+}) {
+  const t = useI18n();
+
+  if (status === "synced") {
+    return (
+      <div className="flex items-center gap-1.5 shrink-0">
+        {wsStatus === "ws_connected" && (
+          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-m3-primary-container" title="WebSocket">
+            <Zap size={10} className="text-m3-primary" />
+          </div>
+        )}
+        <div className="flex items-center gap-1 rounded-md bg-m3-success-container px-2 py-1">
+          <RefreshCw size={10} className="text-m3-success" />
+          <span className="text-[10px] font-medium text-m3-success leading-none">
+            {t("sync_status_synced")}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1">
+          <CircleX size={10} className="text-m3-error" />
+          <span className="text-[10px] font-medium text-m3-error leading-none">
+            {t("sync_status_disconnected")}
+          </span>
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
+          >
+            <RefreshCw size={14} className="text-m3-error" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (status === "nearby") {
+    return (
+      <div className="flex items-center gap-2 shrink-0">
+        {onBlock && (
+          <button
+            onClick={onBlock}
+            className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
+          >
+            <Ban size={14} className="text-m3-error" />
+          </button>
+        )}
+        {onLink && (
+          <button
+            onClick={onLink}
+            className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-primary-container"
+          >
+            <Link size={14} className="text-m3-primary" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function DeviceContextMenu({
+  x,
+  y,
+  menuRef,
+  onEditNote,
+  onRemove,
+  onClose,
+}: {
+  x: number;
+  y: number;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+  onEditNote?: () => void;
+  onRemove?: () => void;
+  onClose: () => void;
+}) {
+  const t = useI18n();
+
+  return (
+    <div
+      ref={menuRef}
+      className="fixed z-50 min-w-[160px] rounded-xl bg-m3-surface-bright shadow-lg border border-m3-outline-variant/20 py-1"
+      style={{ left: x, top: y }}
+    >
+      {onEditNote && (
+        <button
+          onClick={() => {
+            onClose();
+            onEditNote();
+          }}
+          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
+        >
+          <Edit size={16} className="text-m3-on-surface-variant" />
+          <span>{t("add_note")}</span>
+        </button>
+      )}
+      {onRemove && (
+        <button
+          onClick={() => {
+            onClose();
+            onRemove();
+          }}
+          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-error hover:bg-m3-error-container/30 transition-colors"
+        >
+          <Trash2 size={16} />
+          <span>{t("remove_device")}</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function DeviceCard({
   syncInfo,
   status,
@@ -60,7 +191,6 @@ export function DeviceCard({
   onEditNote,
   onRemove,
 }: Props) {
-  const t = useI18n();
   const { endpointInfo } = syncInfo;
   const platformName = endpointInfo.platform.name;
   const IconComponent = PLATFORM_ICON[platformName] ?? Monitor;
@@ -131,96 +261,18 @@ export function DeviceCard({
           </span>
         </div>
 
-        {/* Status Badge & Actions */}
-        {status === "synced" && (
-          <div className="flex items-center gap-1.5 shrink-0">
-            {wsStatus === "ws_connected" && (
-              <div className="flex items-center justify-center w-5 h-5 rounded-md bg-m3-primary-container" title="WebSocket">
-                <Zap size={10} className="text-m3-primary" />
-              </div>
-            )}
-            <div className="flex items-center gap-1 rounded-md bg-m3-success-container px-2 py-1">
-              <RefreshCw size={10} className="text-m3-success" />
-              <span className="text-[10px] font-medium text-m3-success leading-none">
-                {t("sync_status_synced")}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1">
-              <CircleX size={10} className="text-m3-error" />
-              <span className="text-[10px] font-medium text-m3-error leading-none">
-                {t("sync_status_disconnected")}
-              </span>
-            </div>
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
-              >
-                <RefreshCw size={14} className="text-m3-error" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {status === "nearby" && (
-          <div className="flex items-center gap-2 shrink-0">
-            {onBlock && (
-              <button
-                onClick={onBlock}
-                className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
-              >
-                <Ban size={14} className="text-m3-error" />
-              </button>
-            )}
-            {onLink && (
-              <button
-                onClick={onLink}
-                className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-primary-container"
-              >
-                <Link size={14} className="text-m3-primary" />
-              </button>
-            )}
-          </div>
-        )}
+        <DeviceStatusBadge status={status} wsStatus={wsStatus} onRetry={onRetry} onBlock={onBlock} onLink={onLink} />
       </div>
 
-      {/* Right-click Context Menu */}
       {contextMenu && (
-        <div
-          ref={menuRef}
-          className="fixed z-50 min-w-[160px] rounded-xl bg-m3-surface-bright shadow-lg border border-m3-outline-variant/20 py-1"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
-          {onEditNote && (
-            <button
-              onClick={() => {
-                setContextMenu(null);
-                onEditNote();
-              }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
-            >
-              <Edit size={16} className="text-m3-on-surface-variant" />
-              <span>{t("add_note")}</span>
-            </button>
-          )}
-          {onRemove && (
-            <button
-              onClick={() => {
-                setContextMenu(null);
-                onRemove();
-              }}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-error hover:bg-m3-error-container/30 transition-colors"
-            >
-              <Trash2 size={16} />
-              <span>{t("remove_device")}</span>
-            </button>
-          )}
-        </div>
+        <DeviceContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          menuRef={menuRef}
+          onEditNote={onEditNote}
+          onRemove={onRemove}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </>
   );

@@ -401,152 +401,149 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
+async function handleGetDevices(): Promise<unknown> {
+  return { devices: await getDevicesWithStatus() };
+}
+
+async function handleConnect(host: string, port: number): Promise<unknown> {
+  try {
+    const appInstanceId = await getAppInstanceId();
+    const config = { host, port, appInstanceId };
+
+    await SyncApi.telnet(config);
+    const syncInfo = await SyncApi.getSyncInfo(config);
+    const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
+
+    await SyncApi.showToken({ ...config, targetAppInstanceId });
+
+    connectingState = { host, port, targetAppInstanceId, syncInfo };
+    return { success: true, syncInfo };
+  } catch (e) {
+    connectingState = null;
+    return { success: false, error: String(e) };
+  }
+}
+
+async function handlePair(token: number): Promise<unknown> {
+  try {
+    if (!connectingState) throw new Error("Not connected");
+    const appInstanceId = await getAppInstanceId();
+
+    const response = await SyncApi.trust(
+      {
+        host: connectingState.host,
+        port: connectingState.port,
+        appInstanceId,
+        targetAppInstanceId: connectingState.targetAppInstanceId,
+      },
+      token,
+    );
+
+    await DeviceStore.save({
+      targetAppInstanceId: connectingState.targetAppInstanceId,
+      syncInfo: connectingState.syncInfo,
+      host: connectingState.host,
+      port: connectingState.port,
+      trusted: true,
+      serverKeys: {
+        signPublicKey: response.pairingResponse.signPublicKey,
+        cryptPublicKey: response.pairingResponse.cryptPublicKey,
+      },
+      addedAt: Date.now(),
+    });
+
+    deviceStatuses.set(connectingState.targetAppInstanceId, "synced");
+
+    // Attempt WebSocket upgrade after pairing
+    if (!wsManager) {
+      await initializeWebSocket();
+    } else {
+      const device = await DeviceStore.get(connectingState.targetAppInstanceId);
+      if (device) await wsManager.connectDevice(device);
+    }
+
+    connectingState = null;
+
+    startSyncAlarms();
+    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+async function handleRemoveDevice(targetId: string): Promise<unknown> {
+  wsManager?.disconnectDevice(targetId);
+  await DeviceStore.remove(targetId);
+  deviceStatuses.delete(targetId);
+
+  const remaining = await DeviceStore.getAll();
+  if (!remaining.some((d) => d.trusted)) {
+    stopSyncAlarms();
+  }
+
+  broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+  return { success: true };
+}
+
+async function handleUpdateNote(targetId: string, noteName: string): Promise<unknown> {
+  await DeviceStore.updateNote(targetId, noteName);
+  broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+  return { success: true };
+}
+
+async function handleGetPastes(
+  offset: number,
+  limit: number,
+  query: string,
+  pasteType: number | null,
+): Promise<unknown> {
+  const items = (query || pasteType !== null)
+    ? await PasteStore.searchItems(query, pasteType, offset, limit)
+    : await PasteStore.getItems(offset, limit);
+  return { items };
+}
+
+async function handleLocalCopy(pasteId: number): Promise<unknown> {
+  const hash = await PasteStore.moveToTop(pasteId);
+  if (hash) {
+    await setLastHash(hash);
+    broadcastToSidePanel({ type: "PASTE_UPDATED" });
+  }
+  return { success: hash !== null };
+}
+
+async function handleDeletePaste(pasteId: number): Promise<unknown> {
+  const hash = await PasteStore.deleteById(pasteId);
+  if (hash !== null) {
+    await BlobStore.deleteForPaste(hash);
+    await PasteStore.purgeDeleted();
+    broadcastToSidePanel({ type: "PASTE_UPDATED" });
+  }
+  return { success: hash !== null };
+}
+
 async function handleMessage(
   message: Record<string, unknown>,
 ): Promise<unknown> {
   switch (message.type) {
-    case "GET_DEVICES": {
-      return { devices: await getDevicesWithStatus() };
-    }
-
-    case "CONNECT": {
-      const host = message.host as string;
-      const port = message.port as number;
-      try {
-        const appInstanceId = await getAppInstanceId();
-        const config = { host, port, appInstanceId };
-
-        await SyncApi.telnet(config);
-        const syncInfo = await SyncApi.getSyncInfo(config);
-        const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
-
-        await SyncApi.showToken({ ...config, targetAppInstanceId });
-
-        connectingState = { host, port, targetAppInstanceId, syncInfo };
-        return { success: true, syncInfo };
-      } catch (e) {
-        connectingState = null;
-        return { success: false, error: String(e) };
-      }
-    }
-
-    case "PAIR": {
-      const token = message.token as number;
-      try {
-        if (!connectingState) throw new Error("Not connected");
-        const appInstanceId = await getAppInstanceId();
-
-        const response = await SyncApi.trust(
-          {
-            host: connectingState.host,
-            port: connectingState.port,
-            appInstanceId,
-            targetAppInstanceId: connectingState.targetAppInstanceId,
-          },
-          token,
-        );
-
-        await DeviceStore.save({
-          targetAppInstanceId: connectingState.targetAppInstanceId,
-          syncInfo: connectingState.syncInfo,
-          host: connectingState.host,
-          port: connectingState.port,
-          trusted: true,
-          serverKeys: {
-            signPublicKey: response.pairingResponse.signPublicKey,
-            cryptPublicKey: response.pairingResponse.cryptPublicKey,
-          },
-          addedAt: Date.now(),
-        });
-
-        deviceStatuses.set(connectingState.targetAppInstanceId, "synced");
-
-        // Attempt WebSocket upgrade after pairing
-        if (!wsManager) {
-          await initializeWebSocket();
-        } else {
-          const device = await DeviceStore.get(connectingState.targetAppInstanceId);
-          if (device) await wsManager.connectDevice(device);
-        }
-
-        connectingState = null;
-
-        startSyncAlarms();
-        broadcastToSidePanel({ type: "DEVICES_CHANGED" });
-
-        return { success: true };
-      } catch (e) {
-        return { success: false, error: String(e) };
-      }
-    }
-
-    case "REMOVE_DEVICE": {
-      const targetId = message.targetAppInstanceId as string;
-      wsManager?.disconnectDevice(targetId);
-      await DeviceStore.remove(targetId);
-      deviceStatuses.delete(targetId);
-
-      const remaining = await DeviceStore.getAll();
-      if (!remaining.some((d) => d.trusted)) {
-        stopSyncAlarms();
-      }
-
-      broadcastToSidePanel({ type: "DEVICES_CHANGED" });
-      return { success: true };
-    }
-
-    case "UPDATE_NOTE": {
-      const targetId = message.targetAppInstanceId as string;
-      const noteName = message.noteName as string;
-      await DeviceStore.updateNote(targetId, noteName);
-      broadcastToSidePanel({ type: "DEVICES_CHANGED" });
-      return { success: true };
-    }
-
-    case "GET_PASTES": {
-      const offset = (message.offset as number) ?? 0;
-      const limit = (message.limit as number) ?? 50;
-      const query = (message.query as string) ?? "";
-      const pasteType = message.pasteType as number | null ?? null;
-
-      const items = (query || pasteType !== null)
-        ? await PasteStore.searchItems(query, pasteType, offset, limit)
-        : await PasteStore.getItems(offset, limit);
-      return { items };
-    }
-
-    case "COPY_ITEM": {
-      return { success: true };
-    }
-
-    case "LOCAL_COPY": {
-      const pasteId = message.pasteId as number;
-      const hash = await PasteStore.moveToTop(pasteId);
-      if (hash) {
-        await setLastHash(hash);
-        broadcastToSidePanel({ type: "PASTE_UPDATED" });
-      }
-      return { success: hash !== null };
-    }
-
-    case "DELETE_PASTE": {
-      const pasteId = message.pasteId as number;
-      const hash = await PasteStore.deleteById(pasteId);
-      if (hash !== null) {
-        await BlobStore.deleteForPaste(hash);
-        // Purge DELETED records periodically
-        await PasteStore.purgeDeleted();
-        broadcastToSidePanel({ type: "PASTE_UPDATED" });
-      }
-      return { success: hash !== null };
-    }
-
-    case "GET_WS_STATUS": {
-      return { statuses: wsManager?.getConnectionStates() ?? {} };
-    }
-
-    default:
-      return { error: "Unknown message type" };
+    case "GET_DEVICES": return handleGetDevices();
+    case "CONNECT": return handleConnect(message.host as string, message.port as number);
+    case "PAIR": return handlePair(message.token as number);
+    case "REMOVE_DEVICE": return handleRemoveDevice(message.targetAppInstanceId as string);
+    case "UPDATE_NOTE": return handleUpdateNote(message.targetAppInstanceId as string, message.noteName as string);
+    case "GET_PASTES": return handleGetPastes(
+      (message.offset as number) ?? 0,
+      (message.limit as number) ?? 50,
+      (message.query as string) ?? "",
+      message.pasteType as number | null ?? null,
+    );
+    case "COPY_ITEM": return { success: true };
+    case "LOCAL_COPY": return handleLocalCopy(message.pasteId as number);
+    case "DELETE_PASTE": return handleDeletePaste(message.pasteId as number);
+    case "GET_WS_STATUS": return { statuses: wsManager?.getConnectionStates() ?? {} };
+    default: return { error: "Unknown message type" };
   }
 }
 

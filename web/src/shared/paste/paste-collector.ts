@@ -43,6 +43,114 @@ interface CollectedPaste {
   fileBlobs: Array<{ name: string; dataUrl: string }>;
 }
 
+type TypedItem = { pasteType: number; item: PasteItem };
+type HashFn = (s: string) => string;
+
+const MAX_FILE_SIZE = 32 * 1024 * 1024; // 32MB
+
+function collectFileItems(
+  files: ClipboardFileInfo[],
+  hashText: HashFn,
+): { items: TypedItem[]; fileBlobs: Array<{ name: string; dataUrl: string }> } {
+  const fileBlobs: Array<{ name: string; dataUrl: string }> = [];
+  if (files.length === 0) return { items: [], fileBlobs };
+
+  const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+  if (totalSize > MAX_FILE_SIZE) return { items: [], fileBlobs };
+
+  const filesHash = hashText(files.map((f) => `${f.name}:${f.size}`).join("|"));
+  for (const f of files) {
+    if (f.dataUrl) fileBlobs.push({ name: f.name, dataUrl: f.dataUrl });
+  }
+
+  return {
+    items: [{
+      pasteType: PasteTypeInt.FILE,
+      item: {
+        type: "files",
+        identifiers: files.map((f) => f.mimeType),
+        hash: filesHash,
+        size: totalSize,
+        count: files.length,
+        relativePathList: files.map((f) => f.name),
+        fileInfoTreeMap: {},
+      },
+    }],
+    fileBlobs,
+  };
+}
+
+function collectImageItem(imageDataUrl: string, hashText: HashFn): TypedItem {
+  const base64Part = imageDataUrl.split(",")[1] ?? "";
+  const imgSize = Math.round((base64Part.length * 3) / 4);
+  return {
+    pasteType: PasteTypeInt.IMAGE,
+    item: {
+      type: "images",
+      identifiers: ["image/png"],
+      hash: hashText(imageDataUrl),
+      size: imgSize,
+      count: 1,
+      relativePathList: ["clipboard-image.png"],
+      fileInfoTreeMap: {},
+      dataUrl: imageDataUrl,
+    },
+  };
+}
+
+function collectHtmlItem(html: string, bgColor: number | null, hashText: HashFn): TypedItem {
+  return {
+    pasteType: PasteTypeInt.HTML,
+    item: {
+      type: "html",
+      identifiers: ["text/html"],
+      hash: hashText(html),
+      size: new TextEncoder().encode(html).length,
+      html,
+      extraInfo: bgColor !== null ? { background: bgColor } : undefined,
+    },
+  };
+}
+
+function collectRtfItem(rtf: string, hashText: HashFn): TypedItem {
+  return {
+    pasteType: PasteTypeInt.RTF,
+    item: {
+      type: "rtf",
+      identifiers: ["text/rtf"],
+      hash: hashText(rtf),
+      size: new TextEncoder().encode(rtf).length,
+      rtf,
+    },
+  };
+}
+
+function collectTextItem(text: string, hashText: HashFn): TypedItem {
+  const textSize = new TextEncoder().encode(text).length;
+  const detected = detectPasteType(text);
+  detected.pasteItem.hash = hashText(text);
+  detected.pasteItem.size = textSize;
+  return { pasteType: detected.pasteType, item: detected.pasteItem };
+}
+
+function collectTextToColorItem(text: string, existing: TypedItem[], hashText: HashFn): TypedItem | null {
+  if (existing.some((i) => i.pasteType === PasteTypeInt.COLOR)) return null;
+  const trimmed = text.trim();
+  if (trimmed.includes("\n")) return null;
+  const colorValue = parseColor(trimmed);
+  if (colorValue === null) return null;
+  return {
+    pasteType: PasteTypeInt.COLOR,
+    item: {
+      type: "color",
+      identifiers: ["text/plain"],
+      hash: hashText(trimmed),
+      size: new TextEncoder().encode(trimmed).length,
+      color: colorValue,
+    },
+  };
+}
+
 /**
  * Collect all clipboard formats into PasteItems, sort by priority,
  * and split into pasteAppearItem + pasteCollection.
@@ -50,127 +158,26 @@ interface CollectedPaste {
  */
 export function collectPasteItems(
   result: ClipboardResult,
-  hashText: (s: string) => string,
+  hashText: HashFn,
 ): CollectedPaste | null {
-  const items: Array<{ pasteType: number; item: PasteItem }> = [];
-  const fileBlobs: Array<{ name: string; dataUrl: string }> = [];
+  const items: TypedItem[] = [];
+  let fileBlobs: Array<{ name: string; dataUrl: string }> = [];
 
-  // Collect files (highest priority if present)
   if (result.files && result.files.length > 0) {
-    const totalSize = result.files.reduce((sum, f) => sum + f.size, 0);
-    // Skip if total exceeds 32MB
-    if (totalSize <= 32 * 1024 * 1024) {
-      const filesHash = hashText(
-        result.files.map((f) => `${f.name}:${f.size}`).join("|"),
-      );
-      items.push({
-        pasteType: PasteTypeInt.FILE,
-        item: {
-          type: "files",
-          identifiers: result.files.map((f) => f.mimeType),
-          hash: filesHash,
-          size: totalSize,
-          count: result.files.length,
-          relativePathList: result.files.map((f) => f.name),
-          fileInfoTreeMap: {},
-        },
-      });
-      for (const f of result.files) {
-        if (f.dataUrl) {
-          fileBlobs.push({ name: f.name, dataUrl: f.dataUrl });
-        }
-      }
-    }
+    const collected = collectFileItems(result.files, hashText);
+    items.push(...collected.items);
+    fileBlobs = collected.fileBlobs;
   }
-
-  // Collect image
-  if (result.imageDataUrl) {
-    const base64Part = result.imageDataUrl.split(",")[1] ?? "";
-    const imgSize = Math.round((base64Part.length * 3) / 4);
-    const imgHash = hashText(result.imageDataUrl);
-    items.push({
-      pasteType: PasteTypeInt.IMAGE,
-      item: {
-        type: "images",
-        identifiers: ["image/png"],
-        hash: imgHash,
-        size: imgSize,
-        count: 1,
-        relativePathList: ["clipboard-image.png"],
-        fileInfoTreeMap: {},
-        dataUrl: result.imageDataUrl,
-      },
-    });
-  }
-
-  // Collect HTML
-  if (result.html) {
-    const htmlSize = new TextEncoder().encode(result.html).length;
-    items.push({
-      pasteType: PasteTypeInt.HTML,
-      item: {
-        type: "html",
-        identifiers: ["text/html"],
-        hash: hashText(result.html),
-        size: htmlSize,
-        html: result.html,
-        extraInfo: result.htmlBackgroundColor !== null
-          ? { background: result.htmlBackgroundColor }
-          : undefined,
-      },
-    });
-  }
-
-  // Collect RTF
-  if (result.rtf) {
-    const rtfSize = new TextEncoder().encode(result.rtf).length;
-    items.push({
-      pasteType: PasteTypeInt.RTF,
-      item: {
-        type: "rtf",
-        identifiers: ["text/rtf"],
-        hash: hashText(result.rtf),
-        size: rtfSize,
-        rtf: result.rtf,
-      },
-    });
-  }
-
-  // Collect text (may be detected as URL, Color, or Text)
-  if (result.text && result.text.length > 0) {
-    const textSize = new TextEncoder().encode(result.text).length;
-    const detected = detectPasteType(result.text);
-    detected.pasteItem.hash = hashText(result.text);
-    detected.pasteItem.size = textSize;
-    items.push({
-      pasteType: detected.pasteType,
-      item: detected.pasteItem,
-    });
-  }
+  if (result.imageDataUrl) items.push(collectImageItem(result.imageDataUrl, hashText));
+  if (result.html) items.push(collectHtmlItem(result.html, result.htmlBackgroundColor, hashText));
+  if (result.rtf) items.push(collectRtfItem(result.rtf, hashText));
+  if (result.text && result.text.length > 0) items.push(collectTextItem(result.text, hashText));
 
   if (items.length === 0) return null;
 
-  // TextToColor post-processing (matching desktop TextToColorPlugin):
-  // If no color item exists but text is present, try converting text to color
-  const hasColor = items.some((i) => i.pasteType === PasteTypeInt.COLOR);
-  if (!hasColor && result.text) {
-    const trimmed = result.text.trim();
-    if (!trimmed.includes("\n")) {
-      const colorValue = parseColor(trimmed);
-      if (colorValue !== null) {
-        const textSize = new TextEncoder().encode(trimmed).length;
-        items.push({
-          pasteType: PasteTypeInt.COLOR,
-          item: {
-            type: "color",
-            identifiers: ["text/plain"],
-            hash: hashText(trimmed),
-            size: textSize,
-            color: colorValue,
-          },
-        });
-      }
-    }
+  if (result.text) {
+    const colorItem = collectTextToColorItem(result.text, items, hashText);
+    if (colorItem) items.push(colorItem);
   }
 
   // Sort by priority descending (matching desktop SortPlugin)
