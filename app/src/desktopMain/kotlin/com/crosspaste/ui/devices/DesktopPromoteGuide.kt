@@ -35,11 +35,11 @@ fun DesktopPromoteGuide() {
 
     val promoteConfig by promoteService.config.collectAsState()
     val ios = promoteConfig.promote.ios
-    val android = promoteConfig.promote.android
-    val domestic = promoteConfig.promote.domestic
+    val googlePlay = promoteConfig.promote.android.googlePlay
+    val domestic = promoteConfig.promote.android.domestic
     val isChinese = copyWriter.getAbridge().startsWith("zh")
     val showDomestic = domestic.enabled && isChinese
-    val showPromote = ios.enabled || android.enabled || showDomestic
+    val showPromote = ios.enabled || googlePlay.enabled || showDomestic
 
     if (showPromote) {
         Spacer(modifier = Modifier.height(medium))
@@ -71,7 +71,7 @@ fun DesktopPromoteGuide() {
                     onClick = { uiSupport.openUrlInBrowser(ios.url) },
                 )
             }
-            if (android.enabled) {
+            if (googlePlay.enabled) {
                 StoreBadge(
                     icon = {
                         Icon(
@@ -83,7 +83,7 @@ fun DesktopPromoteGuide() {
                     },
                     topText = "GET IT ON",
                     bottomText = "Google Play",
-                    onClick = { uiSupport.openUrlInBrowser(android.url) },
+                    onClick = { uiSupport.openUrlInBrowser(googlePlay.url) },
                 )
             }
             if (showDomestic) {
@@ -98,7 +98,7 @@ fun DesktopPromoteGuide() {
                     },
                     topText = copyWriter.getText("get_domestic_app"),
                     bottomText = "CrossPaste",
-                    onClick = { uiSupport.openUrlInBrowser(domestic.url) },
+                    onClick = { uiSupport.openCrossPasteWebInBrowser(domestic.path) },
                 )
             }
         }
