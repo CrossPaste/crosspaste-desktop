@@ -12,22 +12,29 @@ object ConnectCodeUtils {
 
     private const val ENCODE_CHARS = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
-    private val DECODE_MAP: Map<Char, Int> = buildMap {
-        for (i in ENCODE_CHARS.indices) {
-            put(ENCODE_CHARS[i], i)
-            put(ENCODE_CHARS[i].lowercaseChar(), i)
+    private val DECODE_MAP: Map<Char, Int> =
+        buildMap {
+            for (i in ENCODE_CHARS.indices) {
+                put(ENCODE_CHARS[i], i)
+                put(ENCODE_CHARS[i].lowercaseChar(), i)
+            }
+            // Common misreads
+            put('O', 0)
+            put('o', 0) // O → 0
+            put('I', 1)
+            put('i', 1) // I → 1
+            put('L', 1)
+            put('l', 1) // L → 1
         }
-        // Common misreads
-        put('O', 0); put('o', 0) // O → 0
-        put('I', 1); put('i', 1) // I → 1
-        put('L', 1); put('l', 1) // L → 1
-    }
 
     /**
      * Encode an IPv4 address and port into a 10-char Crockford Base32 code.
      * Returns formatted as "XXXXX-XXXXX".
      */
-    fun encode(ip: String, port: Int): String {
+    fun encode(
+        ip: String,
+        port: Int,
+    ): String {
         val parts = ip.split(".").map { it.toIntOrNull() ?: -1 }
         require(parts.size == 4 && parts.all { it in 0..255 }) { "Invalid IPv4 address: $ip" }
         require(port in 1..65535) { "Invalid port: $port" }
