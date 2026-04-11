@@ -7,9 +7,13 @@ const BACKOFF_BASE_MS = 1_000;
 const BACKOFF_MAX_MS = 30_000;
 const MAX_FAILURES_BEFORE_HTTP_ONLY = 5;
 
+/** Delay before considering a connection "stable" and resetting failure count. */
+const STABLE_CONNECTION_MS = 5_000;
+
 interface DeviceConnection {
   client: WsClient;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
+  stabilityTimer: ReturnType<typeof setTimeout> | null;
   consecutiveFailures: number;
 }
 
@@ -51,6 +55,7 @@ export class WsManager {
     const conn: DeviceConnection = {
       client,
       reconnectTimer: null,
+      stabilityTimer: null,
       consecutiveFailures: existing?.consecutiveFailures ?? 0,
     };
     this.sessions.set(device.targetAppInstanceId, conn);
@@ -61,18 +66,27 @@ export class WsManager {
 
     client.onDisconnect = (reason) => {
       console.log(`[WsManager] Disconnected from ${device.targetAppInstanceId}: ${reason}`);
+      if (conn.stabilityTimer) {
+        clearTimeout(conn.stabilityTimer);
+        conn.stabilityTimer = null;
+      }
       this.scheduleReconnect(device);
     };
 
     client.onConnect = () => {
       console.log(`[WsManager] Connected to ${device.targetAppInstanceId}`);
-      conn.consecutiveFailures = 0;
       this.onStatusChange?.(device.targetAppInstanceId, "ws_connected");
+      // Only reset failure count after the connection proves stable
+      conn.stabilityTimer = setTimeout(() => {
+        conn.stabilityTimer = null;
+        if (conn.client.isActive) {
+          conn.consecutiveFailures = 0;
+        }
+      }, STABLE_CONNECTION_MS);
     };
 
     const success = await client.connect();
     if (!success) {
-      conn.consecutiveFailures++;
       this.scheduleReconnect(device);
       return false;
     }
@@ -106,6 +120,7 @@ export class WsManager {
     if (!conn) return;
 
     if (conn.reconnectTimer) clearTimeout(conn.reconnectTimer);
+    if (conn.stabilityTimer) clearTimeout(conn.stabilityTimer);
     conn.client.close();
     this.sessions.delete(targetAppInstanceId);
   }
@@ -166,6 +181,7 @@ export class WsManager {
     if (!conn) return;
 
     if (conn.reconnectTimer) clearTimeout(conn.reconnectTimer);
+    conn.consecutiveFailures++;
 
     const status: WsConnectionStatus =
       conn.consecutiveFailures >= MAX_FAILURES_BEFORE_HTTP_ONLY ? "http_only" : "ws_reconnecting";
