@@ -9,6 +9,4 @@ interface AppUrls {
     val checkMetadataUrl: String
 
     val issueTrackerUrl: String
-
-    val promoteUrl: String
 }

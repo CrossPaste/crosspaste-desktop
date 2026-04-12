@@ -24,9 +24,7 @@ import com.crosspaste.app.DesktopAppRestartService
 import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
-import com.crosspaste.app.DesktopPromoteService
 import com.crosspaste.app.EndpointInfoFactory
-import com.crosspaste.app.PromoteService
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.config.DesktopSimpleConfigFactory
@@ -101,7 +99,6 @@ fun desktopAppModule(
         single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
         single<AppUrls> { DesktopAppUrls }
         single<CrossPasteWebService> { CrossPasteWebService(get(), get()) }
-        single<PromoteService> { DesktopPromoteService(get(), get()) }
         single<CacheManager> { DesktopCacheManager(get(), get()) }
         single<CommonConfigManager> { configManager as CommonConfigManager }
         single<CrossPasteLogger> { crossPasteLogger }
