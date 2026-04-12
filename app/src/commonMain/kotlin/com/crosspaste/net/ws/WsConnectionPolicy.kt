@@ -18,13 +18,25 @@ object WsConnectionPolicy {
         remoteAppInstanceId: String,
         remotePlatform: Platform,
     ): Boolean {
-        val localIsMobile = !localPlatform.isDesktop()
-        val remoteIsMobile = !remotePlatform.isDesktop()
+        val localWeight = platformWeight(localPlatform)
+        val remoteWeight = platformWeight(remotePlatform)
 
         return when {
-            localIsMobile && !remoteIsMobile -> true // mobile → desktop: mobile initiates
-            !localIsMobile && remoteIsMobile -> false // desktop ← mobile: wait for mobile
-            else -> localAppInstanceId < remoteAppInstanceId // same type: smaller id initiates
+            localWeight != remoteWeight -> localWeight > remoteWeight // higher weight initiates
+            else -> localAppInstanceId < remoteAppInstanceId // same weight: smaller id initiates
         }
     }
+
+    /**
+     * Weight determines which side initiates:
+     * - Extension (2): always initiates toward desktop and mobile
+     * - Mobile (1): initiates toward desktop
+     * - Desktop (0): never initiates toward higher-weight peers
+     */
+    private fun platformWeight(platform: Platform): Int =
+        when {
+            platform.isExtension() -> 2
+            !platform.isDesktop() -> 1 // mobile
+            else -> 0 // desktop
+        }
 }
