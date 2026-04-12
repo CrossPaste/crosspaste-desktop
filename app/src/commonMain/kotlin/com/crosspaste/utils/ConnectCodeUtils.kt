@@ -53,7 +53,7 @@ object ConnectCodeUtils {
             remaining = remaining ushr 5
         }
 
-        return "${String(chars, 0, 5)}-${String(chars, 5, 5)}"
+        return "${chars.concatToString(0, 5)}-${chars.concatToString(5, 10)}"
     }
 
     /**
