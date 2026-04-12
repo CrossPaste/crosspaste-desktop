@@ -20,3 +20,6 @@ expect fun macos(): Painter
 
 @Composable
 expect fun windows(): Painter
+
+@Composable
+expect fun chromeExtension(): Painter

@@ -23,6 +23,8 @@ data class Platform(
 
         const val ANDROID = "Android"
 
+        const val CHROME_EXTENSION = "ChromeExtension"
+
         const val UNKNOWN_OS = "Unknown"
     }
 
@@ -39,6 +41,10 @@ data class Platform(
     fun isIpad(): Boolean = name == IPAD
 
     fun isAndroid(): Boolean = name == ANDROID
+
+    fun isChromeExtension(): Boolean = name == CHROME_EXTENSION
+
+    fun isExtension(): Boolean = isChromeExtension()
 
     fun is64bit(): Boolean = bitMode == 64
 }
