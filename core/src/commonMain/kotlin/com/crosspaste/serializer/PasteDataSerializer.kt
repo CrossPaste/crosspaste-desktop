@@ -68,7 +68,6 @@ class PasteDataSerializer : KSerializer<PasteData> {
             hash = hash,
             createTime = DateUtils.nowEpochMilliseconds(),
             pasteState = PasteState.LOADING,
-            remote = true,
         )
     }
 

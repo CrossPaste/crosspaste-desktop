@@ -82,7 +82,7 @@ class PullClientApi(
 
         return if (response.status.value == 200) {
             logger.debug { "Success to pull latest paste" }
-            SuccessResult(response.body<PasteData>())
+            SuccessResult(response.body<PasteData>().copy(remote = true))
         } else {
             runCatching {
                 val failResponse = response.body<FailResponse>()
@@ -125,7 +125,7 @@ class PullClientApi(
 
         return if (response.status.value == 200) {
             logger.debug { "Success to pull paste batch from $targetAppInstanceId" }
-            SuccessResult(response.body<List<PasteData>>())
+            SuccessResult(response.body<List<PasteData>>().map { it.copy(remote = true) })
         } else {
             runCatching {
                 val failResponse = response.body<FailResponse>()

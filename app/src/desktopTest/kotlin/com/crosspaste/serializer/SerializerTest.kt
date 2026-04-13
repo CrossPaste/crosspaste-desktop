@@ -55,6 +55,7 @@ class SerializerTest {
         assertEquals(PasteState.LOADING, newPasteData.pasteState)
         assertNotEquals(pasteData.createTime, newPasteData.createTime)
         assertEquals(pasteData.appInstanceId, newPasteData.appInstanceId)
-        assertTrue(newPasteData.remote)
+        // Default value for @Transient remote is false; callers set it explicitly
+        assertEquals(false, newPasteData.remote)
     }
 }

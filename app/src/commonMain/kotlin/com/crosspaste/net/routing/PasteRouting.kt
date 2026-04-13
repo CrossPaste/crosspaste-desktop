@@ -46,7 +46,10 @@ fun Routing.pasteRouting(
             }
 
             runCatching {
-                val pasteData = call.receive<PasteData>()
+                val pasteData =
+                    call
+                        .receive<PasteData>()
+                        .copy(remote = true)
 
                 pasteRoutingScope.launch {
                     pasteboardService

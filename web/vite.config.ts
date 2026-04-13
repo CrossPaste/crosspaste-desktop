@@ -19,6 +19,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1024,
     rollupOptions: {
       input: {
+        sidepanel: path.resolve(__dirname, "src/sidepanel/index.html"),
         offscreen: path.resolve(__dirname, "src/offscreen/offscreen.html"),
       },
     },

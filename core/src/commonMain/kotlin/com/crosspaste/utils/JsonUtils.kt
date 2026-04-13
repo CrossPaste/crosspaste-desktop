@@ -1,5 +1,6 @@
 package com.crosspaste.utils
 
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.HtmlPasteItem
@@ -13,12 +14,12 @@ import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.serializer.Base64ByteArraySerializer
 import com.crosspaste.serializer.HtmlPasteItemSerializer
+import com.crosspaste.serializer.PasteDataSerializer
 import com.crosspaste.serializer.RtfPasteItemSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.SerializersModuleBuilder
 import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.serializersModuleOf
 import kotlinx.serialization.modules.subclass
 
 expect fun getJsonUtils(): JsonUtils
@@ -33,7 +34,8 @@ interface JsonUtils {
             ignoreUnknownKeys = true
             serializersModule =
                 SerializersModule {
-                    serializersModuleOf(ByteArray::class, Base64ByteArraySerializer())
+                    contextual(ByteArray::class, Base64ByteArraySerializer())
+                    contextual(PasteData::class, PasteDataSerializer())
 
                     polymorphic(PasteItem::class) {
                         subclass(ColorPasteItem::class)
