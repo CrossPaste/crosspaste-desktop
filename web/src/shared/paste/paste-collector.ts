@@ -63,6 +63,17 @@ function collectFileItems(
     if (f.dataUrl) fileBlobs.push({ name: f.name, dataUrl: f.dataUrl });
   }
 
+  // Build fileInfoTreeMap so Desktop can resolve file paths and create placeholders.
+  // Format matches Kotlin's SingleFileInfoTree: { type: "file", size, hash }
+  const fileInfoTreeMap: Record<string, unknown> = {};
+  for (const f of files) {
+    fileInfoTreeMap[f.name] = {
+      type: "file",
+      size: f.size,
+      hash: f.dataUrl ? hashText(f.dataUrl) : hashText(`${f.name}:${f.size}`),
+    };
+  }
+
   return {
     items: [{
       pasteType: PasteTypeInt.FILE,
@@ -73,7 +84,7 @@ function collectFileItems(
         size: totalSize,
         count: files.length,
         relativePathList: files.map((f) => f.name),
-        fileInfoTreeMap: {},
+        fileInfoTreeMap,
       },
     }],
     fileBlobs,
@@ -83,16 +94,19 @@ function collectFileItems(
 function collectImageItem(imageDataUrl: string, hashText: HashFn): TypedItem {
   const base64Part = imageDataUrl.split(",")[1] ?? "";
   const imgSize = Math.round((base64Part.length * 3) / 4);
+  const imgHash = hashText(imageDataUrl);
   return {
     pasteType: PasteTypeInt.IMAGE,
     item: {
       type: "images",
       identifiers: ["image/png"],
-      hash: hashText(imageDataUrl),
+      hash: imgHash,
       size: imgSize,
       count: 1,
       relativePathList: ["clipboard-image.png"],
-      fileInfoTreeMap: {},
+      fileInfoTreeMap: {
+        "clipboard-image.png": { type: "file", size: imgSize, hash: imgHash },
+      },
       dataUrl: imageDataUrl,
     },
   };
