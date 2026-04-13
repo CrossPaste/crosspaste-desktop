@@ -92,13 +92,23 @@ async function pollClipboard(): Promise<void> {
 
     await setLastHash(collected.hash);
 
-    // Store file blobs separately
+    // Store file blobs separately, grouped by hash.
+    // Most blobs use collected.hash, but image blobs may have their own hash
+    // so Desktop can look them up by the PasteFiles item hash.
     if (collected.fileBlobs.length > 0) {
-      const blobFiles = collected.fileBlobs.map((f) => ({
-        name: f.name,
-        data: dataUrlToArrayBuffer(f.dataUrl),
-      }));
-      await BlobStore.putAll(collected.hash, blobFiles);
+      const byHash = new Map<string, Array<{ name: string; data: ArrayBuffer }>>();
+      for (const f of collected.fileBlobs) {
+        const h = f.hash ?? collected.hash;
+        let group = byHash.get(h);
+        if (!group) {
+          group = [];
+          byHash.set(h, group);
+        }
+        group.push({ name: f.name, data: dataUrlToArrayBuffer(f.dataUrl) });
+      }
+      for (const [h, files] of byHash) {
+        await BlobStore.putAll(h, files);
+      }
     }
 
     const appInstanceId = await getAppInstanceId();

@@ -39,8 +39,8 @@ interface CollectedPaste {
   pasteType: number;
   size: number;
   hash: string;
-  /** Files that need blob storage (name → dataUrl) */
-  fileBlobs: Array<{ name: string; dataUrl: string }>;
+  /** Files that need blob storage (name → dataUrl, optional per-item hash) */
+  fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }>;
 }
 
 type TypedItem = { pasteType: number; item: PasteItem };
@@ -51,8 +51,8 @@ const MAX_FILE_SIZE = 32 * 1024 * 1024; // 32MB
 function collectFileItems(
   files: ClipboardFileInfo[],
   hashText: HashFn,
-): { items: TypedItem[]; fileBlobs: Array<{ name: string; dataUrl: string }> } {
-  const fileBlobs: Array<{ name: string; dataUrl: string }> = [];
+): { items: TypedItem[]; fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> } {
+  const fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> = [];
   if (files.length === 0) return { items: [], fileBlobs };
 
   const totalSize = files.reduce((sum, f) => sum + f.size, 0);
@@ -161,14 +161,21 @@ export function collectPasteItems(
   hashText: HashFn,
 ): CollectedPaste | null {
   const items: TypedItem[] = [];
-  let fileBlobs: Array<{ name: string; dataUrl: string }> = [];
+  let fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> = [];
 
   if (result.files && result.files.length > 0) {
     const collected = collectFileItems(result.files, hashText);
     items.push(...collected.items);
     fileBlobs = collected.fileBlobs;
   }
-  if (result.imageDataUrl) items.push(collectImageItem(result.imageDataUrl, hashText));
+  if (result.imageDataUrl) {
+    const imageItem = collectImageItem(result.imageDataUrl, hashText);
+    items.push(imageItem);
+    // Store image data in BlobStore so it can be served via FILE_PULL_REQUEST.
+    // Use the image item's own hash (not the appear item's hash) so Desktop
+    // can look it up by the PasteFiles hash it receives in the paste data.
+    fileBlobs.push({ name: "clipboard-image.png", dataUrl: result.imageDataUrl, hash: imageItem.item.hash });
+  }
   if (result.html) items.push(collectHtmlItem(result.html, result.htmlBackgroundColor, hashText));
   if (result.rtf) items.push(collectRtfItem(result.rtf, hashText));
   if (result.text && result.text.length > 0) items.push(collectTextItem(result.text, hashText));
