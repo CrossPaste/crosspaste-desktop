@@ -27,6 +27,7 @@ import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.URLBuilder
 import io.ktor.utils.io.ByteReadChannel
+import okio.Path.Companion.toPath
 
 sealed class FilePullResult {
     data class Success(
@@ -188,9 +189,11 @@ class FilePullService(
 
         val failedFiles = mutableMapOf<Int, FailureResult>()
 
-        // Request each file individually by hash + fileName
+        // Request each file individually by hash + fileName.
+        // relativePathList may contain bind-transformed paths like "appInstanceId/date/id/file.png",
+        // but Chrome's BlobStore stores by the original file name only (e.g. "file.png").
         pasteFiles.relativePathList.forEachIndexed { index, relativePath ->
-            val requestFileName = relativePath // Chrome stores by original name
+            val requestFileName = relativePath.toPath().name
             val targetPath = targetPaths[index]
 
             runCatching {
