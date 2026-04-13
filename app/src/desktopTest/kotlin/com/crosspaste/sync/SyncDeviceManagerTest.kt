@@ -6,6 +6,7 @@ import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.clientapi.ConnectionRefused
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createSyncRuntimeInfo
@@ -25,11 +26,14 @@ class SyncDeviceManagerTest {
         val syncClientApi: SyncClientApi = mockk(relaxed = true)
         val syncRuntimeInfoDao: SyncRuntimeInfoDao = mockk(relaxed = true)
 
+        val wsSessionManager: WsSessionManager = mockk(relaxed = true)
+
         fun createManager(): SyncDeviceManager =
             SyncDeviceManager(
                 secureStore = secureStore,
                 syncClientApi = syncClientApi,
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
+                wsSessionManager = wsSessionManager,
             )
     }
 

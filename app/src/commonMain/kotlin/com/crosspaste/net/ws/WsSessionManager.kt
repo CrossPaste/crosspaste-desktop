@@ -15,13 +15,15 @@ class WsSessionManager {
         onSessionClosed = callback
     }
 
-    fun registerSession(
+    suspend fun registerSession(
         appInstanceId: String,
         session: WsSession,
     ) {
         val existing = sessions.put(appInstanceId, session)
         if (existing != null) {
             logger.info { "Replaced existing WebSocket session for $appInstanceId" }
+            runCatching { existing.close("Replaced by new session") }
+                .onFailure { e -> logger.warn(e) { "Error closing old WS session for $appInstanceId" } }
         } else {
             logger.info { "Registered WebSocket session for $appInstanceId" }
         }
@@ -41,6 +43,13 @@ class WsSessionManager {
     fun getSession(appInstanceId: String): WsSession? = sessions[appInstanceId]
 
     fun isConnected(appInstanceId: String): Boolean = sessions[appInstanceId]?.isActive == true
+
+    suspend fun closeSession(appInstanceId: String) {
+        sessions.remove(appInstanceId)?.let { session ->
+            runCatching { session.close("Device removed") }
+                .onFailure { e -> logger.warn(e) { "Error closing WS session for $appInstanceId" } }
+        }
+    }
 
     suspend fun closeAll() {
         sessions.keys.toList().forEach { appInstanceId ->

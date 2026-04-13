@@ -13,6 +13,8 @@ export interface WsMessageHandlerDeps {
   /** Get/set the clipboard last hash to prevent re-capture of synced content. */
   getLastHash: () => Promise<string>;
   setLastHash: (hash: string) => Promise<void>;
+  /** Handle remote removal: remove device from storage and disconnect WebSocket. */
+  onRemoteRemoveDevice: (targetAppInstanceId: string) => Promise<void>;
 }
 
 /**
@@ -40,8 +42,8 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
           break;
 
         case WsMessageType.NOTIFY_REMOVE:
-          console.log(`[WsHandler] notify_remove from ${appInstanceId}`);
-          deps.updateDeviceStatus(appInstanceId, "error");
+          console.log(`[WsHandler] notify_remove from ${appInstanceId}, removing device`);
+          await deps.onRemoteRemoveDevice(appInstanceId);
           break;
 
         default:

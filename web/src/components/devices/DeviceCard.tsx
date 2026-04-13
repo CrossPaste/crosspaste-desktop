@@ -5,8 +5,6 @@ import {
   Monitor,
   RefreshCw,
   CircleX,
-  Ban,
-  Link,
   Edit,
   Trash2,
   Zap,
@@ -15,7 +13,7 @@ import type { SyncInfo } from "@/shared/models/sync-info";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type { WsConnectionStatus } from "@/shared/ws/ws-types";
 
-type DeviceStatus = "synced" | "error" | "nearby";
+type DeviceStatus = "synced" | "error";
 
 interface Props {
   syncInfo: SyncInfo;
@@ -24,8 +22,6 @@ interface Props {
   noteName?: string;
   onClick?: () => void;
   onRetry?: () => void;
-  onBlock?: () => void;
-  onLink?: () => void;
   onEditNote?: () => void;
   onRemove?: () => void;
 }
@@ -52,14 +48,10 @@ function DeviceStatusBadge({
   status,
   wsStatus,
   onRetry,
-  onBlock,
-  onLink,
 }: {
   status: DeviceStatus;
   wsStatus?: WsConnectionStatus;
   onRetry?: () => void;
-  onBlock?: () => void;
-  onLink?: () => void;
 }) {
   const t = useI18n();
 
@@ -96,29 +88,6 @@ function DeviceStatusBadge({
             className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
           >
             <RefreshCw size={14} className="text-m3-error" />
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  if (status === "nearby") {
-    return (
-      <div className="flex items-center gap-2 shrink-0">
-        {onBlock && (
-          <button
-            onClick={onBlock}
-            className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
-          >
-            <Ban size={14} className="text-m3-error" />
-          </button>
-        )}
-        {onLink && (
-          <button
-            onClick={onLink}
-            className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-primary-container"
-          >
-            <Link size={14} className="text-m3-primary" />
           </button>
         )}
       </div>
@@ -186,8 +155,6 @@ export function DeviceCard({
   noteName,
   onClick,
   onRetry,
-  onBlock,
-  onLink,
   onEditNote,
   onRemove,
 }: Props) {
@@ -261,7 +228,7 @@ export function DeviceCard({
           </span>
         </div>
 
-        <DeviceStatusBadge status={status} wsStatus={wsStatus} onRetry={onRetry} onBlock={onBlock} onLink={onLink} />
+        <DeviceStatusBadge status={status} wsStatus={wsStatus} onRetry={onRetry} />
       </div>
 
       {contextMenu && (

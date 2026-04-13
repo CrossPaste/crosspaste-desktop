@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 import { MyDevicesSection } from "./MyDevicesSection";
-import { NearbyDevicesSection } from "./NearbyDevicesSection";
 import { AddDeviceDialog } from "./AddDeviceDialog";
 import { EditNoteDialog } from "./EditNoteDialog";
 import { DeviceDetailView } from "./DeviceDetailView";
@@ -28,8 +27,6 @@ export function DevicesView({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingDevice, setEditingDevice] = useState<DeviceInfo | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-  const [nearbyDevices] = useState<SyncInfo[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
 
   const handleConnect = useCallback(
     async (host: string, port: number) => {
@@ -42,11 +39,6 @@ export function DevicesView({
     },
     [onConnect, t],
   );
-
-  const handleRefreshNearby = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
-  }, []);
 
   // Find the currently selected device from the live devices list
   const detailDevice = selectedDevice
@@ -87,6 +79,39 @@ export function DevicesView({
     <div className="relative flex flex-col h-full">
       <div className="flex-1 overflow-y-auto px-5 py-2">
         <div className="flex flex-col gap-6">
+          {/* Connection guide */}
+          <div className="rounded-2xl bg-m3-surface-container p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-m3-primary-container">
+                <Info size={16} className="text-m3-primary" />
+              </div>
+              <span className="text-sm font-semibold text-m3-on-surface">
+                {t("devices_guide_title")}
+              </span>
+            </div>
+            <p className="text-xs text-m3-on-surface-variant leading-relaxed mb-3">
+              {t("devices_guide_desc")}
+            </p>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start gap-2.5">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-m3-primary-container text-m3-primary text-[10px] font-bold shrink-0 mt-px">
+                  1
+                </span>
+                <span className="text-xs text-m3-on-surface-variant leading-relaxed">
+                  {t("devices_guide_step1")}
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-m3-primary-container text-m3-primary text-[10px] font-bold shrink-0 mt-px">
+                  2
+                </span>
+                <span className="text-xs text-m3-on-surface-variant leading-relaxed">
+                  {t("devices_guide_step2")}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {devices.length > 0 && (
             <MyDevicesSection
               devices={devices}
@@ -95,11 +120,6 @@ export function DevicesView({
               onRemove={(targetAppInstanceId) => onRemoveDevice(targetAppInstanceId)}
             />
           )}
-          <NearbyDevicesSection
-            devices={nearbyDevices}
-            onRefresh={handleRefreshNearby}
-            refreshing={refreshing}
-          />
         </div>
       </div>
 

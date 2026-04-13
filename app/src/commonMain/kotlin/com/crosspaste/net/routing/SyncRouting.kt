@@ -24,11 +24,13 @@ import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
+import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import io.ktor.util.*
 
 fun Routing.syncRouting(
     appInfo: AppInfo,
@@ -42,9 +44,19 @@ fun Routing.syncRouting(
     syncApi: SyncApi,
     syncInfoFactory: SyncInfoFactory,
     syncRoutingApi: SyncRoutingApi,
-    trustSyncInfo: (String, String?) -> Unit,
+    trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
 ) {
     val logger = KotlinLogging.logger {}
+    val json = getJsonUtils().JSON
+
+    fun ApplicationCall.clientSyncInfo(): SyncInfo? =
+        request.headers["crosspaste-sync-info"]?.let { encoded ->
+            runCatching {
+                val decoded = encoded.decodeBase64String()
+                json.decodeFromString<SyncInfo>(decoded)
+            }.onFailure { e -> logger.warn(e) { "Failed to parse crosspaste-sync-info header" } }
+                .getOrNull()
+        }
 
     suspend fun validateHeartbeat(
         appInstanceId: String,
@@ -202,8 +214,9 @@ fun Routing.syncRouting(
                 )
             }.onSuccess { trustResponse ->
                 val host = call.request.headers["crosspaste-host"]
+                val clientSyncInfo = call.clientSyncInfo()
                 appTokenApi.removePendingVerifier(appInstanceId)
-                trustSyncInfo(appInstanceId, host)
+                trustSyncInfo(appInstanceId, host, clientSyncInfo)
                 if (appTokenApi.showToken.value) {
                     appTokenApi.stopRefresh(hideToken = false)
                 }
@@ -329,8 +342,9 @@ fun Routing.syncRouting(
                 )
             }.onSuccess { response ->
                 val host = call.request.headers["crosspaste-host"]
+                val clientSyncInfo = call.clientSyncInfo()
                 appTokenApi.removePendingVerifier(appInstanceId)
-                trustSyncInfo(appInstanceId, host)
+                trustSyncInfo(appInstanceId, host, clientSyncInfo)
                 if (appTokenApi.showToken.value) {
                     appTokenApi.stopRefresh(hideToken = false)
                 }

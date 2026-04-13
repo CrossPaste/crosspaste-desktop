@@ -157,6 +157,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 secureStore = get(),
                 syncClientApi = get(),
                 syncRuntimeInfoDao = get(),
+                wsSessionManager = get(),
             )
         }
         single<SyncResolverApi> {

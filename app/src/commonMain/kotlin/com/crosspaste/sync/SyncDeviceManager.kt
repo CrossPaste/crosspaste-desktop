@@ -5,6 +5,9 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.ws.WsEnvelope
+import com.crosspaste.net.ws.WsMessageType
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostAndPort
@@ -15,6 +18,7 @@ class SyncDeviceManager(
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val wsSessionManager: WsSessionManager,
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -109,6 +113,11 @@ class SyncDeviceManager(
 
     suspend fun notifyExit(syncRuntimeInfo: SyncRuntimeInfo) {
         if (syncRuntimeInfo.connectState == SyncState.CONNECTED) {
+            // Prefer WebSocket when available (required for extensions that have no HTTP server)
+            if (wsSessionManager.send(syncRuntimeInfo.appInstanceId, WsEnvelope(type = WsMessageType.NOTIFY_EXIT))) {
+                logger.info { "notifyExit via WebSocket ${syncRuntimeInfo.appInstanceId}" }
+                return
+            }
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
                 syncClientApi.notifyExit {
@@ -129,12 +138,28 @@ class SyncDeviceManager(
     }
 
     suspend fun removeDevice(syncRuntimeInfo: SyncRuntimeInfo) {
+        // Try WebSocket notification first (fast, buffer write only)
+        val notifiedViaWs =
+            wsSessionManager.send(
+                syncRuntimeInfo.appInstanceId,
+                WsEnvelope(type = WsMessageType.NOTIFY_REMOVE),
+            )
+        if (notifiedViaWs) {
+            logger.info { "notifyRemove via WebSocket ${syncRuntimeInfo.appInstanceId}" }
+        }
+
+        // Delete local state immediately so UI updates without waiting for remote notification
+        wsSessionManager.closeSession(syncRuntimeInfo.appInstanceId)
         secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
         syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId)
-        syncRuntimeInfo.connectHostAddress?.let { host ->
-            val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
-            syncClientApi.notifyRemove {
-                buildUrl(hostAndPort)
+
+        // HTTP fallback notification (best-effort, after local cleanup)
+        if (!notifiedViaWs) {
+            syncRuntimeInfo.connectHostAddress?.let { host ->
+                val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+                syncClientApi.notifyRemove {
+                    buildUrl(hostAndPort)
+                }
             }
         }
     }
