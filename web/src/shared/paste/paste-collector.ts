@@ -45,12 +45,37 @@ interface CollectedPaste {
 
 type TypedItem = { pasteType: number; item: PasteItem };
 type HashFn = (s: string) => string;
+type HashBytesFn = (bytes: Uint8Array) => string;
+
+/** Decode a data URL's base64 payload to raw bytes. */
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const base64 = dataUrl.split(",")[1] ?? "";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/** Hash file content — uses raw-byte hash if available, otherwise falls back to string hash. */
+function hashFileContent(
+  dataUrl: string,
+  hashText: HashFn,
+  hashBytes?: HashBytesFn,
+): string {
+  if (hashBytes) {
+    return hashBytes(dataUrlToBytes(dataUrl));
+  }
+  return hashText(dataUrl);
+}
 
 const MAX_FILE_SIZE = 32 * 1024 * 1024; // 32MB
 
 function collectFileItems(
   files: ClipboardFileInfo[],
   hashText: HashFn,
+  hashBytes?: HashBytesFn,
 ): { items: TypedItem[]; fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> } {
   const fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> = [];
   if (files.length === 0) return { items: [], fileBlobs };
@@ -65,12 +90,13 @@ function collectFileItems(
 
   // Build fileInfoTreeMap so Desktop can resolve file paths and create placeholders.
   // Format matches Kotlin's SingleFileInfoTree: { type: "file", size, hash }
+  // Hash raw file bytes (matching Desktop's getFileHash) when hashBytes is available.
   const fileInfoTreeMap: Record<string, unknown> = {};
   for (const f of files) {
     fileInfoTreeMap[f.name] = {
       type: "file",
       size: f.size,
-      hash: f.dataUrl ? hashText(f.dataUrl) : hashText(`${f.name}:${f.size}`),
+      hash: f.dataUrl ? hashFileContent(f.dataUrl, hashText, hashBytes) : hashText(`${f.name}:${f.size}`),
     };
   }
 
@@ -91,10 +117,10 @@ function collectFileItems(
   };
 }
 
-function collectImageItem(imageDataUrl: string, hashText: HashFn): TypedItem {
+function collectImageItem(imageDataUrl: string, hashText: HashFn, hashBytes?: HashBytesFn): TypedItem {
   const base64Part = imageDataUrl.split(",")[1] ?? "";
   const imgSize = Math.round((base64Part.length * 3) / 4);
-  const imgHash = hashText(imageDataUrl);
+  const imgHash = hashFileContent(imageDataUrl, hashText, hashBytes);
   return {
     pasteType: PasteTypeInt.IMAGE,
     item: {
@@ -173,17 +199,18 @@ function collectTextToColorItem(text: string, existing: TypedItem[], hashText: H
 export function collectPasteItems(
   result: ClipboardResult,
   hashText: HashFn,
+  hashBytes?: HashBytesFn,
 ): CollectedPaste | null {
   const items: TypedItem[] = [];
   let fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> = [];
 
   if (result.files && result.files.length > 0) {
-    const collected = collectFileItems(result.files, hashText);
+    const collected = collectFileItems(result.files, hashText, hashBytes);
     items.push(...collected.items);
     fileBlobs = collected.fileBlobs;
   }
   if (result.imageDataUrl) {
-    const imageItem = collectImageItem(result.imageDataUrl, hashText);
+    const imageItem = collectImageItem(result.imageDataUrl, hashText, hashBytes);
     items.push(imageItem);
     // Store image data in BlobStore so it can be served via FILE_PULL_REQUEST.
     // Use the image item's own hash (not the appear item's hash) so Desktop

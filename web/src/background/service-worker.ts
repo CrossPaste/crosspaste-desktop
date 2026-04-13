@@ -83,7 +83,12 @@ async function pollClipboard(): Promise<void> {
     await ensureOffscreen();
 
     const response = await chrome.runtime.sendMessage({ type: "READ_CLIPBOARD" });
-    const collected = collectPasteItems(response, CrossPasteHash.hashText);
+    const collected = collectPasteItems(
+      response,
+      CrossPasteHash.hashText,
+      (bytes: Uint8Array) =>
+        CrossPasteHash.hashBytes(new Int8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)),
+    );
     if (!collected) return;
 
     // Deduplicate by appear item hash
