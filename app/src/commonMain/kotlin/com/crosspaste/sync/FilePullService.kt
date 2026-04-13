@@ -1,14 +1,20 @@
 package com.crosspaste.sync
 
 import com.crosspaste.dto.pull.PullFileRequest
+import com.crosspaste.dto.pull.WsPullFileRequest
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
+import com.crosspaste.net.ws.WsEnvelope
+import com.crosspaste.net.ws.WsMessageType
+import com.crosspaste.net.ws.WsPendingRequests
+import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.utils.DateUtils
@@ -17,6 +23,7 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.URLBuilder
 import io.ktor.utils.io.ByteReadChannel
@@ -59,6 +66,8 @@ class FilePullService(
     private val userDataPathProvider: UserDataPathProvider,
     private val pasteSyncProcessManager: PasteSyncProcessManager<Long>,
     private val syncManager: SyncManager,
+    private val wsPendingRequests: WsPendingRequests,
+    private val wsSessionManager: WsSessionManager,
 ) {
 
     companion object {
@@ -70,6 +79,8 @@ class FilePullService(
         private val dateUtils: DateUtils = getDateUtils()
 
         private val fileUtils: FileUtils = getFileUtils()
+
+        private val json = getJsonUtils().JSON
     }
 
     /**
@@ -91,6 +102,155 @@ class FilePullService(
         remotePasteId: Long,
         pasteFiles: PasteFiles,
         pullChunks: IntArray,
+    ): FilePullResult {
+        val syncHandler =
+            syncManager.getSyncHandlers()[appInstanceId]
+                ?: return FilePullResult.NoSyncHandler(appInstanceId)
+
+        // Extension devices (e.g. Chrome) have no HTTP server — use WebSocket whole-file pull
+        if (syncHandler.getSyncPlatform().isExtension()) {
+            return pullFilesViaWs(appInstanceId, pasteId, createTime, pasteFiles)
+        }
+
+        return pullFilesViaHttp(
+            appInstanceId,
+            pasteId,
+            createTime,
+            remotePasteId,
+            pasteFiles,
+            pullChunks,
+            syncHandler,
+        )
+    }
+
+    /**
+     * Pull files from a Chrome extension via WebSocket using whole-file mode.
+     * Chrome files are always ≤ 1MB, so no chunking is needed.
+     * Files are requested by paste hash + file name.
+     */
+    private suspend fun pullFilesViaWs(
+        appInstanceId: String,
+        pasteId: Long,
+        createTime: Long,
+        pasteFiles: PasteFiles,
+    ): FilePullResult {
+        val dateString =
+            dateUtils.getYMD(
+                dateUtils.epochMillisecondsToLocalDateTime(createTime),
+            )
+
+        // Resolve target paths and create empty placeholder files.
+        // Pass null for filesIndexBuilder — we don't need chunk indexing in whole-file mode.
+        val renameMap =
+            userDataPathProvider.resolve(
+                appInstanceId,
+                dateString,
+                pasteId,
+                pasteFiles,
+                true,
+                null,
+                resolveConflicts = true,
+            )
+
+        // Build a map from original file name → actual disk path (accounting for renames)
+        val filePaths = pasteFiles.getFilePaths(userDataPathProvider)
+        if (filePaths.isEmpty()) {
+            logger.warn { "No files to pull via WS for pasteId $pasteId" }
+            return FilePullResult.Empty
+        }
+
+        // filePaths are aligned with relativePathList and use original names.
+        // If a rename happened, the actual file on disk has the renamed name in the same parent dir.
+        val targetPaths =
+            pasteFiles.relativePathList.zip(filePaths).map { (originalName, originalPath) ->
+                val renamedName = renameMap[originalName]
+                if (renamedName != null) {
+                    originalPath.parent!! / renamedName
+                } else {
+                    originalPath
+                }
+            }
+
+        val hash = (pasteFiles as? com.crosspaste.paste.item.PasteItem)?.hash ?: ""
+        if (hash.isEmpty()) {
+            logger.error { "Cannot pull files via WS: paste hash is empty for pasteId $pasteId" }
+            return FilePullResult.Failure(
+                mapOf(
+                    0 to
+                        createFailureResult(
+                            StandardErrorCode.PULL_FILE_TASK_FAIL,
+                            "Paste hash is empty",
+                        ) as FailureResult,
+                ),
+                intArrayOf(),
+            )
+        }
+
+        val failedFiles = mutableMapOf<Int, FailureResult>()
+
+        // Request each file individually by hash + fileName
+        pasteFiles.relativePathList.forEachIndexed { index, relativePath ->
+            val requestFileName = relativePath // Chrome stores by original name
+            val targetPath = targetPaths[index]
+
+            runCatching {
+                val request =
+                    WsPullFileRequest(
+                        hash = hash,
+                        fileName = requestFileName,
+                    )
+
+                val requestEnvelope =
+                    WsEnvelope(
+                        type = WsMessageType.FILE_PULL_REQUEST,
+                        payload = json.encodeToString(request).encodeToByteArray(),
+                    )
+
+                val response =
+                    wsPendingRequests.request(
+                        wsSessionManager,
+                        appInstanceId,
+                        requestEnvelope,
+                    )
+
+                if (response.type == WsMessageType.ERROR) {
+                    val errorMsg = response.payload.decodeToString()
+                    throw IllegalStateException("File pull error: $errorMsg")
+                }
+
+                // Write the received bytes directly to the target file path
+                fileUtils.writeFile(targetPath) { sink ->
+                    sink.write(response.payload)
+                }
+
+                logger.debug { "WS file pull success: $requestFileName → $targetPath (${response.payload.size} bytes)" }
+            }.onFailure { e ->
+                logger.error(e) { "WS file pull failed for $requestFileName from $appInstanceId" }
+                failedFiles[index] =
+                    createFailureResult(
+                        StandardErrorCode.PULL_FILE_CHUNK_TASK_FAIL,
+                        "WS file pull failed: ${e.message}",
+                    ) as FailureResult
+            }
+        }
+
+        return if (failedFiles.isEmpty()) {
+            FilePullResult.Success(renameMap)
+        } else {
+            // For WS whole-file mode, pullChunks is not meaningful (no chunk system),
+            // but return an empty array to satisfy the Failure contract.
+            FilePullResult.Failure(failedFiles, intArrayOf())
+        }
+    }
+
+    private suspend fun pullFilesViaHttp(
+        appInstanceId: String,
+        pasteId: Long,
+        createTime: Long,
+        remotePasteId: Long,
+        pasteFiles: PasteFiles,
+        pullChunks: IntArray,
+        syncHandler: SyncHandler,
     ): FilePullResult {
         val dateString =
             dateUtils.getYMD(
@@ -125,10 +285,6 @@ class FilePullService(
                 }
                 pullChunks
             }
-
-        val syncHandler =
-            syncManager.getSyncHandlers()[appInstanceId]
-                ?: return FilePullResult.NoSyncHandler(appInstanceId)
 
         val host =
             syncHandler.getConnectHostAddress()

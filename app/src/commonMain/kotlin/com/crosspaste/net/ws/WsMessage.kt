@@ -57,5 +57,7 @@ object WsMessageType {
     const val SYNC_INFO = "sync_info"
     const val NOTIFY_EXIT = "notify_exit"
     const val NOTIFY_REMOVE = "notify_remove"
+    const val FILE_PULL_REQUEST = "file_pull_request"
+    const val FILE_PULL_RESPONSE = "file_pull_response"
     const val ERROR = "error"
 }

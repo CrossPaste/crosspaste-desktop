@@ -158,6 +158,18 @@ export class WsManager {
   }
 
   /**
+   * Send a request to a connected device and wait for a correlated response.
+   * Throws if the device is not connected or the request times out.
+   */
+  async sendRequest(targetAppInstanceId: string, envelope: WsEnvelope): Promise<WsEnvelope> {
+    const conn = this.sessions.get(targetAppInstanceId);
+    if (!conn?.client.isActive) {
+      throw new Error(`Device ${targetAppInstanceId} not connected`);
+    }
+    return conn.client.sendRequest(envelope);
+  }
+
+  /**
    * Get connection status for all known devices.
    */
   getConnectionStates(): Record<string, WsConnectionStatus> {

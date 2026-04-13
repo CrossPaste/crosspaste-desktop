@@ -21,6 +21,7 @@ import com.crosspaste.net.ws.WsMessageType
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
@@ -191,6 +192,14 @@ class SyncPasteTaskExecutor(
             ),
         )
 
+    companion object {
+        /** Chrome extension per-file size limit (1MB). */
+        const val EXTENSION_MAX_FILE_SIZE: Long = 1L * 1024 * 1024
+
+        /** Chrome extension total files size limit (32MB). */
+        const val EXTENSION_MAX_TOTAL_FILE_SIZE: Long = 32L * 1024 * 1024
+    }
+
     private suspend fun syncPasteToTarget(
         handlerKey: String,
         handler: SyncHandler,
@@ -206,6 +215,18 @@ class SyncPasteTaskExecutor(
                 StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP,
                 "Failed to send paste to $handlerKey",
             )
+        }
+
+        // Extension devices have file size limits — skip file-type pastes that exceed them
+        if (syncRuntimeInfo.platform.isExtension() && pasteData.isFileType()) {
+            val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
+            if (pasteFiles != null && !isWithinExtensionFileLimit(pasteFiles)) {
+                logger.info {
+                    "Skipping file-type paste sync to extension $handlerKey: " +
+                        "file size exceeds extension limit (total=${pasteFiles.size})"
+                }
+                return SuccessResult() // Don't retry — this is intentional
+            }
         }
 
         // Prefer WebSocket if available — lower latency, no new connection
@@ -251,6 +272,13 @@ class SyncPasteTaskExecutor(
         }.onFailure { e ->
             logger.warn(e) { "WebSocket paste send failed for $targetAppInstanceId, falling back to HTTP" }
         }.getOrNull()
+
+    private fun isWithinExtensionFileLimit(pasteFiles: PasteFiles): Boolean {
+        if (pasteFiles.size > EXTENSION_MAX_TOTAL_FILE_SIZE) return false
+        return pasteFiles.fileInfoTreeMap.values.all { fileInfoTree ->
+            fileInfoTree.size <= EXTENSION_MAX_FILE_SIZE
+        }
+    }
 
     private fun processResults(
         results: Map<String, ClientApiResult>,

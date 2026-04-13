@@ -353,6 +353,19 @@ interface FileUtils {
         byteWriteChannel: ByteWriteChannel,
     )
 
+    fun readFilesChunkToByteArray(filesChunk: FilesChunk): ByteArray {
+        val buffer = okio.Buffer()
+        for (fileChunk in filesChunk.fileChunks) {
+            fileSystem.source(fileChunk.path).buffer().use { source ->
+                source.skip(fileChunk.offset)
+                val bytes = ByteArray(fileChunk.size.toInt())
+                source.readFully(bytes)
+                buffer.write(bytes)
+            }
+        }
+        return buffer.readByteArray()
+    }
+
     fun resolveNonConflictFileName(
         dir: Path,
         fileName: String,

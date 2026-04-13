@@ -8,6 +8,7 @@ import {
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
 const HEARTBEAT_ACK_TIMEOUT_MS = 10_000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
 export type WsClientState = "idle" | "connecting" | "connected" | "closed";
 
@@ -16,6 +17,12 @@ export interface WsClientConfig {
   port: number;
   appInstanceId: string;
   targetAppInstanceId: string;
+}
+
+interface PendingRequest {
+  resolve: (envelope: WsEnvelope) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
 }
 
 /**
@@ -43,6 +50,9 @@ export class WsClient {
     reject: (e: Error) => void;
   }> = [];
   private isSending = false;
+
+  // Request-response tracking
+  private pendingRequests: Map<string, PendingRequest> = new Map();
 
   readonly config: WsClientConfig;
 
@@ -136,6 +146,34 @@ export class WsClient {
   }
 
   /**
+   * Send a request envelope and wait for the correlated response.
+   * Generates a requestId, sends the envelope, and resolves when a
+   * response with the same requestId arrives (or rejects on timeout).
+   */
+  sendRequest(
+    envelope: WsEnvelope,
+    timeoutMs: number = DEFAULT_REQUEST_TIMEOUT_MS,
+  ): Promise<WsEnvelope> {
+    const requestId = crypto.randomUUID();
+    const requestEnvelope: WsEnvelope = { ...envelope, requestId };
+
+    return new Promise<WsEnvelope>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingRequests.delete(requestId);
+        reject(new Error(`Request ${requestId} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      this.pendingRequests.set(requestId, { resolve, reject, timer });
+
+      this.sendEnvelope(requestEnvelope).catch((e) => {
+        this.pendingRequests.delete(requestId);
+        clearTimeout(timer);
+        reject(e);
+      });
+    });
+  }
+
+  /**
    * Close the connection gracefully.
    */
   close(): void {
@@ -191,6 +229,17 @@ export class WsClient {
     if (envelope.type === WsMessageType.HEARTBEAT_ACK) {
       this.clearHeartbeatAckTimer();
       return;
+    }
+
+    // Check if this is a response to a pending request
+    if (envelope.requestId) {
+      const pending = this.pendingRequests.get(envelope.requestId);
+      if (pending) {
+        this.pendingRequests.delete(envelope.requestId);
+        clearTimeout(pending.timer);
+        pending.resolve(envelope);
+        return;
+      }
     }
 
     this.onMessage?.(envelope);
@@ -278,5 +327,11 @@ export class WsClient {
     }
     this.sendQueue = [];
     this.isSending = false;
+    // Reject any pending requests
+    for (const [, pending] of this.pendingRequests) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error("Connection closed"));
+    }
+    this.pendingRequests.clear();
   }
 }

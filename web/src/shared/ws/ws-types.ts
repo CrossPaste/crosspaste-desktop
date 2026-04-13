@@ -10,6 +10,8 @@ export const WsMessageType = {
   SYNC_INFO: "sync_info",
   NOTIFY_EXIT: "notify_exit",
   NOTIFY_REMOVE: "notify_remove",
+  FILE_PULL_REQUEST: "file_pull_request",
+  FILE_PULL_RESPONSE: "file_pull_response",
   ERROR: "error",
 } as const;
 

@@ -4,6 +4,7 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
@@ -12,7 +13,9 @@ import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
@@ -80,15 +83,25 @@ class WsModuleDependencyTest : KoinTest {
                 single<TokenCacheApi> { mockk(relaxed = true) }
 
                 // The actual components under test — mirrors DesktopNetworkModule wiring
+                single<CacheManager> { mockk(relaxed = true) }
+                single<PasteDao> { mockk(relaxed = true) }
+                single<UserDataPathProvider> { mockk(relaxed = true) }
                 single<WsSessionManager> {
                     WsSessionManager()
+                }
+                single<WsPendingRequests> {
+                    WsPendingRequests()
                 }
                 single<WsMessageHandler> {
                     WsMessageHandler(
                         lazyAppControl = lazy { get() },
+                        lazyCacheManager = lazy { get() },
+                        lazyPasteDao = lazy { get() },
                         lazyPasteboardService = lazy { get() },
                         lazySyncRoutingApi = lazy { get() },
                         secureStore = get(),
+                        userDataPathProvider = get(),
+                        wsPendingRequests = get(),
                         wsSessionManager = get(),
                     )
                 }

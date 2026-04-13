@@ -323,6 +323,10 @@ async function initializeWebSocket(): Promise<void> {
     sendToDevice: async (targetId, envelope) => {
       await wsManager?.send(targetId, envelope);
     },
+    sendRequest: async (targetId, envelope) => {
+      if (!wsManager) throw new Error("WsManager not initialized");
+      return wsManager.sendRequest(targetId, envelope);
+    },
     updateDeviceStatus: (targetId, status) => {
       if (deviceStatuses.get(targetId) !== status) {
         deviceStatuses.set(targetId, status);
