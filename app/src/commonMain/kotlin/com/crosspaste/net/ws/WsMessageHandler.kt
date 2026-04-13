@@ -92,7 +92,10 @@ class WsMessageHandler(
                 } else {
                     envelope.payload
                 }
-            val pasteData = json.decodeFromString<PasteData>(payloadBytes.decodeToString())
+            val pasteData =
+                json
+                    .decodeFromString<PasteData>(payloadBytes.decodeToString())
+                    .copy(remote = true)
 
             scope.launch {
                 pasteboardService.tryWriteRemotePasteboard(pasteData)
