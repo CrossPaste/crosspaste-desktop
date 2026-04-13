@@ -6,10 +6,11 @@ import { SyncApi } from "@/shared/api/sync";
 import { PullApi } from "@/shared/api/pull";
 import { CrossPasteHash, CrossPasteJson } from "@/shared/core";
 import type { SyncInfo } from "@/shared/models/sync-info";
+import { APP_VERSION } from "@/shared/app/version.generated";
 import { collectPasteItems } from "@/shared/paste/paste-collector";
 import { WsManager } from "@/shared/ws/ws-manager";
 import { createWsMessageHandler } from "@/shared/ws/ws-message-handler";
-import { WsMessageType } from "@/shared/ws/ws-types";
+import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
 
 // ─── Per-device runtime status ──────────────────────────────────────────
@@ -331,6 +332,18 @@ async function initializeWebSocket(): Promise<void> {
     broadcastToSidePanel,
     getLastHash,
     setLastHash,
+    onRemoteRemoveDevice: async (targetId) => {
+      wsManager?.disconnectDevice(targetId);
+      await DeviceStore.remove(targetId);
+      deviceStatuses.delete(targetId);
+
+      const remaining = await DeviceStore.getAll();
+      if (!remaining.some((d) => d.trusted)) {
+        stopSyncAlarms();
+      }
+
+      broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+    },
   });
 
   wsManager.onMessage = (targetId, envelope) => {
@@ -429,6 +442,25 @@ async function handlePair(token: number): Promise<unknown> {
     if (!connectingState) throw new Error("Not connected");
     const appInstanceId = await getAppInstanceId();
 
+    // Build extension's SyncInfo so the server can register this client
+    // (Chrome extension can't be discovered via mDNS)
+    const chromeVersion = navigator.userAgent.split("Chrome/")[1]?.split(" ")[0] ?? "unknown";
+    const extensionSyncInfo: SyncInfo = {
+      appInfo: {
+        appInstanceId,
+        appVersion: APP_VERSION,
+        appRevision: "Unknown",
+        userName: "Chrome Extension",
+      },
+      endpointInfo: {
+        deviceId: appInstanceId,
+        deviceName: "Chrome Extension",
+        platform: { name: "ChromeExtension", arch: "web", bitMode: 64, version: chromeVersion },
+        hostInfoList: [],
+        port: 0,
+      },
+    };
+
     const response = await SyncApi.trust(
       {
         host: connectingState.host,
@@ -437,6 +469,7 @@ async function handlePair(token: number): Promise<unknown> {
         targetAppInstanceId: connectingState.targetAppInstanceId,
       },
       token,
+      extensionSyncInfo,
     );
 
     await DeviceStore.save({
@@ -474,6 +507,10 @@ async function handlePair(token: number): Promise<unknown> {
 }
 
 async function handleRemoveDevice(targetId: string): Promise<unknown> {
+  // Notify desktop before disconnecting so the WS session is still available
+  if (wsManager?.isConnected(targetId)) {
+    await wsManager.send(targetId, simpleEnvelope(WsMessageType.NOTIFY_REMOVE)).catch(() => {});
+  }
   wsManager?.disconnectDevice(targetId);
   await DeviceStore.remove(targetId);
   deviceStatuses.delete(targetId);

@@ -5,6 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
@@ -132,16 +133,18 @@ open class DefaultServerModule(
     private fun trustSyncInfo(
         appInstanceId: String,
         host: String?,
+        preRegisteredSyncInfo: SyncInfo?,
     ) {
         val syncInfo =
             nearbyDeviceManager.nearbySyncInfos.value
                 .firstOrNull {
                     it.appInfo.appInstanceId == appInstanceId
                 }
+                ?: preRegisteredSyncInfo
         if (syncInfo != null) {
             syncRoutingApi.trustSyncInfo(syncInfo, host)
         } else {
-            logger.warn { "trustSyncInfo: $appInstanceId not found in nearby devices" }
+            logger.warn { "trustSyncInfo: $appInstanceId not found in nearby devices or preRegistered" }
         }
     }
 }

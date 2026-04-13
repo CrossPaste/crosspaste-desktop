@@ -163,6 +163,14 @@ class SyncResolver(
 
     private suspend fun SyncRuntimeInfo.resolve(callback: ResolveCallback) {
         logger.info { "Resolve $appInstanceId (state=$connectState)" }
+
+        // Extensions (e.g. Chrome) are client-only: they connect TO us via WebSocket
+        // and have no server to telnet/heartbeat back to. Use WebSocket liveness instead.
+        if (platform.isExtension()) {
+            resolveExtension(callback)
+            return
+        }
+
         when (connectState) {
             SyncState.DISCONNECTED,
             SyncState.INCOMPATIBLE,
@@ -185,6 +193,23 @@ class SyncResolver(
             SyncState.CONNECTED -> {
                 verifyConnection(callback)
             }
+        }
+    }
+
+    /**
+     * Resolve extension devices (e.g. Chrome Extension).
+     * Extensions are client-only — they have no server, no host, no port.
+     * Connection liveness is determined solely by WebSocket session state.
+     */
+    private suspend fun SyncRuntimeInfo.resolveExtension(callback: ResolveCallback) {
+        val wsConnected = wsSessionManager.isConnected(appInstanceId)
+        if (wsConnected && connectState == SyncState.DISCONNECTED) {
+            logger.info { "Extension $appInstanceId WebSocket active, marking CONNECTED" }
+            callback.updateVersionRelation(VersionRelation.EQUAL_TO)
+            updateConnectState(SyncState.CONNECTED)
+        } else if (!wsConnected && connectState == SyncState.CONNECTED) {
+            logger.info { "Extension $appInstanceId WebSocket gone, marking DISCONNECTED" }
+            updateConnectState(SyncState.DISCONNECTED)
         }
     }
 

@@ -52,7 +52,7 @@ class TestServerModule(
                     syncApi,
                     syncInfoFactory,
                     syncRoutingApi,
-                ) { _, _ ->
+                ) { _, _, _ ->
                 }
             }
         }

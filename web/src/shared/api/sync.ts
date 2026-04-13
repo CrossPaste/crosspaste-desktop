@@ -56,6 +56,7 @@ export const SyncApi = {
       targetAppInstanceId: string;
     },
     token: number,
+    clientSyncInfo?: SyncInfo,
   ): Promise<TrustResponse> {
     // Ensure we have keypairs
     let keys = await KeyStore.getKeys();
@@ -72,11 +73,15 @@ export const SyncApi = {
     );
 
     const reqConfig = toRequestConfig(config);
+    const extraHeaders: Record<string, string> = { "crosspaste-host": config.host };
+    if (clientSyncInfo) {
+      extraHeaders["crosspaste-sync-info"] = btoa(JSON.stringify(clientSyncInfo));
+    }
     const response = await apiPost<TrustResponse>(
       reqConfig,
       "/sync/trust",
       JSON.parse(trustRequestJson),
-      { "crosspaste-host": config.host },
+      extraHeaders,
     );
 
     return response;

@@ -19,6 +19,14 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "Re-enter",
     verification_failed_retry: "Verification failed, please try again",
     time: "Time",
+    ip_address: "IP Address",
+    devices_guide_title: "Manual Connection Only",
+    devices_guide_desc:
+      "The Chrome extension runs in a browser sandbox and cannot broadcast on the local network, so other CrossPaste clients cannot automatically discover it.",
+    devices_guide_step1:
+      "Find your device's IP and port in the desktop app: Settings → Network Settings",
+    devices_guide_step2:
+      "Click \"Add Device\" below and enter the connection info",
   },
   de: {
     clipboard: "Zwischenablage",
@@ -36,6 +44,14 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     verification_failed_retry:
       "Überprüfung fehlgeschlagen, bitte erneut versuchen",
     time: "Zeit",
+    ip_address: "IP-Adresse",
+    devices_guide_title: "Nur manuelle Verbindung",
+    devices_guide_desc:
+      "Die Chrome-Erweiterung läuft in einer Browser-Sandbox und kann nicht im lokalen Netzwerk senden, daher können andere CrossPaste-Clients sie nicht automatisch erkennen.",
+    devices_guide_step1:
+      "IP-Adresse und Port des Geräts finden: Desktop-App → Einstellungen → Netzwerkeinstellungen",
+    devices_guide_step2:
+      'Klicken Sie unten auf „Gerät hinzufügen" und geben Sie die Verbindungsdaten ein',
   },
   es: {
     clipboard: "Portapapeles",
@@ -53,6 +69,14 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     verification_failed_retry:
       "Verificación fallida, por favor intente de nuevo",
     time: "Hora",
+    ip_address: "Dirección IP",
+    devices_guide_title: "Solo conexión manual",
+    devices_guide_desc:
+      "La extensión de Chrome se ejecuta en un entorno aislado del navegador y no puede transmitir en la red local, por lo que otros clientes de CrossPaste no pueden descubrirla automáticamente.",
+    devices_guide_step1:
+      "Encuentre la IP y el puerto del dispositivo en la app de escritorio: Ajustes → Configuración de red",
+    devices_guide_step2:
+      "Haga clic en \"Agregar dispositivo\" abajo e ingrese la información de conexión",
   },
   fr: {
     clipboard: "Presse-papiers",
@@ -70,6 +94,14 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     verification_failed_retry:
       "Vérification échouée, veuillez réessayer",
     time: "Heure",
+    ip_address: "Adresse IP",
+    devices_guide_title: "Connexion manuelle uniquement",
+    devices_guide_desc:
+      "L'extension Chrome fonctionne dans un bac à sable du navigateur et ne peut pas diffuser sur le réseau local. Les autres clients CrossPaste ne peuvent donc pas la découvrir automatiquement.",
+    devices_guide_step1:
+      "Trouvez l'IP et le port de l'appareil dans l'application de bureau : Paramètres → Paramètres réseau",
+    devices_guide_step2:
+      "Cliquez sur « Ajouter un appareil » ci-dessous et entrez les informations de connexion",
   },
   ja: {
     clipboard: "クリップボード",
@@ -86,6 +118,14 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "再入力",
     verification_failed_retry: "認証に失敗しました。もう一度お試しください",
     time: "時間",
+    ip_address: "IPアドレス",
+    devices_guide_title: "手動接続のみ",
+    devices_guide_desc:
+      "Chrome 拡張機能はブラウザのサンドボックス内で動作し、ローカルネットワークでブロードキャストできないため、他の CrossPaste クライアントが自動検出することはできません。",
+    devices_guide_step1:
+      "デスクトップアプリでデバイスの IP とポートを確認：設定 → ネットワーク設定",
+    devices_guide_step2:
+      "下の「デバイスを追加」をクリックし、接続情報を入力してください",
   },
   ko: {
     clipboard: "클립보드",
@@ -101,6 +141,14 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "다시 입력",
     verification_failed_retry: "인증 실패, 다시 시도해주세요",
     time: "시간",
+    ip_address: "IP 주소",
+    devices_guide_title: "수동 연결만 가능",
+    devices_guide_desc:
+      "Chrome 확장 프로그램은 브라우저 샌드박스에서 실행되어 로컬 네트워크에서 브로드캐스트할 수 없으므로, 다른 CrossPaste 클라이언트가 자동으로 검색할 수 없습니다.",
+    devices_guide_step1:
+      "데스크톱 앱에서 기기의 IP와 포트를 확인하세요: 설정 → 네트워크 설정",
+    devices_guide_step2:
+      "아래의 \"기기 추가\"를 클릭하고 연결 정보를 입력하세요",
   },
   zh: {
     clipboard: "剪贴板",
@@ -115,6 +163,14 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "重新输入",
     verification_failed_retry: "验证失败，请重新输入",
     time: "时间",
+    ip_address: "IP 地址",
+    devices_guide_title: "仅支持手动连接",
+    devices_guide_desc:
+      "Chrome 扩展运行在浏览器沙箱中，无法在局域网中广播，因此其他 CrossPaste 客户端无法自动发现本扩展。",
+    devices_guide_step1:
+      "在桌面端查找设备的 IP 和端口：设置 → 网络设置",
+    devices_guide_step2:
+      "点击下方「添加设备」按钮，输入连接信息",
   },
   zh_hant: {
     clipboard: "剪貼簿",
@@ -129,5 +185,13 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     re_enter: "重新輸入",
     verification_failed_retry: "驗證失敗，請重新輸入",
     time: "時間",
+    ip_address: "IP 位址",
+    devices_guide_title: "僅支援手動連線",
+    devices_guide_desc:
+      "Chrome 擴充功能運行在瀏覽器沙箱中，無法在區域網路中廣播，因此其他 CrossPaste 用戶端無法自動發現本擴充功能。",
+    devices_guide_step1:
+      "在桌面端查看裝置的 IP 和連接埠：設定 → 網路設定",
+    devices_guide_step2:
+      "點擊下方「新增裝置」按鈕，輸入連線資訊",
   },
 };
