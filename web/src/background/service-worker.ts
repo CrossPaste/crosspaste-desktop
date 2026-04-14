@@ -14,6 +14,7 @@ import { createWsMessageHandler } from "@/shared/ws/ws-message-handler";
 import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
+import { initNativeHost, isDesktopConnected } from "./native-host";
 
 // ─── Per-device runtime status ──────────────────────────────────────────
 
@@ -171,12 +172,47 @@ async function pollClipboard(): Promise<void> {
   }
 }
 
+let clipboardPollTimer: ReturnType<typeof setTimeout> | null = null;
+let pollingEnabled = false;
+
 function startClipboardPolling(): void {
+  if (pollingEnabled) return;
+  pollingEnabled = true;
   async function loop() {
+    if (!pollingEnabled) return;
     await pollClipboard();
-    setTimeout(loop, CLIPBOARD_POLL_INTERVAL_MS);
+    if (!pollingEnabled) return;
+    clipboardPollTimer = setTimeout(loop, CLIPBOARD_POLL_INTERVAL_MS);
   }
   loop();
+}
+
+function stopClipboardPolling(): void {
+  pollingEnabled = false;
+  if (clipboardPollTimer !== null) {
+    clearTimeout(clipboardPollTimer);
+    clipboardPollTimer = null;
+  }
+}
+
+function pauseForDesktop(): void {
+  console.log("[NativeMessaging] Desktop app detected, pausing extension");
+  stopClipboardPolling();
+  stopSyncAlarms();
+  wsManager?.disconnectAll();
+  broadcastToSidePanel({ type: "DESKTOP_STATUS_CHANGED", connected: true });
+}
+
+function resumeFromDesktop(): void {
+  console.log("[NativeMessaging] Desktop app disconnected, resuming extension");
+  startClipboardPolling();
+  DeviceStore.getAll().then((devices) => {
+    if (devices.some((d) => d.trusted)) {
+      startSyncAlarms();
+      wsManager?.connectAllDevices();
+    }
+  });
+  broadcastToSidePanel({ type: "DESKTOP_STATUS_CHANGED", connected: false });
 }
 
 // ─── Identity ───────────────────────────────────────────────────────────
@@ -376,14 +412,22 @@ async function initializeWebSocket(): Promise<void> {
 async function initialize(): Promise<void> {
   await getAppInstanceId();
   await ensureOffscreen();
-  startClipboardPolling();
+
+  const desktopRunning = await initNativeHost({
+    onDesktopConnected: () => pauseForDesktop(),
+    onDesktopDisconnected: () => resumeFromDesktop(),
+  });
+
+  if (!desktopRunning) {
+    startClipboardPolling();
+  }
 
   await migrateFromLegacy();
 
   const devices = await DeviceStore.getAll();
   const trustedDevices = devices.filter((d) => d.trusted);
 
-  if (trustedDevices.length > 0) {
+  if (trustedDevices.length > 0 && !desktopRunning) {
     trustedDevices.forEach((d) => {
       deviceStatuses.set(d.targetAppInstanceId, "synced");
     });
@@ -398,6 +442,7 @@ chrome.runtime.onStartup?.addListener(() => initialize());
 // ─── Alarm handler ──────────────────────────────────────────────────────
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (isDesktopConnected()) return;
   if (alarm.name === "sync-paste") {
     await syncAllDevices();
   } else if (alarm.name === "heartbeat") {
@@ -606,6 +651,7 @@ async function handleMessage(
     case "DELETE_PASTE": return handleDeletePaste(message.pasteId as number);
     case "DOWNLOAD_FILE": return handleDownloadFile(message.hash as string, message.fileName as string);
     case "GET_WS_STATUS": return { statuses: wsManager?.getConnectionStates() ?? {} };
+    case "GET_DESKTOP_STATUS": return { desktopConnected: isDesktopConnected() };
     default: return { error: "Unknown message type" };
   }
 }

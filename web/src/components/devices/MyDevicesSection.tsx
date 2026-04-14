@@ -4,12 +4,13 @@ import type { DeviceInfo } from "@/shared/hooks/use-connection";
 
 interface Props {
   devices: DeviceInfo[];
+  desktopConnected?: boolean;
   onClick?: (device: DeviceInfo) => void;
   onEditNote?: (device: DeviceInfo) => void;
   onRemove?: (targetAppInstanceId: string) => void;
 }
 
-export function MyDevicesSection({ devices, onClick, onEditNote, onRemove }: Props) {
+export function MyDevicesSection({ devices, desktopConnected, onClick, onEditNote, onRemove }: Props) {
   const t = useI18n();
 
   if (devices.length === 0) return null;
@@ -23,7 +24,7 @@ export function MyDevicesSection({ devices, onClick, onEditNote, onRemove }: Pro
         <DeviceCard
           key={device.targetAppInstanceId}
           syncInfo={device.syncInfo}
-          status={device.status === "synced" ? "synced" : "error"}
+          status={desktopConnected ? "paused" : device.status === "synced" ? "synced" : "error"}
           wsStatus={device.wsStatus}
           noteName={device.noteName}
           onClick={() => onClick?.(device)}

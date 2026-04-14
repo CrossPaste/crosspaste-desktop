@@ -5,6 +5,7 @@ import {
   Monitor,
   RefreshCw,
   CircleX,
+  Pause,
   Edit,
   Trash2,
   Zap,
@@ -13,7 +14,7 @@ import type { SyncInfo } from "@/shared/models/sync-info";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type { WsConnectionStatus } from "@/shared/ws/ws-types";
 
-type DeviceStatus = "synced" | "error";
+type DeviceStatus = "synced" | "error" | "paused";
 
 interface Props {
   syncInfo: SyncInfo;
@@ -69,6 +70,17 @@ function DeviceStatusBadge({
             {t("sync_status_synced")}
           </span>
         </div>
+      </div>
+    );
+  }
+
+  if (status === "paused") {
+    return (
+      <div className="flex items-center gap-1 rounded-md bg-m3-warning-container px-2 py-1 shrink-0">
+        <Pause size={10} className="text-m3-warning" />
+        <span className="text-[10px] font-medium text-m3-warning leading-none">
+          {t("sync_status_paused")}
+        </span>
       </div>
     );
   }

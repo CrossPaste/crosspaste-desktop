@@ -10,6 +10,7 @@ import type { SyncInfo } from "@/shared/models/sync-info";
 
 interface Props {
   devices: DeviceInfo[];
+  desktopConnected?: boolean;
   onConnect: (host: string, port: number) => Promise<{ success: boolean; syncInfo?: SyncInfo }>;
   onPair: (token: number) => Promise<{ success: boolean; error?: string }>;
   onRemoveDevice: (targetAppInstanceId: string) => void;
@@ -18,6 +19,7 @@ interface Props {
 
 export function DevicesView({
   devices,
+  desktopConnected,
   onConnect,
   onPair,
   onRemoveDevice,
@@ -115,6 +117,7 @@ export function DevicesView({
           {devices.length > 0 && (
             <MyDevicesSection
               devices={devices}
+              desktopConnected={desktopConnected}
               onClick={(device) => setSelectedDevice(device.targetAppInstanceId)}
               onEditNote={(device) => setEditingDevice(device)}
               onRemove={(targetAppInstanceId) => onRemoveDevice(targetAppInstanceId)}
