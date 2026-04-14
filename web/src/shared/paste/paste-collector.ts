@@ -2,6 +2,8 @@ import { PasteTypeInt } from "@/shared/models/paste-item";
 import type { PasteItem } from "@/shared/models/paste-item";
 import type { PasteCollection } from "@/shared/models/paste-data";
 import { detectPasteType, parseColor } from "./paste-type-detector";
+import type { PasteProcessPlugin, TypedItem } from "./plugin/paste-process-plugin";
+import { RemoveHtmlImagePlugin } from "./plugin/remove-html-image-plugin";
 
 /**
  * Priority map matching desktop's PasteType.kt.
@@ -43,7 +45,6 @@ interface CollectedPaste {
   fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }>;
 }
 
-type TypedItem = { pasteType: number; item: PasteItem };
 type HashFn = (s: string) => string;
 type HashBytesFn = (bytes: Uint8Array) => string;
 
@@ -191,6 +192,10 @@ function collectTextToColorItem(text: string, existing: TypedItem[], hashText: H
   };
 }
 
+const pasteProcessPlugins: PasteProcessPlugin[] = [
+  new RemoveHtmlImagePlugin(),
+];
+
 /**
  * Collect all clipboard formats into PasteItems, sort by priority,
  * and split into pasteAppearItem + pasteCollection.
@@ -223,17 +228,21 @@ export function collectPasteItems(
 
   if (items.length === 0) return null;
 
-  if (result.text) {
-    const colorItem = collectTextToColorItem(result.text, items, hashText);
-    if (colorItem) items.push(colorItem);
+  let processedItems: TypedItem[] = items;
+  for (const plugin of pasteProcessPlugins) {
+    processedItems = plugin.process(processedItems);
   }
 
-  // Sort by priority descending (matching desktop SortPlugin)
-  items.sort((a, b) => (PRIORITY[b.pasteType] ?? 0) - (PRIORITY[a.pasteType] ?? 0));
+  if (result.text) {
+    const colorItem = collectTextToColorItem(result.text, processedItems, hashText);
+    if (colorItem) processedItems.push(colorItem);
+  }
 
-  const appearItem = items[0];
-  const collectionItems = items.slice(1).map((i) => i.item);
-  const totalSize = items.reduce((sum, i) => sum + i.item.size, 0);
+  processedItems.sort((a, b) => (PRIORITY[b.pasteType] ?? 0) - (PRIORITY[a.pasteType] ?? 0));
+
+  const appearItem = processedItems[0];
+  const collectionItems = processedItems.slice(1).map((i) => i.item);
+  const totalSize = processedItems.reduce((sum, i) => sum + i.item.size, 0);
 
   return {
     pasteAppearItem: appearItem.item,
