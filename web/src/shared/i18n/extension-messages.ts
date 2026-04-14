@@ -7,6 +7,8 @@
 export const extensionMessages: Record<string, Record<string, string>> = {
   en: {
     clipboard: "Clipboard",
+    desktop_app_active: "Desktop app is running — extension paused",
+    sync_status_paused: "Paused",
     connect: "Connect",
     connect_code: "Connection Code",
     connecting: "Connecting…",
@@ -30,6 +32,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   de: {
     clipboard: "Zwischenablage",
+    desktop_app_active: "Desktop-App läuft — Erweiterung pausiert",
+    sync_status_paused: "Pausiert",
     connect: "Verbinden",
     connect_code: "Verbindungscode",
     connecting: "Verbindung wird hergestellt…",
@@ -55,6 +59,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   es: {
     clipboard: "Portapapeles",
+    desktop_app_active: "La app de escritorio está activa — extensión en pausa",
+    sync_status_paused: "Pausado",
     connect: "Conectar",
     connect_code: "Código de conexión",
     connecting: "Conectando…",
@@ -80,6 +86,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   fr: {
     clipboard: "Presse-papiers",
+    desktop_app_active: "L'application de bureau est active — extension en pause",
+    sync_status_paused: "En pause",
     connect: "Connecter",
     connect_code: "Code de connexion",
     connecting: "Connexion…",
@@ -105,6 +113,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   ja: {
     clipboard: "クリップボード",
+    desktop_app_active: "デスクトップアプリが実行中 — 拡張機能は一時停止",
+    sync_status_paused: "一時停止",
     connect: "接続",
     connect_code: "接続コード",
     connecting: "接続中…",
@@ -129,6 +139,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   ko: {
     clipboard: "클립보드",
+    desktop_app_active: "데스크톱 앱 실행 중 — 확장 프로그램 일시 중지",
+    sync_status_paused: "일시 중지",
     connect: "연결",
     connect_code: "연결 코드",
     connecting: "연결 중…",
@@ -152,6 +164,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   zh: {
     clipboard: "剪贴板",
+    desktop_app_active: "桌面应用已启动 — 扩展已暂停",
+    sync_status_paused: "已暂停",
     connect: "连接",
     connect_code: "连接码",
     connecting: "连接中…",
@@ -174,6 +188,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   zh_hant: {
     clipboard: "剪貼簿",
+    desktop_app_active: "桌面應用已啟動 — 擴充功能已暫停",
+    sync_status_paused: "已暫停",
     connect: "連線",
     connect_code: "連線碼",
     connecting: "連線中…",

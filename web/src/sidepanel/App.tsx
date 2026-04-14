@@ -1,10 +1,12 @@
 import { useState, useCallback } from "react";
+import { Monitor } from "lucide-react";
 import { Header, type Tab } from "@/components/layout/Header";
 import { DevicesView } from "@/components/devices/DevicesView";
 import { PasteGrid } from "@/components/paste-grid/PasteGrid";
 import { SettingsView } from "@/components/settings/SettingsView";
 import { useConnection } from "@/shared/hooks/use-connection";
-import { I18nProvider } from "@/shared/i18n/use-i18n";
+import { useDesktopStatus } from "@/shared/hooks/use-desktop-status";
+import { useI18n, I18nProvider } from "@/shared/i18n/use-i18n";
 import { ThemeProvider } from "@/shared/theme/use-theme";
 import { NotificationHost } from "@/components/notification/NotificationHost";
 
@@ -25,9 +27,22 @@ function usePersistedTab(): [Tab, (tab: Tab) => void] {
   return [tab, setAndPersist];
 }
 
+function DesktopActiveBanner() {
+  const t = useI18n();
+  return (
+    <div className="flex justify-center mt-2">
+      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-m3-warning-container text-m3-warning text-sm flex-wrap justify-center">
+        <Monitor size={16} className="shrink-0" />
+        <span>{t("desktop_app_active")}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { devices, connect, pair, removeDevice, updateNote } = useConnection();
   const [activeTab, setActiveTab] = usePersistedTab();
+  const desktopConnected = useDesktopStatus();
 
   return (
     <ThemeProvider>
@@ -35,10 +50,12 @@ export default function App() {
         <div className="relative flex flex-col h-screen bg-m3-surface">
           <NotificationHost />
           <Header activeTab={activeTab} onTabChange={setActiveTab} />
+          {desktopConnected && <DesktopActiveBanner />}
           <main className="flex-1 overflow-hidden">
             {activeTab === "devices" ? (
               <DevicesView
                 devices={devices}
+                desktopConnected={desktopConnected}
                 onConnect={connect}
                 onPair={pair}
                 onRemoveDevice={removeDevice}

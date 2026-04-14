@@ -21,6 +21,7 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
+import com.crosspaste.app.NativeMessagingHostService
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
@@ -158,6 +159,7 @@ class CrossPaste {
                     koin.get<PasteBonjourService>()
                     koin.get<CleanScheduler>().start()
                     koin.get<AppStartUpService>().followConfig()
+                    koin.get<NativeMessagingHostService>().register()
                     koin.get<AppUpdateService>().start()
                     koin.get<GuidePasteDataService>().initData()
 

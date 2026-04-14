@@ -3,7 +3,7 @@
   "name": "CrossPaste",
   "description": "Clipboard sync with CrossPaste desktop",
   "version": "0.1.0",
-  "permissions": ["storage", "sidePanel", "alarms", "offscreen", "clipboardRead", "clipboardWrite", "downloads"],
+  "permissions": ["storage", "sidePanel", "alarms", "offscreen", "clipboardRead", "clipboardWrite", "downloads", "nativeMessaging"],
   "host_permissions": ["http://*/*"],
   "side_panel": {
     "default_path": "src/sidepanel/index.html"
