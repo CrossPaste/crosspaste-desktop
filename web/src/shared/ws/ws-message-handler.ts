@@ -178,13 +178,18 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
       const hash = item.hash;
       if (!hash) continue;
 
+      let pulledAny = false;
+
       for (const fileName of item.relativePathList) {
         // Skip if we already have this blob
         const existing = await BlobStore.get(hash, fileName);
-        if (existing) continue;
+        if (existing) {
+          pulledAny = true;
+          continue;
+        }
 
         try {
-          const bareFileName = fileName.includes("/") ? fileName.split("/").pop()! : fileName;
+          const bareFileName = fileName.includes("/") ? fileName.split("/").pop() || fileName : fileName;
           const request = {
             id: pasteData.id,
             chunkIndex: -1,
@@ -208,6 +213,7 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
 
           if (response.payload.length > 0) {
             await BlobStore.put(hash, fileName, response.payload.slice().buffer as ArrayBuffer);
+            pulledAny = true;
             console.log(
               `[WsHandler] Pulled file ${fileName} (${response.payload.length} bytes) from ${appInstanceId}`,
             );
@@ -217,7 +223,9 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
         }
       }
 
-      deps.broadcastToSidePanel({ type: "BLOBS_READY", hash });
+      if (pulledAny) {
+        deps.broadcastToSidePanel({ type: "BLOBS_READY", hash });
+      }
     }
   }
 

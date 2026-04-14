@@ -1,10 +1,10 @@
 import type { ImagesPasteItem } from "@/shared/models/paste-item";
 import { formatSize } from "@/shared/utils/format";
-import { useImageUrl } from "@/shared/hooks/use-image-url";
+import { useImageItemUrl } from "@/shared/hooks/use-image-url";
 
 export function ImagePreview({ item }: { item: ImagesPasteItem }) {
   const fileName = item.relativePathList?.[0] ?? "image";
-  const imageUrl = useImageUrl(item.hash, item.relativePathList?.[0], item.dataUrl);
+  const imageUrl = useImageItemUrl(item);
 
   if (imageUrl) {
     return (

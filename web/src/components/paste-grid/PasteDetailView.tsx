@@ -13,7 +13,7 @@ import type {
   RtfPasteItem,
 } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
-import { useImageUrl } from "@/shared/hooks/use-image-url";
+import { useImageItemUrl } from "@/shared/hooks/use-image-url";
 import { isDarkColor } from "@/shared/utils/html-color";
 import { argbToHex, argbToComponents } from "@/shared/utils/color";
 import { formatSize } from "@/shared/utils/format";
@@ -102,7 +102,7 @@ function FileDetailContent({ item }: { item: FilesPasteItem }) {
 }
 
 function ImageDetailContent({ item }: { item: ImagesPasteItem }) {
-  const imageUrl = useImageUrl(item.hash, item.relativePathList?.[0], item.dataUrl);
+  const imageUrl = useImageItemUrl(item);
   if (imageUrl) {
     return (
       <div className="flex-1 min-h-0 rounded-[14px] bg-m3-surface-container flex items-center justify-center overflow-hidden">
