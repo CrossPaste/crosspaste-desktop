@@ -2,8 +2,9 @@ import { type WsEnvelope, WsMessageType, simpleEnvelope } from "./ws-types";
 import { parsePasteData, type PasteData } from "@/shared/models/paste-data";
 import { PasteType } from "@/shared/models/paste-item";
 import type { FilesPasteItem, ImagesPasteItem } from "@/shared/models/paste-item";
-import { PasteStore } from "@/shared/storage/paste-store";
 import { BlobStore } from "@/shared/storage/blob-store";
+import { ingestPaste } from "@/shared/paste/paste-ingestion";
+import { writeRemotePasteToClipboard } from "@/shared/clipboard/clipboard-sync-writer";
 
 /** Payload of a FILE_PULL_REQUEST message (matches Kotlin WsPullFileRequest). */
 interface WsPullFileRequest {
@@ -22,8 +23,7 @@ export interface WsMessageHandlerDeps {
   updateDeviceStatus: (targetAppInstanceId: string, status: "synced" | "error") => void;
   /** Broadcast a message to the side panel UI. */
   broadcastToSidePanel: (message: unknown) => void;
-  /** Get/set the clipboard last hash to prevent re-capture of synced content. */
-  getLastHash: () => Promise<string>;
+  /** Set the clipboard last hash after writing to clipboard, so poll skips it. */
   setLastHash: (hash: string) => Promise<void>;
   /** Handle remote removal: remove device from storage and disconnect WebSocket. */
   onRemoteRemoveDevice: (targetAppInstanceId: string) => Promise<void>;
@@ -70,7 +70,6 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
 
   async function handlePastePush(appInstanceId: string, envelope: WsEnvelope): Promise<void> {
     try {
-      // Decode payload — no encryption support yet (encrypted=false)
       const jsonString = new TextDecoder().decode(envelope.payload);
       const pasteData = parsePasteData(jsonString);
       if (!pasteData) {
@@ -78,25 +77,19 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
         return;
       }
 
-      const newId = await PasteStore.createPasteData(pasteData);
+      const newId = await ingestPaste(pasteData, deps.broadcastToSidePanel);
       if (newId !== null) {
-        const deleted = await PasteStore.markDeleteSameHash(newId, pasteData.hash);
-        for (const h of deleted) await BlobStore.deleteForPaste(h);
-        const evicted = await PasteStore.evictOverLimit();
-        for (const h of evicted) await BlobStore.deleteForPaste(h);
-
-        deps.broadcastToSidePanel({ type: "PASTE_UPDATED" });
-        // Prevent clipboard poller from re-capturing this synced content
-        await deps.setLastHash(pasteData.hash);
-
-        // Pull file content from desktop if this paste has files
         await pullFilesIfNeeded(appInstanceId, pasteData);
+
+        const written = await writeRemotePasteToClipboard(pasteData);
+        if (written) {
+          await deps.setLastHash(pasteData.hash);
+        }
       }
 
       deps.updateDeviceStatus(appInstanceId, "synced");
-      console.log(`[WsHandler] paste_push from ${appInstanceId} processed`);
     } catch (e) {
-      console.error(`[WsHandler] paste_push from ${appInstanceId} failed:`, e);
+      console.error(`[WS-PASTE-PUSH] Failed from ${appInstanceId}:`, e);
     }
   }
 

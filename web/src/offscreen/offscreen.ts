@@ -123,9 +123,45 @@ function readClipboard(): Promise<ClipboardResult> {
   });
 }
 
+async function writeClipboard(data: {
+  text?: string;
+  html?: string;
+  imageDataUrl?: string;
+}): Promise<boolean> {
+  try {
+    const blobs: Record<string, Blob> = {};
+
+    if (data.imageDataUrl) {
+      const res = await fetch(data.imageDataUrl);
+      const blob = await res.blob();
+      blobs["image/png"] = blob;
+    }
+
+    if (data.html) {
+      blobs["text/html"] = new Blob([data.html], { type: "text/html" });
+    }
+
+    if (data.text) {
+      blobs["text/plain"] = new Blob([data.text], { type: "text/plain" });
+    }
+
+    if (Object.keys(blobs).length === 0) return false;
+
+    await navigator.clipboard.write([new ClipboardItem(blobs)]);
+    return true;
+  } catch (e) {
+    console.error("[Offscreen] writeClipboard failed:", e);
+    return false;
+  }
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "READ_CLIPBOARD") {
     readClipboard().then(sendResponse);
-    return true; // async response
+    return true;
+  }
+  if (message.type === "WRITE_CLIPBOARD") {
+    writeClipboard(message.data).then(sendResponse);
+    return true;
   }
 });
