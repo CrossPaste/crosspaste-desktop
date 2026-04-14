@@ -19,6 +19,7 @@ import { relativeTime } from "@/shared/utils/date";
 import { isDarkColor } from "@/shared/utils/html-color";
 import { copyPasteData } from "@/shared/clipboard/clipboard-writer";
 import { NotificationManager } from "@/shared/notification/notification-manager";
+import { useImageUrl } from "@/shared/hooks/use-image-url";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -93,11 +94,12 @@ function UrlContent({ item }: { item: UrlPasteItem }) {
 }
 
 function ImageContent({ item }: { item: ImagesPasteItem }) {
-  if (item.dataUrl) {
+  const imageUrl = useImageUrl(item.hash, item.relativePathList?.[0], item.dataUrl);
+  if (imageUrl) {
     return (
       <div className="flex-1 overflow-hidden">
         <img
-          src={item.dataUrl}
+          src={imageUrl}
           alt=""
           className="w-full h-full object-cover"
         />

@@ -184,11 +184,12 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
         if (existing) continue;
 
         try {
+          const bareFileName = fileName.includes("/") ? fileName.split("/").pop()! : fileName;
           const request = {
             id: pasteData.id,
             chunkIndex: -1,
             hash,
-            fileName,
+            fileName: bareFileName,
           };
 
           const requestEnvelope: WsEnvelope = {
@@ -215,6 +216,8 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
           console.error(`[WsHandler] Failed to pull file ${fileName} from ${appInstanceId}:`, e);
         }
       }
+
+      deps.broadcastToSidePanel({ type: "BLOBS_READY", hash });
     }
   }
 
