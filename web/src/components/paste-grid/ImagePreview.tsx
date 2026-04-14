@@ -1,15 +1,16 @@
 import type { ImagesPasteItem } from "@/shared/models/paste-item";
 import { formatSize } from "@/shared/utils/format";
+import { useImageItemUrl } from "@/shared/hooks/use-image-url";
 
 export function ImagePreview({ item }: { item: ImagesPasteItem }) {
   const fileName = item.relativePathList?.[0] ?? "image";
+  const imageUrl = useImageItemUrl(item);
 
-  // Inline image data — show actual thumbnail
-  if (item.dataUrl) {
+  if (imageUrl) {
     return (
       <div className="flex flex-col gap-2">
         <img
-          src={item.dataUrl}
+          src={imageUrl}
           alt={fileName}
           className="w-full max-h-40 object-contain rounded-lg bg-m3-surface"
         />
@@ -20,7 +21,6 @@ export function ImagePreview({ item }: { item: ImagesPasteItem }) {
     );
   }
 
-  // File-path based image (pulled from desktop) — show metadata only
   return (
     <div className="flex items-center gap-2">
       <svg
