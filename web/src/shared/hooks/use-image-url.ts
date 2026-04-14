@@ -38,8 +38,8 @@ export function useImageUrl(
     return () => chrome.runtime.onMessage.removeListener(listener);
   }, [hash]);
 
-  const loadedHashRef = useRef<string>();
-  const objectUrlRef = useRef<string>();
+  const loadedHashRef = useRef<string | undefined>(undefined);
+  const objectUrlRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (dataUrl) {
