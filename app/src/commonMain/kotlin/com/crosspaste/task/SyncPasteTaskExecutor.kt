@@ -135,13 +135,18 @@ class SyncPasteTaskExecutor(
                 handler.getConnectHostInfo()?.let { connectHostInfo ->
                     syncManager.getSyncHandlers().filter { (key, handler) ->
                         if (key != syncExtraInfo.appInstanceId) {
-                            val address = handler.getConnectHostAddress()
-                            if (address != null && !connectHostInfo.filter(address)) {
+                            val isEligible =
                                 handler.currentSyncRuntimeInfo.allowSend &&
                                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                                     (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
-                            } else {
+                            if (!isEligible) {
                                 false
+                            } else if (handler.currentSyncRuntimeInfo.platform.isExtension()) {
+                                // Extension devices use WebSocket — no host address to filter
+                                true
+                            } else {
+                                val address = handler.getConnectHostAddress()
+                                address != null && !connectHostInfo.filter(address)
                             }
                         } else {
                             false
@@ -158,30 +163,17 @@ class SyncPasteTaskExecutor(
     ): Deferred<Pair<String, ClientApiResult>> =
         ioScope.async {
             runCatching {
-                handler.getConnectHostAddress()?.let {
-                    val result = syncPasteToTarget(handlerKey, handler, pasteData, it)
+                val result = syncPasteToTarget(handlerKey, handler, pasteData)
 
-                    if (result is SuccessResult) {
-                        appControl.completeSendOperation()
-                    }
-
-                    Pair(handlerKey, result)
-                } ?: run {
-                    createNoHostAddressResult(handlerKey)
+                if (result is SuccessResult) {
+                    appControl.completeSendOperation()
                 }
+
+                Pair(handlerKey, result)
             }.getOrElse {
                 createExceptionResult(handlerKey)
             }
         }
-
-    private fun createNoHostAddressResult(handlerKey: String): Pair<String, ClientApiResult> =
-        Pair(
-            handlerKey,
-            createFailureResult(
-                StandardErrorCode.CANT_GET_SYNC_ADDRESS,
-                "Failed to get connect host address by $handlerKey",
-            ),
-        )
 
     private fun createExceptionResult(handlerKey: String): Pair<String, ClientApiResult> =
         Pair(
@@ -204,7 +196,6 @@ class SyncPasteTaskExecutor(
         handlerKey: String,
         handler: SyncHandler,
         pasteData: PasteData,
-        hostAddress: String,
     ): ClientApiResult {
         val syncRuntimeInfo = handler.currentSyncRuntimeInfo
         val port = syncRuntimeInfo.port
@@ -229,20 +220,33 @@ class SyncPasteTaskExecutor(
             }
         }
 
-        // Prefer WebSocket if available — lower latency, no new connection
-        if (wsSessionManager.isConnected(targetAppInstanceId)) {
-            val wsSendResult = trySendViaWebSocket(targetAppInstanceId, pasteData)
-            if (wsSendResult != null) return wsSendResult
+        // 1. Extension targets always use WebSocket
+        if (syncRuntimeInfo.platform.isExtension()) {
+            return trySendViaWebSocket(targetAppInstanceId, pasteData)
+                ?: createFailureResult(
+                    StandardErrorCode.SYNC_PASTE_ERROR,
+                    "WebSocket send failed for extension $handlerKey",
+                )
         }
 
-        // Fallback to HTTP
-        val hostAndPort = HostAndPort(hostAddress, port)
-        return pasteClientApi.sendPaste(
-            pasteData,
-            targetAppInstanceId,
-        ) {
-            buildUrl(hostAndPort)
+        // 2. Regular devices prefer HTTP (supports concurrent chunk transfer for large files)
+        val hostAddress = handler.getConnectHostAddress()
+        if (hostAddress != null) {
+            val hostAndPort = HostAndPort(hostAddress, port)
+            return pasteClientApi.sendPaste(
+                pasteData,
+                targetAppInstanceId,
+            ) {
+                buildUrl(hostAndPort)
+            }
         }
+
+        // 3. No host address — fall back to WebSocket
+        return trySendViaWebSocket(targetAppInstanceId, pasteData)
+            ?: createFailureResult(
+                StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                "Failed to get connect host address by $handlerKey and WebSocket unavailable",
+            )
     }
 
     private suspend fun trySendViaWebSocket(
