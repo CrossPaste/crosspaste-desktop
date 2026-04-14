@@ -99,7 +99,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         single<DesktopPasteTagMenuService> {
             DesktopPasteTagMenuService(get(), get())
         }
-        single<FilePullService> { FilePullService(get(), get(), get(), get()) }
+        single<FilePullService> { FilePullService(get(), get(), get(), get(), get(), get()) }
         single<PastePullService> { PastePullService(get(), get(), get(), get()) }
         single<PasteReleaseService> {
             PasteReleaseService(

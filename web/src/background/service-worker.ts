@@ -6,6 +6,7 @@ import { SyncApi } from "@/shared/api/sync";
 import { PullApi } from "@/shared/api/pull";
 import { CrossPasteHash, CrossPasteJson } from "@/shared/core";
 import type { SyncInfo } from "@/shared/models/sync-info";
+import type { PasteData } from "@/shared/models/paste-data";
 import { APP_VERSION } from "@/shared/app/version.generated";
 import { collectPasteItems } from "@/shared/paste/paste-collector";
 import { WsManager } from "@/shared/ws/ws-manager";
@@ -78,28 +79,85 @@ function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+/** Store file blobs grouped by their hash. */
+async function storeFileBlobs(collected: { hash: string; fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> }): Promise<void> {
+  if (collected.fileBlobs.length === 0) return;
+  const byHash = new Map<string, Array<{ name: string; data: ArrayBuffer }>>();
+  for (const f of collected.fileBlobs) {
+    const h = f.hash ?? collected.hash;
+    let group = byHash.get(h);
+    if (!group) {
+      group = [];
+      byHash.set(h, group);
+    }
+    group.push({ name: f.name, data: dataUrlToArrayBuffer(f.dataUrl) });
+  }
+  for (const [h, files] of byHash) {
+    await BlobStore.putAll(h, files);
+  }
+}
+
+/** Persist paste data, deduplicate old entries, and evict over limit. */
+async function persistPasteData(pasteData: PasteData, hash: string): Promise<boolean> {
+  const newId = await PasteStore.createPasteData(pasteData);
+  if (newId === null) return false;
+
+  const deleted = await PasteStore.markDeleteSameHash(newId, hash);
+  for (const h of deleted) await BlobStore.deleteForPaste(h);
+  const evicted = await PasteStore.evictOverLimit();
+  for (const h of evicted) await BlobStore.deleteForPaste(h);
+
+  broadcastToSidePanel({ type: "PASTE_UPDATED" });
+  return true;
+}
+
+/** Push paste data to all trusted WebSocket-connected devices. */
+async function pushPasteToDevices(pasteData: PasteData): Promise<void> {
+  if (!wsManager) return;
+
+  let normalizedPayload: Uint8Array;
+  try {
+    const normalized = CrossPasteJson.parsePasteData(JSON.stringify(pasteData));
+    normalizedPayload = new TextEncoder().encode(normalized);
+  } catch (e) {
+    console.error("[WS] Failed to normalize pasteData for push:", e);
+    return;
+  }
+
+  const envelope: WsEnvelope = {
+    type: WsMessageType.PASTE_PUSH,
+    payload: normalizedPayload,
+    encrypted: false,
+  };
+  const devices = await DeviceStore.getAll();
+  for (const device of devices) {
+    if (!device.trusted) continue;
+    if (wsManager.isConnected(device.targetAppInstanceId)) {
+      wsManager.send(device.targetAppInstanceId, envelope).catch(() => {
+        // WS send failed, desktop will poll on its own
+      });
+    }
+  }
+}
+
 async function pollClipboard(): Promise<void> {
   try {
     await ensureOffscreen();
 
     const response = await chrome.runtime.sendMessage({ type: "READ_CLIPBOARD" });
-    const collected = collectPasteItems(response, CrossPasteHash.hashText);
+    const collected = collectPasteItems(
+      response,
+      CrossPasteHash.hashText,
+      (bytes: Uint8Array) =>
+        CrossPasteHash.hashBytes(new Int8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)),
+    );
     if (!collected) return;
 
-    // Deduplicate by appear item hash
     const lastHash = await getLastHash();
     if (collected.hash === lastHash) return;
-
     await setLastHash(collected.hash);
 
-    // Store file blobs separately
-    if (collected.fileBlobs.length > 0) {
-      const blobFiles = collected.fileBlobs.map((f) => ({
-        name: f.name,
-        data: dataUrlToArrayBuffer(f.dataUrl),
-      }));
-      await BlobStore.putAll(collected.hash, blobFiles);
-    }
+    await storeFileBlobs(collected);
 
     const appInstanceId = await getAppInstanceId();
     const pasteData = {
@@ -116,40 +174,8 @@ async function pollClipboard(): Promise<void> {
       receivedAt: Date.now(),
     };
 
-    const newId = await PasteStore.createPasteData(pasteData);
-    if (newId !== null) {
-      const deleted = await PasteStore.markDeleteSameHash(newId, collected.hash);
-      for (const h of deleted) await BlobStore.deleteForPaste(h);
-      const evicted = await PasteStore.evictOverLimit();
-      for (const h of evicted) await BlobStore.deleteForPaste(h);
-      broadcastToSidePanel({ type: "PASTE_UPDATED" });
-
-      // Push via WebSocket to all connected devices
-      if (wsManager) {
-        let normalizedPayload: Uint8Array;
-        try {
-          // Round-trip through Kotlin serializer to ensure wire format compatibility
-          const normalized = CrossPasteJson.parsePasteData(JSON.stringify(pasteData));
-          normalizedPayload = new TextEncoder().encode(normalized);
-        } catch (e) {
-          console.error("[WS] Failed to normalize pasteData for push:", e);
-          return;
-        }
-        const envelope: WsEnvelope = {
-          type: WsMessageType.PASTE_PUSH,
-          payload: normalizedPayload,
-          encrypted: false,
-        };
-        const devices = await DeviceStore.getAll();
-        for (const device of devices) {
-          if (!device.trusted) continue;
-          if (wsManager.isConnected(device.targetAppInstanceId)) {
-            wsManager.send(device.targetAppInstanceId, envelope).catch(() => {
-              // WS send failed, desktop will poll on its own
-            });
-          }
-        }
-      }
+    if (await persistPasteData(pasteData, collected.hash)) {
+      await pushPasteToDevices(pasteData);
     }
   } catch {
     offscreenReady = false;
@@ -322,6 +348,10 @@ async function initializeWebSocket(): Promise<void> {
   const wsMessageHandler = createWsMessageHandler({
     sendToDevice: async (targetId, envelope) => {
       await wsManager?.send(targetId, envelope);
+    },
+    sendRequest: async (targetId, envelope) => {
+      if (!wsManager) throw new Error("WsManager not initialized");
+      return wsManager.sendRequest(targetId, envelope);
     },
     updateDeviceStatus: (targetId, status) => {
       if (deviceStatuses.get(targetId) !== status) {

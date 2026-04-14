@@ -30,6 +30,7 @@ import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
+import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.sync.GeneralNearbyDeviceManager
 import com.crosspaste.sync.GeneralSyncManager
@@ -90,12 +91,19 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<WsSessionManager> {
             WsSessionManager()
         }
+        single<WsPendingRequests> {
+            WsPendingRequests()
+        }
         single<WsMessageHandler> {
             WsMessageHandler(
                 lazyAppControl = lazy { get() },
+                lazyCacheManager = lazy { get() },
+                lazyPasteDao = lazy { get() },
                 lazyPasteboardService = lazy { get() },
                 lazySyncRoutingApi = lazy { get() },
                 secureStore = get(),
+                userDataPathProvider = get(),
+                wsPendingRequests = get(),
                 wsSessionManager = get(),
             )
         }
