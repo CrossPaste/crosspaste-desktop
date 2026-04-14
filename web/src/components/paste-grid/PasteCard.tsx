@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Trash2, Download } from "lucide-react";
 import type { PasteData } from "@/shared/models/paste-data";
 import { PasteType, PASTE_TYPE_FROM_INT, PASTE_TYPE_I18N_KEYS } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
@@ -220,12 +220,39 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const isFileType = data.pasteType === 3; // PasteTypeInt.FILE
+
   const handleCopy = useCallback(async () => {
     try {
       await copyPasteData(data);
       NotificationManager.success("Copied");
     } catch {
       NotificationManager.error("Copy failed");
+    }
+  }, [data]);
+
+  const handleDownload = useCallback(async () => {
+    const item = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
+    if (!item || (item.type !== "files" && item.type !== "images")) return;
+    const fileItem = item as FilesPasteItem | ImagesPasteItem;
+    const hash = fileItem.hash;
+    if (!hash || !fileItem.relativePathList?.length) return;
+
+    for (const fileName of fileItem.relativePathList) {
+      try {
+        const result = await chrome.runtime.sendMessage({
+          type: "DOWNLOAD_FILE",
+          hash,
+          fileName,
+        }) as { success: boolean; error?: string };
+        if (result.success) {
+          NotificationManager.success(`Downloading ${fileName}`);
+        } else {
+          NotificationManager.error(result.error ?? "Download failed");
+        }
+      } catch {
+        NotificationManager.error("Download failed");
+      }
     }
   }, [data]);
 
@@ -283,6 +310,15 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
             <Copy size={16} className="text-m3-on-surface-variant" />
             <span>{t("copy")}</span>
           </button>
+          {isFileType && (
+            <button
+              onClick={() => { setContextMenu(null); handleDownload(); }}
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
+            >
+              <Download size={16} className="text-m3-on-surface-variant" />
+              <span>{t("download")}</span>
+            </button>
+          )}
           {onDelete && (
             <button
               onClick={() => { setContextMenu(null); onDelete(); }}

@@ -13,6 +13,7 @@ import { WsManager } from "@/shared/ws/ws-manager";
 import { createWsMessageHandler } from "@/shared/ws/ws-message-handler";
 import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
+import { ingestPaste } from "@/shared/paste/paste-ingestion";
 
 // ─── Per-device runtime status ──────────────────────────────────────────
 
@@ -97,19 +98,6 @@ async function storeFileBlobs(collected: { hash: string; fileBlobs: Array<{ name
   }
 }
 
-/** Persist paste data, deduplicate old entries, and evict over limit. */
-async function persistPasteData(pasteData: PasteData, hash: string): Promise<boolean> {
-  const newId = await PasteStore.createPasteData(pasteData);
-  if (newId === null) return false;
-
-  const deleted = await PasteStore.markDeleteSameHash(newId, hash);
-  for (const h of deleted) await BlobStore.deleteForPaste(h);
-  const evicted = await PasteStore.evictOverLimit();
-  for (const h of evicted) await BlobStore.deleteForPaste(h);
-
-  broadcastToSidePanel({ type: "PASTE_UPDATED" });
-  return true;
-}
 
 /** Push paste data to all trusted WebSocket-connected devices. */
 async function pushPasteToDevices(pasteData: PasteData): Promise<void> {
@@ -155,6 +143,7 @@ async function pollClipboard(): Promise<void> {
 
     const lastHash = await getLastHash();
     if (collected.hash === lastHash) return;
+
     await setLastHash(collected.hash);
 
     await storeFileBlobs(collected);
@@ -174,7 +163,7 @@ async function pollClipboard(): Promise<void> {
       receivedAt: Date.now(),
     };
 
-    if (await persistPasteData(pasteData, collected.hash)) {
+    if ((await ingestPaste(pasteData, broadcastToSidePanel)) !== null) {
       await pushPasteToDevices(pasteData);
     }
   } catch {
@@ -241,14 +230,7 @@ async function syncAllDevices(): Promise<void> {
         targetAppInstanceId: device.targetAppInstanceId,
       });
       if (data) {
-        const newId = await PasteStore.createPasteData(data);
-        if (newId !== null) {
-          const deleted = await PasteStore.markDeleteSameHash(newId, data.hash);
-          for (const h of deleted) await BlobStore.deleteForPaste(h);
-          const evicted = await PasteStore.evictOverLimit();
-          for (const h of evicted) await BlobStore.deleteForPaste(h);
-          broadcastToSidePanel({ type: "PASTE_UPDATED" });
-          // Update last hash so polling doesn't re-capture synced content
+        if ((await ingestPaste(data, broadcastToSidePanel)) !== null) {
           await setLastHash(data.hash);
         }
       }
@@ -360,7 +342,6 @@ async function initializeWebSocket(): Promise<void> {
       }
     },
     broadcastToSidePanel,
-    getLastHash,
     setLastHash,
     onRemoteRemoveDevice: async (targetId) => {
       wsManager?.disconnectDevice(targetId);
@@ -591,6 +572,20 @@ async function handleDeletePaste(pasteId: number): Promise<unknown> {
   return { success: hash !== null };
 }
 
+async function handleDownloadFile(hash: string, fileName: string): Promise<unknown> {
+  const data = await BlobStore.get(hash, fileName);
+  if (!data) return { success: false, error: "File not found" };
+
+  const blob = new Blob([data]);
+  const url = URL.createObjectURL(blob);
+  try {
+    await chrome.downloads.download({ url, filename: fileName, saveAs: true });
+    return { success: true };
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+}
+
 async function handleMessage(
   message: Record<string, unknown>,
 ): Promise<unknown> {
@@ -609,6 +604,7 @@ async function handleMessage(
     case "COPY_ITEM": return { success: true };
     case "LOCAL_COPY": return handleLocalCopy(message.pasteId as number);
     case "DELETE_PASTE": return handleDeletePaste(message.pasteId as number);
+    case "DOWNLOAD_FILE": return handleDownloadFile(message.hash as string, message.fileName as string);
     case "GET_WS_STATUS": return { statuses: wsManager?.getConnectionStates() ?? {} };
     default: return { error: "Unknown message type" };
   }
