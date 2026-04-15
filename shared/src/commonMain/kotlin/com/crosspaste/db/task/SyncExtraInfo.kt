@@ -9,7 +9,7 @@ class SyncExtraInfo(
     @SerialName("appInstanceId")
     val appInstanceId: String,
     @SerialName("targetAppInstanceIds")
-    val targetAppInstanceIds: Set<String> = emptySet(),
+    val targetAppInstanceIds: Set<String>? = null,
 ) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")

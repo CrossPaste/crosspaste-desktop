@@ -76,7 +76,7 @@ class DesktopTaskBuilder(
         id: Long,
         fileSize: Long,
         appInstanceId: String,
-        targetAppInstanceIds: Set<String>,
+        targetAppInstanceIds: Set<String>?,
     ): TaskBuilder {
         if (appControl.isFileSizeSyncEnabled(fileSize)) {
             taskIds.add(

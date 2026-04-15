@@ -123,10 +123,7 @@ class SyncPasteTaskExecutor(
                 handler.currentSyncRuntimeInfo.allowSend &&
                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                     (
-                        syncExtraInfo.targetAppInstanceIds.isEmpty() ||
-                            syncExtraInfo.targetAppInstanceIds.contains(
-                                key,
-                            )
+                        syncExtraInfo.targetAppInstanceIds?.contains(key) != false
                     ) &&
                     (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
             }
