@@ -317,7 +317,7 @@ class DesktopPasteMenuService(
                                     id = pasteData.id,
                                     fileSize = pasteData.size,
                                     appInstanceId = appInfo.appInstanceId,
-                                    targetAppInstanceId = syncRuntimeInfo.appInstanceId,
+                                    targetAppInstanceIds = setOf(syncRuntimeInfo.appInstanceId),
                                 )
                             }
                         }

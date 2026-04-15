@@ -65,6 +65,7 @@ class PasteReleaseService(
     suspend fun releaseLocalPasteData(
         id: Long,
         pasteItems: List<PasteItem>,
+        targetAppInstanceIds: Set<String>,
     ) = withContext(ioDispatcher) {
         pasteDao.getLoadingPasteData(id)?.let { pasteData ->
             var pasteAppearItems = pasteItems
@@ -122,7 +123,7 @@ class PasteReleaseService(
                     // These items are already from another device, so re-syncing them would cause
                     // unnecessary duplication or sync loops.
                     if (!pasteData.remote) {
-                        addSyncTask(id, maxFileSize, pasteData.appInstanceId)
+                        addSyncTask(id, maxFileSize, pasteData.appInstanceId, targetAppInstanceIds)
                     }
 
                     if (pasteType.isFile() || pasteType.isImage()) {
