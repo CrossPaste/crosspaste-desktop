@@ -1,15 +1,20 @@
 import { PasteTypeInt } from "@/shared/models/paste-item";
-import type { PasteProcessPlugin, TypedItem } from "./paste-process-plugin";
+import type { PasteProcessContext, PasteProcessPlugin, TypedItem } from "./paste-process-plugin";
 
-function isSingleImgInBody(html: string): boolean {
-  const imgCount = (html.match(/<img[\s>]/gi) || []).length;
+function stripComments(html: string): string {
+  return html.replace(/<!--[\s\S]*?-->/g, "");
+}
+
+export function isSingleImgInBody(html: string): boolean {
+  const stripped = stripComments(html);
+  const imgCount = (stripped.match(/<img[\s/>]/gi) || []).length;
   if (imgCount !== 1) return false;
-  const textContent = html.replace(/<[^>]*>/g, "").trim();
+  const textContent = stripped.replace(/<[^>]*>/g, "").trim();
   return textContent.length === 0;
 }
 
 export class RemoveHtmlImagePlugin implements PasteProcessPlugin {
-  process(items: TypedItem[]): TypedItem[] {
+  process(items: TypedItem[], _context: PasteProcessContext): TypedItem[] {
     const hasImage = items.some((i) => i.pasteType === PasteTypeInt.IMAGE);
     if (!hasImage) return items;
     const htmlItem = items.find((i) => i.pasteType === PasteTypeInt.HTML);

@@ -6,13 +6,21 @@ import { BlobStore } from "@/shared/storage/blob-store";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
 import { writeRemotePasteToClipboard } from "@/shared/clipboard/clipboard-sync-writer";
 
-/** Payload of a FILE_PULL_REQUEST message (matches Kotlin WsPullFileRequest). */
-interface WsPullFileRequest {
+/** Payload of a FILE_PULL_REQUEST message (matches Kotlin WsPullFileRequest sealed class). */
+interface WsChunkRequest {
+  mode: "chunk";
   id: number;
   chunkIndex: number;
-  hash: string;
+}
+
+interface WsWholeFileRequest {
+  mode: "whole";
+  id?: number;
+  hash?: string;
   fileName: string;
 }
+
+type WsPullFileRequest = WsChunkRequest | WsWholeFileRequest;
 
 export interface WsMessageHandlerDeps {
   /** Send an envelope back to the device that sent the message. */
@@ -112,7 +120,11 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
       const request: WsPullFileRequest = JSON.parse(new TextDecoder().decode(envelope.payload));
       console.log(`[WsHandler] FILE_PULL_REQUEST from ${appInstanceId}:`, request);
 
-      // Whole-file mode: retrieve blob by hash + fileName
+      if (request.mode !== "whole") {
+        await sendErrorResponse(appInstanceId, requestId, "Chrome extension only supports whole-file mode");
+        return;
+      }
+
       if (!request.hash || !request.fileName) {
         await sendErrorResponse(appInstanceId, requestId, "Missing hash or fileName");
         return;
@@ -183,9 +195,9 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
 
         try {
           const bareFileName = fileName.includes("/") ? fileName.split("/").pop() || fileName : fileName;
-          const request = {
+          const request: WsWholeFileRequest = {
+            mode: "whole",
             id: pasteData.id,
-            chunkIndex: -1,
             hash,
             fileName: bareFileName,
           };
@@ -217,6 +229,7 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
       }
 
       if (pulledAny) {
+        BlobStore.notifyChange(hash);
         deps.broadcastToSidePanel({ type: "BLOBS_READY", hash });
       }
     }

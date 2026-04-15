@@ -65,7 +65,7 @@ class WsPendingRequests {
         requestId: String,
         response: WsEnvelope,
     ): Boolean {
-        val deferred = pending[requestId]
+        val deferred = pending.remove(requestId)
         if (deferred != null) {
             deferred.complete(response)
             return true

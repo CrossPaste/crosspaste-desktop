@@ -1,29 +1,32 @@
 package com.crosspaste.dto.pull
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
- * WebSocket file pull request supporting two modes:
+ * WebSocket file pull request — two modes expressed as a sealed hierarchy.
  *
- * **Chunk mode** (pulling from Desktop): `id` + `chunkIndex` ≥ 0
- * Uses the same chunk system as HTTP pull — each chunk ≤ 1MB.
- *
- * **Whole-file mode** (pulling from Chrome extension): `hash` + `fileName`
- * Requests an entire file by paste hash and name. Chrome files are always ≤ 1MB.
+ * **Chunk mode** (Desktop ↔ Desktop): [ChunkRequest] with `id` + `chunkIndex`.
+ * **Whole-file mode** (Desktop ↔ Chrome extension): [WholeFileRequest] with `fileName`
+ *   plus `id` (Desktop-side lookup) or `hash` (Chrome-side lookup).
  */
 @Serializable
-data class WsPullFileRequest(
-    val id: Long = 0,
-    val chunkIndex: Int = -1,
-    val hash: String = "",
-    val fileName: String = "",
-) {
-    fun isChunkMode(): Boolean = chunkIndex >= 0
+@JsonClassDiscriminator("mode")
+sealed class WsPullFileRequest {
 
-    override fun toString(): String =
-        if (isChunkMode()) {
-            "WsPullFileRequest(chunk: id=$id, chunkIndex=$chunkIndex)"
-        } else {
-            "WsPullFileRequest(file: hash=$hash, fileName=$fileName)"
-        }
+    @Serializable
+    @SerialName("chunk")
+    data class ChunkRequest(
+        val id: Long,
+        val chunkIndex: Int,
+    ) : WsPullFileRequest()
+
+    @Serializable
+    @SerialName("whole")
+    data class WholeFileRequest(
+        val id: Long = 0,
+        val hash: String = "",
+        val fileName: String,
+    ) : WsPullFileRequest()
 }
