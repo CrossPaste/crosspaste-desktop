@@ -22,6 +22,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.HIDE_WINDOW
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
@@ -87,6 +88,8 @@ fun ShortcutKeysContentView() {
                 ShortcutKeyRow(SHOW_MAIN)
                 HorizontalDivider()
                 ShortcutKeyRow(SHOW_SEARCH)
+                HorizontalDivider()
+                ShortcutKeyRow(HIDE_WINDOW)
             }
         }
 
