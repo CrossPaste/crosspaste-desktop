@@ -126,6 +126,29 @@ class FilePullService(
         }
     }
 
+    private fun resolveLocalPaths(
+        appInstanceId: String,
+        createTime: Long,
+        pasteId: Long,
+        pasteFiles: PasteFiles,
+        filesIndexBuilder: FilesIndexBuilder?,
+        resolveConflicts: Boolean,
+    ): Map<String, String> {
+        val dateString =
+            dateUtils.getYMD(
+                dateUtils.epochMillisecondsToLocalDateTime(createTime),
+            )
+        return userDataPathProvider.resolve(
+            appInstanceId,
+            dateString,
+            pasteId,
+            pasteFiles,
+            true,
+            filesIndexBuilder,
+            resolveConflicts = resolveConflicts,
+        )
+    }
+
     /**
      * Pull files from a Chrome extension via WebSocket using whole-file mode.
      * Chrome files are always ≤ 1MB, so no chunking is needed.
@@ -137,23 +160,8 @@ class FilePullService(
         createTime: Long,
         pasteFiles: PasteFiles,
     ): FilePullResult {
-        val dateString =
-            dateUtils.getYMD(
-                dateUtils.epochMillisecondsToLocalDateTime(createTime),
-            )
-
-        // Resolve target paths and create empty placeholder files.
-        // Pass null for filesIndexBuilder — we don't need chunk indexing in whole-file mode.
         val renameMap =
-            userDataPathProvider.resolve(
-                appInstanceId,
-                dateString,
-                pasteId,
-                pasteFiles,
-                true,
-                null,
-                resolveConflicts = true,
-            )
+            resolveLocalPaths(appInstanceId, createTime, pasteId, pasteFiles, null, true)
 
         // Build a map from original file name → actual disk path (accounting for renames)
         val filePaths = pasteFiles.getFilePaths(userDataPathProvider)
@@ -200,7 +208,7 @@ class FilePullService(
 
             runCatching {
                 val request =
-                    WsPullFileRequest(
+                    WsPullFileRequest.WholeFileRequest(
                         hash = hash,
                         fileName = requestFileName,
                     )
@@ -257,22 +265,10 @@ class FilePullService(
         pullChunks: IntArray,
         syncHandler: SyncHandler,
     ): FilePullResult {
-        val dateString =
-            dateUtils.getYMD(
-                dateUtils.epochMillisecondsToLocalDateTime(createTime),
-            )
         val isRetry = pullChunks.isNotEmpty()
         val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
         val renameMap =
-            userDataPathProvider.resolve(
-                appInstanceId,
-                dateString,
-                pasteId,
-                pasteFiles,
-                true,
-                filesIndexBuilder,
-                resolveConflicts = !isRetry,
-            )
+            resolveLocalPaths(appInstanceId, createTime, pasteId, pasteFiles, filesIndexBuilder, !isRetry)
         val filesIndex = filesIndexBuilder.build()
 
         if (filesIndex.getChunkCount() == 0) {

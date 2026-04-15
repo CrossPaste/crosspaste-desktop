@@ -1,7 +1,6 @@
-// TODO: When a second consumer needs blob-change notifications (e.g. file preview, audio),
-// add an onChange(hash, callback) subscription API here so hooks subscribe directly to
-// BlobStore instead of each listening to chrome.runtime.onMessage independently.
 import { openDB, type IDBPDatabase } from "idb";
+
+const changeListeners = new Map<string, Set<() => void>>();
 
 const DB_NAME = "crosspaste-blobs";
 const STORE_NAME = "blobs";
@@ -83,5 +82,21 @@ export const BlobStore = {
   async clear(): Promise<void> {
     const db = await getDb();
     await db.clear(STORE_NAME);
+  },
+
+  subscribe(hash: string, cb: () => void): () => void {
+    if (!changeListeners.has(hash)) changeListeners.set(hash, new Set());
+    changeListeners.get(hash)!.add(cb);
+    return () => {
+      const set = changeListeners.get(hash);
+      if (set) {
+        set.delete(cb);
+        if (set.size === 0) changeListeners.delete(hash);
+      }
+    };
+  },
+
+  notifyChange(hash: string): void {
+    changeListeners.get(hash)?.forEach((cb) => cb());
   },
 };

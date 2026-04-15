@@ -5,6 +5,10 @@ export interface TypedItem {
   item: PasteItem;
 }
 
+export interface PasteProcessContext {
+  hashText: (s: string) => string;
+}
+
 export interface PasteProcessPlugin {
-  process(items: TypedItem[]): TypedItem[];
+  process(items: TypedItem[], context: PasteProcessContext): TypedItem[];
 }

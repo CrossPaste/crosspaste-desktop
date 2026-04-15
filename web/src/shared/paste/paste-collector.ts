@@ -1,23 +1,11 @@
 import { PasteTypeInt } from "@/shared/models/paste-item";
 import type { PasteItem } from "@/shared/models/paste-item";
 import type { PasteCollection } from "@/shared/models/paste-data";
-import { detectPasteType, parseColor } from "./paste-type-detector";
+import { detectPasteType } from "./paste-type-detector";
 import type { PasteProcessPlugin, TypedItem } from "./plugin/paste-process-plugin";
 import { RemoveHtmlImagePlugin } from "./plugin/remove-html-image-plugin";
-
-/**
- * Priority map matching desktop's PasteType.kt.
- * Higher value = higher priority = becomes pasteAppearItem.
- */
-const PRIORITY: Record<number, number> = {
-  [PasteTypeInt.TEXT]: 0,
-  [PasteTypeInt.URL]: 1,
-  [PasteTypeInt.IMAGE]: 2,
-  [PasteTypeInt.RTF]: 3,
-  [PasteTypeInt.HTML]: 4,
-  [PasteTypeInt.COLOR]: 5,
-  [PasteTypeInt.FILE]: 6,
-};
+import { SortPlugin } from "./plugin/sort-plugin";
+import { TextToColorPlugin } from "./plugin/text-to-color-plugin";
 
 interface ClipboardFileInfo {
   name: string;
@@ -174,26 +162,10 @@ function collectTextItem(text: string, hashText: HashFn): TypedItem {
   return { pasteType: detected.pasteType, item: detected.pasteItem };
 }
 
-function collectTextToColorItem(text: string, existing: TypedItem[], hashText: HashFn): TypedItem | null {
-  if (existing.some((i) => i.pasteType === PasteTypeInt.COLOR)) return null;
-  const trimmed = text.trim();
-  if (trimmed.includes("\n")) return null;
-  const colorValue = parseColor(trimmed);
-  if (colorValue === null) return null;
-  return {
-    pasteType: PasteTypeInt.COLOR,
-    item: {
-      type: "color",
-      identifiers: ["text/plain"],
-      hash: hashText(trimmed),
-      size: new TextEncoder().encode(trimmed).length,
-      color: colorValue,
-    },
-  };
-}
-
 const pasteProcessPlugins: PasteProcessPlugin[] = [
   new RemoveHtmlImagePlugin(),
+  new TextToColorPlugin(),
+  new SortPlugin(),
 ];
 
 /**
@@ -228,17 +200,11 @@ export function collectPasteItems(
 
   if (items.length === 0) return null;
 
+  const context = { hashText };
   let processedItems: TypedItem[] = items;
   for (const plugin of pasteProcessPlugins) {
-    processedItems = plugin.process(processedItems);
+    processedItems = plugin.process(processedItems, context);
   }
-
-  if (result.text) {
-    const colorItem = collectTextToColorItem(result.text, processedItems, hashText);
-    if (colorItem) processedItems.push(colorItem);
-  }
-
-  processedItems.sort((a, b) => (PRIORITY[b.pasteType] ?? 0) - (PRIORITY[a.pasteType] ?? 0));
 
   const appearItem = processedItems[0];
   const collectionItems = processedItems.slice(1).map((i) => i.item);

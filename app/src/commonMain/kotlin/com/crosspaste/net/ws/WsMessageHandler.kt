@@ -143,7 +143,7 @@ class WsMessageHandler(
             return
         }
 
-        runCatching {
+        withErrorResponse(appInstanceId, requestId, "FILE_PULL_REQUEST") {
             val request = json.decodeFromString<WsPullFileRequest>(envelope.payload.decodeToString())
             logger.debug { "FILE_PULL_REQUEST from $appInstanceId: $request" }
 
@@ -151,30 +151,26 @@ class WsMessageHandler(
                 syncRoutingApi.getSyncHandler(appInstanceId) ?: run {
                     logger.error { "FILE_PULL_REQUEST: no sync handler for $appInstanceId" }
                     sendErrorResponse(appInstanceId, requestId, "No sync handler")
-                    return
+                    return@withErrorResponse
                 }
 
             if (!syncHandler.currentSyncRuntimeInfo.allowSend) {
                 logger.debug { "FILE_PULL_REQUEST from $appInstanceId: not allow send" }
                 sendErrorResponse(appInstanceId, requestId, "Not allowed to send")
-                return
+                return@withErrorResponse
             }
 
-            if (request.isChunkMode()) {
-                serveFileChunk(appInstanceId, requestId, request)
-            } else {
-                serveWholeFile(appInstanceId, requestId, request)
+            when (request) {
+                is WsPullFileRequest.ChunkRequest -> serveFileChunk(appInstanceId, requestId, request)
+                is WsPullFileRequest.WholeFileRequest -> serveWholeFile(appInstanceId, requestId, request)
             }
-        }.onFailure { e ->
-            logger.error(e) { "FILE_PULL_REQUEST from $appInstanceId failed" }
-            runCatching { sendErrorResponse(appInstanceId, requestId, "Internal error: ${e.message}") }
         }
     }
 
     private suspend fun serveFileChunk(
         appInstanceId: String,
         requestId: String,
-        request: WsPullFileRequest,
+        request: WsPullFileRequest.ChunkRequest,
     ) {
         val filesIndex =
             cacheManager.getFilesIndex(request.id) ?: run {
@@ -211,13 +207,8 @@ class WsMessageHandler(
     private suspend fun serveWholeFile(
         appInstanceId: String,
         requestId: String,
-        request: WsPullFileRequest,
+        request: WsPullFileRequest.WholeFileRequest,
     ) {
-        if (request.fileName.isEmpty()) {
-            sendErrorResponse(appInstanceId, requestId, "Missing fileName in whole-file request")
-            return
-        }
-
         val pasteData =
             pasteDao.getNoDeletePasteData(request.id) ?: run {
                 logger.error { "FILE_PULL_REQUEST whole-file: paste not found for id=${request.id}" }
@@ -285,6 +276,24 @@ class WsMessageHandler(
         }
         if (!wsPendingRequests.complete(requestId, envelope)) {
             logger.warn { "FILE_PULL_RESPONSE: no pending request for requestId=$requestId" }
+        }
+    }
+
+    private suspend inline fun withErrorResponse(
+        appInstanceId: String,
+        requestId: String,
+        label: String,
+        block: () -> Unit,
+    ) {
+        try {
+            block()
+        } catch (e: Exception) {
+            logger.error(e) { "$label from $appInstanceId failed" }
+            try {
+                sendErrorResponse(appInstanceId, requestId, "Internal error: ${e.message}")
+            } catch (sendError: Exception) {
+                logger.error(sendError) { "$label: failed to send error response to $appInstanceId" }
+            }
         }
     }
 
