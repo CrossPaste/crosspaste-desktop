@@ -14,7 +14,7 @@ interface TransferableConsumer {
         source: String?,
         remote: Boolean,
         dragAndDrop: Boolean = false,
-        targetAppInstanceIds: Set<String> = emptySet(),
+        targetAppInstanceIds: Set<String>? = null,
     ): Result<Unit>
 
     fun getPlugin(identity: String): PasteTypePlugin?

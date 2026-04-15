@@ -39,7 +39,7 @@ class DesktopTransferableConsumer(
         source: String?,
         remote: Boolean,
         dragAndDrop: Boolean,
-        targetAppInstanceIds: Set<String>,
+        targetAppInstanceIds: Set<String>?,
     ): Result<Unit> {
         return runCatching {
             logSuspendExecutionTime(logger, "consume") {

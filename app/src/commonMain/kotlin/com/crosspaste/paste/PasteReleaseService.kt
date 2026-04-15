@@ -65,7 +65,7 @@ class PasteReleaseService(
     suspend fun releaseLocalPasteData(
         id: Long,
         pasteItems: List<PasteItem>,
-        targetAppInstanceIds: Set<String>,
+        targetAppInstanceIds: Set<String>?,
     ) = withContext(ioDispatcher) {
         pasteDao.getLoadingPasteData(id)?.let { pasteData ->
             var pasteAppearItems = pasteItems

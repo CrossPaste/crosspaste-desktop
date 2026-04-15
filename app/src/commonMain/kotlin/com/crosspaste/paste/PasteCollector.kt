@@ -103,7 +103,7 @@ class PasteCollector(
 
     suspend fun completeCollect(
         id: Long,
-        targetAppInstanceIds: Set<String> = emptySet(),
+        targetAppInstanceIds: Set<String>? = null,
     ) {
         logSuspendExecutionTime(logger, "completeCollect") {
             val activeIndices = preCollectors.indices.filter { preCollectors[it].isNotEmpty() }
