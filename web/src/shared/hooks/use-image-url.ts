@@ -66,6 +66,11 @@ export function useImageUrl(
 
     return () => {
       cancelled = true;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = undefined;
+        loadedHashRef.current = undefined;
+      }
     };
   }, [hash, fileName, dataUrl, blobVersion]);
 

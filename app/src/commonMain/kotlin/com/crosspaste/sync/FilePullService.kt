@@ -14,6 +14,7 @@ import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndexBuilder
@@ -24,6 +25,7 @@ import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
+import com.crosspaste.utils.noOptionParent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.URLBuilder
 import io.ktor.utils.io.ByteReadChannel
@@ -109,19 +111,19 @@ class FilePullService(
                 ?: return FilePullResult.NoSyncHandler(appInstanceId)
 
         // Extension devices (e.g. Chrome) have no HTTP server — use WebSocket whole-file pull
-        if (syncHandler.getSyncPlatform().isExtension()) {
-            return pullFilesViaWs(appInstanceId, pasteId, createTime, pasteFiles)
+        return if (syncHandler.getSyncPlatform().isExtension()) {
+            pullFilesViaWs(appInstanceId, pasteId, createTime, pasteFiles)
+        } else {
+            pullFilesViaHttp(
+                appInstanceId,
+                pasteId,
+                createTime,
+                remotePasteId,
+                pasteFiles,
+                pullChunks,
+                syncHandler,
+            )
         }
-
-        return pullFilesViaHttp(
-            appInstanceId,
-            pasteId,
-            createTime,
-            remotePasteId,
-            pasteFiles,
-            pullChunks,
-            syncHandler,
-        )
     }
 
     /**
@@ -166,13 +168,13 @@ class FilePullService(
             pasteFiles.relativePathList.zip(filePaths).map { (originalName, originalPath) ->
                 val renamedName = renameMap[originalName]
                 if (renamedName != null) {
-                    originalPath.parent!! / renamedName
+                    originalPath.noOptionParent / renamedName
                 } else {
                     originalPath
                 }
             }
 
-        val hash = (pasteFiles as? com.crosspaste.paste.item.PasteItem)?.hash ?: ""
+        val hash = (pasteFiles as? PasteItem)?.hash ?: ""
         if (hash.isEmpty()) {
             logger.error { "Cannot pull files via WS: paste hash is empty for pasteId $pasteId" }
             return FilePullResult.Failure(
@@ -181,7 +183,7 @@ class FilePullService(
                         createFailureResult(
                             StandardErrorCode.PULL_FILE_TASK_FAIL,
                             "Paste hash is empty",
-                        ) as FailureResult,
+                        ),
                 ),
                 intArrayOf(),
             )

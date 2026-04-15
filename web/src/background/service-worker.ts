@@ -167,7 +167,8 @@ async function pollClipboard(): Promise<void> {
     if ((await ingestPaste(pasteData, broadcastToSidePanel)) !== null) {
       await pushPasteToDevices(pasteData);
     }
-  } catch {
+  } catch (e) {
+    console.error("[pollClipboard] error:", e);
     offscreenReady = false;
   }
 }
@@ -206,10 +207,14 @@ function pauseForDesktop(): void {
 function resumeFromDesktop(): void {
   console.log("[NativeMessaging] Desktop app disconnected, resuming extension");
   startClipboardPolling();
-  DeviceStore.getAll().then((devices) => {
+  DeviceStore.getAll().then(async (devices) => {
     if (devices.some((d) => d.trusted)) {
       startSyncAlarms();
-      wsManager?.connectAllDevices();
+      if (!wsManager) {
+        await initializeWebSocket();
+      } else {
+        await wsManager.connectAllDevices();
+      }
     }
   });
   broadcastToSidePanel({ type: "DESKTOP_STATUS_CHANGED", connected: false });
@@ -624,10 +629,22 @@ async function handleDownloadFile(hash: string, fileName: string): Promise<unkno
   const blob = new Blob([data]);
   const url = URL.createObjectURL(blob);
   try {
-    await chrome.downloads.download({ url, filename: fileName, saveAs: true });
+    const downloadId = await chrome.downloads.download({ url, filename: fileName, saveAs: true });
+
+    const listener = (delta: chrome.downloads.DownloadDelta) => {
+      if (delta.id !== downloadId) return;
+      const state = delta.state?.current;
+      if (state === "complete" || state === "interrupted") {
+        chrome.downloads.onChanged.removeListener(listener);
+        URL.revokeObjectURL(url);
+      }
+    };
+    chrome.downloads.onChanged.addListener(listener);
+
     return { success: true };
-  } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    return { success: false, error: String(e) };
   }
 }
 

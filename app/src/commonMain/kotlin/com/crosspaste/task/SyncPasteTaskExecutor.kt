@@ -211,12 +211,16 @@ class SyncPasteTaskExecutor(
         // Extension devices have file size limits — skip file-type pastes that exceed them
         if (syncRuntimeInfo.platform.isExtension() && pasteData.isFileType()) {
             val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
-            if (pasteFiles != null && !isWithinExtensionFileLimit(pasteFiles)) {
+            if (pasteFiles == null || !isWithinExtensionFileLimit(pasteFiles)) {
                 logger.info {
                     "Skipping file-type paste sync to extension $handlerKey: " +
-                        "file size exceeds extension limit (total=${pasteFiles.size})"
+                        if (pasteFiles == null) {
+                            "unable to resolve PasteFiles for size check"
+                        } else {
+                            "file size exceeds extension limit (total=${pasteFiles.size})"
+                        }
                 }
-                return SuccessResult() // Don't retry — this is intentional
+                return SuccessResult()
             }
         }
 

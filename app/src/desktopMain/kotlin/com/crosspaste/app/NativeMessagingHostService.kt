@@ -11,6 +11,7 @@ import java.util.Properties
 
 class NativeMessagingHostService(
     private val appPathProvider: AppPathProvider,
+    private val pidFileService: DesktopPidFileService,
     private val platform: Platform,
 ) {
 
@@ -130,34 +131,39 @@ class NativeMessagingHostService(
         ).map { File(localAppData).resolve(it).toOkioPath() }
     }
 
-    private fun unixBridgeScript(): String =
-        """
-        #!/bin/bash
-        cat > /dev/null &
-        send_message() {
-            local msg="${'$'}1"
-            local len=${'$'}{#msg}
-            printf "\\x$(printf '%02x' ${'$'}((len & 0xFF)))\\x$(printf '%02x' ${'$'}(((len >> 8) & 0xFF)))\\x$(printf '%02x' ${'$'}(((len >> 16) & 0xFF)))\\x$(printf '%02x' ${'$'}(((len >> 24) & 0xFF)))"
-            printf '%s' "${'$'}msg"
-        }
-        is_running() {
-            pgrep -x "CrossPaste" > /dev/null 2>&1 && return 0
-            pgrep -x "crosspaste" > /dev/null 2>&1 && return 0
-            pgrep -f "com.crosspaste" | grep -v ${'$'}${'$'} > /dev/null 2>&1 && return 0
-            return 1
-        }
-        while true; do
-            if ! is_running; then
-                exit 0
-            fi
-            send_message '{"status":"running"}'
-            sleep 5
-        done
-        """.trimIndent()
+    private fun unixBridgeScript(): String {
+        val pidFilePath = pidFileService.pidFilePath.toString()
+        return """
+            #!/bin/bash
+            cat > /dev/null &
+            PID_FILE="$pidFilePath"
+            send_message() {
+                local msg="${'$'}1"
+                local len=${'$'}{#msg}
+                printf "\\x$(printf '%02x' ${'$'}((len & 0xFF)))\\x$(printf '%02x' ${'$'}(((len >> 8) & 0xFF)))\\x$(printf '%02x' ${'$'}(((len >> 16) & 0xFF)))\\x$(printf '%02x' ${'$'}(((len >> 24) & 0xFF)))"
+                printf '%s' "${'$'}msg"
+            }
+            is_running() {
+                [ -f "${'$'}PID_FILE" ] || return 1
+                local pid
+                pid=${'$'}(cat "${'$'}PID_FILE" 2>/dev/null) || return 1
+                kill -0 "${'$'}pid" 2>/dev/null
+            }
+            while true; do
+                if ! is_running; then
+                    exit 0
+                fi
+                send_message '{"status":"running"}'
+                sleep 5
+            done
+            """.trimIndent()
+    }
 
-    private fun windowsBridgeScript(): String =
-        """
-        @echo off
-        powershell -NoProfile -Command "${'$'}stdin=[Console]::OpenStandardInput(); ${'$'}null=[System.Threading.Tasks.Task]::Run({${'$'}buf=New-Object byte[] 4096; while(${'$'}stdin.Read(${'$'}buf,0,4096) -gt 0){}}); ${'$'}stdout=[Console]::OpenStandardOutput(); ${'$'}msg=[System.Text.Encoding]::UTF8.GetBytes('{\"status\":\"running\"}'); ${'$'}lenBytes=[System.BitConverter]::GetBytes(${'$'}msg.Length); while(${'$'}true){ if(-not(Get-Process -Name CrossPaste -ErrorAction SilentlyContinue)){exit}; ${'$'}stdout.Write(${'$'}lenBytes,0,4); ${'$'}stdout.Write(${'$'}msg,0,${'$'}msg.Length); ${'$'}stdout.Flush(); Start-Sleep -Seconds 5 }"
-        """.trimIndent()
+    private fun windowsBridgeScript(): String {
+        val pidFilePath = pidFileService.pidFilePath.toString().replace("/", "\\")
+        return """
+            @echo off
+            powershell -NoProfile -Command "${'$'}stdin=[Console]::OpenStandardInput(); ${'$'}null=[System.Threading.Tasks.Task]::Run({${'$'}buf=New-Object byte[] 4096; while(${'$'}stdin.Read(${'$'}buf,0,4096) -gt 0){}}); ${'$'}stdout=[Console]::OpenStandardOutput(); ${'$'}msg=[System.Text.Encoding]::UTF8.GetBytes('{\"status\":\"running\"}'); ${'$'}lenBytes=[System.BitConverter]::GetBytes(${'$'}msg.Length); ${'$'}pidFile='$pidFilePath'; while(${'$'}true){ if(-not(Test-Path ${'$'}pidFile)){exit}; ${'$'}pid=[int](Get-Content ${'$'}pidFile -ErrorAction SilentlyContinue); if(-not(Get-Process -Id ${'$'}pid -ErrorAction SilentlyContinue)){exit}; ${'$'}stdout.Write(${'$'}lenBytes,0,4); ${'$'}stdout.Write(${'$'}msg,0,${'$'}msg.Length); ${'$'}stdout.Flush(); Start-Sleep -Seconds 5 }"
+            """.trimIndent()
+    }
 }

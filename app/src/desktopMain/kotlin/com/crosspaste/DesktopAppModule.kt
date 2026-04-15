@@ -24,6 +24,7 @@ import com.crosspaste.app.DesktopAppRestartService
 import com.crosspaste.app.DesktopAppStartUpService
 import com.crosspaste.app.DesktopAppUpdateService
 import com.crosspaste.app.DesktopAppUrls
+import com.crosspaste.app.DesktopPidFileService
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.NativeMessagingHostService
 import com.crosspaste.config.CommonConfigManager
@@ -97,7 +98,8 @@ fun desktopAppModule(
         single<AppPathProvider> { appPathProvider }
         single<AppRestartService> { DesktopAppRestartService(get(), get()) }
         single<AppStartUpService> { DesktopAppStartUpService(get(), get(), get(), get()) }
-        single<NativeMessagingHostService> { NativeMessagingHostService(get(), get()) }
+        single<DesktopPidFileService> { DesktopPidFileService(get(), get()) }
+        single<NativeMessagingHostService> { NativeMessagingHostService(get(), get(), get()) }
         single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
         single<AppUrls> { DesktopAppUrls }
         single<CrossPasteWebService> { CrossPasteWebService(get(), get()) }
