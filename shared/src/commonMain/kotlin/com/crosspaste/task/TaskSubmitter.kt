@@ -25,7 +25,7 @@ interface TaskBuilder {
         id: Long,
         fileSize: Long,
         appInstanceId: String,
-        targetAppInstanceId: String? = null,
+        targetAppInstanceIds: Set<String> = emptySet(),
     ): TaskBuilder
 
     fun addRelaySyncTask(

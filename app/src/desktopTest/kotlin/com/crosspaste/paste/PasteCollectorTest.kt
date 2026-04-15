@@ -157,7 +157,7 @@ class PasteCollectorTest {
 
             collector.completeCollect(1L)
 
-            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any()) }
+            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any(), any()) }
         }
 
     @Test
@@ -188,7 +188,7 @@ class PasteCollectorTest {
             collector.completeCollect(1L)
 
             // Should still release since not all active indices errored
-            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any()) }
+            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any(), any()) }
         }
 
     @Test
@@ -198,7 +198,8 @@ class PasteCollectorTest {
             val item = createTextPasteItem(text = "test")
             collector.preCollectItem(0, TestPasteTypePlugin::class, item)
 
-            coEvery { pasteReleaseService.releaseLocalPasteData(any(), any()) } throws RuntimeException("release error")
+            coEvery { pasteReleaseService.releaseLocalPasteData(any(), any(), any()) } throws
+                RuntimeException("release error")
 
             collector.completeCollect(1L)
 

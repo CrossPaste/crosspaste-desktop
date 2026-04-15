@@ -101,7 +101,10 @@ class PasteCollector(
             }
         }
 
-    suspend fun completeCollect(id: Long) {
+    suspend fun completeCollect(
+        id: Long,
+        targetAppInstanceIds: Set<String> = emptySet(),
+    ) {
         logSuspendExecutionTime(logger, "completeCollect") {
             val activeIndices = preCollectors.indices.filter { preCollectors[it].isNotEmpty() }
             if (activeIndices.isEmpty() || (existError && activeIndices.all { updateErrors[it] != null })) {
@@ -121,7 +124,7 @@ class PasteCollector(
                                 }
                             }
                     }
-                    pasteReleaseService.releaseLocalPasteData(id, pasteItems)
+                    pasteReleaseService.releaseLocalPasteData(id, pasteItems, targetAppInstanceIds)
                 }.onFailure { e ->
                     logger.error(e) { "Failed to complete paste $id" }
                     markDeletePasteData(id)

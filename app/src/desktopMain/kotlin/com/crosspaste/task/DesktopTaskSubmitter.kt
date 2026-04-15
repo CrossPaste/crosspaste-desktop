@@ -76,15 +76,14 @@ class DesktopTaskBuilder(
         id: Long,
         fileSize: Long,
         appInstanceId: String,
-        targetAppInstanceId: String?,
+        targetAppInstanceIds: Set<String>,
     ): TaskBuilder {
         if (appControl.isFileSizeSyncEnabled(fileSize)) {
-            val targetIds = targetAppInstanceId?.let { setOf(it) } ?: setOf()
             taskIds.add(
                 taskDao.createTaskBlock(
                     id,
                     TaskType.SYNC_PASTE_TASK,
-                    SyncExtraInfo(appInstanceId, targetIds),
+                    SyncExtraInfo(appInstanceId, targetAppInstanceIds),
                 ),
             )
         }
