@@ -9,7 +9,7 @@ object MacKeyboardKeys : KeyboardKeys {
         KeyboardKeyDefine("⏎", NativeKeyEvent.VC_ENTER, 0x34) { it.keyCode == NativeKeyEvent.VC_ENTER }
 
     override val ESC: KeyboardKeyDefine =
-        KeyboardKeyDefine("⎋", NativeKeyEvent.VC_ESCAPE, 0x35) { it.keyCode == NativeKeyEvent.VC_ESCAPE }
+        KeyboardKeyDefine("Esc", NativeKeyEvent.VC_ESCAPE, 0x35) { it.keyCode == NativeKeyEvent.VC_ESCAPE }
 
     override val DELETE: KeyboardKeyDefine =
         KeyboardKeyDefine("Delete", NativeKeyEvent.VC_DELETE, 0x75) { it.keyCode == NativeKeyEvent.VC_DELETE }
