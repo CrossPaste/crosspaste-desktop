@@ -57,6 +57,7 @@ class DesktopRtfTypePlugin : RtfTypePlugin {
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
+        identity: String,
         dataFlavor: PasteDataFlavor,
         dataFlavorMap: Map<String, List<PasteDataFlavor>>,
         pasteTransferable: PasteTransferable,

@@ -20,9 +20,11 @@ interface PasteTypePlugin {
         pasteCollector: PasteCollector,
     )
 
+    // identity: unused on Desktop, required by Android/iOS to resolve platform-specific representations
     fun loadRepresentation(
         pasteId: Long,
         itemIndex: Int,
+        identity: String,
         dataFlavor: PasteDataFlavor,
         dataFlavorMap: Map<String, List<PasteDataFlavor>>,
         pasteTransferable: PasteTransferable,
@@ -35,6 +37,7 @@ interface PasteTypePlugin {
                     transferData,
                     pasteId,
                     itemIndex,
+                    identity,
                     dataFlavor,
                     dataFlavorMap,
                     pasteTransferable,
@@ -50,6 +53,7 @@ interface PasteTypePlugin {
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
+        identity: String,
         dataFlavor: PasteDataFlavor,
         dataFlavorMap: Map<String, List<PasteDataFlavor>>,
         pasteTransferable: PasteTransferable,

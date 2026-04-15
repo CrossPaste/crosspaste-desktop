@@ -56,6 +56,7 @@ interface TransferableConsumer {
                         plugin.loadRepresentation(
                             pasteId,
                             itemIndex,
+                            identity,
                             flavor,
                             dataFlavorMap,
                             pasteTransferable,
