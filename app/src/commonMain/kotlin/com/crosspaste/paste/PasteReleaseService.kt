@@ -1,7 +1,6 @@
 package com.crosspaste.paste
 
 import com.crosspaste.Database
-import com.crosspaste.app.AppFileType
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.item.PasteFiles
@@ -147,7 +146,7 @@ class PasteReleaseService(
             val isFileType = pasteData.isFileType()
             val existIconFile: Boolean? =
                 pasteData.source?.let {
-                    fileUtils.existFile(userDataPathProvider.resolve("$it.png", AppFileType.ICON))
+                    fileUtils.existFile(userDataPathProvider.resolveIconPath(pasteData.appInstanceId, it))
                 }
 
             val pasteState =

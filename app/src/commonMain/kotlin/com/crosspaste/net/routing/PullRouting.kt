@@ -93,11 +93,13 @@ fun Routing.pullRouting(
         }
 
         val iconPath =
-            userDataPathProvider.findIconPath(appInfo.appInstanceId, source) ?: run {
-                logger.error { "icon not found: $source" }
-                failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
-                return@get
-            }
+            userDataPathProvider.resolveIconPath(appInfo.appInstanceId, source)
+
+        if (!fileUtils.existFile(iconPath)) {
+            logger.error { "icon not found: $source" }
+            failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
+            return@get
+        }
 
         val producer: suspend ByteWriteChannel.() -> Unit = {
             fileUtils.readFile(iconPath, this)

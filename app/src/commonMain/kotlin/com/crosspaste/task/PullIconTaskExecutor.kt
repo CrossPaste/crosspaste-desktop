@@ -55,10 +55,6 @@ class PullIconTaskExecutor(
                     runCatching {
                         val appInstanceId = pasteData.appInstanceId
 
-                        if (userDataPathProvider.findIconPath(appInstanceId, source) != null) {
-                            return@withLock SuccessPasteTaskResult()
-                        }
-
                         syncManager.getSyncHandlers()[appInstanceId]?.let { handler ->
                             val iconPath = userDataPathProvider.resolveIconPath(appInstanceId, source)
                             val port = handler.currentSyncRuntimeInfo.port
