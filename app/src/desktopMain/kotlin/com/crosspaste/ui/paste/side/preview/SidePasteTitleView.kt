@@ -117,7 +117,9 @@ fun PasteDataScope.SidePasteTitleView() {
 
     LaunchedEffect(isCurrentThemeDark, pasteData.source) {
         pasteData.source?.let {
-            desktopIconColorExtractor.getBackgroundColor(it)?.let { color -> background = color }
+            desktopIconColorExtractor.getBackgroundColor(it, pasteData.appInstanceId)?.let { color ->
+                background = color
+            }
         }
     }
 

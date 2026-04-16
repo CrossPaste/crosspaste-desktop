@@ -3,41 +3,46 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
-import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getCoilUtils
-import com.crosspaste.utils.getFileUtils
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
 
 class DesktopIconStyle(
-    userDataPathProvider: UserDataPathProvider,
+    private val userDataPathProvider: UserDataPathProvider,
 ) : IconStyle {
 
     private val coilUtils = getCoilUtils()
-    private val fileUtils = getFileUtils()
 
-    private val iconStyleCache: LoadingCache<String, Boolean> =
+    private data class IconKey(
+        val source: String,
+        val appInstanceId: String?,
+    )
+
+    private val iconStyleCache: LoadingCache<IconKey, Boolean> =
         Caffeine
             .newBuilder()
             .maximumSize(1000)
             .build { key ->
-                val iconPath = userDataPathProvider.resolve("$key.png", AppFileType.ICON)
-                if (fileUtils.existFile(iconPath)) {
+                userDataPathProvider.findIconPath(key.appInstanceId, key.source)?.let { iconPath ->
                     val imageBitmap =
                         coilUtils
                             .createBitmap(iconPath)
                             .asComposeImageBitmap()
                     checkMacStyleIcon(imageBitmap)
-                } else {
-                    false
-                }
+                } ?: false
             }
 
-    override fun isMacStyleIcon(source: String): Boolean = iconStyleCache.get(source)
+    override fun isMacStyleIcon(
+        source: String,
+        appInstanceId: String?,
+    ): Boolean = iconStyleCache.get(IconKey(source, appInstanceId))
 
-    override fun refreshStyle(source: String) {
-        iconStyleCache.refresh(source)
+    override fun refreshStyle(
+        source: String,
+        appInstanceId: String?,
+    ) {
+        iconStyleCache.refresh(IconKey(source, appInstanceId))
     }
 
     private fun checkMacStyleIcon(imageBitmap: ImageBitmap): Boolean {

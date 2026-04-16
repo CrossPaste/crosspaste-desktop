@@ -35,6 +35,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import coil3.size.Scale
+import com.crosspaste.app.AppInfo
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
@@ -171,17 +172,20 @@ private fun SourceAppIcon(
     source: String,
     size: Dp = large2X,
 ) {
+    val appInfo = koinInject<AppInfo>()
     val iconStyle = koinInject<IconStyle>()
     val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
     val platformContext = koinInject<PlatformContext>()
     val density = LocalDensity.current
+
+    val appInstanceId = appInfo.appInstanceId
 
     var visualScale by remember(source) { mutableStateOf(1f) }
 
     LaunchedEffect(source) {
         visualScale =
             withContext(ioDispatcher) {
-                if (iconStyle.isMacStyleIcon(source)) {
+                if (iconStyle.isMacStyleIcon(source, appInstanceId)) {
                     val paddingRatio = 0.075f
                     val contentRatio = 1f - (paddingRatio * 2)
                     1f / contentRatio
@@ -194,10 +198,10 @@ private fun SourceAppIcon(
     val sizePx = with(density) { size.roundToPx() }
 
     val model =
-        remember(source, platformContext, sizePx) {
+        remember(source, appInstanceId, platformContext, sizePx) {
             ImageRequest
                 .Builder(platformContext)
-                .data(AppSourceItem(source))
+                .data(AppSourceItem(source, appInstanceId))
                 .size(sizePx)
                 .precision(Precision.INEXACT)
                 .scale(Scale.FILL)

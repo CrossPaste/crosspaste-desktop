@@ -1,6 +1,6 @@
 package com.crosspaste.platform.windows
 
-import com.crosspaste.app.AppFileType
+import com.crosspaste.app.AppInfo
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -26,6 +26,7 @@ class WinAppInfo(
 }
 
 class WinAppInfoCaches(
+    private val appInfo: AppInfo,
     private val userDataPathProvider: UserDataPathProvider,
     private val scope: CoroutineScope,
 ) {
@@ -74,9 +75,11 @@ class WinAppInfoCaches(
         exeFilePath: Path,
         appName: String,
     ) {
-        val iconPath = userDataPathProvider.resolve("$appName.png", AppFileType.ICON)
-        if (!fileUtils.existFile(iconPath)) {
-            WindowsIconUtils.extractAndSaveIcon(exeFilePath, iconPath)
+        runCatching {
+            val iconPath = userDataPathProvider.resolveIconPath(appInfo.appInstanceId, appName)
+            if (!fileUtils.existFile(iconPath)) {
+                WindowsIconUtils.extractAndSaveIcon(exeFilePath, iconPath)
+            }
         }
     }
 

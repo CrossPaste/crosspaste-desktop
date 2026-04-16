@@ -19,6 +19,7 @@ class GenerateImageKeyer : Keyer<GenerateImageItem> {
 
 data class AppSourceItem(
     val source: String?,
+    val appInstanceId: String? = null,
 )
 
 data class UrlItem(
@@ -30,7 +31,7 @@ class AppSourceKeyer : Keyer<AppSourceItem> {
     override fun key(
         data: AppSourceItem,
         options: Options,
-    ): String = data.source ?: ""
+    ): String = "${data.appInstanceId ?: ""}/${data.source ?: ""}"
 }
 
 class UrlKeyer : Keyer<UrlItem> {

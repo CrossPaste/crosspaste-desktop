@@ -1,6 +1,5 @@
 package com.crosspaste.task
 
-import com.crosspaste.app.AppFileType
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.task.BaseExtraInfo
 import com.crosspaste.db.task.PasteTask
@@ -56,28 +55,28 @@ class PullIconTaskExecutor(
                     runCatching {
                         val appInstanceId = pasteData.appInstanceId
 
-                        val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
-                        if (!fileUtils.existFile(iconPath)) {
-                            syncManager.getSyncHandlers()[appInstanceId]?.let {
-                                val port = it.currentSyncRuntimeInfo.port
-                                it.getConnectHostAddress()?.let { host ->
-                                    pullIcon(source, iconPath, host, port, baseExtraInfo)
-                                } ?: run {
-                                    createFailurePasteTaskResult(
-                                        baseExtraInfo = baseExtraInfo,
-                                        errorCodeSupplier = StandardErrorCode.CANT_GET_SYNC_ADDRESS,
-                                        errorMessage = "Failed to get connect host address by $appInstanceId",
-                                    )
-                                }
+                        if (userDataPathProvider.findIconPath(appInstanceId, source) != null) {
+                            return@withLock SuccessPasteTaskResult()
+                        }
+
+                        syncManager.getSyncHandlers()[appInstanceId]?.let { handler ->
+                            val iconPath = userDataPathProvider.resolveIconPath(appInstanceId, source)
+                            val port = handler.currentSyncRuntimeInfo.port
+                            handler.getConnectHostAddress()?.let { host ->
+                                pullIcon(source, iconPath, host, port, baseExtraInfo)
                             } ?: run {
                                 createFailurePasteTaskResult(
                                     baseExtraInfo = baseExtraInfo,
-                                    errorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
-                                    errorMessage = "Failed to sync paste to $appInstanceId",
+                                    errorCodeSupplier = StandardErrorCode.CANT_GET_SYNC_ADDRESS,
+                                    errorMessage = "Failed to get connect host address by $appInstanceId",
                                 )
                             }
-                        } else {
-                            SuccessPasteTaskResult()
+                        } ?: run {
+                            createFailurePasteTaskResult(
+                                baseExtraInfo = baseExtraInfo,
+                                errorCodeSupplier = StandardErrorCode.PULL_ICON_TASK_FAIL,
+                                errorMessage = "Failed to sync paste to $appInstanceId",
+                            )
                         }
                     }.getOrElse {
                         createFailurePasteTaskResult(

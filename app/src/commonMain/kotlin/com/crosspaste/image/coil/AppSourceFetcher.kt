@@ -7,7 +7,6 @@ import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
-import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
@@ -25,10 +24,9 @@ class AppSourceFetcher(
 
     override suspend fun fetch(): FetchResult? =
         withContext(ioDispatcher) {
-            data.source?.let {
+            data.source?.let { source ->
                 runCatching {
-                    val path = userDataPathProvider.resolve("$it.png", AppFileType.ICON)
-                    if (fileUtils.existFile(path)) {
+                    userDataPathProvider.findIconPath(data.appInstanceId, source)?.let { path ->
                         SourceFetchResult(
                             source =
                                 ImageSource(
@@ -38,8 +36,6 @@ class AppSourceFetcher(
                             mimeType = "image/png",
                             dataSource = DataSource.MEMORY_CACHE,
                         )
-                    } else {
-                        null
                     }
                 }.onFailure { e ->
                     logger.error(e) { "Error while fetching app source" }

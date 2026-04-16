@@ -20,13 +20,14 @@ class ImageItemsTest {
     @Test
     fun `AppSourceKeyer uses source as key`() {
         val keyer = AppSourceKeyer()
-        assertEquals("com.example.app", keyer.key(AppSourceItem("com.example.app"), io.mockk.mockk()))
+        assertEquals("/com.example.app", keyer.key(AppSourceItem("com.example.app"), io.mockk.mockk()))
+        assertEquals("inst-1/com.example.app", keyer.key(AppSourceItem("com.example.app", "inst-1"), io.mockk.mockk()))
     }
 
     @Test
     fun `AppSourceKeyer returns empty string for null source`() {
         val keyer = AppSourceKeyer()
-        assertEquals("", keyer.key(AppSourceItem(null), io.mockk.mockk()))
+        assertEquals("/", keyer.key(AppSourceItem(null), io.mockk.mockk()))
     }
 
     @Test

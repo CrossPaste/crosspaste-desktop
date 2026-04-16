@@ -1,6 +1,5 @@
 package com.crosspaste.net.routing
 
-import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.dto.pull.PullFileRequest
@@ -93,12 +92,12 @@ fun Routing.pullRouting(
             return@get
         }
 
-        val iconPath = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
-        if (!fileUtils.existFile(iconPath)) {
-            logger.error { "icon not found: $source" }
-            failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
-            return@get
-        }
+        val iconPath =
+            userDataPathProvider.findIconPath(appInfo.appInstanceId, source) ?: run {
+                logger.error { "icon not found: $source" }
+                failResponse(call, StandardErrorCode.NOT_FOUND_ICON.toErrorCode())
+                return@get
+            }
 
         val producer: suspend ByteWriteChannel.() -> Unit = {
             fileUtils.readFile(iconPath, this)

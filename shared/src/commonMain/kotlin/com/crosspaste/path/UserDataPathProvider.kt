@@ -147,6 +147,38 @@ class UserDataPathProvider(
         }
     }
 
+    fun resolveIconPath(
+        appInstanceId: String,
+        source: String,
+    ): Path {
+        require(isSafeIconComponent(appInstanceId)) { "Invalid appInstanceId: $appInstanceId" }
+        require(isSafeIconComponent(source)) { "Invalid source: $source" }
+        val iconDir = resolve(appFileType = AppFileType.ICON)
+        val instanceDir = iconDir.resolve(appInstanceId)
+        autoCreateDir(instanceDir)
+        return instanceDir.resolve("$source.png")
+    }
+
+    fun findIconPath(
+        appInstanceId: String?,
+        source: String,
+    ): Path? {
+        if (!isSafeIconComponent(source)) return null
+        val iconDir = resolve(appFileType = AppFileType.ICON)
+        if (appInstanceId != null && isSafeIconComponent(appInstanceId)) {
+            val instancePath = iconDir.resolve(appInstanceId).resolve("$source.png")
+            if (fileUtils.existFile(instancePath)) return instancePath
+        }
+        val fallbackPath = iconDir.resolve("$source.png")
+        return if (fileUtils.existFile(fallbackPath)) fallbackPath else null
+    }
+
+    private fun isSafeIconComponent(value: String): Boolean =
+        value.isNotEmpty() &&
+            !value.contains('/') &&
+            !value.contains('\\') &&
+            !value.contains("..")
+
     fun getUserDataPath(): Path =
         if (configManager.getCurrentConfig().useDefaultStoragePath) {
             platformUserDataPathProvider.getUserDefaultStoragePath()
