@@ -3,6 +3,7 @@ package com.crosspaste.ui.base
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
+import com.crosspaste.image.IconKey
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getCoilUtils
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -13,11 +14,6 @@ class DesktopIconStyle(
 ) : IconStyle {
 
     private val coilUtils = getCoilUtils()
-
-    private data class IconKey(
-        val source: String,
-        val appInstanceId: String?,
-    )
 
     private val iconStyleCache: LoadingCache<IconKey, Boolean> =
         Caffeine

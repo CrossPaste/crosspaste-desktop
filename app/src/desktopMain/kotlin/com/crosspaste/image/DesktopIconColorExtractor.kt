@@ -24,11 +24,6 @@ class DesktopIconColorExtractor(
 
     private val logger = KotlinLogging.logger {}
 
-    private data class IconKey(
-        val source: String,
-        val appInstanceId: String?,
-    )
-
     private val colorCache: MutableMap<IconKey, Box<Color>> = ConcurrentMap()
 
     private val mutex = StripedMutex()
