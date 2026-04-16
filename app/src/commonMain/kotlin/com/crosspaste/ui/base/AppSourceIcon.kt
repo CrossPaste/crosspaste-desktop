@@ -50,9 +50,11 @@ fun PasteDataScope.AppSourceIcon(
         val platformContext = koinInject<PlatformContext>()
         val density = LocalDensity.current
 
+        val appInstanceId = pasteData.appInstanceId
+
         val visualScale =
-            remember(source) {
-                if (iconStyle.isMacStyleIcon(source)) {
+            remember(source, appInstanceId) {
+                if (iconStyle.isMacStyleIcon(source, appInstanceId)) {
                     val paddingRatio = 0.075f
                     val contentRatio = 1f - (paddingRatio * 2)
                     1f / contentRatio
@@ -64,10 +66,10 @@ fun PasteDataScope.AppSourceIcon(
         val sizePx = with(density) { size.roundToPx() }
 
         val model =
-            remember(source, platformContext, sizePx) {
+            remember(source, appInstanceId, platformContext, sizePx) {
                 ImageRequest
                     .Builder(platformContext)
-                    .data(AppSourceItem(source))
+                    .data(AppSourceItem(source, appInstanceId))
                     .size(sizePx)
                     .precision(Precision.INEXACT)
                     .scale(Scale.FILL)

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 fun getDesktopAppWindowManager(
+    appInfo: AppInfo,
     appSize: DesktopAppSize,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
@@ -28,18 +29,21 @@ fun getDesktopAppWindowManager(
 ): DesktopAppWindowManager =
     if (platform.isMacos()) {
         MacAppWindowManager(
+            appInfo,
             appSize,
             lazyShortcutKeys,
             userDataPathProvider,
         )
     } else if (platform.isWindows()) {
         WinAppWindowManager(
+            appInfo,
             appSize,
             lazyShortcutKeys,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {
         LinuxAppWindowManager(
+            appInfo,
             appSize,
             lazyShortcutKeys,
             lazyShortcutKeysAction,

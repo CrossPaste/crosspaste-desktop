@@ -46,7 +46,7 @@ fun PasteDataScope.SideAppSourceIcon(
     val sizePx = with(density) { appSizeValue.sideTitleHeight.roundToPx() }
 
     val model =
-        remember(pasteData.source, sizePx, platform, syncPlatform) {
+        remember(pasteData.source, pasteData.appInstanceId, sizePx, platform, syncPlatform) {
             val transformation = create(platform, syncPlatform)
 
             val requestSizePx = transformation?.requestSize(sizePx) ?: sizePx
@@ -55,7 +55,7 @@ fun PasteDataScope.SideAppSourceIcon(
 
             ImageRequest
                 .Builder(platformContext)
-                .data(AppSourceItem(pasteData.source))
+                .data(AppSourceItem(pasteData.source, pasteData.appInstanceId))
                 .transformations(transformations)
                 .size(requestSizePx)
                 .precision(Precision.INEXACT)

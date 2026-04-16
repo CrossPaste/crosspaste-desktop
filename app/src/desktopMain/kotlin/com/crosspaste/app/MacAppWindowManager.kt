@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MacAppWindowManager(
+    private val appInfo: AppInfo,
     appSize: DesktopAppSize,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val userDataPathProvider: UserDataPathProvider,
@@ -72,9 +73,11 @@ class MacAppWindowManager(
         bundleIdentifier: String,
         localizedName: String,
     ) {
-        val appImagePath = userDataPathProvider.resolve("$localizedName.png", AppFileType.ICON)
-        if (!appImagePath.toFile().exists()) {
-            MacAppUtils.saveAppIcon(bundleIdentifier, appImagePath.toString())
+        runCatching {
+            val appImagePath = userDataPathProvider.resolveIconPath(appInfo.appInstanceId, localizedName)
+            if (!appImagePath.toFile().exists()) {
+                MacAppUtils.saveAppIcon(bundleIdentifier, appImagePath.toString())
+            }
         }
     }
 

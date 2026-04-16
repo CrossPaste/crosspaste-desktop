@@ -63,7 +63,7 @@ fun desktopUiModule(): Module =
         single<AppWindowManager> { get<DesktopAppWindowManager>() }
         single<DesktopAppSize> { DesktopAppSize(get()) }
         single<DesktopAppWindowManager> {
-            getDesktopAppWindowManager(get(), lazy { get() }, lazy { get() }, get(), get())
+            getDesktopAppWindowManager(get(), get(), lazy { get() }, lazy { get() }, get(), get())
         }
         single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
         single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get(), get()) }

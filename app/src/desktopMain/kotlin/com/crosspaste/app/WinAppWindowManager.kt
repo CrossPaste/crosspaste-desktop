@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class WinAppWindowManager(
+    appInfo: AppInfo,
     appSize: DesktopAppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     userDataPathProvider: UserDataPathProvider,
@@ -51,7 +52,7 @@ class WinAppWindowManager(
             return _cachedBubbleHWND
         }
 
-    private val winAppInfoCaches = WinAppInfoCaches(userDataPathProvider, ioScope)
+    private val winAppInfoCaches = WinAppInfoCaches(appInfo, userDataPathProvider, ioScope)
 
     private val windowFocusRecorder = WindowFocusRecorder(this)
 

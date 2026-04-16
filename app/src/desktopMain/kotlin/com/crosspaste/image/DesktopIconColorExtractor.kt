@@ -1,7 +1,6 @@
 package com.crosspaste.image
 
 import androidx.compose.ui.graphics.Color
-import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.Box
 import com.crosspaste.utils.ColorConversion.hsvToRgb
@@ -25,33 +24,37 @@ class DesktopIconColorExtractor(
 
     private val logger = KotlinLogging.logger {}
 
-    private val colorCache: MutableMap<String, Box<Color>> = ConcurrentMap()
+    private val colorCache: MutableMap<IconKey, Box<Color>> = ConcurrentMap()
 
     private val mutex = StripedMutex()
 
-    /**
-     * Get background color from icon path (with cache)
-     */
-    suspend fun getBackgroundColor(source: String): Color? =
-        mutex.withLock(source) {
-            colorCache[source]?.let { cached ->
+    suspend fun getBackgroundColor(
+        source: String,
+        appInstanceId: String? = null,
+    ): Color? {
+        val cacheKey = IconKey(source, appInstanceId)
+        return mutex.withLock(cacheKey) {
+            colorCache[cacheKey]?.let { cached ->
                 return@withLock cached.getOrNull()
             }
 
             withContext(ioDispatcher) {
                 val color =
                     runCatching {
-                        val path = userDataPathProvider.resolve("$source.png", AppFileType.ICON)
+                        val path =
+                            userDataPathProvider.findIconPath(appInstanceId, source)
+                                ?: return@runCatching null
                         val bytes = path.toNioPath().readBytes()
                         extractColorFromBytes(bytes)
                     }.getOrNull()
 
                 logger.debug { "$source - ${color?.toHexString()}" }
 
-                colorCache[source] = Box.of(color)
+                colorCache[cacheKey] = Box.of(color)
                 color
             }
         }
+    }
 
     /**
      * Extract dominant color from image byte array

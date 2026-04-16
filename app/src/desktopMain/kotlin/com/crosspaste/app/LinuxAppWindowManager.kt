@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class LinuxAppWindowManager(
+    private val appInfo: AppInfo,
     appSize: DesktopAppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
@@ -96,9 +97,11 @@ class LinuxAppWindowManager(
         window: Window,
         className: String,
     ) {
-        val iconPath = userDataPathProvider.resolve("$className.png", AppFileType.ICON)
-        if (!iconPath.toFile().exists()) {
-            X11Api.saveAppIcon(window, iconPath.toNioPath())
+        runCatching {
+            val iconPath = userDataPathProvider.resolveIconPath(appInfo.appInstanceId, className)
+            if (!iconPath.toFile().exists()) {
+                X11Api.saveAppIcon(window, iconPath.toNioPath())
+            }
         }
     }
 
