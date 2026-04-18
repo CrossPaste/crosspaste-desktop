@@ -78,6 +78,8 @@ class MacAppWindowManager(
             if (!appImagePath.toFile().exists()) {
                 MacAppUtils.saveAppIcon(bundleIdentifier, appImagePath.toString())
             }
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to save app icon for $localizedName ($bundleIdentifier)" }
         }
     }
 

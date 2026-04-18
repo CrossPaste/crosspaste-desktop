@@ -6,6 +6,7 @@ import com.crosspaste.utils.getFileUtils
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.LoadingCache
 import com.sun.jna.platform.win32.WinDef.HWND
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import okio.Path
@@ -30,6 +31,8 @@ class WinAppInfoCaches(
     private val userDataPathProvider: UserDataPathProvider,
     private val scope: CoroutineScope,
 ) {
+
+    private val logger = KotlinLogging.logger {}
 
     private val fileUtils = getFileUtils()
 
@@ -80,6 +83,8 @@ class WinAppInfoCaches(
             if (!fileUtils.existFile(iconPath)) {
                 WindowsIconUtils.extractAndSaveIcon(exeFilePath, iconPath)
             }
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to save app icon for $appName" }
         }
     }
 
