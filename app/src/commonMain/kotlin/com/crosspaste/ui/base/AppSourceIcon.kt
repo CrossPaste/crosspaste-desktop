@@ -29,54 +29,47 @@ import com.crosspaste.ui.theme.AppUISize.large2X
 import org.koin.compose.koinInject
 
 @Composable
-fun PasteDataScope.AppSourceIcon(
+fun AppSourceIcon(
+    source: String,
+    appInstanceId: String,
     modifier: Modifier = Modifier,
     size: Dp = large2X,
     defaultIcon: @Composable () -> Unit = {},
 ) {
-    val source = pasteData.source
+    val iconStyle = koinInject<IconStyle>()
+    val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
+    val platformContext = koinInject<PlatformContext>()
+    val density = LocalDensity.current
+
+    val visualScale =
+        remember(source, appInstanceId) {
+            if (iconStyle.isMacStyleIcon(source, appInstanceId)) {
+                val paddingRatio = 0.075f
+                val contentRatio = 1f - (paddingRatio * 2)
+                1f / contentRatio
+            } else {
+                1f
+            }
+        }
+
+    val sizePx = with(density) { size.roundToPx() }
+
+    val model =
+        remember(source, appInstanceId, platformContext, sizePx) {
+            ImageRequest
+                .Builder(platformContext)
+                .data(AppSourceItem(source, appInstanceId))
+                .size(sizePx)
+                .precision(Precision.INEXACT)
+                .scale(Scale.FILL)
+                .crossfade(true)
+                .build()
+        }
 
     Box(
         modifier = modifier.size(size),
         contentAlignment = Alignment.Center,
     ) {
-        if (source == null) {
-            defaultIcon()
-            return@Box
-        }
-
-        val iconStyle = koinInject<IconStyle>()
-        val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
-        val platformContext = koinInject<PlatformContext>()
-        val density = LocalDensity.current
-
-        val appInstanceId = pasteData.appInstanceId
-
-        val visualScale =
-            remember(source, appInstanceId) {
-                if (iconStyle.isMacStyleIcon(source, appInstanceId)) {
-                    val paddingRatio = 0.075f
-                    val contentRatio = 1f - (paddingRatio * 2)
-                    1f / contentRatio
-                } else {
-                    1f
-                }
-            }
-
-        val sizePx = with(density) { size.roundToPx() }
-
-        val model =
-            remember(source, appInstanceId, platformContext, sizePx) {
-                ImageRequest
-                    .Builder(platformContext)
-                    .data(AppSourceItem(source, appInstanceId))
-                    .size(sizePx)
-                    .precision(Precision.INEXACT)
-                    .scale(Scale.FILL)
-                    .crossfade(true)
-                    .build()
-            }
-
         SubcomposeAsyncImage(
             modifier =
                 Modifier
@@ -99,5 +92,30 @@ fun PasteDataScope.AppSourceIcon(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PasteDataScope.AppSourceIcon(
+    modifier: Modifier = Modifier,
+    size: Dp = large2X,
+    defaultIcon: @Composable () -> Unit = {},
+) {
+    val source = pasteData.source
+    if (source == null) {
+        Box(
+            modifier = modifier.size(size),
+            contentAlignment = Alignment.Center,
+        ) {
+            defaultIcon()
+        }
+    } else {
+        AppSourceIcon(
+            source = source,
+            appInstanceId = pasteData.appInstanceId,
+            modifier = modifier,
+            size = size,
+            defaultIcon = defaultIcon,
+        )
     }
 }
