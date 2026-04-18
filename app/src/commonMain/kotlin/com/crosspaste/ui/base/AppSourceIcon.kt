@@ -9,7 +9,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -20,8 +19,10 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.request.transformations
 import coil3.size.Precision
 import coil3.size.Scale
+import com.crosspaste.image.coil.AppSourceIconTransformer
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.ui.paste.PasteDataScope
@@ -36,30 +37,21 @@ fun AppSourceIcon(
     size: Dp = large2X,
     defaultIcon: @Composable () -> Unit = {},
 ) {
-    val iconStyle = koinInject<IconStyle>()
     val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
+    val transformer = koinInject<AppSourceIconTransformer>()
     val platformContext = koinInject<PlatformContext>()
     val density = LocalDensity.current
 
-    val visualScale =
-        remember(source, appInstanceId) {
-            if (iconStyle.isMacStyleIcon(source, appInstanceId)) {
-                val paddingRatio = 0.075f
-                val contentRatio = 1f - (paddingRatio * 2)
-                1f / contentRatio
-            } else {
-                1f
-            }
-        }
-
     val sizePx = with(density) { size.roundToPx() }
+    val requestSizePx = transformer.requestSize(sizePx)
 
     val model =
-        remember(source, appInstanceId, platformContext, sizePx) {
+        remember(source, appInstanceId, platformContext, requestSizePx, transformer) {
             ImageRequest
                 .Builder(platformContext)
                 .data(AppSourceItem(source, appInstanceId))
-                .size(sizePx)
+                .transformations(transformer.transformations)
+                .size(requestSizePx)
                 .precision(Precision.INEXACT)
                 .scale(Scale.FILL)
                 .crossfade(true)
@@ -71,10 +63,7 @@ fun AppSourceIcon(
         contentAlignment = Alignment.Center,
     ) {
         SubcomposeAsyncImage(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .scale(visualScale),
+            modifier = Modifier.fillMaxSize(),
             model = model,
             imageLoader = appSourceLoader,
             contentDescription = "App Source Icon",

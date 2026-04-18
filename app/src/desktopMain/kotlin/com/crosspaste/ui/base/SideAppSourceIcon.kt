@@ -3,7 +3,6 @@ package com.crosspaste.ui.base
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -16,11 +15,9 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.transformations
 import coil3.size.Precision
+import com.crosspaste.image.coil.AppSourceIconTransformer
 import com.crosspaste.image.coil.AppSourceItem
-import com.crosspaste.image.coil.CropTransformationFactory.create
 import com.crosspaste.image.coil.ImageLoaderQualifiers
-import com.crosspaste.platform.Platform
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.paste.PasteDataScope
 import org.koin.compose.koinInject
@@ -30,33 +27,23 @@ fun PasteDataScope.SideAppSourceIcon(
     modifier: Modifier = Modifier,
     defaultIcon: @Composable () -> Unit = {},
 ) {
-    val syncManager = koinInject<SyncManager>()
     val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
-    val platform = koinInject<Platform>()
+    val transformer = koinInject<AppSourceIconTransformer>()
     val platformContext = koinInject<PlatformContext>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val density = LocalDensity.current
 
-    val syncPlatform by remember(pasteData.appInstanceId) {
-        mutableStateOf(syncManager.getSyncPlatform(pasteData.appInstanceId))
-    }
-
     val sizePx = with(density) { appSizeValue.sideTitleHeight.roundToPx() }
+    val requestSizePx = transformer.requestSize(sizePx)
 
     val model =
-        remember(pasteData.source, pasteData.appInstanceId, sizePx, platform, syncPlatform) {
-            val transformation = create(platform, syncPlatform)
-
-            val requestSizePx = transformation?.requestSize(sizePx) ?: sizePx
-
-            val transformations = transformation?.let { listOf(it) } ?: listOf()
-
+        remember(pasteData.source, pasteData.appInstanceId, requestSizePx, transformer) {
             ImageRequest
                 .Builder(platformContext)
                 .data(AppSourceItem(pasteData.source, pasteData.appInstanceId))
-                .transformations(transformations)
+                .transformations(transformer.transformations)
                 .size(requestSizePx)
                 .precision(Precision.INEXACT)
                 .crossfade(true)

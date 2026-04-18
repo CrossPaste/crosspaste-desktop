@@ -15,6 +15,8 @@ import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.i18n.DesktopGlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.image.coil.AppSourceIconTransformer
+import com.crosspaste.image.coil.DesktopAppSourceIconTransformer
 import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.listener.DesktopGlobalListener
 import com.crosspaste.listener.DesktopShortKeysAction
@@ -34,10 +36,8 @@ import com.crosspaste.sync.TokenCacheApi
 import com.crosspaste.ui.DesktopScreenProvider
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.ScreenProvider
-import com.crosspaste.ui.base.DesktopIconStyle
 import com.crosspaste.ui.base.DesktopNotificationManager
 import com.crosspaste.ui.base.DesktopUISupport
-import com.crosspaste.ui.base.IconStyle
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.UISupport
@@ -59,6 +59,7 @@ fun desktopUiModule(): Module =
         single<ActiveGraphicsDevice> { get<DesktopAppSize>() }
         single<AppFileChooser> { DesktopAppFileChooser(get()) }
         single<AppSize> { get<DesktopAppSize>() }
+        single<AppSourceIconTransformer> { DesktopAppSourceIconTransformer }
         single<AppTokenApi> { DesktopAppTokenService(get(), get()) }
         single<AppWindowManager> { get<DesktopAppWindowManager>() }
         single<DesktopAppSize> { DesktopAppSize(get()) }
@@ -71,7 +72,6 @@ fun desktopUiModule(): Module =
         single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
         single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
         single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
-        single<IconStyle> { DesktopIconStyle(get()) }
         single<MenuHelper> { MenuHelper(get(), get(), get(), get(), get()) }
         single<NavigationManager> { get<DesktopScreenProvider>() }
         single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
