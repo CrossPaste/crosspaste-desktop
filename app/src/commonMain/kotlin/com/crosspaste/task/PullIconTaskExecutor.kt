@@ -54,9 +54,13 @@ class PullIconTaskExecutor(
                 mutex.withLock(source) {
                     runCatching {
                         val appInstanceId = pasteData.appInstanceId
+                        val iconPath = userDataPathProvider.resolveIconPath(appInstanceId, source)
+
+                        if (fileUtils.existFile(iconPath)) {
+                            return@withLock SuccessPasteTaskResult()
+                        }
 
                         syncManager.getSyncHandlers()[appInstanceId]?.let { handler ->
-                            val iconPath = userDataPathProvider.resolveIconPath(appInstanceId, source)
                             val port = handler.currentSyncRuntimeInfo.port
                             handler.getConnectHostAddress()?.let { host ->
                                 pullIcon(source, iconPath, host, port, baseExtraInfo)
