@@ -102,6 +102,8 @@ class LinuxAppWindowManager(
             if (!iconPath.toFile().exists()) {
                 X11Api.saveAppIcon(window, iconPath.toNioPath())
             }
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to save app icon for $className" }
         }
     }
 
