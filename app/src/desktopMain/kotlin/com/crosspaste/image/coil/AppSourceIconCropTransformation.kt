@@ -77,60 +77,88 @@ object AppSourceIconCropTransformation : Transformation() {
     private fun detectSymmetricTrim(bitmap: Bitmap): Int {
         val width = bitmap.width
         val height = bitmap.height
+        val pixels = readN32Pixels(bitmap) ?: return 0
+        val bounds = findContentBounds(pixels, width, height) ?: return 0
+        val minPadding =
+            minOf(
+                bounds.left,
+                bounds.top,
+                width - 1 - bounds.right,
+                height - 1 - bounds.bottom,
+            )
+        return resolveTrim(minPadding, minOf(width, height))
+    }
 
-        // One JNI hop to pull every pixel into a known BGRA layout; alpha is byte 3.
-        val info = ImageInfo.makeN32(width, height, ColorAlphaType.PREMUL)
-        val pixels = bitmap.readPixels(info, width * 4, 0, 0) ?: return 0
+    // One JNI hop to pull every pixel in N32 layout; alpha sits at byte 3 of every 4-byte pixel.
+    private fun readN32Pixels(bitmap: Bitmap): ByteArray? {
+        val info = ImageInfo.makeN32(bitmap.width, bitmap.height, ColorAlphaType.PREMUL)
+        return bitmap.readPixels(info, bitmap.width * 4, 0, 0)
+    }
 
-        fun alphaAt(
-            x: Int,
-            y: Int,
-        ): Int = pixels[(y * width + x) * 4 + 3].toInt() and 0xFF
-
+    private fun findContentBounds(
+        pixels: ByteArray,
+        width: Int,
+        height: Int,
+    ): ContentBounds? {
         var top = 0
-        topScan@ while (top < height) {
-            for (x in 0 until width) {
-                if (alphaAt(x, top) > ALPHA_THRESHOLD_BYTE) break@topScan
-            }
-            top++
-        }
-        if (top == height) return 0
+        while (top < height && isRowTransparent(pixels, width, top)) top++
+        if (top == height) return null
 
         var bottom = height - 1
-        bottomScan@ while (bottom > top) {
-            for (x in 0 until width) {
-                if (alphaAt(x, bottom) > ALPHA_THRESHOLD_BYTE) break@bottomScan
-            }
-            bottom--
-        }
+        while (bottom > top && isRowTransparent(pixels, width, bottom)) bottom--
 
         var left = 0
-        leftScan@ while (left < width) {
-            for (y in top..bottom) {
-                if (alphaAt(left, y) > ALPHA_THRESHOLD_BYTE) break@leftScan
-            }
-            left++
-        }
+        while (left < width && isColumnTransparent(pixels, width, left, top, bottom)) left++
 
         var right = width - 1
-        rightScan@ while (right > left) {
-            for (y in top..bottom) {
-                if (alphaAt(right, y) > ALPHA_THRESHOLD_BYTE) break@rightScan
-            }
-            right--
+        while (right > left && isColumnTransparent(pixels, width, right, top, bottom)) right--
+
+        return ContentBounds(left, top, right, bottom)
+    }
+
+    private fun isRowTransparent(
+        pixels: ByteArray,
+        width: Int,
+        y: Int,
+    ): Boolean {
+        var offset = y * width * 4 + 3
+        repeat(width) {
+            if (pixels[offset].toInt() and 0xFF > ALPHA_THRESHOLD_BYTE) return false
+            offset += 4
         }
+        return true
+    }
 
-        val paddingLeft = left
-        val paddingTop = top
-        val paddingRight = width - 1 - right
-        val paddingBottom = height - 1 - bottom
-        val minPadding = minOf(paddingLeft, paddingTop, paddingRight, paddingBottom)
+    private fun isColumnTransparent(
+        pixels: ByteArray,
+        width: Int,
+        x: Int,
+        yStart: Int,
+        yEnd: Int,
+    ): Boolean {
+        val rowStride = width * 4
+        var offset = (yStart * width + x) * 4 + 3
+        repeat(yEnd - yStart + 1) {
+            if (pixels[offset].toInt() and 0xFF > ALPHA_THRESHOLD_BYTE) return false
+            offset += rowStride
+        }
+        return true
+    }
 
-        val shortSide = minOf(width, height)
+    private fun resolveTrim(
+        minPadding: Int,
+        shortSide: Int,
+    ): Int {
         val marginPx = (shortSide * MARGIN_RATIO).roundToInt()
         val minTrimPx = (shortSide * MIN_TRIM_RATIO).roundToInt().coerceAtLeast(1)
-
         val appliedTrim = (minPadding - marginPx).coerceAtLeast(0)
         return if (appliedTrim < minTrimPx) 0 else appliedTrim
     }
+
+    private data class ContentBounds(
+        val left: Int,
+        val top: Int,
+        val right: Int,
+        val bottom: Int,
+    )
 }
