@@ -39,7 +39,7 @@ fun PasteDataScope.SideAppSourceIcon(
     val requestSizePx = transformer.requestSize(sizePx)
 
     val model =
-        remember(pasteData.source, pasteData.appInstanceId, requestSizePx, transformer) {
+        remember(pasteData.source, pasteData.appInstanceId, requestSizePx) {
             ImageRequest
                 .Builder(platformContext)
                 .data(AppSourceItem(pasteData.source, pasteData.appInstanceId))
@@ -54,7 +54,7 @@ fun PasteDataScope.SideAppSourceIcon(
         modifier = modifier,
         model = model,
         imageLoader = appSourceLoader,
-        contentDescription = "Paste Icon",
+        contentDescription = pasteData.source,
         content = {
             val state by this.painter.state.collectAsState()
             when (state) {

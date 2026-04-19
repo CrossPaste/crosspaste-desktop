@@ -46,7 +46,7 @@ fun AppSourceIcon(
     val requestSizePx = transformer.requestSize(sizePx)
 
     val model =
-        remember(source, appInstanceId, platformContext, requestSizePx, transformer) {
+        remember(source, appInstanceId, requestSizePx) {
             ImageRequest
                 .Builder(platformContext)
                 .data(AppSourceItem(source, appInstanceId))
@@ -66,7 +66,7 @@ fun AppSourceIcon(
             modifier = Modifier.fillMaxSize(),
             model = model,
             imageLoader = appSourceLoader,
-            contentDescription = "App Source Icon",
+            contentDescription = source,
             contentScale = ContentScale.Fit,
         ) {
             val state by painter.state.collectAsState()
