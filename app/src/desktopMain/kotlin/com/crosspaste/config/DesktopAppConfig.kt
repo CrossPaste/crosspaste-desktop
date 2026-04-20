@@ -4,7 +4,6 @@ import com.crosspaste.config.AppConfig.Companion.toBoolean
 import com.crosspaste.config.AppConfig.Companion.toInt
 import com.crosspaste.config.AppConfig.Companion.toLong
 import com.crosspaste.config.AppConfig.Companion.toString
-import com.crosspaste.mouse.Position
 import com.crosspaste.ui.extension.ProxyType
 import kotlinx.serialization.Serializable
 
@@ -65,7 +64,10 @@ data class DesktopAppConfig(
     // Mouse daemon (crosspaste-mouse plugin)
     val mouseEnabled: Boolean = false,
     val mouseListenPort: Int = 4243,
-    val mouseLayout: Map<String, Position> = emptyMap(),
+    // JSON-encoded Map<String, Position> (deviceId → virtual-desktop offset).
+    // Stored as a String so it flows through the scalar copy(key, value) path,
+    // matching the blacklist / sourceExclusions / useNetworkInterfaces pattern.
+    val mouseLayout: String = "{}",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -171,9 +173,6 @@ data class DesktopAppConfig(
             mcpServerPort = if (key == "mcpServerPort") toInt(value) else mcpServerPort,
             mouseEnabled = if (key == "mouseEnabled") toBoolean(value) else mouseEnabled,
             mouseListenPort = if (key == "mouseListenPort") toInt(value) else mouseListenPort,
-            // mouseLayout is Map<String, Position> and is not mutated through the
-            // generic scalar-based copy(key, value) path. It is updated via typed
-            // data-class copy() by the MouseLayoutStore backing adapter (Task 8).
-            mouseLayout = mouseLayout,
+            mouseLayout = if (key == "mouseLayout") toString(value) else mouseLayout,
         )
 }
