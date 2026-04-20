@@ -262,7 +262,7 @@ private fun OfflineToggle(
         horizontalArrangement = Arrangement.spacedBy(tiny2X),
     ) {
         Switch(
-            modifier = Modifier.scale(0.8f),
+            modifier = Modifier.scale(0.7f),
             checked = checked,
             onCheckedChange = onCheckedChange,
         )
