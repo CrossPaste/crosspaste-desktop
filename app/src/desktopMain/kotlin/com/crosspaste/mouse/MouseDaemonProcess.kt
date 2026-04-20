@@ -21,6 +21,7 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.InterruptedIOException
 import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
@@ -70,17 +71,24 @@ class MouseDaemonProcess internal constructor(
             runInterruptible(Dispatchers.IO) {
                 BufferedReader(InputStreamReader(stdout, StandardCharsets.UTF_8)).use { reader ->
                     // EOF is the only way out under normal flow; daemon restarts
-                    // the session in-place via `stopped` events.
-                    while (true) {
-                        val line = reader.readLine() ?: break
-                        if (line.isBlank()) continue
-                        val event =
-                            runCatching {
-                                MouseIpcProtocol.json.decodeFromString(IpcEvent.serializer(), line)
-                            }.getOrElse {
-                                IpcEvent.Error("malformed daemon output: ${it.message}")
-                            }
-                        _events.tryEmit(event)
+                    // the session in-place via `stopped` events. close() interrupts
+                    // readLine() via Thread.interrupt(); swallow the resulting
+                    // InterruptedIOException so it doesn't leak onto the JVM's
+                    // uncaught-exception queue (which confuses adjacent tests).
+                    try {
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            if (line.isBlank()) continue
+                            val event =
+                                runCatching {
+                                    MouseIpcProtocol.json.decodeFromString(IpcEvent.serializer(), line)
+                                }.getOrElse {
+                                    IpcEvent.Error("malformed daemon output: ${it.message}")
+                                }
+                            _events.tryEmit(event)
+                        }
+                    } catch (_: InterruptedIOException) {
+                        // expected on close()
                     }
                 }
             }
