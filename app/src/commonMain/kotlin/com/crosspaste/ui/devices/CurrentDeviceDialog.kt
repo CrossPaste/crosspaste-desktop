@@ -17,7 +17,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Dialog
@@ -49,19 +50,18 @@ fun CurrentDeviceDialog(onDismiss: () -> Unit) {
 
     val appSizeValue = LocalAppSizeValueState.current
 
+    val port by server.portFlow.collectAsState()
+
     val rows =
-        remember(appInfo, platform, copywriter) {
-            val port = server.port()
-            listOf(
-                "device_name" to deviceUtils.getDeviceName(),
-                "user_name" to appInfo.userName,
-                "app_version" to appInfo.displayVersion(),
-                "device_id" to deviceUtils.getDeviceId(),
-                "os" to "${platform.name} ${platform.version}",
-                "arch" to platform.arch,
-                "port" to if (port <= 0) copywriter.getText("unknown") else port.toString(),
-            )
-        }
+        listOf(
+            "device_name" to deviceUtils.getDeviceName(),
+            "user_name" to appInfo.userName,
+            "app_version" to appInfo.displayVersion(),
+            "device_id" to deviceUtils.getDeviceId(),
+            "os" to "${platform.name} ${platform.version}",
+            "arch" to platform.arch,
+            "port" to if (port <= 0) copywriter.getText("unknown") else port.toString(),
+        )
 
     Dialog(
         onDismissRequest = onDismiss,
