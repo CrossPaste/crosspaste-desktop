@@ -2,10 +2,14 @@ package com.crosspaste.mouse
 
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -51,6 +55,21 @@ class MouseDaemonManager(
     private val _state = MutableStateFlow<MouseState>(MouseState.Disabled)
     val state: StateFlow<MouseState> = _state.asStateFlow()
 
+    /**
+     * Aggregated event stream multiplexed across the manager's active clients.
+     * UI components (e.g. [com.crosspaste.ui.mouse.ScreenArrangementViewModel])
+     * can subscribe here to receive `IpcEvent`s without having to plumb a
+     * specific client session through DI — the manager always forwards events
+     * from whichever client is currently active.
+     */
+    private val _events =
+        MutableSharedFlow<IpcEvent>(
+            replay = 0,
+            extraBufferCapacity = 256,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
+    val events: SharedFlow<IpcEvent> = _events.asSharedFlow()
+
     suspend fun run() =
         coroutineScope {
             var activeClient: MouseDaemonClient? = null
@@ -93,6 +112,8 @@ class MouseDaemonManager(
                     eventJob =
                         launch {
                             client.events.collect { ev ->
+                                // Re-broadcast every event for UI subscribers.
+                                _events.tryEmit(ev)
                                 when (ev) {
                                     is IpcEvent.PeerConnected ->
                                         _state.value =

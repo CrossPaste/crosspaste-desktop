@@ -6,9 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Content_paste
+import com.composables.icons.materialsymbols.rounded.Mouse
 import com.composables.icons.materialsymbols.rounded.Storage
 import com.composables.icons.materialsymbols.rounded.Wifi
 import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.MouseSettings
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.NetworkSettings
 import com.crosspaste.ui.PasteboardSettings
@@ -36,6 +38,14 @@ fun AdvancedSettingsContentView() {
             icon = IconData(MaterialSymbols.Rounded.Wifi, themeExt.greenIconColor),
         ) {
             navigationManager.navigate(NetworkSettings)
+        }
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+        SettingListItem(
+            title = "mouse_settings",
+            subtitle = "mouse_settings_desc",
+            icon = IconData(MaterialSymbols.Rounded.Mouse, themeExt.purpleIconColor),
+        ) {
+            navigationManager.navigate(MouseSettings)
         }
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListItem(

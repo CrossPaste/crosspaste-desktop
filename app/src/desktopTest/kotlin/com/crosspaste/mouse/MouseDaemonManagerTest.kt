@@ -113,6 +113,35 @@ class MouseDaemonManagerTest {
         }
 
     @Test
+    fun `events flow re-emits client events for UI subscribers`() =
+        runBlocking {
+            val handle = FakeHandle()
+            val store = inMemoryStore().apply { upsert("inst-1", Position(1920, 0)) }
+            val syncs = MutableStateFlow(listOf(sri("inst-1", "192.168.1.10")))
+            val mgr = newManager(handle, store, syncs = syncs, enabled = MutableStateFlow(true))
+            val received = mutableListOf<IpcEvent>()
+            val collector =
+                launch {
+                    mgr.events.collect { received.add(it) }
+                }
+            val job = launch { mgr.run() }
+            delay(50)
+            val learned =
+                IpcEvent.PeerScreensLearned(
+                    deviceId = "peer-1",
+                    screens = listOf(ScreenInfo(0, 1920, 1080, 0, 0, 1.0, true)),
+                )
+            handle.emit(learned)
+            delay(50)
+            assertTrue(
+                received.any { it is IpcEvent.PeerScreensLearned },
+                "expected PeerScreensLearned on manager.events, got $received",
+            )
+            collector.cancel()
+            job.cancel()
+        }
+
+    @Test
     fun `disable sends Stop`() =
         runBlocking {
             val handle = FakeHandle()
