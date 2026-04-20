@@ -31,6 +31,7 @@ class GeneralSyncHandler(
 
     override var versionRelation: StateFlow<VersionRelation> = _versionRelation
 
+    // @VisibleForTesting
     internal val syncPollingManager = SyncPollingManager(syncHandlerScope)
 
     private val job: Job
@@ -66,6 +67,7 @@ class GeneralSyncHandler(
             onComplete = onComplete,
         )
 
+    // @VisibleForTesting
     internal fun createPollingCallback(): ResolveCallback =
         ResolveCallback(
             updateVersionRelation = ::updateVersionRelation,
