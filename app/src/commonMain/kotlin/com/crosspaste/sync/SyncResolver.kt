@@ -199,17 +199,32 @@ class SyncResolver(
     /**
      * Resolve extension devices (e.g. Chrome Extension).
      * Extensions are client-only — they have no server, no host, no port.
-     * Connection liveness is determined solely by WebSocket session state.
+     * Liveness is verified by sending an in-band Frame.Ping; send failure
+     * means the underlying socket is dead.
      */
     private suspend fun SyncRuntimeInfo.resolveExtension(callback: ResolveCallback) {
-        val wsConnected = wsSessionManager.isConnected(appInstanceId)
-        if (wsConnected && connectState == SyncState.DISCONNECTED) {
-            logger.info { "Extension $appInstanceId WebSocket active, marking CONNECTED" }
-            callback.updateVersionRelation(VersionRelation.EQUAL_TO)
-            updateConnectState(SyncState.CONNECTED)
-        } else if (!wsConnected && connectState == SyncState.CONNECTED) {
-            logger.info { "Extension $appInstanceId WebSocket gone, marking DISCONNECTED" }
-            updateConnectState(SyncState.DISCONNECTED)
+        when (connectState) {
+            SyncState.CONNECTED -> {
+                if (!wsSessionManager.probe(appInstanceId)) {
+                    logger.info { "Extension $appInstanceId probe failed, marking DISCONNECTED" }
+                    updateConnectState(SyncState.DISCONNECTED)
+                }
+                // probe success → stay CONNECTED
+            }
+            SyncState.DISCONNECTED -> {
+                if (wsSessionManager.isConnected(appInstanceId)) {
+                    logger.info { "Extension $appInstanceId WebSocket back, marking CONNECTED" }
+                    callback.updateVersionRelation(VersionRelation.EQUAL_TO)
+                    updateConnectState(SyncState.CONNECTED)
+                } else {
+                    // WS still gone; only scheduled polling will actually escalate backoff
+                    // (force-resolve / first-value paths pass a no-op markPollFailure).
+                    callback.markPollFailure()
+                }
+            }
+            else -> {
+                logger.warn { "Extension $appInstanceId in unexpected state=$connectState" }
+            }
         }
     }
 

@@ -916,6 +916,132 @@ class SyncResolverTest {
             assertEquals(VersionRelation.EQUAL_TO, capturedRelation)
         }
 
+    // ========== F. resolveExtension ==========
+
+    @Test
+    fun resolveExtension_connected_probeSucceeds_staysConnected() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createExtensionSyncRuntimeInfo(connectState = SyncState.CONNECTED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) } returns true
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun resolveExtension_connected_probeFails_setsDisconnected() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createExtensionSyncRuntimeInfo(connectState = SyncState.CONNECTED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) } returns false
+
+            val captured = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(captured)) } returns
+                syncRuntimeInfo.appInstanceId
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(SyncState.DISCONNECTED, captured.captured.connectState)
+        }
+
+    @Test
+    fun resolveExtension_disconnected_wsConnected_setsConnected() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createExtensionSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returns true
+
+            val captured = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(captured)) } returns
+                syncRuntimeInfo.appInstanceId
+
+            var capturedRelation: VersionRelation? = null
+            val callback =
+                ResolveCallback(
+                    updateVersionRelation = { capturedRelation = it },
+                )
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
+
+            assertEquals(SyncState.CONNECTED, captured.captured.connectState)
+            assertEquals(VersionRelation.EQUAL_TO, capturedRelation)
+        }
+
+    @Test
+    fun resolveExtension_disconnected_wsNotConnected_invokesMarkPollFailure() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createExtensionSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returns false
+
+            var failureCalls = 0
+            val callback =
+                ResolveCallback(
+                    updateVersionRelation = {},
+                    markPollFailure = { failureCalls++ },
+                )
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
+
+            assertEquals(1, failureCalls)
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun resolveExtension_unexpectedState_noOp() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createExtensionSyncRuntimeInfo(connectState = SyncState.UNVERIFIED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+
+            var failureCalls = 0
+            val callback =
+                ResolveCallback(
+                    updateVersionRelation = {},
+                    markPollFailure = { failureCalls++ },
+                )
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
+
+            assertEquals(0, failureCalls)
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+            coVerify(exactly = 0) { deps.wsSessionManager.probe(any()) }
+        }
+
+    private fun extensionPlatform(): Platform =
+        mockk(relaxed = true) {
+            every { isExtension() } returns true
+            every { isChromeExtension() } returns true
+            every { name } returns "ChromeExtension"
+            every { version } returns "1.0.0"
+        }
+
+    private fun createExtensionSyncRuntimeInfo(
+        appInstanceId: String = "chrome-ext-1",
+        connectState: Int = SyncState.CONNECTED,
+    ): SyncRuntimeInfo =
+        createSyncRuntimeInfo(
+            appInstanceId = appInstanceId,
+            platform = extensionPlatform(),
+            connectState = connectState,
+        )
+
     private fun createTestCallback(): ResolveCallback =
         ResolveCallback(
             updateVersionRelation = {},
