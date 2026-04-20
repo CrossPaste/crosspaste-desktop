@@ -36,8 +36,10 @@ class WsSessionManager {
     }
 
     fun notifySessionClosed(appInstanceId: String) {
-        unregisterSession(appInstanceId)
-        onSessionClosed?.invoke(appInstanceId)
+        if (sessions.remove(appInstanceId) != null) {
+            logger.info { "Unregistered WebSocket session for $appInstanceId" }
+            onSessionClosed?.invoke(appInstanceId)
+        }
     }
 
     fun getSession(appInstanceId: String): WsSession? = sessions[appInstanceId]
