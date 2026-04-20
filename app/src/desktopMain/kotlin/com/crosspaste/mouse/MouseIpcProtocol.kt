@@ -1,6 +1,5 @@
 package com.crosspaste.mouse
 
-import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -85,7 +84,7 @@ sealed class IpcEvent {
     @SerialName("initialized")
     data class Initialized(
         val screens: List<ScreenInfo>,
-        @SerialName("protocol_version") @EncodeDefault val protocolVersion: Int,
+        @SerialName("protocol_version") val protocolVersion: Int,
     ) : IpcEvent()
 
     @Serializable
