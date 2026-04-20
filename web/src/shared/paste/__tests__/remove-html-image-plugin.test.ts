@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { isSingleImgInBody } from "../plugin/remove-html-image-plugin";
 import { RemoveHtmlImagePlugin } from "../plugin/remove-html-image-plugin";
-import { PasteTypeInt } from "@/shared/models/paste-item";
+import { PasteType, PasteTypeInt } from "@/shared/models/paste-item";
+import type { HtmlPasteItem, ImagesPasteItem } from "@/shared/models/paste-item";
 import type { TypedItem, PasteProcessContext } from "../plugin/paste-process-plugin";
 
 // ─── isSingleImgInBody ───────────────────────────────────────────────
@@ -59,15 +60,33 @@ describe("isSingleImgInBody", () => {
 
 describe("RemoveHtmlImagePlugin", () => {
   const plugin = new RemoveHtmlImagePlugin();
-  const ctx: PasteProcessContext = {};
+  const ctx: PasteProcessContext = { hashText: (s) => s };
 
   function htmlItem(html: string): TypedItem {
-    return { pasteType: PasteTypeInt.HTML, item: { html } };
+    const item: HtmlPasteItem = {
+      type: PasteType.HTML,
+      identifiers: [],
+      hash: "",
+      size: 0,
+      html,
+    };
+    return { pasteType: PasteTypeInt.HTML, item };
   }
+
+  const imagesItem: ImagesPasteItem = {
+    type: PasteType.IMAGE,
+    identifiers: [],
+    hash: "",
+    size: 0,
+    count: 1,
+    relativePathList: [],
+    fileInfoTreeMap: {},
+    dataUrl: "data:image/png;base64,AA==",
+  };
 
   const imageItem: TypedItem = {
     pasteType: PasteTypeInt.IMAGE,
-    item: { dataUrl: "data:image/png;base64,AA==" },
+    item: imagesItem,
   };
 
   it("removes HTML item when it is a single-img wrapper and IMAGE is present", () => {
