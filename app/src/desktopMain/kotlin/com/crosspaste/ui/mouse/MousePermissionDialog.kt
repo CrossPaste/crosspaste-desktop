@@ -4,7 +4,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.mouse.IpcEvent
+import org.koin.compose.koinInject
 
 /**
  * Surfaces the most recent daemon [IpcEvent.Warning] (e.g. missing input
@@ -18,10 +20,15 @@ fun MousePermissionDialog(
     onDismiss: () -> Unit,
 ) {
     if (warning == null) return
+    val copywriter = koinInject<GlobalCopywriter>()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(warning.code) },
         text = { Text(warning.message) },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(copywriter.getText("mouse_settings.warning_dialog.ok"))
+            }
+        },
     )
 }

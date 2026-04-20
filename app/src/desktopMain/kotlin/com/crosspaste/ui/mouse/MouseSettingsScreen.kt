@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.mouse.IpcEvent
 import com.crosspaste.mouse.MouseDaemonManager
 import com.crosspaste.mouse.MouseState
@@ -37,6 +38,7 @@ fun MouseSettingsScreen() {
     val manager: MouseDaemonManager = koinInject()
     val viewModel: ScreenArrangementViewModel = koinInject()
     val configManager: DesktopConfigManager = koinInject()
+    val copywriter = koinInject<GlobalCopywriter>()
 
     LaunchedEffect(viewModel) { viewModel.observe() }
 
@@ -61,7 +63,10 @@ fun MouseSettingsScreen() {
         verticalArrangement = Arrangement.spacedBy(AppUISize.medium),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text("Share keyboard/mouse", style = MaterialTheme.typography.titleMedium)
+            Text(
+                copywriter.getText("mouse_settings.switch"),
+                style = MaterialTheme.typography.titleMedium,
+            )
             Spacer(Modifier.weight(1f))
             Switch(
                 checked = config.mouseEnabled,
@@ -71,11 +76,17 @@ fun MouseSettingsScreen() {
         Text(
             text =
                 when (val s = state) {
-                    MouseState.Disabled -> "Off"
-                    MouseState.Starting -> "Starting…"
-                    is MouseState.Running -> "Running — ${s.connectedPeers.size} peer(s)"
-                    is MouseState.Warning -> "Warning: ${s.code}"
-                    is MouseState.Error -> "Error: ${s.message}"
+                    MouseState.Disabled -> copywriter.getText("mouse_settings.state.disabled")
+                    MouseState.Starting -> copywriter.getText("mouse_settings.state.starting")
+                    is MouseState.Running ->
+                        copywriter.getText(
+                            "mouse_settings.state.running_n_peers",
+                            s.connectedPeers.size,
+                        )
+                    is MouseState.Warning ->
+                        copywriter.getText("mouse_settings.state.warning_prefix", s.code)
+                    is MouseState.Error ->
+                        copywriter.getText("mouse_settings.state.error_prefix", s.message)
                 },
             style = MaterialTheme.typography.bodyMedium,
         )
