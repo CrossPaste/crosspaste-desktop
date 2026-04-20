@@ -184,6 +184,7 @@ class DesktopModule(
                     pasteComponentModule(),
                     uiModule(),
                     viewModelModule(),
+                    desktopMouseModule(),
                 )
             }
         }
