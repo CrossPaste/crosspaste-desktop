@@ -31,7 +31,7 @@ class GeneralSyncHandler(
 
     override var versionRelation: StateFlow<VersionRelation> = _versionRelation
 
-    private val syncPollingManager = SyncPollingManager(syncHandlerScope)
+    internal val syncPollingManager = SyncPollingManager(syncHandlerScope)
 
     private val job: Job
 
@@ -55,14 +55,22 @@ class GeneralSyncHandler(
 
         job =
             syncPollingManager.startPollingResolve {
-                emitEvent(SyncEvent.Resolve(currentSyncRuntimeInfo, createCallback()))
+                emitEvent(SyncEvent.Resolve(currentSyncRuntimeInfo, createPollingCallback()))
             }
     }
 
     private fun createCallback(onComplete: () -> Unit = {}): ResolveCallback =
         ResolveCallback(
             updateVersionRelation = ::updateVersionRelation,
+            markPollFailure = {},
             onComplete = onComplete,
+        )
+
+    internal fun createPollingCallback(): ResolveCallback =
+        ResolveCallback(
+            updateVersionRelation = ::updateVersionRelation,
+            markPollFailure = { syncPollingManager.fail() },
+            onComplete = {},
         )
 
     override fun updateSyncRuntimeInfo(syncRuntimeInfo: SyncRuntimeInfo) {
