@@ -137,3 +137,12 @@ class MouseDaemonProcess internal constructor(
         }
     }
 }
+
+fun MouseDaemonProcess.asDaemonHandle(): MouseDaemonClient.DaemonHandle =
+    object : MouseDaemonClient.DaemonHandle {
+        override val events = this@asDaemonHandle.events
+
+        override suspend fun send(command: IpcCommand) = this@asDaemonHandle.send(command)
+
+        override fun close() = this@asDaemonHandle.close()
+    }
