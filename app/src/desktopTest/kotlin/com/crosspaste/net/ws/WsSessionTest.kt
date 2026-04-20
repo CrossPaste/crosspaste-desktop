@@ -53,4 +53,17 @@ class WsSessionTest {
 
             assertFalse(wsSession.ping())
         }
+
+    @Test
+    fun ping_sendHangsLongerThanTimeout_returnsFalse() =
+        runTest {
+            val inner = mockSession()
+            coEvery { inner.send(any<Frame.Ping>()) } coAnswers {
+                kotlinx.coroutines.delay(10_000L)
+            }
+
+            val wsSession = WsSession(inner, "remote-id")
+
+            assertFalse(wsSession.ping())
+        }
 }

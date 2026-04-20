@@ -1025,12 +1025,12 @@ class SyncResolverTest {
         }
 
     private fun extensionPlatform(): Platform =
-        mockk(relaxed = true) {
-            every { isExtension() } returns true
-            every { isChromeExtension() } returns true
-            every { name } returns "ChromeExtension"
-            every { version } returns "1.0.0"
-        }
+        Platform(
+            name = Platform.CHROME_EXTENSION,
+            arch = "any",
+            bitMode = 64,
+            version = "1.0.0",
+        )
 
     private fun createExtensionSyncRuntimeInfo(
         appInstanceId: String = "chrome-ext-1",
