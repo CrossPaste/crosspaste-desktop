@@ -9,13 +9,13 @@ import com.crosspaste.net.filter
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class GeneralSyncManager(
-    override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    override val realTimeSyncScope: CoroutineScope = namedScope(ioDispatcher, "GeneralSyncManager"),
     private val syncResolver: SyncResolverApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val wsSessionManager: WsSessionManager,

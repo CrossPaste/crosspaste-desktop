@@ -6,12 +6,12 @@ import androidx.compose.runtime.setValue
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
 class StorageStatisticsScope(
     val pasteDao: PasteDao,
-    val scope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    val scope: CoroutineScope = namedScope(ioDispatcher, "StorageStatisticsScope"),
 ) {
 
     val fileUtils = getFileUtils()

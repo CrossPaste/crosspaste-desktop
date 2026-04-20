@@ -4,10 +4,10 @@ import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.cpuDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -17,7 +17,7 @@ class TaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
     private val taskDao: TaskDao,
     maxConcurrentTasks: Int = 10,
-    private val scope: CoroutineScope = CoroutineScope(cpuDispatcher + SupervisorJob()),
+    private val scope: CoroutineScope = namedScope(cpuDispatcher, "TaskExecutor"),
 ) {
     private val logger = KotlinLogging.logger {}
 

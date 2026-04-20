@@ -21,10 +21,10 @@ import com.crosspaste.platform.macos.api.MenuCallback
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -83,7 +83,7 @@ class NativeTrayManager(
 ) {
     private val lib = MacosApi.INSTANCE
 
-    private val menuScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val menuScope: CoroutineScope = namedScope(ioDispatcher, "MacTrayView.NativeTrayManager")
 
     private var menuCallbacks = mutableMapOf<Int, () -> Unit>()
 

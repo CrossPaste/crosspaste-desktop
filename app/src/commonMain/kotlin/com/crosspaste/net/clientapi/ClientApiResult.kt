@@ -7,8 +7,10 @@ import com.crosspaste.exception.standardErrorCodeMap
 import com.crosspaste.net.exception.ExceptionHandler
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.client.call.*
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.statement.*
 import kotlinx.serialization.Serializable
+import kotlin.coroutines.cancellation.CancellationException
 
 interface ClientApiResult
 
@@ -30,6 +32,8 @@ object ConnectionRefused : ClientApiResult
 object EncryptFail : ClientApiResult
 
 object DecryptFail : ClientApiResult
+
+object RequestTimeout : ClientApiResult
 
 object UnknownError : ClientApiResult
 
@@ -71,6 +75,11 @@ suspend inline fun <T> request(
         } else {
             SuccessResult(transformData(response))
         }
+    } catch (e: HttpRequestTimeoutException) {
+        logger.warn(e) { "request timeout" }
+        RequestTimeout
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         logger.error(e) { "request error" }
         if (exceptionHandler.isConnectionRefused(e)) {

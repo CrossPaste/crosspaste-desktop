@@ -3,9 +3,9 @@ package com.crosspaste.net
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 
 class DesktopNetworkInterfaceService(
     private val configManager: DesktopConfigManager,
-    networkRefreshScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    networkRefreshScope: CoroutineScope = namedScope(ioDispatcher, "DesktopNetworkInterfaceService"),
 ) : AbstractNetworkInterfaceService() {
 
     private val jsonUtils = getJsonUtils()

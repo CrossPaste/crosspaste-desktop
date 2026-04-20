@@ -6,13 +6,13 @@ import com.crosspaste.net.ResourcesClient
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.util.collections.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 class ModuleDownloadManager(
     private val moduleManager: ModuleManager,
     private val resourcesClient: ResourcesClient,
-    private val downloadScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    private val downloadScope: CoroutineScope = namedScope(ioDispatcher, "ModuleDownloadManager"),
 ) {
 
     companion object Companion {

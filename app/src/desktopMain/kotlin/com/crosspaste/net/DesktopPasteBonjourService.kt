@@ -9,10 +9,10 @@ import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
 import com.crosspaste.utils.TxtRecordUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
@@ -32,7 +32,7 @@ class DesktopPasteBonjourService(
     private val endpointInfoFactory: EndpointInfoFactory,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
-    private val scope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    private val scope: CoroutineScope = namedScope(ioDispatcher, "DesktopPasteBonjourService"),
 ) : PasteBonjourService {
 
     companion object {

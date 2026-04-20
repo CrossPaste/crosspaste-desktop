@@ -7,15 +7,15 @@ import com.crosspaste.db.task.TaskType
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.cpuDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class DelayedDeletePasteTaskExecutor(
     private val pasteDao: PasteDao,
-    private val scope: CoroutineScope = CoroutineScope(cpuDispatcher + SupervisorJob()),
+    private val scope: CoroutineScope = namedScope(cpuDispatcher, "DelayedDeletePasteTaskExecutor"),
 ) : SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}

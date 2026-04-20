@@ -30,10 +30,9 @@ import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlin.collections.filter
 
@@ -52,7 +51,7 @@ class SyncPasteTaskExecutor(
 
     private val jsonUtils = getJsonUtils()
 
-    private val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val ioScope = namedScope(ioDispatcher, "SyncPasteTaskExecutor")
 
     override val taskType: Int = TaskType.SYNC_PASTE_TASK
 

@@ -2,6 +2,7 @@ package com.crosspaste.platform.windows
 
 import com.crosspaste.platform.windows.api.Kernel32
 import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.utils.namedScope
 import com.sun.jna.Function
 import com.sun.jna.Memory
 import com.sun.jna.Pointer
@@ -11,11 +12,9 @@ import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinUser
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
@@ -35,7 +34,7 @@ class WindowsLazyClipboard : AutoCloseable {
     private val getMessageW = Function.getFunction("user32", "GetMessageW", Function.ALT_CONVENTION)
 
     private val windowDispatcher = newSingleThreadContext("WindowsLazyClipboard")
-    private val scope = CoroutineScope(windowDispatcher + SupervisorJob())
+    private val scope = namedScope(windowDispatcher, "WindowsLazyClipboard")
 
     private var hwnd: HWND? = null
     private var messageLoopJob: Job? = null

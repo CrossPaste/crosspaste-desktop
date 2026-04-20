@@ -5,10 +5,10 @@ import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.hostInfoListEqual
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import kotlin.time.Duration.Companion.seconds
 class GeneralSyncHandler(
     syncRuntimeInfo: SyncRuntimeInfo,
     private val emitEvent: suspend (SyncEvent) -> Unit,
-    private val syncHandlerScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    private val syncHandlerScope: CoroutineScope = namedScope(ioDispatcher, "GeneralSyncHandler"),
 ) : SyncHandler {
 
     private val _syncRuntimeInfo: MutableStateFlow<SyncRuntimeInfo> = MutableStateFlow(syncRuntimeInfo)

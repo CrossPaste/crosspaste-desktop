@@ -3,8 +3,8 @@ package com.crosspaste.ui.theme
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.ui.theme.ThemeState.Companion.createThemeState
 import com.crosspaste.utils.mainDispatcher
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 
 class DesktopThemeDetector(
     private val configManager: CommonConfigManager,
-    scope: CoroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher),
+    scope: CoroutineScope = namedScope(mainDispatcher, "DesktopThemeDetector"),
 ) : ThemeDetector {
 
     private data class ThemeConfig(

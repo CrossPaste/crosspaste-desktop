@@ -14,9 +14,8 @@ import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getCompressUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,7 +35,7 @@ class PasteExportService(
 
     private val fileUtils = getFileUtils()
 
-    private val ioCoroutineDispatcher = CoroutineScope(SupervisorJob() + ioDispatcher)
+    private val ioCoroutineDispatcher = namedScope(ioDispatcher, "PasteExportService")
 
     private val mutex = Mutex()
 

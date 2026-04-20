@@ -6,9 +6,9 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +22,7 @@ class GeneralNearbyDeviceManager(
     configManager: CommonConfigManager,
     private val ratingPromptManager: RatingPromptManager,
     private val syncManager: SyncManager,
-    override val nearbyDeviceScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    override val nearbyDeviceScope: CoroutineScope = namedScope(ioDispatcher, "GeneralNearbyDeviceManager"),
 ) : NearbyDeviceManager {
 
     private val logger = KotlinLogging.logger {}

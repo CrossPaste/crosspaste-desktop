@@ -10,8 +10,8 @@ import ch.qos.logback.core.util.FileSize
 import ch.qos.logback.core.util.StatusPrinter2
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 class DesktopCrossPasteLogger(
     override val logPath: String,
     configManager: DesktopConfigManager,
-    loggerLevelScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    loggerLevelScope: CoroutineScope = namedScope(ioDispatcher, "DesktopCrossPasteLogger"),
 ) : CrossPasteLogger {
 
     private val context = LoggerFactory.getILoggerFactory() as LoggerContext

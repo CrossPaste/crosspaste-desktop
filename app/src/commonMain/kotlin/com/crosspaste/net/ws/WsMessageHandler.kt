@@ -14,9 +14,9 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class WsMessageHandler(
@@ -29,7 +29,7 @@ class WsMessageHandler(
     private val userDataPathProvider: UserDataPathProvider,
     private val wsPendingRequests: WsPendingRequests,
     private val wsSessionManager: WsSessionManager,
-    private val scope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    private val scope: CoroutineScope = namedScope(ioDispatcher, "WsMessageHandler"),
 ) {
     private val appControl: AppControl get() = lazyAppControl.value
     private val cacheManager: CacheManager get() = lazyCacheManager.value

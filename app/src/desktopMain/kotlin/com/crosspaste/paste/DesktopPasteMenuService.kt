@@ -36,12 +36,11 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import com.dzirbel.contextmenu.ContextMenuDivider
 import com.dzirbel.contextmenu.ContextMenuGroup
 import com.dzirbel.contextmenu.MaterialContextMenuItem
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -71,7 +70,7 @@ class DesktopPasteMenuService(
 
     private val desktopAppWindowManager = appWindowManager as DesktopAppWindowManager
 
-    private val menuScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val menuScope = namedScope(ioDispatcher, "DesktopPasteMenuService")
 
     private val _pendingCutPasteId = MutableStateFlow<Long?>(null)
     val pendingCutPasteId: StateFlow<Long?> = _pendingCutPasteId.asStateFlow()

@@ -6,8 +6,7 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.ioDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
 import java.awt.datatransfer.Clipboard
@@ -38,7 +37,7 @@ abstract class AbstractPasteboardService :
 
     override val remotePasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.CONFLATED)
 
-    override val serviceScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    override val serviceScope = namedScope(ioDispatcher, "AbstractPasteboardService")
 
     fun isValidContents(contents: Transferable?): Boolean =
         contents != null && contents.transferDataFlavors.isNotEmpty()

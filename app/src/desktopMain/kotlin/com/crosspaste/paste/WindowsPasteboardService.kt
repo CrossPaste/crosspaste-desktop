@@ -13,6 +13,7 @@ import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.DesktopControlUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
+import com.crosspaste.utils.namedScope
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -22,9 +23,7 @@ import com.sun.jna.platform.win32.WinUser.MSG
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -62,7 +61,7 @@ class WindowsPasteboardService(
 
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
-    private val serviceConsumerScope = CoroutineScope(cpuDispatcher + SupervisorJob())
+    private val serviceConsumerScope = namedScope(cpuDispatcher, "WindowsPasteboardService")
 
     private var job: Job? = null
     private var viewer: HWND? = null
