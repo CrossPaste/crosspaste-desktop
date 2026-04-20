@@ -28,6 +28,7 @@ import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -35,7 +36,6 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 
@@ -91,7 +91,11 @@ open class DefaultServerModule(
                 }
             }
             val pasteRoutingScope =
-                CoroutineScope(ioDispatcher + SupervisorJob(coroutineContext[Job]))
+                namedScope(
+                    ioDispatcher,
+                    "DefaultServerModule.pasteRoutingScope",
+                    SupervisorJob(coroutineContext[Job]),
+                )
             routing {
                 syncRouting(
                     appInfo,

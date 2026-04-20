@@ -5,7 +5,9 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.utils.createPlatformLock
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
-import kotlinx.coroutines.CoroutineScope
+import com.crosspaste.utils.namedScope
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,9 @@ import kotlin.time.Duration.Companion.seconds
 
 class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
 
-    private val ioScope = CoroutineScope(ioDispatcher)
+    private val logger = KotlinLogging.logger {}
+
+    private val ioScope = namedScope(ioDispatcher, "DefaultPasteSyncProcessManager")
 
     private val semaphore = Semaphore(10)
 
@@ -48,23 +52,30 @@ class DefaultPasteSyncProcessManager : PasteSyncProcessManager<Long> {
         pasteDataId: Long,
         tasks: List<suspend () -> Pair<Int, ClientApiResult>>,
     ): List<Pair<Int, ClientApiResult>> {
+        if (tasks.isEmpty()) return emptyList()
         val process = getProcess(pasteDataId, tasks.size)
         return ioScope
             .async {
                 tasks
                     .map { task ->
                         async {
-                            semaphore.withPermit {
-                                withTimeout(60.seconds) {
-                                    val result = task()
-                                    if (result.second is SuccessResult) {
-                                        process.success(result.first)
+                            try {
+                                semaphore.withPermit {
+                                    withTimeout(60.seconds) {
+                                        val result = task()
+                                        if (result.second is SuccessResult) {
+                                            process.success(result.first)
+                                        }
+                                        result
                                     }
-                                    result
                                 }
+                            } catch (e: TimeoutCancellationException) {
+                                logger.warn(e) { "runTask timed out for pasteDataId=$pasteDataId" }
+                                null
                             }
                         }
                     }.awaitAll()
+                    .filterNotNull()
             }.await()
     }
 }

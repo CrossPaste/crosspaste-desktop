@@ -1,8 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.utils.ioDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +16,7 @@ import kotlin.random.Random
 
 abstract class AppTokenService : AppTokenApi {
 
-    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val scope = namedScope(ioDispatcher, "AppTokenService")
 
     private val lock = Mutex()
 

@@ -3,18 +3,16 @@ package com.crosspaste.net
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
-import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.statement.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
 class TelnetHelper(
@@ -36,32 +34,29 @@ class TelnetHelper(
     ): Pair<HostInfo, VersionRelation>? {
         if (hostInfoList.isEmpty()) return null
 
-        val result = CompletableDeferred<Pair<HostInfo, VersionRelation>?>()
-        val mutex = Mutex()
-        val scope = CoroutineScope(ioDispatcher)
+        return withTimeoutOrNull(timeout.milliseconds) {
+            supervisorScope {
+                val result = CompletableDeferred<Pair<HostInfo, VersionRelation>?>()
+                val mutex = Mutex()
 
-        hostInfoList.forEach { hostInfo ->
-            scope.launch(CoroutineName("SwitchHost")) {
-                runCatching {
-                    telnet(hostInfo.hostAddress, port, timeout)?.let {
-                        mutex.withLock {
-                            if (!result.isCompleted) {
-                                result.complete(Pair(hostInfo, it))
+                hostInfoList.forEach { hostInfo ->
+                    launch(CoroutineName("SwitchHost")) {
+                        runCatching {
+                            telnet(hostInfo.hostAddress, port, timeout)?.let {
+                                mutex.withLock {
+                                    if (!result.isCompleted) {
+                                        result.complete(Pair(hostInfo, it))
+                                    }
+                                }
                             }
+                        }.onFailure { e ->
+                            logger.debug(e) { "switchHost telnet failed for ${hostInfo.hostAddress}:$port" }
                         }
                     }
-                }.onFailure { e ->
-                    logger.debug(e) { "switchHost telnet failed for ${hostInfo.hostAddress}:$port" }
                 }
-            }
-        }
 
-        return try {
-            withTimeout(timeout.milliseconds) { result.await() }
-        } catch (_: TimeoutCancellationException) {
-            null
-        } finally {
-            scope.cancel()
+                result.await().also { coroutineContext.cancelChildren() }
+            }
         }
     }
 

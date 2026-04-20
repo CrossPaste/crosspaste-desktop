@@ -1,13 +1,10 @@
 package com.crosspaste.utils
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-
 object GlobalCoroutineScope {
 
-    val mainCoroutineDispatcher = CoroutineScope(SupervisorJob() + mainDispatcher)
+    val mainCoroutineDispatcher = namedScope(mainDispatcher, "GlobalCoroutineScope.main")
 
-    val ioCoroutineDispatcher = CoroutineScope(SupervisorJob() + ioDispatcher)
+    val ioCoroutineDispatcher = namedScope(ioDispatcher, "GlobalCoroutineScope.io")
 
-    val cpuCoroutineDispatcher = CoroutineScope(SupervisorJob() + cpuDispatcher)
+    val cpuCoroutineDispatcher = namedScope(cpuDispatcher, "GlobalCoroutineScope.cpu")
 }

@@ -4,10 +4,9 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.utils.DesktopResourceUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -24,7 +23,7 @@ class DesktopSoundService(
 
     private val logger = KotlinLogging.logger {}
 
-    private val scope = CoroutineScope(cpuDispatcher + SupervisorJob())
+    private val scope = namedScope(cpuDispatcher, "DesktopSoundService")
 
     companion object {
 

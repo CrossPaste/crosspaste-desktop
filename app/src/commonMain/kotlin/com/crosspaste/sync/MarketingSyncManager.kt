@@ -7,9 +7,8 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.platform.Platform.Companion.MACOS
 import com.crosspaste.platform.Platform.Companion.WINDOWS
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.ktor.util.collections.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -70,7 +69,7 @@ class MarketingSyncManager : SyncManager {
 
     private var internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
-    override val realTimeSyncScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    override val realTimeSyncScope = namedScope(ioDispatcher, "MarketingSyncManager")
 
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler =
         MarketingSyncHandler(syncRuntimeInfo)

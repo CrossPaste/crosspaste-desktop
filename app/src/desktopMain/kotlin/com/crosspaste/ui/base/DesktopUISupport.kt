@@ -20,9 +20,9 @@ import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import okio.Path
 import java.awt.Color
@@ -40,7 +40,7 @@ class DesktopUISupport(
     private val updatePasteItemHelper: UpdatePasteItemHelper,
     private val userDataPathProvider: UserDataPathProvider,
     private val appWindowManager: DesktopAppWindowManager,
-    private val actionScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob()),
+    private val actionScope: CoroutineScope = namedScope(ioDispatcher, "DesktopUISupport"),
 ) : UISupport {
 
     private val logger = KotlinLogging.logger {}

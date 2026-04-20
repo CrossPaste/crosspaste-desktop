@@ -5,13 +5,12 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import dev.hydraulic.conveyor.control.SoftwareUpdateController
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.z4kn4fein.semver.Version
 import io.ktor.utils.io.jvm.javaio.toInputStream
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +33,7 @@ class DesktopAppUpdateService(
 
     private val controller: SoftwareUpdateController? = SoftwareUpdateController.getInstance()
 
-    private val coroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val coroutineScope = namedScope(ioDispatcher, "DesktopAppUpdateService")
 
     private val _currentVersion: MutableStateFlow<Version> =
         MutableStateFlow(

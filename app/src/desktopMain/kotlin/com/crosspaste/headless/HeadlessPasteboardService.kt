@@ -6,10 +6,10 @@ import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 
 class HeadlessPasteboardService(
@@ -23,7 +23,7 @@ class HeadlessPasteboardService(
 
     override val remotePasteboardChannel: Channel<suspend () -> Result<Unit?>> = Channel(Channel.CONFLATED)
 
-    override val serviceScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    override val serviceScope: CoroutineScope = namedScope(ioDispatcher, "HeadlessPasteboardService")
 
     override fun start() {
         logger.info { "Headless pasteboard service started (no clipboard monitoring)" }

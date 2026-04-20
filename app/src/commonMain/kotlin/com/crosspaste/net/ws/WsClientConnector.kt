@@ -3,12 +3,11 @@ package com.crosspaste.net.ws
 import com.crosspaste.app.AppInfo
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class WsClientConnector(
@@ -19,7 +18,7 @@ class WsClientConnector(
 ) {
     private val logger = KotlinLogging.logger {}
     private val json = getJsonUtils().JSON
-    private val connectScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val connectScope = namedScope(ioDispatcher, "WsClientConnector")
 
     /**
      * Attempt to open a WebSocket connection to a remote peer.

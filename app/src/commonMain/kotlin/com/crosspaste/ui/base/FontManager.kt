@@ -8,8 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.font.FontFamily
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.utils.ioDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +36,7 @@ abstract class FontManager(
             )
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
+    private val scope = namedScope(ioDispatcher, "FontManager")
 
     private val _selectableFonts = MutableStateFlow(listOf(defaultFontInfo))
 

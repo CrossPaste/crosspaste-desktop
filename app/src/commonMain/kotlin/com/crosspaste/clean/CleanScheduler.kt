@@ -5,9 +5,8 @@ import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -22,7 +21,7 @@ class CleanScheduler(
 
     private val logger = KotlinLogging.logger {}
 
-    private val coroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val coroutineScope = namedScope(ioDispatcher, "CleanScheduler")
 
     private val cleanInterval = 5.minutes
 

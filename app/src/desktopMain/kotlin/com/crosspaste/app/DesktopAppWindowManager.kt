@@ -10,10 +10,9 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -87,7 +86,7 @@ abstract class DesktopAppWindowManager(
 
     val bubbleWindowTitle: String = BUBBLE_WINDOW_TITLE
 
-    protected val ioScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    protected val ioScope = namedScope(ioDispatcher, "DesktopAppWindowManager")
 
     private val _mainWindowInfo =
         MutableStateFlow(

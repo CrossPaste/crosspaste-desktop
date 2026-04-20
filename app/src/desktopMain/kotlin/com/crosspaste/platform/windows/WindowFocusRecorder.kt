@@ -4,14 +4,13 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinNT
 import com.sun.jna.platform.win32.WinUser
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -29,7 +28,7 @@ class WindowFocusRecorder(
 
     val lastWinAppInfo: StateFlow<WinAppInfo?> = _lastWinAppInfo
 
-    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val scope = namedScope(ioDispatcher, "WindowFocusRecorder")
 
     fun start() {
         if (hookHandle != null) return

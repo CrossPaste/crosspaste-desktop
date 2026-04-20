@@ -6,14 +6,14 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.Platform.Companion.LINUX
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class MarketingNearbyDeviceManager : NearbyDeviceManager {
 
-    override val nearbyDeviceScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    override val nearbyDeviceScope: CoroutineScope = namedScope(ioDispatcher, "MarketingNearbyDeviceManager")
 
     override val searching: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
