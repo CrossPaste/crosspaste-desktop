@@ -30,6 +30,7 @@ import com.crosspaste.db.DriverFactory
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.mcp.McpServer
+import com.crosspaste.mouse.MouseDaemonManager
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.ResourcesClient
@@ -165,6 +166,11 @@ class CrossPaste {
                     koin.get<Server>().start()
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
+                    }
+                    if (!headless) {
+                        ioCoroutineDispatcher.launch {
+                            koin.get<MouseDaemonManager>().run()
+                        }
                     }
                     koin.get<PasteClient>()
                     koin.get<PasteBonjourService>()

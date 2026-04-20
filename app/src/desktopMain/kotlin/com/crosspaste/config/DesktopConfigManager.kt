@@ -85,6 +85,31 @@ class DesktopConfigManager(
         }
     }
 
+    /**
+     * Typed, lambda-based updater for fields that cannot flow through the
+     * scalar `copy(key, value)` path (e.g. `Map` / complex types). On save
+     * failure, reverts the in-memory state and surfaces a notification,
+     * matching the scalar [updateConfig] behavior.
+     */
+    @Synchronized
+    fun updateConfig(updater: (DesktopAppConfig) -> DesktopAppConfig) {
+        val oldConfig = _config.value
+        val newConfig = updater(oldConfig)
+        _config.value = newConfig
+        runCatching {
+            saveConfig(newConfig)
+        }.onFailure { e ->
+            logger.error(e) { "Failed to save config" }
+            notificationManager?.let { manager ->
+                manager.sendNotification(
+                    title = { it.getText("failed_to_save_config") },
+                    messageType = MessageType.Error,
+                )
+            }
+            _config.value = oldConfig
+        }
+    }
+
     fun saveConfig(config: DesktopAppConfig) {
         configFilePersist.save(config)
     }
