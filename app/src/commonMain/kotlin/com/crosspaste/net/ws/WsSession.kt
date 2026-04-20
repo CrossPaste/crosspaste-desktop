@@ -33,7 +33,16 @@ class WsSession(
         }
     }
 
+    suspend fun ping(): Boolean =
+        sendMutex.withLock {
+            runCatching { session.send(Frame.Ping(PING_PAYLOAD)) }.isSuccess
+        }
+
     suspend fun close(reason: String = "Normal closure") {
         session.close(CloseReason(CloseReason.Codes.NORMAL, reason))
+    }
+
+    companion object {
+        private val PING_PAYLOAD = "cp".encodeToByteArray()
     }
 }
