@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -36,6 +37,7 @@ class MouseDaemonProcess internal constructor(
     private val onClose: () -> Unit,
 ) : AutoCloseable {
 
+    private val stdoutStream: InputStream = stdout
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val writer: BufferedWriter =
         BufferedWriter(OutputStreamWriter(stdin, StandardCharsets.UTF_8))
@@ -61,18 +63,25 @@ class MouseDaemonProcess internal constructor(
 
     private val readerJob: Job =
         scope.launch {
-            BufferedReader(InputStreamReader(stdout, StandardCharsets.UTF_8)).use { reader ->
-                // EOF is the only way out — daemon restarts the session in-place via `stopped` events.
-                while (true) {
-                    val line = reader.readLine() ?: break
-                    if (line.isBlank()) continue
-                    val event =
-                        runCatching {
-                            MouseIpcProtocol.json.decodeFromString(IpcEvent.serializer(), line)
-                        }.getOrElse {
-                            IpcEvent.Error("malformed daemon output: ${it.message}")
-                        }
-                    _events.emit(event)
+            // `runInterruptible` translates coroutine cancellation into
+            // `Thread.interrupt()`, which is the only way to unblock a JVM
+            // classic-IO `readLine()` in progress — neither PipedInputStream.close()
+            // nor coroutine cancel alone wake a reader parked in read().
+            runInterruptible(Dispatchers.IO) {
+                BufferedReader(InputStreamReader(stdout, StandardCharsets.UTF_8)).use { reader ->
+                    // EOF is the only way out under normal flow; daemon restarts
+                    // the session in-place via `stopped` events.
+                    while (true) {
+                        val line = reader.readLine() ?: break
+                        if (line.isBlank()) continue
+                        val event =
+                            runCatching {
+                                MouseIpcProtocol.json.decodeFromString(IpcEvent.serializer(), line)
+                            }.getOrElse {
+                                IpcEvent.Error("malformed daemon output: ${it.message}")
+                            }
+                        _events.tryEmit(event)
+                    }
                 }
             }
         }
@@ -89,8 +98,12 @@ class MouseDaemonProcess internal constructor(
     }
 
     override fun close() {
-        // Cancel the scope and wait for the reader to fully unwind, so the
-        // AutoCloseable contract is honored: no worker thread outlives close().
+        // Close the stdout stream first to unblock any reader thread parked in
+        // `readLine()` (coroutine cancellation alone can't interrupt a blocking
+        // JVM I/O call). Then cancel the scope and wait for the reader to fully
+        // unwind, so the AutoCloseable contract is honored: no worker thread
+        // outlives close().
+        runCatching { stdoutStream.close() }
         runCatching {
             runBlocking {
                 scope.coroutineContext[Job]?.cancelAndJoin()
