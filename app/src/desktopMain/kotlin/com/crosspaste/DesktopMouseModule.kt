@@ -8,6 +8,7 @@ import com.crosspaste.mouse.MouseDaemonProcess
 import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.asDaemonHandle
+import com.crosspaste.ui.mouse.ScreenArrangementViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -65,6 +66,12 @@ fun desktopMouseModule(): Module =
                             ?: throw IllegalStateException("crosspaste-mouse binary not found")
                     MouseDaemonClient(MouseDaemonProcess.spawn(binary).asDaemonHandle())
                 },
+            )
+        }
+        factory<ScreenArrangementViewModel> {
+            ScreenArrangementViewModel(
+                events = get<MouseDaemonManager>().events,
+                layoutStore = get(),
             )
         }
     }

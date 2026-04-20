@@ -42,6 +42,7 @@ import com.crosspaste.ui.extension.ExtensionContentView
 import com.crosspaste.ui.extension.mcp.McpContentView
 import com.crosspaste.ui.extension.ocr.OCRContentView
 import com.crosspaste.ui.extension.sourcecontrol.SourceControlContentView
+import com.crosspaste.ui.mouse.MouseSettingsScreen
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.settings.DesktopNetworkSettingsContentView
@@ -191,6 +192,12 @@ class DesktopScreenProvider(
                     enterTransition = { slideInLeft() },
                 ) {
                     NetworkSettingsScreen()
+                }
+                composable<MouseSettings>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    MouseSettingsScreen()
                 }
                 composable<StorageSettings>(
                     exitTransition = { slideOutRight() },
