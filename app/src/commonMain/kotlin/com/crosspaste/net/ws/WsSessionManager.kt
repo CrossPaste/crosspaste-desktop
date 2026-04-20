@@ -46,6 +46,19 @@ class WsSessionManager {
 
     fun isConnected(appInstanceId: String): Boolean = sessions[appInstanceId]?.isActive == true
 
+    suspend fun probe(appInstanceId: String): Boolean {
+        val session = sessions[appInstanceId] ?: return false
+        if (!session.isActive) {
+            notifySessionClosed(appInstanceId)
+            return false
+        }
+        val success = session.ping()
+        if (!success) {
+            notifySessionClosed(appInstanceId)
+        }
+        return success
+    }
+
     suspend fun closeSession(appInstanceId: String) {
         sessions.remove(appInstanceId)?.let { session ->
             runCatching { session.close("Device removed") }
