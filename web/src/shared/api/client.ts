@@ -1,3 +1,5 @@
+import { parseFailResponse, SyncApiError } from "./sync-error";
+
 export interface RequestConfig {
   host: string;
   port: number;
@@ -20,19 +22,27 @@ function defaultHeaders(config: RequestConfig): Record<string, string> {
   return headers;
 }
 
-/**
- * Parse the response body, handling JSON, plain text/numbers, and empty bodies.
- * The server uses `successResponse(call)` for empty, `successResponse(call, value)` for data.
- */
 async function parseResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   if (!text) return undefined as T;
   try {
     return JSON.parse(text) as T;
   } catch {
-    // Plain value (e.g. integer VERSION)
     return text as T;
   }
+}
+
+function throwForStatus(path: string, status: number, body: string): never {
+  const fail = parseFailResponse(body);
+  if (fail !== null) {
+    throw new SyncApiError({
+      errorCode: fail.errorCode,
+      status,
+      path,
+      message: fail.message || `errorCode=${fail.errorCode}`,
+    });
+  }
+  throw new Error(`${path} failed (${status}): ${body}`);
 }
 
 export async function apiGet<T>(
@@ -47,7 +57,7 @@ export async function apiGet<T>(
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`GET ${path} failed (${res.status}): ${body}`);
+    throwForStatus(path, res.status, body);
   }
   return parseResponse<T>(res);
 }
@@ -64,7 +74,7 @@ export async function apiGetText(
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`GET ${path} failed (${res.status}): ${body}`);
+    throwForStatus(path, res.status, body);
   }
   return res.text();
 }
@@ -83,7 +93,7 @@ export async function apiPost<T>(
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`POST ${path} failed (${res.status}): ${text}`);
+    throwForStatus(path, res.status, text);
   }
   return parseResponse<T>(res);
 }

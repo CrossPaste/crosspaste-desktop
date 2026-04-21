@@ -24,8 +24,8 @@ export const SyncApi = {
     host: string;
     port: number;
     appInstanceId: string;
-  }): Promise<void> {
-    await apiGet<unknown>(toRequestConfig(config), "/sync/telnet");
+  }): Promise<number> {
+    return apiGet<number>(toRequestConfig(config), "/sync/telnet");
   },
 
   /** Get device sync info — GET /sync/syncInfo → returns SyncInfo JSON */
@@ -93,7 +93,7 @@ export const SyncApi = {
     port: number;
     appInstanceId: string;
     targetAppInstanceId: string;
-  }): Promise<void> {
-    await apiGet<unknown>(toRequestConfig(config), "/sync/heartbeat");
+  }): Promise<number> {
+    return apiGet<number>(toRequestConfig(config), "/sync/heartbeat");
   },
 };

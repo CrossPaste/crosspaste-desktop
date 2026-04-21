@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import type { SyncInfo } from "@/shared/models/sync-info";
 import type { StoredDevice } from "@/shared/storage/device-store";
 import type { WsConnectionStatus } from "@/shared/ws/ws-types";
+import { SyncState } from "@/shared/sync/sync-state";
 
 export interface DeviceInfo extends StoredDevice {
-  status: "synced" | "error";
+  status: SyncState;
   wsStatus?: WsConnectionStatus;
 }
 
@@ -34,7 +35,6 @@ export function useConnection() {
 
   useEffect(() => {
     loadDevices();
-
     const listener = (message: Record<string, unknown>) => {
       if (message.type === "DEVICES_CHANGED") {
         loadDevices();
@@ -45,11 +45,12 @@ export function useConnection() {
   }, [loadDevices]);
 
   const connect = useCallback(async (host: string, port: number) => {
-    const result = (await sendMessage({
-      type: "CONNECT",
-      host,
-      port,
-    })) as { success: boolean; syncInfo?: SyncInfo; error?: string };
+    const result = (await sendMessage({ type: "CONNECT", host, port })) as {
+      success: boolean;
+      syncInfo?: SyncInfo;
+      error?: string;
+      incompatible?: boolean;
+    };
     return result;
   }, []);
 
@@ -59,12 +60,21 @@ export function useConnection() {
         success: boolean;
         error?: string;
       };
-      if (result.success) {
-        await loadDevices();
-      }
+      if (result.success) await loadDevices();
       return result;
     },
     [loadDevices],
+  );
+
+  const rePair = useCallback(
+    async (targetAppInstanceId: string) => {
+      const result = (await sendMessage({
+        type: "REPAIR",
+        targetAppInstanceId,
+      })) as { success: boolean; syncInfo?: SyncInfo; error?: string; incompatible?: boolean };
+      return result;
+    },
+    [],
   );
 
   const removeDevice = useCallback(
@@ -85,5 +95,5 @@ export function useConnection() {
     [],
   );
 
-  return { devices, connect, pair, removeDevice, updateNote };
+  return { devices, connect, pair, rePair, removeDevice, updateNote };
 }

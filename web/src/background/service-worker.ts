@@ -15,10 +15,70 @@ import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
 import { initNativeHost, isDesktopConnected } from "./native-host";
+import type { WsConnectionStatus } from "@/shared/ws/ws-types";
+import {
+  deriveSyncState,
+  type DeviceRuntimeFacts,
+} from "@/shared/sync/derive-state";
+import { SyncState } from "@/shared/sync/sync-state";
+import { SyncApiError, StandardErrorCode } from "@/shared/api/sync-error";
+import {
+  PROTOCOL_VERSION,
+  isCompatibleVersion,
+} from "@/shared/sync/protocol-version";
 
-// ─── Per-device runtime status ──────────────────────────────────────────
+// ─── Per-device runtime facts (source of truth) ───────────────────────
+//
+// Lives only in the service worker. The UI sees the derived SyncState
+// (see getDevicesWithStatus). We broadcast DEVICES_CHANGED only when the
+// derived state flips, to avoid spamming on every 60s probe.
 
-const deviceStatuses = new Map<string, "synced" | "error">();
+interface RuntimeFacts {
+  wsState: WsConnectionStatus | null;
+  lastHttpSuccessAt: number | null;
+  lastErrorCode: number | null;
+  versionDrift: boolean;
+  connecting: boolean;
+}
+
+const deviceRuntime = new Map<string, RuntimeFacts>();
+
+function getOrCreateRuntime(targetId: string): RuntimeFacts {
+  let state = deviceRuntime.get(targetId);
+  if (!state) {
+    state = {
+      wsState: null,
+      lastHttpSuccessAt: null,
+      lastErrorCode: null,
+      versionDrift: false,
+      connecting: false,
+    };
+    deviceRuntime.set(targetId, state);
+  }
+  return state;
+}
+
+async function computeState(targetId: string): Promise<SyncState> {
+  const runtime = getOrCreateRuntime(targetId);
+  const device = await DeviceStore.get(targetId);
+  const facts: DeviceRuntimeFacts = {
+    ...runtime,
+    needsRePair: device?.needsRePair === true,
+  };
+  return deriveSyncState(facts, Date.now());
+}
+
+async function updateRuntime(
+  targetId: string,
+  mutate: (state: RuntimeFacts) => void,
+): Promise<void> {
+  const before = await computeState(targetId);
+  mutate(getOrCreateRuntime(targetId));
+  const after = await computeState(targetId);
+  if (before !== after) {
+    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+  }
+}
 
 // ─── WebSocket manager (initialized in initialize()) ────────────────────
 
@@ -240,17 +300,20 @@ async function getAppInstanceId(): Promise<string> {
 // ─── Device status helpers ──────────────────────────────────────────────
 
 export interface DeviceWithStatus extends StoredDevice {
-  status: "synced" | "error";
+  status: SyncState;
 }
 
 async function getDevicesWithStatus(): Promise<DeviceWithStatus[]> {
   const devices = await DeviceStore.getAll();
-  return devices
-    .filter((d) => d.trusted)
-    .map((d) => ({
-      ...d,
-      status: (deviceStatuses.get(d.targetAppInstanceId) ?? "synced") as "synced" | "error",
-    }));
+  const visible = devices.filter((d) => d.trusted || d.needsRePair);
+  const now = Date.now();
+  return visible.map((d) => {
+    const facts: DeviceRuntimeFacts = {
+      ...getOrCreateRuntime(d.targetAppInstanceId),
+      needsRePair: d.needsRePair === true,
+    };
+    return { ...d, status: deriveSyncState(facts, now) };
+  });
 }
 
 // ─── Sync & heartbeat ──────────────────────────────────────────────────
@@ -261,6 +324,7 @@ async function syncAllDevices(): Promise<void> {
 
   for (const device of devices) {
     if (!device.trusted) continue;
+    if (device.needsRePair) continue;
     // Skip HTTP polling for devices with active WebSocket connections
     if (wsManager?.isConnected(device.targetAppInstanceId)) continue;
     try {
@@ -275,46 +339,80 @@ async function syncAllDevices(): Promise<void> {
           await setLastHash(data.hash);
         }
       }
-      if (deviceStatuses.get(device.targetAppInstanceId) !== "synced") {
-        deviceStatuses.set(device.targetAppInstanceId, "synced");
-        broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+      await updateRuntime(device.targetAppInstanceId, (s) => {
+        s.lastHttpSuccessAt = Date.now();
+      });
+    } catch (e) {
+      if (e instanceof SyncApiError) {
+        // Peer is reachable but returned an error — freshness stays;
+        // heartbeat will classify it (DECRYPT_FAIL etc.) on its next tick.
+      } else {
+        // Transport failure = peer unreachable. Collapse the freshness window
+        // so the UI flips to DISCONNECTED instead of lingering as CONNECTED.
+        await updateRuntime(device.targetAppInstanceId, (s) => {
+          s.lastHttpSuccessAt = null;
+        });
       }
-    } catch {
-      // Will retry on next alarm
     }
   }
+}
+
+/**
+ * Desktop reports DECRYPT_FAIL when our stored cryptPublicKey no longer
+ * matches its own (e.g. desktop DB wipe, crypto rotation, or a reinstall).
+ * Recover by wiping the key and flipping the device to UNVERIFIED so the
+ * UI prompts the user to re-pair.
+ */
+async function handleDecryptFail(targetId: string): Promise<void> {
+  await DeviceStore.setNeedsRePair(targetId, true);
+  wsManager?.disconnectDevice(targetId);
+  await updateRuntime(targetId, (s) => {
+    s.lastErrorCode = StandardErrorCode.DECRYPT_FAIL;
+    s.wsState = null;
+    s.lastHttpSuccessAt = null;
+  });
 }
 
 async function sendHeartbeats(): Promise<void> {
   const appInstanceId = await getAppInstanceId();
   const devices = await DeviceStore.getAll();
-  let changed = false;
 
   for (const device of devices) {
     if (!device.trusted) continue;
-    // Skip HTTP heartbeat for devices with active WebSocket connections
+    if (device.needsRePair) continue;
     if (wsManager?.isConnected(device.targetAppInstanceId)) continue;
+
     try {
-      await SyncApi.heartbeat({
+      const remoteVersion = await SyncApi.heartbeat({
         host: device.host,
         port: device.port,
         appInstanceId,
         targetAppInstanceId: device.targetAppInstanceId,
       });
-      if (deviceStatuses.get(device.targetAppInstanceId) !== "synced") {
-        deviceStatuses.set(device.targetAppInstanceId, "synced");
-        changed = true;
-      }
-    } catch {
-      if (deviceStatuses.get(device.targetAppInstanceId) !== "error") {
-        deviceStatuses.set(device.targetAppInstanceId, "error");
-        changed = true;
+      const drift = !isCompatibleVersion(remoteVersion);
+      await updateRuntime(device.targetAppInstanceId, (s) => {
+        s.lastHttpSuccessAt = Date.now();
+        s.lastErrorCode = null;
+        s.versionDrift = drift;
+      });
+    } catch (e) {
+      if (e instanceof SyncApiError && e.isDecryptFail()) {
+        await handleDecryptFail(device.targetAppInstanceId);
+      } else if (e instanceof SyncApiError) {
+        const errorCode = e.errorCode;
+        await updateRuntime(device.targetAppInstanceId, (s) => {
+          s.lastErrorCode = errorCode;
+        });
+      } else {
+        console.debug("[heartbeat] transport error:", e);
+        // Transport failure = peer unreachable. Collapse the freshness
+        // window immediately so the UI flips to DISCONNECTED instead of
+        // lingering as CONNECTED for up to FRESH_THRESHOLD_MS.
+        await updateRuntime(device.targetAppInstanceId, (s) => {
+          s.lastHttpSuccessAt = null;
+        });
       }
     }
-  }
-
-  if (changed) {
-    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
   }
 }
 
@@ -376,18 +474,25 @@ async function initializeWebSocket(): Promise<void> {
       if (!wsManager) throw new Error("WsManager not initialized");
       return wsManager.sendRequest(targetId, envelope);
     },
-    updateDeviceStatus: (targetId, status) => {
-      if (deviceStatuses.get(targetId) !== status) {
-        deviceStatuses.set(targetId, status);
-        broadcastToSidePanel({ type: "DEVICES_CHANGED" });
-      }
+    updateDeviceStatus: async (targetId, status) => {
+      // Receiving a WS message proves the channel is alive; treat NOTIFY_EXIT
+      // as an explicit hint to immediately stale both channels (the WS will
+      // close shortly anyway, but this avoids waiting for the close event).
+      await updateRuntime(targetId, (s) => {
+        if (status === "synced") {
+          s.lastHttpSuccessAt = Date.now();
+        } else {
+          s.wsState = null;
+          s.lastHttpSuccessAt = null;
+        }
+      });
     },
     broadcastToSidePanel,
     setLastHash,
     onRemoteRemoveDevice: async (targetId) => {
       wsManager?.disconnectDevice(targetId);
       await DeviceStore.remove(targetId);
-      deviceStatuses.delete(targetId);
+      deviceRuntime.delete(targetId);
 
       const remaining = await DeviceStore.getAll();
       if (!remaining.some((d) => d.trusted)) {
@@ -404,11 +509,13 @@ async function initializeWebSocket(): Promise<void> {
     });
   };
 
-  wsManager.onStatusChange = (targetId, status) => {
-    if (status === "ws_connected") {
-      deviceStatuses.set(targetId, "synced");
-    }
-    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+  // Source of truth for WS liveness: every status transition is recorded,
+  // not just the success case. The derived state (see deriveSyncState) handles
+  // the rest, including the HTTP fallback grace window.
+  wsManager.onStatusChange = async (targetId, status) => {
+    await updateRuntime(targetId, (s) => {
+      s.wsState = status;
+    });
   };
 
   await wsManager.connectAllDevices();
@@ -433,9 +540,9 @@ async function initialize(): Promise<void> {
   const trustedDevices = devices.filter((d) => d.trusted);
 
   if (trustedDevices.length > 0 && !desktopRunning) {
-    trustedDevices.forEach((d) => {
-      deviceStatuses.set(d.targetAppInstanceId, "synced");
-    });
+    // Do not preset to "synced" — the first WS attempt or heartbeat decides
+    // truth. UI may briefly show "error" until evidence arrives, which is
+    // strictly better than lying with a green badge.
     startSyncAlarms();
     await initializeWebSocket();
   }
@@ -484,13 +591,30 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
     const appInstanceId = await getAppInstanceId();
     const config = { host, port, appInstanceId };
 
-    await SyncApi.telnet(config);
+    const remoteVersion = await SyncApi.telnet(config);
+    if (!isCompatibleVersion(remoteVersion)) {
+      connectingState = null;
+      return {
+        success: false,
+        error: `incompatible protocol version: remote=${remoteVersion} extension=${PROTOCOL_VERSION}`,
+        incompatible: true,
+      };
+    }
+
     const syncInfo = await SyncApi.getSyncInfo(config);
     const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
 
     await SyncApi.showToken({ ...config, targetAppInstanceId });
 
+    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
+      const staleId = connectingState.targetAppInstanceId;
+      await updateRuntime(staleId, (s) => { s.connecting = false; });
+    }
     connectingState = { host, port, targetAppInstanceId, syncInfo };
+    await updateRuntime(targetAppInstanceId, (s) => {
+      s.connecting = true;
+      s.versionDrift = false;
+    });
     return { success: true, syncInfo };
   } catch (e) {
     connectingState = null;
@@ -546,7 +670,14 @@ async function handlePair(token: number): Promise<unknown> {
       addedAt: Date.now(),
     });
 
-    deviceStatuses.set(connectingState.targetAppInstanceId, "synced");
+    // SyncApi.trust just succeeded over HTTP, so the channel is proven alive.
+    await DeviceStore.setNeedsRePair(connectingState.targetAppInstanceId, false);
+    await updateRuntime(connectingState.targetAppInstanceId, (s) => {
+      s.connecting = false;
+      s.lastErrorCode = null;
+      s.versionDrift = false;
+      s.lastHttpSuccessAt = Date.now();
+    });
 
     // Attempt WebSocket upgrade after pairing
     if (!wsManager) {
@@ -563,6 +694,51 @@ async function handlePair(token: number): Promise<unknown> {
 
     return { success: true };
   } catch (e) {
+    if (connectingState) {
+      const id = connectingState.targetAppInstanceId;
+      await updateRuntime(id, (s) => { s.connecting = false; });
+    }
+    return { success: false, error: String(e) };
+  }
+}
+
+async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
+  const device = await DeviceStore.get(targetAppInstanceId);
+  if (!device) return { success: false, error: "Device not found" };
+  try {
+    const appInstanceId = await getAppInstanceId();
+    const config = { host: device.host, port: device.port, appInstanceId };
+
+    const remoteVersion = await SyncApi.telnet(config);
+    if (!isCompatibleVersion(remoteVersion)) {
+      await updateRuntime(targetAppInstanceId, (s) => {
+        s.versionDrift = true;
+      });
+      return {
+        success: false,
+        error: `incompatible protocol version: remote=${remoteVersion} extension=${PROTOCOL_VERSION}`,
+        incompatible: true,
+      };
+    }
+
+    await SyncApi.showToken({ ...config, targetAppInstanceId });
+    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
+      const staleId = connectingState.targetAppInstanceId;
+      await updateRuntime(staleId, (s) => { s.connecting = false; });
+    }
+    connectingState = {
+      host: device.host,
+      port: device.port,
+      targetAppInstanceId,
+      syncInfo: device.syncInfo,
+    };
+    await updateRuntime(targetAppInstanceId, (s) => {
+      s.connecting = true;
+      s.versionDrift = false;
+    });
+    return { success: true, syncInfo: device.syncInfo };
+  } catch (e) {
+    await updateRuntime(targetAppInstanceId, (s) => { s.connecting = false; });
     return { success: false, error: String(e) };
   }
 }
@@ -574,7 +750,7 @@ async function handleRemoveDevice(targetId: string): Promise<unknown> {
   }
   wsManager?.disconnectDevice(targetId);
   await DeviceStore.remove(targetId);
-  deviceStatuses.delete(targetId);
+  deviceRuntime.delete(targetId);
 
   const remaining = await DeviceStore.getAll();
   if (!remaining.some((d) => d.trusted)) {
@@ -655,6 +831,7 @@ async function handleMessage(
     case "GET_DEVICES": return handleGetDevices();
     case "CONNECT": return handleConnect(message.host as string, message.port as number);
     case "PAIR": return handlePair(message.token as number);
+    case "REPAIR": return handleRePair(message.targetAppInstanceId as string);
     case "REMOVE_DEVICE": return handleRemoveDevice(message.targetAppInstanceId as string);
     case "UPDATE_NOTE": return handleUpdateNote(message.targetAppInstanceId as string, message.noteName as string);
     case "GET_PASTES": return handleGetPastes(

@@ -2,7 +2,12 @@ import { apiGetText, type RequestConfig } from "./client";
 import { type PasteData, parsePasteData } from "@/shared/models/paste-data";
 
 export const PullApi = {
-  /** Pull latest paste from the connected device */
+  /**
+   * Pull latest paste from the connected device. Throws on network/transport
+   * errors or server errors so callers can distinguish "peer replied empty"
+   * (returns null) from "peer unreachable" (throws) — the latter must collapse
+   * any liveness freshness window.
+   */
   async pullPaste(config: {
     host: string;
     port: number;
@@ -15,13 +20,9 @@ export const PullApi = {
       appInstanceId: config.appInstanceId,
       targetAppInstanceId: config.targetAppInstanceId,
     };
-    try {
-      const text = await apiGetText(reqConfig, "/pull/paste");
-      if (!text) return null;
-      return parsePasteData(text);
-    } catch {
-      return null;
-    }
+    const text = await apiGetText(reqConfig, "/pull/paste");
+    if (!text) return null;
+    return parsePasteData(text);
   },
 
   /** Get the source application icon */

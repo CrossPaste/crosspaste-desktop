@@ -13,6 +13,12 @@ export interface StoredDevice {
   trusted: boolean;
   noteName?: string;
   serverKeys?: ServerKeys;
+  /**
+   * True when the device was auto-wiped after UNMATCHED and is now awaiting
+   * a re-pair. Surfaces in UI as SyncState.UNVERIFIED. Cleared on successful
+   * pair.
+   */
+  needsRePair?: boolean;
   addedAt: number;
 }
 
@@ -66,5 +72,23 @@ export const DeviceStore = {
         (d) => d.targetAppInstanceId === targetAppInstanceId,
       ) ?? null
     );
+  },
+
+  async setNeedsRePair(
+    targetAppInstanceId: string,
+    needsRePair: boolean,
+  ): Promise<void> {
+    const devices = await this.getAll();
+    const device = devices.find(
+      (d) => d.targetAppInstanceId === targetAppInstanceId,
+    );
+    if (!device) return;
+    if (needsRePair) {
+      device.needsRePair = true;
+      device.serverKeys = undefined;
+    } else {
+      device.needsRePair = undefined;
+    }
+    await chrome.storage.local.set({ [STORAGE_KEY]: devices });
   },
 };
