@@ -16,61 +16,65 @@ import type { WsEnvelope } from "@/shared/ws/ws-types";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
 import { initNativeHost, isDesktopConnected } from "./native-host";
 import type { WsConnectionStatus } from "@/shared/ws/ws-types";
+import {
+  deriveSyncState,
+  type DeviceRuntimeFacts,
+} from "@/shared/sync/derive-state";
+import { SyncState } from "@/shared/sync/sync-state";
+import { SyncApiError, StandardErrorCode } from "@/shared/api/sync-error";
+import {
+  PROTOCOL_VERSION,
+  isCompatibleVersion,
+} from "@/shared/sync/protocol-version";
 
-// ─── Per-device runtime status (derived view) ──────────────────────────
+// ─── Per-device runtime facts (source of truth) ───────────────────────
 //
-// A device is considered "synced" iff EITHER channel is currently alive:
-//   - WebSocket: latest WsManager.onStatusChange was "ws_connected"
-//   - HTTP: a successful heartbeat/sync within FRESH_THRESHOLD_MS
-// Otherwise it is "error" (offline). This is a derived view computed
-// from the two source-of-truth fields below — never stored independently.
+// Lives only in the service worker. The UI sees the derived SyncState
+// (see getDevicesWithStatus). We broadcast DEVICES_CHANGED only when the
+// derived state flips, to avoid spamming on every 60s probe.
 
-interface DeviceRuntimeState {
+interface RuntimeFacts {
   wsState: WsConnectionStatus | null;
   lastHttpSuccessAt: number | null;
+  lastErrorCode: number | null;
+  versionDrift: boolean;
+  connecting: boolean;
 }
 
-type DerivedStatus = "synced" | "error";
+const deviceRuntime = new Map<string, RuntimeFacts>();
 
-// HTTP heartbeat fires every 60s; allow a small grace window for jitter.
-const FRESH_THRESHOLD_MS = 90_000;
-
-const deviceRuntime = new Map<string, DeviceRuntimeState>();
-
-function getOrCreateRuntime(targetId: string): DeviceRuntimeState {
+function getOrCreateRuntime(targetId: string): RuntimeFacts {
   let state = deviceRuntime.get(targetId);
   if (!state) {
-    state = { wsState: null, lastHttpSuccessAt: null };
+    state = {
+      wsState: null,
+      lastHttpSuccessAt: null,
+      lastErrorCode: null,
+      versionDrift: false,
+      connecting: false,
+    };
     deviceRuntime.set(targetId, state);
   }
   return state;
 }
 
-function deriveStatus(state: DeviceRuntimeState | undefined): DerivedStatus {
-  if (!state) return "error";
-  if (state.wsState === "ws_connected") return "synced";
-  if (
-    state.lastHttpSuccessAt !== null &&
-    Date.now() - state.lastHttpSuccessAt < FRESH_THRESHOLD_MS
-  ) {
-    return "synced";
-  }
-  return "error";
+async function computeState(targetId: string): Promise<SyncState> {
+  const runtime = getOrCreateRuntime(targetId);
+  const device = await DeviceStore.get(targetId);
+  const facts: DeviceRuntimeFacts = {
+    ...runtime,
+    needsRePair: device?.needsRePair === true,
+  };
+  return deriveSyncState(facts, Date.now());
 }
 
-/**
- * Apply a mutation to the device's runtime state and broadcast
- * DEVICES_CHANGED only when the *derived* status flips. Avoids spamming
- * the side panel on every probe/heartbeat tick.
- */
-function updateRuntime(
+async function updateRuntime(
   targetId: string,
-  mutate: (state: DeviceRuntimeState) => void,
-): void {
-  const state = getOrCreateRuntime(targetId);
-  const before = deriveStatus(state);
-  mutate(state);
-  const after = deriveStatus(state);
+  mutate: (state: RuntimeFacts) => void,
+): Promise<void> {
+  const before = await computeState(targetId);
+  mutate(getOrCreateRuntime(targetId));
+  const after = await computeState(targetId);
   if (before !== after) {
     broadcastToSidePanel({ type: "DEVICES_CHANGED" });
   }
@@ -296,17 +300,20 @@ async function getAppInstanceId(): Promise<string> {
 // ─── Device status helpers ──────────────────────────────────────────────
 
 export interface DeviceWithStatus extends StoredDevice {
-  status: DerivedStatus;
+  status: SyncState;
 }
 
 async function getDevicesWithStatus(): Promise<DeviceWithStatus[]> {
   const devices = await DeviceStore.getAll();
-  return devices
-    .filter((d) => d.trusted)
-    .map((d) => ({
-      ...d,
-      status: deriveStatus(deviceRuntime.get(d.targetAppInstanceId)),
-    }));
+  const visible = devices.filter((d) => d.trusted || d.needsRePair);
+  const now = Date.now();
+  return visible.map((d) => {
+    const facts: DeviceRuntimeFacts = {
+      ...getOrCreateRuntime(d.targetAppInstanceId),
+      needsRePair: d.needsRePair === true,
+    };
+    return { ...d, status: deriveSyncState(facts, now) };
+  });
 }
 
 // ─── Sync & heartbeat ──────────────────────────────────────────────────
@@ -331,7 +338,7 @@ async function syncAllDevices(): Promise<void> {
           await setLastHash(data.hash);
         }
       }
-      updateRuntime(device.targetAppInstanceId, (s) => {
+      await updateRuntime(device.targetAppInstanceId, (s) => {
         s.lastHttpSuccessAt = Date.now();
       });
     } catch {
@@ -340,26 +347,54 @@ async function syncAllDevices(): Promise<void> {
   }
 }
 
+/**
+ * Desktop reports DECRYPT_FAIL when our stored cryptPublicKey no longer
+ * matches its own (e.g. desktop DB wipe, crypto rotation, or a reinstall).
+ * Recover by wiping the key and flipping the device to UNVERIFIED so the
+ * UI prompts the user to re-pair.
+ */
+async function handleDecryptFail(targetId: string): Promise<void> {
+  await DeviceStore.setNeedsRePair(targetId, true);
+  wsManager?.disconnectDevice(targetId);
+  await updateRuntime(targetId, (s) => {
+    s.lastErrorCode = StandardErrorCode.DECRYPT_FAIL;
+    s.wsState = null;
+    s.lastHttpSuccessAt = null;
+  });
+}
+
 async function sendHeartbeats(): Promise<void> {
   const appInstanceId = await getAppInstanceId();
   const devices = await DeviceStore.getAll();
 
   for (const device of devices) {
     if (!device.trusted) continue;
-    // Skip HTTP heartbeat for devices with active WebSocket connections
     if (wsManager?.isConnected(device.targetAppInstanceId)) continue;
+
     try {
-      await SyncApi.heartbeat({
+      const remoteVersion = await SyncApi.heartbeat({
         host: device.host,
         port: device.port,
         appInstanceId,
         targetAppInstanceId: device.targetAppInstanceId,
       });
-      updateRuntime(device.targetAppInstanceId, (s) => {
+      const drift = !isCompatibleVersion(remoteVersion);
+      await updateRuntime(device.targetAppInstanceId, (s) => {
         s.lastHttpSuccessAt = Date.now();
+        s.lastErrorCode = null;
+        s.versionDrift = drift;
       });
-    } catch {
-      // Failure leaves lastHttpSuccessAt unchanged; freshness expires naturally.
+    } catch (e) {
+      if (e instanceof SyncApiError && e.isDecryptFail()) {
+        await handleDecryptFail(device.targetAppInstanceId);
+      } else if (e instanceof SyncApiError) {
+        const errorCode = e.errorCode;
+        await updateRuntime(device.targetAppInstanceId, (s) => {
+          s.lastErrorCode = errorCode;
+        });
+      }
+      // Transport errors leave lastHttpSuccessAt unchanged; freshness
+      // expires naturally and state falls to DISCONNECTED.
     }
   }
 }
@@ -422,11 +457,11 @@ async function initializeWebSocket(): Promise<void> {
       if (!wsManager) throw new Error("WsManager not initialized");
       return wsManager.sendRequest(targetId, envelope);
     },
-    updateDeviceStatus: (targetId, status) => {
+    updateDeviceStatus: async (targetId, status) => {
       // Receiving a WS message proves the channel is alive; treat NOTIFY_EXIT
       // as an explicit hint to immediately stale both channels (the WS will
       // close shortly anyway, but this avoids waiting for the close event).
-      updateRuntime(targetId, (s) => {
+      await updateRuntime(targetId, (s) => {
         if (status === "synced") {
           s.lastHttpSuccessAt = Date.now();
         } else {
@@ -458,10 +493,10 @@ async function initializeWebSocket(): Promise<void> {
   };
 
   // Source of truth for WS liveness: every status transition is recorded,
-  // not just the success case. The derived status (see deriveStatus) handles
+  // not just the success case. The derived state (see deriveSyncState) handles
   // the rest, including the HTTP fallback grace window.
-  wsManager.onStatusChange = (targetId, status) => {
-    updateRuntime(targetId, (s) => {
+  wsManager.onStatusChange = async (targetId, status) => {
+    await updateRuntime(targetId, (s) => {
       s.wsState = status;
     });
   };
@@ -539,13 +574,26 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
     const appInstanceId = await getAppInstanceId();
     const config = { host, port, appInstanceId };
 
-    await SyncApi.telnet(config);
+    const remoteVersion = await SyncApi.telnet(config);
+    if (!isCompatibleVersion(remoteVersion)) {
+      connectingState = null;
+      return {
+        success: false,
+        error: `incompatible protocol version: remote=${remoteVersion} extension=${PROTOCOL_VERSION}`,
+        incompatible: true,
+      };
+    }
+
     const syncInfo = await SyncApi.getSyncInfo(config);
     const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
 
     await SyncApi.showToken({ ...config, targetAppInstanceId });
 
     connectingState = { host, port, targetAppInstanceId, syncInfo };
+    await updateRuntime(targetAppInstanceId, (s) => {
+      s.connecting = true;
+      s.versionDrift = false;
+    });
     return { success: true, syncInfo };
   } catch (e) {
     connectingState = null;
@@ -602,7 +650,11 @@ async function handlePair(token: number): Promise<unknown> {
     });
 
     // SyncApi.trust just succeeded over HTTP, so the channel is proven alive.
-    updateRuntime(connectingState.targetAppInstanceId, (s) => {
+    await DeviceStore.setNeedsRePair(connectingState.targetAppInstanceId, false);
+    await updateRuntime(connectingState.targetAppInstanceId, (s) => {
+      s.connecting = false;
+      s.lastErrorCode = null;
+      s.versionDrift = false;
       s.lastHttpSuccessAt = Date.now();
     });
 
@@ -620,6 +672,45 @@ async function handlePair(token: number): Promise<unknown> {
     broadcastToSidePanel({ type: "DEVICES_CHANGED" });
 
     return { success: true };
+  } catch (e) {
+    if (connectingState) {
+      const id = connectingState.targetAppInstanceId;
+      await updateRuntime(id, (s) => { s.connecting = false; });
+    }
+    return { success: false, error: String(e) };
+  }
+}
+
+async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
+  const device = await DeviceStore.get(targetAppInstanceId);
+  if (!device) return { success: false, error: "Device not found" };
+  try {
+    const appInstanceId = await getAppInstanceId();
+    const config = { host: device.host, port: device.port, appInstanceId };
+
+    const remoteVersion = await SyncApi.telnet(config);
+    if (!isCompatibleVersion(remoteVersion)) {
+      await updateRuntime(targetAppInstanceId, (s) => {
+        s.versionDrift = true;
+      });
+      return {
+        success: false,
+        error: `incompatible protocol version: remote=${remoteVersion}`,
+      };
+    }
+
+    await SyncApi.showToken({ ...config, targetAppInstanceId });
+    connectingState = {
+      host: device.host,
+      port: device.port,
+      targetAppInstanceId,
+      syncInfo: device.syncInfo,
+    };
+    await updateRuntime(targetAppInstanceId, (s) => {
+      s.connecting = true;
+      s.versionDrift = false;
+    });
+    return { success: true, syncInfo: device.syncInfo };
   } catch (e) {
     return { success: false, error: String(e) };
   }
@@ -713,6 +804,7 @@ async function handleMessage(
     case "GET_DEVICES": return handleGetDevices();
     case "CONNECT": return handleConnect(message.host as string, message.port as number);
     case "PAIR": return handlePair(message.token as number);
+    case "REPAIR": return handleRePair(message.targetAppInstanceId as string);
     case "REMOVE_DEVICE": return handleRemoveDevice(message.targetAppInstanceId as string);
     case "UPDATE_NOTE": return handleUpdateNote(message.targetAppInstanceId as string, message.noteName as string);
     case "GET_PASTES": return handleGetPastes(
