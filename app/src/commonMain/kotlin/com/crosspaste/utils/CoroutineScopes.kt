@@ -18,8 +18,5 @@ fun loggingExceptionHandler(name: String): CoroutineExceptionHandler =
 fun namedScope(
     dispatcher: CoroutineDispatcher,
     name: String,
-    job: CompletableJob? = SupervisorJob(),
-): CoroutineScope =
-    job?.let {
-        CoroutineScope(dispatcher + it + loggingExceptionHandler(name))
-    } ?: CoroutineScope(dispatcher + loggingExceptionHandler(name))
+    job: CompletableJob = SupervisorJob(),
+): CoroutineScope = CoroutineScope(dispatcher + job + loggingExceptionHandler(name))

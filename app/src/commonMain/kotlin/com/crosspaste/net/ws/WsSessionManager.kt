@@ -7,7 +7,7 @@ class WsSessionManager {
 
     private val logger = KotlinLogging.logger {}
 
-    private val sessions: MutableMap<String, WsSession> = ConcurrentMap()
+    private val sessions: ConcurrentMap<String, WsSession> = ConcurrentMap()
 
     private var onSessionClosed: ((String) -> Unit)? = null
 
@@ -35,8 +35,11 @@ class WsSessionManager {
         }
     }
 
-    fun notifySessionClosed(appInstanceId: String) {
-        if (sessions.remove(appInstanceId) != null) {
+    fun notifySessionClosed(
+        appInstanceId: String,
+        session: WsSession,
+    ) {
+        if (sessions.remove(appInstanceId, session)) {
             logger.info { "Unregistered WebSocket session for $appInstanceId" }
             onSessionClosed?.invoke(appInstanceId)
         }
@@ -49,12 +52,12 @@ class WsSessionManager {
     suspend fun probe(appInstanceId: String): Boolean {
         val session = sessions[appInstanceId] ?: return false
         if (!session.isActive) {
-            notifySessionClosed(appInstanceId)
+            notifySessionClosed(appInstanceId, session)
             return false
         }
         val success = session.ping()
         if (!success) {
-            notifySessionClosed(appInstanceId)
+            notifySessionClosed(appInstanceId, session)
         }
         return success
     }
@@ -85,7 +88,7 @@ class WsSessionManager {
             true
         }.onFailure { e ->
             logger.warn(e) { "WebSocket send failed for $appInstanceId" }
-            notifySessionClosed(appInstanceId)
+            notifySessionClosed(appInstanceId, session)
         }.getOrDefault(false)
     }
 }
