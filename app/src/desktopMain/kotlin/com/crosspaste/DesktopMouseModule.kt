@@ -10,6 +10,7 @@ import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.asDaemonHandle
 import com.crosspaste.ui.mouse.ScreenArrangementViewModel
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -35,9 +36,20 @@ class DesktopAppConfigMouseLayoutBacking(
     private val configManager: DesktopConfigManager,
 ) : MouseLayoutStore.Backing {
 
+    private val logger = KotlinLogging.logger {}
+
     private val mapSerializer = MapSerializer(String.serializer(), Position.serializer())
 
     private val updateLock = Any()
+
+    /**
+     * Last JSON value we already logged a decode failure for. De-duplicates
+     * warnings across the many `decode()` calls that happen while a corrupt
+     * config value keeps sitting in [DesktopConfigManager.config] — we only
+     * want one warning per distinct bad payload.
+     */
+    @Volatile
+    private var lastWarnedJson: String? = null
 
     override fun snapshot(): Map<String, Position> = decode(configManager.config.value.mouseLayout)
 
@@ -59,7 +71,16 @@ class DesktopAppConfigMouseLayoutBacking(
 
     private fun decode(json: String): Map<String, Position> =
         runCatching { MouseIpcProtocol.json.decodeFromString(mapSerializer, json) }
-            .getOrElse { emptyMap() }
+            .getOrElse { e ->
+                if (lastWarnedJson != json) {
+                    lastWarnedJson = json
+                    logger.warn(e) {
+                        "Failed to decode mouseLayout JSON; falling back to empty layout. " +
+                            "Offending value (truncated): ${json.take(200)}"
+                    }
+                }
+                emptyMap()
+            }
 }
 
 fun desktopMouseModule(): Module =
