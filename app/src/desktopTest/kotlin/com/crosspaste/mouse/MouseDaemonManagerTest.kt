@@ -173,7 +173,7 @@ class MouseDaemonManagerTest {
                     flow.value = updater(flow.value)
                 }
 
-                override fun flow() = flow
+                override fun flow(): kotlinx.coroutines.flow.Flow<Map<String, Position>> = flow
             }
         return MouseLayoutStore(backing)
     }

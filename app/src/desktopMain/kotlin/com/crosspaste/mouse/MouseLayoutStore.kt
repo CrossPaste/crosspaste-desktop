@@ -1,7 +1,6 @@
 package com.crosspaste.mouse
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Store for the per-device virtual-screen layout driving the mouse daemon.
@@ -31,7 +30,12 @@ class MouseLayoutStore(
 
         fun update(updater: (Map<String, Position>) -> Map<String, Position>)
 
-        fun flow(): MutableStateFlow<Map<String, Position>>
+        /**
+         * Observable surface. Must be derived from (or kept in lockstep with)
+         * the same state `snapshot()` reads, so observers never see a
+         * persisted-but-not-yet-emitted state or vice versa.
+         */
+        fun flow(): Flow<Map<String, Position>>
     }
 
     fun all(): Map<String, Position> = backing.snapshot()

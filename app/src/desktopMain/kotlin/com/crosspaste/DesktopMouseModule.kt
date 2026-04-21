@@ -10,7 +10,7 @@ import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.asDaemonHandle
 import com.crosspaste.ui.mouse.ScreenArrangementViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.builtins.MapSerializer
@@ -24,19 +24,18 @@ import org.koin.dsl.module
  * `mouseLayout` is stored as a JSON-encoded `Map<String, Position>` in
  * [com.crosspaste.config.DesktopAppConfig.mouseLayout], matching the
  * `blacklist` / `sourceExclusions` pattern: encode on write, decode on read,
- * flow through the scalar `updateConfig(key, value)` path. The store's own
- * [flow] is the authoritative observable surface — updated in lockstep with
- * `set()` so observers see new layouts immediately, independent of config
- * save latency.
+ * flow through the scalar `updateConfig(key, value)` path.
+ *
+ * Observable [flow] is derived from `configManager.config` directly — this
+ * is the single source of truth. If a save fails inside `updateConfig` and
+ * the config rolls back, the derived flow automatically reflects the
+ * rollback; observers never see a value that isn't persisted.
  */
 class DesktopAppConfigMouseLayoutBacking(
     private val configManager: DesktopConfigManager,
 ) : MouseLayoutStore.Backing {
 
     private val mapSerializer = MapSerializer(String.serializer(), Position.serializer())
-
-    private val _flow: MutableStateFlow<Map<String, Position>> =
-        MutableStateFlow(decode(configManager.config.value.mouseLayout))
 
     private val updateLock = Any()
 
@@ -50,11 +49,13 @@ class DesktopAppConfigMouseLayoutBacking(
                 "mouseLayout",
                 MouseIpcProtocol.json.encodeToString(mapSerializer, next),
             )
-            _flow.value = next
         }
     }
 
-    override fun flow(): MutableStateFlow<Map<String, Position>> = _flow
+    override fun flow(): Flow<Map<String, Position>> =
+        configManager.config
+            .map { decode(it.mouseLayout) }
+            .distinctUntilChanged()
 
     private fun decode(json: String): Map<String, Position> =
         runCatching { MouseIpcProtocol.json.decodeFromString(mapSerializer, json) }
