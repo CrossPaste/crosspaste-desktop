@@ -93,6 +93,19 @@ class MouseDaemonProcess internal constructor(
             }
         }
 
+    /**
+     * Send one command as a line on daemon stdin. Serialization + write +
+     * flush is wrapped in [NonCancellable] on purpose: if the caller gets
+     * cancelled mid-write, we'd otherwise leave a truncated JSON line in
+     * the daemon's stdin — the Rust JSON-Lines parser would then fail the
+     * next command (and every command thereafter) with a protocol error.
+     *
+     * Trade-off: a concurrent [close] call will wait on [writeLock] until
+     * the in-flight send completes. That's intentional — the alternative
+     * (yanking the writer mid-flush) would corrupt the daemon. The whole
+     * write is short (single line, flushed immediately) so the wait is
+     * bounded by OS pipe-buffer latency.
+     */
     suspend fun send(command: IpcCommand) {
         val line = MouseIpcProtocol.json.encodeToString(IpcCommand.serializer(), command)
         writeLock.withLock {
