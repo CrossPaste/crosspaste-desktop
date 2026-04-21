@@ -5,6 +5,7 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Unified wrapper around Ktor WebSocket sessions (server or client).
@@ -33,7 +34,19 @@ class WsSession(
         }
     }
 
+    suspend fun ping(): Boolean =
+        sendMutex.withLock {
+            withTimeoutOrNull(PING_TIMEOUT_MS) {
+                runCatching { session.send(Frame.Ping(PING_PAYLOAD)) }.isSuccess
+            } ?: false
+        }
+
     suspend fun close(reason: String = "Normal closure") {
         session.close(CloseReason(CloseReason.Codes.NORMAL, reason))
+    }
+
+    companion object {
+        private val PING_PAYLOAD = "cp".encodeToByteArray()
+        private const val PING_TIMEOUT_MS = 3_000L
     }
 }

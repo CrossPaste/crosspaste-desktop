@@ -34,6 +34,10 @@ class SyncPollingManager(
 
     private val stateMutex = Mutex()
 
+    // @VisibleForTesting
+    internal val currentFailCount: Int
+        get() = failTimeRef.value
+
     suspend fun reset() {
         stateMutex.withLock {
             failTimeRef.value = 0

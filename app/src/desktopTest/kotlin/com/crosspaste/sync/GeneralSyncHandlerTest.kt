@@ -402,4 +402,63 @@ class GeneralSyncHandlerTest {
             assertNull(address)
             childScope.cancel()
         }
+
+    // ========== X. callback wiring (polling vs force) ==========
+
+    // NOTE on approach: the plan's original design had the test capture a polling-origin
+    // Resolve event via `advanceTimeBy(61_000L)` to trigger SyncPollingManager's 60s tick.
+    // However, `SyncPollingManager.waitForNextExecution` reads wall-clock time via
+    // `DateUtils.nowEpochMilliseconds()` (Clock.System.now()), not the virtual TestScheduler
+    // clock. Under `runTest`, `advanceTimeBy` advances virtual time but not wall-clock, so the
+    // polling loop spins indefinitely (`delay(1000)` returns under virtual time but the
+    // `while` check never sees wall-clock pass `nextExecutionTime`). That hangs `runTest`.
+    //
+    // To verify the wiring without refactoring the time source, we expose
+    // `createPollingCallback` as an `internal` member on GeneralSyncHandler and invoke it
+    // directly — it is the same factory the polling loop uses (`init { job = startPollingResolve { emitEvent(Resolve(..., createPollingCallback())) } }`).
+
+    @Test
+    fun pollingCallback_markPollFailure_incrementsFailCount() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            val handler = GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            // Directly obtain the polling-origin callback the polling loop would use
+            val pollingCallback = handler.createPollingCallback()
+
+            val before = handler.syncPollingManager.currentFailCount
+            pollingCallback.markPollFailure()
+            val after = handler.syncPollingManager.currentFailCount
+
+            assertEquals(before + 1, after)
+            childScope.cancel()
+        }
+
+    @Test
+    fun forceResolveCallback_markPollFailure_isNoOp() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            val handler = GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            handler.forceResolve()
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            val forceEvent =
+                emitter.events.filterIsInstance<SyncEvent.ForceResolve>().first()
+
+            val before = handler.syncPollingManager.currentFailCount
+            forceEvent.callback.markPollFailure()
+            val after = handler.syncPollingManager.currentFailCount
+
+            assertEquals(before, after)
+            childScope.cancel()
+        }
 }
