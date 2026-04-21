@@ -342,8 +342,17 @@ async function syncAllDevices(): Promise<void> {
       await updateRuntime(device.targetAppInstanceId, (s) => {
         s.lastHttpSuccessAt = Date.now();
       });
-    } catch {
-      // Failure leaves lastHttpSuccessAt unchanged; freshness expires naturally.
+    } catch (e) {
+      if (e instanceof SyncApiError) {
+        // Peer is reachable but returned an error — freshness stays;
+        // heartbeat will classify it (DECRYPT_FAIL etc.) on its next tick.
+      } else {
+        // Transport failure = peer unreachable. Collapse the freshness window
+        // so the UI flips to DISCONNECTED instead of lingering as CONNECTED.
+        await updateRuntime(device.targetAppInstanceId, (s) => {
+          s.lastHttpSuccessAt = null;
+        });
+      }
     }
   }
 }
@@ -396,9 +405,13 @@ async function sendHeartbeats(): Promise<void> {
         });
       } else {
         console.debug("[heartbeat] transport error:", e);
+        // Transport failure = peer unreachable. Collapse the freshness
+        // window immediately so the UI flips to DISCONNECTED instead of
+        // lingering as CONNECTED for up to FRESH_THRESHOLD_MS.
+        await updateRuntime(device.targetAppInstanceId, (s) => {
+          s.lastHttpSuccessAt = null;
+        });
       }
-      // Transport errors leave lastHttpSuccessAt unchanged; freshness
-      // expires naturally and state falls to DISCONNECTED.
     }
   }
 }

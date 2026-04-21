@@ -26,7 +26,6 @@ export function MyDevicesSection({ devices, desktopConnected, onClick, onEditNot
           key={device.targetAppInstanceId}
           syncInfo={device.syncInfo}
           status={desktopConnected ? "paused" : device.status}
-          wsStatus={device.wsStatus}
           noteName={device.noteName}
           onClick={() => onClick?.(device)}
           onRePair={() => onRePair(device.targetAppInstanceId)}

@@ -8,7 +8,6 @@ import {
   Pause,
   Edit,
   Trash2,
-  Zap,
   Loader,
   KeyRound,
   ShieldAlert,
@@ -16,7 +15,6 @@ import {
 } from "lucide-react";
 import type { SyncInfo } from "@/shared/models/sync-info";
 import { useI18n } from "@/shared/i18n/use-i18n";
-import type { WsConnectionStatus } from "@/shared/ws/ws-types";
 import { SyncState } from "@/shared/sync/sync-state";
 
 type DeviceStatus = SyncState | "paused";
@@ -24,7 +22,6 @@ type DeviceStatus = SyncState | "paused";
 interface Props {
   syncInfo: SyncInfo;
   status: DeviceStatus;
-  wsStatus?: WsConnectionStatus;
   noteName?: string;
   onClick?: () => void;
   onRetry?: () => void;
@@ -53,12 +50,10 @@ const PLATFORM_ICON_COLOR: Record<string, string> = {
 
 function DeviceStatusBadge({
   status,
-  wsStatus,
   onRetry,
   onRePair,
 }: {
   status: DeviceStatus;
-  wsStatus?: WsConnectionStatus;
   onRetry?: () => void;
   onRePair?: () => void;
 }) {
@@ -66,18 +61,11 @@ function DeviceStatusBadge({
 
   if (status === SyncState.CONNECTED) {
     return (
-      <div className="flex items-center gap-1.5 shrink-0">
-        {wsStatus === "ws_connected" && (
-          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-m3-primary-container" title="WebSocket">
-            <Zap size={10} className="text-m3-primary" />
-          </div>
-        )}
-        <div className="flex items-center gap-1 rounded-md bg-m3-success-container px-2 py-1">
-          <RefreshCw size={10} className="text-m3-success" />
-          <span className="text-[10px] font-medium text-m3-success leading-none">
-            {t("sync_status_synced")}
-          </span>
-        </div>
+      <div className="flex items-center gap-1 rounded-md bg-m3-success-container px-2 py-1 shrink-0">
+        <RefreshCw size={10} className="text-m3-success" />
+        <span className="text-[10px] font-medium text-m3-success leading-none">
+          {t("sync_status_synced")}
+        </span>
       </div>
     );
   }
@@ -244,7 +232,6 @@ function DeviceContextMenu({
 export function DeviceCard({
   syncInfo,
   status,
-  wsStatus,
   noteName,
   onClick,
   onRetry,
@@ -324,7 +311,6 @@ export function DeviceCard({
 
         <DeviceStatusBadge
           status={status}
-          wsStatus={wsStatus}
           onRetry={onRetry}
           onRePair={onRePair}
         />
