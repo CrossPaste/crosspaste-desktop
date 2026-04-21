@@ -15,10 +15,66 @@ import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
 import { initNativeHost, isDesktopConnected } from "./native-host";
+import type { WsConnectionStatus } from "@/shared/ws/ws-types";
 
-// ─── Per-device runtime status ──────────────────────────────────────────
+// ─── Per-device runtime status (derived view) ──────────────────────────
+//
+// A device is considered "synced" iff EITHER channel is currently alive:
+//   - WebSocket: latest WsManager.onStatusChange was "ws_connected"
+//   - HTTP: a successful heartbeat/sync within FRESH_THRESHOLD_MS
+// Otherwise it is "error" (offline). This is a derived view computed
+// from the two source-of-truth fields below — never stored independently.
 
-const deviceStatuses = new Map<string, "synced" | "error">();
+interface DeviceRuntimeState {
+  wsState: WsConnectionStatus | null;
+  lastHttpSuccessAt: number | null;
+}
+
+type DerivedStatus = "synced" | "error";
+
+// HTTP heartbeat fires every 60s; allow a small grace window for jitter.
+const FRESH_THRESHOLD_MS = 90_000;
+
+const deviceRuntime = new Map<string, DeviceRuntimeState>();
+
+function getOrCreateRuntime(targetId: string): DeviceRuntimeState {
+  let state = deviceRuntime.get(targetId);
+  if (!state) {
+    state = { wsState: null, lastHttpSuccessAt: null };
+    deviceRuntime.set(targetId, state);
+  }
+  return state;
+}
+
+function deriveStatus(state: DeviceRuntimeState | undefined): DerivedStatus {
+  if (!state) return "error";
+  if (state.wsState === "ws_connected") return "synced";
+  if (
+    state.lastHttpSuccessAt !== null &&
+    Date.now() - state.lastHttpSuccessAt < FRESH_THRESHOLD_MS
+  ) {
+    return "synced";
+  }
+  return "error";
+}
+
+/**
+ * Apply a mutation to the device's runtime state and broadcast
+ * DEVICES_CHANGED only when the *derived* status flips. Avoids spamming
+ * the side panel on every probe/heartbeat tick.
+ */
+function updateRuntime(
+  targetId: string,
+  mutate: (state: DeviceRuntimeState) => void,
+): void {
+  const state = getOrCreateRuntime(targetId);
+  const before = deriveStatus(state);
+  mutate(state);
+  const after = deriveStatus(state);
+  if (before !== after) {
+    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+  }
+}
 
 // ─── WebSocket manager (initialized in initialize()) ────────────────────
 
@@ -240,7 +296,7 @@ async function getAppInstanceId(): Promise<string> {
 // ─── Device status helpers ──────────────────────────────────────────────
 
 export interface DeviceWithStatus extends StoredDevice {
-  status: "synced" | "error";
+  status: DerivedStatus;
 }
 
 async function getDevicesWithStatus(): Promise<DeviceWithStatus[]> {
@@ -249,7 +305,7 @@ async function getDevicesWithStatus(): Promise<DeviceWithStatus[]> {
     .filter((d) => d.trusted)
     .map((d) => ({
       ...d,
-      status: (deviceStatuses.get(d.targetAppInstanceId) ?? "synced") as "synced" | "error",
+      status: deriveStatus(deviceRuntime.get(d.targetAppInstanceId)),
     }));
 }
 
@@ -275,12 +331,11 @@ async function syncAllDevices(): Promise<void> {
           await setLastHash(data.hash);
         }
       }
-      if (deviceStatuses.get(device.targetAppInstanceId) !== "synced") {
-        deviceStatuses.set(device.targetAppInstanceId, "synced");
-        broadcastToSidePanel({ type: "DEVICES_CHANGED" });
-      }
+      updateRuntime(device.targetAppInstanceId, (s) => {
+        s.lastHttpSuccessAt = Date.now();
+      });
     } catch {
-      // Will retry on next alarm
+      // Failure leaves lastHttpSuccessAt unchanged; freshness expires naturally.
     }
   }
 }
@@ -288,7 +343,6 @@ async function syncAllDevices(): Promise<void> {
 async function sendHeartbeats(): Promise<void> {
   const appInstanceId = await getAppInstanceId();
   const devices = await DeviceStore.getAll();
-  let changed = false;
 
   for (const device of devices) {
     if (!device.trusted) continue;
@@ -301,20 +355,12 @@ async function sendHeartbeats(): Promise<void> {
         appInstanceId,
         targetAppInstanceId: device.targetAppInstanceId,
       });
-      if (deviceStatuses.get(device.targetAppInstanceId) !== "synced") {
-        deviceStatuses.set(device.targetAppInstanceId, "synced");
-        changed = true;
-      }
+      updateRuntime(device.targetAppInstanceId, (s) => {
+        s.lastHttpSuccessAt = Date.now();
+      });
     } catch {
-      if (deviceStatuses.get(device.targetAppInstanceId) !== "error") {
-        deviceStatuses.set(device.targetAppInstanceId, "error");
-        changed = true;
-      }
+      // Failure leaves lastHttpSuccessAt unchanged; freshness expires naturally.
     }
-  }
-
-  if (changed) {
-    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
   }
 }
 
@@ -377,17 +423,24 @@ async function initializeWebSocket(): Promise<void> {
       return wsManager.sendRequest(targetId, envelope);
     },
     updateDeviceStatus: (targetId, status) => {
-      if (deviceStatuses.get(targetId) !== status) {
-        deviceStatuses.set(targetId, status);
-        broadcastToSidePanel({ type: "DEVICES_CHANGED" });
-      }
+      // Receiving a WS message proves the channel is alive; treat NOTIFY_EXIT
+      // as an explicit hint to immediately stale both channels (the WS will
+      // close shortly anyway, but this avoids waiting for the close event).
+      updateRuntime(targetId, (s) => {
+        if (status === "synced") {
+          s.lastHttpSuccessAt = Date.now();
+        } else {
+          s.wsState = null;
+          s.lastHttpSuccessAt = null;
+        }
+      });
     },
     broadcastToSidePanel,
     setLastHash,
     onRemoteRemoveDevice: async (targetId) => {
       wsManager?.disconnectDevice(targetId);
       await DeviceStore.remove(targetId);
-      deviceStatuses.delete(targetId);
+      deviceRuntime.delete(targetId);
 
       const remaining = await DeviceStore.getAll();
       if (!remaining.some((d) => d.trusted)) {
@@ -404,11 +457,13 @@ async function initializeWebSocket(): Promise<void> {
     });
   };
 
+  // Source of truth for WS liveness: every status transition is recorded,
+  // not just the success case. The derived status (see deriveStatus) handles
+  // the rest, including the HTTP fallback grace window.
   wsManager.onStatusChange = (targetId, status) => {
-    if (status === "ws_connected") {
-      deviceStatuses.set(targetId, "synced");
-    }
-    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+    updateRuntime(targetId, (s) => {
+      s.wsState = status;
+    });
   };
 
   await wsManager.connectAllDevices();
@@ -433,9 +488,9 @@ async function initialize(): Promise<void> {
   const trustedDevices = devices.filter((d) => d.trusted);
 
   if (trustedDevices.length > 0 && !desktopRunning) {
-    trustedDevices.forEach((d) => {
-      deviceStatuses.set(d.targetAppInstanceId, "synced");
-    });
+    // Do not preset to "synced" — the first WS attempt or heartbeat decides
+    // truth. UI may briefly show "error" until evidence arrives, which is
+    // strictly better than lying with a green badge.
     startSyncAlarms();
     await initializeWebSocket();
   }
@@ -546,7 +601,10 @@ async function handlePair(token: number): Promise<unknown> {
       addedAt: Date.now(),
     });
 
-    deviceStatuses.set(connectingState.targetAppInstanceId, "synced");
+    // SyncApi.trust just succeeded over HTTP, so the channel is proven alive.
+    updateRuntime(connectingState.targetAppInstanceId, (s) => {
+      s.lastHttpSuccessAt = Date.now();
+    });
 
     // Attempt WebSocket upgrade after pairing
     if (!wsManager) {
@@ -574,7 +632,7 @@ async function handleRemoveDevice(targetId: string): Promise<unknown> {
   }
   wsManager?.disconnectDevice(targetId);
   await DeviceStore.remove(targetId);
-  deviceStatuses.delete(targetId);
+  deviceRuntime.delete(targetId);
 
   const remaining = await DeviceStore.getAll();
   if (!remaining.some((d) => d.trusted)) {
