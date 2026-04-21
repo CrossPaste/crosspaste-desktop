@@ -9,7 +9,7 @@ function mockFetchOnce(response: {
   status: number;
   body: string;
 }): void {
-  global.fetch = vi.fn().mockResolvedValueOnce({
+  globalThis.fetch = vi.fn().mockResolvedValueOnce({
     ok: response.ok,
     status: response.status,
     text: () => Promise.resolve(response.body),
@@ -42,10 +42,10 @@ describe("apiGet error handling", () => {
   it("throws generic Error when body is not a FailResponse", async () => {
     mockFetchOnce({ ok: false, status: 500, body: "boom" });
 
-    const err = await apiGet(CONFIG, "/sync/telnet").catch((e) => e);
+    const err: unknown = await apiGet(CONFIG, "/sync/telnet").catch((e) => e);
     expect(err).toBeInstanceOf(Error);
     expect(err).not.toBeInstanceOf(SyncApiError);
-    expect(String(err.message)).toContain("boom");
+    expect(err instanceof Error && err.message).toContain("boom");
   });
 
   it("returns parsed integer body on success", async () => {
