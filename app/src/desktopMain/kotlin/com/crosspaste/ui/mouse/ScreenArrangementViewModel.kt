@@ -25,8 +25,8 @@ class ScreenArrangementViewModel(
     private val _remoteDevices = MutableStateFlow<Map<String, RemoteDeviceInfo>>(emptyMap())
     val remoteDevices: StateFlow<Map<String, RemoteDeviceInfo>> = _remoteDevices.asStateFlow()
 
-    /** For tests: inject a remote without emitting an event. */
-    fun seedRemote(
+    /** Test-only: inject a remote device without going through the event stream. */
+    internal fun seedRemote(
         deviceId: String,
         name: String,
         screens: List<ScreenInfo>,
