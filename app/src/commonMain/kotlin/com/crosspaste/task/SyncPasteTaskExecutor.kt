@@ -8,6 +8,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
+import com.crosspaste.dto.notice.OversizePasteNotice
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.ClientApiResult
@@ -207,14 +208,19 @@ class SyncPasteTaskExecutor(
         // Extension devices have file size limits — skip file-type pastes that exceed them
         if (syncRuntimeInfo.platform.isExtension() && pasteData.isFileType()) {
             val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
-            if (pasteFiles == null || !isWithinExtensionFileLimit(pasteFiles)) {
+            val oversizeNotice =
+                if (pasteFiles == null) null else detectExtensionOversize(pasteFiles)
+            if (pasteFiles == null || oversizeNotice != null) {
                 logger.info {
                     "Skipping file-type paste sync to extension $handlerKey: " +
                         if (pasteFiles == null) {
                             "unable to resolve PasteFiles for size check"
                         } else {
-                            "file size exceeds extension limit (total=${pasteFiles.size})"
+                            "file size exceeds extension limit (reason=${oversizeNotice?.reason})"
                         }
+                }
+                if (oversizeNotice != null) {
+                    notifyExtensionOversize(targetAppInstanceId, oversizeNotice)
                 }
                 return SuccessResult()
             }
@@ -277,10 +283,48 @@ class SyncPasteTaskExecutor(
             logger.warn(e) { "WebSocket paste send failed for $targetAppInstanceId, falling back to HTTP" }
         }.getOrNull()
 
-    private fun isWithinExtensionFileLimit(pasteFiles: PasteFiles): Boolean {
-        if (pasteFiles.size > EXTENSION_MAX_TOTAL_FILE_SIZE) return false
-        return pasteFiles.fileInfoTreeMap.values.all { fileInfoTree ->
-            fileInfoTree.size <= EXTENSION_MAX_FILE_SIZE
+    /**
+     * Returns a notice describing why [pasteFiles] exceeds the Chrome extension
+     * per-file / total-size limits, or null if it's within bounds.
+     */
+    private fun detectExtensionOversize(pasteFiles: PasteFiles): OversizePasteNotice? {
+        val oversizeFile =
+            pasteFiles.fileInfoTreeMap.entries.firstOrNull { (_, info) ->
+                info.size > EXTENSION_MAX_FILE_SIZE
+            }
+        if (oversizeFile != null) {
+            return OversizePasteNotice(
+                reason = OversizePasteNotice.Reason.FILE_TOO_LARGE,
+                fileName = oversizeFile.key,
+                actualSize = oversizeFile.value.size,
+                sizeLimitBytes = EXTENSION_MAX_FILE_SIZE,
+            )
+        }
+        if (pasteFiles.size > EXTENSION_MAX_TOTAL_FILE_SIZE) {
+            return OversizePasteNotice(
+                reason = OversizePasteNotice.Reason.TOTAL_TOO_LARGE,
+                fileName = null,
+                actualSize = pasteFiles.size,
+                sizeLimitBytes = EXTENSION_MAX_TOTAL_FILE_SIZE,
+            )
+        }
+        return null
+    }
+
+    private suspend fun notifyExtensionOversize(
+        targetAppInstanceId: String,
+        notice: OversizePasteNotice,
+    ) {
+        runCatching {
+            val payload = getJsonUtils().JSON.encodeToString(notice).encodeToByteArray()
+            val envelope =
+                WsEnvelope(
+                    type = WsMessageType.PASTE_REJECTED_OVERSIZE,
+                    payload = payload,
+                )
+            wsSessionManager.send(targetAppInstanceId, envelope)
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to send PASTE_REJECTED_OVERSIZE to $targetAppInstanceId" }
         }
     }
 

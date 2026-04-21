@@ -22,6 +22,14 @@ interface WsWholeFileRequest {
 
 type WsPullFileRequest = WsChunkRequest | WsWholeFileRequest;
 
+/** Payload of a PASTE_REJECTED_OVERSIZE message (matches Kotlin OversizePasteNotice). */
+export interface OversizePasteNotice {
+  reason: "FILE_TOO_LARGE" | "TOTAL_TOO_LARGE";
+  fileName?: string | null;
+  actualSize: number;
+  sizeLimitBytes: number;
+}
+
 export interface WsMessageHandlerDeps {
   /** Send an envelope back to the device that sent the message. */
   sendToDevice: (targetAppInstanceId: string, envelope: WsEnvelope) => Promise<void>;
@@ -35,6 +43,11 @@ export interface WsMessageHandlerDeps {
   setLastHash: (hash: string) => Promise<void>;
   /** Handle remote removal: remove device from storage and disconnect WebSocket. */
   onRemoteRemoveDevice: (targetAppInstanceId: string) => Promise<void>;
+  /** Surface an oversize-paste rejection from [sourceAppInstanceId] to the user. */
+  showOversizePasteNotice: (
+    sourceAppInstanceId: string,
+    notice: OversizePasteNotice,
+  ) => Promise<void>;
 }
 
 /**
@@ -68,6 +81,10 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
 
         case WsMessageType.FILE_PULL_REQUEST:
           await handleFilePullRequest(appInstanceId, envelope);
+          break;
+
+        case WsMessageType.PASTE_REJECTED_OVERSIZE:
+          await handlePasteRejectedOversize(appInstanceId, envelope);
           break;
 
         default:
@@ -232,6 +249,20 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
         BlobStore.notifyChange(hash);
         deps.broadcastToSidePanel({ type: "BLOBS_READY", hash });
       }
+    }
+  }
+
+  async function handlePasteRejectedOversize(
+    appInstanceId: string,
+    envelope: WsEnvelope,
+  ): Promise<void> {
+    try {
+      const notice = JSON.parse(
+        new TextDecoder().decode(envelope.payload),
+      ) as OversizePasteNotice;
+      await deps.showOversizePasteNotice(appInstanceId, notice);
+    } catch (e) {
+      console.error(`[WsHandler] Failed to handle PASTE_REJECTED_OVERSIZE from ${appInstanceId}:`, e);
     }
   }
 

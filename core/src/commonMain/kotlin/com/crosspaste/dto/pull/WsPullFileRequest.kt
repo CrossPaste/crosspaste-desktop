@@ -1,5 +1,6 @@
 package com.crosspaste.dto.pull
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
@@ -11,6 +12,7 @@ import kotlinx.serialization.json.JsonClassDiscriminator
  * **Whole-file mode** (Desktop ↔ Chrome extension): [WholeFileRequest] with `fileName`
  *   plus `id` (Desktop-side lookup) or `hash` (Chrome-side lookup).
  */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("mode")
 sealed class WsPullFileRequest {

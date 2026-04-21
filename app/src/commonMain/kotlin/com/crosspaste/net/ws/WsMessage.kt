@@ -59,5 +59,6 @@ object WsMessageType {
     const val NOTIFY_REMOVE = "notify_remove"
     const val FILE_PULL_REQUEST = "file_pull_request"
     const val FILE_PULL_RESPONSE = "file_pull_response"
+    const val PASTE_REJECTED_OVERSIZE = "paste_rejected_oversize"
     const val ERROR = "error"
 }

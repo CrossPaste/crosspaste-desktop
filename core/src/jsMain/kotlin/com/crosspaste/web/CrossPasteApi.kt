@@ -119,7 +119,7 @@ object CrossPasteCrypto {
             val privateKey = serializer.decodeSignPrivateKey(signPrivateKeyDer)
 
             val timestamp =
-                kotlinx.datetime.Clock.System
+                kotlin.time.Clock.System
                     .now()
                     .toEpochMilliseconds()
 

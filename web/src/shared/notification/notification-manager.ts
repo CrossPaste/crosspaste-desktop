@@ -40,7 +40,7 @@ export const NotificationManager = {
     lastContentTime = now;
 
     const msg: Message = { id: nextId++, title, message, type, duration };
-    messages = [...messages, msg];
+    messages = [msg, ...messages];
     notify();
 
     if (duration !== null) {
