@@ -8,9 +8,10 @@ interface Props {
   onClick?: (device: DeviceInfo) => void;
   onEditNote?: (device: DeviceInfo) => void;
   onRemove?: (targetAppInstanceId: string) => void;
+  onRePair: (targetId: string) => Promise<unknown>;
 }
 
-export function MyDevicesSection({ devices, desktopConnected, onClick, onEditNote, onRemove }: Props) {
+export function MyDevicesSection({ devices, desktopConnected, onClick, onEditNote, onRemove, onRePair }: Props) {
   const t = useI18n();
 
   if (devices.length === 0) return null;
@@ -24,10 +25,11 @@ export function MyDevicesSection({ devices, desktopConnected, onClick, onEditNot
         <DeviceCard
           key={device.targetAppInstanceId}
           syncInfo={device.syncInfo}
-          status={desktopConnected ? "paused" : device.status === "synced" ? "synced" : "error"}
+          status={desktopConnected ? "paused" : device.status}
           wsStatus={device.wsStatus}
           noteName={device.noteName}
           onClick={() => onClick?.(device)}
+          onRePair={() => onRePair(device.targetAppInstanceId)}
           onEditNote={() => onEditNote?.(device)}
           onRemove={() => onRemove?.(device.targetAppInstanceId)}
         />

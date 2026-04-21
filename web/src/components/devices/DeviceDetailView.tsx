@@ -7,9 +7,14 @@ import {
   CircleX,
   Edit,
   Trash2,
+  Loader,
+  KeyRound,
+  ShieldAlert,
+  AlertTriangle,
 } from "lucide-react";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type { DeviceInfo } from "@/shared/hooks/use-connection";
+import { SyncState } from "@/shared/sync/sync-state";
 
 interface Props {
   device: DeviceInfo;
@@ -100,11 +105,39 @@ export function DeviceDetailView({
             </div>
 
             {/* Status badge */}
-            {status === "synced" ? (
+            {status === SyncState.CONNECTED ? (
               <div className="flex items-center gap-1.5 rounded-full bg-m3-success-container px-3 py-1">
                 <RefreshCw size={12} className="text-m3-success" />
                 <span className="text-xs font-medium text-m3-success">
                   {t("sync_status_synced")}
+                </span>
+              </div>
+            ) : status === SyncState.CONNECTING ? (
+              <div className="flex items-center gap-1.5 rounded-full bg-m3-primary-container px-3 py-1">
+                <Loader size={12} className="text-m3-primary animate-spin" />
+                <span className="text-xs font-medium text-m3-primary">
+                  {t("sync_status_connecting")}
+                </span>
+              </div>
+            ) : status === SyncState.UNVERIFIED ? (
+              <div className="flex items-center gap-1.5 rounded-full bg-m3-warning-container px-3 py-1">
+                <KeyRound size={12} className="text-m3-warning" />
+                <span className="text-xs font-medium text-m3-warning">
+                  {t("sync_status_unverified")}
+                </span>
+              </div>
+            ) : status === SyncState.UNMATCHED ? (
+              <div className="flex items-center gap-1.5 rounded-full bg-m3-error-container px-3 py-1">
+                <ShieldAlert size={12} className="text-m3-error" />
+                <span className="text-xs font-medium text-m3-error">
+                  {t("sync_status_unmatched")}
+                </span>
+              </div>
+            ) : status === SyncState.INCOMPATIBLE ? (
+              <div className="flex items-center gap-1.5 rounded-full bg-m3-error-container px-3 py-1">
+                <AlertTriangle size={12} className="text-m3-error" />
+                <span className="text-xs font-medium text-m3-error">
+                  {t("sync_status_incompatible")}
                 </span>
               </div>
             ) : (

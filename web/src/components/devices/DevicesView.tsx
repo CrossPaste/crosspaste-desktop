@@ -15,6 +15,7 @@ interface Props {
   onPair: (token: number) => Promise<{ success: boolean; error?: string }>;
   onRemoveDevice: (targetAppInstanceId: string) => void;
   onUpdateNote: (targetAppInstanceId: string, noteName: string) => void;
+  onRePair: (targetId: string) => Promise<unknown>;
 }
 
 export function DevicesView({
@@ -24,6 +25,7 @@ export function DevicesView({
   onPair,
   onRemoveDevice,
   onUpdateNote,
+  onRePair,
 }: Props) {
   const t = useI18n();
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -121,6 +123,7 @@ export function DevicesView({
               onClick={(device) => setSelectedDevice(device.targetAppInstanceId)}
               onEditNote={(device) => setEditingDevice(device)}
               onRemove={(targetAppInstanceId) => onRemoveDevice(targetAppInstanceId)}
+              onRePair={onRePair}
             />
           )}
         </div>

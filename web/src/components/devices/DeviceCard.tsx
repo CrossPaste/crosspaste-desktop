@@ -9,12 +9,17 @@ import {
   Edit,
   Trash2,
   Zap,
+  Loader,
+  KeyRound,
+  ShieldAlert,
+  AlertTriangle,
 } from "lucide-react";
 import type { SyncInfo } from "@/shared/models/sync-info";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type { WsConnectionStatus } from "@/shared/ws/ws-types";
+import { SyncState } from "@/shared/sync/sync-state";
 
-type DeviceStatus = "synced" | "error" | "paused";
+type DeviceStatus = SyncState | "paused";
 
 interface Props {
   syncInfo: SyncInfo;
@@ -23,6 +28,7 @@ interface Props {
   noteName?: string;
   onClick?: () => void;
   onRetry?: () => void;
+  onRePair?: () => void;
   onEditNote?: () => void;
   onRemove?: () => void;
 }
@@ -49,14 +55,16 @@ function DeviceStatusBadge({
   status,
   wsStatus,
   onRetry,
+  onRePair,
 }: {
   status: DeviceStatus;
   wsStatus?: WsConnectionStatus;
   onRetry?: () => void;
+  onRePair?: () => void;
 }) {
   const t = useI18n();
 
-  if (status === "synced") {
+  if (status === SyncState.CONNECTED) {
     return (
       <div className="flex items-center gap-1.5 shrink-0">
         {wsStatus === "ws_connected" && (
@@ -85,28 +93,92 @@ function DeviceStatusBadge({
     );
   }
 
-  if (status === "error") {
+  if (status === SyncState.CONNECTING) {
+    return (
+      <div className="flex items-center gap-1 rounded-md bg-m3-primary-container px-2 py-1 shrink-0">
+        <Loader size={10} className="text-m3-primary animate-spin" />
+        <span className="text-[10px] font-medium text-m3-primary leading-none">
+          {t("sync_status_connecting")}
+        </span>
+      </div>
+    );
+  }
+
+  if (status === SyncState.INCOMPATIBLE) {
+    return (
+      <div className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1 shrink-0">
+        <AlertTriangle size={10} className="text-m3-error" />
+        <span className="text-[10px] font-medium text-m3-error leading-none">
+          {t("sync_status_incompatible")}
+        </span>
+      </div>
+    );
+  }
+
+  if (status === SyncState.UNMATCHED) {
     return (
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1">
-          <CircleX size={10} className="text-m3-error" />
+          <ShieldAlert size={10} className="text-m3-error" />
           <span className="text-[10px] font-medium text-m3-error leading-none">
-            {t("sync_status_disconnected")}
+            {t("sync_status_unmatched")}
           </span>
         </div>
-        {onRetry && (
+        {onRePair && (
           <button
-            onClick={onRetry}
-            className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
+            onClick={onRePair}
+            className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1 text-[10px] font-medium text-m3-error"
           >
-            <RefreshCw size={14} className="text-m3-error" />
+            <KeyRound size={10} />
+            {t("repair_device")}
           </button>
         )}
       </div>
     );
   }
 
-  return null;
+  if (status === SyncState.UNVERIFIED) {
+    return (
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 rounded-md bg-m3-warning-container px-2 py-1">
+          <KeyRound size={10} className="text-m3-warning" />
+          <span className="text-[10px] font-medium text-m3-warning leading-none">
+            {t("sync_status_unverified")}
+          </span>
+        </div>
+        {onRePair && (
+          <button
+            onClick={onRePair}
+            className="flex items-center gap-1 rounded-md bg-m3-warning-container px-2 py-1 text-[10px] font-medium text-m3-warning"
+          >
+            <KeyRound size={10} />
+            {t("repair_device")}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // DISCONNECTED (and any unhandled numeric) fall through to the
+  // generic error pill with a retry button — same behavior as before.
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1">
+        <CircleX size={10} className="text-m3-error" />
+        <span className="text-[10px] font-medium text-m3-error leading-none">
+          {t("sync_status_disconnected")}
+        </span>
+      </div>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
+        >
+          <RefreshCw size={14} className="text-m3-error" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 function DeviceContextMenu({
@@ -167,6 +239,7 @@ export function DeviceCard({
   noteName,
   onClick,
   onRetry,
+  onRePair,
   onEditNote,
   onRemove,
 }: Props) {
@@ -240,7 +313,12 @@ export function DeviceCard({
           </span>
         </div>
 
-        <DeviceStatusBadge status={status} wsStatus={wsStatus} onRetry={onRetry} />
+        <DeviceStatusBadge
+          status={status}
+          wsStatus={wsStatus}
+          onRetry={onRetry}
+          onRePair={onRePair}
+        />
       </div>
 
       {contextMenu && (
