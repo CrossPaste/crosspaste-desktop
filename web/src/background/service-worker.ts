@@ -324,6 +324,7 @@ async function syncAllDevices(): Promise<void> {
 
   for (const device of devices) {
     if (!device.trusted) continue;
+    if (device.needsRePair) continue;
     // Skip HTTP polling for devices with active WebSocket connections
     if (wsManager?.isConnected(device.targetAppInstanceId)) continue;
     try {
@@ -369,6 +370,7 @@ async function sendHeartbeats(): Promise<void> {
 
   for (const device of devices) {
     if (!device.trusted) continue;
+    if (device.needsRePair) continue;
     if (wsManager?.isConnected(device.targetAppInstanceId)) continue;
 
     try {
@@ -392,6 +394,8 @@ async function sendHeartbeats(): Promise<void> {
         await updateRuntime(device.targetAppInstanceId, (s) => {
           s.lastErrorCode = errorCode;
         });
+      } else {
+        console.debug("[heartbeat] transport error:", e);
       }
       // Transport errors leave lastHttpSuccessAt unchanged; freshness
       // expires naturally and state falls to DISCONNECTED.
@@ -589,6 +593,10 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
 
     await SyncApi.showToken({ ...config, targetAppInstanceId });
 
+    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
+      const staleId = connectingState.targetAppInstanceId;
+      await updateRuntime(staleId, (s) => { s.connecting = false; });
+    }
     connectingState = { host, port, targetAppInstanceId, syncInfo };
     await updateRuntime(targetAppInstanceId, (s) => {
       s.connecting = true;
@@ -695,11 +703,16 @@ async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
       });
       return {
         success: false,
-        error: `incompatible protocol version: remote=${remoteVersion}`,
+        error: `incompatible protocol version: remote=${remoteVersion} extension=${PROTOCOL_VERSION}`,
+        incompatible: true,
       };
     }
 
     await SyncApi.showToken({ ...config, targetAppInstanceId });
+    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
+      const staleId = connectingState.targetAppInstanceId;
+      await updateRuntime(staleId, (s) => { s.connecting = false; });
+    }
     connectingState = {
       host: device.host,
       port: device.port,
@@ -712,6 +725,7 @@ async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
     });
     return { success: true, syncInfo: device.syncInfo };
   } catch (e) {
+    await updateRuntime(targetAppInstanceId, (s) => { s.connecting = false; });
     return { success: false, error: String(e) };
   }
 }
