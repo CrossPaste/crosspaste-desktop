@@ -63,27 +63,44 @@ function NotificationCard({
 
   const styles = TYPE_STYLES[msg.type];
   const Icon = TYPE_ICONS[msg.type];
+  const hasBody = Boolean(msg.message) || Boolean(msg.action);
 
   return (
     <div
       className={`
-        flex items-start gap-2.5 px-3 py-2.5 rounded-xl shadow-lg
+        flex gap-2.5 px-3 py-2.5 rounded-xl shadow-lg
         transition-all duration-200 ease-out
+        ${hasBody ? "items-start" : "items-center"}
         ${styles.container}
         ${visible && !exiting ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
         ${exiting ? "opacity-0 translate-x-full" : ""}
       `}
     >
-      <Icon size={18} className={`${styles.icon} shrink-0 mt-0.5`} />
+      <Icon
+        size={18}
+        className={`${styles.icon} shrink-0 ${hasBody ? "mt-0.5" : ""}`}
+      />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium leading-tight">{msg.title}</p>
         {msg.message && (
           <p className="text-[11px] leading-tight mt-0.5 opacity-70">{msg.message}</p>
         )}
+        {msg.action && (
+          <button
+            onClick={() => {
+              msg.action?.onClick();
+              handleDismiss();
+            }}
+            className="mt-1.5 text-[11px] font-semibold underline underline-offset-2
+              hover:opacity-80 transition-opacity"
+          >
+            {msg.action.label}
+          </button>
+        )}
       </div>
       <button
         onClick={handleDismiss}
-        className="shrink-0 opacity-50 hover:opacity-100 transition-opacity mt-0.5"
+        className={`shrink-0 opacity-50 hover:opacity-100 transition-opacity ${hasBody ? "mt-0.5" : ""}`}
       >
         <X size={14} />
       </button>

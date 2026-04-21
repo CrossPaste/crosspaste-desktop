@@ -37,6 +37,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste: paste from %s not synced",
     paste_oversize_file: "\"%s\" (%s) exceeds the %s per-file limit",
     paste_oversize_total: "Total size %s exceeds the %s limit",
+    install_desktop_client: "Install the desktop client for full functionality",
   },
   de: {
     clipboard: "Zwischenablage",
@@ -72,6 +73,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste: Einfügung von %s nicht synchronisiert",
     paste_oversize_file: "„%s\" (%s) überschreitet das Limit von %s pro Datei",
     paste_oversize_total: "Gesamtgröße %s überschreitet das Limit von %s",
+    install_desktop_client: "Desktop-Client für alle Funktionen installieren",
   },
   es: {
     clipboard: "Portapapeles",
@@ -107,6 +109,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste: pegado de %s no sincronizado",
     paste_oversize_file: "\"%s\" (%s) supera el límite de %s por archivo",
     paste_oversize_total: "El tamaño total %s supera el límite de %s",
+    install_desktop_client: "Instala el cliente de escritorio para todas las funciones",
   },
   fr: {
     clipboard: "Presse-papiers",
@@ -142,6 +145,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste : collage depuis %s non synchronisé",
     paste_oversize_file: "« %s » (%s) dépasse la limite de %s par fichier",
     paste_oversize_total: "La taille totale %s dépasse la limite de %s",
+    install_desktop_client: "Installer le client de bureau pour toutes les fonctionnalités",
   },
   ja: {
     clipboard: "クリップボード",
@@ -176,6 +180,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste: %s からのペーストは同期されませんでした",
     paste_oversize_file: "「%s」(%s) が1ファイルあたりの上限 %s を超えています",
     paste_oversize_total: "合計サイズ %s が上限 %s を超えています",
+    install_desktop_client: "すべての機能を利用するためにデスクトップクライアントをインストール",
   },
   ko: {
     clipboard: "클립보드",
@@ -209,6 +214,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste: %s 의 붙여넣기가 동기화되지 않았습니다",
     paste_oversize_file: "\"%s\"(%s)이(가) 파일당 한도 %s 을(를) 초과합니다",
     paste_oversize_total: "총 크기 %s 이(가) 한도 %s 을(를) 초과합니다",
+    install_desktop_client: "전체 기능을 위해 데스크톱 클라이언트 설치",
   },
   zh: {
     clipboard: "剪贴板",
@@ -241,6 +247,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste：来自 %s 的剪贴板未同步",
     paste_oversize_file: "文件「%s」大小为 %s，超过单文件上限 %s",
     paste_oversize_total: "总大小 %s 超过 %s 上限",
+    install_desktop_client: "安装桌面客户端以支持完整功能",
   },
   zh_hant: {
     clipboard: "剪貼簿",
@@ -273,5 +280,6 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_not_synced_title: "CrossPaste：來自 %s 的剪貼簿未同步",
     paste_oversize_file: "檔案「%s」大小為 %s，超過單檔上限 %s",
     paste_oversize_total: "總大小 %s 超過 %s 上限",
+    install_desktop_client: "安裝桌面客戶端以支援完整功能",
   },
 };

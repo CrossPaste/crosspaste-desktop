@@ -225,11 +225,11 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   const handleCopy = useCallback(async () => {
     try {
       await copyPasteData(data);
-      NotificationManager.success("Copied");
+      NotificationManager.success(t("copy_successful"));
     } catch {
-      NotificationManager.error("Copy failed");
+      NotificationManager.error(t("copy_failed"));
     }
-  }, [data]);
+  }, [data, t]);
 
   const handleDownload = useCallback(async () => {
     const item = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];

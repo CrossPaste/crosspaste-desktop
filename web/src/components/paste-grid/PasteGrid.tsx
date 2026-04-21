@@ -9,15 +9,6 @@ import { NotificationManager } from "@/shared/notification/notification-manager"
 import { PasteTypeInt } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
 
-async function copyItem(data: PasteData) {
-  try {
-    await copyPasteData(data);
-    NotificationManager.success("Copied");
-  } catch {
-    NotificationManager.error("Copy failed");
-  }
-}
-
 /** Each entry maps to an i18n key; null value = "all types" */
 const TYPE_OPTIONS: ReadonlyArray<{ value: number | null; i18nKey: string }> = [
   { value: null, i18nKey: "all_types" },
@@ -63,6 +54,18 @@ export function PasteGrid() {
   const { items, loading, hasMore, loadMore, deletePaste } = usePasteList(searchParams);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+
+  const copyItem = useCallback(
+    async (data: PasteData) => {
+      try {
+        await copyPasteData(data);
+        NotificationManager.success(t("copy_successful"));
+      } catch {
+        NotificationManager.error(t("copy_failed"));
+      }
+    },
+    [t],
+  );
 
   const lastItemRef = useCallback(
     (node: HTMLDivElement | null) => {

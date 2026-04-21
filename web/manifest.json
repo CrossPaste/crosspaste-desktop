@@ -4,7 +4,7 @@
   "description": "Clipboard sync with CrossPaste desktop",
   "version": "0.1.0",
   "permissions": ["storage", "sidePanel", "alarms", "offscreen", "clipboardRead", "clipboardWrite", "downloads", "nativeMessaging"],
-  "host_permissions": ["http://*/*"],
+  "host_permissions": ["http://*/*", "https://crosspaste.com/*"],
   "side_panel": {
     "default_path": "src/sidepanel/index.html"
   },
