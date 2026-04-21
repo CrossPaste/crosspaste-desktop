@@ -168,8 +168,9 @@ class MouseDaemonManagerTest {
 
                 override fun snapshot() = flow.value
 
-                override fun set(newMap: Map<String, Position>) {
-                    flow.value = newMap
+                @Synchronized
+                override fun update(updater: (Map<String, Position>) -> Map<String, Position>) {
+                    flow.value = updater(flow.value)
                 }
 
                 override fun flow() = flow

@@ -1,7 +1,10 @@
 package com.crosspaste.mouse
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlin.test.Test
@@ -46,6 +49,26 @@ class MouseLayoutStoreTest {
             assertEquals(Position(1920, 0), updates.last()["inst-1"])
         }
 
+    @Test
+    fun `concurrent upserts on distinct keys do not lose updates`() =
+        runBlocking {
+            // Under the previous snapshot() + set() design, concurrent upserts
+            // could read the same snapshot and overwrite each other on write,
+            // losing all but one update. The atomic update() contract closes
+            // that race — all 200 distinct keys must survive.
+            val cfg = FakeConfig(mutableMapOf())
+            val store = MouseLayoutStore(cfg)
+            val n = 200
+            coroutineScope {
+                repeat(n) { i ->
+                    launch(Dispatchers.Default) {
+                        store.upsert("device-$i", Position(i, 0))
+                    }
+                }
+            }
+            assertEquals(n, store.all().size)
+        }
+
     // Fake config stand-in that matches the store's expected interface.
     private class FakeConfig(
         val backing: MutableMap<String, Position>,
@@ -54,10 +77,12 @@ class MouseLayoutStoreTest {
 
         override fun snapshot() = backing.toMap()
 
-        override fun set(newMap: Map<String, Position>) {
+        @Synchronized
+        override fun update(updater: (Map<String, Position>) -> Map<String, Position>) {
+            val next = updater(backing.toMap())
             backing.clear()
-            backing.putAll(newMap)
-            flow.value = snapshot()
+            backing.putAll(next)
+            flow.value = next
         }
 
         override fun flow() = flow

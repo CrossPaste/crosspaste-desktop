@@ -20,11 +20,16 @@ class MouseLayoutStore(
      * The store treats the layout as a `Map<deviceId, Position>`; the adapter
      * decides how to serialize it into whatever config representation the
      * platform uses (plain map, JSON-encoded strings, wrapper class, etc).
+     *
+     * Mutations are expressed as an [update] function that atomically reads
+     * the current state, applies the updater, and persists the result. This
+     * closes a read–modify–write race that a separate `snapshot() + set()`
+     * pair would leave open under concurrent [upsert] / [remove] calls.
      */
     interface Backing {
         fun snapshot(): Map<String, Position>
 
-        fun set(newMap: Map<String, Position>)
+        fun update(updater: (Map<String, Position>) -> Map<String, Position>)
 
         fun flow(): MutableStateFlow<Map<String, Position>>
     }
@@ -37,13 +42,11 @@ class MouseLayoutStore(
         deviceId: String,
         position: Position,
     ) {
-        val next = backing.snapshot().toMutableMap().apply { put(deviceId, position) }
-        backing.set(next)
+        backing.update { it + (deviceId to position) }
     }
 
     fun remove(deviceId: String) {
-        val next = backing.snapshot().toMutableMap().apply { remove(deviceId) }
-        backing.set(next)
+        backing.update { it - deviceId }
     }
 
     fun flow(): Flow<Map<String, Position>> = backing.flow()
