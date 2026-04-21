@@ -38,11 +38,20 @@ class DesktopAppConfigMouseLayoutBacking(
     private val _flow: MutableStateFlow<Map<String, Position>> =
         MutableStateFlow(decode(configManager.config.value.mouseLayout))
 
+    private val updateLock = Any()
+
     override fun snapshot(): Map<String, Position> = decode(configManager.config.value.mouseLayout)
 
-    override fun set(newMap: Map<String, Position>) {
-        configManager.updateConfig("mouseLayout", MouseIpcProtocol.json.encodeToString(mapSerializer, newMap))
-        _flow.value = newMap
+    override fun update(updater: (Map<String, Position>) -> Map<String, Position>) {
+        synchronized(updateLock) {
+            val current = decode(configManager.config.value.mouseLayout)
+            val next = updater(current)
+            configManager.updateConfig(
+                "mouseLayout",
+                MouseIpcProtocol.json.encodeToString(mapSerializer, next),
+            )
+            _flow.value = next
+        }
     }
 
     override fun flow(): MutableStateFlow<Map<String, Position>> = _flow
