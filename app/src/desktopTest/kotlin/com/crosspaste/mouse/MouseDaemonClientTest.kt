@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlin.test.Test
@@ -102,6 +103,47 @@ class MouseDaemonClientTest {
             yield()
             proc.emit(IpcEvent.PeerConnected(name = "Desktop", deviceId = "d1"))
             got.join()
+            job.cancel()
+        }
+
+    @Test
+    fun `transient Stopped during updateLayout fallback is hidden from events`() =
+        runTest {
+            val proc = FakeProcess()
+            val client = MouseDaemonClient(proc)
+            val job = launch { client.run() }
+            advanceUntilIdle()
+            // Handshake without update_layout → fallback path
+            proc.emit(IpcEvent.Initialized(screens = emptyList(), protocolVersion = 2))
+            proc.emit(IpcEvent.Capabilities(protocolVersion = 2, features = emptyList()))
+            advanceUntilIdle()
+
+            val observed = mutableListOf<IpcEvent>()
+            val collector = launch { client.events.collect { observed.add(it) } }
+            advanceUntilIdle()
+
+            // Trigger the stop+start fallback
+            client.updateLayout(port = 4243, peers = emptyList())
+            advanceUntilIdle()
+            // Daemon would emit Stopped in between, then Initialized on new session.
+            proc.emit(IpcEvent.Stopped)
+            proc.emit(IpcEvent.Initialized(screens = emptyList(), protocolVersion = 2))
+            advanceUntilIdle()
+
+            // The transient Stopped must NOT reach observers
+            assertTrue(
+                observed.none { it is IpcEvent.Stopped },
+                "transient Stopped leaked through: $observed",
+            )
+            // A subsequent real Stopped (after handshake clears the flag) should pass
+            proc.emit(IpcEvent.Stopped)
+            advanceUntilIdle()
+            assertTrue(
+                observed.any { it is IpcEvent.Stopped },
+                "real Stopped after restart window was suppressed: $observed",
+            )
+
+            collector.cancel()
             job.cancel()
         }
 }
