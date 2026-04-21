@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Copy, Trash2, Download } from "lucide-react";
 import type { PasteData } from "@/shared/models/paste-data";
-import { PasteType, PASTE_TYPE_FROM_INT, PASTE_TYPE_I18N_KEYS } from "@/shared/models/paste-item";
+import { PasteType, PasteTypeInt, PASTE_TYPE_FROM_INT, PASTE_TYPE_I18N_KEYS } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
 import type {
   PasteItem,
@@ -220,7 +220,7 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const isFileType = data.pasteType === 3; // PasteTypeInt.FILE
+  const isDownloadable = data.pasteType === PasteTypeInt.FILE || data.pasteType === PasteTypeInt.IMAGE;
 
   const handleCopy = useCallback(async () => {
     try {
@@ -310,7 +310,7 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
             <Copy size={16} className="text-m3-on-surface-variant" />
             <span>{t("copy")}</span>
           </button>
-          {isFileType && (
+          {isDownloadable && (
             <button
               onClick={() => { setContextMenu(null); handleDownload(); }}
               className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"

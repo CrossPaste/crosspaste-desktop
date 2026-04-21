@@ -145,6 +145,18 @@ function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+// MV3 service workers don't expose URL.createObjectURL or the Blob URL scheme,
+// so chrome.downloads.download has to be fed a data URL instead.
+function arrayBufferToDataUrl(buffer: ArrayBuffer, mime = "application/octet-stream"): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)));
+  }
+  return `data:${mime};base64,${btoa(binary)}`;
+}
+
 /** Store file blobs grouped by their hash. */
 async function storeFileBlobs(collected: { hash: string; fileBlobs: Array<{ name: string; dataUrl: string; hash?: string }> }): Promise<void> {
   if (collected.fileBlobs.length === 0) return;
@@ -832,24 +844,11 @@ async function handleDownloadFile(hash: string, fileName: string): Promise<unkno
   const data = await BlobStore.get(hash, fileName);
   if (!data) return { success: false, error: "File not found" };
 
-  const blob = new Blob([data]);
-  const url = URL.createObjectURL(blob);
+  const url = arrayBufferToDataUrl(data);
   try {
-    const downloadId = await chrome.downloads.download({ url, filename: fileName, saveAs: true });
-
-    const listener = (delta: chrome.downloads.DownloadDelta) => {
-      if (delta.id !== downloadId) return;
-      const state = delta.state?.current;
-      if (state === "complete" || state === "interrupted") {
-        chrome.downloads.onChanged.removeListener(listener);
-        URL.revokeObjectURL(url);
-      }
-    };
-    chrome.downloads.onChanged.addListener(listener);
-
+    await chrome.downloads.download({ url, filename: fileName, saveAs: true });
     return { success: true };
   } catch (e) {
-    URL.revokeObjectURL(url);
     return { success: false, error: String(e) };
   }
 }
