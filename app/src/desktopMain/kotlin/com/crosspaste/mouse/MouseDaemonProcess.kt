@@ -5,13 +5,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -106,17 +105,21 @@ class MouseDaemonProcess internal constructor(
     }
 
     override fun close() {
-        // Close the stdout stream first to unblock any reader thread parked in
-        // `readLine()` (coroutine cancellation alone can't interrupt a blocking
-        // JVM I/O call). Then cancel the scope and wait for the reader to fully
-        // unwind, so the AutoCloseable contract is honored: no worker thread
-        // outlives close().
+        // Signal cancellation; runInterruptible translates this into
+        // Thread.interrupt() on the reader thread, which unblocks readLine()
+        // (InterruptedIOException). The reader coroutine then unwinds on its
+        // own Dispatchers.IO thread.
+        //
+        // We intentionally do NOT runBlocking { cancelAndJoin() } here:
+        // close() can be called from a coroutine context (e.g. the
+        // MouseDaemonManager collector) and runBlocking inside a coroutine
+        // is a deadlock risk if the caller's dispatcher is saturated or if
+        // close() is ever invoked from inside the reader itself.
+        // Trade-off: AutoCloseable returns before the reader is fully dead,
+        // but the reader has no external side effects beyond _events.tryEmit
+        // into a DROP_OLDEST buffer — safe.
+        scope.cancel()
         runCatching { stdoutStream.close() }
-        runCatching {
-            runBlocking {
-                scope.coroutineContext[Job]?.cancelAndJoin()
-            }
-        }
         runCatching { writer.close() }
         onClose()
     }
