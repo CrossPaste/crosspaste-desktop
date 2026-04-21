@@ -1,6 +1,7 @@
 package com.crosspaste.mouse
 
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.coroutineScope
@@ -70,14 +71,18 @@ class MouseDaemonManager(
         )
     val events: SharedFlow<IpcEvent> = _events.asSharedFlow()
 
+    /** Snapshot of an active daemon session (bundle of client + coroutines + last inputs). */
+    private data class Session(
+        val client: MouseDaemonClient,
+        val runJob: Job,
+        val eventJob: Job,
+        val port: Int,
+        val peers: List<IpcPeer>,
+    )
+
     suspend fun run() =
         coroutineScope {
-            var activeClient: MouseDaemonClient? = null
-            var activeClientJob: Job? = null
-            var eventJob: Job? = null
-            var lastPeers: List<IpcPeer>? = null
-            var lastPort = -1
-
+            var session: Session? = null
             combine(
                 enabledFlow,
                 portFlow,
@@ -85,73 +90,70 @@ class MouseDaemonManager(
                 syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow(),
             ) { enabled, port, layout, syncs ->
                 MergedInputs(enabled, port, MousePeerMapper.map(syncs, layout))
-            }.distinctUntilChanged().collect { inputs ->
-                if (!inputs.enabled) {
-                    activeClient?.let {
-                        runCatching { it.stop() }
-                        it.close()
-                    }
-                    eventJob?.cancel()
-                    activeClientJob?.cancel()
-                    activeClient = null
-                    activeClientJob = null
-                    eventJob = null
-                    lastPeers = null
-                    lastPort = -1
-                    _state.value = MouseState.Disabled
-                    return@collect
-                }
-
-                if (activeClient == null) {
-                    _state.value = MouseState.Starting
-                    val client = clientFactory()
-                    activeClient = client
-                    activeClientJob = launch { client.run() }
-
-                    // Route events into state.
-                    eventJob =
-                        launch {
-                            client.events.collect { ev ->
-                                // Re-broadcast every event for UI subscribers.
-                                _events.tryEmit(ev)
-                                when (ev) {
-                                    is IpcEvent.PeerConnected ->
-                                        _state.value =
-                                            MouseState.Running(
-                                                connectedPeers =
-                                                    (state.value as? MouseState.Running)
-                                                        ?.connectedPeers
-                                                        .orEmpty() + ev.name,
-                                            )
-                                    is IpcEvent.PeerDisconnected ->
-                                        _state.value =
-                                            MouseState.Running(
-                                                connectedPeers =
-                                                    (state.value as? MouseState.Running)
-                                                        ?.connectedPeers
-                                                        .orEmpty() - ev.name,
-                                            )
-                                    is IpcEvent.Warning ->
-                                        _state.value = MouseState.Warning(ev.code, ev.message)
-                                    is IpcEvent.Error ->
-                                        _state.value = MouseState.Error(ev.message)
-                                    else -> Unit
-                                }
-                            }
+            }.distinctUntilChanged()
+                .collect { inputs ->
+                    session =
+                        when {
+                            !inputs.enabled -> teardownClient(session)
+                            session == null -> spawnClient(inputs)
+                            else -> updateClientLayout(session!!, inputs)
                         }
-                    client.start(inputs.port, inputs.peers)
-                    lastPort = inputs.port
-                    lastPeers = inputs.peers
-                    return@collect
                 }
+        }
 
-                if (lastPort != inputs.port || lastPeers != inputs.peers) {
-                    activeClient?.updateLayout(inputs.port, inputs.peers)
-                    lastPort = inputs.port
-                    lastPeers = inputs.peers
+    /** Stop, close, and cancel the current session's coroutines; reset state. */
+    private suspend fun teardownClient(current: Session?): Session? {
+        current?.let {
+            runCatching { it.client.stop() }
+            it.client.close()
+            it.eventJob.cancel()
+            it.runJob.cancel()
+        }
+        _state.value = MouseState.Disabled
+        return null
+    }
+
+    /** Create a new client, wire up event forwarding, send the initial `Start`. */
+    private suspend fun CoroutineScope.spawnClient(inputs: MergedInputs): Session {
+        _state.value = MouseState.Starting
+        val client = clientFactory()
+        val runJob = launch { client.run() }
+        val eventJob = launch { forwardClientEvents(client.events) }
+        client.start(inputs.port, inputs.peers)
+        return Session(client, runJob, eventJob, inputs.port, inputs.peers)
+    }
+
+    /** Push a layout/port diff down to the existing session via `updateLayout`. */
+    private suspend fun updateClientLayout(
+        current: Session,
+        inputs: MergedInputs,
+    ): Session {
+        if (current.port == inputs.port && current.peers == inputs.peers) {
+            return current
+        }
+        current.client.updateLayout(inputs.port, inputs.peers)
+        return current.copy(port = inputs.port, peers = inputs.peers)
+    }
+
+    /** Re-broadcast every event for UI subscribers and translate into [MouseState] transitions. */
+    private suspend fun forwardClientEvents(source: SharedFlow<IpcEvent>) {
+        source.collect { ev ->
+            _events.tryEmit(ev)
+            when (ev) {
+                is IpcEvent.PeerConnected -> {
+                    val prev = (state.value as? MouseState.Running)?.connectedPeers.orEmpty()
+                    _state.value = MouseState.Running(prev + ev.name)
                 }
+                is IpcEvent.PeerDisconnected -> {
+                    val prev = (state.value as? MouseState.Running)?.connectedPeers.orEmpty()
+                    _state.value = MouseState.Running(prev - ev.name)
+                }
+                is IpcEvent.Warning -> _state.value = MouseState.Warning(ev.code, ev.message)
+                is IpcEvent.Error -> _state.value = MouseState.Error(ev.message)
+                else -> Unit
             }
         }
+    }
 
     private data class MergedInputs(
         val enabled: Boolean,
