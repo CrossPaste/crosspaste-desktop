@@ -40,15 +40,21 @@ function DesktopActiveBanner() {
   );
 }
 
+/** Placed inside I18nProvider so hooks that depend on `useI18n` can run. */
+function OversizeNoticeRelay() {
+  useOversizeNoticeListener();
+  return null;
+}
+
 export default function App() {
   const { devices, connect, pair, rePair, removeDevice, updateNote } = useConnection();
   const [activeTab, setActiveTab] = usePersistedTab();
   const desktopConnected = useDesktopStatus();
-  useOversizeNoticeListener();
 
   return (
     <ThemeProvider>
       <I18nProvider>
+        <OversizeNoticeRelay />
         <div className="relative flex flex-col h-screen bg-m3-surface">
           <NotificationHost />
           <Header activeTab={activeTab} onTabChange={setActiveTab} />

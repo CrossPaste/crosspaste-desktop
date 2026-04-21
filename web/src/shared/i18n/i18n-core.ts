@@ -39,12 +39,19 @@ export function buildTranslator(lang: string): TranslateFn {
 }
 
 /**
+ * Read the user's active UI language — persisted preference if present,
+ * otherwise browser detection. Safe to call from service-workers.
+ */
+export async function getActiveLanguage(): Promise<string> {
+  const stored = await chrome.storage.local.get(LANGUAGE_STORAGE_KEY);
+  return (stored[LANGUAGE_STORAGE_KEY] as string) || detectLanguage();
+}
+
+/**
  * Build a translator using the language persisted by the side panel UI,
  * falling back to browser detection. Safe to call from service-workers
  * (no React / DOM dependencies beyond `chrome.storage`).
  */
 export async function buildTranslatorFromStorage(): Promise<TranslateFn> {
-  const stored = await chrome.storage.local.get(LANGUAGE_STORAGE_KEY);
-  const lang = (stored[LANGUAGE_STORAGE_KEY] as string) || detectLanguage();
-  return buildTranslator(lang);
+  return buildTranslator(await getActiveLanguage());
 }

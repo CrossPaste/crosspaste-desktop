@@ -11,6 +11,7 @@
 
   /* M3 Primary */
   --color-m3-primary: #3B82F6;
+  --color-m3-on-primary: #FFFFFF;
   --color-m3-primary-container: #DBEAFE;
   --color-m3-on-primary-container: #1E3A8A;
 
@@ -56,6 +57,7 @@
   --color-m3-on-surface-variant: #9CA3AF;
 
   --color-m3-primary: #60A5FA;
+  --color-m3-on-primary: #0A0A0A;
   --color-m3-primary-container: #1E3A8A;
   --color-m3-on-primary-container: #DBEAFE;
 

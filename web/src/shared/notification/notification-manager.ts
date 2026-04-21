@@ -1,5 +1,10 @@
 export type MessageType = "info" | "success" | "warning" | "error";
 
+export interface MessageAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface Message {
   id: number;
   title: string;
@@ -7,6 +12,8 @@ export interface Message {
   type: MessageType;
   /** Auto-dismiss duration in ms. Null = persistent until manually dismissed. */
   duration: number | null;
+  /** Optional call-to-action button rendered inside the notification. */
+  action?: MessageAction;
 }
 
 type Listener = (messages: Message[]) => void;
@@ -32,14 +39,20 @@ export const NotificationManager = {
   },
 
   /** Show a notification. Debounces identical content within 300ms. */
-  show(title: string, type: MessageType = "info", message?: string, duration: number | null = 3000) {
+  show(
+    title: string,
+    type: MessageType = "info",
+    message?: string,
+    duration: number | null = 3000,
+    action?: MessageAction,
+  ) {
     const contentKey = `${type}:${title}:${message ?? ""}`;
     const now = Date.now();
     if (contentKey === lastContent && now - lastContentTime < DEBOUNCE_MS) return;
     lastContent = contentKey;
     lastContentTime = now;
 
-    const msg: Message = { id: nextId++, title, message, type, duration };
+    const msg: Message = { id: nextId++, title, message, type, duration, action };
     messages = [msg, ...messages];
     notify();
 
@@ -58,16 +71,16 @@ export const NotificationManager = {
   },
 
   /** Convenience methods */
-  info(title: string, message?: string, duration?: number | null) {
-    this.show(title, "info", message, duration);
+  info(title: string, message?: string, duration?: number | null, action?: MessageAction) {
+    this.show(title, "info", message, duration, action);
   },
-  success(title: string, message?: string, duration?: number | null) {
-    this.show(title, "success", message, duration);
+  success(title: string, message?: string, duration?: number | null, action?: MessageAction) {
+    this.show(title, "success", message, duration, action);
   },
-  warning(title: string, message?: string, duration?: number | null) {
-    this.show(title, "warning", message, duration);
+  warning(title: string, message?: string, duration?: number | null, action?: MessageAction) {
+    this.show(title, "warning", message, duration, action);
   },
-  error(title: string, message?: string, duration?: number | null) {
-    this.show(title, "error", message, duration);
+  error(title: string, message?: string, duration?: number | null, action?: MessageAction) {
+    this.show(title, "error", message, duration, action);
   },
 };
