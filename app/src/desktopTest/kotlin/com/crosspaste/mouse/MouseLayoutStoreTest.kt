@@ -85,6 +85,6 @@ class MouseLayoutStoreTest {
             flow.value = next
         }
 
-        override fun flow() = flow
+        override fun flow(): kotlinx.coroutines.flow.Flow<Map<String, Position>> = flow
     }
 }
