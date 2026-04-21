@@ -197,10 +197,10 @@ export function DeviceDetailView({
             {onRePair && (status === SyncState.UNMATCHED || status === SyncState.UNVERIFIED) && (
               <button
                 onClick={onRePair}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] bg-m3-surface-container text-sm text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
               >
-                <KeyRound size={16} className="text-m3-on-surface-variant" />
-                <span>{t("repair_device")}</span>
+                <KeyRound size={18} className="text-m3-on-surface-variant" />
+                <span className="font-medium">{t("repair_device")}</span>
               </button>
             )}
             <button
