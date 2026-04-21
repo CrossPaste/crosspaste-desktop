@@ -61,6 +61,7 @@ export function DevicesView({
             onRemoveDevice(detailDevice.targetAppInstanceId);
             setSelectedDevice(null);
           }}
+          onRePair={() => onRePair(detailDevice.targetAppInstanceId)}
         />
 
         {editingDevice && (

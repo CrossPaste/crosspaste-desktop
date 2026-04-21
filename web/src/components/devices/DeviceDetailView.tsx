@@ -21,6 +21,7 @@ interface Props {
   onBack: () => void;
   onEditNote: () => void;
   onRemove: () => void;
+  onRePair?: () => void;
 }
 
 const PLATFORM_ICON: Record<string, typeof Laptop> = {
@@ -57,6 +58,7 @@ export function DeviceDetailView({
   onBack,
   onEditNote,
   onRemove,
+  onRePair,
 }: Props) {
   const t = useI18n();
   const { syncInfo, status, noteName } = device;
@@ -192,6 +194,15 @@ export function DeviceDetailView({
 
           {/* Actions */}
           <div className="flex flex-col gap-2">
+            {onRePair && (status === SyncState.UNMATCHED || status === SyncState.UNVERIFIED) && (
+              <button
+                onClick={onRePair}
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
+              >
+                <KeyRound size={16} className="text-m3-on-surface-variant" />
+                <span>{t("repair_device")}</span>
+              </button>
+            )}
             <button
               onClick={onEditNote}
               className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] bg-m3-surface-container text-sm text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"

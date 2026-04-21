@@ -126,7 +126,10 @@ function DeviceStatusBadge({
         </div>
         {onRePair && (
           <button
-            onClick={onRePair}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRePair?.();
+            }}
             className="flex items-center gap-1 rounded-md bg-m3-error-container px-2 py-1 text-[10px] font-medium text-m3-error"
           >
             <KeyRound size={10} />
@@ -148,7 +151,10 @@ function DeviceStatusBadge({
         </div>
         {onRePair && (
           <button
-            onClick={onRePair}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRePair?.();
+            }}
             className="flex items-center gap-1 rounded-md bg-m3-warning-container px-2 py-1 text-[10px] font-medium text-m3-warning"
           >
             <KeyRound size={10} />
@@ -171,7 +177,10 @@ function DeviceStatusBadge({
       </div>
       {onRetry && (
         <button
-          onClick={onRetry}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRetry?.();
+          }}
           className="flex items-center justify-center w-7 h-7 rounded-md bg-m3-error-container"
         >
           <RefreshCw size={14} className="text-m3-error" />
