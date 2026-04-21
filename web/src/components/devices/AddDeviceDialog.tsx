@@ -11,6 +11,12 @@ interface Props {
   onClose: () => void;
   onConnect: (host: string, port: number) => Promise<{ success: boolean; syncInfo?: SyncInfo; error?: string }>;
   onPair: (token: number) => Promise<{ success: boolean; error?: string }>;
+  /**
+   * When set, the dialog opens directly in the token-entry phase with the
+   * given device info. Used by the re-pair flow where the service worker
+   * has already completed the equivalent of `onConnect` via `handleRePair`.
+   */
+  initialSyncInfo?: SyncInfo;
 }
 
 function isValidIp(ip: string): boolean {
@@ -36,7 +42,7 @@ const PLATFORM_ICON: Record<string, typeof Laptop> = {
   iPad: Smartphone,
 };
 
-export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
+export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncInfo }: Props) {
   const t = useI18n();
   const [phase, setPhase] = useState<Phase>("input");
   const [host, setHost] = useState("");
@@ -49,18 +55,25 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair }: Props) {
 
   // Reset state when dialog opens/closes
   useEffect(() => {
-    if (!open) {
-      const timer = setTimeout(() => {
-        setPhase("input");
-        setHost("");
-        setPort("13129");
+    if (open) {
+      if (initialSyncInfo) {
+        setPhase("token");
+        setSyncInfo(initialSyncInfo);
         setLoading(false);
         setError(null);
-        setSyncInfo(null);
-      }, 200);
-      return () => clearTimeout(timer);
+      }
+      return;
     }
-  }, [open]);
+    const timer = setTimeout(() => {
+      setPhase("input");
+      setHost("");
+      setPort("13129");
+      setLoading(false);
+      setError(null);
+      setSyncInfo(null);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [open, initialSyncInfo]);
 
   const handleConnect = useCallback(async () => {
     if (loading) return;

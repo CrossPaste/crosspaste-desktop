@@ -15,7 +15,7 @@ interface Props {
   onPair: (token: number) => Promise<{ success: boolean; error?: string }>;
   onRemoveDevice: (targetAppInstanceId: string) => void;
   onUpdateNote: (targetAppInstanceId: string, noteName: string) => void;
-  onRePair: (targetId: string) => Promise<unknown>;
+  onRePair: (targetId: string) => Promise<{ success: boolean; syncInfo?: SyncInfo; error?: string; incompatible?: boolean }>;
 }
 
 export function DevicesView({
@@ -31,6 +31,7 @@ export function DevicesView({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingDevice, setEditingDevice] = useState<DeviceInfo | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [rePairSyncInfo, setRePairSyncInfo] = useState<SyncInfo | null>(null);
 
   const handleConnect = useCallback(
     async (host: string, port: number) => {
@@ -42,6 +43,17 @@ export function DevicesView({
       };
     },
     [onConnect, t],
+  );
+
+  const handleRePair = useCallback(
+    async (targetAppInstanceId: string) => {
+      const result = await onRePair(targetAppInstanceId);
+      if (result.success && result.syncInfo) {
+        setRePairSyncInfo(result.syncInfo);
+      }
+      return result;
+    },
+    [onRePair],
   );
 
   // Find the currently selected device from the live devices list
@@ -61,7 +73,7 @@ export function DevicesView({
             onRemoveDevice(detailDevice.targetAppInstanceId);
             setSelectedDevice(null);
           }}
-          onRePair={() => onRePair(detailDevice.targetAppInstanceId)}
+          onRePair={() => handleRePair(detailDevice.targetAppInstanceId)}
         />
 
         {editingDevice && (
@@ -124,7 +136,7 @@ export function DevicesView({
               onClick={(device) => setSelectedDevice(device.targetAppInstanceId)}
               onEditNote={(device) => setEditingDevice(device)}
               onRemove={(targetAppInstanceId) => onRemoveDevice(targetAppInstanceId)}
-              onRePair={onRePair}
+              onRePair={handleRePair}
             />
           )}
         </div>
@@ -146,6 +158,18 @@ export function DevicesView({
         onClose={() => setShowAddDialog(false)}
         onConnect={handleConnect}
         onPair={onPair}
+      />
+
+      <AddDeviceDialog
+        open={rePairSyncInfo !== null}
+        onClose={() => setRePairSyncInfo(null)}
+        onConnect={handleConnect}
+        onPair={async (token) => {
+          const result = await onPair(token);
+          if (result.success) setRePairSyncInfo(null);
+          return result;
+        }}
+        initialSyncInfo={rePairSyncInfo ?? undefined}
       />
 
       {editingDevice && (
