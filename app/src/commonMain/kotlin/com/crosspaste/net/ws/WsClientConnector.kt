@@ -74,7 +74,7 @@ class WsClientConnector(
                     }
                 } finally {
                     logger.info { "WebSocket client disconnected from $targetAppInstanceId" }
-                    wsSessionManager.notifySessionClosed(targetAppInstanceId)
+                    wsSessionManager.notifySessionClosed(targetAppInstanceId, wsSession)
                 }
             }
             true

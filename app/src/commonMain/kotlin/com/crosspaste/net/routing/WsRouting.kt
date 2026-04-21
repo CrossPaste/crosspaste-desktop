@@ -82,7 +82,7 @@ fun Routing.wsRouting(
             }
         } finally {
             logger.info { "WebSocket disconnected: $appInstanceId" }
-            wsSessionManager.notifySessionClosed(appInstanceId)
+            wsSessionManager.notifySessionClosed(appInstanceId, wsSession)
         }
     }
 }

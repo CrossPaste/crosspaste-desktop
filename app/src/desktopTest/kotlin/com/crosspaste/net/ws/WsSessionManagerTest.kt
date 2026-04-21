@@ -32,9 +32,10 @@ class WsSessionManagerTest {
             val mgr = WsSessionManager()
             val fired = mutableListOf<String>()
             mgr.setOnSessionClosed { fired.add(it) }
-            mgr.registerSession("A", fakeSession())
+            val session = fakeSession()
+            mgr.registerSession("A", session)
 
-            mgr.notifySessionClosed("A")
+            mgr.notifySessionClosed("A", session)
 
             assertEquals(listOf("A"), fired)
         }
@@ -46,7 +47,7 @@ class WsSessionManagerTest {
             val fired = mutableListOf<String>()
             mgr.setOnSessionClosed { fired.add(it) }
 
-            mgr.notifySessionClosed("missing")
+            mgr.notifySessionClosed("missing", fakeSession())
 
             assertEquals(emptyList(), fired)
         }
@@ -57,13 +58,31 @@ class WsSessionManagerTest {
             val mgr = WsSessionManager()
             val fired = mutableListOf<String>()
             mgr.setOnSessionClosed { fired.add(it) }
-            mgr.registerSession("A", fakeSession())
+            val session = fakeSession()
+            mgr.registerSession("A", session)
 
-            mgr.notifySessionClosed("A")
-            mgr.notifySessionClosed("A")
+            mgr.notifySessionClosed("A", session)
+            mgr.notifySessionClosed("A", session)
 
             assertEquals(listOf("A"), fired)
             assertFalse(mgr.isConnected("A"))
+        }
+
+    @Test
+    fun notifySessionClosed_replacedSession_doesNotRemoveNewEntry() =
+        runTest {
+            val mgr = WsSessionManager()
+            val fired = mutableListOf<String>()
+            mgr.setOnSessionClosed { fired.add(it) }
+            val oldSession = fakeSession()
+            val newSession = fakeSession()
+            mgr.registerSession("A", oldSession)
+            mgr.registerSession("A", newSession)
+
+            mgr.notifySessionClosed("A", oldSession)
+
+            assertEquals(emptyList(), fired)
+            assertTrue(mgr.isConnected("A"))
         }
 
     @Test

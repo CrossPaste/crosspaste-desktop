@@ -13,7 +13,10 @@ import kotlinx.coroutines.withTimeoutOrNull
  *
  * Wire protocol: each logical message is sent as 1 Text frame (JSON header)
  * followed by 0 or 1 Binary frames (payload). A [Mutex] guarantees atomicity
- * so concurrent senders cannot interleave their frame pairs.
+ * for these data-frame pairs so concurrent senders cannot interleave them.
+ * Control frames (ping) are single frames and bypass the mutex — RFC 6455
+ * permits control frames to be injected between data frames, and Ktor handles
+ * pong replies internally so they are invisible to the application stream.
  */
 class WsSession(
     private val session: WebSocketSession,
@@ -35,11 +38,9 @@ class WsSession(
     }
 
     suspend fun ping(): Boolean =
-        sendMutex.withLock {
-            withTimeoutOrNull(PING_TIMEOUT_MS) {
-                runCatching { session.send(Frame.Ping(PING_PAYLOAD)) }.isSuccess
-            } ?: false
-        }
+        withTimeoutOrNull(PING_TIMEOUT_MS) {
+            runCatching { session.send(Frame.Ping(PING_PAYLOAD)) }.isSuccess
+        } ?: false
 
     suspend fun close(reason: String = "Normal closure") {
         session.close(CloseReason(CloseReason.Codes.NORMAL, reason))
