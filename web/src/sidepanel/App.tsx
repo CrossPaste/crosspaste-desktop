@@ -6,6 +6,7 @@ import { PasteGrid } from "@/components/paste-grid/PasteGrid";
 import { SettingsView } from "@/components/settings/SettingsView";
 import { useConnection } from "@/shared/hooks/use-connection";
 import { useDesktopStatus } from "@/shared/hooks/use-desktop-status";
+import { useOversizeNoticeListener } from "@/shared/hooks/use-oversize-notice";
 import { useI18n, I18nProvider } from "@/shared/i18n/use-i18n";
 import { ThemeProvider } from "@/shared/theme/use-theme";
 import { NotificationHost } from "@/components/notification/NotificationHost";
@@ -43,6 +44,7 @@ export default function App() {
   const { devices, connect, pair, rePair, removeDevice, updateNote } = useConnection();
   const [activeTab, setActiveTab] = usePersistedTab();
   const desktopConnected = useDesktopStatus();
+  useOversizeNoticeListener();
 
   return (
     <ThemeProvider>

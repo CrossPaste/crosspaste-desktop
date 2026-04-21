@@ -6,6 +6,7 @@ import com.crosspaste.dto.paste.SyncPasteCollection
 import com.crosspaste.dto.paste.SyncPasteData
 import com.crosspaste.dto.paste.SyncPasteLabel
 import com.crosspaste.dto.pull.PullFileRequest
+import com.crosspaste.dto.pull.WsPullFileRequest
 import com.crosspaste.dto.secure.PairingRequest
 import com.crosspaste.dto.secure.PairingResponse
 import com.crosspaste.dto.secure.TrustRequest
@@ -42,6 +43,48 @@ class DtoSerializationTest {
         val decoded = json.decodeFromString<PullFileRequest>(encoded)
         assertEquals(42L, decoded.id)
         assertEquals(7, decoded.chunkIndex)
+    }
+
+    // --- WsPullFileRequest ---
+    // The sealed class uses @JsonClassDiscriminator("mode"); the discriminator is only emitted
+    // when encoding via the parent-type serializer. If the Desktop side encodes a concrete
+    // subtype directly, Chrome rejects the request with "only supports whole-file mode".
+
+    @Test
+    fun `WsPullFileRequest WholeFileRequest encodes mode discriminator via parent type`() {
+        val request: WsPullFileRequest =
+            WsPullFileRequest.WholeFileRequest(hash = "abc", fileName = "image.png")
+        val encoded = json.encodeToString(request)
+        assertTrue(
+            encoded.contains("\"mode\":\"whole\""),
+            "Expected discriminator 'mode:whole' in payload, got: $encoded",
+        )
+    }
+
+    @Test
+    fun `WsPullFileRequest ChunkRequest encodes mode discriminator via parent type`() {
+        val request: WsPullFileRequest = WsPullFileRequest.ChunkRequest(id = 1L, chunkIndex = 0)
+        val encoded = json.encodeToString(request)
+        assertTrue(
+            encoded.contains("\"mode\":\"chunk\""),
+            "Expected discriminator 'mode:chunk' in payload, got: $encoded",
+        )
+    }
+
+    @Test
+    fun `WsPullFileRequest roundtrip preserves subtype`() {
+        val whole: WsPullFileRequest =
+            WsPullFileRequest.WholeFileRequest(hash = "h", fileName = "f.png")
+        val decodedWhole = json.decodeFromString<WsPullFileRequest>(json.encodeToString(whole))
+        assertTrue(decodedWhole is WsPullFileRequest.WholeFileRequest)
+        assertEquals("h", (decodedWhole as WsPullFileRequest.WholeFileRequest).hash)
+        assertEquals("f.png", decodedWhole.fileName)
+
+        val chunk: WsPullFileRequest = WsPullFileRequest.ChunkRequest(id = 5L, chunkIndex = 2)
+        val decodedChunk = json.decodeFromString<WsPullFileRequest>(json.encodeToString(chunk))
+        assertTrue(decodedChunk is WsPullFileRequest.ChunkRequest)
+        assertEquals(5L, (decodedChunk as WsPullFileRequest.ChunkRequest).id)
+        assertEquals(2, decodedChunk.chunkIndex)
     }
 
     // --- EndpointInfo ---

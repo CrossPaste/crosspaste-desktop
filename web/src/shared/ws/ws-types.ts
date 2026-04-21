@@ -12,6 +12,7 @@ export const WsMessageType = {
   NOTIFY_REMOVE: "notify_remove",
   FILE_PULL_REQUEST: "file_pull_request",
   FILE_PULL_RESPONSE: "file_pull_response",
+  PASTE_REJECTED_OVERSIZE: "paste_rejected_oversize",
   ERROR: "error",
 } as const;
 

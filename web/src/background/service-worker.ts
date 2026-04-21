@@ -10,7 +10,11 @@ import type { PasteData } from "@/shared/models/paste-data";
 import { APP_VERSION } from "@/shared/app/version.generated";
 import { collectPasteItems } from "@/shared/paste/paste-collector";
 import { WsManager } from "@/shared/ws/ws-manager";
-import { createWsMessageHandler } from "@/shared/ws/ws-message-handler";
+import {
+  createWsMessageHandler,
+  type OversizePasteNotice,
+} from "@/shared/ws/ws-message-handler";
+import { buildTranslatorFromStorage } from "@/shared/i18n/i18n-core";
 import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
@@ -489,6 +493,7 @@ async function initializeWebSocket(): Promise<void> {
     },
     broadcastToSidePanel,
     setLastHash,
+    showOversizePasteNotice,
     onRemoteRemoveDevice: async (targetId) => {
       wsManager?.disconnectDevice(targetId);
       await DeviceStore.remove(targetId);
@@ -572,6 +577,31 @@ function broadcastToSidePanel(message: unknown): void {
   chrome.runtime.sendMessage(message).catch(() => {
     // Side panel not open — ignore
   });
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+async function showOversizePasteNotice(
+  sourceAppInstanceId: string,
+  notice: OversizePasteNotice,
+): Promise<void> {
+  const device = await DeviceStore.get(sourceAppInstanceId);
+  const deviceName =
+    device?.noteName || device?.syncInfo.endpointInfo.deviceName || "Remote device";
+  const t = await buildTranslatorFromStorage();
+  const limit = formatBytes(notice.sizeLimitBytes);
+  const actual = formatBytes(notice.actualSize);
+  const title = t("paste_not_synced_title", deviceName);
+  const message =
+    notice.reason === "FILE_TOO_LARGE"
+      ? t("paste_oversize_file", notice.fileName ?? "", actual, limit)
+      : t("paste_oversize_total", actual, limit);
+
+  broadcastToSidePanel({ type: "OVERSIZE_NOTICE", title, message });
 }
 
 // ─── Message handling ───────────────────────────────────────────────────

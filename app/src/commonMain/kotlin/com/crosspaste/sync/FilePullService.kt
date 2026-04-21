@@ -207,7 +207,7 @@ class FilePullService(
             val targetPath = targetPaths[index]
 
             runCatching {
-                val request =
+                val request: WsPullFileRequest =
                     WsPullFileRequest.WholeFileRequest(
                         hash = hash,
                         fileName = requestFileName,

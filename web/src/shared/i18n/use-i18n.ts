@@ -9,39 +9,17 @@ import {
   type ReactNode,
 } from "react";
 import { translations } from "./translations.generated";
-import { extensionMessages } from "./extension-messages";
+import {
+  buildTranslator,
+  detectLanguage,
+  LANGUAGE_STORAGE_KEY,
+  type TranslateFn,
+} from "./i18n-core";
 
 // ─── Language detection ─────────────────────────────────────────────────
 
-const STORAGE_KEY = "ui_language";
-
 /** All supported language codes, sorted for UI display */
 export const SUPPORTED_LANGUAGES = Object.keys(translations).sort();
-
-/**
- * Detect the user's language from the browser/Chrome settings
- * and map to our supported language codes.
- */
-function detectLanguage(): string {
-  const locale = navigator.language?.toLowerCase().replace("-", "_") ?? "en";
-
-  if (locale in translations) return locale;
-
-  const base = locale.split("_")[0];
-  if (base === "zh") {
-    if (
-      locale.includes("tw") ||
-      locale.includes("hk") ||
-      locale.includes("hant")
-    ) {
-      return "zh_hant";
-    }
-    return "zh";
-  }
-
-  if (base in translations) return base;
-  return "en";
-}
 
 /** Get the native display name for a language code */
 export function getLanguageName(code: string): string {
@@ -49,8 +27,6 @@ export function getLanguageName(code: string): string {
 }
 
 // ─── Context ────────────────────────────────────────────────────────────
-
-type TranslateFn = (key: string, ...args: (string | number)[]) => string;
 
 interface I18nContextValue {
   t: TranslateFn;
@@ -62,38 +38,21 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 // ─── Provider ───────────────────────────────────────────────────────────
 
-function buildTranslator(lang: string): TranslateFn {
-  const messages: Record<string, string> = {
-    ...translations.en,
-    ...extensionMessages.en,
-    ...translations[lang],
-    ...extensionMessages[lang],
-  };
-
-  return function t(key: string, ...args: (string | number)[]): string {
-    let text = messages[key] ?? key;
-    for (const arg of args) {
-      text = text.replace("%s", String(arg));
-    }
-    return text;
-  };
-}
-
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<string | null>(null);
 
   // Load persisted language on mount
   useEffect(() => {
-    chrome.storage.local.get(STORAGE_KEY).then((result) => {
+    chrome.storage.local.get(LANGUAGE_STORAGE_KEY).then((result) => {
       setLanguageState(
-        (result[STORAGE_KEY] as string) ?? detectLanguage(),
+        (result[LANGUAGE_STORAGE_KEY] as string) ?? detectLanguage(),
       );
     });
   }, []);
 
   const setLanguage = useCallback((lang: string) => {
     setLanguageState(lang);
-    chrome.storage.local.set({ [STORAGE_KEY]: lang });
+    chrome.storage.local.set({ [LANGUAGE_STORAGE_KEY]: lang });
   }, []);
 
   const t = useMemo(() => {

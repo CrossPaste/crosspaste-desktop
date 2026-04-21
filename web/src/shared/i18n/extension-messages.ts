@@ -34,6 +34,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "Find your device's IP and port in the desktop app: Settings → Network Settings",
     devices_guide_step2:
       "Click \"Add Device\" below and enter the connection info",
+    paste_not_synced_title: "CrossPaste: paste from %s not synced",
+    paste_oversize_file: "\"%s\" (%s) exceeds the %s per-file limit",
+    paste_oversize_total: "Total size %s exceeds the %s limit",
   },
   de: {
     clipboard: "Zwischenablage",
@@ -66,6 +69,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "IP-Adresse und Port des Geräts finden: Desktop-App → Einstellungen → Netzwerkeinstellungen",
     devices_guide_step2:
       'Klicken Sie unten auf „Gerät hinzufügen" und geben Sie die Verbindungsdaten ein',
+    paste_not_synced_title: "CrossPaste: Einfügung von %s nicht synchronisiert",
+    paste_oversize_file: "„%s\" (%s) überschreitet das Limit von %s pro Datei",
+    paste_oversize_total: "Gesamtgröße %s überschreitet das Limit von %s",
   },
   es: {
     clipboard: "Portapapeles",
@@ -98,6 +104,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "Encuentre la IP y el puerto del dispositivo en la app de escritorio: Ajustes → Configuración de red",
     devices_guide_step2:
       "Haga clic en \"Agregar dispositivo\" abajo e ingrese la información de conexión",
+    paste_not_synced_title: "CrossPaste: pegado de %s no sincronizado",
+    paste_oversize_file: "\"%s\" (%s) supera el límite de %s por archivo",
+    paste_oversize_total: "El tamaño total %s supera el límite de %s",
   },
   fr: {
     clipboard: "Presse-papiers",
@@ -130,6 +139,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "Trouvez l'IP et le port de l'appareil dans l'application de bureau : Paramètres → Paramètres réseau",
     devices_guide_step2:
       "Cliquez sur « Ajouter un appareil » ci-dessous et entrez les informations de connexion",
+    paste_not_synced_title: "CrossPaste : collage depuis %s non synchronisé",
+    paste_oversize_file: "« %s » (%s) dépasse la limite de %s par fichier",
+    paste_oversize_total: "La taille totale %s dépasse la limite de %s",
   },
   ja: {
     clipboard: "クリップボード",
@@ -161,6 +173,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "デスクトップアプリでデバイスの IP とポートを確認：設定 → ネットワーク設定",
     devices_guide_step2:
       "下の「デバイスを追加」をクリックし、接続情報を入力してください",
+    paste_not_synced_title: "CrossPaste: %s からのペーストは同期されませんでした",
+    paste_oversize_file: "「%s」(%s) が1ファイルあたりの上限 %s を超えています",
+    paste_oversize_total: "合計サイズ %s が上限 %s を超えています",
   },
   ko: {
     clipboard: "클립보드",
@@ -191,6 +206,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "데스크톱 앱에서 기기의 IP와 포트를 확인하세요: 설정 → 네트워크 설정",
     devices_guide_step2:
       "아래의 \"기기 추가\"를 클릭하고 연결 정보를 입력하세요",
+    paste_not_synced_title: "CrossPaste: %s 의 붙여넣기가 동기화되지 않았습니다",
+    paste_oversize_file: "\"%s\"(%s)이(가) 파일당 한도 %s 을(를) 초과합니다",
+    paste_oversize_total: "총 크기 %s 이(가) 한도 %s 을(를) 초과합니다",
   },
   zh: {
     clipboard: "剪贴板",
@@ -220,6 +238,9 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "在桌面端查找设备的 IP 和端口：设置 → 网络设置",
     devices_guide_step2:
       "点击下方「添加设备」按钮，输入连接信息",
+    paste_not_synced_title: "CrossPaste：来自 %s 的剪贴板未同步",
+    paste_oversize_file: "文件「%s」大小为 %s，超过单文件上限 %s",
+    paste_oversize_total: "总大小 %s 超过 %s 上限",
   },
   zh_hant: {
     clipboard: "剪貼簿",
@@ -249,5 +270,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "在桌面端查看裝置的 IP 和連接埠：設定 → 網路設定",
     devices_guide_step2:
       "點擊下方「新增裝置」按鈕，輸入連線資訊",
+    paste_not_synced_title: "CrossPaste：來自 %s 的剪貼簿未同步",
+    paste_oversize_file: "檔案「%s」大小為 %s，超過單檔上限 %s",
+    paste_oversize_total: "總大小 %s 超過 %s 上限",
   },
 };
