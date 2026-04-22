@@ -27,6 +27,8 @@ class SerializerTest {
                 text = "testPasteData",
             )
 
+        val testStart = DateUtils.nowEpochMilliseconds()
+        val sentinelCreateTime = testStart - 10_000L
         val pasteData =
             PasteData(
                 pasteAppearItem = textPasteItem,
@@ -36,7 +38,7 @@ class SerializerTest {
                 hash = textPasteItem.hash,
                 size = textPasteItem.size,
                 pasteState = PasteState.LOADED,
-                createTime = DateUtils.nowEpochMilliseconds(),
+                createTime = sentinelCreateTime,
                 appInstanceId = UUID.randomUUID().toString(),
             )
 
@@ -53,7 +55,10 @@ class SerializerTest {
         assertEquals(pasteData.pasteType, newPasteData.pasteType)
         assertEquals(pasteData.hash, newPasteData.hash)
         assertEquals(PasteState.LOADING, newPasteData.pasteState)
-        assertNotEquals(pasteData.createTime, newPasteData.createTime)
+        // createTime is @Transient: not serialized, defaults to now() on deserialize,
+        // so it must drop the sentinel and land at or after the test start.
+        assertNotEquals(sentinelCreateTime, newPasteData.createTime)
+        assertTrue(newPasteData.createTime >= testStart)
         assertEquals(pasteData.appInstanceId, newPasteData.appInstanceId)
         // Default value for @Transient remote is false; callers set it explicitly
         assertEquals(false, newPasteData.remote)
