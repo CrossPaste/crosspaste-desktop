@@ -10,6 +10,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -43,7 +44,7 @@ class WsSessionTest {
         }
 
     @Test
-    fun ping_sendThrowsCancellation_returnsFalse() =
+    fun ping_sendThrowsCancellation_propagates() =
         runTest {
             val inner = mockSession(active = false)
             coEvery { inner.send(any<Frame.Ping>()) } throws
@@ -51,7 +52,7 @@ class WsSessionTest {
 
             val wsSession = WsSession(inner, "remote-id")
 
-            assertFalse(wsSession.ping())
+            assertFailsWith<kotlinx.coroutines.CancellationException> { wsSession.ping() }
         }
 
     @Test

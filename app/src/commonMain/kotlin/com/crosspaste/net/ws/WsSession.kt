@@ -6,6 +6,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Unified wrapper around Ktor WebSocket sessions (server or client).
@@ -39,7 +40,14 @@ class WsSession(
 
     suspend fun ping(): Boolean =
         withTimeoutOrNull(PING_TIMEOUT_MS) {
-            runCatching { session.send(Frame.Ping(PING_PAYLOAD)) }.isSuccess
+            try {
+                session.send(Frame.Ping(PING_PAYLOAD))
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
         } ?: false
 
     suspend fun close(reason: String = "Normal closure") {
