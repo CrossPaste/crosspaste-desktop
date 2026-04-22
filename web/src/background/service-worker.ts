@@ -103,6 +103,12 @@ let offscreenReady = false;
 
 const CLIPBOARD_POLL_INTERVAL_MS = 1000; // 1 second
 const STORAGE_KEY_LAST_HASH = "clipboard_lastHash";
+// After a LOCAL_COPY, Chrome's clipboard.write sanitizes text/html and may
+// regenerate text/plain from the HTML, so the first post-write poll reads
+// bytes that don't match the original paste's hash. Within this window we
+// absorb the re-read hash into lastHash once instead of ingesting it.
+const STORAGE_KEY_LOCAL_COPY_UNTIL = "clipboard_localCopyUntil";
+const LOCAL_COPY_SUPPRESS_MS = 2000;
 
 
 async function ensureOffscreen(): Promise<void> {
@@ -132,6 +138,15 @@ async function getLastHash(): Promise<string> {
 
 async function setLastHash(hash: string): Promise<void> {
   await chrome.storage.session.set({ [STORAGE_KEY_LAST_HASH]: hash });
+}
+
+async function getLocalCopyUntil(): Promise<number> {
+  const result = await chrome.storage.session.get(STORAGE_KEY_LOCAL_COPY_UNTIL);
+  return (result[STORAGE_KEY_LOCAL_COPY_UNTIL] as number) ?? 0;
+}
+
+async function setLocalCopyUntil(value: number): Promise<void> {
+  await chrome.storage.session.set({ [STORAGE_KEY_LOCAL_COPY_UNTIL]: value });
 }
 
 /** Convert a data URL to ArrayBuffer */
@@ -220,6 +235,13 @@ async function pollClipboard(): Promise<void> {
 
     const lastHash = await getLastHash();
     if (collected.hash === lastHash) return;
+
+    const suppressUntil = await getLocalCopyUntil();
+    if (Date.now() < suppressUntil) {
+      await setLastHash(collected.hash);
+      await setLocalCopyUntil(0);
+      return;
+    }
 
     await setLastHash(collected.hash);
 
@@ -825,6 +847,7 @@ async function handleLocalCopy(pasteId: number): Promise<unknown> {
   const hash = await PasteStore.moveToTop(pasteId);
   if (hash) {
     await setLastHash(hash);
+    await setLocalCopyUntil(Date.now() + LOCAL_COPY_SUPPRESS_MS);
     broadcastToSidePanel({ type: "PASTE_UPDATED" });
   }
   return { success: hash !== null };
