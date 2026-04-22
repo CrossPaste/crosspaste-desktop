@@ -385,9 +385,11 @@ async function syncAllDevices(): Promise<void> {
         s.lastHttpSuccessAt = Date.now();
       });
     } catch (e) {
-      if (e instanceof SyncApiError) {
-        // Peer is reachable but returned an error — freshness stays;
-        // heartbeat will classify it (DECRYPT_FAIL etc.) on its next tick.
+      if (e instanceof SyncApiError && e.isDecryptFail()) {
+        await handleDecryptFail(device.targetAppInstanceId);
+      } else if (e instanceof SyncApiError) {
+        // Peer is reachable but returned a non-crypto error — freshness stays;
+        // heartbeat will classify it on its next tick.
       } else {
         // Transport failure = peer unreachable. Collapse the freshness window
         // so the UI flips to DISCONNECTED instead of lingering as CONNECTED.
