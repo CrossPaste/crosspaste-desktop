@@ -22,16 +22,23 @@ interface WebMeta {
 }
 
 let localePathMap: Record<string, string> = {};
+let inFlightRefresh: Promise<void> | null = null;
 
 async function refresh(): Promise<void> {
-  try {
-    const response = await fetch(`${AppUrls.homeUrl}/api/meta.json`, { cache: "no-cache" });
-    if (!response.ok) return;
-    const meta = (await response.json()) as WebMeta;
-    localePathMap = Object.fromEntries(meta.locales.map((l) => [l.code, l.path]));
-  } catch (e) {
-    console.warn("[CrossPasteWebService] Failed to fetch web meta:", e);
-  }
+  if (inFlightRefresh) return inFlightRefresh;
+  inFlightRefresh = (async () => {
+    try {
+      const response = await fetch(`${AppUrls.homeUrl}/api/meta.json`, { cache: "no-cache" });
+      if (!response.ok) return;
+      const meta = (await response.json()) as WebMeta;
+      localePathMap = Object.fromEntries(meta.locales.map((l) => [l.code, l.path]));
+    } catch (e) {
+      console.warn("[CrossPasteWebService] Failed to fetch web meta:", e);
+    } finally {
+      inFlightRefresh = null;
+    }
+  })();
+  return inFlightRefresh;
 }
 
 function resolveLocalePath(language: string): string {
@@ -40,7 +47,8 @@ function resolveLocalePath(language: string): string {
     return map[language] ?? map["en"] ?? "/en/";
   }
   // Fallback before meta.json loads, matching the desktop default.
-  return language === "zh" ? "/" : "/en/";
+  // Matches both "zh" (Simplified) and "zh_hant" (Traditional).
+  return language.startsWith("zh") ? "/" : "/en/";
 }
 
 export const CrossPasteWebService = {
