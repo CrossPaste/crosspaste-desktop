@@ -858,7 +858,7 @@ async function handleDeletePaste(pasteId: number): Promise<unknown> {
   if (hash !== null) {
     await BlobStore.deleteForPaste(hash);
     await PasteStore.purgeDeleted();
-    broadcastToSidePanel({ type: "PASTE_UPDATED" });
+    broadcastToSidePanel({ type: "PASTE_DELETED", pasteId });
   }
   return { success: hash !== null };
 }

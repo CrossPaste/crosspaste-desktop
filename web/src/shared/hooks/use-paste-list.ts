@@ -63,9 +63,23 @@ export function usePasteList(searchParams: SearchParams) {
     busyRef.current = false;
   }, []);
 
-  const deletePaste = useCallback(async (pasteId: number) => {
-    await chrome.runtime.sendMessage({ type: "DELETE_PASTE", pasteId });
+  const removeLocal = useCallback((pasteId: number) => {
+    setItems((prev) => {
+      const next = prev.filter((i) => i._id !== pasteId);
+      if (next.length !== prev.length) {
+        offsetRef.current = Math.max(0, offsetRef.current - (prev.length - next.length));
+      }
+      return next;
+    });
   }, []);
+
+  const deletePaste = useCallback(
+    async (pasteId: number) => {
+      removeLocal(pasteId);
+      await chrome.runtime.sendMessage({ type: "DELETE_PASTE", pasteId });
+    },
+    [removeLocal],
+  );
 
   // Reload when search params change
   useEffect(() => {
@@ -75,16 +89,18 @@ export function usePasteList(searchParams: SearchParams) {
     reload().then(() => setLoading(false));
   }, [searchParams.query, searchParams.pasteType, reload]);
 
-  // Listen for paste notifications → full reload
+  // Listen for paste notifications
   useEffect(() => {
     const listener = (message: Record<string, unknown>) => {
       if (message.type === "PASTE_UPDATED") {
         reload();
+      } else if (message.type === "PASTE_DELETED") {
+        removeLocal(message.pasteId as number);
       }
     };
     chrome.runtime.onMessage.addListener(listener);
     return () => chrome.runtime.onMessage.removeListener(listener);
-  }, [reload]);
+  }, [reload, removeLocal]);
 
   return { items, loading, hasMore, loadMore, deletePaste };
 }
