@@ -61,10 +61,9 @@ export function DevicesView({
     ? devices.find((d) => d.targetAppInstanceId === selectedDevice) ?? null
     : null;
 
-  // Device detail view
-  if (detailDevice) {
-    return (
-      <>
+  return (
+    <>
+      {detailDevice ? (
         <DeviceDetailView
           device={detailDevice}
           onBack={() => setSelectedDevice(null)}
@@ -75,90 +74,75 @@ export function DevicesView({
           }}
           onRePair={() => handleRePair(detailDevice.targetAppInstanceId)}
         />
+      ) : (
+        <div className="relative flex flex-col h-full">
+          <div className="flex-1 overflow-y-auto px-5 py-2">
+            <div className="flex flex-col gap-6">
+              {/* Connection guide */}
+              <div className="rounded-2xl bg-m3-surface-container p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-m3-primary-container">
+                    <Info size={16} className="text-m3-primary" />
+                  </div>
+                  <span className="text-sm font-semibold text-m3-on-surface">
+                    {t("devices_guide_title")}
+                  </span>
+                </div>
+                <p className="text-xs text-m3-on-surface-variant leading-relaxed mb-3">
+                  {t("devices_guide_desc")}
+                </p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-m3-primary-container text-m3-primary text-[10px] font-bold shrink-0 mt-px">
+                      1
+                    </span>
+                    <span className="text-xs text-m3-on-surface-variant leading-relaxed">
+                      {t("devices_guide_step1")}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-m3-primary-container text-m3-primary text-[10px] font-bold shrink-0 mt-px">
+                      2
+                    </span>
+                    <span className="text-xs text-m3-on-surface-variant leading-relaxed">
+                      {t("devices_guide_step2")}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-        {editingDevice && (
-          <EditNoteDialog
-            deviceName={editingDevice.syncInfo.endpointInfo.deviceName}
-            currentNote={editingDevice.noteName ?? ""}
-            onConfirm={(note) => {
-              onUpdateNote(editingDevice.targetAppInstanceId, note);
-              setEditingDevice(null);
-            }}
-            onClose={() => setEditingDevice(null)}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Device list view
-  return (
-    <div className="relative flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-5 py-2">
-        <div className="flex flex-col gap-6">
-          {/* Connection guide */}
-          <div className="rounded-2xl bg-m3-surface-container p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-m3-primary-container">
-                <Info size={16} className="text-m3-primary" />
-              </div>
-              <span className="text-sm font-semibold text-m3-on-surface">
-                {t("devices_guide_title")}
-              </span>
-            </div>
-            <p className="text-xs text-m3-on-surface-variant leading-relaxed mb-3">
-              {t("devices_guide_desc")}
-            </p>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-start gap-2.5">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-m3-primary-container text-m3-primary text-[10px] font-bold shrink-0 mt-px">
-                  1
-                </span>
-                <span className="text-xs text-m3-on-surface-variant leading-relaxed">
-                  {t("devices_guide_step1")}
-                </span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-m3-primary-container text-m3-primary text-[10px] font-bold shrink-0 mt-px">
-                  2
-                </span>
-                <span className="text-xs text-m3-on-surface-variant leading-relaxed">
-                  {t("devices_guide_step2")}
-                </span>
-              </div>
+              {devices.length > 0 && (
+                <MyDevicesSection
+                  devices={devices}
+                  desktopConnected={desktopConnected}
+                  onClick={(device) => setSelectedDevice(device.targetAppInstanceId)}
+                  onEditNote={(device) => setEditingDevice(device)}
+                  onRemove={(targetAppInstanceId) => onRemoveDevice(targetAppInstanceId)}
+                  onRePair={handleRePair}
+                />
+              )}
             </div>
           </div>
 
-          {devices.length > 0 && (
-            <MyDevicesSection
-              devices={devices}
-              desktopConnected={desktopConnected}
-              onClick={(device) => setSelectedDevice(device.targetAppInstanceId)}
-              onEditNote={(device) => setEditingDevice(device)}
-              onRemove={(targetAppInstanceId) => onRemoveDevice(targetAppInstanceId)}
-              onRePair={handleRePair}
-            />
-          )}
+          {/* FAB - Add Device */}
+          <div className="absolute bottom-4 right-4">
+            <button
+              onClick={() => setShowAddDialog(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-m3-success-container text-m3-success shadow-lg hover:shadow-xl transition-shadow"
+            >
+              <Plus size={20} />
+              <span className="text-sm font-medium">{t("add_device_manually")}</span>
+            </button>
+          </div>
+
+          <AddDeviceDialog
+            open={showAddDialog}
+            onClose={() => setShowAddDialog(false)}
+            onConnect={handleConnect}
+            onPair={onPair}
+          />
         </div>
-      </div>
-
-      {/* FAB - Add Device */}
-      <div className="absolute bottom-4 right-4">
-        <button
-          onClick={() => setShowAddDialog(true)}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-m3-success-container text-m3-success shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <Plus size={20} />
-          <span className="text-sm font-medium">{t("add_device_manually")}</span>
-        </button>
-      </div>
-
-      <AddDeviceDialog
-        open={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        onConnect={handleConnect}
-        onPair={onPair}
-      />
+      )}
 
       <AddDeviceDialog
         open={rePairSyncInfo !== null}
@@ -183,6 +167,6 @@ export function DevicesView({
           onClose={() => setEditingDevice(null)}
         />
       )}
-    </div>
+    </>
   );
 }
