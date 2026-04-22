@@ -212,13 +212,14 @@ class SyncResolver(
                 // probe success → stay CONNECTED
             }
             SyncState.DISCONNECTED -> {
-                if (wsSessionManager.isConnected(appInstanceId)) {
+                if (wsSessionManager.probe(appInstanceId)) {
                     logger.info { "Extension $appInstanceId WebSocket back, marking CONNECTED" }
                     callback.updateVersionRelation(VersionRelation.EQUAL_TO)
                     updateConnectState(SyncState.CONNECTED)
                 } else {
-                    // WS still gone; only scheduled polling will actually escalate backoff
-                    // (force-resolve / first-value paths pass a no-op markPollFailure).
+                    // WS still gone (or half-open); only scheduled polling will actually
+                    // escalate backoff (force-resolve / first-value paths pass a no-op
+                    // markPollFailure).
                     callback.markPollFailure()
                 }
             }

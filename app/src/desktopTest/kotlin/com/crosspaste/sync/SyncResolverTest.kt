@@ -67,10 +67,7 @@ class SyncResolverTest {
                 every { isDesktop() } returns true
             }
         val wsClientConnector: WsClientConnector = mockk(relaxed = true)
-        val wsSessionManager: WsSessionManager =
-            mockk(relaxed = true) {
-                every { isConnected(any()) } returns false
-            }
+        val wsSessionManager: WsSessionManager = mockk(relaxed = true)
 
         fun stubDbRead(syncRuntimeInfo: SyncRuntimeInfo) {
             coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) } returns syncRuntimeInfo
@@ -960,7 +957,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createExtensionSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
             deps.stubDbRead(syncRuntimeInfo)
-            every { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returns true
+            coEvery { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) } returns true
 
             val captured = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(captured)) } returns
@@ -986,7 +983,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createExtensionSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
             deps.stubDbRead(syncRuntimeInfo)
-            every { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returns false
+            coEvery { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) } returns false
 
             var failureCalls = 0
             val callback =
