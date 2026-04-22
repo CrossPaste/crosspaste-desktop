@@ -243,7 +243,7 @@ class FilePullService(
                     createFailureResult(
                         StandardErrorCode.PULL_FILE_CHUNK_TASK_FAIL,
                         "WS file pull failed: ${e.message}",
-                    ) as FailureResult
+                    )
             }
         }
 
