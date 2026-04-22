@@ -16,6 +16,10 @@ object CrossPasteBootstrap {
         JvmSystemPropertiesOverride.apply()
         val clazz = Class.forName("com.crosspaste.CrossPaste")
         val mainMethod = clazz.getDeclaredMethod("main", Array<String>::class.java)
-        mainMethod.invoke(null, args)
+        try {
+            mainMethod.invoke(null, args)
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            throw e.cause ?: e
+        }
     }
 }
