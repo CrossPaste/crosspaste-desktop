@@ -3,9 +3,7 @@ import { usePasteList } from "@/shared/hooks/use-paste-list";
 import { PasteCard } from "./PasteCard";
 import { PasteDetailView } from "./PasteDetailView";
 import { EmptyState } from "./EmptyState";
-import type { PasteData } from "@/shared/models/paste-data";
-import { copyPasteData } from "@/shared/clipboard/clipboard-writer";
-import { NotificationManager } from "@/shared/notification/notification-manager";
+import { useCopyWithNotification } from "@/shared/hooks/use-copy-with-notification";
 import { PasteTypeInt } from "@/shared/models/paste-item";
 import { useI18n } from "@/shared/i18n/use-i18n";
 
@@ -55,17 +53,7 @@ export function PasteGrid() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
-  const copyItem = useCallback(
-    async (data: PasteData) => {
-      try {
-        await copyPasteData(data);
-        NotificationManager.success(t("copy_successful"));
-      } catch {
-        NotificationManager.error(t("copy_failed"));
-      }
-    },
-    [t],
-  );
+  const copyItem = useCopyWithNotification();
 
   const lastItemRef = useCallback(
     (node: HTMLDivElement | null) => {
