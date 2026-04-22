@@ -30,6 +30,10 @@ import {
   PROTOCOL_VERSION,
   isCompatibleVersion,
 } from "@/shared/sync/protocol-version";
+import {
+  enqueueOversizeNotice,
+  type OversizeNoticeMessage,
+} from "@/shared/oversize-notice-queue";
 
 // ─── Per-device runtime facts (source of truth) ───────────────────────
 //
@@ -635,7 +639,14 @@ async function showOversizePasteNotice(
       ? t("paste_oversize_file", notice.fileName ?? "", actual, limit)
       : t("paste_oversize_total", actual, limit);
 
-  broadcastToSidePanel({ type: "OVERSIZE_NOTICE", title, message });
+  const payload: OversizeNoticeMessage = { type: "OVERSIZE_NOTICE", title, message };
+  // Always enqueue, then ping the side panel to drain. Avoids the MV3 quirk
+  // where sendMessage resolves (not rejects) when the offscreen listener
+  // receives but doesn't handle the message, which would silently drop notices.
+  await enqueueOversizeNotice(payload);
+  chrome.runtime.sendMessage({ type: "OVERSIZE_NOTICE_DRAIN" }).catch(() => {
+    // Side panel not open — next mount will drain.
+  });
 }
 
 // ─── Message handling ───────────────────────────────────────────────────
