@@ -17,9 +17,9 @@ import { argbToHex, argbToRgba } from "@/shared/utils/color";
 import { formatSize } from "@/shared/utils/format";
 import { relativeTime } from "@/shared/utils/date";
 import { isDarkColor } from "@/shared/utils/html-color";
-import { copyPasteData } from "@/shared/clipboard/clipboard-writer";
 import { NotificationManager } from "@/shared/notification/notification-manager";
 import { useImageItemUrl } from "@/shared/hooks/use-image-url";
+import { useCopyWithNotification } from "@/shared/hooks/use-copy-with-notification";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -216,20 +216,13 @@ function renderContent(item: PasteItem) {
 
 export function PasteCard({ data, onClick, onDelete }: Props) {
   const t = useI18n();
-  const displayItem = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const copyWithNotification = useCopyWithNotification();
+  const handleCopy = useCallback(() => copyWithNotification(data), [copyWithNotification, data]);
 
+  const displayItem = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
   const isDownloadable = data.pasteType === PasteTypeInt.FILE || data.pasteType === PasteTypeInt.IMAGE;
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await copyPasteData(data);
-      NotificationManager.success(t("copy_successful"));
-    } catch {
-      NotificationManager.error(t("copy_failed"));
-    }
-  }, [data, t]);
 
   const handleDownload = useCallback(async () => {
     const item = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
