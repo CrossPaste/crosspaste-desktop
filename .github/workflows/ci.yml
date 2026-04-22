@@ -7,7 +7,32 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            app:
+              - '!web/**'
+            web:
+              - 'web/**'
+              - 'core/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'settings.gradle.kts'
+              - 'build.gradle.kts'
+              - 'gradle.properties'
+
+  app-build:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     env:
       BUILD_FULL_PLATFORM: YES
@@ -38,3 +63,59 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew app:build
+
+  web-build:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          check-latest: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+
+      - name: Build web extension
+        run: ./gradlew :web:build
+
+      - name: Test web extension
+        working-directory: web
+        run: npm test
+
+  ci:
+    needs: [app-build, web-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify CI results
+        run: |
+          app_result="${{ needs.app-build.result }}"
+          web_result="${{ needs.web-build.result }}"
+          echo "app-build: $app_result"
+          echo "web-build: $web_result"
+          for result in "$app_result" "$web_result"; do
+            if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
+              echo "CI failed"
+              exit 1
+            fi
+          done
+          echo "CI passed"
