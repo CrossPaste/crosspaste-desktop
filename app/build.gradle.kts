@@ -306,7 +306,7 @@ compose.desktop {
             configurationFiles.from("compose-desktop.pro")
         }
 
-        mainClass = "com.crosspaste.CrossPaste"
+        mainClass = "com.crosspaste.bootstrap.CrossPasteBootstrap"
 
         if (os.isMacOsX || buildFullPlatform) {
             if (!buildFullPlatform) {
