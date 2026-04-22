@@ -30,7 +30,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import io.ktor.util.*
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 fun Routing.syncRouting(
     appInfo: AppInfo,
@@ -49,10 +50,11 @@ fun Routing.syncRouting(
     val logger = KotlinLogging.logger {}
     val json = getJsonUtils().JSON
 
+    @OptIn(ExperimentalEncodingApi::class)
     fun ApplicationCall.clientSyncInfo(): SyncInfo? =
         request.headers["crosspaste-sync-info"]?.let { encoded ->
             runCatching {
-                val decoded = encoded.decodeBase64String()
+                val decoded = Base64.decode(encoded).decodeToString()
                 json.decodeFromString<SyncInfo>(decoded)
             }.onFailure { e -> logger.warn(e) { "Failed to parse crosspaste-sync-info header" } }
                 .getOrNull()
