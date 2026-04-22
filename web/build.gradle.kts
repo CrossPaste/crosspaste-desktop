@@ -23,22 +23,43 @@ tasks.register("generateVersion") {
             .parent
             .resolve("app/src/desktopMain/resources/crosspaste-version.properties")
             .toFile()
-    val outputFile = project.file("src/shared/app/version.generated.ts")
+    val tsOutputFile = project.file("src/shared/app/version.generated.ts")
+    val manifestFile = project.file("manifest.json")
 
     inputs.file(versionFile)
-    outputs.file(outputFile)
+    outputs.file(tsOutputFile)
+    outputs.file(manifestFile)
 
     doLast {
-        outputFile.parentFile.mkdirs()
-        outputFile.writeText(
+        val props = Properties()
+        FileReader(versionFile).use { props.load(it) }
+        val version = props.getProperty("version")
+        val revision = props.getProperty("revision")
+        val fullVersion = if (revision.isNullOrBlank()) version else "$version.$revision"
+
+        tsOutputFile.parentFile.mkdirs()
+        tsOutputFile.writeText(
             """
             |// Auto-generated from app/src/desktopMain/resources/crosspaste-version.properties
             |// Do not edit manually — run ./gradlew :web:generateVersion to regenerate
             |
-            |export const APP_VERSION = "${versionProperties.getProperty("version")}";
+            |export const APP_VERSION = "$fullVersion";
             |
             """.trimMargin(),
         )
+
+        val manifestText = manifestFile.readText()
+        val updatedManifest =
+            manifestText.replaceFirst(
+                Regex("\"version\"\\s*:\\s*\"[^\"]*\""),
+                "\"version\": \"$fullVersion\"",
+            )
+        check(updatedManifest != manifestText || manifestText.contains("\"version\": \"$fullVersion\"")) {
+            "Failed to update version field in $manifestFile"
+        }
+        if (updatedManifest != manifestText) {
+            manifestFile.writeText(updatedManifest)
+        }
     }
 }
 
