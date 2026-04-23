@@ -15,6 +15,18 @@ async function sendMessage(
   return chrome.runtime.sendMessage(message);
 }
 
+/**
+ * Request host permission for the target device over a user gesture (UI thread).
+ * Service worker cannot call `chrome.permissions.request` — the gesture is lost
+ * by the time the message is dispatched, so the prompt must be raised here.
+ */
+async function ensureHostPermission(host: string, port: number): Promise<boolean> {
+  const origins = [`http://${host}:${port}/*`];
+  const already = await chrome.permissions.contains({ origins });
+  if (already) return true;
+  return chrome.permissions.request({ origins });
+}
+
 export function useConnection() {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
 
@@ -45,6 +57,10 @@ export function useConnection() {
   }, [loadDevices]);
 
   const connect = useCallback(async (host: string, port: number) => {
+    const granted = await ensureHostPermission(host, port);
+    if (!granted) {
+      return { success: false, error: "host_permission_denied" };
+    }
     const result = (await sendMessage({ type: "CONNECT", host, port })) as {
       success: boolean;
       syncInfo?: SyncInfo;
@@ -68,13 +84,21 @@ export function useConnection() {
 
   const rePair = useCallback(
     async (targetAppInstanceId: string) => {
+      const device = devices.find((d) => d.targetAppInstanceId === targetAppInstanceId);
+      if (!device) {
+        return { success: false, error: "Device not found" };
+      }
+      const granted = await ensureHostPermission(device.host, device.port);
+      if (!granted) {
+        return { success: false, error: "host_permission_denied" };
+      }
       const result = (await sendMessage({
         type: "REPAIR",
         targetAppInstanceId,
       })) as { success: boolean; syncInfo?: SyncInfo; error?: string; incompatible?: boolean };
       return result;
     },
-    [],
+    [devices],
   );
 
   const removeDevice = useCallback(
