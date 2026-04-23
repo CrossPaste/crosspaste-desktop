@@ -67,6 +67,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
+import org.jetbrains.skiko.SkikoProperties
 import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
@@ -315,6 +316,8 @@ class CrossPaste {
             logger.info { "Starting CrossPaste${if (headless) " (headless)" else ""}" }
             runBlocking { startApplication() }
             logger.info { "CrossPaste started" }
+
+            logger.info { "SkikoProperties.renderApi=${SkikoProperties.renderApi}" }
 
             if (headless) {
                 runHeadless()
