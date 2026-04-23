@@ -1,7 +1,7 @@
 package com.crosspaste.bootstrap
 
-import java.io.File
-import java.io.FileInputStream
+import com.crosspaste.presist.OneFilePersist
+import java.io.ByteArrayInputStream
 import java.util.Properties
 
 /**
@@ -9,15 +9,11 @@ import java.util.Properties
  * CrossPaste config directory and applies them via [System.setProperty] BEFORE any Compose
  * or skiko class is loaded.
  *
- * Location (mirrors [com.crosspaste.path.DesktopAppPathProvider] USER dir):
- *   Windows: %USERPROFILE%\.crosspaste\jvm-system-properties.properties
- *   Linux:   ~/.local/share/.crosspaste/jvm-system-properties.properties
- *   macOS:   ~/Library/Application Support/CrossPaste/jvm-system-properties.properties
+ * File location is owned by the caller (resolved through `AppPathProvider`); only keys matching
+ * [ALLOWED_PREFIXES] are applied, everything else is logged and skipped.
  *
- * Only keys matching [ALLOWED_PREFIXES] are applied; everything else is logged and skipped.
- *
- * Intentionally dependency-free: only JDK APIs. Do NOT add imports from Compose, Koin, Okio,
- * or any CrossPaste service — this class runs before those subsystems exist.
+ * Must run before configManager / logger / Compose / skiko / AWT classes initialize. The
+ * caller is responsible for ordering this in the companion-object init sequence.
  */
 object JvmSystemPropertiesOverride {
 
@@ -36,16 +32,21 @@ object JvmSystemPropertiesOverride {
             "crosspaste.",
         )
 
-    fun apply() {
-        val file = resolveOverrideFile() ?: return
-        if (!file.isFile) {
-            return
-        }
+    fun apply(persist: OneFilePersist) {
+        val bytes =
+            runCatching { persist.readBytes() }.getOrElse { e ->
+                System.err.println("$LOG_PREFIX failed to read ${persist.path}: ${e.message}")
+                return
+            } ?: return
+
         val props =
-            runCatching { loadProperties(file) }.getOrElse { e ->
-                System.err.println("$LOG_PREFIX failed to read ${file.absolutePath}: ${e.message}")
+            runCatching {
+                Properties().apply { ByteArrayInputStream(bytes).use { load(it) } }
+            }.getOrElse { e ->
+                System.err.println("$LOG_PREFIX failed to parse ${persist.path}: ${e.message}")
                 return
             }
+
         var applied = 0
         var rejected = 0
         for (name in props.stringPropertyNames()) {
@@ -60,31 +61,9 @@ object JvmSystemPropertiesOverride {
             applied++
         }
         System.err.println(
-            "$LOG_PREFIX loaded ${file.absolutePath}: applied=$applied, rejected=$rejected",
+            "$LOG_PREFIX loaded ${persist.path}: applied=$applied, rejected=$rejected",
         )
     }
 
-    internal fun resolveOverrideFile(
-        osName: String = System.getProperty("os.name").orEmpty(),
-        userHome: String = System.getProperty("user.home").orEmpty(),
-    ): File? {
-        if (userHome.isEmpty()) return null
-        val lower = osName.lowercase()
-        val dir =
-            when {
-                lower.contains("mac") || lower.contains("darwin") ->
-                    File(File(File(userHome, "Library"), "Application Support"), "CrossPaste")
-                lower.contains("win") -> File(userHome, ".crosspaste")
-                else -> File(File(File(userHome, ".local"), "share"), ".crosspaste")
-            }
-        return File(dir, FILE_NAME)
-    }
-
     internal fun isAllowed(key: String): Boolean = ALLOWED_PREFIXES.any { key.startsWith(it) }
-
-    private fun loadProperties(file: File): Properties {
-        val props = Properties()
-        FileInputStream(file).use { props.load(it) }
-        return props
-    }
 }

@@ -23,6 +23,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopPidFileService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.NativeMessagingHostService
+import com.crosspaste.bootstrap.JvmSystemPropertiesOverride
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
@@ -88,6 +89,14 @@ class CrossPaste {
         private val deviceUtils = DesktopDeviceUtils(platform)
 
         private val localeUtils = DesktopLocaleUtils
+
+        init {
+            JvmSystemPropertiesOverride.apply(
+                FilePersist.createOneFilePersist(
+                    appPathProvider.resolve(JvmSystemPropertiesOverride.FILE_NAME, AppFileType.USER),
+                ),
+            )
+        }
 
         private val configManager =
             DesktopConfigManager(
