@@ -34,19 +34,27 @@ export function useOversizeNoticeListener(): void {
     };
 
     let cancelled = false;
-    const drainAndShow = async () => {
-      const pending = await drainOversizeNotices();
-      if (cancelled) {
-        // Unmounted mid-drain — put the already-drained notices back so the
-        // next mount can replay them instead of silently losing them.
-        for (const notice of pending) {
-          await enqueueOversizeNotice(notice);
+    // Serialize drains via a promise chain. Without this, the mount drain and
+    // an immediate drain ping can both read the queue before either removes
+    // it, causing the same notice to be shown twice.
+    let chain: Promise<unknown> = Promise.resolve();
+    const drainAndShow = (): Promise<void> => {
+      const next = chain.then(async () => {
+        const pending = await drainOversizeNotices();
+        if (cancelled) {
+          // Unmounted mid-drain — put the already-drained notices back so the
+          // next mount can replay them instead of silently losing them.
+          for (const notice of pending) {
+            await enqueueOversizeNotice(notice);
+          }
+          return;
         }
-        return;
-      }
-      for (const notice of pending) {
-        showNotice(notice.title, notice.message);
-      }
+        for (const notice of pending) {
+          showNotice(notice.title, notice.message);
+        }
+      });
+      chain = next.catch(() => {});
+      return next;
     };
 
     void drainAndShow();
