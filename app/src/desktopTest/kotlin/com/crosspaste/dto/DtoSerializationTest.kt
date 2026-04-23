@@ -77,13 +77,13 @@ class DtoSerializationTest {
             WsPullFileRequest.WholeFileRequest(hash = "h", fileName = "f.png")
         val decodedWhole = json.decodeFromString<WsPullFileRequest>(json.encodeToString(whole))
         assertTrue(decodedWhole is WsPullFileRequest.WholeFileRequest)
-        assertEquals("h", (decodedWhole as WsPullFileRequest.WholeFileRequest).hash)
+        assertEquals("h", decodedWhole.hash)
         assertEquals("f.png", decodedWhole.fileName)
 
         val chunk: WsPullFileRequest = WsPullFileRequest.ChunkRequest(id = 5L, chunkIndex = 2)
         val decodedChunk = json.decodeFromString<WsPullFileRequest>(json.encodeToString(chunk))
         assertTrue(decodedChunk is WsPullFileRequest.ChunkRequest)
-        assertEquals(5L, (decodedChunk as WsPullFileRequest.ChunkRequest).id)
+        assertEquals(5L, decodedChunk.id)
         assertEquals(2, decodedChunk.chunkIndex)
     }
 
