@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -124,15 +123,33 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                     )
                 }
 
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        showAddDeviceDialog = true
-                    },
-                    containerColor = LocalThemeExtState.current.success.surface,
-                    contentColor = LocalThemeExtState.current.success.onContainer,
-                    icon = { Icon(MaterialSymbols.Rounded.Add, contentDescription = null) },
-                    text = { Text(copywriter.getText("add_device_manually")) },
-                )
+                FilledTonalButton(
+                    onClick = { showAddDeviceDialog = true },
+                    contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
+                    colors =
+                        ButtonDefaults.filledTonalButtonColors(
+                            containerColor = LocalThemeExtState.current.success.surface,
+                            contentColor = LocalThemeExtState.current.success.onContainer,
+                        ),
+                    elevation =
+                        ButtonDefaults.filledTonalButtonElevation(
+                            defaultElevation = tiny3X,
+                            pressedElevation = tiny5X,
+                            hoveredElevation = tiny2X,
+                            focusedElevation = tiny3X,
+                        ),
+                ) {
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(small),
+                    )
+                    Spacer(modifier = Modifier.width(tiny3X))
+                    Text(
+                        text = copywriter.getText("add_device_manually"),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
             }
         },
     ) { innerPadding ->
