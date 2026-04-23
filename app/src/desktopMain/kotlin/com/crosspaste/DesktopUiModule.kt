@@ -16,7 +16,7 @@ import com.crosspaste.i18n.DesktopGlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.image.coil.AppSourceIconTransformer
-import com.crosspaste.image.coil.DesktopAppSourceIconTransformer
+import com.crosspaste.image.coil.DefaultAppSourceIconTransformer
 import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.listener.DesktopGlobalListener
 import com.crosspaste.listener.DesktopShortKeysAction
@@ -59,7 +59,7 @@ fun desktopUiModule(): Module =
         single<ActiveGraphicsDevice> { get<DesktopAppSize>() }
         single<AppFileChooser> { DesktopAppFileChooser(get()) }
         single<AppSize> { get<DesktopAppSize>() }
-        single<AppSourceIconTransformer> { DesktopAppSourceIconTransformer }
+        single<AppSourceIconTransformer> { DefaultAppSourceIconTransformer }
         single<AppTokenApi> { DesktopAppTokenService(get(), get()) }
         single<AppWindowManager> { get<DesktopAppWindowManager>() }
         single<DesktopAppSize> { DesktopAppSize(get()) }
