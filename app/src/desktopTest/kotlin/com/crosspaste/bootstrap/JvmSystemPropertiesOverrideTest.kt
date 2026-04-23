@@ -33,7 +33,7 @@ class JvmSystemPropertiesOverrideTest {
                 userHome = "/home/alice",
             )!!
         assertEquals(
-            "/home/alice/.crosspaste/jvm-system-properties.properties",
+            "/home/alice/.local/share/.crosspaste/jvm-system-properties.properties",
             file.path,
         )
     }
@@ -100,7 +100,8 @@ class JvmSystemPropertiesOverrideTest {
     @Test
     fun `apply sets whitelisted properties and skips others`() {
         val tmp = Files.createTempDirectory("jvmOverrideApply")
-        val dir = File(tmp.toFile(), ".crosspaste").apply { mkdirs() }
+        val dir =
+            File(File(File(tmp.toFile(), ".local"), "share"), ".crosspaste").apply { mkdirs() }
         File(dir, "jvm-system-properties.properties").writeText(
             """
             skiko.renderApi=SOFTWARE_COMPAT

@@ -11,7 +11,7 @@ import java.util.Properties
  *
  * Location (mirrors [com.crosspaste.path.DesktopAppPathProvider] USER dir):
  *   Windows: %USERPROFILE%\.crosspaste\jvm-system-properties.properties
- *   Linux:   ~/.crosspaste/jvm-system-properties.properties
+ *   Linux:   ~/.local/share/.crosspaste/jvm-system-properties.properties
  *   macOS:   ~/Library/Application Support/CrossPaste/jvm-system-properties.properties
  *
  * Only keys matching [ALLOWED_PREFIXES] are applied; everything else is logged and skipped.
@@ -75,7 +75,7 @@ object JvmSystemPropertiesOverride {
                 lower.contains("mac") || lower.contains("darwin") ->
                     File(File(File(userHome, "Library"), "Application Support"), "CrossPaste")
                 lower.contains("win") -> File(userHome, ".crosspaste")
-                else -> File(userHome, ".crosspaste")
+                else -> File(File(File(userHome, ".local"), "share"), ".crosspaste")
             }
         return File(dir, FILE_NAME)
     }
