@@ -36,10 +36,6 @@ tasks.register("generateVersion") {
     doLast {
         val props = Properties()
         FileReader(versionFile).use { props.load(it) }
-        val version =
-            checkNotNull(props.getProperty("version")) {
-                "Missing 'version' in crosspaste-version.properties"
-            }
         val revision = props.getProperty("revision")
         val fullVersion = if (revision.isNullOrBlank()) version else "$version.$revision"
 
