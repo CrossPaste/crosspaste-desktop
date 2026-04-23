@@ -19,7 +19,17 @@ jobs:
         with:
           filters: |
             app:
-              - '!web/**'
+              - 'app/**'
+              - 'shared/**'
+              - 'core/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'settings.gradle.kts'
+              - 'build.gradle.kts'
+              - 'gradle.properties'
+              - 'compose-stability.conf'
+              - '.github/workflows/ci.yml'
             web:
               - 'web/**'
               - 'core/**'
@@ -29,6 +39,7 @@ jobs:
               - 'settings.gradle.kts'
               - 'build.gradle.kts'
               - 'gradle.properties'
+              - '.github/workflows/ci.yml'
 
   app-build:
     needs: changes
