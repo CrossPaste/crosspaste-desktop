@@ -2,7 +2,7 @@ package com.crosspaste.image.coil
 
 import coil3.transform.Transformation
 
-object DesktopAppSourceIconTransformer : AppSourceIconTransformer {
+object SideAppSourceIconTransformer : AppSourceIconTransformer {
 
     override val transformations: List<Transformation> = listOf(AppSourceIconCropTransformation)
 

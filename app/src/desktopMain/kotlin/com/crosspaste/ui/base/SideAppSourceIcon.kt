@@ -15,9 +15,9 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.transformations
 import coil3.size.Precision
-import com.crosspaste.image.coil.AppSourceIconTransformer
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaderQualifiers
+import com.crosspaste.image.coil.SideAppSourceIconTransformer
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.paste.PasteDataScope
 import org.koin.compose.koinInject
@@ -28,7 +28,6 @@ fun PasteDataScope.SideAppSourceIcon(
     defaultIcon: @Composable () -> Unit = {},
 ) {
     val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
-    val transformer = koinInject<AppSourceIconTransformer>()
     val platformContext = koinInject<PlatformContext>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
@@ -36,14 +35,14 @@ fun PasteDataScope.SideAppSourceIcon(
     val density = LocalDensity.current
 
     val sizePx = with(density) { appSizeValue.sideTitleHeight.roundToPx() }
-    val requestSizePx = transformer.requestSize(sizePx)
+    val requestSizePx = SideAppSourceIconTransformer.requestSize(sizePx)
 
     val model =
         remember(pasteData.source, pasteData.appInstanceId, requestSizePx) {
             ImageRequest
                 .Builder(platformContext)
                 .data(AppSourceItem(pasteData.source, pasteData.appInstanceId))
-                .transformations(transformer.transformations)
+                .transformations(SideAppSourceIconTransformer.transformations)
                 .size(requestSizePx)
                 .precision(Precision.INEXACT)
                 .crossfade(true)
