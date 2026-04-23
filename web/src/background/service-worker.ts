@@ -663,8 +663,17 @@ async function handleGetDevices(): Promise<unknown> {
   return { devices: await getDevicesWithStatus() };
 }
 
+// Host permission is granted by the sidepanel via `chrome.permissions.request`
+// during a user gesture; the service worker can only verify, never request.
+async function hasHostPermission(host: string, port: number): Promise<boolean> {
+  return chrome.permissions.contains({ origins: [`http://${host}:${port}/*`] });
+}
+
 async function handleConnect(host: string, port: number): Promise<unknown> {
   try {
+    if (!(await hasHostPermission(host, port))) {
+      return { success: false, error: "host_permission_denied" };
+    }
     const appInstanceId = await getAppInstanceId();
     const config = { host, port, appInstanceId };
 
@@ -782,6 +791,9 @@ async function handlePair(token: number): Promise<unknown> {
 async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
   const device = await DeviceStore.get(targetAppInstanceId);
   if (!device) return { success: false, error: "Device not found" };
+  if (!(await hasHostPermission(device.host, device.port))) {
+    return { success: false, error: "host_permission_denied" };
+  }
   try {
     const appInstanceId = await getAppInstanceId();
     const config = { host: device.host, port: device.port, appInstanceId };
