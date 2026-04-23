@@ -14,7 +14,10 @@ versionProperties.load(
 )
 
 group = "com.crosspaste"
-version = versionProperties.getProperty("version")
+version =
+    checkNotNull(versionProperties.getProperty("version")) {
+        "Missing 'version' in crosspaste-version.properties"
+    }
 
 tasks.register("generateVersion") {
     val versionFile =
@@ -33,7 +36,10 @@ tasks.register("generateVersion") {
     doLast {
         val props = Properties()
         FileReader(versionFile).use { props.load(it) }
-        val version = props.getProperty("version")
+        val version =
+            checkNotNull(props.getProperty("version")) {
+                "Missing 'version' in crosspaste-version.properties"
+            }
         val revision = props.getProperty("revision")
         val fullVersion = if (revision.isNullOrBlank()) version else "$version.$revision"
 
