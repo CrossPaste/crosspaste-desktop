@@ -38,6 +38,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "\"%s\" (%s) exceeds the %s per-file limit",
     paste_oversize_total: "Total size %s exceeds the %s limit",
     install_desktop_client: "Install the desktop client for full functionality",
+    get_native_app: "Get the native app",
   },
   de: {
     clipboard: "Zwischenablage",
@@ -74,6 +75,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "„%s\" (%s) überschreitet das Limit von %s pro Datei",
     paste_oversize_total: "Gesamtgröße %s überschreitet das Limit von %s",
     install_desktop_client: "Desktop-Client für alle Funktionen installieren",
+    get_native_app: "Native App laden",
   },
   es: {
     clipboard: "Portapapeles",
@@ -110,6 +112,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "\"%s\" (%s) supera el límite de %s por archivo",
     paste_oversize_total: "El tamaño total %s supera el límite de %s",
     install_desktop_client: "Instala el cliente de escritorio para todas las funciones",
+    get_native_app: "Obtener la app nativa",
   },
   fr: {
     clipboard: "Presse-papiers",
@@ -146,6 +149,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "« %s » (%s) dépasse la limite de %s par fichier",
     paste_oversize_total: "La taille totale %s dépasse la limite de %s",
     install_desktop_client: "Installer le client de bureau pour toutes les fonctionnalités",
+    get_native_app: "Obtenir l'application native",
   },
   ja: {
     clipboard: "クリップボード",
@@ -181,6 +185,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "「%s」(%s) が1ファイルあたりの上限 %s を超えています",
     paste_oversize_total: "合計サイズ %s が上限 %s を超えています",
     install_desktop_client: "すべての機能を利用するためにデスクトップクライアントをインストール",
+    get_native_app: "ネイティブアプリを入手",
   },
   ko: {
     clipboard: "클립보드",
@@ -215,6 +220,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "\"%s\"(%s)이(가) 파일당 한도 %s 을(를) 초과합니다",
     paste_oversize_total: "총 크기 %s 이(가) 한도 %s 을(를) 초과합니다",
     install_desktop_client: "전체 기능을 위해 데스크톱 클라이언트 설치",
+    get_native_app: "네이티브 앱 받기",
   },
   zh: {
     clipboard: "剪贴板",
@@ -248,6 +254,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "文件「%s」大小为 %s，超过单文件上限 %s",
     paste_oversize_total: "总大小 %s 超过 %s 上限",
     install_desktop_client: "安装桌面客户端以支持完整功能",
+    get_native_app: "获取原生应用",
   },
   zh_hant: {
     clipboard: "剪貼簿",
@@ -281,5 +288,6 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_file: "檔案「%s」大小為 %s，超過單檔上限 %s",
     paste_oversize_total: "總大小 %s 超過 %s 上限",
     install_desktop_client: "安裝桌面客戶端以支援完整功能",
+    get_native_app: "取得原生應用",
   },
 };
