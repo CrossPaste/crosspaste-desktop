@@ -6,6 +6,8 @@ import {
   ChevronDown,
   ChevronRight,
   Check,
+  Download,
+  ArrowRight,
 } from "lucide-react";
 import {
   useI18n,
@@ -14,6 +16,8 @@ import {
   getLanguageName,
 } from "@/shared/i18n/use-i18n";
 import { useTheme, type ThemeMode } from "@/shared/theme/use-theme";
+import { useDesktopStatus } from "@/shared/hooks/use-desktop-status";
+import { openCrossPasteWebInBrowser } from "@/shared/app/ui-support";
 import { APP_VERSION } from "@/shared/app/version.generated";
 import { AboutView } from "./AboutView";
 
@@ -90,6 +94,36 @@ function LanguageDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Download Banner ────────────────────────────────────────────────────
+
+function DownloadBanner() {
+  const t = useI18n();
+  return (
+    <button
+      onClick={() => {
+        void openCrossPasteWebInBrowser("download");
+      }}
+      className="group relative flex items-center gap-3 w-full overflow-hidden rounded-[14px] px-4 py-3 text-left bg-gradient-to-r from-settings-indigo-bg via-settings-blue-bg to-settings-purple-bg ring-1 ring-settings-indigo/10 hover:ring-settings-indigo/30 hover:shadow-md shadow-sm transition-shadow"
+    >
+      <div className="flex items-center justify-center w-10 h-10 rounded-[12px] bg-m3-surface/70 shrink-0 shadow-sm">
+        <Download size={20} className="text-settings-indigo" />
+      </div>
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+        <span className="text-sm font-semibold text-m3-on-surface truncate">
+          {t("get_native_app")}
+        </span>
+        <span className="text-xs text-m3-on-surface-variant truncate">
+          {t("download")} · crosspaste.com
+        </span>
+      </div>
+      <ArrowRight
+        size={18}
+        className="text-settings-indigo shrink-0 transition-transform group-hover:translate-x-0.5"
+      />
+    </button>
+  );
+}
+
 // ─── Divider ────────────────────────────────────────────────────────────
 
 function Divider() {
@@ -105,6 +139,7 @@ function Divider() {
 export function SettingsView() {
   const t = useI18n();
   const { language } = useLanguageSettings();
+  const desktopConnected = useDesktopStatus();
   const [showAbout, setShowAbout] = useState(false);
   const [showLanguages, setShowLanguages] = useState(false);
 
@@ -114,6 +149,12 @@ export function SettingsView() {
 
   return (
     <div className="flex flex-col gap-2 h-full overflow-y-auto px-5 py-4">
+      {!desktopConnected && (
+        <div className="pb-1">
+          <DownloadBanner />
+        </div>
+      )}
+
       {/* Section Title */}
       <span className="text-[13px] font-semibold text-m3-on-surface-variant">
         {t("general")}
