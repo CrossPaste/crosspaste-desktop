@@ -192,7 +192,6 @@ class DesktopShortKeysAction(
             }.onFailure {
                 notificationManager.sendNotification(
                     title = { copyWriter -> copyWriter.getText("copy_failed") },
-                    message = it.message?.let { message -> { message } },
                     messageType = MessageType.Error,
                 )
             }

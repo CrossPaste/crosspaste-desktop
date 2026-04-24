@@ -86,7 +86,6 @@ fun DeviceScope.DeviceActionButton(
                         updateRefreshing(false)
                         notificationManager.sendNotification(
                             title = { it.getText("refresh_connection_failed") },
-                            message = e.message?.let { message -> { message } },
                             messageType = MessageType.Error,
                         )
                     }

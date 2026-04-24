@@ -91,10 +91,9 @@ class DesktopPasteMenuService(
                         title = { it.getText("copy_successful") },
                         messageType = MessageType.Success,
                     )
-                }.onFailure { e ->
+                }.onFailure {
                     notificationManager.sendNotification(
                         title = { it.getText("copy_failed") },
-                        message = e.message?.let { message -> { message } },
                         messageType = MessageType.Error,
                     )
                 }
@@ -112,10 +111,9 @@ class DesktopPasteMenuService(
                         title = { it.getText("copy_successful") },
                         messageType = MessageType.Success,
                     )
-                }.onFailure { e ->
+                }.onFailure {
                     notificationManager.sendNotification(
                         title = { it.getText("copy_failed") },
-                        message = e.message?.let { message -> { message } },
                         messageType = MessageType.Error,
                     )
                 }
@@ -144,10 +142,9 @@ class DesktopPasteMenuService(
                         title = { it.getText("copy_successful") },
                         messageType = MessageType.Success,
                     )
-                }.onFailure { e ->
+                }.onFailure {
                     notificationManager.sendNotification(
                         title = { it.getText("copy_failed") },
-                        message = e.message?.let { message -> { message } },
                         messageType = MessageType.Error,
                     )
                 }

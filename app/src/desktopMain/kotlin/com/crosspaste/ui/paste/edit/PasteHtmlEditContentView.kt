@@ -222,10 +222,9 @@ fun PasteDataScope.PasteHtmlEditContentView() {
                             messageType = MessageType.Success,
                         )
                         appWindowManager.hideBubbleWindow()
-                    }.onFailure { error ->
+                    }.onFailure {
                         notificationManager.sendNotification(
                             title = { copywriter.getText("save_failed") },
-                            message = { error.message ?: "" },
                             messageType = MessageType.Error,
                         )
                     }
