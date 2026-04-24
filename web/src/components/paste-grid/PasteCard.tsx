@@ -18,8 +18,9 @@ import { formatSize } from "@/shared/utils/format";
 import { relativeTime } from "@/shared/utils/date";
 import { isDarkColor } from "@/shared/utils/html-color";
 import { NotificationManager } from "@/shared/notification/notification-manager";
-import { useImageItemUrl } from "@/shared/hooks/use-image-url";
+import { useImageUrl } from "@/shared/hooks/use-image-url";
 import { useCopyWithNotification } from "@/shared/hooks/use-copy-with-notification";
+import { applyImageDragData, getDragText } from "@/shared/paste/paste-drag";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -93,8 +94,7 @@ function UrlContent({ item }: { item: UrlPasteItem }) {
   );
 }
 
-function ImageContent({ item }: { item: ImagesPasteItem }) {
-  const imageUrl = useImageItemUrl(item);
+function ImageContent({ item, imageUrl }: { item: ImagesPasteItem; imageUrl: string | undefined }) {
   if (imageUrl) {
     return (
       <div className="flex-1 overflow-hidden">
@@ -191,14 +191,14 @@ function FileContent({ item }: { item: FilesPasteItem }) {
   );
 }
 
-function renderContent(item: PasteItem) {
+function renderContent(item: PasteItem, imageUrl: string | undefined) {
   switch (item.type) {
     case PasteType.TEXT:
       return <TextContent item={item as TextPasteItem} />;
     case PasteType.URL:
       return <UrlContent item={item as UrlPasteItem} />;
     case PasteType.IMAGE:
-      return <ImageContent item={item as ImagesPasteItem} />;
+      return <ImageContent item={item as ImagesPasteItem} imageUrl={imageUrl} />;
     case PasteType.COLOR:
       return <ColorContent item={item as ColorPasteItem} />;
     case PasteType.HTML:
@@ -223,6 +223,11 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
 
   const displayItem = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
   const isDownloadable = data.pasteType === PasteTypeInt.FILE || data.pasteType === PasteTypeInt.IMAGE;
+  const dragText = getDragText(data);
+
+  const imageItem = displayItem?.type === PasteType.IMAGE ? (displayItem as ImagesPasteItem) : undefined;
+  const dragImageUrl = useImageUrl(imageItem?.hash, imageItem?.relativePathList?.[0], imageItem?.dataUrl);
+  const dragImageFileName = imageItem?.relativePathList?.[0];
 
   const handleDownload = useCallback(async () => {
     const item = data.pasteAppearItem ?? data.pasteCollection.pasteItems[0];
@@ -248,6 +253,36 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
       }
     }
   }, [data]);
+
+  const handleDragStart = useCallback((e: React.DragEvent) => {
+    if (data.pasteType === PasteTypeInt.FILE) {
+      e.preventDefault();
+      NotificationManager.warning(t("file_drag_not_supported"), undefined, 3000, {
+        label: t("download"),
+        onClick: handleDownload,
+      });
+      return;
+    }
+    if (data.pasteType === PasteTypeInt.IMAGE) {
+      if (!dragImageUrl || !dragImageFileName) {
+        e.preventDefault();
+        return;
+      }
+      applyImageDragData(e.dataTransfer, dragImageUrl, dragImageFileName);
+      return;
+    }
+    if (!dragText) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.setData("text/plain", dragText);
+    e.dataTransfer.effectAllowed = "copy";
+  }, [data.pasteType, dragText, dragImageUrl, dragImageFileName, t, handleDownload]);
+
+  const canDrag =
+    dragText != null ||
+    data.pasteType === PasteTypeInt.FILE ||
+    (data.pasteType === PasteTypeInt.IMAGE && dragImageUrl != null);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -280,13 +315,15 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
       <div
         onClick={onClick}
         onContextMenu={handleContextMenu}
+        draggable={canDrag}
+        onDragStart={handleDragStart}
         className="flex flex-col aspect-square rounded-[14px] bg-m3-surface-container overflow-hidden cursor-pointer hover:bg-m3-surface-container-high transition-colors"
       >
         {/* Title Bar */}
         <GridTitle data={data} />
 
         {/* Content */}
-        {renderContent(displayItem)}
+        {renderContent(displayItem, dragImageUrl)}
       </div>
 
       {/* Context Menu */}
