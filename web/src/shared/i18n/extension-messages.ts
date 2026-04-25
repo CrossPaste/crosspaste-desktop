@@ -114,6 +114,43 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     install_desktop_client: "Instala el cliente de escritorio para todas las funciones",
     get_native_app: "Obtener la app nativa",
   },
+  fa: {
+    clipboard: "کلیپ‌بورد",
+    desktop_app_active: "اپ دسکتاپ در حال اجراست — افزونه متوقف شد",
+    sync_status_paused: "متوقف",
+    sync_status_connecting: "در حال اتصال",
+    sync_status_unverified: "نیاز به جفت‌سازی مجدد",
+    sync_status_unmatched: "عدم تطابق کلید",
+    sync_status_incompatible: "ناسازگاری نسخه",
+    repair_device: "جفت‌سازی مجدد",
+    connect: "اتصال",
+    connect_code: "کد اتصال",
+    connecting: "در حال اتصال…",
+    connection_failed_check:
+      "اتصال ناموفق بود، لطفاً کد اتصال را بررسی کنید",
+    device_note: "یادداشت دستگاه",
+    add_note_for: "افزودن یادداشت برای %s",
+    enter_note_name: "نام یادداشت را وارد کنید",
+    enter_pairing_code_desc:
+      "کد جفت‌سازی ۶ رقمی نمایش‌داده‌شده در اپ دسکتاپ را وارد کنید.",
+    re_enter: "وارد کردن مجدد",
+    verification_failed_retry: "تأیید ناموفق بود، لطفاً دوباره تلاش کنید",
+    time: "زمان",
+    ip_address: "آدرس IP",
+    devices_guide_title: "فقط اتصال دستی",
+    devices_guide_desc:
+      "افزونه کروم در ساندباکس مرورگر اجرا می‌شود و نمی‌تواند در شبکه محلی پخش کند، بنابراین سایر کلاینت‌های CrossPaste نمی‌توانند آن را به‌طور خودکار کشف کنند.",
+    devices_guide_step1:
+      "آدرس IP و پورت دستگاه را در اپ دسکتاپ پیدا کنید: تنظیمات ← تنظیمات شبکه",
+    devices_guide_step2:
+      "روی «افزودن دستگاه» در پایین کلیک کنید و اطلاعات اتصال را وارد کنید",
+    paste_not_synced_title: "CrossPaste: چسباندن از %s همگام‌سازی نشد",
+    paste_oversize_file: "«%s» (%s) از محدودیت %s در هر فایل فراتر می‌رود",
+    paste_oversize_total: "اندازه کل %s از محدودیت %s فراتر می‌رود",
+    install_desktop_client:
+      "برای دسترسی به امکانات کامل، کلاینت دسکتاپ را نصب کنید",
+    get_native_app: "دریافت اپ بومی",
+  },
   fr: {
     clipboard: "Presse-papiers",
     desktop_app_active: "L'application de bureau est active — extension en pause",
@@ -221,6 +258,43 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     paste_oversize_total: "총 크기 %s 이(가) 한도 %s 을(를) 초과합니다",
     install_desktop_client: "전체 기능을 위해 데스크톱 클라이언트 설치",
     get_native_app: "네이티브 앱 받기",
+  },
+  pt: {
+    clipboard: "Área de transferência",
+    desktop_app_active: "App de desktop em execução — extensão pausada",
+    sync_status_paused: "Pausado",
+    sync_status_connecting: "Conectando",
+    sync_status_unverified: "Reemparelhar",
+    sync_status_unmatched: "Chaves não coincidem",
+    sync_status_incompatible: "Versão incompatível",
+    repair_device: "Reemparelhar",
+    connect: "Conectar",
+    connect_code: "Código de conexão",
+    connecting: "Conectando…",
+    connection_failed_check:
+      "Falha na conexão, verifique o código de conexão",
+    device_note: "Nota do dispositivo",
+    add_note_for: "Adicionar nota para %s",
+    enter_note_name: "Insira o nome da nota",
+    enter_pairing_code_desc:
+      "Insira o código de emparelhamento de 6 dígitos exibido no app de desktop.",
+    re_enter: "Reinserir",
+    verification_failed_retry: "Falha na verificação, tente novamente",
+    time: "Hora",
+    ip_address: "Endereço IP",
+    devices_guide_title: "Apenas conexão manual",
+    devices_guide_desc:
+      "A extensão do Chrome é executada em uma sandbox do navegador e não pode transmitir na rede local, portanto outros clientes do CrossPaste não conseguem descobri-la automaticamente.",
+    devices_guide_step1:
+      "Encontre o IP e a porta do dispositivo no app de desktop: Configurações → Configurações de rede",
+    devices_guide_step2:
+      "Clique em \"Adicionar dispositivo\" abaixo e insira as informações de conexão",
+    paste_not_synced_title: "CrossPaste: colagem de %s não sincronizada",
+    paste_oversize_file: "\"%s\" (%s) excede o limite de %s por arquivo",
+    paste_oversize_total: "Tamanho total %s excede o limite de %s",
+    install_desktop_client:
+      "Instale o cliente de desktop para a funcionalidade completa",
+    get_native_app: "Obter o app nativo",
   },
   zh: {
     clipboard: "剪贴板",
