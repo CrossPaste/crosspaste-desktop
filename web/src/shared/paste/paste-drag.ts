@@ -9,6 +9,7 @@ import type {
 } from "@/shared/models/paste-item";
 import type { PasteData } from "@/shared/models/paste-data";
 import { argbToHex } from "@/shared/utils/color";
+import { imageMimeFromFileName } from "@/shared/utils/mime";
 
 /**
  * Extract plain text for HTML5 drag-and-drop into input fields.
@@ -44,24 +45,6 @@ export function getDragText(data: PasteData): string | null {
   return null;
 }
 
-const IMAGE_MIME_MAP: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  svg: "image/svg+xml",
-  bmp: "image/bmp",
-  ico: "image/x-icon",
-  tiff: "image/tiff",
-  tif: "image/tiff",
-};
-
-function imageMimeFromFileName(fileName: string): string {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return IMAGE_MIME_MAP[ext] ?? "image/png";
-}
-
 /**
  * Populate a DataTransfer with image drag payloads. Covers three drop targets:
  * - `text/plain` / `text/uri-list` — URL text into inputs or address bars.
@@ -74,7 +57,7 @@ export function applyImageDragData(
   imageUrl: string,
   fileName: string,
 ): void {
-  const mime = imageMimeFromFileName(fileName);
+  const mime = imageMimeFromFileName(fileName) ?? "image/png";
   dataTransfer.setData("text/plain", fileName);
   dataTransfer.setData("text/uri-list", imageUrl);
   dataTransfer.setData("text/html", `<img src="${imageUrl}" alt="${fileName}">`);
