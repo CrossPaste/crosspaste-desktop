@@ -16,7 +16,6 @@ import {
   getLanguageName,
 } from "@/shared/i18n/use-i18n";
 import { useTheme, type ThemeMode } from "@/shared/theme/use-theme";
-import { useDesktopStatus } from "@/shared/hooks/use-desktop-status";
 import { openCrossPasteWebInBrowser } from "@/shared/app/ui-support";
 import { APP_VERSION } from "@/shared/app/version.generated";
 import { AboutView } from "./AboutView";
@@ -136,10 +135,13 @@ function Divider() {
 
 // ─── Main View ──────────────────────────────────────────────────────────
 
-export function SettingsView() {
+interface Props {
+  desktopConnected?: boolean;
+}
+
+export function SettingsView({ desktopConnected }: Props) {
   const t = useI18n();
   const { language } = useLanguageSettings();
-  const desktopConnected = useDesktopStatus();
   const [showAbout, setShowAbout] = useState(false);
   const [showLanguages, setShowLanguages] = useState(false);
 
