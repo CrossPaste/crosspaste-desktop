@@ -75,7 +75,7 @@ export default function App() {
                 <PasteGrid />
               </div>
             ) : (
-              <SettingsView />
+              <SettingsView desktopConnected={desktopConnected} />
             )}
           </main>
         </div>
