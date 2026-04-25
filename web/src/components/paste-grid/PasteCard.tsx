@@ -280,9 +280,9 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
   }, [data.pasteType, dragText, dragImageUrl, dragImageFileName, t, handleDownload]);
 
   const canDrag =
-    dragText != null ||
+    !!dragText ||
     data.pasteType === PasteTypeInt.FILE ||
-    (data.pasteType === PasteTypeInt.IMAGE && dragImageUrl != null);
+    (data.pasteType === PasteTypeInt.IMAGE && !!dragImageUrl && !!dragImageFileName);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
