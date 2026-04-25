@@ -1,22 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-
-const MIME_MAP: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  svg: "image/svg+xml",
-  bmp: "image/bmp",
-  ico: "image/x-icon",
-  tiff: "image/tiff",
-  tif: "image/tiff",
-};
-
-function mimeFromExt(fileName: string): string | undefined {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-  return MIME_MAP[ext];
-}
+import { imageMimeFromFileName } from "@/shared/utils/mime";
 
 export function useObjectUrl(
   data: ArrayBuffer | undefined,
@@ -36,7 +19,7 @@ export function useObjectUrl(
     }
 
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    const mime = mimeFromExt(fileName);
+    const mime = imageMimeFromFileName(fileName);
     const blob = mime ? new Blob([data], { type: mime }) : new Blob([data]);
     objectUrlRef.current = URL.createObjectURL(blob);
     setUrl(objectUrlRef.current);
