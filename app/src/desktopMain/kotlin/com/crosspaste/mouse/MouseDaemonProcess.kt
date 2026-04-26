@@ -1,5 +1,6 @@
 package com.crosspaste.mouse
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,6 +25,8 @@ import java.io.InterruptedIOException
 import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Wraps a running daemon subprocess for JSON Lines IPC.
@@ -78,6 +81,19 @@ class MouseDaemonProcess internal constructor(
                         while (true) {
                             val line = reader.readLine() ?: break
                             if (line.isBlank()) continue
+                            // The daemon's `plugin` mode is supposed to emit only
+                            // JSON Lines on stdout and route logs through stderr,
+                            // but in practice some log output (with ANSI color
+                            // codes — \x1b[…) leaks onto stdout. Treat anything
+                            // that isn't a JSON object as log spillover: log
+                            // it on the JVM side for diagnostics, but don't
+                            // promote it to an IpcEvent.Error that would surface
+                            // as a red banner in the settings UI.
+                            val firstNonWhitespace = line.firstOrNull { !it.isWhitespace() }
+                            if (firstNonWhitespace != '{') {
+                                logger.warn { "non-JSON line on daemon stdout (log spillover): ${line.take(200)}" }
+                                continue
+                            }
                             val event =
                                 runCatching {
                                     MouseIpcProtocol.json.decodeFromString(IpcEvent.serializer(), line)
