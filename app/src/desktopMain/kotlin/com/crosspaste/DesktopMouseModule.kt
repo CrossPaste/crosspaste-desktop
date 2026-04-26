@@ -13,6 +13,7 @@ import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.asDaemonHandle
 import com.crosspaste.platform.Platform
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.mouse.ScreenArrangementViewModel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
@@ -108,7 +109,12 @@ fun desktopMouseModule(): Module =
                         .map { it.mouseListenPort }
                         .distinctUntilChanged(),
                 layoutStore = get(),
-                syncRuntimeInfoDao = get(),
+                // Source the paired-device list from SyncManager's already-shared
+                // StateFlow rather than the raw DAO flow. The DAO flow is fine to
+                // observe in isolation but conceptually mouse cares about "business
+                // peers managed by SyncManager", not about raw table rows — and
+                // SyncManager's StateFlow is the canonical multi-cast view.
+                syncRuntimeInfosFlow = get<SyncManager>().realTimeSyncRuntimeInfos,
                 clientFactory = {
                     val binary =
                         MouseDaemonBinary.resolve()

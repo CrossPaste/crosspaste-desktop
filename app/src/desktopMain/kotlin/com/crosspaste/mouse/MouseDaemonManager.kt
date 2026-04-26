@@ -1,6 +1,6 @@
 package com.crosspaste.mouse
 
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
+import com.crosspaste.db.sync.SyncRuntimeInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
@@ -50,7 +50,7 @@ class MouseDaemonManager(
     private val enabledFlow: Flow<Boolean>,
     private val portFlow: Flow<Int>,
     private val layoutStore: MouseLayoutStore,
-    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val syncRuntimeInfosFlow: Flow<List<SyncRuntimeInfo>>,
     private val clientFactory: () -> MouseDaemonClient,
 ) {
     private val _state = MutableStateFlow<MouseState>(MouseState.Disabled)
@@ -87,7 +87,7 @@ class MouseDaemonManager(
                 enabledFlow,
                 portFlow,
                 layoutStore.flow(),
-                syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow(),
+                syncRuntimeInfosFlow,
             ) { enabled, port, layout, syncs ->
                 MergedInputs(enabled, port, MousePeerMapper.map(syncs, layout))
             }.distinctUntilChanged()

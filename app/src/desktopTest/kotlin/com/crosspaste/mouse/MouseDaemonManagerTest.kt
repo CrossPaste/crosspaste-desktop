@@ -7,10 +7,7 @@
 package com.crosspaste.mouse
 
 import com.crosspaste.db.sync.SyncRuntimeInfo
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.platform.Platform
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -185,14 +182,12 @@ class MouseDaemonManagerTest {
         enabled: MutableStateFlow<Boolean>,
         port: MutableStateFlow<Int> = MutableStateFlow(4243),
     ): MouseDaemonManager {
-        val dao = mockk<SyncRuntimeInfoDao>()
-        every { dao.getAllSyncRuntimeInfosFlow() } returns syncs
         val client = MouseDaemonClient(handle)
         return MouseDaemonManager(
             enabledFlow = enabled,
             portFlow = port,
             layoutStore = store,
-            syncRuntimeInfoDao = dao,
+            syncRuntimeInfosFlow = syncs,
             clientFactory = { client },
         )
     }
