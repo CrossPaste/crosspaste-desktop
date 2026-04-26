@@ -1,5 +1,6 @@
 package com.crosspaste.mouse
 
+import com.crosspaste.platform.Platform
 import java.io.File
 
 object MouseDaemonBinary {
@@ -8,27 +9,29 @@ object MouseDaemonBinary {
 
     /**
      * Resolution order:
-     *   1. -Dcrosspaste.mouse.binary=<path>
-     *   2. $CROSSPASTE_MOUSE_BIN
-     *   3. Any path in `candidatePaths` (e.g. bundled in resources/bin/...)
-     * Returns null if nothing points at an existing regular file.
+     *   1. -Dcrosspaste.mouse.binary=<path>     (per-launch override)
+     *   2. $CROSSPASTE_MOUSE_BIN                (per-shell override)
+     *   3. Any path in [candidatePaths]         (caller-supplied, env-aware)
+     *
+     * The caller is responsible for assembling [candidatePaths] from the
+     * dev-mode `DevConfig.mouseBinaryPath` or the prod-mode
+     * `pasteAppExePath / binaryName(platform)`. Returns null if nothing
+     * points at an existing regular file.
      */
     fun resolve(
+        candidatePaths: List<String> = emptyList(),
         envLookup: (String) -> String? = System::getenv,
-        candidatePaths: List<String> = defaultCandidatePaths(),
     ): File? {
         System.getProperty(SYSTEM_PROPERTY)?.let { File(it).takeIf { f -> f.isFile } }?.let { return it }
         envLookup(ENV_VAR)?.let { File(it).takeIf { f -> f.isFile } }?.let { return it }
         return candidatePaths
             .asSequence()
+            .filter { it.isNotBlank() }
             .map(::File)
             .firstOrNull { it.isFile }
     }
 
-    private fun defaultCandidatePaths(): List<String> {
-        // Production bundling is a follow-up plan; for now the only
-        // candidate is a dev-mode symlink next to the app jar.
-        val home = System.getProperty("user.home") ?: return emptyList()
-        return listOf("$home/crosspaste-mouse/target/release/crosspaste-mouse")
-    }
+    /** crosspaste-mouse build artifact name for the given platform. */
+    fun binaryName(platform: Platform): String =
+        if (platform.isWindows()) "crosspaste-mouse.exe" else "crosspaste-mouse"
 }
