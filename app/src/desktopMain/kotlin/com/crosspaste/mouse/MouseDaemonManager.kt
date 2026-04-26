@@ -140,6 +140,16 @@ class MouseDaemonManager(
         source.collect { ev ->
             _events.tryEmit(ev)
             when (ev) {
+                // Initialized/Ready means the daemon successfully spun up a
+                // session. Treat it as "running with no connected peers
+                // yet" — also clears any prior Error/Warning so a transient
+                // failure (e.g. log spillover briefly mis-parsed before
+                // we filtered it out) doesn't get stuck on screen.
+                is IpcEvent.Initialized, is IpcEvent.Ready -> {
+                    if (state.value !is MouseState.Running) {
+                        _state.value = MouseState.Running(emptyList())
+                    }
+                }
                 is IpcEvent.PeerConnected -> {
                     val prev = (state.value as? MouseState.Running)?.connectedPeers.orEmpty()
                     _state.value = MouseState.Running(prev + ev.name)
