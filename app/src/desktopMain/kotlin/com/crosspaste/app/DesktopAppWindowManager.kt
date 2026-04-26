@@ -158,6 +158,17 @@ abstract class DesktopAppWindowManager(
 
     fun isBubbleWindowVisible(): Boolean = _bubbleWindowInfo.value.show
 
+    private val _mouseSettingsWindowVisible = MutableStateFlow(false)
+    val mouseSettingsWindowVisible: StateFlow<Boolean> = _mouseSettingsWindowVisible
+
+    fun showMouseSettingsWindow() {
+        _mouseSettingsWindowVisible.value = true
+    }
+
+    fun hideMouseSettingsWindow() {
+        _mouseSettingsWindowVisible.value = false
+    }
+
     abstract suspend fun focusBubbleWindow()
 
     abstract fun startWindowService()

@@ -128,12 +128,6 @@ object NetworkSettings : Route {
 }
 
 @Serializable
-object MouseSettings : Route {
-    const val NAME: String = "mouse_settings"
-    override val name: String = NAME
-}
-
-@Serializable
 object StorageSettings : Route {
     const val NAME: String = "storage_settings"
     override val name: String = NAME
