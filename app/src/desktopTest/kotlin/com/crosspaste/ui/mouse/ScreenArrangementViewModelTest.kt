@@ -1,6 +1,7 @@
 package com.crosspaste.ui.mouse
 
 import com.crosspaste.mouse.IpcEvent
+import com.crosspaste.mouse.LocalScreensProvider
 import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.ScreenInfo
@@ -82,4 +83,51 @@ class ScreenArrangementViewModelTest {
         vm.onDragEnd("inst-1")
         assertEquals(Position(-1920, 0), s.get("inst-1"))
     }
+
+    @Test
+    fun `seeds local screens from provider at construction`() {
+        val provider =
+            LocalScreensProvider {
+                listOf(
+                    ScreenInfo(0, 1920, 1080, 0, 0, 1.0, true),
+                    ScreenInfo(1, 2560, 1440, 1920, 0, 2.0, false),
+                )
+            }
+        val vm = ScreenArrangementViewModel(MutableSharedFlow(), store(), provider)
+        assertEquals(2, vm.localScreens.value.size)
+        assertEquals(2560, vm.localScreens.value[1].width)
+    }
+
+    @Test
+    fun `daemon Initialized event overrides provider seed`() =
+        runTest {
+            val events = MutableSharedFlow<IpcEvent>(replay = 0, extraBufferCapacity = 16)
+            val provider =
+                LocalScreensProvider {
+                    listOf(ScreenInfo(0, 1280, 720, 0, 0, 1.0, true))
+                }
+            val vm = ScreenArrangementViewModel(events.asSharedFlow(), store(), provider)
+            assertEquals(
+                1280,
+                vm.localScreens.value
+                    .single()
+                    .width,
+            )
+            val job = launch { vm.observe() }
+            yield()
+            events.emit(
+                IpcEvent.Initialized(
+                    screens = listOf(ScreenInfo(0, 3840, 2160, 0, 0, 2.0, true)),
+                    protocolVersion = 2,
+                ),
+            )
+            yield()
+            assertEquals(
+                3840,
+                vm.localScreens.value
+                    .single()
+                    .width,
+            )
+            job.cancel()
+        }
 }

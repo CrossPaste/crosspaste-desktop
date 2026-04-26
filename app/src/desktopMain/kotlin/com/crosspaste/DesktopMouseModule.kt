@@ -1,6 +1,9 @@
 package com.crosspaste
 
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.mouse.AwtLocalScreensProvider
+import com.crosspaste.mouse.LocalScreensProvider
+import com.crosspaste.mouse.MacosLocalScreensProvider
 import com.crosspaste.mouse.MouseDaemonBinary
 import com.crosspaste.mouse.MouseDaemonClient
 import com.crosspaste.mouse.MouseDaemonManager
@@ -9,6 +12,7 @@ import com.crosspaste.mouse.MouseIpcProtocol
 import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.asDaemonHandle
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.mouse.ScreenArrangementViewModel
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
@@ -85,6 +89,10 @@ class DesktopAppConfigMouseLayoutBacking(
 
 fun desktopMouseModule(): Module =
     module {
+        single<LocalScreensProvider> {
+            val platform = get<Platform>()
+            if (platform.isMacos()) MacosLocalScreensProvider() else AwtLocalScreensProvider()
+        }
         single<MouseLayoutStore> {
             MouseLayoutStore(DesktopAppConfigMouseLayoutBacking(get<DesktopConfigManager>()))
         }
@@ -113,6 +121,7 @@ fun desktopMouseModule(): Module =
             ScreenArrangementViewModel(
                 events = get<MouseDaemonManager>().events,
                 layoutStore = get(),
+                localScreensProvider = get(),
             )
         }
     }
