@@ -3,6 +3,7 @@ package com.crosspaste.mouse
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonClassDiscriminator
 
@@ -30,6 +31,20 @@ data class ScreenInfo(
     val y: Int,
     @SerialName("scale_factor") val scaleFactor: Double,
     @SerialName("is_primary") val isPrimary: Boolean,
+    /**
+     * Human-readable monitor name (e.g. "DELL U2725QE", "Built-in Retina Display").
+     * Not part of the daemon IPC contract — populated on the desktop side
+     * from platform APIs (`NSScreen.localizedName` on macOS) and rendered
+     * in the [com.crosspaste.ui.mouse.ScreenCanvas] label.
+     */
+    @Transient val name: String? = null,
+    /**
+     * Filesystem path of a PNG copy of this monitor's desktop wallpaper.
+     * Same caveat as [name] — desktop-side enrichment only, never crosses
+     * the daemon IPC boundary. Null when the platform doesn't expose
+     * wallpapers or the lookup failed.
+     */
+    @Transient val wallpaperPath: String? = null,
 )
 
 @Serializable
