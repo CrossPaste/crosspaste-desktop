@@ -217,6 +217,21 @@ class DesktopImageTypePlugin(
         pasteItem as ImagesPasteItem
         val filePaths = pasteItem.getFilePaths(userDataPathProvider)
         val fileList: List<File> = filePaths.map { it.toFile() }
+
+        if (fileList.size == 1) {
+            runCatching {
+                val start = System.currentTimeMillis()
+                val image: BufferedImage? = imageHandler.readImage(fileList[0].toOkioPath())
+                image?.let {
+                    map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it
+                }
+                val end = System.currentTimeMillis()
+                logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
+            }.onFailure { e ->
+                logger.error(e) { "read image fail" }
+            }
+        }
+
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
 
         if (mixedCategory) {
@@ -234,15 +249,6 @@ class DesktopImageTypePlugin(
 
             if (fileList.size == 1) {
                 map[URL_FLAVOR.toPasteDataFlavor()] = fileList[0].toURI().toURL()
-                runCatching {
-                    val start = System.currentTimeMillis()
-                    val image: BufferedImage? = imageHandler.readImage(fileList[0].toOkioPath())
-                    image?.let { map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it }
-                    val end = System.currentTimeMillis()
-                    logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
-                }.onFailure { e ->
-                    logger.error(e) { "read image fail" }
-                }
             }
         }
 
