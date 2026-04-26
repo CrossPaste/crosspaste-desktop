@@ -1,6 +1,7 @@
 package com.crosspaste
 
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.config.DevConfig
 import com.crosspaste.mouse.AwtLocalScreensProvider
 import com.crosspaste.mouse.LocalScreensProvider
 import com.crosspaste.mouse.MacosLocalScreensProvider
@@ -12,9 +13,11 @@ import com.crosspaste.mouse.MouseIpcProtocol
 import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.asDaemonHandle
+import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.mouse.ScreenArrangementViewModel
+import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -116,9 +119,38 @@ fun desktopMouseModule(): Module =
                 // SyncManager's StateFlow is the canonical multi-cast view.
                 syncRuntimeInfosFlow = get<SyncManager>().realTimeSyncRuntimeInfos,
                 clientFactory = {
+                    val platform = get<Platform>()
+                    val pathProvider = get<AppPathProvider>()
+                    val isDevelopment = getAppEnvUtils().isDevelopment()
+
+                    // Dev: developer-supplied path from development.properties.
+                    // Prod: bundled binary sits next to the app's runtime under pasteAppExePath.
+                    val candidates =
+                        if (isDevelopment) {
+                            listOfNotNull(DevConfig.mouseBinaryPath)
+                        } else {
+                            listOf(
+                                pathProvider.pasteAppExePath.resolve(MouseDaemonBinary.binaryName(platform)).toString(),
+                            )
+                        }
+
                     val binary =
-                        MouseDaemonBinary.resolve()
-                            ?: throw IllegalStateException("crosspaste-mouse binary not found")
+                        MouseDaemonBinary.resolve(candidatePaths = candidates)
+                            ?: throw IllegalStateException(
+                                buildString {
+                                    append("crosspaste-mouse binary not found. Tried: ")
+                                    append(if (candidates.isEmpty()) "(no candidates)" else candidates.joinToString())
+                                    if (isDevelopment) {
+                                        append(". Set mouseBinaryPath in development.properties, ")
+                                        append("or set CROSSPASTE_MOUSE_BIN / -Dcrosspaste.mouse.binary.")
+                                    } else {
+                                        append(
+                                            ". The bundled binary is missing — please reinstall the app or " +
+                                                "report this issue.",
+                                        )
+                                    }
+                                },
+                            )
                     MouseDaemonClient(MouseDaemonProcess.spawn(binary).asDaemonHandle())
                 },
             )
