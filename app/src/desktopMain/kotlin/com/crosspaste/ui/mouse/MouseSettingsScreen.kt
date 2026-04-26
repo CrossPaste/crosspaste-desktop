@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -59,7 +60,7 @@ fun MouseSettingsScreen() {
     )
 
     Column(
-        modifier = Modifier.padding(AppUISize.medium),
+        modifier = Modifier.fillMaxSize().padding(AppUISize.medium),
         verticalArrangement = Arrangement.spacedBy(AppUISize.medium),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -91,6 +92,9 @@ fun MouseSettingsScreen() {
             style = MaterialTheme.typography.bodyMedium,
         )
         Spacer(Modifier.height(AppUISize.small))
-        ScreenCanvas(viewModel = viewModel, modifier = Modifier.fillMaxWidth())
+        ScreenCanvas(
+            viewModel = viewModel,
+            modifier = Modifier.fillMaxWidth().weight(1f),
+        )
     }
 }
