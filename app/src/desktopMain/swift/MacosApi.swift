@@ -216,6 +216,121 @@ public func getHardwareUUID() -> UnsafePointer<CChar>? {
     return nil
 }
 
+/// Returns the path of a downsampled PNG copy of the desktop wallpaper for
+/// `displayId` (a `CGDirectDisplayID`). Reading the wallpaper file via
+/// `NSWorkspace.desktopImageURL(for:)` does NOT require Screen Recording
+/// permission — that permission only gates capturing live screen contents.
+///
+/// Why decode + re-encode here rather than handing the original path back?
+/// macOS 14+ defaults to HEIC wallpapers, and neither the JVM's `ImageIO`
+/// nor Skia decode HEIC reliably across versions. Doing the conversion in
+/// Swift (where Apple's image stack handles every format the OS supports)
+/// keeps the Kotlin side trivially correct.
+///
+/// Output is written to `NSTemporaryDirectory()/crosspaste-wallpaper-<id>.png`
+/// and overwritten on each call so the path is stable across redraws.
+@_cdecl("getDesktopWallpaperPng")
+public func getDesktopWallpaperPng(displayId: Int32) -> UnsafePointer<CChar>? {
+    let target = CGDirectDisplayID(displayId)
+    var matched: NSScreen?
+    for screen in NSScreen.screens {
+        var sid: CGDirectDisplayID = 0
+        if let raw = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? UInt32 {
+            sid = raw
+        }
+        if sid == target {
+            matched = screen
+            break
+        }
+    }
+    guard let screen = matched else { return nil }
+    guard let url = NSWorkspace.shared.desktopImageURL(for: screen) else { return nil }
+    guard let image = NSImage(contentsOf: url) else { return nil }
+
+    // Downsample so we don't spend ~100MB of bitmap memory rendering a
+    // 6K wallpaper into a ~200px-wide rectangle. 1024px wide preserves
+    // enough detail for any zoom level the user is likely to use.
+    let originalSize = image.size
+    guard originalSize.width > 0, originalSize.height > 0 else { return nil }
+    let maxWidth: CGFloat = 1024
+    let scale = min(1.0, maxWidth / originalSize.width)
+    let targetSize = NSSize(
+        width: max(1, originalSize.width * scale),
+        height: max(1, originalSize.height * scale)
+    )
+
+    let resized = NSImage(size: targetSize)
+    resized.lockFocus()
+    image.draw(
+        in: NSRect(origin: .zero, size: targetSize),
+        from: NSRect(origin: .zero, size: originalSize),
+        operation: .copy,
+        fraction: 1.0
+    )
+    resized.unlockFocus()
+
+    guard let tiffData = resized.tiffRepresentation,
+          let bitmap = NSBitmapImageRep(data: tiffData),
+          let pngData = bitmap.representation(using: .png, properties: [:])
+    else { return nil }
+
+    let tempPath = "\(NSTemporaryDirectory())crosspaste-wallpaper-\(displayId).png"
+    do {
+        try pngData.write(to: URL(fileURLWithPath: tempPath), options: .atomic)
+    } catch {
+        return nil
+    }
+    return UnsafePointer<CChar>(strdup(tempPath))
+}
+
+/// Returns a JSON array describing every NSScreen, e.g.
+/// `[{"id":1,"name":"DELL U2725QE","x":0,"y":0,"width":3840,"height":2160,
+///    "scaleFactor":2.0,"isPrimary":true}]`
+///
+/// `id` is the CGDirectDisplayID (a stable per-display identifier across
+/// reboots). `name` comes from `NSScreen.localizedName` (macOS 10.15+).
+///
+/// Coordinates use **CoreGraphics' top-left-origin** convention via
+/// `CGDisplayBounds`, NOT `NSScreen.frame` (which is bottom-left-origin).
+/// This matches what the crosspaste-mouse Rust daemon emits and what
+/// Compose Canvas expects, so a "screen 2 above screen 1" arrangement
+/// shows screen 2 at a smaller (more negative) y in the canvas — same
+/// as the user sees in System Settings → Displays → Arrangement.
+@_cdecl("getLocalScreensJson")
+public func getLocalScreensJson() -> UnsafePointer<CChar>? {
+    let screens = NSScreen.screens
+    let mainScreen = NSScreen.main
+    var items: [[String: Any]] = []
+    for screen in screens {
+        var displayID: CGDirectDisplayID = 0
+        if let raw = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? UInt32 {
+            displayID = raw
+        } else if let raw = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? Int {
+            displayID = CGDirectDisplayID(raw)
+        }
+        // CGDisplayBounds is top-left-origin (relative to the main display).
+        // NSScreen.frame would be bottom-left-origin, which the rest of the
+        // pipeline (daemon + Compose) treats as inverted.
+        let bounds = CGDisplayBounds(displayID)
+        let entry: [String: Any] = [
+            "id": Int(displayID),
+            "name": screen.localizedName,
+            "x": Int(bounds.origin.x),
+            "y": Int(bounds.origin.y),
+            "width": Int(bounds.size.width),
+            "height": Int(bounds.size.height),
+            "scaleFactor": screen.backingScaleFactor,
+            "isPrimary": screen == mainScreen,
+        ]
+        items.append(entry)
+    }
+    guard
+        let data = try? JSONSerialization.data(withJSONObject: items, options: []),
+        let str = String(data: data, encoding: .utf8)
+    else { return nil }
+    return UnsafePointer<CChar>(strdup(str))
+}
+
 private func IOPlatformUUID() -> String? {
     let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault,
                                                      IOServiceMatching("IOPlatformExpertDevice"))

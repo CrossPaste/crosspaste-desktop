@@ -5,11 +5,12 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -24,37 +25,32 @@ class SqlSyncRuntimeInfoDao(
 
     private val writeMutex = Mutex()
 
-    private val updateNotifier = Channel<String>(Channel.UNLIMITED)
-
-    private fun cleanUpdateNotifier() {
-        while (updateNotifier.tryReceive().isSuccess) {
-            // do nothing
-        }
-    }
+    /**
+     * Broadcast "table changed" signal — multi-subscriber safe.
+     *
+     * Previously this was a `Channel<String>(UNLIMITED)`, which has fan-out
+     * (each item delivered to exactly one collector). With a single subscriber
+     * (`GeneralSyncManager`) that worked, but adding a second subscriber
+     * (e.g. `MouseDaemonManager`) caused them to race for each event — about
+     * half the time the wrong collector won and the UI/sync state never
+     * reflected the write. Switched to `MutableSharedFlow<Unit>` so all
+     * subscribers see every signal.
+     *
+     * `Unit` is sufficient: subscribers re-read the full table on each tick;
+     * coalescing rapid bursts via DROP_OLDEST is therefore safe and desirable.
+     */
+    private val changeSignal =
+        MutableSharedFlow<Unit>(
+            replay = 0,
+            extraBufferCapacity = 64,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
 
     override fun getAllSyncRuntimeInfosFlow(): Flow<List<SyncRuntimeInfo>> =
-        flow {
-            cleanUpdateNotifier()
-            val currentMap = getAllSyncRuntimeInfos().associateBy { it.appInstanceId }.toMutableMap()
-            emit(currentMap.values.toList())
-
-            updateNotifier.receiveAsFlow().collect { appInstanceId ->
-                val updated =
-                    syncRuntimeInfoDatabaseQueries
-                        .getSyncRuntimeInfo(
-                            appInstanceId,
-                            SyncRuntimeInfo::mapper,
-                        ).executeAsOneOrNull()
-
-                if (updated != null) {
-                    currentMap[appInstanceId] = updated
-                } else {
-                    currentMap.remove(appInstanceId)
-                }
-
-                emit(currentMap.values.toList())
-            }
-        }.flowOn(ioDispatcher)
+        changeSignal
+            .onSubscription { emit(Unit) }
+            .map { getAllSyncRuntimeInfos() }
+            .flowOn(ioDispatcher)
 
     override suspend fun getAllSyncRuntimeInfos(): List<SyncRuntimeInfo> =
         withContext(ioDispatcher) {
@@ -82,7 +78,7 @@ class SqlSyncRuntimeInfoDao(
                     }
                 }
             if (change) {
-                updateNotifier.trySend(syncRuntimeInfo.appInstanceId)
+                changeSignal.tryEmit(Unit)
                 syncRuntimeInfo.appInstanceId
             } else {
                 null
@@ -142,7 +138,7 @@ class SqlSyncRuntimeInfoDao(
                     }
                 }
             if (deleted) {
-                updateNotifier.trySend(appInstanceId)
+                changeSignal.tryEmit(Unit)
             }
         }
     }
@@ -251,7 +247,7 @@ class SqlSyncRuntimeInfoDao(
                 }
 
             if (changed) {
-                updateNotifier.trySend(syncInfo.appInfo.appInstanceId)
+                changeSignal.tryEmit(Unit)
             }
         }
     }

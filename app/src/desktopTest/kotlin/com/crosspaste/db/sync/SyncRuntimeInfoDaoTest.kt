@@ -8,6 +8,8 @@ import com.crosspaste.db.sync.SyncRuntimeInfo.Companion.createSyncRuntimeInfo
 import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
 import kotlin.collections.listOf
 import kotlin.test.Test
@@ -103,6 +105,42 @@ class SyncRuntimeInfoDaoTest {
             // Cancel the test
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    // Regression: previously updateNotifier was a Channel<String>(UNLIMITED), and
+    // multiple collectors would compete (fan-out) for each emission — adding a
+    // second subscriber (e.g. MouseDaemonManager) caused half of the delete
+    // events to be stolen, leaving the UI/sync state stale. The DAO now uses a
+    // MutableSharedFlow broadcast signal so every subscriber sees every change.
+    @Test
+    fun `getAllSyncRuntimeInfosFlow broadcasts to multiple subscribers`() = runTest {
+        syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
+
+        // Two independent collectors must each receive the delete emission.
+        val sub1 = async {
+            syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().test {
+                assertEquals(1, awaitItem().size)
+                val afterDelete = awaitItem()
+                assertTrue(afterDelete.isEmpty(), "subscriber 1 missed the delete")
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+        val sub2 = async {
+            syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().test {
+                assertEquals(1, awaitItem().size)
+                val afterDelete = awaitItem()
+                assertTrue(afterDelete.isEmpty(), "subscriber 2 missed the delete")
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        // Defer the delete one tick so both `test {}` blocks have collected
+        // their initial snapshot before the change signal fires.
+        val deleter = async {
+            syncRuntimeInfoDao.deleteSyncRuntimeInfo(testSyncRuntimeInfo.appInstanceId)
+        }
+
+        awaitAll(sub1, sub2, deleter)
     }
 
     @Test

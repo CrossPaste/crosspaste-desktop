@@ -61,6 +61,13 @@ data class DesktopAppConfig(
     // MCP server
     val enableMcpServer: Boolean = false,
     val mcpServerPort: Int = 0,
+    // Mouse daemon (crosspaste-mouse plugin)
+    val mouseEnabled: Boolean = false,
+    val mouseListenPort: Int = 4243,
+    // JSON-encoded Map<String, Position> (deviceId → virtual-desktop offset).
+    // Stored as a String so it flows through the scalar copy(key, value) path,
+    // matching the blacklist / sourceExclusions / useNetworkInterfaces pattern.
+    val mouseLayout: String = "{}",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -164,5 +171,8 @@ data class DesktopAppConfig(
                 },
             enableMcpServer = if (key == "enableMcpServer") toBoolean(value) else enableMcpServer,
             mcpServerPort = if (key == "mcpServerPort") toInt(value) else mcpServerPort,
+            mouseEnabled = if (key == "mouseEnabled") toBoolean(value) else mouseEnabled,
+            mouseListenPort = if (key == "mouseListenPort") toInt(value) else mouseListenPort,
+            mouseLayout = if (key == "mouseLayout") toString(value) else mouseLayout,
         )
 }

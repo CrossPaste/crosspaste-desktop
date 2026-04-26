@@ -11,4 +11,6 @@ object DevConfig {
     val pasteUserPath: String? = development.getProperty("pasteUserPath")
 
     val marketingMode: Boolean = development.getProperty("marketingMode")?.toBoolean() == true
+
+    val mouseBinaryPath: String? = development.getProperty("mouseBinaryPath")?.takeIf { it.isNotBlank() }
 }
