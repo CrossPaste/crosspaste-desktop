@@ -29,6 +29,7 @@ node_modules/
 output*/
 /.claude/commands/
 /.claude/skills/
+/.dev-context/
 /code-review/
 /ai/
 /.claude/skills/ui-ux-pro-max/
