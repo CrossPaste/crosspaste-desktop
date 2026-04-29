@@ -8,13 +8,13 @@ import com.crosspaste.utils.DeviceUtils
 import kotlinx.coroutines.flow.first
 
 class EndpointInfoFactory(
-    deviceUtils: DeviceUtils,
+    private val deviceUtils: DeviceUtils,
     private val pasteServer: Lazy<Server>,
     private val platform: Platform,
 ) {
-    private val deviceName = deviceUtils.getDeviceName()
+    private val deviceName: String by lazy { deviceUtils.getDeviceName() }
 
-    private val deviceId = deviceUtils.getDeviceId()
+    private val deviceId: String by lazy { deviceUtils.getDeviceId() }
 
     suspend fun createEndpointInfo(hostInfoList: List<HostInfo>): EndpointInfo {
         val port = pasteServer.value.portFlow.first { it > 0 }
