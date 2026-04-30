@@ -17,7 +17,6 @@ class DesktopAppControlTest {
     ): DesktopAppControl {
         val config =
             DesktopAppConfig(
-                appInstanceId = "test",
                 language = "en",
                 enabledSyncFileSizeLimit = enabledSyncFileSizeLimit,
                 maxSyncFileSize = maxSyncFileSize,

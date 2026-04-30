@@ -3,7 +3,6 @@ package com.crosspaste.config
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.presist.OneFilePersist
-import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 
 class DesktopConfigManager(
     private val configFilePersist: OneFilePersist,
-    override val deviceUtils: DeviceUtils,
     private val localeUtils: LocaleUtils,
 ) : ConfigManager<DesktopAppConfig> {
 
@@ -34,7 +32,6 @@ class DesktopConfigManager(
 
     private fun createDefaultAppConfig(): DesktopAppConfig =
         DesktopAppConfig(
-            appInstanceId = deviceUtils.createAppInstanceId(),
             language = localeUtils.getLanguage(),
         )
 

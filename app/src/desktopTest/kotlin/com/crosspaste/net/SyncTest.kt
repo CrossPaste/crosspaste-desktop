@@ -120,7 +120,7 @@ class SyncTest : KoinTest {
                         get(),
                     )
                 }
-                single<CommonConfigManager> { TestConfigManager(get(), TestAppConfig()) }
+                single<CommonConfigManager> { TestConfigManager(TestAppConfig()) }
                 single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
                 single<SyncApi> { SyncApi }
                 single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {

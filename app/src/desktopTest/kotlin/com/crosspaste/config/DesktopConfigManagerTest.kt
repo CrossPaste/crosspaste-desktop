@@ -1,9 +1,7 @@
 package com.crosspaste.config
 
 import com.crosspaste.presist.OneFilePersist
-import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
-import com.crosspaste.utils.getPlatformUtils
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
@@ -14,8 +12,6 @@ import kotlin.test.assertTrue
 
 class DesktopConfigManagerTest {
 
-    private val platform = getPlatformUtils().platform
-
     private fun createConfigManager(): Pair<DesktopConfigManager, okio.Path> {
         val configDirPath = Files.createTempDirectory("configDir").toOkioPath()
         configDirPath.toFile().deleteOnExit()
@@ -23,17 +19,9 @@ class DesktopConfigManagerTest {
         val manager =
             DesktopConfigManager(
                 OneFilePersist(configPath),
-                DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
             )
         return Pair(manager, configPath)
-    }
-
-    @Test
-    fun `initial config has non-empty appInstanceId`() {
-        val (manager, _) = createConfigManager()
-        val config = manager.getCurrentConfig()
-        assertTrue(config.appInstanceId.isNotBlank())
     }
 
     @Test
@@ -108,20 +96,16 @@ class DesktopConfigManagerTest {
         val manager1 =
             DesktopConfigManager(
                 OneFilePersist(configPath),
-                DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
             )
         manager1.updateConfig("port", 5555)
-        val instanceId = manager1.getCurrentConfig().appInstanceId
 
         val manager2 =
             DesktopConfigManager(
                 OneFilePersist(configPath),
-                DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
             )
         assertEquals(5555, manager2.getCurrentConfig().port)
-        assertEquals(instanceId, manager2.getCurrentConfig().appInstanceId)
     }
 
     @Test
@@ -134,7 +118,6 @@ class DesktopConfigManagerTest {
         val manager =
             DesktopConfigManager(
                 OneFilePersist(configPath),
-                DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
             )
         // First save should work
@@ -150,7 +133,6 @@ class DesktopConfigManagerTest {
         val manager =
             DesktopConfigManager(
                 OneFilePersist(configPath),
-                DesktopDeviceUtils(platform),
                 DesktopLocaleUtils,
             )
         // Initial config should still be created from defaults

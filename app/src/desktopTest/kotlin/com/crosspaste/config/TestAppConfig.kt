@@ -3,7 +3,6 @@ package com.crosspaste.config
 import com.crosspaste.config.AppConfig.Companion.toBoolean
 
 data class TestAppConfig(
-    override val appInstanceId: String = "test",
     override val language: String = "en",
     override val font: String = "",
     override val isFollowSystemTheme: Boolean = true,
