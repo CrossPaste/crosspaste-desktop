@@ -1,6 +1,6 @@
 package com.crosspaste.app
 
-import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.net.SyncApi
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
@@ -9,7 +9,7 @@ import java.nio.file.Paths
 import java.util.Properties
 
 class DesktopAppInfoFactory(
-    private val configManager: CommonConfigManager,
+    private val appMetadataRepository: AppMetadataRepository,
 ) : AppInfoFactory {
 
     private val logger = KotlinLogging.logger {}
@@ -30,16 +30,14 @@ class DesktopAppInfoFactory(
             logger.error(e) { "Failed to read version" }
         }.getOrNull()
 
-    override fun createAppInfo(): AppInfo {
-        val appInstanceId = configManager.getCurrentConfig().appInstanceId
-        return AppInfo(
-            appInstanceId = appInstanceId,
+    override fun createAppInfo(): AppInfo =
+        AppInfo(
+            appInstanceId = appMetadataRepository.appInstanceId,
             appVersion = getVersion(),
             appRevision = getRevision(),
             userName = getUserName(),
             pairingVersion = SyncApi.PAIRING_VERSION,
         )
-    }
 
     override fun getVersion(): String = getVersion(appEnvUtils.getCurrentAppEnv(), properties)
 

@@ -1,6 +1,7 @@
 package com.crosspaste
 
 import com.crosspaste.app.AppEnv
+import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.config.DevConfig
 import com.crosspaste.db.DesktopDriverFactory
@@ -61,6 +62,7 @@ import org.koin.dsl.module
 
 class DesktopModule(
     private val appEnv: AppEnv,
+    private val appMetadataRepository: AppMetadataRepository,
     private val appPathProvider: AppPathProvider,
     private val configManager: DesktopConfigManager,
     private val crossPasteLogger: CrossPasteLogger,
@@ -75,6 +77,7 @@ class DesktopModule(
     override fun appModule() =
         desktopAppModule(
             appEnv,
+            appMetadataRepository,
             appPathProvider,
             configManager,
             crossPasteLogger,

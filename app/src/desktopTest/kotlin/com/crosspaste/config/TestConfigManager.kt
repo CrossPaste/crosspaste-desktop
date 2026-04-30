@@ -1,11 +1,9 @@
 package com.crosspaste.config
 
-import com.crosspaste.utils.DeviceUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class TestConfigManager(
-    override val deviceUtils: DeviceUtils,
     private val initialConfig: AppConfig,
 ) : CommonConfigManager {
 

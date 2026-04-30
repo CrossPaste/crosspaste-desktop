@@ -9,14 +9,12 @@ class DesktopAppConfigTest {
 
     private fun createDefaultConfig(): DesktopAppConfig =
         DesktopAppConfig(
-            appInstanceId = "test-instance",
             language = "en",
         )
 
     @Test
     fun `default config has expected values`() {
         val config = createDefaultConfig()
-        assertEquals("test-instance", config.appInstanceId)
         assertEquals("en", config.language)
         assertEquals("", config.font)
         assertTrue(config.enableAutoStartUp)
@@ -72,13 +70,6 @@ class DesktopAppConfigTest {
         val config: AppConfig = createDefaultConfig()
         val updated = config.copy("maxStorage", 4096L)
         assertEquals(4096L, updated.maxStorage)
-    }
-
-    @Test
-    fun `copy preserves appInstanceId`() {
-        val config: AppConfig = createDefaultConfig()
-        val updated = config.copy("language", "ja")
-        assertEquals("test-instance", updated.appInstanceId)
     }
 
     @Test

@@ -87,7 +87,7 @@ class TestInstance(
         TestServerModule(
             appInfo = appInfo,
             appTokenApi = appTokenApi,
-            configManager = TestConfigManager(deviceUtils, TestAppConfig(appInstanceId = appInstanceId)),
+            configManager = TestConfigManager(TestAppConfig()),
             exceptionHandler = exceptionHandler,
             networkInterfaceService = networkInterfaceService,
             pendingKeyExchangeStore = pendingKeyExchangeStore,
