@@ -34,6 +34,7 @@ class OneFilePersist(
             null
         }
 
+    /** @throws okio.IOException if the filesystem write fails (disk full, permission denied, etc.) */
     @OptIn(InternalSerializationApi::class)
     fun <T : Any> save(config: T) {
         val serializer: KSerializer<T> = config::class.serializer() as KSerializer<T>
@@ -41,14 +42,12 @@ class OneFilePersist(
         writeWithParentDirs { writeUtf8(jsonString) }
     }
 
+    /** @throws okio.IOException if the filesystem write fails (disk full, permission denied, etc.) */
     fun saveBytes(bytes: ByteArray) {
         writeWithParentDirs { write(bytes) }
     }
 
-    fun createEmptyFile() {
-        writeWithParentDirs { }
-    }
-
+    /** @throws okio.IOException if deletion fails (e.g. permission denied). */
     fun delete(): Boolean =
         if (fileSystem.exists(path)) {
             fileSystem.delete(path)

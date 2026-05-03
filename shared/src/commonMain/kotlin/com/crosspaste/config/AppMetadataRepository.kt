@@ -10,6 +10,6 @@ class AppMetadataRepository(
     val appInstanceId: String by lazy { loadOrCreate().appInstanceId }
 
     private fun loadOrCreate(): AppMetadata =
-        persist.read(AppMetadata::class)
+        runCatching { persist.read(AppMetadata::class) }.getOrNull()
             ?: AppMetadata(deviceUtils.createAppInstanceId()).also { persist.save(it) }
 }

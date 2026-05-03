@@ -16,17 +16,19 @@ fun migrateAppInstanceIdIfNeeded(
     legacyConfigPersist: OneFilePersist,
 ) {
     if (runCatching { metadataPersist.read(AppMetadata::class) }.getOrNull() != null) return
-    runCatching {
-        legacyConfigPersist
-            .read(LegacyAppInstanceIdHolder::class)
-            ?.appInstanceId
-            ?.takeIf { it.isNotBlank() }
-            ?.let { metadataPersist.save(AppMetadata(it)) }
-    }.onFailure {
-        logger.error(it) {
-            "Failed to migrate appInstanceId from legacy config; " +
-                "a new appInstanceId will be generated and this device " +
-                "will appear as a new peer to previously paired devices"
-        }
-    }
+    val legacyId =
+        runCatching {
+            legacyConfigPersist
+                .read(LegacyAppInstanceIdHolder::class)
+                ?.appInstanceId
+                ?.takeIf { it.isNotBlank() }
+        }.onFailure {
+            logger.error(it) {
+                "Failed to read legacy appInstanceId; " +
+                    "a new appInstanceId will be generated and this device " +
+                    "will appear as a new peer to previously paired devices"
+            }
+        }.getOrNull() ?: return
+
+    metadataPersist.save(AppMetadata(legacyId))
 }
