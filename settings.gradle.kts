@@ -30,6 +30,7 @@ plugins {
 include(":app")
 include(":cli")
 include(":core")
+include(":e2e")
 include(":shared")
 include(":shared-ui")
 include(":web")
