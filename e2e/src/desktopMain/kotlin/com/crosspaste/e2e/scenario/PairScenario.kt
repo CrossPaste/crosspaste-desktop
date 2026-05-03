@@ -12,8 +12,29 @@ class PairScenario : Scenario {
         val target = resolveOrDiscover(ctx) ?: return ScenarioResult.Fail("Could not resolve target.")
         val targetAppId = target.appInstanceId ?: return ScenarioResult.Fail("Target has no appInstanceId.")
         println("[pair] Target: $targetAppId at ${target.host}:${target.port}")
+        requestShowToken(ctx, target)?.let { return it }
         val token = ctx.tokenProvider()
         return performTrust(ctx, target, targetAppId, token)
+    }
+}
+
+/**
+ * Ask the target device to display its pairing token. Mirrors what the real client does
+ * before prompting the user — without this call, the target UI never shows a code and
+ * the user has nothing to type in.
+ */
+internal suspend fun requestShowToken(
+    ctx: ScenarioContext,
+    target: TargetSpec,
+): ScenarioResult? {
+    val result =
+        ctx.peer.syncClientApi.showToken(
+            toUrl = { buildUrl(HostAndPort(target.host, target.port)) },
+        )
+    return if (result is SuccessResult) {
+        null
+    } else {
+        ScenarioResult.Fail("showToken call failed: ${describeFailure(result)}")
     }
 }
 
@@ -32,7 +53,7 @@ internal suspend fun performTrust(
         )
 
     if (result !is SuccessResult) {
-        return ScenarioResult.Fail("Trust call failed: $result")
+        return ScenarioResult.Fail("Trust call failed: ${describeFailure(result)}")
     }
     if (!ctx.peer.secureIO.existCryptPublicKey(targetAppId)) {
         return ScenarioResult.Fail("Trust returned success but target's public key was not stored.")
@@ -51,6 +72,7 @@ internal suspend fun ensureTrust(
     val id = target.appInstanceId ?: return ScenarioResult.Fail("Target has no appInstanceId.")
     if (ctx.peer.secureIO.existCryptPublicKey(id)) return null
     println("[ensureTrust] Not paired with $id yet — pairing first.")
+    requestShowToken(ctx, target)?.let { return it }
     val token = ctx.tokenProvider()
     val result = performTrust(ctx, target, id, token)
     return if (result is ScenarioResult.Fail) result else null

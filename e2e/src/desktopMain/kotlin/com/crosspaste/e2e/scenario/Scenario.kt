@@ -2,6 +2,13 @@ package com.crosspaste.e2e.scenario
 
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.e2e.peer.HeadlessPeer
+import com.crosspaste.net.clientapi.ClientApiResult
+import com.crosspaste.net.clientapi.ConnectionRefused
+import com.crosspaste.net.clientapi.DecryptFail
+import com.crosspaste.net.clientapi.EncryptFail
+import com.crosspaste.net.clientapi.FailureResult
+import com.crosspaste.net.clientapi.RequestTimeout
+import com.crosspaste.net.clientapi.UnknownError
 
 sealed class ScenarioResult {
     data class Pass(
@@ -58,3 +65,17 @@ fun resolveTarget(
         appInstanceId = match.appInfo.appInstanceId,
     )
 }
+
+fun describeFailure(result: ClientApiResult): String =
+    when (result) {
+        is FailureResult ->
+            "FailureResult(code=${result.exception.getErrorCode().code}, " +
+                "name=${result.exception.getErrorCode().name}, " +
+                "message='${result.exception.message ?: ""}')"
+        is ConnectionRefused -> "ConnectionRefused"
+        is EncryptFail -> "EncryptFail"
+        is DecryptFail -> "DecryptFail"
+        is RequestTimeout -> "RequestTimeout"
+        is UnknownError -> "UnknownError"
+        else -> result::class.simpleName ?: result.toString()
+    }

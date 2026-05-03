@@ -22,7 +22,7 @@ class PullIconScenario(
             )
 
         if (result !is SuccessResult) {
-            return ScenarioResult.Fail("pullIcon failed: $result")
+            return ScenarioResult.Fail("pullIcon failed: ${describeFailure(result)}")
         }
         return ScenarioResult.Pass("Icon source='$source' fetched from ${target.host}:${target.port}.")
     }

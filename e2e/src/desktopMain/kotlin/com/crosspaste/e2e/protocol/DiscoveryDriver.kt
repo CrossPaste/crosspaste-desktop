@@ -1,6 +1,7 @@
 package com.crosspaste.e2e.protocol
 
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.AbstractNetworkInterfaceService
 import com.crosspaste.utils.TxtRecordUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.ConcurrentMap
@@ -8,6 +9,10 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.util.Collections
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceListener
@@ -17,11 +22,12 @@ class DiscoveryDriver {
 
     companion object {
         const val SERVICE_TYPE: String = "_crosspasteService._tcp.local."
+        private const val ACTIVE_SCAN_TIMEOUT_MS = 1500L
     }
 
     private val logger = KotlinLogging.logger {}
 
-    private val jmdns: JmDNS = JmDNS.create()
+    private val jmdnsInstances: List<JmDNS> = createJmdnsInstances()
 
     private val resolved: ConcurrentMap<String, SyncInfo> = ConcurrentMap()
 
@@ -32,7 +38,7 @@ class DiscoveryDriver {
     private val listener =
         object : ServiceListener {
             override fun serviceAdded(event: ServiceEvent) {
-                jmdns.requestServiceInfo(SERVICE_TYPE, event.info.name)
+                event.dns.requestServiceInfo(SERVICE_TYPE, event.info.name)
             }
 
             override fun serviceRemoved(event: ServiceEvent) {
@@ -58,7 +64,19 @@ class DiscoveryDriver {
         }
 
     fun start() {
-        jmdns.addServiceListener(SERVICE_TYPE, listener)
+        jmdnsInstances.forEach { jm ->
+            jm.addServiceListener(SERVICE_TYPE, listener)
+            // JmDNS.list() blocks; run per interface on a daemon thread so the active PTR
+            // query fires alongside the passive listener instead of waiting for peer announces.
+            Thread {
+                runCatching { jm.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT_MS) }
+                    .onFailure { e -> logger.debug(e) { "Active scan failed" } }
+            }.apply {
+                name = "DiscoveryDriver-active-scan"
+                isDaemon = true
+                start()
+            }
+        }
     }
 
     /**
@@ -85,11 +103,51 @@ class DiscoveryDriver {
 
     fun close() {
         runCatching {
-            jmdns.removeServiceListener(SERVICE_TYPE, listener)
-            jmdns.close()
+            jmdnsInstances.forEach { jm ->
+                jm.removeServiceListener(SERVICE_TYPE, listener)
+                jm.close()
+            }
             events.close()
         }.onFailure { e ->
             logger.debug(e) { "Error closing DiscoveryDriver" }
         }
+    }
+
+    private fun createJmdnsInstances(): List<JmDNS> {
+        val addresses = enumerateLanInet4Addresses()
+        if (addresses.isEmpty()) {
+            logger.warn { "No usable LAN IPv4 interfaces found; falling back to default JmDNS." }
+            return listOf(JmDNS.create())
+        }
+        val instances =
+            addresses.mapNotNull { addr ->
+                runCatching { JmDNS.create(addr) }
+                    .onSuccess { logger.info { "JmDNS bound to ${addr.hostAddress}" } }
+                    .onFailure { e -> logger.warn(e) { "Failed to bind JmDNS to ${addr.hostAddress}" } }
+                    .getOrNull()
+            }
+        return instances.ifEmpty { listOf(JmDNS.create()) }
+    }
+
+    private fun enumerateLanInet4Addresses(): List<InetAddress> {
+        val nics =
+            runCatching { Collections.list(NetworkInterface.getNetworkInterfaces()) }
+                .getOrElse {
+                    logger.warn(it) { "Failed to enumerate network interfaces." }
+                    emptyList()
+                }
+        return nics
+            .asSequence()
+            .filter { nic ->
+                runCatching { nic.isUp && !nic.isLoopback && !nic.isVirtual }.getOrDefault(false)
+            }.filterNot { nic ->
+                AbstractNetworkInterfaceService.isLikelyVirtual(
+                    nic.name,
+                    AbstractNetworkInterfaceService.getMacAddress(nic),
+                )
+            }.flatMap { it.inetAddresses.asSequence() }
+            .filterIsInstance<Inet4Address>()
+            .filterNot { it.isLoopbackAddress || it.isLinkLocalAddress || it.isAnyLocalAddress }
+            .toList()
     }
 }

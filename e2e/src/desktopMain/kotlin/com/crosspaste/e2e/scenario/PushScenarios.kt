@@ -38,7 +38,7 @@ internal suspend fun pushPasteData(
         )
 
     if (result !is SuccessResult) {
-        return ScenarioResult.Fail("sendPaste failed: $result")
+        return ScenarioResult.Fail("sendPaste failed: ${describeFailure(result)}")
     }
     return ScenarioResult.Pass(summary(targetAppId))
 }

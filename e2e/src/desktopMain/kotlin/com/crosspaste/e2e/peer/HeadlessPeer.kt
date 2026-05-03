@@ -73,7 +73,10 @@ class HeadlessPeer(
 
     val pullClientApi: PullClientApi = PullClientApi(pasteClient, configManager)
 
+    val bonjourAdvertiser: BonjourAdvertiser = BonjourAdvertiser(appInfo).also { it.start() }
+
     fun close() {
+        bonjourAdvertiser.close()
         pasteClient.close()
     }
 }
