@@ -1,28 +1,34 @@
 # Project Roadmap
 
-Below is our current project roadmap, outlining the planned features and versions from the current release to future major updates:
+Below is our current project roadmap. Rather than pinning features to specific version numbers, we group them into what has shipped and what we're working on next:
 
 ```mermaid
 graph LR
-    B[v1.2.0<br/>current] --> C[v1.3.0]
-    C --> D[v1.4.0]
-    D --> E[v2.0.0]
-    E --> F[v3.0.0]
-    F --> G[v4.0.0]
+    B[Available now<br/>v2.0] --> U[Upcoming]
 
-    C -.- C1[Support native pasteboard, improve pasteboard performance]
-    D -.- D1[Support command-line mode]
-    E -.- E1[Support plugin system]
-    F -.- F1[Implement AI and other official plugins]
-    G -.- G2[Support controlling multiple devices with one set of keyboard and mouse]
+    B -.- B1[OCR<br/>since v1.2.3]
+    B -.- B2[MCP server<br/>since v1.2.8]
+    B -.- B3[Chrome extension<br/>since v2.0]
+
+    U -.- U1[Command-line mode]
+    U -.- U2[Plugin system]
 
     classDef current fill:#f9d5e5,stroke:#333,stroke-width:2px
-    classDef minor fill:#eeac99,stroke:#333,stroke-width:2px
-    classDef major fill:#e06377,stroke:#333,stroke-width:2px
+    classDef upcoming fill:#eeac99,stroke:#333,stroke-width:2px
     class B current
-    class C,D minor
-    class E,F,G major
+    class U upcoming
 ```
+
+## Available now
+
+- **OCR** _(since v1.2.3)_ — extract text from images locally, with no network calls.
+- **MCP server** _(since v1.2.8)_ — expose pasteboard history to AI assistants via the Model Context Protocol.
+- **Chrome extension** _(since v2.0)_ — sync clipboard between the browser and any paired CrossPaste device.
+
+## Upcoming
+
+- **Command-line mode** — drive CrossPaste from your terminal and shell scripts.
+- **Plugin system** — let the community extend CrossPaste with custom paste types and integrations.
 
 **Note**: This roadmap represents our current development plans and vision for the project. As development progresses, adjustments may be made based on community feedback, technological advancements, and changing priorities. We welcome community involvement and contributions! If you're interested in helping shape the future of this project, please consider joining our community and contributing to its growth.
 

@@ -22,7 +22,7 @@
    [![Sqlite](https://img.shields.io/badge/Database-Sqlite-39477F?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
    ![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
    ![OS](https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-2cbe4e)
-   [![Download](https://img.shields.io/badge/Download-v1.2.7-2cbe4e?logo=download&link=https://crosspaste.com/en/download)](https://crosspaste.com/en/download)
+   [![Download](https://img.shields.io/badge/Download-v2.0.0-2cbe4e?logo=download&link=https://crosspaste.com/en/download)](https://crosspaste.com/en/download)
    [![AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-2cbe4e.svg)](https://github.com/CrossPaste/crosspaste-desktop/blob/main/LICENSE)
    [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/CrossPaste/crosspaste-desktop)
 
@@ -38,6 +38,9 @@
 - **🔒 End-to-End Encryption**: Using asymmetric encryption to fully protect your data security.
 - **🌐 LAN-only Serverless**: Local storage, serverless architecture. Privacy protection, in your control.
 - **🧹 Smart Space Management**: Auto-cleanup options manage pasteboard storage without manual effort.
+- **🔍 Built-in OCR**: Extract text from images locally — no network calls, your screenshots never leave the device.
+- **🤖 MCP Server**: Expose your pasteboard history to AI assistants (Claude, etc.) via the Model Context Protocol.
+- **🌍 Chrome Extension**: Sync clipboard with the browser — copy from a web page on one device, paste on any other.
 
 ## 🏗 Getting Started with Development
 
@@ -77,11 +80,31 @@ systemProp.http.nonProxyHosts=*.nonproxyrepos.com|localhost
 
 Additionally, a series of technical [blogs](https://crosspaste.com/en/blog/introduction) about CrossPaste is being published (approximately one article per week). If you're interested in developing cross-platform applications, you're welcome to read them.
 
-## 🗺️ Roadmap
-CrossPaste is continuously evolving! We plan to add more useful features in future versions. Here's an overview of our near-term development plans:
+### 🌍 Building the Chrome Extension
 
-- [ ] **v1.3.0**: Support for native pasteboard, improve pasteboard performance
-- [ ] **v1.4.0**: Introduction of command-line mode
+The Chrome extension lives in [`web/`](./web) and is built via Gradle. Node.js (>= 18) is required — the `npmInstall` task will fetch dependencies on first build.
+
+1. Build the extension
+
+   ```bash
+   ./gradlew :web:build
+   ```
+
+   The unpacked extension is emitted to `web/dist/`.
+
+2. Load it into Chrome
+
+   - Open `chrome://extensions/`
+   - Enable **Developer mode** in the top-right corner
+   - Click **Load unpacked** and select the `web/dist/` directory
+
+The extension auto-discovers a CrossPaste desktop app running on the same machine and syncs clipboard content with it. To iterate on extension code, run `npm run dev` inside `web/` for a fast Vite dev loop, then reload the extension in Chrome. The extension imports a Kotlin/JS `core` library produced by `./gradlew :core:jsBrowserProductionLibraryDistribution` (also run as part of `:web:build`) — re-run that task whenever you change `core/` sources.
+
+## 🗺️ Roadmap
+CrossPaste is continuously evolving! **v2.0** brings the Chrome extension into the sync mesh as a first-class platform. Here's what we're working on next:
+
+- [ ] **Command-line mode** — drive CrossPaste from your terminal and shell scripts
+- [ ] **Plugin system** — let the community extend CrossPaste with custom paste types and integrations
 
 This is just a small part of our plans. Want to learn more details and long-term plans? Check out our [full roadmap](doc/en/Roadmap.md).
 

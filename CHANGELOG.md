@@ -2,6 +2,387 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.0.0] - 2026-04-26
+# Highlights 🌟
+
+- 🌍 **Chrome Extension — first-class platform**
+  CrossPaste now ships a Chrome extension that participates in the sync mesh as a real platform. It speaks the same WebSocket sync protocol as the desktop, supports image preview, large file download via WS pulling, right-click copy, install CTAs on oversize notices, and pauses itself via Native Messaging when the desktop app is running on the same machine (#4152 #4157 #4163 #4167 #4175 #4223 #4227 #4230 #4286 #4288).
+
+- 🔌 **WebSocket sync protocol**
+  A bidirectional WebSocket sync protocol replaces the previous polling/HTTP flow, with batch paste pull endpoints for incremental sync and an active liveness probe. Reconnection uses a fast-then-slow telnet probe strategy for snappier recovery (#4111 #4119 #4107 #4223).
+
+- 🔐 **SAS-based v2 pairing**
+  A new Short-Authentication-String pairing protocol prevents MITM attacks during device pairing, with a `showPairingCode` endpoint and remote-access toggle for lower-friction trust establishment (#4088 #4095).
+
+- 🏗️ **Core module + architectural cleanup**
+  Extracted a `core` module to deduplicate shared logic between `app` and `shared`, unified coroutine scopes via a `namedScope` helper, refactored `SyncResolver` to a unified single-pass connection flow, namespaced source icons by `appInstanceId`, and converted `withTimeout` overloads to `Duration` (#4060 #4103 #4191 #4215 #4093).
+
+- 🇵🇹 **Portuguese support**
+  Added full Portuguese (`pt`) translations across the app (#4076 #4090 #4284 #4299).
+
+# Bug Fixes 🐛
+
+- :bug: Keep `javaFileListFlavor` alongside `imageFlavor` for single images (#4302)
+- :bug: Align `PasteCard.canDrag` with `handleDragStart` guards (#4293)
+- :bug: Fail fast when `crosspaste-version.properties` is missing the version key (#4277)
+- :bug: Serialize oversize-notice drains to prevent duplicate display (#4275)
+- :bug: Use `probe()` instead of `isConnected()` for extension reconnect (#4258)
+- :bug: Rethrow `CancellationException` in `WsSession.ping` (#4257)
+- :bug: Keep re-pair / edit-note dialogs mounted from `DevicesView` detail view (#4259)
+- :bug: Handle `DECRYPT_FAIL` inline in `syncAllDevices` (#4251)
+- :bug: Always enqueue oversize-paste notices before notifying side panel (#4247)
+- :bug: Preserve Chrome extension scroll position on paste delete (#4237)
+- :bug: Fix Chrome extension right-click Copy duplicating HTML/image pastes (#4235)
+- :bug: Fix Chrome extension download for MV3 SW + enable image download (#4232)
+- :bug: Reactively read port in `CurrentDeviceDialog` (#4213)
+- :bug: Restore ESC key binding for `hide_window` and surface it in shortcuts UI (#4183)
+- :bug: Fix robustness issues in Chrome extension and Native Messaging integration (#4177)
+- :bug: Fix Chrome extension sync ordering and write synced clipboard (#4171)
+- :bug: Fix Chrome extension image preview for synced clipboard images (#4170)
+- :bug: Fix `PasteData` serializer registration on Kotlin/JS and clean up remote flag handling (#4165)
+- :bug: Use KMP-compatible `concatToString` in `ConnectCodeUtils` (#4154)
+- :bug: Skip sync for remote clipboard data to prevent duplication (#4147)
+- :bug: Fix incorrect MCP SSE endpoint URL in configuration command (#4145)
+- :bug: Deprioritize virtual network interfaces in auto-selection (#4137)
+- :bug: Fix `SegmentedControlSettingsRow` layout in `twoLine` mode (#4135)
+- :bug: Verify connection immediately after server-side trust completes (#4109)
+- :bug: Fix pairing-code countdown freeze by reordering trust completion steps (#4101)
+- :bug: Fix Sparkle crash by disabling redundant scheduled check and ensuring main-thread dispatching (#4085)
+- :bug: Fix missing `add_device_manually_desc` key in `zh_hant` (#4078)
+- :bug: Fix HTML/RTF search content returning raw markup (#4061)
+- :bug: Fix `ToStartView` showing on open and not appearing when scrolled (#4051)
+- :bug: Fix missing `libtesseract.so` in Linux builds since 1.2.6 (#4048)
+- :bug: Fix flaky crypto tests that assume wrong-key decryption always throws (#4045)
+- :bug: Fix color hex format in `MarketingPasteData` from ARGB to RGBA (#4043)
+- :bug: Fix image side preview crop fill and blurry decode size (#4041)
+- :bug: Fix notification close button intercepted by native title bar buttons on Windows (#4039)
+
+# New Features ✨
+
+- :sparkles: Add Chrome Extension as a first-class platform type (#4157)
+- :sparkles: Make sync protocol fully compatible with Chrome Extension (#4163)
+- :sparkles: Add WebSocket-based file pulling for Chrome Extension (#4167)
+- :sparkles: Add Native Messaging support to pause Chrome extension when desktop app is running (#4175)
+- :sparkles: Active WebSocket probe for Chrome Extension liveness (#4223)
+- :sparkles: Notify Chrome extension when paste is skipped for size limit (#4228)
+- :sparkles: Chrome extension SyncState parity with desktop (#4227)
+- :sparkles: Chrome extension UISupport helpers + install CTA on oversize notice (#4230)
+- :sparkles: Add native app download banner to extension settings (#4288)
+- :sparkles: Allow Native Messaging from Chrome Web Store release extension ID (#4286)
+- :sparkles: Add support for image drag from side panel; warn for file drag (#4282)
+- :sparkles: Add user-configurable JVM system-property override file (#4267)
+- :sparkles: Add WebSocket sync protocol for bidirectional real-time communication (#4111)
+- :sparkles: Add batch paste pull endpoint for incremental sync (#4119)
+- :sparkles: Add `showPairingCode` endpoint with remote access toggle (#4095)
+- :sparkles: Add SAS-based v2 pairing protocol to prevent MITM attacks (#4088)
+- :sparkles: Add loading indicator for pasteboard lazy loading and fix throttle stall (#4053)
+- :sparkles: Add Portuguese (`pt`) language support (#4076)
+- :sparkles: Add `fa`/`pt` translations for extension-only i18n keys (#4299)
+
+# UI Improvements 💄
+
+- :lipstick: Redesign devices screen with offline grouping and current-device dialog (#4206)
+- :lipstick: Add mobile app promotion guide in desktop devices view (#4083)
+- :lipstick: Improve Portuguese i18n conciseness for sync-related keys (#4090)
+- :art: Align add-device button style with current-device button (#4273)
+- :art: Shrink `OfflineToggle` switch scale to 0.7× (#4211)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Stop leaking raw exception messages to notifications (#4291)
+- :hammer: Pass `desktopConnected` as prop to `SettingsView` (#4297)
+- :hammer: Extract `IMAGE_MIME_MAP` into shared mime utility (#4295)
+- :hammer: Switch Chrome extension to `optional_host_permissions` (#4281)
+- :hammer: Split `AppSourceIcon` and `SideAppSourceIcon` transformer pipelines (#4271)
+- :hammer: Dedupe concurrent `refresh()` calls and support `zh_hant` fallback (#4256)
+- :hammer: Extract `useCopyWithNotification` hook (#4249)
+- :hammer: Unify Chrome extension version with `crosspaste-version.properties` (#4245)
+- :hammer: Polish `WsSessionManager` TOCTOU, ping mutex, `namedScope` (#4224)
+- :hammer: Remove P2P Test debug panel from Chrome extension (#4219)
+- :hammer: Unify coroutine scopes via `namedScope` helper (#4215)
+- :hammer: Extract `core` module and deduplicate `shared`/`app` code (#4060)
+- :hammer: Refactor `SyncResolver` to unified single-pass connection flow (#4103)
+- :hammer: Namespace source icons by `appInstanceId` (#4191)
+- :hammer: Enforce namespaced icon paths in sync endpoints (#4192)
+- :hammer: Refactor `WsPullFileRequest` to sealed class, extract plugins, and improve robustness (#4179)
+- :hammer: Refactor `addSyncTask` to accept `targetAppInstanceIds` as `Set<String>` (#4181)
+- :hammer: Convert `withTimeout`/`withTimeoutOrNull` `Long` overloads to `Duration` (#4093)
+- :hammer: Abstract `TrustDeviceView` in `DeviceScope` for platform-specific pairing (#4097)
+- :hammer: Replace custom `CountBadgeAuto` with Material 3 `Badge` and add image count badge (#4142)
+- :hammer: Refactor `getCrossPasteWebUrl` to use remote locale config from `meta.json` (#4123)
+- :hammer: Refactor `searchPasteData.pasteType` to `pasteTypeList` for multi-type filtering (#4121)
+- :hammer: Reduce default shortcut key bindings to `show_main` and `show_search` only (#4126)
+- :hammer: Migrate `promote.json` to web API and update data model (#4149)
+- :hammer: Simplify `DesktopPromoteGuide` to single download button (#4155)
+- :hammer: Extract shared `AppSourceIcon` composable (#4196)
+- :hammer: Normalize app source icon padding across platforms (#4203)
+- :hammer: Remove `getSearchContent`/`getSummary` from `PasteItem`, introduce `PasteItemReader` and `PasteDataHelper` (#4066)
+- :heavy_minus_sign: Remove duplicate exception classes from app module (#4099)
+- :heavy_minus_sign: Remove unused `material-kolor` dependency (#4081)
+
+# Performance ⚡
+
+- :zap: Improve device reconnection with fast-then-slow telnet probe strategy (#4107)
+- :zap: Skip icon pull when local icon file already exists (#4194)
+
+# Build & CI 👷
+
+- :construction_worker: Tighten CI path filters and unify Node version in build-release (#4279)
+- :construction_worker: Build Chrome extension zip and upload to OSS on release (#4241)
+- :construction_worker: Split CI into app-build and web-build with path filters (#4239)
+
+# Dependencies ⬆️
+
+- ⬆️ **Kotlin** 2.3.10 → 2.3.20 (#4069)
+- ⬆️ **Compose Plugin** 1.10.1 → 1.10.3 (#4055 #4068)
+- ⬆️ **Ktor** 3.4.0 → 3.4.2 (#4073 #4128)
+- ⬆️ **Koin** 4.1.1 → 4.2.1 (#4115 #4159)
+- ⬆️ **SQLDelight** 2.2.1 → 2.3.2 (#4114)
+- ⬆️ **Conveyor** 1.13 → 2.0 (#4071)
+- ⬆️ **Cryptography** 0.5.0 → 0.6.0 (#4132)
+- ⬆️ **Coil** 3.3.0 → 3.4.0 (#4210)
+- ⬆️ **Lifecycle** 2.9.6 → 2.10.0 (#4070)
+- ⬆️ **Logback** 1.5.31 → 1.5.32 (#4134)
+- ⬆️ **Okio** 3.16.4 → 3.17.0 (#4133)
+- ⬆️ **MCP Kotlin SDK Server** 0.8.4 → 0.9.0+ (#4024 #4113 #4162)
+- ⬆️ **Jewel** 0.33.0 → 0.34.0 (#4056 #4129)
+
+---
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.9.2059...2.0.0.2192
+
+# [1.2.9] - 2026-03-11
+# Highlights 🌟
+
+- 🖥️ **Native lazy clipboard writes**
+  Files copied to the clipboard are now provided lazily on macOS via `NSPasteboardItemDataProvider` and on Windows via JNA delayed rendering, avoiding upfront materialization of large file payloads (#3929 #3931).
+
+- 🏷️ **Tag-based favorites**
+  The legacy boolean "favorite" flag is gone — favorites are now just another tag, opening the door to user-defined organizational tags. New `AppControl` hooks support tag creation and pinning (#3989 #3991).
+
+- 🧱 **Modularization groundwork**
+  Initialized `shared-ui` and `web` Gradle modules, moved SQLDelight into the shared module and extracted DAO interfaces, rewrote CLI commands from HTTP to direct DAO and native access, and split `DesktopModule` DI into focused sub-modules (#3954 #3950 #3952 #3937).
+
+- 🎯 **"Sync To" context menu**
+  Right-click any paste to send it to a specific device on demand, instead of relying on background sync (#4019).
+
+# Bug Fixes 🐛
+
+- :bug: Fix duplicate JAR version conflicts in MSIX packages (#4026)
+- :bug: Fix CLI cross-platform build failures for Windows and cross-compilation (#4030)
+- :bug: Fix `SQLITE_BUSY` errors by serializing `SyncRuntimeInfoDao` writes (#3994)
+- :bug: Fix `SearchWindow` position flash on macOS after long background (#3984)
+- :bug: Fix devices list overlapping FAB and transparent sticky headers (#3982)
+- :bug: Refresh storage statistics immediately after cleanup and show progress dialog (#3980)
+- :bug: Fix `IllegalStateException` in `compressExportFile` and add export/import tests (#3976)
+- :bug: Improve JmDNS service discovery reliability in `refreshAll` and `serviceRemoved` (#3974)
+- :bug: Recreate `LazyListState` on window open to reliably reset scroll position (#3962)
+- :bug: Fix theme flash from light to dark on startup (#3960)
+
+# New Features ✨
+
+- :sparkles: Add right-click "Sync To" context menu for syncing paste to specific device (#4019)
+- :sparkles: Add rounded corners for main window on Windows and Linux (#4006)
+- :sparkles: Add adaptive QR code sizing for multi-device compatibility (#4010)
+- :sparkles: Add `AppControl` hooks for tag creation and pinning (#3991)
+- :sparkles: Auto-close token view when all pending verifiers complete verification (#3972)
+- :sparkles: Add headless mode for CLI-only environments (#3863)
+- :sparkles: Add Windows native lazy file clipboard write via JNA delayed rendering (#3931)
+- :sparkles: Add macOS native lazy file pasteboard write via `NSPasteboardItemDataProvider` (#3929)
+- :sparkles: Add `GET /pull/paste` endpoint for iOS pull (#3922)
+- :sparkles: Add source exclusion service to filter clipboard by application (#3920)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Merge `addSyncTask` and `addTargetedSyncTask` into single method (#4021)
+- :hammer: Extract `PlatformTokenTextField` expect/actual for iOS backspace support (#4017)
+- :hammer: Extract platform-specific number keyboard options for iOS compatibility (#4002)
+- :hammer: Redesign `FilledDropdown` component to match prototype design (#4000)
+- :hammer: Redesign `Counter` component to match prototype stepper design (#3998)
+- :hammer: Redesign desktop About page to match mobile layout (#3996)
+- :hammer: Convert favorite boolean to tag-based system (#3989)
+- :hammer: Extract `ScreenLayout` into `ScreenProvider` interface with configurable padding (#3967)
+- :hammer: Extract `SearchPasteData` and `QueryPasteTag` interfaces from DAO layer (#3956)
+- :hammer: Extract `ImageLoaders` into individual DI-registered `ImageLoader` instances (#3958)
+- :hammer: Initialize `shared-ui` and `web` Gradle modules (#3954)
+- :hammer: Rewrite CLI commands from HTTP to direct DAO and native access (#3952)
+- :hammer: Move SQLDelight to shared module, extract DAO interfaces, remove CLI bridge (#3950)
+- :hammer: Extract `SyncResolverApi` interface and `SyncDeviceManager` class (#3942)
+- :hammer: Split `ColorUtils` into `ColorParser`, `ColorConversion`, and `ColorAccessibility` (#3941)
+- :hammer: Extract `DesktopModule` DI sub-modules into `DesktopAppModule`, `DesktopNetworkModule`, `DesktopPasteComponentModule`, `DesktopUiModule` (#3937)
+- :hammer: Extract User32 utility functions into focused `WindowsProcessUtils`, `WindowsFocusUtils`, `WindowsIconUtils` (#3935)
+- :hammer: Extract `FilePullService` from `PullFileTaskExecutor` (#3933)
+- :hammer: Extract `PasteReleaseService` and `PasteTagDao` from `PasteDao` (#3926)
+- :hammer: Move `sourceExclusions` to desktop-only config and use `DesktopConfigManager` (#3921)
+
+# Performance ⚡
+
+- :zap: Improve QR code layout for narrow screens (#4012)
+- :zap: Async font loading and virtualized font dropdown to eliminate UI stutter (#4004)
+- :zap: Use content hash as `LaunchedEffect` key to avoid `equals` on large HTML strings (#3948)
+- :zap: Truncate HTML DOM for side preview rendering to prevent UI lag (#3939)
+
+# Build & CI 👷
+
+- :construction_worker: Remove CLI native build from GitHub Actions workflows (#4032)
+- :construction_worker: Fix Kotlin Default Hierarchy Template warnings for `cli` and `web` modules (#3987)
+
+# Dependencies ⬆️
+
+- ⬆️ **Gradle Wrapper** 9.3.1 → 9.4.0 (#4023)
+- ⬆️ **Tesseract Platform** downgraded to 5.5.1-1.5.12 to fix macOS 15.0 minimum-version conflict (#4034)
+- ⬆️ **filekit-dialogs** 0.12.0 → 0.13.0 (#4009)
+- ⬆️ **SnakeYAML** 2.5 → 2.6 (#4008)
+- ⬆️ **imageio** 3.13.0 → 3.13.1 (#3968)
+- ⬆️ **MCP Kotlin SDK Server** updated (#3969)
+- ⬆️ **composenativetray-jvm** updated (#3924)
+
+---
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.8.1999...1.2.9.2059
+
+# [1.2.8] - 2026-02-16
+# Highlights 🌟
+
+- 🤖 **MCP server**
+  CrossPaste now exposes its clipboard history to AI agents through the Model Context Protocol, with a dedicated settings page that lets you toggle the server and configure its port (#3839 #3841).
+
+- ✏️ **BubbleWindow inline editing**
+  A new `BubbleWindow` enables inline text and HTML editing directly from the Search window, with a redesigned `PasteTextEditContentView` featuring a floating toolbar and undo/redo (#3837 #3860 #3862).
+
+- ✂️ **Cut with undo**
+  Added cut operation with undo support for file and image paste items (#3871).
+
+- 📂 **Smarter large-file sync**
+  Large files are now synced directly into the system download directory, and drag-and-drop file pulls follow the same path. The "In Downloads" indicator hides paste items whose backing files have gone missing (#3833 #3842 #3852).
+
+- 🧪 **Testing & code-review push**
+  ~700 new unit tests landed across data, sync, network/security, business logic, control layer, utils, ViewModel, and UI state. Multi-instance device-lifecycle integration tests round it out, alongside dozens of code-review-driven fixes for resource leaks, race conditions, and security issues (#3816 #3818 #3820 #3822 #3824 #3825 #3826 #3827).
+
+# Bug Fixes 🐛
+
+- :bug: Fix encrypted file pull failure, retry duplicate files, and missing cleanup (#3916)
+- :bug: Fix sync retry loop on `NOT_MATCH_APP_INSTANCE_ID` and delayed `CONNECTED` status on passive device (#3912)
+- :bug: Fix `BubbleWindow` white corners and missing tail on Linux (#3910)
+- :bug: Fix export count off-by-one, import failure handling and orphaned DB entries (#3908)
+- :bug: Fail fast in `ClientEncryptPlugin` when body type is unsupported for encryption (#3902)
+- :bug: Harden paste sync pipeline: channel leak, semaphore timeout, and `getProcess` consistency (#3904)
+- :bug: Fix `SecureStore` double-check locking and session lifecycle bugs (#3906)
+- :bug: Fix import file path collision and export partial failure handling (#3900)
+- :bug: Fix cleanup config mismatch: expiration cleanup guarded by wrong flag (#3895)
+- :bug: Fix task executor semaphore starvation and unbuffered queue backpressure (#3893)
+- :bug: Fix notification race window and unconditional notify in `SyncRuntimeInfoDao` (#3888)
+- :bug: Make `started` flag thread-safe with `atomicfu` in `GeneralSyncManager` (#3886)
+- :bug: Ensure `notifyExit` completes before scope cancellation via `CompletableDeferred` (#3884)
+- :bug: Add missing `return` after `connectState` change to prevent duplicate events (#3882)
+- :bug: Enable per-device concurrent sync event processing (#3880)
+- :bug: Fix stale `SyncRuntimeInfo` snapshot in sync event processing (#3879)
+- :bug: Move sync info diff check from `combine` to `addDevice` to prevent feedback loop (#3876)
+- :bug: Fix sync handler coroutine leak and add immediate reconnection on disconnect (#3875)
+- :bug: Fix save button and toolbar selection bugs in `PasteHtmlEditContentView` (#3872)
+- :bug: Fix `NotFoundNearByDevices` wifi icon tint color (#3850)
+- :bug: Fix always-on-top push-pin icon state (#3848)
+- :bug: Fix `InfoItem` value text alignment when wrapping (#3831)
+- :bug: Fix unchecked cast, short timeout, hardcoded `User-Agent`, and missing design comments (#3814)
+- :bug: Fix `StripedMutex` overflow, hardcoded IV size, regex recompilation, and public logger (#3812)
+- :bug: Fix Zip Slip vulnerability, regex recompilation, and redundant `hashCode` (#3810)
+- :bug: Fix thread-unsafe `RTFEditorKit`, non-local return in `runCatching`, and `Memoize` cache (#3808)
+- :bug: Fix share URL encoding, inconsistent delay, missing clipboard copy, and UI issues (#3806)
+- :bug: Fix `runBlocking` UI freeze and redundant `koinInject` in device sync UI (#3804)
+- :bug: Fix stale discovery toggle, IO thread state write, and dead code in settings (#3800)
+- :bug: Fix export filter UI, redundant variable shadow, and Material 2 import (#3798)
+- :bug: Fix notification loop, redundant rendering, resource leak, and Material 2 imports (#3796)
+- :bug: Fix thread safety, race conditions, and resource leaks in UI infrastructure (#3794)
+- :bug: Fix queries returning deleted paste data and `isValid()` treating deleted state as valid (#3792)
+- :bug: Fix path resolution silent errors, migration cleanup, and download race condition (#3790)
+- :bug: Fix file dialog timing, `runBlocking` in coroutine, dead state, and thread safety (#3788)
+- :bug: Fix app lifecycle resource leaks, naming inconsistency, and thread safety (#3786)
+- :bug: Fix shortcut key system: wrong macOS rawCode, dead code, fragile reflection (#3784)
+- :bug: Fix Linux native integration resource leaks and pointer bugs (#3782)
+- :bug: Fix Windows native resource leaks: DC, COM, HICON, GlobalAlloc, and Process (#3780)
+- :bug: Fix use-after-free in Swift async dispatches for window management (#3778)
+- :bug: Fix `FileExtFetcher` wrong image path and OCR native resource leak (#3776)
+- :bug: Fix resource leaks and bitmap copy bug in image processing (#3774)
+- :bug: Fix Bonjour service registering with port 0 due to race with server startup (#3772)
+- :bug: Fix macOS platform: `getString` memory leak and Keychain duplicate entry handling (#3770)
+- :bug: Fix security layer: race condition, null safety, bounds checking, and cleanup (#3768)
+- :bug: Fix duplicate retry condition and `check()` crash in sync task executors (#3766)
+- :bug: Fix `TxtRecord` sort bug, non-atomic `StateFlow` mutation, and unscoped async (#3764)
+- :bug: Fix sync layer: silent error swallowing, duplicate fail counting, and missing callbacks (#3762)
+- :bug: Fix network plugins: encryption error handling, scope leak, and stream safety (#3760)
+- :bug: Fix client API layer: error handling and logging improvements (#3758)
+- :bug: Fix server routing: scope leak, path traversal, exit timeout, and logging gaps (#3756)
+- :bug: Fix network layer: server error handling, `HttpClient` leak, and Bonjour robustness (#3754)
+- :bug: Fix import/export stream leaks and minor code quality issues (#3752)
+- :bug: Fix `FileToUrlPlugin` resource leak and simplify `MultiImagesPlugin` (#3750)
+- :bug: Fix image resource leak, redundant hash computation, and silent plugin failures (#3748)
+- :bug: Fix consumer/producer pipeline: `StateFlow` update, error logic, and cleanup (#3745)
+- :bug: Harden pasteboard service: fix race conditions, NPE risks, and channel redesign (#3742)
+- :bug: Fix `launch_at_startup` switch reading wrong config field (#3722)
+- :bug: Correct `formatBytes` logic to display decimals for KB/MB/GB (#3699)
+
+# New Features ✨
+
+- :sparkles: Add MCP server for AI agent clipboard data access (#3839)
+- :sparkles: Add MCP server settings UI with toggle and port configuration (#3841)
+- :sparkles: Add `BubbleWindow` for inline text editing from Search window (#3837)
+- :sparkles: Redesign `PasteTextEditContentView` with floating toolbar and undo/redo (#3860)
+- :sparkles: Add inline HTML editing in `BubbleWindow` (#3862)
+- :sparkles: Add cut operation with undo support for file and image paste items (#3871)
+- :sparkles: Force drag-and-drop files to sync to remote download directory (#3842)
+- :sparkles: Add "In Downloads" indicator and hide missing-file paste items (#3852)
+- :sparkles: Sync large files directly to system download directory (#3833)
+- :sparkles: Add granular sync control for specific content types (#3737)
+- :sparkles: Add `mutedText` color to `ThemeExt` (#3728)
+- :sparkles: Add `getPasteTypeExt()` composable helper for `PasteType` (#3726)
+- :sparkles: Add `PasteTypeExt` constants for all paste types (#3724)
+
+# UI Improvements 💄
+
+- :lipstick: Menu item redesign by Pencil (#3720)
+- :lipstick: Replace multiple theme colors with unified `CrossPasteColor` M3 theme (#3718)
+- :lipstick: Use `FlowRow` for adaptive layout of image info components (#3700)
+- :lipstick: Add image file size and format info components (#3697)
+- :art: Improve drag-and-drop overlay visual design (#3844)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Simplify `PasteTextEditContentView` layout (#3867)
+- :hammer: Add `isLoading` parameter to `DialogActionButton` for reusable loading state (#3835)
+- :hammer: Refactor icon system to Material Symbols with unified `IconData` (#3739)
+- :hammer: Refactor `GeneralIconButton` to use `IconButtonColors` instead of `iconColor` (#3736)
+- :hammer: Refactor `SemanticColorGroup` to use Tailwind CSS color palette (#3734)
+- :hammer: Improve `ImageResolution` component flexibility (#3695)
+- :hammer: Clean up core data models from code-review session 1 (#3743)
+
+# Testing 🧪
+
+- :white_check_mark: Add 209 unit tests for core data layer (Phase 1) (#3820)
+- :white_check_mark: Add 103 unit tests for business logic layer (Phase 2) (#3822)
+- :white_check_mark: Add 77 unit tests for network and security layer (Phase 3) (#3824)
+- :white_check_mark: Add 116 unit tests for application control layer (Phase 4) (#3825)
+- :white_check_mark: Add 63 unit tests for utils and platform layer (Phase 5) (#3826)
+- :white_check_mark: Add 62 unit tests for ViewModel and UI state layer (Phase 6) (#3827)
+- :white_check_mark: Add 12 sync integration tests for multi-instance device lifecycle (#3818)
+- :white_check_mark: Add 111 unit tests for sync layer and fix `HostInfoFilter` DNS resolution (#3816)
+- :white_check_mark: Fix flaky tests by replacing `Thread.sleep` with `runTest` (#3858)
+
+# Dependencies ⬆️
+
+- ⬆️ **Kotlin** 2.3.0 → 2.3.10 (#3801)
+- ⬆️ **Compose Plugin** 1.10.0 → 1.10.1 (#3856)
+- ⬆️ **Gradle Wrapper** 8.14 → 9.3.1 (#3710)
+- ⬆️ **Conveyor** 1.12 → 1.13 (#3709)
+- ⬆️ **Ktor** 3.3.3 → 3.4.0 (#3701)
+- ⬆️ **Logback** 1.5.25 → 1.5.31 (#3708 #3715 #3892)
+- ⬆️ **atomicfu** 0.29.0 → 0.31.0 (#3702)
+- ⬆️ **MockK** 1.14.7 → 1.14.9 (#3714)
+- ⬆️ **download** 5.6.0 → 5.7.0 (#3802)
+- ⬆️ **kotlinx-serialization-json** updated (#3703)
+- ⬆️ **navigation-compose** updated (#3855)
+- ⬆️ **Compose Hot-Reload** updated (#3890)
+
+---
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/1.2.7.1883...1.2.8.1999
+
 # [1.2.7] - 2026-01-25
 ## 🚀 v1.2.7 - Emergency Hotfix
 
