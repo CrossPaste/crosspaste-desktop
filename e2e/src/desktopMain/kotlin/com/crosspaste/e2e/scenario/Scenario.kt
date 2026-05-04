@@ -33,12 +33,22 @@ data class TargetSpec(
     val appInstanceId: String?,
 )
 
+/**
+ * Holds a discovered target across scenarios so the second-onwards run in a multi-scenario
+ * batch skips a redundant 1.5–10s mDNS round.
+ */
+class TargetCache {
+    @Volatile
+    var resolved: TargetSpec? = null
+}
+
 data class ScenarioContext(
     val peer: HeadlessPeer,
     val target: TargetSpec?,
     val targetAppInstanceId: String?,
     val discoveryTimeoutMs: Long,
     val tokenProvider: suspend () -> Int,
+    val targetCache: TargetCache = TargetCache(),
 )
 
 /**

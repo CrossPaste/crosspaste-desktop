@@ -4,13 +4,10 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.net.AbstractNetworkInterfaceService
+import com.crosspaste.e2e.net.NetworkUtils
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.TxtRecordUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.net.Inet4Address
-import java.net.NetworkInterface
-import java.util.Collections
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
 
@@ -41,7 +38,7 @@ class BonjourAdvertiser(
     private val instances: MutableList<JmDNS> = mutableListOf()
 
     fun start() {
-        val addresses = enumerateLanInet4Addresses()
+        val addresses = NetworkUtils.enumerateLanInet4()
         if (addresses.isEmpty()) {
             logger.warn { "No usable LAN IPv4 addresses; mDNS advertising skipped." }
             return
@@ -101,30 +98,5 @@ class BonjourAdvertiser(
             }
         }
         instances.clear()
-    }
-
-    private fun enumerateLanInet4Addresses(): List<Pair<Inet4Address, Short>> {
-        val nics =
-            runCatching { Collections.list(NetworkInterface.getNetworkInterfaces()) }
-                .getOrElse {
-                    logger.warn(it) { "Failed to enumerate network interfaces." }
-                    emptyList()
-                }
-        return nics
-            .asSequence()
-            .filter { nic ->
-                runCatching { nic.isUp && !nic.isLoopback && !nic.isVirtual }.getOrDefault(false)
-            }.filterNot { nic ->
-                AbstractNetworkInterfaceService.isLikelyVirtual(
-                    nic.name,
-                    AbstractNetworkInterfaceService.getMacAddress(nic),
-                )
-            }.flatMap { it.interfaceAddresses.asSequence() }
-            .mapNotNull { ifAddr ->
-                val addr = ifAddr.address
-                if (addr is Inet4Address) addr to ifAddr.networkPrefixLength else null
-            }.filterNot { (addr, _) ->
-                addr.isLoopbackAddress || addr.isLinkLocalAddress || addr.isAnyLocalAddress
-            }.toList()
     }
 }

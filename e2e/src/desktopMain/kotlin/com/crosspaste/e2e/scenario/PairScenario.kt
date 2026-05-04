@@ -80,11 +80,12 @@ internal suspend fun ensureTrust(
 
 internal suspend fun resolveOrDiscover(ctx: ScenarioContext): TargetSpec? {
     if (ctx.target != null) return ctx.target
+    ctx.targetCache.resolved?.let { return it }
     val driver = DiscoveryDriver()
     return try {
         driver.start()
         val found = driver.browse(ctx.discoveryTimeoutMs, ctx.targetAppInstanceId)
-        resolveTarget(ctx, found)
+        resolveTarget(ctx, found)?.also { ctx.targetCache.resolved = it }
     } finally {
         driver.close()
     }

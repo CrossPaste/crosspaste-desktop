@@ -193,7 +193,8 @@ private fun parseColor(raw: String): Int {
             trimmed.startsWith("#") -> trimmed.substring(1) to 16
             else -> trimmed to 10
         }
-    return text.toUInt(radix).toInt()
+    val value = text.toUInt(radix)
+    return if (radix == 16 && text.length <= 6) (value or 0xFF000000u).toInt() else value.toInt()
 }
 
 private fun promptToken(): Int {

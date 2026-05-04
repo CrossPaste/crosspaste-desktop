@@ -22,6 +22,7 @@ class DiscoveryScenario : Scenario {
                     "Target appInstanceId '$expected' not seen. Discovered: [$seen]",
                 )
             }
+            resolveTarget(ctx, found)?.let { ctx.targetCache.resolved = it }
             val summary =
                 found.joinToString { si ->
                     "${si.appInfo.appInstanceId}@${si.endpointInfo.hostInfoList.firstOrNull()?.hostAddress}:${si.endpointInfo.port}"

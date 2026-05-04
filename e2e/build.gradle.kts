@@ -1,16 +1,13 @@
-import java.io.FileReader
 import java.util.Properties
 
 val versionProperties = Properties()
-versionProperties.load(
-    FileReader(
-        project.projectDir
-            .toPath()
-            .parent
-            .resolve("app/src/desktopMain/resources/crosspaste-version.properties")
-            .toFile(),
-    ),
-)
+project.projectDir
+    .toPath()
+    .parent
+    .resolve("app/src/desktopMain/resources/crosspaste-version.properties")
+    .toFile()
+    .reader()
+    .use { versionProperties.load(it) }
 
 group = "com.crosspaste"
 version = versionProperties.getProperty("version")

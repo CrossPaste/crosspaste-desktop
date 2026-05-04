@@ -1,7 +1,7 @@
 package com.crosspaste.e2e.protocol
 
 import com.crosspaste.dto.sync.SyncInfo
-import com.crosspaste.net.AbstractNetworkInterfaceService
+import com.crosspaste.e2e.net.NetworkUtils
 import com.crosspaste.utils.TxtRecordUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.ConcurrentMap
@@ -9,10 +9,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
-import java.net.Inet4Address
-import java.net.InetAddress
-import java.net.NetworkInterface
-import java.util.Collections
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceListener
@@ -114,7 +110,7 @@ class DiscoveryDriver {
     }
 
     private fun createJmdnsInstances(): List<JmDNS> {
-        val addresses = enumerateLanInet4Addresses()
+        val addresses = NetworkUtils.enumerateLanInet4().map { it.first }
         if (addresses.isEmpty()) {
             logger.warn { "No usable LAN IPv4 interfaces found; falling back to default JmDNS." }
             return listOf(JmDNS.create())
@@ -127,27 +123,5 @@ class DiscoveryDriver {
                     .getOrNull()
             }
         return instances.ifEmpty { listOf(JmDNS.create()) }
-    }
-
-    private fun enumerateLanInet4Addresses(): List<InetAddress> {
-        val nics =
-            runCatching { Collections.list(NetworkInterface.getNetworkInterfaces()) }
-                .getOrElse {
-                    logger.warn(it) { "Failed to enumerate network interfaces." }
-                    emptyList()
-                }
-        return nics
-            .asSequence()
-            .filter { nic ->
-                runCatching { nic.isUp && !nic.isLoopback && !nic.isVirtual }.getOrDefault(false)
-            }.filterNot { nic ->
-                AbstractNetworkInterfaceService.isLikelyVirtual(
-                    nic.name,
-                    AbstractNetworkInterfaceService.getMacAddress(nic),
-                )
-            }.flatMap { it.inetAddresses.asSequence() }
-            .filterIsInstance<Inet4Address>()
-            .filterNot { it.isLoopbackAddress || it.isLinkLocalAddress || it.isAnyLocalAddress }
-            .toList()
     }
 }
