@@ -14,6 +14,7 @@ import com.crosspaste.e2e.scenario.ScenarioContext
 import com.crosspaste.e2e.scenario.ScenarioResult
 import com.crosspaste.e2e.scenario.TargetSpec
 import com.crosspaste.e2e.scenario.WrongTokenScenario
+import com.crosspaste.utils.getDateUtils
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.default
@@ -99,12 +100,13 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
                     tokenProvider = ::promptToken,
                 )
 
+            val now = getDateUtils().nowEpochMilliseconds()
             val payloads =
                 Payloads(
-                    text = pushText ?: "e2e-ping ${System.currentTimeMillis()}",
-                    url = pushUrl ?: "https://crosspaste.com/?e2e=${System.currentTimeMillis()}",
-                    html = pushHtml ?: "<p>e2e-ping ${System.currentTimeMillis()}</p>",
-                    rtf = pushRtf ?: "{\\rtf1 e2e-ping ${System.currentTimeMillis()}}",
+                    text = pushText ?: "e2e-ping $now",
+                    url = pushUrl ?: "https://crosspaste.com/?e2e=$now",
+                    html = pushHtml ?: "<p>e2e-ping $now</p>",
+                    rtf = pushRtf ?: "{\\rtf1 e2e-ping $now}",
                     color = pushColor?.let(::parseColor) ?: 0xFFFF0000.toInt(),
                 )
 

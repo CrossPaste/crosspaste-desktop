@@ -3,6 +3,7 @@ package com.crosspaste.e2e.protocol
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.e2e.net.NetworkUtils
 import com.crosspaste.utils.TxtRecordUtils
+import com.crosspaste.utils.getDateUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.channels.Channel
@@ -22,6 +23,8 @@ class DiscoveryDriver {
     }
 
     private val logger = KotlinLogging.logger {}
+
+    private val dateUtils = getDateUtils()
 
     private val jmdnsInstances: List<JmDNS> = createJmdnsInstances()
 
@@ -85,9 +88,12 @@ class DiscoveryDriver {
         targetAppInstanceId: String? = null,
         pollIntervalMs: Long = 200,
     ): List<SyncInfo> {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
+        val deadline = dateUtils.nowEpochMilliseconds() + timeoutMs
+        while (dateUtils.nowEpochMilliseconds() < deadline) {
             if (targetAppInstanceId != null && resolved.containsKey(targetAppInstanceId)) {
+                break
+            }
+            if (targetAppInstanceId == null && resolved.isNotEmpty()) {
                 break
             }
             delay(pollIntervalMs)
@@ -98,15 +104,16 @@ class DiscoveryDriver {
     fun snapshot(): Map<String, SyncInfo> = resolved.toMap()
 
     fun close() {
-        runCatching {
-            jmdnsInstances.forEach { jm ->
+        jmdnsInstances.forEach { jm ->
+            runCatching {
                 jm.removeServiceListener(SERVICE_TYPE, listener)
                 jm.close()
+            }.onFailure { e ->
+                logger.debug(e) { "Error closing JmDNS instance" }
             }
-            events.close()
-        }.onFailure { e ->
-            logger.debug(e) { "Error closing DiscoveryDriver" }
         }
+        runCatching { events.close() }
+            .onFailure { e -> logger.debug(e) { "Error closing events channel" } }
     }
 
     private fun createJmdnsInstances(): List<JmDNS> {
