@@ -5,6 +5,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.sound.SoundService
+import com.crosspaste.sync.SyncManager
 
 fun getDesktopPasteboardService(
     appWindowManager: DesktopAppWindowManager,
@@ -17,6 +18,7 @@ fun getDesktopPasteboardService(
     platform: Platform,
     soundService: SoundService,
     sourceExclusionService: DesktopSourceExclusionService,
+    syncManager: SyncManager,
 ): AbstractPasteboardService =
     if (platform.isMacos()) {
         MacosPasteboardService(
@@ -29,6 +31,7 @@ fun getDesktopPasteboardService(
             pasteReleaseService,
             soundService,
             sourceExclusionService,
+            syncManager,
         )
     } else if (platform.isWindows()) {
         WindowsPasteboardService(
