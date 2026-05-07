@@ -9,6 +9,7 @@ import com.crosspaste.net.clientapi.EncryptFail
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.RequestTimeout
 import com.crosspaste.net.clientapi.UnknownError
+import java.util.concurrent.atomic.AtomicReference
 
 sealed class ScenarioResult {
     data class Pass(
@@ -35,11 +36,12 @@ data class TargetSpec(
 
 /**
  * Holds a discovered target across scenarios so the second-onwards run in a multi-scenario
- * batch skips a redundant 1.5–10s mDNS round.
+ * batch skips a redundant 1.5–10s mDNS round. AtomicReference + CAS keeps the cache
+ * coherent if scenarios are ever fanned out concurrently — first writer wins, later
+ * writes are dropped instead of clobbering.
  */
 class TargetCache {
-    @Volatile
-    var resolved: TargetSpec? = null
+    val resolved: AtomicReference<TargetSpec?> = AtomicReference(null)
 }
 
 data class ScenarioContext(

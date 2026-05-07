@@ -79,9 +79,16 @@ class DiscoveryDriver {
     }
 
     /**
-     * Block until [timeoutMs] elapses, returning all distinct SyncInfo records resolved
-     * during that window. Optionally filter to a specific appInstanceId — return as soon
-     * as that one is found instead of waiting for the full timeout.
+     * Poll until either [timeoutMs] elapses or at least one matching peer is resolved,
+     * then return a snapshot of every SyncInfo seen so far (which may include peers
+     * resolved before this call). Early-exits as soon as:
+     *   - [targetAppInstanceId] is non-null and that specific peer has been resolved, or
+     *   - [targetAppInstanceId] is null and any peer has been resolved.
+     *
+     * Because of the early exit, the returned list is not guaranteed to contain every
+     * peer reachable on the LAN — only those resolved by the time the first match arrives.
+     * Callers that need the full set should either pass a [targetAppInstanceId] or call
+     * [snapshot] after waiting out [timeoutMs] another way.
      */
     suspend fun browse(
         timeoutMs: Long,
