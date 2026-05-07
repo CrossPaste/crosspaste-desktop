@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class MacAppWindowManager(
     private val appInfo: AppInfo,
@@ -146,7 +147,7 @@ class MacAppWindowManager(
                 pair.second,
             )
             for (i in 1 until size) {
-                delay(1000)
+                delay(1000.milliseconds)
                 if (preparePaste(i)) {
                     toPaste()
                 }

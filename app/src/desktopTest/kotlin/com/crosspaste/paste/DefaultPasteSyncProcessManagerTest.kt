@@ -21,6 +21,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class DefaultPasteSyncProcessManagerTest {
 
@@ -174,11 +175,11 @@ class DefaultPasteSyncProcessManagerTest {
             val tasks =
                 listOf<suspend () -> Pair<Int, ClientApiResult>>(
                     {
-                        delay(50)
+                        delay(50.milliseconds)
                         Pair(0, SuccessResult("Task 0"))
                     },
                     {
-                        delay(100)
+                        delay(100.milliseconds)
                         Pair(1, SuccessResult("Task 1"))
                     },
                 )
@@ -232,7 +233,7 @@ class DefaultPasteSyncProcessManagerTest {
                 (0..4).map { index ->
                     suspend {
                         val startTime = System.currentTimeMillis()
-                        delay(50) // Simulate work
+                        delay(50.milliseconds) // Simulate work
                         executionOrder[index] = startTime
                         Pair(index, SuccessResult("Task $index"))
                     }
@@ -261,7 +262,7 @@ class DefaultPasteSyncProcessManagerTest {
                     suspend {
                         val current = concurrentTasks.incrementAndGet()
                         maxConcurrency.set(maxOf(maxConcurrency.get(), current))
-                        delay(100) // Simulate work
+                        delay(100.milliseconds) // Simulate work
                         concurrentTasks.decrementAndGet()
                         Pair(index, SuccessResult("Task $index"))
                     }
@@ -285,7 +286,7 @@ class DefaultPasteSyncProcessManagerTest {
                         val tasks =
                             (0..2).map { taskIndex ->
                                 suspend {
-                                    delay(50)
+                                    delay(50.milliseconds)
                                     Pair(taskIndex, SuccessResult("Task $taskIndex for paste $pasteDataId"))
                                 }
                             }
@@ -351,23 +352,23 @@ class DefaultPasteSyncProcessManagerTest {
                     }
                 }
 
-            delay(50) // Let collection start
+            delay(50.milliseconds) // Let collection start
 
             val tasks =
                 listOf<suspend () -> Pair<Int, ClientApiResult>>(
                     {
-                        delay(100)
+                        delay(100.milliseconds)
                         Pair(0, SuccessResult("Task 0"))
                     },
                     {
-                        delay(200)
+                        delay(200.milliseconds)
                         Pair(1, SuccessResult("Task 1"))
                     },
                 )
 
             manager.runTask(pasteDataId, tasks)
 
-            delay(50) // Let final progress update propagate
+            delay(50.milliseconds) // Let final progress update propagate
             collectJob.cancel()
 
             assertTrue(progressValues.contains(0.0f), "Should contain initial progress")

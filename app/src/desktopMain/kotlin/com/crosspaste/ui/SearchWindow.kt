@@ -36,6 +36,7 @@ import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SearchWindow(windowIcon: Painter?) {
@@ -99,7 +100,7 @@ fun SearchWindow(windowIcon: Painter?) {
         if (searchWindowInfo.show) {
             ignoreFocusLoss.set(true)
             appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
-            delay(1000)
+            delay(1000.milliseconds)
         }
         ignoreFocusLoss.set(false)
     }

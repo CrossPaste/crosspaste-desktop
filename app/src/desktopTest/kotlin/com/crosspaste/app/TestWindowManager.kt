@@ -3,6 +3,7 @@ package com.crosspaste.app
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlin.time.Duration.Companion.milliseconds
 
 class TestWindowManager(
     appSize: DesktopAppSize,
@@ -52,7 +53,7 @@ class TestWindowManager(
         val toPaste = preparePaste(0)
         bringToBack(toPaste)
         for (i in 1 until size) {
-            delay(1000)
+            delay(1000.milliseconds)
             if (preparePaste(i)) {
                 toPaste()
             }

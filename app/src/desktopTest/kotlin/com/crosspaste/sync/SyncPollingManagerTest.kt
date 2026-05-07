@@ -8,6 +8,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -34,7 +35,7 @@ class SyncPollingManagerTest {
 
             withTimeout(5.seconds) {
                 while (actionCount == 0) {
-                    delay(50)
+                    delay(50.milliseconds)
                 }
             }
 
@@ -66,7 +67,7 @@ class SyncPollingManagerTest {
 
             withTimeout(10.seconds) {
                 while (actionCount == countAt1s) {
-                    delay(50)
+                    delay(50.milliseconds)
                 }
             }
 
@@ -120,7 +121,7 @@ class SyncPollingManagerTest {
 
             withTimeout(5.seconds) {
                 while (actionCount == 0) {
-                    delay(50)
+                    delay(50.milliseconds)
                 }
             }
             val countBeforeCancel = actionCount
@@ -156,7 +157,7 @@ class SyncPollingManagerTest {
 
             withTimeout(5.seconds) {
                 while (actionCount == 0) {
-                    delay(50)
+                    delay(50.milliseconds)
                 }
             }
 
@@ -183,7 +184,7 @@ class SyncPollingManagerTest {
             // Wait for first execution
             withTimeout(5.seconds) {
                 while (actionCount == 0) {
-                    delay(50)
+                    delay(50.milliseconds)
                 }
             }
             val firstCount = actionCount
@@ -194,7 +195,7 @@ class SyncPollingManagerTest {
             // Wait for second execution
             withTimeout(5.seconds) {
                 while (actionCount <= firstCount) {
-                    delay(50)
+                    delay(50.milliseconds)
                 }
             }
 
@@ -218,7 +219,7 @@ class SyncPollingManagerTest {
 
             withTimeout(5.seconds) {
                 while (actionCount == 0) {
-                    delay(50)
+                    delay(50.milliseconds)
                 }
             }
 

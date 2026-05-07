@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 abstract class AppTokenService : AppTokenApi {
 
@@ -53,7 +54,7 @@ abstract class AppTokenService : AppTokenApi {
                         val totalSteps = 100
                         for (i in 0..totalSteps) {
                             _refreshProgress.value = i / totalSteps.toFloat()
-                            delay(300)
+                            delay(300.milliseconds)
                         }
                     }
                 } else {

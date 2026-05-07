@@ -9,6 +9,7 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class GenerateImageServiceTest {
 
@@ -52,7 +53,7 @@ class GenerateImageServiceTest {
                 }
 
             // Give some time for awaitGeneration to register
-            delay(50)
+            delay(50.milliseconds)
 
             // Mark generation complete
             service.markGenerationComplete(path)
@@ -85,7 +86,7 @@ class GenerateImageServiceTest {
             val deferred1 = async { service.awaitGeneration(path, timeoutMillis = 5000) }
             val deferred2 = async { service.awaitGeneration(path, timeoutMillis = 5000) }
 
-            delay(50)
+            delay(50.milliseconds)
 
             service.markGenerationComplete(path)
 
@@ -106,7 +107,7 @@ class GenerateImageServiceTest {
                     val path = tempDir.toOkioPath().resolve("concurrent_$i.png")
                     val deferred = async { service.awaitGeneration(path, timeoutMillis = 5000) }
                     launch {
-                        delay(20)
+                        delay(20.milliseconds)
                         service.markGenerationComplete(path)
                     }
                     deferred

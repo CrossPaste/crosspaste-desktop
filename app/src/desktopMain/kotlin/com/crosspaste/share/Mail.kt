@@ -18,6 +18,7 @@ import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 class Mail(
     private val notificationManager: NotificationManager,
@@ -56,7 +57,7 @@ class Mail(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,
         )
-        delay(2000)
+        delay(2000.milliseconds)
         uiSupport.openEmailClient(null)
     }
 }

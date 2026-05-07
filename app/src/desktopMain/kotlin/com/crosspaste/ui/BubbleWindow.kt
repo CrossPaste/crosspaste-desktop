@@ -62,6 +62,7 @@ import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * A bubble shape: rounded rectangle body with a triangular tail at the bottom,
@@ -215,7 +216,7 @@ fun BubbleWindow(windowIcon: Painter?) {
     LaunchedEffect(itemCenterXInSearchWindow, bubbleWindowInfo.show) {
         if (bubbleWindowInfo.show && itemCenterXInSearchWindow == null) {
             // Small delay to avoid flicker during fast scroll
-            delay(100)
+            delay(100.milliseconds)
             if (pasteSelectionViewModel.searchListState
                     ?.layoutInfo
                     ?.visibleItemsInfo
@@ -238,7 +239,7 @@ fun BubbleWindow(windowIcon: Painter?) {
         if (bubbleWindowInfo.show) {
             ignoreFocusLoss.set(true)
             appWindowManager.focusBubbleWindow()
-            delay(1000)
+            delay(1000.milliseconds)
         }
         ignoreFocusLoss.set(false)
     }

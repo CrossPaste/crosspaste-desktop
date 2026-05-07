@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class StripedMutexTest {
 
@@ -27,12 +28,12 @@ class StripedMutexTest {
                 async {
                     mutex.withLock("sameKey") {
                         log.add("start1")
-                        delay(50)
+                        delay(50.milliseconds)
                         log.add("end1")
                     }
                 }
             // Give job1 time to acquire the lock
-            delay(10)
+            delay(10.milliseconds)
             val job2 =
                 async {
                     mutex.withLock("sameKey") {
@@ -60,16 +61,16 @@ class StripedMutexTest {
                 async {
                     mutex.withLock("keyA") {
                         log.add("startA")
-                        delay(50)
+                        delay(50.milliseconds)
                         log.add("endA")
                     }
                 }
-            delay(10)
+            delay(10.milliseconds)
             val job2 =
                 async {
                     mutex.withLock("keyB") {
                         log.add("startB")
-                        delay(50)
+                        delay(50.milliseconds)
                         log.add("endB")
                     }
                 }
@@ -93,11 +94,11 @@ class StripedMutexTest {
                 async {
                     mutex.withLock("anyKey1") {
                         log.add("start1")
-                        delay(50)
+                        delay(50.milliseconds)
                         log.add("end1")
                     }
                 }
-            delay(10)
+            delay(10.milliseconds)
             val job2 =
                 async {
                     mutex.withLock("anyKey2") {

@@ -19,6 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class SyncIntegrationTest {
 
@@ -200,7 +201,7 @@ class SyncIntegrationTest {
             c.start()
             // Allow Netty event loops to stabilize after starting 3 servers
             // in the same JVM to avoid ClosedReadChannelException from resource contention
-            kotlinx.coroutines.delay(200)
+            kotlinx.coroutines.delay(200.milliseconds)
 
             // B trusts A
             trustBToA(a, b)
@@ -365,7 +366,7 @@ class SyncIntegrationTest {
             b.syncClientApi.notifyExit(urlFor(a))
 
             // Give the coroutine scope time to execute markExit
-            kotlinx.coroutines.delay(200)
+            kotlinx.coroutines.delay(200.milliseconds)
 
             // markExit should have been called on B's handler in A
             coVerify { mockHandler.markExit() }

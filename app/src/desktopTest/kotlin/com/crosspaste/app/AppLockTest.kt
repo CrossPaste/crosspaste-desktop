@@ -15,6 +15,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class AppLockTest : KoinTest {
 
@@ -52,7 +53,7 @@ class AppLockTest : KoinTest {
                     assertTrue(appLockState.firstLaunch, "First instance should be considered as the first launch")
                 }
 
-            delay(100)
+            delay(100.milliseconds)
 
             val job2 =
                 launch {

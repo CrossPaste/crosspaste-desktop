@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class PasteSingleProcessImplTest {
 
@@ -210,17 +211,17 @@ class PasteSingleProcessImplTest {
                     }
                 }
 
-            kotlinx.coroutines.delay(50) // Let collection start
+            kotlinx.coroutines.delay(50.milliseconds) // Let collection start
 
             // Update progress
             process.success(0)
-            kotlinx.coroutines.delay(10)
+            kotlinx.coroutines.delay(10.milliseconds)
 
             process.success(1)
-            kotlinx.coroutines.delay(10)
+            kotlinx.coroutines.delay(10.milliseconds)
 
             process.success(2)
-            kotlinx.coroutines.delay(10)
+            kotlinx.coroutines.delay(10.milliseconds)
 
             collectJob.cancel()
 

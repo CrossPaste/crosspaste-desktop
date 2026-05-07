@@ -22,6 +22,7 @@ import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
+import kotlin.time.Duration.Companion.milliseconds
 
 class LinkedIn(
     private val notificationManager: NotificationManager,
@@ -69,7 +70,7 @@ class LinkedIn(
             title = { it.getText("copy_successful") },
             messageType = MessageType.Success,
         )
-        delay(2000)
+        delay(2000.milliseconds)
         uiSupport.openUrlInBrowser(url)
     }
 }

@@ -54,6 +54,7 @@ import com.crosspaste.utils.Quadruple
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun StorageStatisticsScope.StorageStatisticsHeader() {
@@ -90,7 +91,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
     LaunchedEffect(Unit) {
         while (true) {
             refresh()
-            delay(5000)
+            delay(5000.milliseconds)
         }
     }
 

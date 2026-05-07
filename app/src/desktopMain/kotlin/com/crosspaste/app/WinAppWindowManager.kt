@@ -16,6 +16,7 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlin.time.Duration.Companion.milliseconds
 
 class WinAppWindowManager(
     appInfo: AppInfo,
@@ -105,7 +106,7 @@ class WinAppWindowManager(
 
     override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
-        delay(500)
+        delay(500.milliseconds)
         WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             mainHWND,
@@ -120,7 +121,7 @@ class WinAppWindowManager(
 
     override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
         // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
-        delay(500)
+        delay(500.milliseconds)
         WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             searchHWND,
@@ -128,7 +129,7 @@ class WinAppWindowManager(
     }
 
     override suspend fun focusBubbleWindow() {
-        delay(500)
+        delay(500.milliseconds)
         WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             bubbleHWND,
@@ -142,7 +143,7 @@ class WinAppWindowManager(
         logger.info { "unActive search window" }
         bringToBack(preparePaste(0), searchHWND)
         for (i in 1 until size) {
-            delay(1000)
+            delay(1000.milliseconds)
             if (preparePaste(i)) {
                 toPaste()
             }

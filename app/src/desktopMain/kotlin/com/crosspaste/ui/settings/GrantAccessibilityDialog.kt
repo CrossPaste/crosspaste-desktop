@@ -39,6 +39,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun GrantAccessibilityDialog(cancelAction: () -> Unit) {
@@ -58,7 +59,7 @@ fun GrantAccessibilityDialog(cancelAction: () -> Unit) {
                 restart = true
                 break
             } else {
-                delay(2000)
+                delay(2000.milliseconds)
             }
         }
     }

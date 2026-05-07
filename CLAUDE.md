@@ -86,6 +86,7 @@ SQLDelight manages database schema in `.sq` files:
 - **Utility usage**: Always check `com.crosspaste.utils` and prefer existing utility classes (e.g., FileUtils, DateUtils, StringUtils) instead of implementing new ones.
 - **UI sizing**: When adding size/dimension constants in UI code, prefer using values defined in `com.crosspaste.ui.theme.AppUISize` instead of inline literal `dp`/`sp` values.
 - **Thread-safe collections**: In `commonMain` code, prefer thread-safe Map/Set from `io.ktor.util.collections` (e.g., `ConcurrentMap`, `ConcurrentSet`) over platform-specific concurrent collections.
+- **Coroutine `delay`**: Always pass a `Duration` to `kotlinx.coroutines.delay`, never a raw number. Write `delay(280L.milliseconds)` / `delay(2.seconds)`, not `delay(280L)` or `delay(2000)`. Add `import kotlin.time.Duration.Companion.milliseconds` (or `.seconds`) as needed. This applies to both production code and tests.
 
 ## Key Technical Details
 

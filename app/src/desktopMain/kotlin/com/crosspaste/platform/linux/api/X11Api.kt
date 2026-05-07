@@ -12,6 +12,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import java.nio.file.Path
 import javax.imageio.ImageIO
+import kotlin.time.Duration.Companion.milliseconds
 
 interface X11Api : X11 {
 
@@ -104,7 +105,7 @@ interface X11Api : X11 {
                 for (keyCode in keyCodes) {
                     xTest.XTestFakeKeyEvent(display, keyCode, true, NativeLong(0))
                 }
-                delay(100)
+                delay(100.milliseconds)
 
                 for (keyCode in keyCodes.reversed()) {
                     xTest.XTestFakeKeyEvent(display, keyCode, false, NativeLong(0))

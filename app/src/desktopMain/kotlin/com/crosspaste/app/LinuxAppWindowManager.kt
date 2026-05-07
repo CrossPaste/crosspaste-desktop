@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class LinuxAppWindowManager(
     private val appInfo: AppInfo,
@@ -154,7 +155,7 @@ class LinuxAppWindowManager(
         logger.info { "unActive search window" }
         bringToBack(preparePaste(0))
         for (i in 1 until size) {
-            delay(1000)
+            delay(1000.milliseconds)
             if (preparePaste(i)) {
                 toPaste()
             }

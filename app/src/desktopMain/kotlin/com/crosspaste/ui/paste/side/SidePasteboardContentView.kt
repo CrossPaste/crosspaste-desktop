@@ -79,6 +79,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.awt.event.KeyEvent.VK_1
 import java.awt.event.KeyEvent.VK_9
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -209,7 +210,7 @@ fun SidePasteboardContentView() {
                 scrollJob?.cancel()
                 scrollJob =
                     coroutineScope.launch {
-                        delay(1000)
+                        delay(1000.milliseconds)
                         showScrollbar = false
                     }
             }

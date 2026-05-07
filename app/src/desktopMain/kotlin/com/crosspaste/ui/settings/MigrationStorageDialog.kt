@@ -45,6 +45,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MigrationStorageDialog(
@@ -143,7 +144,7 @@ fun MigrationStorageDialog(
                     coroutineScope.launch {
                         while (progress < 0.99f && isMigration) {
                             progress += 0.01f
-                            delay(100)
+                            delay(100.milliseconds)
                         }
                     }
                 }
@@ -153,7 +154,7 @@ fun MigrationStorageDialog(
                         desktopMigration.migration(path)
                         coroutineScope.launch {
                             progress = 1f
-                            delay(500)
+                            delay(500.milliseconds)
                             isMigration = false
                         }
                     }.onFailure {

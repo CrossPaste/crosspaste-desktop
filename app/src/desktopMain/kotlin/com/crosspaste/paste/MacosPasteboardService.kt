@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
+import kotlin.time.Duration.Companion.milliseconds
 
 class MacosPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -125,7 +126,7 @@ class MacosPasteboardService(
                 }.onFailure { e ->
                     logger.error(e) { "Failed to consume transferable" }
                 }
-                delay(280L)
+                delay(280L.milliseconds)
             }
         }
     }
