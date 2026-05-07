@@ -1,7 +1,7 @@
 package com.crosspaste.utils
 
-import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH
-import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.ZH_HANT
+import com.crosspaste.i18n.SupportedLanguages.ZH
+import com.crosspaste.i18n.SupportedLanguages.ZH_HANT
 import java.util.Locale
 
 object DesktopLocaleUtils : LocaleUtils {

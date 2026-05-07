@@ -6,7 +6,8 @@ import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.task.SqlTaskDao
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
-import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
+import com.crosspaste.i18n.SupportedLanguages.EN
+import com.crosspaste.i18n.SupportedLanguages.LANGUAGE_LIST
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DesktopLocaleUtils
@@ -43,7 +44,7 @@ class GlobalCopywriterTest {
 
     @Test
     fun testI18nKeys() {
-        val languageList = DesktopGlobalCopywriter.LANGUAGE_LIST
+        val languageList = LANGUAGE_LIST
         val copywriterMap: Map<String, Copywriter> =
             languageList.associateWith { language ->
                 DesktopCopywriter(language)

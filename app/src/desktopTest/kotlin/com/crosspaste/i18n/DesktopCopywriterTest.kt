@@ -1,7 +1,7 @@
 package com.crosspaste.i18n
 
-import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
-import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.LANGUAGE_LIST
+import com.crosspaste.i18n.SupportedLanguages.EN
+import com.crosspaste.i18n.SupportedLanguages.LANGUAGE_LIST
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals

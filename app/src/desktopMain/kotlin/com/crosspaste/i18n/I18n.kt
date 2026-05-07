@@ -8,7 +8,8 @@ import com.crosspaste.db.task.SwitchLanguageInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
-import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EN
+import com.crosspaste.i18n.SupportedLanguages.EN
+import com.crosspaste.i18n.SupportedLanguages.LANGUAGE_LIST
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DateTimeFormatOptions
 import com.crosspaste.utils.GlobalCoroutineScope.cpuCoroutineDispatcher
@@ -20,7 +21,6 @@ import java.io.FileNotFoundException
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.Properties
-import java.util.concurrent.ConcurrentHashMap
 
 class DesktopGlobalCopywriter(
     private val configManager: CommonConfigManager,
@@ -30,34 +30,12 @@ class DesktopGlobalCopywriter(
 
     companion object {
 
-        const val DE = "de"
-
-        const val EN = "en"
-
-        const val ES = "es"
-
-        const val FA = "fa"
-
-        const val FR = "fr"
-
-        const val KO = "ko"
-
-        const val JA = "ja"
-
-        const val PT = "pt"
-
-        const val ZH = "zh"
-
-        const val ZH_HANT = "zh_hant"
-
-        val LANGUAGE_LIST = listOf(DE, EN, ES, FA, FR, KO, JA, PT, ZH, ZH_HANT)
-
-        val LANGUAGE_MAP = ConcurrentHashMap<String, Copywriter>()
-
         const val EMPTY_STRING = ""
     }
 
     private val logger = KotlinLogging.logger {}
+
+    private val cache = LanguageCache { DesktopCopywriter(it) }
 
     private var language: String =
         run {
@@ -73,18 +51,9 @@ class DesktopGlobalCopywriter(
     // mutableStateOf is intentionally used here to trigger Compose recomposition when the
     // language changes. Writes from non-Compose threads (e.g., switchLanguage()) are safe
     // because Compose's global snapshot system handles cross-thread state mutations.
-    private var copywriter: Copywriter by mutableStateOf(
-        LANGUAGE_MAP
-            .computeIfAbsent(language) {
-                DesktopCopywriter(language)
-            },
-    )
+    private var copywriter: Copywriter by mutableStateOf(cache.getOrCreate(language))
 
-    private val enCopywriter by lazy {
-        LANGUAGE_MAP.computeIfAbsent(EN) {
-            DesktopCopywriter(EN)
-        }
-    }
+    private val enCopywriter by lazy { cache.getOrCreate(EN) }
 
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
@@ -92,7 +61,7 @@ class DesktopGlobalCopywriter(
 
     override fun switchLanguage(language: String) {
         logger.info { "Switching language $language" }
-        copywriter = LANGUAGE_MAP.computeIfAbsent(language) { DesktopCopywriter(language) }
+        copywriter = cache.getOrCreate(language)
         configManager.updateConfig("language", language)
         cpuCoroutineDispatcher.launch {
             taskExecutor.submitTask(
@@ -102,13 +71,10 @@ class DesktopGlobalCopywriter(
     }
 
     override fun getAllLanguages(): List<Language> =
-        LANGUAGE_LIST
-            .map { it ->
-                val copywriter = LANGUAGE_MAP.computeIfAbsent(it) { DesktopCopywriter(it) }
-                val abridge = copywriter.getAbridge()
-                val name = copywriter.getText("current_language")
-                Language(abridge, name)
-            }
+        LANGUAGE_LIST.map {
+            val cw = cache.getOrCreate(it)
+            Language(cw.getAbridge(), cw.getText("current_language"))
+        }
 
     override fun getText(
         id: String,
