@@ -31,8 +31,6 @@ class DesktopGlobalCopywriter(
 
     private val logger = KotlinLogging.logger {}
 
-    private val enCopywriter by lazy { copywriterFor(EN) }
-
     private val taskExecutor by lazy { lazyTaskExecutor.value }
 
     override fun onLanguageSwitched(language: String) {

@@ -24,6 +24,8 @@ abstract class AbstractGlobalCopywriter(
 
     private val cache = LanguageCache(factory)
 
+    protected val enCopywriter by lazy { cache.getOrCreate(EN) }
+
     init {
         val initial = configManager.getCurrentConfig().language
         if (!LANGUAGE_LIST.contains(initial)) {
@@ -37,8 +39,6 @@ abstract class AbstractGlobalCopywriter(
     protected var copywriter: Copywriter by mutableStateOf(
         cache.getOrCreate(configManager.getCurrentConfig().language),
     )
-
-    protected fun copywriterFor(language: String): Copywriter = cache.getOrCreate(language)
 
     override fun language(): String = copywriter.language()
 
