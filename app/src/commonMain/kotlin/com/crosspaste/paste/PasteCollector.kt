@@ -18,7 +18,7 @@ class PasteCollector(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
     private val pasteReleaseService: PasteReleaseService,
-    private val dragAndDrop: Boolean = false,
+    private val sourceContext: PasteSourceContext,
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -72,10 +72,7 @@ class PasteCollector(
         existError = true
     }
 
-    suspend fun createPrePasteData(
-        source: String?,
-        remote: Boolean,
-    ): Long? =
+    suspend fun createPrePasteData(): Long? =
         logSuspendExecutionTime(logger, "createPrePasteData") {
             val collector = preCollectors.filter { it.isNotEmpty() }
             if (collector.isEmpty()) {
@@ -90,21 +87,18 @@ class PasteCollector(
                         appInstanceId = appInfo.appInstanceId,
                         pasteCollection = pasteCollection,
                         pasteType = PasteType.INVALID_TYPE.type,
-                        source = source,
+                        source = sourceContext.source,
                         size = 0L,
                         hash = "",
                         pasteState = PasteState.LOADING,
-                        remote = remote,
+                        remote = sourceContext.remote,
                     )
 
                 pasteDao.createPasteData(pasteData)
             }
         }
 
-    suspend fun completeCollect(
-        id: Long,
-        targetAppInstanceIds: Set<String>? = null,
-    ) {
+    suspend fun completeCollect(id: Long) {
         logSuspendExecutionTime(logger, "completeCollect") {
             val activeIndices = preCollectors.indices.filter { preCollectors[it].isNotEmpty() }
             if (activeIndices.isEmpty() || (existError && activeIndices.all { updateErrors[it] != null })) {
@@ -112,7 +106,7 @@ class PasteCollector(
             } else {
                 runCatching {
                     var pasteItems = preCollectors.flatMap { it.values }
-                    if (dragAndDrop) {
+                    if (sourceContext.dragAndDrop) {
                         pasteItems =
                             pasteItems.map { item ->
                                 if (item is PasteFiles) {
@@ -124,7 +118,7 @@ class PasteCollector(
                                 }
                             }
                     }
-                    pasteReleaseService.releaseLocalPasteData(id, pasteItems, targetAppInstanceIds)
+                    pasteReleaseService.releaseLocalPasteData(id, pasteItems, sourceContext.targetAppInstanceIds)
                 }.onFailure { e ->
                     logger.error(e) { "Failed to complete paste $id" }
                     markDeletePasteData(id)

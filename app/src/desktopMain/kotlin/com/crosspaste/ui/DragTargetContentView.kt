@@ -47,6 +47,7 @@ import com.composables.icons.materialsymbols.rounded.Content_paste
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopReadTransferable
+import com.crosspaste.paste.PasteSourceContext
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -89,7 +90,14 @@ fun DragTargetContentView() {
                     val source: String? = appWindowManager.getCurrentActiveAppName()
                     val pasteTransferable = DesktopReadTransferable(transferable)
                     return runBlocking {
-                        pasteConsumer.consume(pasteTransferable, source, remote = false, dragAndDrop = true)
+                        pasteConsumer.consume(
+                            pasteTransferable,
+                            PasteSourceContext(
+                                source = source,
+                                remote = false,
+                                dragAndDrop = true,
+                            ),
+                        )
                     }.isSuccess
                 }
             }

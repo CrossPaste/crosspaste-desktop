@@ -153,7 +153,10 @@ class LinuxPasteboardService(
                 ownerTransferable = it
                 scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
                     val pasteTransferable = DesktopReadTransferable(it)
-                    pasteConsumer.consume(pasteTransferable, source, remote = false)
+                    pasteConsumer.consume(
+                        pasteTransferable,
+                        PasteSourceContext(source = source, remote = false),
+                    )
                 }
             }
         }

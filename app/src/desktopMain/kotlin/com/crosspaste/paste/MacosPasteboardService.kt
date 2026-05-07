@@ -115,7 +115,13 @@ class MacosPasteboardService(
                                             ownerTransferable = it
                                             launch(CoroutineName("MacPasteboardServiceConsumer")) {
                                                 val pasteTransferable = DesktopReadTransferable(it)
-                                                pasteConsumer.consume(pasteTransferable, source, remote.value != 0)
+                                                pasteConsumer.consume(
+                                                    pasteTransferable,
+                                                    PasteSourceContext(
+                                                        source = source,
+                                                        remote = remote.value != 0,
+                                                    ),
+                                                )
                                             }
                                         }
                                     }

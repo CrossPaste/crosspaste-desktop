@@ -11,10 +11,7 @@ interface TransferableConsumer {
 
     suspend fun consume(
         pasteTransferable: PasteTransferable,
-        source: String?,
-        remote: Boolean,
-        dragAndDrop: Boolean = false,
-        targetAppInstanceIds: Set<String>? = null,
+        sourceContext: PasteSourceContext,
     ): Result<Unit>
 
     fun getPlugin(identity: String): PasteTypePlugin?

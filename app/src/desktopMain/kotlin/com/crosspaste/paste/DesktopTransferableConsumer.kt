@@ -36,10 +36,7 @@ class DesktopTransferableConsumer(
 
     override suspend fun consume(
         pasteTransferable: PasteTransferable,
-        source: String?,
-        remote: Boolean,
-        dragAndDrop: Boolean,
-        targetAppInstanceIds: Set<String>?,
+        sourceContext: PasteSourceContext,
     ): Result<Unit> {
         return runCatching {
             logSuspendExecutionTime(logger, "consume") {
@@ -56,13 +53,13 @@ class DesktopTransferableConsumer(
                         appInfo,
                         pasteDao,
                         pasteReleaseService,
-                        dragAndDrop,
+                        sourceContext,
                     )
 
                 preCollect(dataFlavorMap, pasteTransferable, pasteCollector)
-                pasteCollector.createPrePasteData(source, remote = remote)?.also { id ->
+                pasteCollector.createPrePasteData()?.also { id ->
                     updatePasteData(id, dataFlavorMap, pasteTransferable, pasteCollector)
-                    pasteCollector.completeCollect(id, targetAppInstanceIds)
+                    pasteCollector.completeCollect(id)
                 }
             }
         }.onFailure { e ->
