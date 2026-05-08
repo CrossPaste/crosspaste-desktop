@@ -91,10 +91,9 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     val isMac = remember { platform.isMacos() }
 
     val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
-    val htmlUtils = remember { getHtmlUtils() }
     val originalHtml =
         remember(pasteData.id, pasteData.hash) {
-            htmlUtils.sanitizeForRichText(htmlPasteItem.html)
+            getHtmlUtils().sanitizeForRichText(htmlPasteItem.html)
         }
     val richTextState = rememberRichTextState()
 
