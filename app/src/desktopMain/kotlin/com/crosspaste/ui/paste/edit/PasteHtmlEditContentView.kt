@@ -65,6 +65,7 @@ import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.utils.ColorAccessibility
+import com.crosspaste.utils.getHtmlUtils
 import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
@@ -90,7 +91,11 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     val isMac = remember { platform.isMacos() }
 
     val htmlPasteItem = getPasteItem(HtmlPasteItem::class)
-    val originalHtml = remember(pasteData.id, pasteData.hash) { htmlPasteItem.html }
+    val htmlUtils = remember { getHtmlUtils() }
+    val originalHtml =
+        remember(pasteData.id, pasteData.hash) {
+            htmlUtils.sanitizeForRichText(htmlPasteItem.html)
+        }
     val richTextState = rememberRichTextState()
 
     val currentThemeState = LocalThemeState.current

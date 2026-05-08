@@ -46,6 +46,7 @@ import org.koin.compose.koinInject
 @Composable
 fun PasteDataScope.SidePasteItemView(
     selected: Boolean,
+    isScrolling: Boolean,
     onPress: () -> Unit,
     onDoubleTap: () -> Unit,
     pasteContent: @Composable PasteData.() -> Unit,
@@ -120,10 +121,26 @@ fun PasteDataScope.SidePasteItemView(
                 Modifier
                     .fillMaxSize()
                     .drawWithContent {
-                        graphicsLayer.record {
-                            this@drawWithContent.drawContent()
+                        // Always render the visible content directly. The graphics
+                        // layer is only used to provide a drag preview, so we keep
+                        // recording off the per-frame draw path of the visible UI.
+                        drawContent()
+                        // Skip layer recording while the LazyRow is actively
+                        // scrolling. During fast recycling a freshly composed text
+                        // child can still have a null MultiParagraphLayoutCache,
+                        // and re-driving the child draw via record { drawContent() }
+                        // would crash. The previously recorded layer remains
+                        // available for any drag started mid-scroll.
+                        if (!isScrolling) {
+                            try {
+                                graphicsLayer.record {
+                                    this@drawWithContent.drawContent()
+                                }
+                            } catch (_: IllegalStateException) {
+                                // Residual race on the first stable frame: keep
+                                // the prior recording and try again next frame.
+                            }
                         }
-                        drawLayer(graphicsLayer)
                     },
         ) {
             Card(

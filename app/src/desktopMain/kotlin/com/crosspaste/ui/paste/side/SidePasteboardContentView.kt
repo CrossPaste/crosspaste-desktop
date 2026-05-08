@@ -320,6 +320,7 @@ fun SidePasteboardContentView() {
                         Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
                         scope.SidePasteItemView(
                             selected = currentIndex in selectedIndexes,
+                            isScrolling = searchListState.isScrollInProgress,
                             onPress = {
                                 pasteSelectionViewModel.clickSelectedIndex(currentIndex, isShiftPressed)
                             },
