@@ -71,6 +71,48 @@ object HtmlUtils {
             Ksoup.clean(str, Safelist.none(), "", outputSettings)
         }.getOrNull()
 
+    /**
+     * Strip declarations that crash richeditor + Compose Multiplatform when
+     * rendered through `RichTextState.setHtml`. richeditor's CSS parser maps
+     * `em`, `rem`, and `%` to `TextUnit.Em`, but Compose's
+     * `ParagraphBuilder.textStyleToParagraphStyle` calls `Density.toPx` on
+     * `TextIndent.firstLine`/`restLine`, which only accepts `Sp` and throws
+     * "Only Sp can convert to Px" otherwise. Stripping `text-indent` from
+     * inline styles is acceptable for our previews/editor — the lost
+     * indentation is purely cosmetic and not worth a full CSS rewrite.
+     */
+    fun sanitizeForRichText(html: String): String {
+        if (!html.contains("text-indent", ignoreCase = true)) return html
+        return runCatching {
+            val doc = Ksoup.parse(html)
+            doc.select("[style]").forEach { el ->
+                val original = el.attr("style")
+                val sanitized = stripTextIndent(original)
+                if (sanitized != original) {
+                    if (sanitized.isEmpty()) {
+                        el.removeAttr("style")
+                    } else {
+                        el.attr("style", sanitized)
+                    }
+                }
+            }
+            doc.outerHtml()
+        }.getOrElse { html }
+    }
+
+    private fun stripTextIndent(style: String): String =
+        style
+            .split(';')
+            .filter { decl ->
+                val colonIndex = decl.indexOf(':')
+                if (colonIndex < 0) return@filter decl.isNotBlank()
+                // Match the exact property name to avoid stripping vendor
+                // prefixes such as `mso-text-indent` from Word-pasted HTML.
+                val property = decl.substring(0, colonIndex).trim().lowercase()
+                property != "text-indent"
+            }.joinToString("; ") { it.trim() }
+            .trim()
+
     fun ensureHtmlCharsetUtf8(html: String): String =
         runCatching {
             val doc = Ksoup.parse(html)
@@ -101,17 +143,18 @@ object HtmlUtils {
         maxLines: Int = PREVIEW_MAX_LINES,
         charsPerLine: Int = PREVIEW_CHARS_PER_LINE,
     ): String {
-        if (html.length < maxLines * charsPerLine) return html
+        val sanitized = sanitizeForRichText(html)
+        if (sanitized.length < maxLines * charsPerLine) return sanitized
 
         return runCatching {
-            val doc = Ksoup.parse(html)
+            val doc = Ksoup.parse(sanitized)
             val body = doc.body()
 
             body.select("script, style, noscript, template").remove()
 
             truncateElement(body, maxLines, charsPerLine)
             doc.outerHtml()
-        }.getOrElse { html }
+        }.getOrElse { sanitized }
     }
 
     /**
