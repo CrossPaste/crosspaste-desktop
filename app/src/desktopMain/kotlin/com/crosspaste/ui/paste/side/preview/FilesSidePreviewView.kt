@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
@@ -30,6 +31,8 @@ import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.isVideoFile
+import com.crosspaste.utils.safeIsDirectory
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
@@ -48,6 +51,16 @@ fun PasteDataScope.FilesSidePreviewView() {
     }
 
     val isInDownloads = remember(filesPasteItem) { filesPasteItem.isInDownloads() }
+
+    val singleVideoPath =
+        remember(filePaths, fileCount) {
+            if (fileCount == 1L && filePaths.size == 1) {
+                val path = filePaths[0]
+                if (path.isVideoFile && !path.safeIsDirectory) path else null
+            } else {
+                null
+            }
+        }
 
     val fileDisplayInfo by produceState<FileDisplayInfo?>(
         initialValue = null,
@@ -89,10 +102,21 @@ fun PasteDataScope.FilesSidePreviewView() {
                     .padding(bottom = huge),
             contentAlignment = Alignment.Center,
         ) {
-            MultiFileIcon(
-                fileList = filesPasteItem.getFilePaths(userDataPathProvider),
-                size = AppUISize.massive,
-            )
+            if (singleVideoPath != null) {
+                val pasteFileCoordinate =
+                    remember(pasteData.id, singleVideoPath) {
+                        PasteFileCoordinate(pasteData.getPasteCoordinate(), singleVideoPath)
+                    }
+                VideoFilePreviewContent(
+                    videoPath = singleVideoPath,
+                    pasteFileCoordinate = pasteFileCoordinate,
+                )
+            } else {
+                MultiFileIcon(
+                    fileList = filesPasteItem.getFilePaths(userDataPathProvider),
+                    size = AppUISize.massive,
+                )
+            }
 
             if (fileCount > 1L) {
                 val label = remember(fileCount) { if (fileCount > 99) "99+" else fileCount.toString() }

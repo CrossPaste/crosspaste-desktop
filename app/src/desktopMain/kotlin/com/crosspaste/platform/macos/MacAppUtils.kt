@@ -76,4 +76,9 @@ object MacAppUtils {
         thumbnailImagePath: String,
         metadataPath: String,
     ): Boolean = INSTANCE.createThumbnail(originalImagePath, thumbnailImagePath, metadataPath)
+
+    fun createVideoThumbnail(
+        videoPath: String,
+        thumbnailPath: String,
+    ): Boolean = INSTANCE.createVideoThumbnail(videoPath, thumbnailPath)
 }

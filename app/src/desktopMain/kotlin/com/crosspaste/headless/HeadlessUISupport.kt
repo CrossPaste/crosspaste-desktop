@@ -37,8 +37,8 @@ class HeadlessUISupport(
         logger.info { "Headless mode: cannot open color picker" }
     }
 
-    override fun openImage(imagePath: Path) {
-        logger.info { "Headless mode: cannot open image: $imagePath" }
+    override fun openFile(filePath: Path) {
+        logger.info { "Headless mode: cannot open file: $filePath" }
     }
 
     override fun openText(pasteData: PasteData) {

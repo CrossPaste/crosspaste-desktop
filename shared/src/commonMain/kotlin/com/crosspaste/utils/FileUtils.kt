@@ -27,20 +27,6 @@ const val MB = "MB"
 const val GB = "GB"
 const val TB = "TB"
 
-private val canPreviewImageMap =
-    setOf(
-        "png",
-        "jpg",
-        "jpeg",
-        "gif",
-        "bmp",
-        "webp",
-        "heic",
-        "heif",
-        "tiff",
-        "svg",
-    )
-
 val UNITS = arrayOf(B, KB, MB, GB, TB)
 
 interface FileUtils {
@@ -84,7 +70,7 @@ interface FileUtils {
             else -> size
         }
 
-    fun canPreviewImage(ext: String): Boolean = canPreviewImageMap.contains(ext.lowercase())
+    fun canPreviewImage(ext: String): Boolean = ext.lowercase() in imageExtensions
 
     @OptIn(ExperimentalUuidApi::class)
     fun createRandomFileName(ext: String? = null): String {

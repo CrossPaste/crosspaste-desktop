@@ -101,6 +101,11 @@ interface MacosApi : Library {
         metadataPath: String,
     ): Boolean
 
+    fun createVideoThumbnail(
+        videoPath: String,
+        thumbnailPath: String,
+    ): Boolean
+
     fun trayInit(
         iconData: ByteArray,
         iconDataLength: Int,

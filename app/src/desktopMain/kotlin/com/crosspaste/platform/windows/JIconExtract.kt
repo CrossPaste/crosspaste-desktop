@@ -27,6 +27,8 @@ data class IconSize(
 
 object JIconExtract {
 
+    private const val SIIGBF_THUMBNAIL_ONLY = 0x08
+
     private val ICON_SIZES =
         listOf(
             IconSize(512, 512),
@@ -73,6 +75,86 @@ object JIconExtract {
         }
 
         return null
+    }
+
+    /**
+     * Get a real shell-generated thumbnail for the given file (e.g. a video frame).
+     * Returns null if the system has no real thumbnail to provide — the caller
+     * should fall back to a generic icon in that case.
+     */
+    fun getThumbnailForFile(
+        filePath: String,
+        size: IconSize,
+    ): BufferedImage? {
+        var hBitmap: HBITMAP? = null
+        var hdc: HDC? = null
+
+        return try {
+            hBitmap = getHBITMAPForFile(size.width, size.height, filePath, SIIGBF_THUMBNAIL_ONLY) ?: return null
+
+            val bitmap = BITMAP()
+            val result = GDI32.INSTANCE.GetObject(hBitmap, bitmap.size(), bitmap.pointer)
+
+            if (result <= 0) {
+                return null
+            }
+
+            bitmap.read()
+
+            val w = bitmap.bmWidth.toInt()
+            val h = bitmap.bmHeight.toInt()
+
+            hdc = User32.INSTANCE.GetDC(null)
+
+            val bitmapInfo = BITMAPINFO()
+            bitmapInfo.bmiHeader.biSize = bitmapInfo.bmiHeader.size()
+
+            if (0 ==
+                GDI32.INSTANCE.GetDIBits(
+                    hdc,
+                    hBitmap,
+                    0,
+                    0,
+                    Pointer.NULL,
+                    bitmapInfo,
+                    WinGDI.DIB_RGB_COLORS,
+                )
+            ) {
+                return null
+            }
+
+            bitmapInfo.read()
+
+            val lpPixels = Memory(bitmapInfo.bmiHeader.biSizeImage.toLong())
+
+            bitmapInfo.bmiHeader.biCompression = WinGDI.BI_RGB
+            bitmapInfo.bmiHeader.biHeight = -h
+
+            if (0 ==
+                GDI32.INSTANCE.GetDIBits(
+                    hdc,
+                    hBitmap,
+                    0,
+                    bitmapInfo.bmiHeader.biHeight,
+                    lpPixels,
+                    bitmapInfo,
+                    WinGDI.DIB_RGB_COLORS,
+                )
+            ) {
+                return null
+            }
+
+            val colorArray: IntArray = lpPixels.getIntArray(0, w * h)
+
+            BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB).apply {
+                setRGB(0, 0, w, h, colorArray, 0, w)
+            }
+        } catch (_: Exception) {
+            null
+        } finally {
+            hdc?.let { User32.INSTANCE.ReleaseDC(null, it) }
+            hBitmap?.let { GDI32.INSTANCE.DeleteObject(it) }
+        }
     }
 
     private fun tryGetIconForSize(
@@ -165,6 +247,7 @@ object JIconExtract {
         width: Int,
         height: Int,
         filePath: String,
+        flags: Int = 0,
     ): HBITMAP? {
         val h1 = Ole32.INSTANCE.CoInitialize(null)
         if (!COMUtils.SUCCEEDED(h1)) return null
@@ -185,7 +268,7 @@ object JIconExtract {
 
                 val hBitmapPointer = PointerByReference()
 
-                val h3 = imageFactory.GetImage(SIZEByValue(width, height), 0, hBitmapPointer)
+                val h3 = imageFactory.GetImage(SIZEByValue(width, height), flags, hBitmapPointer)
 
                 var bitmap: HBITMAP? = null
                 if (COMUtils.SUCCEEDED(h3)) {

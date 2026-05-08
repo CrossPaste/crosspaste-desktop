@@ -47,3 +47,43 @@ val Path.noOptionParent: Path
     get() {
         return this.parent ?: this
     }
+
+val imageExtensions =
+    setOf(
+        "png",
+        "jpg",
+        "jpeg",
+        "gif",
+        "bmp",
+        "webp",
+        "heic",
+        "heif",
+        "tiff",
+        "svg",
+    )
+
+val videoExtensions =
+    setOf(
+        "mp4",
+        "mov",
+        "m4v",
+        "mkv",
+        "webm",
+        "avi",
+        "wmv",
+        "flv",
+        "ts",
+        "mts",
+        "m2ts",
+        "3gp",
+        "mpg",
+        "mpeg",
+        "vob",
+        "ogv",
+    )
+
+val Path.isImageFile: Boolean
+    get() = extension.lowercase() in imageExtensions
+
+val Path.isVideoFile: Boolean
+    get() = extension.lowercase() in videoExtensions
