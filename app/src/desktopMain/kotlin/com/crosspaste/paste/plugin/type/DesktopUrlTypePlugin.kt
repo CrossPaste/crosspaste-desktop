@@ -49,16 +49,20 @@ class DesktopUrlTypePlugin(
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        if (transferData is String) {
-            val update: (PasteItem) -> PasteItem = { pasteItem ->
-                createUrlPasteItem(
-                    identifiers = pasteItem.identifiers,
-                    url = transferData,
-                    extraInfo = pasteItem.extraInfo,
-                )
+        val urlString =
+            when (transferData) {
+                is String -> transferData
+                is URL -> transferData.toString()
+                else -> return
             }
-            pasteCollector.updateCollectItem(itemIndex, this::class, update)
+        val update: (PasteItem) -> PasteItem = { pasteItem ->
+            createUrlPasteItem(
+                identifiers = pasteItem.identifiers,
+                url = urlString,
+                extraInfo = pasteItem.extraInfo,
+            )
         }
+        pasteCollector.updateCollectItem(itemIndex, this::class, update)
     }
 
     override fun collectError(
