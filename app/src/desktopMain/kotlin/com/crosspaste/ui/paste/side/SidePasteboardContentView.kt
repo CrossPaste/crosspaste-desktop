@@ -190,9 +190,11 @@ fun SidePasteboardContentView() {
     }
 
     LaunchedEffect(searchListState) {
+        // Key on indices only; LazyListItemInfo.offset changes per frame and defeats distinctUntilChanged.
         snapshotFlow {
-            searchListState.layoutInfo.visibleItemsInfo
-        }.distinctUntilChanged().collect { visibleItems ->
+            searchListState.layoutInfo.visibleItemsInfo.map { it.index }
+        }.distinctUntilChanged().collect {
+            val visibleItems = searchListState.layoutInfo.visibleItemsInfo
             if (visibleItems.isNotEmpty()) {
                 // Only consider data items, exclude the loading indicator item
                 val lastDataItem = visibleItems.lastOrNull { it.index < latestSearchResult.value.size }
@@ -302,6 +304,7 @@ fun SidePasteboardContentView() {
                 itemsIndexed(
                     searchResult,
                     key = { _, item -> item.id },
+                    contentType = { _, item -> item.pasteType },
                 ) { index, pasteData ->
 
                     val currentIndex by rememberUpdatedState(index)
