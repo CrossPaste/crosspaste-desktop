@@ -121,7 +121,10 @@ class PasteReleaseService(
                     // Skip syncing for remote clipboard data (e.g., Apple Universal Clipboard / Handoff).
                     // These items are already from another device, so re-syncing them would cause
                     // unnecessary duplication or sync loops.
-                    if (!pasteData.remote) {
+                    // An empty target set means every paired peer was filtered out (e.g. all-Apple
+                    // peers for an Apple Universal Clipboard event) — skip the task instead of
+                    // creating one that can't sync anywhere.
+                    if (!pasteData.remote && targetAppInstanceIds?.isEmpty() != true) {
                         addSyncTask(id, maxFileSize, pasteData.appInstanceId, targetAppInstanceIds)
                     }
 

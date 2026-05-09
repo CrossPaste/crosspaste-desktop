@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.DesktopPasteMenuService
@@ -60,13 +61,23 @@ fun PasteDataScope.SidePasteItemView(
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val graphicsLayer = rememberGraphicsLayer()
+    val placeholderColor = AppUIColors.pasteBackground
 
     Row(
         modifier =
             Modifier
                 .dragAndDropSource(
                     drawDragDecoration = {
-                        drawLayer(graphicsLayer)
+                        // The graphics layer is empty until the first non-scrolling
+                        // frame records it. If a drag starts before that, fall back
+                        // to a blank tile sized to the source so the preview is
+                        // still visible — the drag itself shouldn't be blocked by
+                        // rendering state.
+                        if (graphicsLayer.size == IntSize.Zero) {
+                            drawRect(color = placeholderColor)
+                        } else {
+                            drawLayer(graphicsLayer)
+                        }
                     },
                 ) { offset ->
                     DragAndDropTransferData(
