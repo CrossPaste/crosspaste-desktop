@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
@@ -30,7 +31,10 @@ import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.isVideoFile
+import com.crosspaste.utils.safeIsDirectory
 import kotlinx.coroutines.withContext
+import okio.Path
 import org.koin.compose.koinInject
 
 @Composable
@@ -48,6 +52,7 @@ fun PasteDataScope.FilesSidePreviewView() {
     }
 
     val isInDownloads = remember(filesPasteItem) { filesPasteItem.isInDownloads() }
+    val singleVideoPath = rememberSingleVideoPath(filePaths, fileCount)
 
     val fileDisplayInfo by produceState<FileDisplayInfo?>(
         initialValue = null,
@@ -62,48 +67,95 @@ fun PasteDataScope.FilesSidePreviewView() {
 
     SidePasteLayoutView(
         pasteBottomContent = {
-            val subtitle =
-                if (isInDownloads) {
-                    val inDownloadsText = copywriter.getText("in_downloads")
-                    val base = fileDisplayInfo?.subtitle ?: ""
-                    if (base.isNotEmpty()) "$inDownloadsText · $base" else inDownloadsText
-                } else {
-                    fileDisplayInfo?.subtitle ?: ""
-                }
-            FileBottomSolid(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(huge)
-                        .background(AppUIColors.topBackground)
-                        .padding(tiny),
-                title = fileDisplayInfo?.title,
-                subtitle = subtitle,
+            FilesPreviewBottomBar(
+                fileDisplayInfo = fileDisplayInfo,
+                isInDownloads = isInDownloads,
             )
         },
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(bottom = huge),
-            contentAlignment = Alignment.Center,
-        ) {
+        FilesPreviewMainBox(
+            filePaths = filePaths,
+            fileCount = fileCount,
+            singleVideoPath = singleVideoPath,
+        )
+    }
+}
+
+@Composable
+private fun rememberSingleVideoPath(
+    filePaths: List<Path>,
+    fileCount: Long,
+): Path? =
+    remember(filePaths, fileCount) {
+        if (fileCount != 1L || filePaths.size != 1) return@remember null
+        val path = filePaths[0]
+        if (path.isVideoFile && !path.safeIsDirectory) path else null
+    }
+
+@Composable
+private fun FilesPreviewBottomBar(
+    fileDisplayInfo: FileDisplayInfo?,
+    isInDownloads: Boolean,
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    val baseSubtitle = fileDisplayInfo?.subtitle ?: ""
+    val subtitle =
+        if (isInDownloads) {
+            val inDownloadsText = copywriter.getText("in_downloads")
+            if (baseSubtitle.isNotEmpty()) "$inDownloadsText · $baseSubtitle" else inDownloadsText
+        } else {
+            baseSubtitle
+        }
+    FileBottomSolid(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(huge)
+                .background(AppUIColors.topBackground)
+                .padding(tiny),
+        title = fileDisplayInfo?.title,
+        subtitle = subtitle,
+    )
+}
+
+@Composable
+private fun PasteDataScope.FilesPreviewMainBox(
+    filePaths: List<Path>,
+    fileCount: Long,
+    singleVideoPath: Path?,
+) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(bottom = huge),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (singleVideoPath != null) {
+            val pasteFileCoordinate =
+                remember(pasteData.id, singleVideoPath) {
+                    PasteFileCoordinate(pasteData.getPasteCoordinate(), singleVideoPath)
+                }
+            VideoFilePreviewContent(
+                videoPath = singleVideoPath,
+                pasteFileCoordinate = pasteFileCoordinate,
+            )
+        } else {
             MultiFileIcon(
-                fileList = filesPasteItem.getFilePaths(userDataPathProvider),
+                fileList = filePaths,
                 size = AppUISize.massive,
             )
+        }
 
-            if (fileCount > 1L) {
-                val label = remember(fileCount) { if (fileCount > 99) "99+" else fileCount.toString() }
-                Badge(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = medium, end = medium),
-                ) {
-                    Text(label)
-                }
+        if (fileCount > 1L) {
+            val label = remember(fileCount) { if (fileCount > 99) "99+" else fileCount.toString() }
+            Badge(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = medium, end = medium),
+            ) {
+                Text(label)
             }
         }
     }

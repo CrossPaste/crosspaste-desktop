@@ -3,6 +3,7 @@ import ApplicationServices
 import Cocoa
 import CoreGraphics
 import ImageIO
+import QuickLookThumbnailing
 import Security
 
 @_cdecl("getPasteboardChangeCount")
@@ -614,6 +615,46 @@ public func createThumbnail(
     }
 
     return true
+}
+
+@_cdecl("createVideoThumbnail")
+public func createVideoThumbnail(
+    videoPath: UnsafePointer<CChar>,
+    thumbnailPath: UnsafePointer<CChar>
+) -> Bool {
+    let videoPathString = String(cString: videoPath)
+    let thumbnailPathString = String(cString: thumbnailPath)
+
+    let videoUrl = URL(fileURLWithPath: videoPathString)
+    let thumbnailUrl = URL(fileURLWithPath: thumbnailPathString)
+
+    let request = QLThumbnailGenerator.Request(
+        fileAt: videoUrl,
+        size: CGSize(width: 200, height: 200),
+        scale: 1.0,
+        representationTypes: .thumbnail
+    )
+
+    let semaphore = DispatchSemaphore(value: 0)
+    var success = false
+
+    QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { thumbnail, _ in
+        defer { semaphore.signal() }
+        guard let thumbnail = thumbnail, thumbnail.type == .thumbnail else { return }
+        guard let destination = CGImageDestinationCreateWithURL(
+            thumbnailUrl as CFURL,
+            "public.png" as CFString,
+            1,
+            nil
+        ) else { return }
+        CGImageDestinationAddImage(destination, thumbnail.cgImage, nil)
+        success = CGImageDestinationFinalize(destination)
+    }
+
+    if semaphore.wait(timeout: .now() + .seconds(10)) == .timedOut {
+        return false
+    }
+    return success
 }
 
 var statusItem: NSStatusItem?

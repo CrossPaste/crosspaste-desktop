@@ -20,6 +20,7 @@ import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.isVideoFile
 import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -177,13 +178,13 @@ class DesktopUISupport(
             logger.error(e) { "Failed to open file in explorer" }
         }.getOrElse { false }
 
-    override fun openImage(imagePath: Path) {
-        if (fileUtils.existFile(imagePath)) {
+    override fun openFile(filePath: Path) {
+        if (fileUtils.existFile(filePath)) {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(imagePath.toFile())
+                Desktop.getDesktop().open(filePath.toFile())
             } else {
                 notificationManager.sendNotification(
-                    title = { it.getText("failed_to_open_image_pasteboard") },
+                    title = { it.getText("failed_to_open_file") },
                     messageType = MessageType.Error,
                 )
             }
@@ -238,8 +239,8 @@ class DesktopUISupport(
                     val pathList = item.getFilePaths(userDataPathProvider)
                     if (pathList.isNotEmpty()) {
                         val filepath = pathList[index]
-                        if (fileUtils.canPreviewImage(filepath.extension)) {
-                            openImage(filepath)
+                        if (fileUtils.canPreviewImage(filepath.extension) || filepath.isVideoFile) {
+                            openFile(filepath)
                         } else {
                             browseFile(filepath)
                         }
@@ -250,7 +251,7 @@ class DesktopUISupport(
                     val pathList = item.getFilePaths(userDataPathProvider)
                     if (pathList.isNotEmpty()) {
                         if (pathList.size == 1) {
-                            openImage(pathList[0])
+                            openFile(pathList[0])
                         } else {
                             browseFile(pathList[index])
                         }

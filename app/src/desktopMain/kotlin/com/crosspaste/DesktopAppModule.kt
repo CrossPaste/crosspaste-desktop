@@ -37,9 +37,11 @@ import com.crosspaste.config.SimpleConfigFactory
 import com.crosspaste.image.DesktopFileExtLoader
 import com.crosspaste.image.DesktopImageHandler
 import com.crosspaste.image.DesktopThumbnailLoader
+import com.crosspaste.image.DesktopVideoThumbnailLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.ThumbnailLoader
+import com.crosspaste.image.VideoThumbnailLoader
 import com.crosspaste.image.coil.AppSourceFactory
 import com.crosspaste.image.coil.AppSourceKeyer
 import com.crosspaste.image.coil.FaviconFactory
@@ -182,5 +184,6 @@ fun desktopAppModule(
         single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
         single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
         single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider(get())) }
+        single<VideoThumbnailLoader> { DesktopVideoThumbnailLoader(get(), get()) }
         single<FontManager> { DesktopFontManager(get()) }
     }

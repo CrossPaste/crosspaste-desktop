@@ -27,7 +27,7 @@ interface UISupport {
 
     fun openColorPicker(pasteData: PasteData)
 
-    fun openImage(imagePath: Path)
+    fun openFile(filePath: Path)
 
     fun openText(pasteData: PasteData)
 
