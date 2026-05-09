@@ -17,6 +17,7 @@ import com.sun.jna.platform.win32.WinGDI.BITMAP
 import com.sun.jna.platform.win32.WinGDI.BITMAPINFO
 import com.sun.jna.platform.win32.WinNT.HRESULT
 import com.sun.jna.ptr.PointerByReference
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.image.BufferedImage
 import java.io.File
 
@@ -26,6 +27,8 @@ data class IconSize(
 )
 
 object JIconExtract {
+
+    private val logger = KotlinLogging.logger {}
 
     private const val SIIGBF_THUMBNAIL_ONLY = 0x08
 
@@ -86,87 +89,30 @@ object JIconExtract {
         filePath: String,
         size: IconSize,
     ): BufferedImage? {
-        var hBitmap: HBITMAP? = null
-        var hdc: HDC? = null
-
-        return try {
-            hBitmap = getHBITMAPForFile(size.width, size.height, filePath, SIIGBF_THUMBNAIL_ONLY) ?: return null
-
-            val bitmap = BITMAP()
-            val result = GDI32.INSTANCE.GetObject(hBitmap, bitmap.size(), bitmap.pointer)
-
-            if (result <= 0) {
-                return null
-            }
-
-            bitmap.read()
-
-            val w = bitmap.bmWidth.toInt()
-            val h = bitmap.bmHeight.toInt()
-
-            hdc = User32.INSTANCE.GetDC(null)
-
-            val bitmapInfo = BITMAPINFO()
-            bitmapInfo.bmiHeader.biSize = bitmapInfo.bmiHeader.size()
-
-            if (0 ==
-                GDI32.INSTANCE.GetDIBits(
-                    hdc,
-                    hBitmap,
-                    0,
-                    0,
-                    Pointer.NULL,
-                    bitmapInfo,
-                    WinGDI.DIB_RGB_COLORS,
-                )
-            ) {
-                return null
-            }
-
-            bitmapInfo.read()
-
-            val lpPixels = Memory(bitmapInfo.bmiHeader.biSizeImage.toLong())
-
-            bitmapInfo.bmiHeader.biCompression = WinGDI.BI_RGB
-            bitmapInfo.bmiHeader.biHeight = -h
-
-            if (0 ==
-                GDI32.INSTANCE.GetDIBits(
-                    hdc,
-                    hBitmap,
-                    0,
-                    bitmapInfo.bmiHeader.biHeight,
-                    lpPixels,
-                    bitmapInfo,
-                    WinGDI.DIB_RGB_COLORS,
-                )
-            ) {
-                return null
-            }
-
-            val colorArray: IntArray = lpPixels.getIntArray(0, w * h)
-
-            BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB).apply {
-                setRGB(0, 0, w, h, colorArray, 0, w)
-            }
-        } catch (_: Exception) {
-            null
-        } finally {
-            hdc?.let { User32.INSTANCE.ReleaseDC(null, it) }
-            hBitmap?.let { GDI32.INSTANCE.DeleteObject(it) }
-        }
+        val hBitmap = getHBITMAPForFile(size.width, size.height, filePath, SIIGBF_THUMBNAIL_ONLY) ?: return null
+        return hbitmapToBufferedImage(hBitmap, minWidth = 0, minHeight = 0)
     }
 
     private fun tryGetIconForSize(
         filePath: String,
         size: IconSize,
     ): BufferedImage? {
-        var hBitmap: HBITMAP? = null
+        val hBitmap = getHBITMAPForFile(size.width, size.height, filePath) ?: return null
+        // Reject undersized icons so callers can try the next preferred size.
+        return hbitmapToBufferedImage(hBitmap, minWidth = size.width / 2, minHeight = size.height / 2)
+    }
+
+    /**
+     * Convert an already-acquired HBITMAP to a BufferedImage and release the
+     * GDI resources. `minWidth`/`minHeight` of 0 disables the size guard.
+     */
+    private fun hbitmapToBufferedImage(
+        hBitmap: HBITMAP,
+        minWidth: Int,
+        minHeight: Int,
+    ): BufferedImage? {
         var hdc: HDC? = null
-
         return try {
-            hBitmap = getHBITMAPForFile(size.width, size.height, filePath) ?: return null
-
             val bitmap = BITMAP()
             val result = GDI32.INSTANCE.GetObject(hBitmap, bitmap.size(), bitmap.pointer)
 
@@ -179,7 +125,7 @@ object JIconExtract {
             val w = bitmap.bmWidth.toInt()
             val h = bitmap.bmHeight.toInt()
 
-            if (w < size.width / 2 || h < size.height / 2) {
+            if (w < minWidth || h < minHeight) {
                 return null
             }
 
@@ -228,11 +174,14 @@ object JIconExtract {
             BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB).apply {
                 setRGB(0, 0, w, h, colorArray, 0, w)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // Native GDI calls fail often enough on rejected paths that warn
+            // would flood the log; debug keeps it diagnosable on demand.
+            logger.debug(e) { "Failed to convert HBITMAP to BufferedImage" }
             null
         } finally {
             hdc?.let { User32.INSTANCE.ReleaseDC(null, it) }
-            hBitmap?.let { GDI32.INSTANCE.DeleteObject(it) }
+            GDI32.INSTANCE.DeleteObject(hBitmap)
         }
     }
 

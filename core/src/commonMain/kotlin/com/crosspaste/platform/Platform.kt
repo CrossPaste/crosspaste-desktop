@@ -40,6 +40,8 @@ data class Platform(
 
     fun isIpad(): Boolean = name == IPAD
 
+    fun isApple(): Boolean = isMacos() || isIphone() || isIpad()
+
     fun isAndroid(): Boolean = name == ANDROID
 
     fun isChromeExtension(): Boolean = name == CHROME_EXTENSION
