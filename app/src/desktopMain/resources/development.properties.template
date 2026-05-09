@@ -1,2 +1,8 @@
 pasteAppPath=.
 pasteUserPath=.user
+
+# Mouse daemon binary path (development only). Set to the absolute path of
+# your local crosspaste-mouse build. Leave empty to fall back to
+# -Dcrosspaste.mouse.binary or $CROSSPASTE_MOUSE_BIN.
+# Example: mouseBinaryPath=/Users/me/crosspaste-mouse/target/release/crosspaste-mouse
+mouseBinaryPath=
