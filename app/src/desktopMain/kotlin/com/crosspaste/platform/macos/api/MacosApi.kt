@@ -74,7 +74,7 @@ interface MacosApi : Library {
         count: Int,
     )
 
-    fun setWindowLevelScreenSaver(windowPtr: Pointer?)
+    fun setWindowLevelPopUpMenu(windowPtr: Pointer?)
 
     fun applyAcrylicBackground(
         windowPtr: Pointer?,

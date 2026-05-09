@@ -327,8 +327,8 @@ private func hideWindowAndActivateApp(hideTitle: String, appName: String) {
     }
 }
 
-@_cdecl("setWindowLevelScreenSaver")
-public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
+@_cdecl("setWindowLevelPopUpMenu")
+public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?) {
     guard let rawPtr = rawPtr else { return }
 
     let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
@@ -338,8 +338,8 @@ public func setWindowLevelScreenSaver(_ rawPtr: UnsafeRawPointer?) {
             return
         }
 
-        let screenSaverLevel = CGWindowLevelForKey(.screenSaverWindow)
-        window.level = NSWindow.Level(rawValue: Int(screenSaverLevel))
+        let popUpMenuLevel = CGWindowLevelForKey(.popUpMenuWindow)
+        window.level = NSWindow.Level(rawValue: Int(popUpMenuLevel))
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
     }
 }
