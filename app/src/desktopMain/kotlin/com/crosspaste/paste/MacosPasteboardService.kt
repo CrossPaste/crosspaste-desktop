@@ -115,9 +115,8 @@ class MacosPasteboardService(
                                     if (contents != ownerTransferable) {
                                         contents?.let {
                                             ownerTransferable = it
-                                            val isAppleRemoteClipboard = remote.value != 0
                                             val targetAppInstanceIds =
-                                                if (isAppleRemoteClipboard) {
+                                                if (remote.value != 0) {
                                                     syncManager
                                                         .getSyncHandlers()
                                                         .filterValues { handler ->
@@ -136,7 +135,6 @@ class MacosPasteboardService(
                                                     PasteSourceContext(
                                                         source = source,
                                                         remote = false,
-                                                        appleRemoteClipboard = isAppleRemoteClipboard,
                                                         targetAppInstanceIds = targetAppInstanceIds,
                                                     ),
                                                 )
