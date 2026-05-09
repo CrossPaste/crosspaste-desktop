@@ -37,8 +37,8 @@ object MacAppUtils {
         INSTANCE.searchToBackAndPaste(appName, array, count)
     }
 
-    fun setWindowLevelScreenSaver(windowPtr: Pointer?) {
-        INSTANCE.setWindowLevelScreenSaver(windowPtr)
+    fun setWindowLevelPopUpMenu(windowPtr: Pointer?) {
+        INSTANCE.setWindowLevelPopUpMenu(windowPtr)
     }
 
     fun applyAcrylicBackground(

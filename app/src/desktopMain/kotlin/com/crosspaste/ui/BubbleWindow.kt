@@ -381,7 +381,7 @@ fun MacAcrylicEffect(window: ComposeWindow) {
         withContext(cpuDispatcher) {
             runCatching {
                 val pointer = Pointer(window.windowHandle)
-                MacAppUtils.setWindowLevelScreenSaver(pointer)
+                MacAppUtils.setWindowLevelPopUpMenu(pointer)
             }
         }
     }
