@@ -120,10 +120,7 @@ class MacosPasteboardService(
                                                     syncManager
                                                         .getSyncHandlers()
                                                         .filterValues { handler ->
-                                                            val platform = handler.currentSyncRuntimeInfo.platform
-                                                            !platform.isIphone() &&
-                                                                !platform.isIpad() &&
-                                                                !platform.isMacos()
+                                                            !handler.currentSyncRuntimeInfo.platform.isApple()
                                                         }.keys
                                                 } else {
                                                     null

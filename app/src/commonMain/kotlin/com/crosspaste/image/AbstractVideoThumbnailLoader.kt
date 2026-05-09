@@ -54,6 +54,6 @@ abstract class AbstractVideoThumbnailLoader(
         value: PasteFileCoordinate,
         e: Throwable,
     ) {
-        logger.warn { "Failed to create video thumbnail for file: $value" }
+        logger.warn(e) { "Failed to create video thumbnail for file: $value" }
     }
 }
