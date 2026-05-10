@@ -29,8 +29,12 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.utils.getControlUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+
+private val logger = KotlinLogging.logger {}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,20 +78,23 @@ fun DeviceScope.DeviceActionButton(
                     },
             ) {
                 scope.launch {
-                    runCatching {
+                    try {
                         updateRefreshing(true)
                         getControlUtils().ensureMinExecutionTimeForCallback(2000L) { proceed ->
                             syncManager.refresh(listOf(syncRuntimeInfo.appInstanceId)) {
                                 proceed()
                             }
                         }
-                        updateRefreshing(false)
-                    }.onFailure { e ->
-                        updateRefreshing(false)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logger.error(e) { "refresh failed: ${syncRuntimeInfo.appInstanceId}" }
                         notificationManager.sendNotification(
                             title = { it.getText("refresh_connection_failed") },
                             messageType = MessageType.Error,
                         )
+                    } finally {
+                        updateRefreshing(false)
                     }
                 }
             }
