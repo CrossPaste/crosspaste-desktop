@@ -622,11 +622,13 @@ public func createVideoThumbnail(
     videoPath: UnsafePointer<CChar>,
     thumbnailPath: UnsafePointer<CChar>
 ) -> Bool {
-    let videoPathString = String(cString: videoPath)
-    let thumbnailPathString = String(cString: thumbnailPath)
-
-    let videoUrl = URL(fileURLWithPath: videoPathString)
-    let thumbnailUrl = URL(fileURLWithPath: thumbnailPathString)
+    let videoUrl = URL(fileURLWithPath: String(cString: videoPath))
+    let thumbnailUrl = URL(fileURLWithPath: String(cString: thumbnailPath))
+    // Write into a sibling temp file and atomically rename on success so concurrent
+    // readers never observe a partial PNG, and a callback that completes after our
+    // 10s timeout cannot leave an orphaned thumbnail at the final path.
+    let tempUrl = thumbnailUrl.deletingLastPathComponent()
+        .appendingPathComponent(".\(UUID().uuidString).tmp")
 
     let request = QLThumbnailGenerator.Request(
         fileAt: videoUrl,
@@ -642,7 +644,7 @@ public func createVideoThumbnail(
         defer { semaphore.signal() }
         guard let thumbnail = thumbnail, thumbnail.type == .thumbnail else { return }
         guard let destination = CGImageDestinationCreateWithURL(
-            thumbnailUrl as CFURL,
+            tempUrl as CFURL,
             "public.png" as CFString,
             1,
             nil
@@ -652,9 +654,29 @@ public func createVideoThumbnail(
     }
 
     if semaphore.wait(timeout: .now() + .seconds(10)) == .timedOut {
+        // Callback may still be writing tempUrl; clean it up after a generous grace period.
+        DispatchQueue.global().asyncAfter(deadline: .now() + .seconds(20)) {
+            try? FileManager.default.removeItem(at: tempUrl)
+        }
         return false
     }
-    return success
+
+    guard success else {
+        try? FileManager.default.removeItem(at: tempUrl)
+        return false
+    }
+
+    do {
+        if FileManager.default.fileExists(atPath: thumbnailUrl.path) {
+            _ = try FileManager.default.replaceItemAt(thumbnailUrl, withItemAt: tempUrl)
+        } else {
+            try FileManager.default.moveItem(at: tempUrl, to: thumbnailUrl)
+        }
+        return true
+    } catch {
+        try? FileManager.default.removeItem(at: tempUrl)
+        return false
+    }
 }
 
 var statusItem: NSStatusItem?

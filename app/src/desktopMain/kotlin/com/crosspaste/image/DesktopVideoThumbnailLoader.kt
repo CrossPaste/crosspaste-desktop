@@ -44,6 +44,11 @@ class DesktopVideoThumbnailLoader(
                     ImageIO.write(image, "PNG", result.toNioPath().toFile())
                 }
             }
+            else -> {
+                logger.debug {
+                    "Video thumbnail generation not supported on ${platform.name}; falling back to file icon for: ${value.filePath}"
+                }
+            }
         }
     }
 }
