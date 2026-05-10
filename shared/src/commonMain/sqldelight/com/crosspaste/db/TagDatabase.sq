@@ -39,6 +39,9 @@ UPDATE TagEntity SET name = ? WHERE id = ?;
 updateTagColor:
 UPDATE TagEntity SET color = ? WHERE id = ?;
 
+updateTagSortOrder:
+UPDATE TagEntity SET sortOrder = ? WHERE id = ?;
+
 deleteTag:
 DELETE FROM TagEntity WHERE id = ?;
 

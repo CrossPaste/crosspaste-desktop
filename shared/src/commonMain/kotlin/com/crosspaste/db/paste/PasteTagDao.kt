@@ -21,6 +21,8 @@ interface PasteTagDao : QueryPasteTag {
         color: Long,
     )
 
+    suspend fun updatePasteTagsSortOrder(orderedIds: List<Long>)
+
     fun switchPinPasteTagBlock(
         pasteDataId: Long,
         pasteTagId: Long,
