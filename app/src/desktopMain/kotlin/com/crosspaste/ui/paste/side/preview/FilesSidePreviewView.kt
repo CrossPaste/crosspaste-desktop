@@ -68,6 +68,7 @@ fun PasteDataScope.FilesSidePreviewView() {
     SidePasteLayoutView(
         pasteBottomContent = {
             FilesPreviewBottomBar(
+                copywriter = copywriter,
                 fileDisplayInfo = fileDisplayInfo,
                 isInDownloads = isInDownloads,
             )
@@ -94,18 +95,15 @@ private fun rememberSingleVideoPath(
 
 @Composable
 private fun FilesPreviewBottomBar(
+    copywriter: GlobalCopywriter,
     fileDisplayInfo: FileDisplayInfo?,
     isInDownloads: Boolean,
 ) {
-    val copywriter = koinInject<GlobalCopywriter>()
-    val baseSubtitle = fileDisplayInfo?.subtitle ?: ""
     val subtitle =
-        if (isInDownloads) {
-            val inDownloadsText = copywriter.getText("in_downloads")
-            if (baseSubtitle.isNotEmpty()) "$inDownloadsText · $baseSubtitle" else inDownloadsText
-        } else {
-            baseSubtitle
-        }
+        listOfNotNull(
+            if (isInDownloads) copywriter.getText("in_downloads") else null,
+            fileDisplayInfo?.subtitle?.takeIf { it.isNotEmpty() },
+        ).joinToString(" · ")
     FileBottomSolid(
         modifier =
             Modifier
