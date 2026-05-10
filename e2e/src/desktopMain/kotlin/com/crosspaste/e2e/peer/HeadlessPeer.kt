@@ -71,7 +71,7 @@ class HeadlessPeer(
 
     val pasteClientApi: PasteClientApi = PasteClientApi(pasteClient, configManager)
 
-    val pullClientApi: PullClientApi = PullClientApi(pasteClient, configManager)
+    val pullClientApi: PullClientApi = PullClientApi(pasteClient, configManager, exceptionHandler)
 
     val bonjourAdvertiser: BonjourAdvertiser = BonjourAdvertiser(appInfo).also { it.start() }
 

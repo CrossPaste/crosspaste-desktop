@@ -72,7 +72,7 @@ class SyncClientApi(
                     },
                 )
             }
-        }, transformData = {
+        }) {
             val result = it.bodyAsText()
             result.toIntOrNull()?.let { connectedVersion ->
                 syncApi.compareVersion(connectedVersion)
@@ -80,7 +80,7 @@ class SyncClientApi(
                 logger.warn { "heartbeat response is not a valid version int: '$result'" }
                 null
             }
-        })
+        }
 
     suspend fun trust(
         targetAppInstanceId: String,
@@ -119,7 +119,7 @@ class SyncClientApi(
                     buildUrl("sync", "trust")
                 },
             )
-        }, transformData = {
+        }) {
             val trustResponse = it.body<TrustResponse>()
 
             val receiveSignPublicKey =
@@ -140,7 +140,7 @@ class SyncClientApi(
                 logger.warn { "verifyResult is false" }
                 false
             }
-        })
+        }
 
     suspend fun exchangeKeys(
         targetAppInstanceId: String,
@@ -172,7 +172,7 @@ class SyncClientApi(
                     buildUrl("sync", "trust", "v2", "exchange")
                 },
             )
-        }, transformData = {
+        }) {
             val response = it.body<KeyExchangeResponse>()
 
             val receiveSignPublicKey =
@@ -189,7 +189,7 @@ class SyncClientApi(
                 logger.warn { "exchangeKeys: signature verification failed" }
                 null
             }
-        })
+        }
 
     suspend fun trustV2Confirm(
         targetAppInstanceId: String,
@@ -219,12 +219,12 @@ class SyncClientApi(
                     buildUrl("sync", "trust", "v2", "confirm")
                 },
             )
-        }, transformData = {
+        }) {
             val response = it.body<TrustConfirmResponse>()
             // Save remote crypt public key is done in the server-side confirm handler
             // Here we just verify the response signature
             true
-        })
+        }
 
     suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult =
         request(logger, exceptionHandler, request = {
@@ -232,7 +232,7 @@ class SyncClientApi(
                 toUrl()
                 buildUrl("sync", "showToken")
             })
-        }, transformData = { true })
+        }) { true }
 
     suspend fun showPairingCode(toUrl: URLBuilder.() -> Unit): ClientApiResult =
         request(logger, exceptionHandler, request = {
@@ -240,7 +240,7 @@ class SyncClientApi(
                 toUrl()
                 buildUrl("sync", "showPairingCode")
             })
-        }, transformData = { true })
+        }) { true }
 
     suspend fun notifyExit(toUrl: URLBuilder.() -> Unit) {
         request(logger, exceptionHandler, request = {
@@ -248,7 +248,7 @@ class SyncClientApi(
                 toUrl()
                 buildUrl("sync", "notifyExit")
             })
-        }, transformData = { true })
+        }) { true }
     }
 
     suspend fun notifyRemove(toUrl: URLBuilder.() -> Unit) {
@@ -257,6 +257,6 @@ class SyncClientApi(
                 toUrl()
                 buildUrl("sync", "notifyRemove")
             })
-        }, transformData = { true })
+        }) { true }
     }
 }

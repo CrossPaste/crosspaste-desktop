@@ -81,9 +81,9 @@ class PullClientApi(
                     buildUrl("pull", "paste")
                 },
             )
-        }, transformData = { response ->
+        }) { response ->
             response.body<PasteData>().copy(remote = true)
-        })
+        }
 
     suspend fun pullPasteBatch(
         targetAppInstanceId: String,
@@ -108,9 +108,9 @@ class PullClientApi(
                     parameters.append("limit", limit.toString())
                 },
             )
-        }, transformData = { response ->
+        }) { response ->
             response.body<List<PasteData>>().map { it.copy(remote = true) }
-        })
+        }
 
     private suspend fun result(
         response: HttpResponse,
