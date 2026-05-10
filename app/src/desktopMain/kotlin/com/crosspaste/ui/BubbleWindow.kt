@@ -15,10 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -43,7 +41,6 @@ import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
-import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.ui.DesktopContext.BubbleWindowContext
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -51,13 +48,9 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteHtmlEditContentView
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
-import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getPlatformUtils
-import com.sun.jna.Pointer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -367,21 +360,6 @@ private fun BubbleWindowContent(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun MacAcrylicEffect(window: ComposeWindow) {
-    LaunchedEffect(window) {
-        snapshotFlow { window.isDisplayable }
-            .first { it }
-
-        withContext(cpuDispatcher) {
-            runCatching {
-                val pointer = Pointer(window.windowHandle)
-                MacAppUtils.setWindowLevelPopUpMenu(pointer)
             }
         }
     }

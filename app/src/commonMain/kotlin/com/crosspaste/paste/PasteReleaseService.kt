@@ -118,13 +118,11 @@ class PasteReleaseService(
                 currentPaste.setPasteId(id)
                 taskSubmitter.submit {
                     addRenderingTask(id, pasteType)
-                    // Skip syncing for remote clipboard data (e.g., Apple Universal Clipboard / Handoff).
-                    // These items are already from another device, so re-syncing them would cause
-                    // unnecessary duplication or sync loops.
-                    // An empty target set means every paired peer was filtered out (e.g. all-Apple
-                    // peers for an Apple Universal Clipboard event) — skip the task instead of
-                    // creating one that can't sync anywhere.
-                    if (!pasteData.remote && targetAppInstanceIds?.isEmpty() != true) {
+                    // Skip syncing items already from another device (would cause sync loops).
+                    // Empty target set = every peer filtered out (e.g. Apple Universal Clipboard
+                    // items skip Apple peers).
+                    val hasValidSyncTargets = targetAppInstanceIds == null || targetAppInstanceIds.isNotEmpty()
+                    if (!pasteData.remote && hasValidSyncTargets) {
                         addSyncTask(id, maxFileSize, pasteData.appInstanceId, targetAppInstanceIds)
                     }
 

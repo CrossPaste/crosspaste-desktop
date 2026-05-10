@@ -170,19 +170,23 @@ fun SearchWindow(windowIcon: Painter?) {
 @Composable
 fun MacAcrylicEffect(
     window: ComposeWindow,
-    isDark: Boolean,
+    isDark: Boolean? = null,
 ) {
     LaunchedEffect(window, isDark) {
         snapshotFlow { window.isDisplayable }
             .first { it }
 
-        window.background = java.awt.Color(0, 0, 0, 0)
+        if (isDark != null) {
+            window.background = java.awt.Color(0, 0, 0, 0)
+        }
 
         withContext(cpuDispatcher) {
             runCatching {
                 val pointer = Pointer(window.windowHandle)
                 MacAppUtils.setWindowLevelPopUpMenu(pointer)
-                MacAppUtils.applyAcrylicBackground(pointer, isDark)
+                if (isDark != null) {
+                    MacAppUtils.applyAcrylicBackground(pointer, isDark)
+                }
             }
         }
     }
