@@ -131,11 +131,50 @@ tasks.register("generateI18n") {
     }
 }
 
-val npmCmd = if (org.gradle.internal.os.OperatingSystem.current().isWindows) "npm.cmd" else "npm"
+fun resolveNpmCommand(): String {
+    val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
+    val fallback = if (isWindows) "npm.cmd" else "npm"
+    if (isWindows) return fallback
+    val userShell = System.getenv("SHELL")?.takeIf { java.io.File(it).canExecute() } ?: "/bin/bash"
+    return sequenceOf(
+        listOf(userShell, "-ic", "command -v npm"),
+        listOf(userShell, "-lc", "command -v npm"),
+        listOf("/bin/bash", "-lc", "command -v npm"),
+    ).firstNotNullOfOrNull { cmd ->
+        runCatching {
+            val process =
+                ProcessBuilder(cmd)
+                    .redirectErrorStream(false)
+                    .start()
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+            process.waitFor()
+            output.lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.isNotBlank() && java.io.File(it).canExecute() }
+        }.getOrNull()
+    } ?: fallback
+}
+
+val npmCmd = resolveNpmCommand()
+
+val npmBinDir: String? =
+    java.io.File(npmCmd)
+        .takeIf { it.isAbsolute && it.exists() }
+        ?.parentFile
+        ?.absolutePath
+
+fun org.gradle.process.ExecSpec.injectNpmBinDir() {
+    val dir = npmBinDir ?: return
+    val currentPath = System.getenv("PATH").orEmpty()
+    if (currentPath.split(java.io.File.pathSeparator).none { it == dir }) {
+        environment("PATH", "$dir${java.io.File.pathSeparator}$currentPath")
+    }
+}
 
 tasks.register<Exec>("npmInstall") {
     workingDir = projectDir
     commandLine(npmCmd, "install")
+    injectNpmBinDir()
     inputs.file("package.json")
     outputs.dir("node_modules")
 }
@@ -144,6 +183,7 @@ tasks.register<Exec>("npmBuild") {
     dependsOn("npmInstall", "generateVersion", "generateI18n", ":core:jsBrowserProductionLibraryDistribution")
     workingDir = projectDir
     commandLine(npmCmd, "run", "build")
+    injectNpmBinDir()
     inputs.dir("src")
     inputs.dir("public")
     inputs.file("manifest.json")
