@@ -13,7 +13,10 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.writeFully
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -110,17 +113,59 @@ class ClientEncryptPluginTest {
         }
 
     @Test
-    fun `throws PasteException for unsupported content type when secure header is set`() =
+    fun `bodyless GET with secure header passes through without invoking encryption`() =
         runBlocking {
-            val client = createClient()
+            // GET / DELETE etc. have no request body to encrypt — the secure header
+            // signals that the *response* should be encrypted (handled by
+            // ClientDecryptPlugin). The encrypt plugin must skip these instead of
+            // aborting the request, otherwise pull endpoints crash on K/N iOS where
+            // the throwing coroutine has no exception handler installed.
+            val neverCalledStore =
+                mockk<SecureStore> {
+                    coEvery { getMessageProcessor(any()) } throws
+                        AssertionError("Should not encrypt bodyless request")
+                }
+            val client = createClient(neverCalledStore)
+
+            val response =
+                client.get("https://localhost/test") {
+                    header("targetAppInstanceId", "test-instance")
+                    header("secure", "1")
+                }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+        }
+
+    @Test
+    fun `throws PasteException for unsupported body type when secure header is set`() =
+        runBlocking {
+            // Streaming bodies (WriteChannelContent) are neither ByteArrayContent nor
+            // NoContent. Reaching this branch means a request was added that the encrypt
+            // plugin doesn't know how to encrypt — fail loud rather than silently send
+            // plaintext under a `secure: 1` header. The API layer's safeApiCall converts
+            // this into ClientApiResult.EncryptFail for the caller.
+            val neverCalledStore =
+                mockk<SecureStore> {
+                    coEvery { getMessageProcessor(any()) } throws
+                        AssertionError("Should not reach encryption for unsupported body type")
+                }
+            val client = createClient(neverCalledStore)
+
+            val streamingBody =
+                object : OutgoingContent.WriteChannelContent() {
+                    override val contentType: ContentType = ContentType.Application.OctetStream
+
+                    override suspend fun writeTo(channel: ByteWriteChannel) {
+                        channel.writeFully("payload".encodeToByteArray())
+                    }
+                }
 
             val exception =
                 assertFailsWith<PasteException> {
-                    // GET request with secure headers produces a non-ByteArrayContent body,
-                    // which should throw PasteException instead of silently sending plaintext
-                    client.get("https://localhost/test") {
+                    client.post("https://localhost/test") {
                         header("targetAppInstanceId", "test-instance")
                         header("secure", "1")
+                        setBody(streamingBody)
                     }
                 }
 
