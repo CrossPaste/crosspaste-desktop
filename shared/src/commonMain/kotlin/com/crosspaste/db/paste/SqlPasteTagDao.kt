@@ -65,6 +65,17 @@ class SqlPasteTagDao(
         }
     }
 
+    override suspend fun updatePasteTagsSortOrder(orderedIds: List<Long>) {
+        if (orderedIds.isEmpty()) return
+        withContext(ioDispatcher) {
+            database.transaction {
+                orderedIds.forEachIndexed { index, id ->
+                    tagDatabaseQueries.updateTagSortOrder((index + 1).toLong(), id)
+                }
+            }
+        }
+    }
+
     override fun switchPinPasteTagBlock(
         pasteDataId: Long,
         pasteTagId: Long,

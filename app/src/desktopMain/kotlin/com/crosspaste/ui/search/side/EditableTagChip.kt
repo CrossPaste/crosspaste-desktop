@@ -42,11 +42,13 @@ import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
-private const val DOUBLE_CLICK_TIMEOUT_MS = 300L
+private val DOUBLE_CLICK_TIMEOUT_MS = 300L.milliseconds
 
 @Composable
 fun PasteTagScope.TagChip(
+    modifier: Modifier = Modifier,
     isSelected: Boolean,
     onEdit: () -> Unit,
     onSelect: () -> Unit,
@@ -107,7 +109,7 @@ fun PasteTagScope.TagChip(
                 selectedLabelColor = MaterialTheme.colorScheme.primary,
             ),
         shape = CircleShape,
-        modifier = Modifier.height(xxLarge),
+        modifier = modifier.height(xxLarge),
     )
 }
 

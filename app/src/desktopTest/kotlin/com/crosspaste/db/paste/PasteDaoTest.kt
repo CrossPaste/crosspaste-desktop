@@ -430,6 +430,46 @@ class PasteDaoTest {
         assertTrue(afterSecond > afterFirst)
     }
 
+    @Test
+    fun `updatePasteTagsSortOrder reorders tags`() = runTest {
+        val id1 = pasteTagDao.createPasteTag("a", 0xFF0000L)
+        val id2 = pasteTagDao.createPasteTag("b", 0x00FF00L)
+        val id3 = pasteTagDao.createPasteTag("c", 0x0000FFL)
+
+        // Original order: a, b, c
+        pasteTagDao.getAllTagsFlow().test {
+            val initial = awaitItem()
+            assertEquals(listOf(id1, id2, id3), initial.map { it.id })
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Reorder to: c, a, b
+        pasteTagDao.updatePasteTagsSortOrder(listOf(id3, id1, id2))
+
+        pasteTagDao.getAllTagsFlow().test {
+            val reordered = awaitItem()
+            assertEquals(listOf(id3, id1, id2), reordered.map { it.id })
+            // Sort orders compact and 1-based so getMaxSortOrder still works for new tags.
+            assertEquals(3L, pasteTagDao.getMaxSortOrder())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `updatePasteTagsSortOrder with empty list is a no-op`() = runTest {
+        val id1 = pasteTagDao.createPasteTag("only", 0xFF0000L)
+        val before = pasteTagDao.getMaxSortOrder()
+
+        pasteTagDao.updatePasteTagsSortOrder(emptyList())
+
+        assertEquals(before, pasteTagDao.getMaxSortOrder())
+        pasteTagDao.getAllTagsFlow().test {
+            val tags = awaitItem()
+            assertEquals(listOf(id1), tags.map { it.id })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     // --- Flow ---
 
     @Test
