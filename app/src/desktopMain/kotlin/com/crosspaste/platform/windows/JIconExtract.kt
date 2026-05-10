@@ -150,6 +150,12 @@ object JIconExtract {
 
             bitmapInfo.read()
 
+            // GetDIBits may return biSizeImage == 0 for BI_RGB bitmaps; allocating
+            // Memory(0) and writing into it on the second call would corrupt native memory.
+            if (bitmapInfo.bmiHeader.biSizeImage <= 0) {
+                return null
+            }
+
             val lpPixels = Memory(bitmapInfo.bmiHeader.biSizeImage.toLong())
 
             bitmapInfo.bmiHeader.biCompression = WinGDI.BI_RGB

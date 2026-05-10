@@ -72,7 +72,9 @@ val videoExtensions =
         "avi",
         "wmv",
         "flv",
-        "ts",
+        // Intentionally omit "ts": for a developer-focused clipboard tool, .ts is
+        // overwhelmingly TypeScript source, not an MPEG transport stream. The
+        // MPEG-TS variants .mts and .m2ts are still recognized below.
         "mts",
         "m2ts",
         "3gp",
