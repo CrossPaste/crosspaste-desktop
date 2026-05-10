@@ -1,5 +1,6 @@
 node_modules/
 dist/
+public/marketing/
 
 # Override root-level package*.json ignore
 !package.json

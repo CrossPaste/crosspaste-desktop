@@ -19,6 +19,18 @@ version =
         "Missing 'version' in crosspaste-version.properties"
     }
 
+fun gitRevision(): String? =
+    runCatching {
+        val process =
+            ProcessBuilder("git", "rev-list", "--count", "HEAD")
+                .directory(project.projectDir.parentFile)
+                .redirectErrorStream(true)
+                .start()
+        process.inputStream.bufferedReader().use { it.readText() }.trim().also {
+            process.waitFor()
+        }
+    }.getOrNull()?.takeIf { it.isNotBlank() && it.all(Char::isDigit) }
+
 tasks.register("generateVersion") {
     val versionFile =
         project.projectDir
@@ -138,6 +150,54 @@ tasks.register<Exec>("npmBuild") {
     inputs.file("vite.config.ts")
     inputs.file("tsconfig.json")
     outputs.dir("dist")
+}
+
+tasks.register("patchDistManifestRevision") {
+    dependsOn("npmBuild")
+    val distManifest = project.file("dist/manifest.json")
+    outputs.file(distManifest)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        val revision =
+            versionProperties.getProperty("revision")?.takeIf { it.isNotBlank() }
+                ?: gitRevision()
+                ?: error("Cannot resolve revision: 'revision' missing in properties and 'git rev-list --count HEAD' failed")
+        val fullVersion = "$version.$revision"
+
+        check(distManifest.exists()) { "dist/manifest.json not found — run :web:npmBuild first" }
+        val text = distManifest.readText()
+        val patched =
+            text.replaceFirst(
+                Regex("\"version\"\\s*:\\s*\"[^\"]*\""),
+                "\"version\": \"$fullVersion\"",
+            )
+        check(patched.contains("\"version\": \"$fullVersion\"")) {
+            "Failed to inject version into $distManifest"
+        }
+        distManifest.writeText(patched)
+        logger.lifecycle("Patched dist/manifest.json version → $fullVersion")
+    }
+}
+
+tasks.register<Zip>("packageExtension") {
+    dependsOn("patchDistManifestRevision")
+    from(layout.projectDirectory.dir("dist"))
+    archiveFileName.set(
+        provider {
+            val rev =
+                versionProperties.getProperty("revision")?.takeIf { it.isNotBlank() }
+                    ?: gitRevision()
+                    ?: error("Cannot resolve revision for zip name")
+            "crosspaste-extension-$version.$rev.zip"
+        },
+    )
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    exclude("**/.DS_Store")
+
+    doLast {
+        logger.lifecycle("Chrome extension zip: ${archiveFile.get().asFile.absolutePath}")
+    }
 }
 
 tasks.register<Delete>("clean") {
