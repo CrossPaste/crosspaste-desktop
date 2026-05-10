@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:marketing": "VITE_MARKETING_MODE=true vite --open /src/sidepanel/index.html",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
