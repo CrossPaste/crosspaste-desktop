@@ -75,7 +75,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
         single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
         single<PasteClient> { PasteClient(get(), get(), get()) }
-        single<PullClientApi> { PullClientApi(get(), get()) }
+        single<PullClientApi> { PullClientApi(get(), get(), get()) }
         single<PasteClientApi> { PasteClientApi(get(), get()) }
         single<Server> {
             DesktopPasteServer(

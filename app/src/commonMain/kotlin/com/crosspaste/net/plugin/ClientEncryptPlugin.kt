@@ -32,19 +32,27 @@ class ClientEncryptPlugin(
             context.headers["targetAppInstanceId"]?.let { targetAppInstanceId ->
                 context.headers["secure"]?.let {
                     logger.debug { "client encrypt $targetAppInstanceId" }
-                    when (context.body) {
+                    when (val body = context.body) {
                         is OutgoingContent.ByteArrayContent -> {
                             val processor = secureStore.getMessageProcessor(targetAppInstanceId)
-                            val originalContent = context.body as OutgoingContent.ByteArrayContent
-                            val bytes = originalContent.bytes()
+                            val bytes = body.bytes()
                             val ciphertextMessageBytes = processor.encrypt(bytes)
                             context.body =
                                 ByteArrayContent(ciphertextMessageBytes, contentType = ContentType.Application.Json)
                         }
+                        is OutgoingContent.NoContent -> {
+                            // GET / DELETE etc.: the `secure` header only tells the server to
+                            // encrypt its response (handled by ClientDecryptPlugin). There is no
+                            // request body to encrypt here, so this is a legal no-op.
+                        }
                         else -> {
+                            // Unknown body type. Fail loudly instead of silently sending plaintext
+                            // under a `secure: 1` header — the API layer wraps these calls in
+                            // safeApiCall, so this surfaces as ClientApiResult.EncryptFail to the
+                            // caller without aborting the coroutine.
                             throw PasteException(
                                 StandardErrorCode.ENCRYPT_FAIL.toErrorCode(),
-                                "Unsupported content type for encryption: ${context.body::class}",
+                                "Unsupported content type for encryption: ${body::class}",
                             )
                         }
                     }

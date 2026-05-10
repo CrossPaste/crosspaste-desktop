@@ -57,24 +57,13 @@ fun createFailureResult(
     throwable: Throwable,
 ): FailureResult = FailureResult(PasteException(errorCodeSupplier.toErrorCode(), throwable))
 
-suspend inline fun <T> request(
+suspend inline fun safeApiCall(
     logger: KLogger,
     exceptionHandler: ExceptionHandler,
-    request: () -> HttpResponse,
-    transformData: (HttpResponse) -> T,
+    block: () -> ClientApiResult,
 ): ClientApiResult =
     try {
-        val response = request()
-        logger.debug { "response status: ${response.call.request.url} ${response.status}" }
-        if (response.status.value == 404) {
-            createFailureResult(StandardErrorCode.NOT_FOUND_API, "Not found Api")
-        } else if (response.status.value != 200) {
-            val failResponse = response.body<FailResponse>()
-            logger.error { "request error: $failResponse" }
-            createFailureResult(failResponse)
-        } else {
-            SuccessResult(transformData(response))
-        }
+        block()
     } catch (e: HttpRequestTimeoutException) {
         logger.warn(e) { "request timeout" }
         RequestTimeout
@@ -90,6 +79,26 @@ suspend inline fun <T> request(
             DecryptFail
         } else {
             UnknownError
+        }
+    }
+
+suspend inline fun <T> request(
+    logger: KLogger,
+    exceptionHandler: ExceptionHandler,
+    request: () -> HttpResponse,
+    transformData: (HttpResponse) -> T,
+): ClientApiResult =
+    safeApiCall(logger, exceptionHandler) {
+        val response = request()
+        logger.debug { "response status: ${response.call.request.url} ${response.status}" }
+        if (response.status.value == 404) {
+            createFailureResult(StandardErrorCode.NOT_FOUND_API, "Not found Api")
+        } else if (response.status.value != 200) {
+            val failResponse = response.body<FailResponse>()
+            logger.error { "request error: $failResponse" }
+            createFailureResult(failResponse)
+        } else {
+            SuccessResult(transformData(response))
         }
     }
 

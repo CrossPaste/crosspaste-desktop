@@ -4,6 +4,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.PasteClient
+import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.paste.PasteData
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -15,6 +16,7 @@ import io.ktor.util.reflect.*
 class PullClientApi(
     private val pasteClient: PasteClient,
     private val configManager: CommonConfigManager,
+    private val exceptionHandler: ExceptionHandler,
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -23,50 +25,50 @@ class PullClientApi(
         pullFileRequest: PullFileRequest,
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        val response =
-            pasteClient.post(
-                message = pullFileRequest,
-                messageType = typeInfo<PullFileRequest>(),
-                timeout = 50000L,
-                headersBuilder = {
-                    append("targetAppInstanceId", targetAppInstanceId)
-                    if (configManager.getCurrentConfig().enableEncryptSync) {
-                        append("secure", "1")
-                    }
-                },
-                // pull file timeout is 50s
-                urlBuilder = {
-                    toUrl()
-                    buildUrl("pull", "file")
-                },
-            )
-
-        return result(response, "file", pullFileRequest)
-    }
+    ): ClientApiResult =
+        safeApiCall(logger, exceptionHandler) {
+            val response =
+                pasteClient.post(
+                    message = pullFileRequest,
+                    messageType = typeInfo<PullFileRequest>(),
+                    timeout = 50000L,
+                    headersBuilder = {
+                        append("targetAppInstanceId", targetAppInstanceId)
+                        if (configManager.getCurrentConfig().enableEncryptSync) {
+                            append("secure", "1")
+                        }
+                    },
+                    // pull file timeout is 50s
+                    urlBuilder = {
+                        toUrl()
+                        buildUrl("pull", "file")
+                    },
+                )
+            result(response, "file", pullFileRequest)
+        }
 
     suspend fun pullIcon(
         source: String,
         toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        val response =
-            pasteClient.get(
-                timeout = 50000L,
-                urlBuilder = {
-                    toUrl()
-                    buildUrl("pull", "icon", source)
-                },
-            )
-
-        return result(response, "icon", response.request.url)
-    }
+    ): ClientApiResult =
+        safeApiCall(logger, exceptionHandler) {
+            val response =
+                pasteClient.get(
+                    timeout = 50000L,
+                    urlBuilder = {
+                        toUrl()
+                        buildUrl("pull", "icon", source)
+                    },
+                )
+            result(response, "icon", response.request.url)
+        }
 
     @Suppress("unused")
     suspend fun pullLatestPaste(
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        val response =
+    ): ClientApiResult =
+        request(logger, exceptionHandler, request = {
             pasteClient.get(
                 headersBuilder = {
                     append("targetAppInstanceId", targetAppInstanceId)
@@ -79,33 +81,17 @@ class PullClientApi(
                     buildUrl("pull", "paste")
                 },
             )
-
-        return if (response.status.value == 200) {
-            logger.debug { "Success to pull latest paste" }
-            SuccessResult(response.body<PasteData>().copy(remote = true))
-        } else {
-            runCatching {
-                val failResponse = response.body<FailResponse>()
-                createFailureResult(
-                    StandardErrorCode.SYNC_PASTE_ERROR,
-                    "Fail to pull latest paste from $targetAppInstanceId: ${response.status.value} $failResponse",
-                )
-            }.getOrElse {
-                createFailureResult(
-                    StandardErrorCode.SYNC_PASTE_ERROR,
-                    "Fail to pull latest paste from $targetAppInstanceId: ${response.status.value}",
-                )
-            }
+        }) { response ->
+            response.body<PasteData>().copy(remote = true)
         }
-    }
 
     suspend fun pullPasteBatch(
         targetAppInstanceId: String,
         createTime: Long?,
         limit: Long,
         toUrl: URLBuilder.() -> Unit,
-    ): ClientApiResult {
-        val response =
+    ): ClientApiResult =
+        request(logger, exceptionHandler, request = {
             pasteClient.get(
                 headersBuilder = {
                     append("targetAppInstanceId", targetAppInstanceId)
@@ -122,25 +108,9 @@ class PullClientApi(
                     parameters.append("limit", limit.toString())
                 },
             )
-
-        return if (response.status.value == 200) {
-            logger.debug { "Success to pull paste batch from $targetAppInstanceId" }
-            SuccessResult(response.body<List<PasteData>>().map { it.copy(remote = true) })
-        } else {
-            runCatching {
-                val failResponse = response.body<FailResponse>()
-                createFailureResult(
-                    StandardErrorCode.SYNC_PASTE_ERROR,
-                    "Fail to pull paste batch from $targetAppInstanceId: ${response.status.value} $failResponse",
-                )
-            }.getOrElse {
-                createFailureResult(
-                    StandardErrorCode.SYNC_PASTE_ERROR,
-                    "Fail to pull paste batch from $targetAppInstanceId: ${response.status.value}",
-                )
-            }
+        }) { response ->
+            response.body<List<PasteData>>().map { it.copy(remote = true) }
         }
-    }
 
     private suspend fun result(
         response: HttpResponse,
