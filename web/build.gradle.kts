@@ -135,9 +135,23 @@ fun resolveNpmCommand(): String {
     val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
     val fallback = if (isWindows) "npm.cmd" else "npm"
     if (isWindows) return fallback
-    val userShell = System.getenv("SHELL")?.takeIf { java.io.File(it).canExecute() } ?: "/bin/bash"
+
+    val candidatePaths =
+        buildList {
+            add("/opt/homebrew/bin/npm")
+            add("/usr/local/bin/npm")
+            add("/usr/bin/npm")
+            val home = System.getProperty("user.home")
+            File("$home/.nvm/versions/node")
+                .takeIf { it.isDirectory }
+                ?.listFiles { f -> f.isDirectory }
+                ?.sortedByDescending { it.name }
+                ?.forEach { add("${it.absolutePath}/bin/npm") }
+        }
+    candidatePaths.firstOrNull { File(it).canExecute() }?.let { return it }
+
+    val userShell = System.getenv("SHELL")?.takeIf { File(it).canExecute() } ?: "/bin/bash"
     return sequenceOf(
-        listOf(userShell, "-ic", "command -v npm"),
         listOf(userShell, "-lc", "command -v npm"),
         listOf("/bin/bash", "-lc", "command -v npm"),
     ).firstNotNullOfOrNull { cmd ->
@@ -150,46 +164,51 @@ fun resolveNpmCommand(): String {
             process.waitFor()
             output.lineSequence()
                 .map { it.trim() }
-                .firstOrNull { it.isNotBlank() && java.io.File(it).canExecute() }
+                .firstOrNull { it.isNotBlank() && File(it).canExecute() }
         }.getOrNull()
     } ?: fallback
 }
 
-val npmCmd = resolveNpmCommand()
+val npmCmd: String by lazy { resolveNpmCommand() }
 
-val npmBinDir: String? =
-    java.io.File(npmCmd)
+val npmBinDir: String? by lazy {
+    File(npmCmd)
         .takeIf { it.isAbsolute && it.exists() }
         ?.parentFile
         ?.absolutePath
+}
 
-fun org.gradle.process.ExecSpec.injectNpmBinDir() {
+fun ExecSpec.injectNpmBinDir() {
     val dir = npmBinDir ?: return
     val currentPath = System.getenv("PATH").orEmpty()
-    if (currentPath.split(java.io.File.pathSeparator).none { it == dir }) {
-        environment("PATH", "$dir${java.io.File.pathSeparator}$currentPath")
+    if (currentPath.split(File.pathSeparator).none { it == dir }) {
+        environment("PATH", "$dir${File.pathSeparator}$currentPath")
     }
 }
 
 tasks.register<Exec>("npmInstall") {
     workingDir = projectDir
-    commandLine(npmCmd, "install")
-    injectNpmBinDir()
     inputs.file("package.json")
     outputs.dir("node_modules")
+    doFirst {
+        commandLine(npmCmd, "install")
+        injectNpmBinDir()
+    }
 }
 
 tasks.register<Exec>("npmBuild") {
     dependsOn("npmInstall", "generateVersion", "generateI18n", ":core:jsBrowserProductionLibraryDistribution")
     workingDir = projectDir
-    commandLine(npmCmd, "run", "build")
-    injectNpmBinDir()
     inputs.dir("src")
     inputs.dir("public")
     inputs.file("manifest.json")
     inputs.file("vite.config.ts")
     inputs.file("tsconfig.json")
     outputs.dir("dist")
+    doFirst {
+        commandLine(npmCmd, "run", "build")
+        injectNpmBinDir()
+    }
 }
 
 tasks.register("patchDistManifestRevision") {
