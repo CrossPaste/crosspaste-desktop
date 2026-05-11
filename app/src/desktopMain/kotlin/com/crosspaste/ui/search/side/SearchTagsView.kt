@@ -96,7 +96,7 @@ fun SearchTagsView() {
                 isSelected = tag.id == searchBaseParams.tag,
                 isDragging = dragState.isDragging(tag.id),
                 isEditing = editingMap[tag.id] == true,
-                dragOffsetX = dragState.dragOffsetX,
+                dragOffsetX = { dragState.dragOffsetX },
                 contextMenuItemsFor = tagMenuService::menuItemsProvider,
                 onTagClick = { pasteSearchViewModel.updateTag(tag.id) },
                 onSubmitName = { name ->
@@ -157,7 +157,7 @@ private fun SearchTagItem(
     isSelected: Boolean,
     isDragging: Boolean,
     isEditing: Boolean,
-    dragOffsetX: Float,
+    dragOffsetX: () -> Float,
     contextMenuItemsFor: (PasteTagScope) -> () -> List<ContextMenuItem>,
     onTagClick: () -> Unit,
     onSubmitName: suspend (String) -> Unit,
@@ -235,13 +235,13 @@ private fun AddTagChip(onClick: () -> Unit) {
 @Composable
 private fun Modifier.tagDragVisuals(
     isDragging: Boolean,
-    dragOffsetX: Float,
+    dragOffsetX: () -> Float,
 ): Modifier {
     val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
     return this
         .zIndex(if (isDragging) 1f else 0f)
         .graphicsLayer {
-            translationX = if (isDragging) dragOffsetX else 0f
+            translationX = if (isDragging) dragOffsetX() else 0f
             if (isDragging) {
                 scaleX = 1.05f
                 scaleY = 1.05f
