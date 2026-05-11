@@ -119,11 +119,13 @@ fun SidePasteboardContentView() {
         }
     }
 
-    // Reset key modifier state when the window opens.
+    // Reset key modifier state and selection when the window opens, so it matches
+    // the freshly recreated scroll state above.
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
             isCtrlPressed = false
             isShiftPressed = false
+            pasteSelectionViewModel.initSelectIndex()
         }
     }
 
