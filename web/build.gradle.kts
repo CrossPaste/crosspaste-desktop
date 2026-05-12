@@ -142,11 +142,21 @@ fun resolveNpmCommand(): String {
             add("/usr/local/bin/npm")
             add("/usr/bin/npm")
             val home = System.getProperty("user.home")
+            val semverRegex = Regex("""^v?(\d+)\.(\d+)\.(\d+)""")
             File("$home/.nvm/versions/node")
                 .takeIf { it.isDirectory }
                 ?.listFiles { f -> f.isDirectory }
-                ?.sortedByDescending { it.name }
-                ?.forEach { add("${it.absolutePath}/bin/npm") }
+                ?.mapNotNull { dir ->
+                    semverRegex.find(dir.name)?.destructured?.let { (maj, min, patch) ->
+                        Triple(maj.toInt(), min.toInt(), patch.toInt()) to dir
+                    }
+                }
+                ?.sortedWith(
+                    compareByDescending<Pair<Triple<Int, Int, Int>, File>> { it.first.first }
+                        .thenByDescending { it.first.second }
+                        .thenByDescending { it.first.third },
+                )
+                ?.forEach { add("${it.second.absolutePath}/bin/npm") }
         }
     candidatePaths.firstOrNull { File(it).canExecute() }?.let { return it }
 
