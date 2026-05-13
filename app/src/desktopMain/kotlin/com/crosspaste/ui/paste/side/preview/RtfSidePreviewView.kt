@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.RtfPasteItem
@@ -32,11 +33,12 @@ fun PasteDataScope.RtfSidePreviewView() {
         mutableStateOf(Color(rtfPasteItem.getBackgroundColor()))
     }
 
+    val themeBackground = MaterialTheme.colorScheme.background
     val rtfBackground =
         if (backgroundColor == Color.Transparent) {
-            MaterialTheme.colorScheme.background
+            themeBackground
         } else {
-            backgroundColor
+            backgroundColor.compositeOver(themeBackground)
         }
     val isDark by remember(pasteData.id) { mutableStateOf(ColorAccessibility.isDarkColor(rtfBackground)) }
     val richTextColor =
