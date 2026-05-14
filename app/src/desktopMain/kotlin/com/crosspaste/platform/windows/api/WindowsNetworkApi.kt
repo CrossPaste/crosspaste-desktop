@@ -58,9 +58,6 @@ object WindowsNetworkApi {
     // exposes the raw resource id, which never changes.
     private const val NETWORK_DISCOVERY_GROUPING = "@FirewallAPI.dll,-32752"
 
-    private const val MDNS_PORT = "5353"
-    private const val PROTOCOL_UDP = 17
-
     // S_OK and S_FALSE both grant a CoUninitialize obligation; RPC_E_CHANGED_MODE means
     // the thread is already initialised under a different threading model — we can still
     // make COM calls but must NOT call CoUninitialize.
@@ -252,18 +249,13 @@ object WindowsNetworkApi {
                 profilesValue == FW_PROFILE_ALL || (profilesValue and profileBit) != 0
             if (!matchesProfile) return false
 
-            val grouping = readBstr(rule::getGrouping)
-            if (grouping != null && grouping.equals(NETWORK_DISCOVERY_GROUPING, ignoreCase = true)) {
-                return true
-            }
-
-            // Fallback for raw mDNS rules (Windows 10 1809+) that may not carry the
-            // Network Discovery grouping: UDP/5353 inbound allow on a matching profile.
-            val protocol = IntByReference()
-            if (!COMUtils.SUCCEEDED(rule.getProtocol(protocol))) return false
-            if (protocol.value != PROTOCOL_UDP) return false
-            val ports = readBstr(rule::getLocalPorts) ?: return false
-            ports.split(',').any { it.trim() == MDNS_PORT }
+            // The "Network Discovery" toggle in Advanced sharing settings controls
+            // exactly the rule group with this Grouping resource id. We deliberately
+            // do NOT fall back to matching UDP/5353 — Windows 10 1809+ / Windows 11
+            // ship a separate `mDNS-In-UDP` rule that is NOT part of this group, so
+            // matching it would tell the user discovery is on when the toggle is off.
+            val grouping = readBstr(rule::getGrouping) ?: return false
+            grouping.equals(NETWORK_DISCOVERY_GROUPING, ignoreCase = true)
         } finally {
             rule.Release()
         }
@@ -362,20 +354,6 @@ private class NetFwRules(
 private class NetFwRule(
     pvInstance: Pointer,
 ) : Unknown(pvInstance) {
-    fun getProtocol(out: IntByReference): HRESULT =
-        _invokeNativeObject(
-            15,
-            arrayOf<Any>(this.pointer, out),
-            HRESULT::class.java,
-        ) as HRESULT
-
-    fun getLocalPorts(out: PointerByReference): HRESULT =
-        _invokeNativeObject(
-            17,
-            arrayOf<Any>(this.pointer, out),
-            HRESULT::class.java,
-        ) as HRESULT
-
     fun getDirection(out: IntByReference): HRESULT =
         _invokeNativeObject(
             27,
