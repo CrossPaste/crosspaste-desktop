@@ -65,6 +65,8 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
 
     var isLoading by remember { mutableStateOf(false) }
 
+    val isDiscoveryBlocked = rememberNetworkDiscoveryBlocked()
+
     // Determine if the confirm button should be enabled
     val isInputValid =
         remember(ip, port) {
@@ -111,6 +113,8 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
                 )
 
+                NetworkDiscoveryBlockedNotice()
+
                 Column(verticalArrangement = Arrangement.spacedBy(medium)) {
                     OutlinedTextField(
                         value = ip,
@@ -156,16 +160,21 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         onDismiss() // Close dialog after success
                     } else {
                         isLoading = false
-                        notificationManager.sendNotification(
-                            title = { it.getText("addition_failed") },
-                            message = {
-                                "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
-                                    "2. ${it.getText(
-                                        "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
-                                    )}"
-                            },
-                            messageType = MessageType.Error,
-                        )
+                        // The proactive banner shown above already explains a likely-blocking
+                        // network. Only fall back to the generic firewall/IP notification when
+                        // the network does not look blocking.
+                        if (!isDiscoveryBlocked.value) {
+                            notificationManager.sendNotification(
+                                title = { it.getText("addition_failed") },
+                                message = {
+                                    "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
+                                        "2. ${it.getText(
+                                            "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
+                                        )}"
+                                },
+                                messageType = MessageType.Error,
+                            )
+                        }
                     }
                 }
             }

@@ -41,11 +41,14 @@ import com.composables.icons.materialsymbols.rounded.Settings
 import com.composables.icons.materialsymbols.rounded.Share
 import com.composables.icons.materialsymbols.rounded.Upload
 import com.composables.icons.materialsymbols.rounded.Vpn_key
+import com.composables.icons.materialsymbols.rounded.Warning
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.ExitMode
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.net.NetworkProfileService
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -65,6 +68,7 @@ fun MainMenuView() {
     val appUpdateService = koinInject<AppUpdateService>()
     val configManager = koinInject<DesktopConfigManager>()
     val navigateManage = koinInject<NavigationManager>()
+    val networkProfileService = koinInject<NetworkProfileService>()
 
     val primaryMenuList =
         remember {
@@ -75,6 +79,9 @@ fun MainMenuView() {
                 MainMenuItem("extension", Extension, MaterialSymbols.Rounded.Extension),
             )
         }
+
+    val networkDiagnosis by networkProfileService.diagnosis.collectAsState()
+    val showNetworkWarning = networkDiagnosis.isLikelyBlocking()
 
     val secondaryMenuList =
         remember {
@@ -125,6 +132,16 @@ fun MainMenuView() {
                     .padding(start = tiny, end = tiny),
             verticalArrangement = Arrangement.spacedBy(tiny4X),
         ) {
+            if (showNetworkWarning) {
+                MainMenuItemView(
+                    title = "network_warning",
+                    icon = MaterialSymbols.Rounded.Warning,
+                    selected = false,
+                    onClick = { networkProfileService.showWarning() },
+                    tintColor = LocalThemeExtState.current.warning.color,
+                )
+            }
+
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = tiny3X),
                 thickness = tiny5X,
