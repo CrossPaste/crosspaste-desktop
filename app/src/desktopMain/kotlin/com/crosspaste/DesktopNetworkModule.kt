@@ -73,7 +73,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
             }
         }
         single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get()) }
-        single<NetworkProfileService> { DesktopNetworkProfileService(get(), get()) }
+        single<NetworkProfileService> { DesktopNetworkProfileService(get(), get(), get()) }
         single<ResourcesClient> { DesktopResourcesClient(get(), get()) }
         single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
         single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }

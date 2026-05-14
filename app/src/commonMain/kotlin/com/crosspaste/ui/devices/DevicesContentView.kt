@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -16,8 +17,10 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,9 +38,11 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Devices
 import com.composables.icons.materialsymbols.rounded.Refresh
+import com.composables.icons.materialsymbols.rounded.Warning
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.net.NetworkProfileService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
@@ -47,6 +52,7 @@ import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -61,9 +67,16 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
     val copywriter = koinInject<GlobalCopywriter>()
     val deviceScopeFactory = koinInject<DeviceScopeFactory>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
+    val networkProfileService = koinInject<NetworkProfileService>()
     val pasteBonjourService = koinInject<PasteBonjourService>()
     val syncManager = koinInject<SyncManager>()
     val syncScopeFactory = koinInject<SyncScopeFactory>()
+
+    val networkDiagnosis by networkProfileService.diagnosis.collectAsState()
+    val networkWarningDismissed by networkProfileService.isWarningDismissed.collectAsState()
+    val isNetworkBlocking = networkDiagnosis.isLikelyBlocking()
+    val showNetworkBanner = isNetworkBlocking && !networkWarningDismissed
+    val showNetworkIcon = isNetworkBlocking && networkWarningDismissed
 
     val nearbyDevicesList by nearbyDeviceManager.nearbySyncInfos.collectAsState()
 
@@ -100,6 +113,20 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(tiny),
             ) {
+                if (showNetworkIcon) {
+                    IconButton(
+                        onClick = { networkProfileService.showWarning() },
+                        modifier = Modifier.size(xxLarge),
+                    ) {
+                        Icon(
+                            imageVector = MaterialSymbols.Rounded.Warning,
+                            contentDescription = copywriter.getText("network_warning_view"),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(large2X),
+                        )
+                    }
+                }
+
                 FilledTonalButton(
                     onClick = { showCurrentDeviceDialog = true },
                     contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
@@ -175,6 +202,18 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
             contentPadding = PaddingValues(bottom = titanic),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
+            if (showNetworkBanner) {
+                item(key = "network_blocking_banner") {
+                    NetworkBlockingBanner(
+                        message = copywriter.getText("windows_network_discovery_blocked_warning"),
+                        openSettingsLabel = copywriter.getText("open_network_settings"),
+                        dismissLabel = copywriter.getText("network_warning_dismiss"),
+                        onOpenSettings = { networkProfileService.openNetworkSettings() },
+                        onDismiss = { networkProfileService.dismissWarning() },
+                    )
+                }
+            }
+
             if (syncRuntimeInfos.isNotEmpty()) {
                 stickyHeader {
                     SectionHeader(
@@ -265,6 +304,67 @@ private fun SyncDeviceItem(
             deviceScopeFactory.createDeviceScope(syncRuntimeInfo)
         }
     scope.DeviceConnectView()
+}
+
+@Composable
+private fun NetworkBlockingBanner(
+    message: String,
+    openSettingsLabel: String,
+    dismissLabel: String,
+    onOpenSettings: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(vertical = tiny),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = small2XRoundedCornerShape,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = medium, vertical = small),
+            verticalArrangement = Arrangement.spacedBy(tiny),
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(small),
+                )
+                Spacer(modifier = Modifier.width(tiny))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    contentPadding = PaddingValues(horizontal = tiny),
+                ) {
+                    Text(
+                        text = dismissLabel,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
+                Spacer(modifier = Modifier.width(tiny))
+                TextButton(
+                    onClick = onOpenSettings,
+                    contentPadding = PaddingValues(horizontal = tiny),
+                ) {
+                    Text(
+                        text = openSettingsLabel,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable

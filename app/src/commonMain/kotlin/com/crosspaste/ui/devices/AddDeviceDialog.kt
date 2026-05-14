@@ -18,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,7 +71,8 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    var showNetworkDiscoveryWarning by remember { mutableStateOf(false) }
+    val networkDiagnosis by networkProfileService.diagnosis.collectAsState()
+    val showNetworkDiscoveryWarning = networkDiagnosis.isLikelyBlocking()
 
     // Determine if the confirm button should be enabled
     val isInputValid =
@@ -182,7 +184,6 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                 isLoading = isLoading,
             ) {
                 isLoading = true
-                showNetworkDiscoveryWarning = false
                 coroutineScope.launch {
                     val hostAndPort = HostAndPort(ip, port.toInt())
                     val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
@@ -193,10 +194,10 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         onDismiss() // Close dialog after success
                     } else {
                         isLoading = false
-                        val diagnosis = networkProfileService.diagnose()
-                        if (diagnosis.isLikelyBlocking()) {
-                            showNetworkDiscoveryWarning = true
-                        } else {
+                        // The proactive banner shown above already explains a likely-blocking
+                        // network. Only fall back to the generic firewall/IP notification when
+                        // the network does not look blocking.
+                        if (!networkProfileService.diagnosis.value.isLikelyBlocking()) {
                             notificationManager.sendNotification(
                                 title = { it.getText("addition_failed") },
                                 message = {

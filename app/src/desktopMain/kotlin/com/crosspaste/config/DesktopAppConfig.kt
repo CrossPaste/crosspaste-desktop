@@ -60,6 +60,9 @@ data class DesktopAppConfig(
     // MCP server
     val enableMcpServer: Boolean = false,
     val mcpServerPort: Int = 0,
+    // Fingerprint of the most recently dismissed network-blocking diagnosis ("profile|mDnsAllowed"),
+    // or empty when the user has not dismissed the current warning.
+    val networkBlockingDismissedFingerprint: String = "",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -162,5 +165,11 @@ data class DesktopAppConfig(
                 },
             enableMcpServer = if (key == "enableMcpServer") toBoolean(value) else enableMcpServer,
             mcpServerPort = if (key == "mcpServerPort") toInt(value) else mcpServerPort,
+            networkBlockingDismissedFingerprint =
+                if (key == "networkBlockingDismissedFingerprint") {
+                    toString(value)
+                } else {
+                    networkBlockingDismissedFingerprint
+                },
         )
 }

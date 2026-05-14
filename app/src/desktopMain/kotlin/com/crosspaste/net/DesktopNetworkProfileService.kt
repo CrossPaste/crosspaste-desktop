@@ -1,10 +1,24 @@
 package com.crosspaste.net
 
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.ioDispatcher
+import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.Desktop
 import java.net.URI
@@ -12,20 +26,67 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 class DesktopNetworkProfileService(
-    private val platform: Platform,
+    private val configManager: DesktopConfigManager,
     private val notificationManager: NotificationManager,
+    private val platform: Platform,
+    private val scope: CoroutineScope = namedScope(ioDispatcher, "DesktopNetworkProfileService"),
 ) : NetworkProfileService {
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun diagnose(): NetworkDiagnosis {
-        if (!platform.isWindows()) {
-            return NetworkDiagnosis.NOT_APPLICABLE
+    private val _diagnosis = MutableStateFlow(NetworkDiagnosis.NOT_APPLICABLE)
+    override val diagnosis: StateFlow<NetworkDiagnosis> = _diagnosis.asStateFlow()
+
+    override val isWarningDismissed: StateFlow<Boolean> =
+        combine(
+            _diagnosis,
+            configManager.config.map { it.networkBlockingDismissedFingerprint }.distinctUntilChanged(),
+        ) { current, storedFingerprint ->
+            storedFingerprint.isNotEmpty() && storedFingerprint == current.fingerprint()
+        }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
+
+    init {
+        if (platform.isWindows()) {
+            scope.launch {
+                kotlinx.coroutines.delay(STARTUP_DELAY)
+                while (isActive) {
+                    runDetection()
+                    kotlinx.coroutines.delay(REFRESH_INTERVAL)
+                }
+            }
         }
-        return withContext(ioDispatcher) { runDetection() }
+
+        // When the diagnosis fingerprint diverges from the stored dismissed fingerprint
+        // (e.g. user fixed the network, or moved to a different blocking state), forget
+        // the dismissal so a future blocking event surfaces a fresh banner.
+        _diagnosis
+            .onEach { current ->
+                val stored = configManager.getCurrentConfig().networkBlockingDismissedFingerprint
+                if (stored.isNotEmpty() && stored != current.fingerprint()) {
+                    configManager.updateConfig("networkBlockingDismissedFingerprint", "")
+                }
+            }.launchIn(scope)
     }
 
-    private fun runDetection(): NetworkDiagnosis =
+    override suspend fun refresh() {
+        if (!platform.isWindows()) {
+            _diagnosis.value = NetworkDiagnosis.NOT_APPLICABLE
+            return
+        }
+        withContext(ioDispatcher) { runDetection() }
+    }
+
+    override fun dismissWarning() {
+        val current = _diagnosis.value
+        if (!current.isLikelyBlocking()) return
+        configManager.updateConfig("networkBlockingDismissedFingerprint", current.fingerprint())
+    }
+
+    override fun showWarning() {
+        configManager.updateConfig("networkBlockingDismissedFingerprint", "")
+    }
+
+    private fun runDetection() {
         runCatching {
             val command =
                 listOf(
@@ -43,20 +104,22 @@ class DesktopNetworkProfileService(
                 val finished = process.waitFor(POWERSHELL_TIMEOUT.inWholeSeconds, TimeUnit.SECONDS)
                 if (!finished) {
                     logger.warn { "Network diagnosis PowerShell timed out" }
-                    return@runCatching NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
+                    _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
+                    return@runCatching
                 }
                 val output = process.inputStream.bufferedReader(Charsets.UTF_8).readText()
                 logger.info { "Network diagnosis raw output: <<<$output>>>" }
-                val diagnosis = parseDiagnosisOutput(output)
-                logger.info { "Network diagnosis parsed: $diagnosis" }
-                diagnosis
+                val parsed = parseDiagnosisOutput(output)
+                logger.info { "Network diagnosis parsed: $parsed" }
+                _diagnosis.value = parsed
             } finally {
                 process.destroyForcibly()
             }
-        }.getOrElse { e ->
+        }.onFailure { e ->
             logger.warn(e) { "Failed to run Windows network diagnosis" }
-            NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
+            _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
         }
+    }
 
     private fun parseDiagnosisOutput(output: String): NetworkDiagnosis {
         var profile = NetworkProfile.UNKNOWN
@@ -120,14 +183,10 @@ class DesktopNetworkProfileService(
 
         private val POWERSHELL_TIMEOUT = 5.seconds
 
-        // Returns two key=value lines:
-        //   PROFILE=<Public|Private|DomainAuthenticated|Unknown>
-        //   MDNS_ALLOWED=<True|False>
-        //
-        // The profile is reduced to the most restrictive across active interfaces (Public wins).
-        // mDNS is considered "allowed" when at least one enabled inbound Allow rule whose Name
-        // starts with `mDNS` is scoped to the active profile (or to Any).
-        // Forces UTF-8 output so the JVM can decode it reliably across non-English Windows locales.
+        private val STARTUP_DELAY = 3.seconds
+
+        private val REFRESH_INTERVAL = 60.seconds
+
         private val POWERSHELL_SCRIPT =
             """
             ${'$'}ErrorActionPreference = 'SilentlyContinue'
