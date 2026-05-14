@@ -18,14 +18,14 @@ class DesktopNetworkProfileService(
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getCurrentProfile(): NetworkProfile {
+    override suspend fun diagnose(): NetworkDiagnosis {
         if (!platform.isWindows()) {
-            return NetworkProfile.NOT_APPLICABLE
+            return NetworkDiagnosis.NOT_APPLICABLE
         }
-        return withContext(ioDispatcher) { runPowerShellDetection() }
+        return withContext(ioDispatcher) { runDetection() }
     }
 
-    private fun runPowerShellDetection(): NetworkProfile =
+    private fun runDetection(): NetworkDiagnosis =
         runCatching {
             val command =
                 listOf(
@@ -33,7 +33,7 @@ class DesktopNetworkProfileService(
                     "-NoProfile",
                     "-NonInteractive",
                     "-Command",
-                    "Get-NetConnectionProfile | Select-Object -ExpandProperty NetworkCategory",
+                    POWERSHELL_SCRIPT,
                 )
             val process =
                 ProcessBuilder(command)
@@ -42,41 +42,54 @@ class DesktopNetworkProfileService(
             try {
                 val finished = process.waitFor(POWERSHELL_TIMEOUT.inWholeSeconds, TimeUnit.SECONDS)
                 if (!finished) {
-                    logger.warn { "Get-NetConnectionProfile timed out" }
-                    return@runCatching NetworkProfile.UNKNOWN
+                    logger.warn { "Network diagnosis PowerShell timed out" }
+                    return@runCatching NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
                 }
-                val output = process.inputStream.bufferedReader().readText()
-                parseProfileOutput(output)
+                val output = process.inputStream.bufferedReader(Charsets.UTF_8).readText()
+                logger.info { "Network diagnosis raw output: <<<$output>>>" }
+                val diagnosis = parseDiagnosisOutput(output)
+                logger.info { "Network diagnosis parsed: $diagnosis" }
+                diagnosis
             } finally {
                 process.destroyForcibly()
             }
         }.getOrElse { e ->
-            logger.warn(e) { "Failed to detect Windows network profile" }
-            NetworkProfile.UNKNOWN
+            logger.warn(e) { "Failed to run Windows network diagnosis" }
+            NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
         }
 
-    private fun parseProfileOutput(output: String): NetworkProfile {
-        val categories =
-            output
-                .lineSequence()
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .toList()
+    private fun parseDiagnosisOutput(output: String): NetworkDiagnosis {
+        var profile = NetworkProfile.UNKNOWN
+        var mDnsAllowed = false
+        output
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .forEach { line ->
+                when {
+                    line.startsWith(KEY_PROFILE) -> {
+                        profile = parseProfile(line.removePrefix(KEY_PROFILE).trim())
+                    }
+                    line.startsWith(KEY_MDNS_ALLOWED) -> {
+                        mDnsAllowed =
+                            line
+                                .removePrefix(KEY_MDNS_ALLOWED)
+                                .trim()
+                                .equals("True", ignoreCase = true)
+                    }
+                }
+            }
+        return NetworkDiagnosis(profile, mDnsAllowed)
+    }
 
-        if (categories.isEmpty()) {
-            return NetworkProfile.UNKNOWN
-        }
-        // Pick the most restrictive: if any active interface is Public, treat the host as Public.
-        return when {
-            categories.any { it.equals("Public", ignoreCase = true) } -> NetworkProfile.PUBLIC
-            categories.any { it.equals("Private", ignoreCase = true) } -> NetworkProfile.PRIVATE
-            categories.any {
-                it.equals("DomainAuthenticated", ignoreCase = true) ||
-                    it.equals("Domain", ignoreCase = true)
-            } -> NetworkProfile.DOMAIN_AUTHENTICATED
+    private fun parseProfile(value: String): NetworkProfile =
+        when {
+            value.equals("Public", ignoreCase = true) -> NetworkProfile.PUBLIC
+            value.equals("Private", ignoreCase = true) -> NetworkProfile.PRIVATE
+            value.equals("DomainAuthenticated", ignoreCase = true) ||
+                value.equals("Domain", ignoreCase = true) -> NetworkProfile.DOMAIN_AUTHENTICATED
             else -> NetworkProfile.UNKNOWN
         }
-    }
 
     override fun openNetworkSettings() {
         if (!platform.isWindows()) {
@@ -101,6 +114,45 @@ class DesktopNetworkProfileService(
     companion object {
         private const val MS_SETTINGS_NETWORK = "ms-settings:network"
 
+        private const val KEY_PROFILE = "PROFILE="
+
+        private const val KEY_MDNS_ALLOWED = "MDNS_ALLOWED="
+
         private val POWERSHELL_TIMEOUT = 5.seconds
+
+        // Returns two key=value lines:
+        //   PROFILE=<Public|Private|DomainAuthenticated|Unknown>
+        //   MDNS_ALLOWED=<True|False>
+        //
+        // The profile is reduced to the most restrictive across active interfaces (Public wins).
+        // mDNS is considered "allowed" when at least one enabled inbound Allow rule whose Name
+        // starts with `mDNS` is scoped to the active profile (or to Any).
+        // Forces UTF-8 output so the JVM can decode it reliably across non-English Windows locales.
+        private val POWERSHELL_SCRIPT =
+            """
+            ${'$'}ErrorActionPreference = 'SilentlyContinue'
+            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+            ${'$'}OutputEncoding = [System.Text.Encoding]::UTF8
+
+            ${'$'}category = 'Unknown'
+            ${'$'}cats = @(Get-NetConnectionProfile | Select-Object -ExpandProperty NetworkCategory)
+            if (${'$'}cats -contains 'Public') { ${'$'}category = 'Public' }
+            elseif (${'$'}cats -contains 'Private') { ${'$'}category = 'Private' }
+            elseif (${'$'}cats -contains 'DomainAuthenticated') { ${'$'}category = 'DomainAuthenticated' }
+
+            ${'$'}mDnsAllowed = ${'$'}false
+            ${'$'}rules = Get-NetFirewallRule -Name 'mDNS*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue
+            foreach (${'$'}rule in ${'$'}rules) {
+                if (${'$'}rule.Action -ne 'Allow') { continue }
+                ${'$'}p = "${'$'}(${'$'}rule.Profile)"
+                if (${'$'}p -match '\bAny\b' -or ${'$'}p -match "\b${'$'}category\b") {
+                    ${'$'}mDnsAllowed = ${'$'}true
+                    break
+                }
+            }
+
+            Write-Output "PROFILE=${'$'}category"
+            Write-Output "MDNS_ALLOWED=${'$'}mDnsAllowed"
+            """.trimIndent()
     }
 }

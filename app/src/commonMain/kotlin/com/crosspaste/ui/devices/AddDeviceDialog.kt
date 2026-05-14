@@ -31,7 +31,6 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.net.NetworkProfile
 import com.crosspaste.net.NetworkProfileService
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -71,7 +70,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    var showPublicNetworkWarning by remember { mutableStateOf(false) }
+    var showNetworkDiscoveryWarning by remember { mutableStateOf(false) }
 
     // Determine if the confirm button should be enabled
     val isInputValid =
@@ -119,7 +118,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
                 )
 
-                if (showPublicNetworkWarning) {
+                if (showNetworkDiscoveryWarning) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.errorContainer,
@@ -130,7 +129,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                             verticalArrangement = Arrangement.spacedBy(tiny),
                         ) {
                             Text(
-                                text = copywriter.getText("windows_public_network_warning"),
+                                text = copywriter.getText("windows_network_discovery_blocked_warning"),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
@@ -183,7 +182,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                 isLoading = isLoading,
             ) {
                 isLoading = true
-                showPublicNetworkWarning = false
+                showNetworkDiscoveryWarning = false
                 coroutineScope.launch {
                     val hostAndPort = HostAndPort(ip, port.toInt())
                     val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
@@ -194,9 +193,9 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         onDismiss() // Close dialog after success
                     } else {
                         isLoading = false
-                        val profile = networkProfileService.getCurrentProfile()
-                        if (profile == NetworkProfile.PUBLIC) {
-                            showPublicNetworkWarning = true
+                        val diagnosis = networkProfileService.diagnose()
+                        if (diagnosis.isLikelyBlocking()) {
+                            showNetworkDiscoveryWarning = true
                         } else {
                             notificationManager.sendNotification(
                                 title = { it.getText("addition_failed") },
