@@ -233,26 +233,26 @@ class DesktopNetworkProfileService(
         }
         runCatching {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(URI(MS_SETTINGS_ADVANCED_SHARING))
+                Desktop.getDesktop().browse(URI(MS_SETTINGS_NETWORK))
                 return
             }
-            ProcessBuilder("cmd", "/c", "start", MS_SETTINGS_ADVANCED_SHARING).start()
+            ProcessBuilder("cmd", "/c", "start", MS_SETTINGS_NETWORK).start()
         }.onFailure { e ->
             logger.warn(e) { "Failed to open Windows network settings" }
             notificationManager.sendNotification(
                 title = { it.getText("failed_to_open_browser") },
-                message = { MS_SETTINGS_ADVANCED_SHARING },
+                message = { MS_SETTINGS_NETWORK },
                 messageType = MessageType.Error,
             )
         }
     }
 
     companion object {
-        // Windows 11 22H2+ deep-links straight to Network & Internet -> Advanced network
-        // settings -> Advanced sharing settings, which exposes the Network Discovery toggle
-        // and the network profile switch — the exact controls the user needs to fix
-        // CrossPaste's discovery. Older Windows builds fall back to the Settings root.
-        private const val MS_SETTINGS_ADVANCED_SHARING = "ms-settings:network-advancedsharingsettings"
+        // Lands on Network & Internet. Microsoft has not published a deep link
+        // for the Advanced sharing settings sub-page — unsupported URIs (e.g.
+        // ms-settings:network-advancedsharingsettings) silently fall back to the
+        // Settings root, which is worse than landing one level above the target.
+        private const val MS_SETTINGS_NETWORK = "ms-settings:network"
 
         private const val KEY_PROFILE = "PROFILE="
 
