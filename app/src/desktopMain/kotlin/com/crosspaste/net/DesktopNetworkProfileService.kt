@@ -4,11 +4,14 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.windows.api.WindowsNetworkApi
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -20,9 +23,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.nio.charset.Charset
-import java.util.Base64
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 class DesktopNetworkProfileService(
@@ -43,7 +43,7 @@ class DesktopNetworkProfileService(
             configManager.config.map { it.networkBlockingDismissedFingerprint }.distinctUntilChanged(),
         ) { current, storedFingerprint ->
             storedFingerprint.isNotEmpty() && storedFingerprint == current.fingerprint()
-        }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
+        }.stateIn(scope, SharingStarted.Eagerly, false)
 
     private val _isWarningDialogVisible = MutableStateFlow(false)
     override val isWarningDialogVisible: StateFlow<Boolean> = _isWarningDialogVisible.asStateFlow()
@@ -51,10 +51,10 @@ class DesktopNetworkProfileService(
     init {
         if (platform.isWindows()) {
             scope.launch {
-                kotlinx.coroutines.delay(STARTUP_DELAY)
+                delay(STARTUP_DELAY)
                 while (isActive) {
                     runDetection()
-                    kotlinx.coroutines.delay(REFRESH_INTERVAL)
+                    delay(REFRESH_INTERVAL)
                 }
             }
         }
@@ -102,128 +102,15 @@ class DesktopNetworkProfileService(
 
     private fun runDetection() {
         runCatching {
-            // Use -EncodedCommand (UTF-16 LE Base64) instead of -Command. Java's ProcessBuilder
-            // and Windows' CreateProcess have unreliable double-quote escaping, which previously
-            // stripped the inner quotes from the script and caused PowerShell parser errors.
-            val encodedScript =
-                Base64
-                    .getEncoder()
-                    .encodeToString(POWERSHELL_SCRIPT.toByteArray(Charsets.UTF_16LE))
-            val command =
-                listOf(
-                    "powershell.exe",
-                    "-NoProfile",
-                    "-NonInteractive",
-                    "-OutputFormat",
-                    "Text",
-                    "-EncodedCommand",
-                    encodedScript,
-                )
-            // Keep stderr separate from stdout. PowerShell writes stdout and stderr in
-            // different encodings; merging them produces a mixed byte stream that no
-            // single charset can decode cleanly. Our script writes ASCII-only sentinel
-            // lines to stdout, so a clean stdout decodes reliably as UTF-8.
-            val process = ProcessBuilder(command).start()
-            try {
-                // Drain stderr concurrently so the child does not block on a full
-                // stderr pipe buffer.
-                val stderrThread =
-                    Thread {
-                        runCatching {
-                            val errBytes = process.errorStream.readBytes()
-                            if (errBytes.isNotEmpty()) {
-                                logger.warn { "Network diagnosis stderr: ${decodeProcessOutput(errBytes)}" }
-                            }
-                        }
-                    }.apply {
-                        isDaemon = true
-                        start()
-                    }
-
-                val stdoutBytes = process.inputStream.readBytes()
-                val finished = process.waitFor(POWERSHELL_TIMEOUT.inWholeSeconds, TimeUnit.SECONDS)
-                stderrThread.join(1000L)
-
-                if (!finished) {
-                    logger.warn { "Network diagnosis PowerShell timed out" }
-                    _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
-                    return@runCatching
-                }
-                val output = decodeProcessOutput(stdoutBytes)
-                logger.info { "Network diagnosis raw output: <<<$output>>>" }
-                val parsed = parseDiagnosisOutput(output)
-                logger.info { "Network diagnosis parsed: $parsed" }
-                _diagnosis.value = parsed
-            } finally {
-                process.destroyForcibly()
-            }
+            val snapshot = WindowsNetworkApi.query()
+            val diagnosis = NetworkDiagnosis(snapshot.profile, snapshot.mDnsAllowed)
+            logger.info { "Network diagnosis: $diagnosis" }
+            _diagnosis.value = diagnosis
         }.onFailure { e ->
             logger.warn(e) { "Failed to run Windows network diagnosis" }
             _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
         }
     }
-
-    // PowerShell 5.1 redirects stdout in inconsistent encodings depending on the host: sometimes
-    // UTF-16 LE (with or without BOM), sometimes the legacy ANSI codepage, sometimes UTF-8. The
-    // detection output is pure ASCII ("PROFILE=...", "MDNS_ALLOWED=..."), so try several decoders
-    // and pick the first one that produces our marker.
-    private fun decodeProcessOutput(bytes: ByteArray): String {
-        if (bytes.isEmpty()) return ""
-        val candidates =
-            listOf(
-                Charsets.UTF_8,
-                Charsets.UTF_16LE,
-                Charsets.UTF_16BE,
-                Charset.defaultCharset(),
-            )
-        for (charset in candidates) {
-            val decoded = String(bytes, charset).trimStart('﻿')
-            if (decoded.contains(KEY_PROFILE)) {
-                logger.info { "Network diagnosis decoded with $charset" }
-                return decoded
-            }
-        }
-        // Nothing matched — log all candidates so we can diagnose the actual encoding.
-        candidates.forEach { charset ->
-            logger.warn {
-                "Network diagnosis decode attempt with $charset: <<<${String(bytes, charset)}>>>"
-            }
-        }
-        return String(bytes, Charsets.UTF_8)
-    }
-
-    private fun parseDiagnosisOutput(output: String): NetworkDiagnosis {
-        var profile = NetworkProfile.UNKNOWN
-        var mDnsAllowed = false
-        output
-            .lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .forEach { line ->
-                when {
-                    line.startsWith(KEY_PROFILE) -> {
-                        profile = parseProfile(line.removePrefix(KEY_PROFILE).trim())
-                    }
-                    line.startsWith(KEY_MDNS_ALLOWED) -> {
-                        mDnsAllowed =
-                            line
-                                .removePrefix(KEY_MDNS_ALLOWED)
-                                .trim()
-                                .equals("True", ignoreCase = true)
-                    }
-                }
-            }
-        return NetworkDiagnosis(profile, mDnsAllowed)
-    }
-
-    private fun parseProfile(value: String): NetworkProfile =
-        when {
-            value.equals("Public", ignoreCase = true) -> NetworkProfile.PUBLIC
-            value.equals("Private", ignoreCase = true) -> NetworkProfile.PRIVATE
-            value.equals("DomainAuthenticated", ignoreCase = true) ||
-                value.equals("Domain", ignoreCase = true) -> NetworkProfile.DOMAIN_AUTHENTICATED
-            else -> NetworkProfile.UNKNOWN
-        }
 
     override fun openNetworkSettings() {
         if (!platform.isWindows()) {
@@ -257,75 +144,8 @@ class DesktopNetworkProfileService(
         private const val OPEN_NETWORK_SETTINGS_COMMAND =
             "control.exe /name Microsoft.NetworkAndSharingCenter /page Advanced"
 
-        private const val KEY_PROFILE = "PROFILE="
-
-        private const val KEY_MDNS_ALLOWED = "MDNS_ALLOWED="
-
-        private val POWERSHELL_TIMEOUT = 5.seconds
-
         private val STARTUP_DELAY = 3.seconds
 
         private val REFRESH_INTERVAL = 60.seconds
-
-        private val POWERSHELL_SCRIPT =
-            """
-            ${'$'}ErrorActionPreference = 'SilentlyContinue'
-            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-            ${'$'}OutputEncoding = [System.Text.Encoding]::UTF8
-
-            ${'$'}category = 'Unknown'
-            ${'$'}cats = @(Get-NetConnectionProfile | Select-Object -ExpandProperty NetworkCategory)
-            if (${'$'}cats -contains 'Public') { ${'$'}category = 'Public' }
-            elseif (${'$'}cats -contains 'Private') { ${'$'}category = 'Private' }
-            elseif (${'$'}cats -contains 'DomainAuthenticated') { ${'$'}category = 'DomainAuthenticated' }
-
-            # CrossPaste needs discovery traffic to flow on the current profile.
-            # Toggling either of these in Windows is enough for the user:
-            #   - mDNS rules (Name like mDNS*) — Windows 10 1809+ ships them
-            #   - "Network Discovery" group rules — what Advanced sharing settings
-            #     toggles. The individual rule names vary (WSDAPI-*, SSDPSrv-*,
-            #     LLMNR-*, NB-*, UPnPHost-*, WMPNetworkSvc-*), so we match by
-            #     DisplayGroup. DisplayGroup is localised per the OS UI language,
-            #     so we also try the stable Group resource id as a fallback.
-            ${'$'}mDnsAllowed = ${'$'}false
-            ${'$'}candidates = New-Object System.Collections.ArrayList
-
-            ${'$'}mdnsRules = @(Get-NetFirewallRule -Name '*mDNS*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue)
-            ${'$'}null = ${'$'}candidates.AddRange(${'$'}mdnsRules)
-
-            foreach (${'$'}groupName in @(
-                'Network Discovery',
-                '网络发现',
-                '網路探索',
-                'ネットワーク探索',
-                '네트워크 검색',
-                '@FirewallAPI.dll,-32752'
-            )) {
-                ${'$'}groupRules = @(Get-NetFirewallRule -DisplayGroup ${'$'}groupName -Direction Inbound -Enabled True -ErrorAction SilentlyContinue)
-                if (${'$'}groupRules.Count -eq 0) {
-                    ${'$'}groupRules = @(Get-NetFirewallRule -Group ${'$'}groupName -Direction Inbound -Enabled True -ErrorAction SilentlyContinue)
-                }
-                if (${'$'}groupRules.Count -gt 0) {
-                    ${'$'}null = ${'$'}candidates.AddRange(${'$'}groupRules)
-                }
-            }
-
-            ${'$'}matchedRuleName = ''
-            foreach (${'$'}rule in ${'$'}candidates) {
-                if (${'$'}rule.Action -ne 'Allow') { continue }
-                ${'$'}p = "${'$'}(${'$'}rule.Profile)"
-                if (${'$'}p -match '\bAny\b' -or ${'$'}p -match "\b${'$'}category\b") {
-                    ${'$'}mDnsAllowed = ${'$'}true
-                    ${'$'}matchedRuleName = ${'$'}rule.Name
-                    break
-                }
-            }
-
-            # Diagnostic to stderr — surfaces "why nothing matched" without polluting stdout.
-            [Console]::Error.WriteLine("diag: profile=${'$'}category, candidates=${'$'}(${'$'}candidates.Count), matched=${'$'}matchedRuleName")
-
-            Write-Output "PROFILE=${'$'}category"
-            Write-Output "MDNS_ALLOWED=${'$'}mDnsAllowed"
-            """.trimIndent()
     }
 }
