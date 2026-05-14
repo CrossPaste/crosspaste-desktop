@@ -20,8 +20,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.Desktop
-import java.net.URI
 import java.nio.charset.Charset
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -232,27 +230,32 @@ class DesktopNetworkProfileService(
             return
         }
         runCatching {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                Desktop.getDesktop().browse(URI(MS_SETTINGS_NETWORK))
-                return
-            }
-            ProcessBuilder("cmd", "/c", "start", MS_SETTINGS_NETWORK).start()
+            // Jumps straight to Control Panel -> Network and Sharing Center ->
+            // Advanced sharing settings, which exposes the Network Discovery
+            // toggle and per-profile sharing options — exactly the controls the
+            // user needs. The classic Control Panel surface is still shipped
+            // on Windows 10/11 even though Microsoft has been gradually moving
+            // pages into the Settings app.
+            ProcessBuilder(
+                "control.exe",
+                "/name",
+                "Microsoft.NetworkAndSharingCenter",
+                "/page",
+                "Advanced",
+            ).start()
         }.onFailure { e ->
             logger.warn(e) { "Failed to open Windows network settings" }
             notificationManager.sendNotification(
                 title = { it.getText("failed_to_open_browser") },
-                message = { MS_SETTINGS_NETWORK },
+                message = { OPEN_NETWORK_SETTINGS_COMMAND },
                 messageType = MessageType.Error,
             )
         }
     }
 
     companion object {
-        // Lands on Network & Internet. Microsoft has not published a deep link
-        // for the Advanced sharing settings sub-page — unsupported URIs (e.g.
-        // ms-settings:network-advancedsharingsettings) silently fall back to the
-        // Settings root, which is worse than landing one level above the target.
-        private const val MS_SETTINGS_NETWORK = "ms-settings:network"
+        private const val OPEN_NETWORK_SETTINGS_COMMAND =
+            "control.exe /name Microsoft.NetworkAndSharingCenter /page Advanced"
 
         private const val KEY_PROFILE = "PROFILE="
 
