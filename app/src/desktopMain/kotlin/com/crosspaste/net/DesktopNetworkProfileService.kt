@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import java.awt.Desktop
 import java.net.URI
 import java.nio.charset.Charset
+import java.util.Base64
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
@@ -89,13 +90,22 @@ class DesktopNetworkProfileService(
 
     private fun runDetection() {
         runCatching {
+            // Use -EncodedCommand (UTF-16 LE Base64) instead of -Command. Java's ProcessBuilder
+            // and Windows' CreateProcess have unreliable double-quote escaping, which previously
+            // stripped the inner quotes from the script and caused PowerShell parser errors.
+            val encodedScript =
+                Base64
+                    .getEncoder()
+                    .encodeToString(POWERSHELL_SCRIPT.toByteArray(Charsets.UTF_16LE))
             val command =
                 listOf(
                     "powershell.exe",
                     "-NoProfile",
                     "-NonInteractive",
-                    "-Command",
-                    POWERSHELL_SCRIPT,
+                    "-OutputFormat",
+                    "Text",
+                    "-EncodedCommand",
+                    encodedScript,
                 )
             // Keep stderr separate from stdout. PowerShell writes stdout and stderr in
             // different encodings; merging them produces a mixed byte stream that no
