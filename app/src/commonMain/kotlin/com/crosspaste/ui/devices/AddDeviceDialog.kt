@@ -2,6 +2,7 @@ package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +31,8 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.net.NetworkProfile
+import com.crosspaste.net.NetworkProfileService
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.notification.MessageType
@@ -39,6 +43,7 @@ import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.base.PortTextField
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
@@ -51,6 +56,7 @@ import org.koin.compose.koinInject
 @Composable
 fun AddDeviceDialog(onDismiss: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
+    val networkProfileService = koinInject<NetworkProfileService>()
     val notificationManager = koinInject<NotificationManager>()
     val syncClientApi = koinInject<SyncClientApi>()
     val syncManager = koinInject<SyncManager>()
@@ -64,6 +70,8 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
     var port by remember { mutableStateOf("13129") }
 
     var isLoading by remember { mutableStateOf(false) }
+
+    var showPublicNetworkWarning by remember { mutableStateOf(false) }
 
     // Determine if the confirm button should be enabled
     val isInputValid =
@@ -111,6 +119,35 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
                 )
 
+                if (showPublicNetworkWarning) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = small2XRoundedCornerShape,
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = medium, vertical = small),
+                            verticalArrangement = Arrangement.spacedBy(tiny),
+                        ) {
+                            Text(
+                                text = copywriter.getText("windows_public_network_warning"),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
+                            )
+                            TextButton(
+                                onClick = { networkProfileService.openNetworkSettings() },
+                                contentPadding = PaddingValues(horizontal = tiny),
+                            ) {
+                                Text(
+                                    text = copywriter.getText("open_network_settings"),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Column(verticalArrangement = Arrangement.spacedBy(medium)) {
                     OutlinedTextField(
                         value = ip,
@@ -146,6 +183,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                 isLoading = isLoading,
             ) {
                 isLoading = true
+                showPublicNetworkWarning = false
                 coroutineScope.launch {
                     val hostAndPort = HostAndPort(ip, port.toInt())
                     val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
@@ -156,16 +194,21 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         onDismiss() // Close dialog after success
                     } else {
                         isLoading = false
-                        notificationManager.sendNotification(
-                            title = { it.getText("addition_failed") },
-                            message = {
-                                "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
-                                    "2. ${it.getText(
-                                        "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
-                                    )}"
-                            },
-                            messageType = MessageType.Error,
-                        )
+                        val profile = networkProfileService.getCurrentProfile()
+                        if (profile == NetworkProfile.PUBLIC) {
+                            showPublicNetworkWarning = true
+                        } else {
+                            notificationManager.sendNotification(
+                                title = { it.getText("addition_failed") },
+                                message = {
+                                    "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
+                                        "2. ${it.getText(
+                                            "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
+                                        )}"
+                                },
+                                messageType = MessageType.Error,
+                            )
+                        }
                     }
                 }
             }

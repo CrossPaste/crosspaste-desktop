@@ -8,12 +8,14 @@ import com.crosspaste.mcp.McpResourceProvider
 import com.crosspaste.mcp.McpServer
 import com.crosspaste.mcp.McpToolProvider
 import com.crosspaste.net.DesktopNetworkInterfaceService
+import com.crosspaste.net.DesktopNetworkProfileService
 import com.crosspaste.net.DesktopPasteBonjourService
 import com.crosspaste.net.DesktopPasteServer
 import com.crosspaste.net.DesktopResourcesClient
 import com.crosspaste.net.DesktopServerFactory
 import com.crosspaste.net.DesktopServerModule
 import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.net.NetworkProfileService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.ResourcesClient
@@ -71,6 +73,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
             }
         }
         single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get()) }
+        single<NetworkProfileService> { DesktopNetworkProfileService(get(), get()) }
         single<ResourcesClient> { DesktopResourcesClient(get(), get()) }
         single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
         single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
