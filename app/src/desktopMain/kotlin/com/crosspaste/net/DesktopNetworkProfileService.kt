@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.Desktop
 import java.net.URI
+import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
@@ -107,7 +108,8 @@ class DesktopNetworkProfileService(
                     _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
                     return@runCatching
                 }
-                val output = process.inputStream.bufferedReader(Charsets.UTF_8).readText()
+                val bytes = process.inputStream.readBytes()
+                val output = decodeProcessOutput(bytes)
                 logger.info { "Network diagnosis raw output: <<<$output>>>" }
                 val parsed = parseDiagnosisOutput(output)
                 logger.info { "Network diagnosis parsed: $parsed" }
@@ -119,6 +121,35 @@ class DesktopNetworkProfileService(
             logger.warn(e) { "Failed to run Windows network diagnosis" }
             _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
         }
+    }
+
+    // PowerShell 5.1 redirects stdout in inconsistent encodings depending on the host: sometimes
+    // UTF-16 LE (with or without BOM), sometimes the legacy ANSI codepage, sometimes UTF-8. The
+    // detection output is pure ASCII ("PROFILE=...", "MDNS_ALLOWED=..."), so try several decoders
+    // and pick the first one that produces our marker.
+    private fun decodeProcessOutput(bytes: ByteArray): String {
+        if (bytes.isEmpty()) return ""
+        val candidates =
+            listOf(
+                Charsets.UTF_8,
+                Charsets.UTF_16LE,
+                Charsets.UTF_16BE,
+                Charset.defaultCharset(),
+            )
+        for (charset in candidates) {
+            val decoded = String(bytes, charset).trimStart('﻿')
+            if (decoded.contains(KEY_PROFILE)) {
+                logger.info { "Network diagnosis decoded with $charset" }
+                return decoded
+            }
+        }
+        // Nothing matched — log all candidates so we can diagnose the actual encoding.
+        candidates.forEach { charset ->
+            logger.warn {
+                "Network diagnosis decode attempt with $charset: <<<${String(bytes, charset)}>>>"
+            }
+        }
+        return String(bytes, Charsets.UTF_8)
     }
 
     private fun parseDiagnosisOutput(output: String): NetworkDiagnosis {
