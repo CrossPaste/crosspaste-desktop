@@ -114,16 +114,6 @@ fun MainMenuView() {
                     .padding(horizontal = tiny),
             verticalArrangement = Arrangement.spacedBy(tiny4X),
         ) {
-            if (showNetworkWarning) {
-                MainMenuItemView(
-                    title = "network_warning",
-                    icon = MaterialSymbols.Rounded.Warning,
-                    selected = false,
-                    onClick = { networkProfileService.showWarning() },
-                    tintColor = MaterialTheme.colorScheme.error,
-                )
-            }
-
             primaryMenuList.forEach { item ->
                 MainMenuItemView(
                     title = item.title,
@@ -141,6 +131,16 @@ fun MainMenuView() {
                     .padding(start = tiny, end = tiny),
             verticalArrangement = Arrangement.spacedBy(tiny4X),
         ) {
+            if (showNetworkWarning) {
+                MainMenuItemView(
+                    title = "network_warning",
+                    icon = MaterialSymbols.Rounded.Warning,
+                    selected = false,
+                    onClick = { networkProfileService.showWarning() },
+                    tintColor = MaterialTheme.colorScheme.error,
+                )
+            }
+
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = tiny3X),
                 thickness = tiny5X,
