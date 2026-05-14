@@ -8,6 +8,8 @@ interface NetworkProfileService {
 
     val isWarningDismissed: StateFlow<Boolean>
 
+    val isWarningDialogVisible: StateFlow<Boolean>
+
     suspend fun refresh()
 
     fun dismissWarning()

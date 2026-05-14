@@ -1,13 +1,11 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,8 +16,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,11 +35,9 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Devices
 import com.composables.icons.materialsymbols.rounded.Refresh
-import com.composables.icons.materialsymbols.rounded.Warning
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.net.NetworkProfileService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
@@ -53,7 +47,6 @@ import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
-import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -68,16 +61,9 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
     val copywriter = koinInject<GlobalCopywriter>()
     val deviceScopeFactory = koinInject<DeviceScopeFactory>()
     val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
-    val networkProfileService = koinInject<NetworkProfileService>()
     val pasteBonjourService = koinInject<PasteBonjourService>()
     val syncManager = koinInject<SyncManager>()
     val syncScopeFactory = koinInject<SyncScopeFactory>()
-
-    val networkDiagnosis by networkProfileService.diagnosis.collectAsState()
-    val networkWarningDismissed by networkProfileService.isWarningDismissed.collectAsState()
-    val isNetworkBlocking = networkDiagnosis.isLikelyBlocking()
-    val showNetworkBanner = isNetworkBlocking && !networkWarningDismissed
-    val showNetworkIcon = isNetworkBlocking && networkWarningDismissed
 
     val nearbyDevicesList by nearbyDeviceManager.nearbySyncInfos.collectAsState()
 
@@ -114,36 +100,6 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(tiny),
             ) {
-                if (showNetworkIcon) {
-                    FilledTonalButton(
-                        onClick = { networkProfileService.showWarning() },
-                        contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
-                        colors =
-                            ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                            ),
-                        elevation =
-                            ButtonDefaults.filledTonalButtonElevation(
-                                defaultElevation = tiny3X,
-                                pressedElevation = tiny5X,
-                                hoveredElevation = tiny2X,
-                                focusedElevation = tiny3X,
-                            ),
-                    ) {
-                        Icon(
-                            imageVector = MaterialSymbols.Rounded.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(small),
-                        )
-                        Spacer(modifier = Modifier.width(tiny3X))
-                        Text(
-                            text = copywriter.getText("network_warning_view"),
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                    }
-                }
-
                 FilledTonalButton(
                     onClick = { showCurrentDeviceDialog = true },
                     contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
@@ -219,18 +175,6 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
             contentPadding = PaddingValues(bottom = titanic),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
-            if (showNetworkBanner) {
-                item(key = "network_blocking_banner") {
-                    NetworkBlockingBanner(
-                        message = copywriter.getText("windows_network_discovery_blocked_warning"),
-                        openSettingsLabel = copywriter.getText("open_network_settings"),
-                        dismissLabel = copywriter.getText("network_warning_dismiss"),
-                        onOpenSettings = { networkProfileService.openNetworkSettings() },
-                        onDismiss = { networkProfileService.dismissWarning() },
-                    )
-                }
-            }
-
             if (syncRuntimeInfos.isNotEmpty()) {
                 stickyHeader {
                     SectionHeader(
@@ -321,83 +265,6 @@ private fun SyncDeviceItem(
             deviceScopeFactory.createDeviceScope(syncRuntimeInfo)
         }
     scope.DeviceConnectView()
-}
-
-@Composable
-private fun NetworkBlockingBanner(
-    message: String,
-    openSettingsLabel: String,
-    dismissLabel: String,
-    onOpenSettings: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = tiny),
-        color = MaterialTheme.colorScheme.errorContainer,
-        shape = small2XRoundedCornerShape,
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = medium, vertical = small),
-            verticalArrangement = Arrangement.spacedBy(tiny),
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier =
-                        Modifier
-                            .padding(top = tiny3X)
-                            .size(small),
-                )
-                Spacer(modifier = Modifier.width(tiny))
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
-                    colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        ),
-                    border =
-                        BorderStroke(
-                            width = tiny5X,
-                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.5f),
-                        ),
-                ) {
-                    Text(
-                        text = dismissLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
-                Spacer(modifier = Modifier.width(tiny))
-                FilledTonalButton(
-                    onClick = onOpenSettings,
-                    contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
-                    colors =
-                        ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
-                ) {
-                    Text(
-                        text = openSettingsLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable

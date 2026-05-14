@@ -47,6 +47,9 @@ class DesktopNetworkProfileService(
             storedFingerprint.isNotEmpty() && storedFingerprint == current.fingerprint()
         }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
 
+    private val _isWarningDialogVisible = MutableStateFlow(false)
+    override val isWarningDialogVisible: StateFlow<Boolean> = _isWarningDialogVisible.asStateFlow()
+
     init {
         if (platform.isWindows()) {
             scope.launch {
@@ -60,12 +63,22 @@ class DesktopNetworkProfileService(
 
         // When the diagnosis fingerprint diverges from the stored dismissed fingerprint
         // (e.g. user fixed the network, or moved to a different blocking state), forget
-        // the dismissal so a future blocking event surfaces a fresh banner.
+        // the dismissal so the next blocking event surfaces a fresh warning.
         _diagnosis
             .onEach { current ->
                 val stored = configManager.getCurrentConfig().networkBlockingDismissedFingerprint
                 if (stored.isNotEmpty() && stored != current.fingerprint()) {
                     configManager.updateConfig("networkBlockingDismissedFingerprint", "")
+                }
+            }.launchIn(scope)
+
+        // Auto-surface the dialog the first time a new blocking state is detected.
+        combine(_diagnosis, isWarningDismissed) { current, dismissed ->
+            current.isLikelyBlocking() && !dismissed
+        }.distinctUntilChanged()
+            .onEach { shouldShow ->
+                if (shouldShow) {
+                    _isWarningDialogVisible.value = true
                 }
             }.launchIn(scope)
     }
@@ -79,13 +92,14 @@ class DesktopNetworkProfileService(
     }
 
     override fun dismissWarning() {
+        _isWarningDialogVisible.value = false
         val current = _diagnosis.value
         if (!current.isLikelyBlocking()) return
         configManager.updateConfig("networkBlockingDismissedFingerprint", current.fingerprint())
     }
 
     override fun showWarning() {
-        configManager.updateConfig("networkBlockingDismissedFingerprint", "")
+        _isWarningDialogVisible.value = true
     }
 
     private fun runDetection() {
