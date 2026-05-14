@@ -39,6 +39,7 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.base.PortTextField
@@ -73,6 +74,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
 
     val networkDiagnosis by networkProfileService.diagnosis.collectAsState()
     val showNetworkDiscoveryWarning = networkDiagnosis.isLikelyBlocking()
+    val warning = LocalThemeExtState.current.warning
 
     // Determine if the confirm button should be enabled
     val isInputValid =
@@ -123,7 +125,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                 if (showNetworkDiscoveryWarning) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.errorContainer,
+                        color = warning.container,
                         shape = small2XRoundedCornerShape,
                     ) {
                         Column(
@@ -133,7 +135,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                             Text(
                                 text = copywriter.getText("windows_network_discovery_blocked_warning"),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                color = warning.onContainer,
                                 lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
                             )
                             TextButton(
@@ -142,7 +144,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                             ) {
                                 Text(
                                     text = copywriter.getText("open_network_settings"),
-                                    color = MaterialTheme.colorScheme.error,
+                                    color = warning.color,
                                 )
                             }
                         }

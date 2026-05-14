@@ -48,6 +48,7 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkProfileService
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -137,7 +138,7 @@ fun MainMenuView() {
                     icon = MaterialSymbols.Rounded.Warning,
                     selected = false,
                     onClick = { networkProfileService.showWarning() },
-                    tintColor = MaterialTheme.colorScheme.error,
+                    tintColor = LocalThemeExtState.current.warning.color,
                 )
             }
 
