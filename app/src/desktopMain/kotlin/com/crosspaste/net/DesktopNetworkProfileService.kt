@@ -280,25 +280,49 @@ class DesktopNetworkProfileService(
             elseif (${'$'}cats -contains 'DomainAuthenticated') { ${'$'}category = 'DomainAuthenticated' }
 
             # CrossPaste needs discovery traffic to flow on the current profile.
-            # Two firewall rule groups can let it through, and toggling either is a
-            # reasonable user fix:
-            #   - mDNS rules (Name like mDNS*) — Windows 10 1809+ ships these
-            #   - Network Discovery rules (Name like NETDIS-*) — the classic SSDP /
-            #     LLMNR / WS-Discovery / NetBIOS group toggled by Advanced sharing
-            #     settings -> "Network discovery"
-            # Either being enabled and applying to the current profile counts as allowed.
+            # Toggling either of these in Windows is enough for the user:
+            #   - mDNS rules (Name like mDNS*) — Windows 10 1809+ ships them
+            #   - "Network Discovery" group rules — what Advanced sharing settings
+            #     toggles. The individual rule names vary (WSDAPI-*, SSDPSrv-*,
+            #     LLMNR-*, NB-*, UPnPHost-*, WMPNetworkSvc-*), so we match by
+            #     DisplayGroup. DisplayGroup is localised per the OS UI language,
+            #     so we also try the stable Group resource id as a fallback.
             ${'$'}mDnsAllowed = ${'$'}false
-            ${'$'}rules = @()
-            ${'$'}rules += Get-NetFirewallRule -Name 'mDNS*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue
-            ${'$'}rules += Get-NetFirewallRule -Name 'NETDIS-*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue
-            foreach (${'$'}rule in ${'$'}rules) {
+            ${'$'}candidates = New-Object System.Collections.ArrayList
+
+            ${'$'}mdnsRules = @(Get-NetFirewallRule -Name '*mDNS*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue)
+            ${'$'}null = ${'$'}candidates.AddRange(${'$'}mdnsRules)
+
+            foreach (${'$'}groupName in @(
+                'Network Discovery',
+                '网络发现',
+                '網路探索',
+                'ネットワーク探索',
+                '네트워크 검색',
+                '@FirewallAPI.dll,-32752'
+            )) {
+                ${'$'}groupRules = @(Get-NetFirewallRule -DisplayGroup ${'$'}groupName -Direction Inbound -Enabled True -ErrorAction SilentlyContinue)
+                if (${'$'}groupRules.Count -eq 0) {
+                    ${'$'}groupRules = @(Get-NetFirewallRule -Group ${'$'}groupName -Direction Inbound -Enabled True -ErrorAction SilentlyContinue)
+                }
+                if (${'$'}groupRules.Count -gt 0) {
+                    ${'$'}null = ${'$'}candidates.AddRange(${'$'}groupRules)
+                }
+            }
+
+            ${'$'}matchedRuleName = ''
+            foreach (${'$'}rule in ${'$'}candidates) {
                 if (${'$'}rule.Action -ne 'Allow') { continue }
                 ${'$'}p = "${'$'}(${'$'}rule.Profile)"
                 if (${'$'}p -match '\bAny\b' -or ${'$'}p -match "\b${'$'}category\b") {
                     ${'$'}mDnsAllowed = ${'$'}true
+                    ${'$'}matchedRuleName = ${'$'}rule.Name
                     break
                 }
             }
+
+            # Diagnostic to stderr — surfaces "why nothing matched" without polluting stdout.
+            [Console]::Error.WriteLine("diag: profile=${'$'}category, candidates=${'$'}(${'$'}candidates.Count), matched=${'$'}matchedRuleName")
 
             Write-Output "PROFILE=${'$'}category"
             Write-Output "MDNS_ALLOWED=${'$'}mDnsAllowed"
