@@ -97,19 +97,37 @@ class DesktopNetworkProfileService(
                     "-Command",
                     POWERSHELL_SCRIPT,
                 )
-            val process =
-                ProcessBuilder(command)
-                    .redirectErrorStream(true)
-                    .start()
+            // Keep stderr separate from stdout. PowerShell writes stdout and stderr in
+            // different encodings; merging them produces a mixed byte stream that no
+            // single charset can decode cleanly. Our script writes ASCII-only sentinel
+            // lines to stdout, so a clean stdout decodes reliably as UTF-8.
+            val process = ProcessBuilder(command).start()
             try {
+                // Drain stderr concurrently so the child does not block on a full
+                // stderr pipe buffer.
+                val stderrThread =
+                    Thread {
+                        runCatching {
+                            val errBytes = process.errorStream.readBytes()
+                            if (errBytes.isNotEmpty()) {
+                                logger.warn { "Network diagnosis stderr: ${decodeProcessOutput(errBytes)}" }
+                            }
+                        }
+                    }.apply {
+                        isDaemon = true
+                        start()
+                    }
+
+                val stdoutBytes = process.inputStream.readBytes()
                 val finished = process.waitFor(POWERSHELL_TIMEOUT.inWholeSeconds, TimeUnit.SECONDS)
+                stderrThread.join(1000L)
+
                 if (!finished) {
                     logger.warn { "Network diagnosis PowerShell timed out" }
                     _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
                     return@runCatching
                 }
-                val bytes = process.inputStream.readBytes()
-                val output = decodeProcessOutput(bytes)
+                val output = decodeProcessOutput(stdoutBytes)
                 logger.info { "Network diagnosis raw output: <<<$output>>>" }
                 val parsed = parseDiagnosisOutput(output)
                 logger.info { "Network diagnosis parsed: $parsed" }
