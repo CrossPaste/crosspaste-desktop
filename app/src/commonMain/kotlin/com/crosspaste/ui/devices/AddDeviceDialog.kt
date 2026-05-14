@@ -2,7 +2,6 @@ package com.crosspaste.ui.devices
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,11 +13,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,19 +29,16 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.net.NetworkProfileService
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
-import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.base.PortTextField
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
@@ -57,7 +51,6 @@ import org.koin.compose.koinInject
 @Composable
 fun AddDeviceDialog(onDismiss: () -> Unit) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val networkProfileService = koinInject<NetworkProfileService>()
     val notificationManager = koinInject<NotificationManager>()
     val syncClientApi = koinInject<SyncClientApi>()
     val syncManager = koinInject<SyncManager>()
@@ -72,9 +65,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    val networkDiagnosis by networkProfileService.diagnosis.collectAsState()
-    val showNetworkDiscoveryWarning = networkDiagnosis.isLikelyBlocking()
-    val warning = LocalThemeExtState.current.warning
+    val isDiscoveryBlocked = rememberNetworkDiscoveryBlocked()
 
     // Determine if the confirm button should be enabled
     val isInputValid =
@@ -122,34 +113,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
                 )
 
-                if (showNetworkDiscoveryWarning) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = warning.container,
-                        shape = small2XRoundedCornerShape,
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = medium, vertical = small),
-                            verticalArrangement = Arrangement.spacedBy(tiny),
-                        ) {
-                            Text(
-                                text = copywriter.getText("windows_network_discovery_blocked_warning"),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = warning.onContainer,
-                                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
-                            )
-                            TextButton(
-                                onClick = { networkProfileService.openNetworkSettings() },
-                                contentPadding = PaddingValues(horizontal = tiny),
-                            ) {
-                                Text(
-                                    text = copywriter.getText("open_network_settings"),
-                                    color = warning.color,
-                                )
-                            }
-                        }
-                    }
-                }
+                NetworkDiscoveryBlockedNotice()
 
                 Column(verticalArrangement = Arrangement.spacedBy(medium)) {
                     OutlinedTextField(
@@ -199,7 +163,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         // The proactive banner shown above already explains a likely-blocking
                         // network. Only fall back to the generic firewall/IP notification when
                         // the network does not look blocking.
-                        if (!networkProfileService.diagnosis.value.isLikelyBlocking()) {
+                        if (!isDiscoveryBlocked.value) {
                             notificationManager.sendNotification(
                                 title = { it.getText("addition_failed") },
                                 message = {
