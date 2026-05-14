@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,8 +26,7 @@ import com.composables.icons.materialsymbols.rounded.Warning
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkProfileService
 import com.crosspaste.ui.LocalAppSizeValueState
-import com.crosspaste.ui.base.DialogActionButton
-import com.crosspaste.ui.base.DialogButtonType
+import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
@@ -54,11 +56,15 @@ private fun NetworkWarningDialog(
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     val appSizeValue = LocalAppSizeValueState.current
+    val warning = LocalThemeExtState.current.warning
 
     AlertDialog(
         modifier = Modifier.width(appSizeValue.dialogWidth),
         properties = DialogProperties(usePlatformDefaultWidth = false),
         onDismissRequest = onDismiss,
+        containerColor = warning.surface,
+        titleContentColor = warning.onContainer,
+        textContentColor = warning.onContainer,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -71,7 +77,7 @@ private fun NetworkWarningDialog(
                     imageVector = MaterialSymbols.Rounded.Warning,
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
-                    tint = MaterialTheme.colorScheme.error,
+                    tint = warning.color,
                 )
                 Spacer(modifier = Modifier.width(medium))
                 Text(
@@ -91,23 +97,31 @@ private fun NetworkWarningDialog(
                 Text(
                     text = copywriter.getText("windows_network_discovery_blocked_warning"),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         },
         confirmButton = {
-            DialogActionButton(
-                text = copywriter.getText("open_network_settings"),
-                type = DialogButtonType.ERROR,
+            Button(
                 onClick = onOpenSettings,
-            )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = warning.color,
+                        contentColor = warning.onColor,
+                    ),
+            ) {
+                Text(copywriter.getText("open_network_settings"))
+            }
         },
         dismissButton = {
-            DialogActionButton(
-                text = copywriter.getText("network_warning_dismiss"),
-                type = DialogButtonType.TEXT,
+            TextButton(
                 onClick = onDismiss,
-            )
+                colors =
+                    ButtonDefaults.textButtonColors(
+                        contentColor = warning.onContainer,
+                    ),
+            ) {
+                Text(copywriter.getText("network_warning_dismiss"))
+            }
         },
     )
 }
