@@ -26,7 +26,7 @@ data class NetworkDiagnosis(
 
     fun isLikelyBlocking(): Boolean =
         when (profile) {
-            NetworkProfile.PUBLIC -> true
+            NetworkProfile.PUBLIC,
             NetworkProfile.PRIVATE,
             NetworkProfile.DOMAIN_AUTHENTICATED,
             -> !mDnsAllowed

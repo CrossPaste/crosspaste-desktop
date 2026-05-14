@@ -279,8 +279,18 @@ class DesktopNetworkProfileService(
             elseif (${'$'}cats -contains 'Private') { ${'$'}category = 'Private' }
             elseif (${'$'}cats -contains 'DomainAuthenticated') { ${'$'}category = 'DomainAuthenticated' }
 
+            # CrossPaste needs discovery traffic to flow on the current profile.
+            # Two firewall rule groups can let it through, and toggling either is a
+            # reasonable user fix:
+            #   - mDNS rules (Name like mDNS*) — Windows 10 1809+ ships these
+            #   - Network Discovery rules (Name like NETDIS-*) — the classic SSDP /
+            #     LLMNR / WS-Discovery / NetBIOS group toggled by Advanced sharing
+            #     settings -> "Network discovery"
+            # Either being enabled and applying to the current profile counts as allowed.
             ${'$'}mDnsAllowed = ${'$'}false
-            ${'$'}rules = Get-NetFirewallRule -Name 'mDNS*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue
+            ${'$'}rules = @()
+            ${'$'}rules += Get-NetFirewallRule -Name 'mDNS*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue
+            ${'$'}rules += Get-NetFirewallRule -Name 'NETDIS-*' -Direction Inbound -Enabled True -ErrorAction SilentlyContinue
             foreach (${'$'}rule in ${'$'}rules) {
                 if (${'$'}rule.Action -ne 'Allow') { continue }
                 ${'$'}p = "${'$'}(${'$'}rule.Profile)"
