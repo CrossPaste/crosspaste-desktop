@@ -1,5 +1,6 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,10 +18,10 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -114,15 +115,31 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                 verticalArrangement = Arrangement.spacedBy(tiny),
             ) {
                 if (showNetworkIcon) {
-                    IconButton(
+                    FilledTonalButton(
                         onClick = { networkProfileService.showWarning() },
-                        modifier = Modifier.size(xxLarge),
+                        contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
+                        colors =
+                            ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            ),
+                        elevation =
+                            ButtonDefaults.filledTonalButtonElevation(
+                                defaultElevation = tiny3X,
+                                pressedElevation = tiny5X,
+                                hoveredElevation = tiny2X,
+                                focusedElevation = tiny3X,
+                            ),
                     ) {
                         Icon(
                             imageVector = MaterialSymbols.Rounded.Warning,
-                            contentDescription = copywriter.getText("network_warning_view"),
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(large2X),
+                            contentDescription = null,
+                            modifier = Modifier.size(small),
+                        )
+                        Spacer(modifier = Modifier.width(tiny3X))
+                        Text(
+                            text = copywriter.getText("network_warning_view"),
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
@@ -328,14 +345,16 @@ private fun NetworkBlockingBanner(
                     imageVector = MaterialSymbols.Rounded.Warning,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.size(small),
+                    modifier =
+                        Modifier
+                            .padding(top = tiny3X)
+                            .size(small),
                 )
                 Spacer(modifier = Modifier.width(tiny))
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer,
-                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -343,23 +362,37 @@ private fun NetworkBlockingBanner(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(
+                OutlinedButton(
                     onClick = onDismiss,
-                    contentPadding = PaddingValues(horizontal = tiny),
+                    contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        ),
+                    border =
+                        BorderStroke(
+                            width = tiny5X,
+                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.5f),
+                        ),
                 ) {
                     Text(
                         text = dismissLabel,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
                 Spacer(modifier = Modifier.width(tiny))
-                TextButton(
+                FilledTonalButton(
                     onClick = onOpenSettings,
-                    contentPadding = PaddingValues(horizontal = tiny),
+                    contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
+                    colors =
+                        ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
                 ) {
                     Text(
                         text = openSettingsLabel,
-                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
