@@ -10,7 +10,9 @@ import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppTokenService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopRatingPromptManager
+import com.crosspaste.app.DesktopUserAttentionService
 import com.crosspaste.app.RatingPromptManager
+import com.crosspaste.app.UserAttentionService
 import com.crosspaste.app.getDesktopAppWindowManager
 import com.crosspaste.i18n.DesktopGlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriter
@@ -87,6 +89,7 @@ fun desktopUiModule(): Module =
         single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
         single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get(), get()) }
         single<SmartImageDisplayStrategy> { SmartImageDisplayStrategy() }
+        single<UserAttentionService> { DesktopUserAttentionService(get<DesktopAppWindowManager>()) }
         single<SoundService> { DesktopSoundService(get()) }
         single<StoragePathManager> { DesktopStoragePathManager() }
         single<SyncScopeFactory> { DesktopSyncScopeFactory() }
