@@ -4,6 +4,7 @@ import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopRatingPromptManager
 import com.crosspaste.app.RatingPromptManager
+import com.crosspaste.app.UserAttentionService
 import com.crosspaste.i18n.DesktopGlobalCopywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.NotificationManager
@@ -23,6 +24,7 @@ fun headlessUiModule() =
         single<SoundService> { HeadlessSoundService() }
         single<TokenCacheApi> { TokenCache }
         single<UISupport> { HeadlessUISupport(get()) }
+        single<UserAttentionService> { HeadlessUserAttentionService() }
     }
 
 fun headlessViewModelModule() = module {}

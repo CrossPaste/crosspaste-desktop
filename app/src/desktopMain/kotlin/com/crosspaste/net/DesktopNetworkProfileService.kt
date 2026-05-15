@@ -1,5 +1,9 @@
 package com.crosspaste.net
 
+import com.crosspaste.app.AttentionSurface
+import com.crosspaste.app.UserAttentionService
+import com.crosspaste.app.attentionOn
+import com.crosspaste.app.launchWhileAttentive
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
@@ -20,7 +24,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.seconds
@@ -29,6 +32,7 @@ class DesktopNetworkProfileService(
     private val configManager: DesktopConfigManager,
     private val notificationManager: NotificationManager,
     private val platform: Platform,
+    private val userAttentionService: UserAttentionService,
     private val scope: CoroutineScope = namedScope(ioDispatcher, "DesktopNetworkProfileService"),
 ) : NetworkProfileService {
 
@@ -50,12 +54,18 @@ class DesktopNetworkProfileService(
 
     init {
         if (platform.isWindows()) {
+            // Gate polling on the main window — that's the only surface that
+            // can render the warning dialog (`NetworkWarningDialogHost`) or
+            // the menu-bar warning entry, so polling while no one can see
+            // the result wastes COM enumerations every 60s. The 3s startup
+            // delay is preserved so we don't race the rest of init even if
+            // the main window comes up immediately.
             scope.launch {
                 delay(STARTUP_DELAY)
-                while (isActive) {
-                    runDetection()
-                    delay(REFRESH_INTERVAL)
-                }
+                launchWhileAttentive(
+                    attention = userAttentionService.attentionOn(AttentionSurface.MAIN_WINDOW),
+                    interval = REFRESH_INTERVAL,
+                ) { runDetection() }
             }
         }
 
