@@ -108,7 +108,7 @@ class DesktopNetworkProfileService(
             _diagnosis.value = diagnosis
         }.onFailure { e ->
             logger.warn(e) { "Failed to run Windows network diagnosis" }
-            _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = false)
+            _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = null)
         }
     }
 

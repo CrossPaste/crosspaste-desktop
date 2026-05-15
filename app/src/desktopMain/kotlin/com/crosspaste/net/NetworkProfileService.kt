@@ -21,7 +21,10 @@ interface NetworkProfileService {
 
 data class NetworkDiagnosis(
     val profile: NetworkProfile,
-    val mDnsAllowed: Boolean,
+    // null = could not be determined. Only an explicit `false` (rules enumerated,
+    // no allowing rule found) is treated as blocking — null short-circuits to
+    // avoid false-positive warnings on accounts that can't read firewall rules.
+    val mDnsAllowed: Boolean?,
 ) {
 
     fun isLikelyBlocking(): Boolean =
@@ -29,7 +32,7 @@ data class NetworkDiagnosis(
             NetworkProfile.PUBLIC,
             NetworkProfile.PRIVATE,
             NetworkProfile.DOMAIN_AUTHENTICATED,
-            -> !mDnsAllowed
+            -> mDnsAllowed == false
             NetworkProfile.UNKNOWN,
             NetworkProfile.NOT_APPLICABLE,
             -> false
@@ -38,7 +41,7 @@ data class NetworkDiagnosis(
     fun fingerprint(): String = "${profile.name}|$mDnsAllowed"
 
     companion object {
-        val NOT_APPLICABLE = NetworkDiagnosis(NetworkProfile.NOT_APPLICABLE, mDnsAllowed = true)
+        val NOT_APPLICABLE = NetworkDiagnosis(NetworkProfile.NOT_APPLICABLE, mDnsAllowed = null)
     }
 }
 

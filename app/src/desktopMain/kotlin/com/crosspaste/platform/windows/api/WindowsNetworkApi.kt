@@ -21,7 +21,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 
 data class WindowsNetworkSnapshot(
     val profile: NetworkProfile,
-    val mDnsAllowed: Boolean,
+    // null = could not be determined (NetFwPolicy2 unavailable, enumeration failed,
+    // insufficient privileges, ...). The caller must NOT treat null as "blocked" —
+    // false-positive warnings in restricted environments were the whole reason this
+    // is a tristate.
+    val mDnsAllowed: Boolean?,
 )
 
 object WindowsNetworkApi {
@@ -68,17 +72,17 @@ object WindowsNetworkApi {
         val ownsCoInit = COMUtils.SUCCEEDED(hr)
         if (!ownsCoInit && hr.toInt() != RPC_E_CHANGED_MODE) {
             logger.warn { "CoInitializeEx failed: 0x${Integer.toHexString(hr.toInt())}" }
-            return WindowsNetworkSnapshot(NetworkProfile.UNKNOWN, mDnsAllowed = false)
+            return WindowsNetworkSnapshot(NetworkProfile.UNKNOWN, mDnsAllowed = null)
         }
         try {
             val profile =
                 runCatching { queryProfile() }
                     .onFailure { logger.warn(it) { "queryProfile failed" } }
                     .getOrDefault(NetworkProfile.UNKNOWN)
-            val mDnsAllowed =
+            val mDnsAllowed: Boolean? =
                 runCatching { queryMDnsAllowed(profile) }
                     .onFailure { logger.warn(it) { "queryMDnsAllowed failed" } }
-                    .getOrDefault(false)
+                    .getOrNull()
             return WindowsNetworkSnapshot(profile, mDnsAllowed)
         } finally {
             if (ownsCoInit) {
@@ -153,8 +157,13 @@ object WindowsNetworkApi {
             else -> 0
         }
 
-    private fun queryMDnsAllowed(profile: NetworkProfile): Boolean {
-        val profileBit = profile.firewallBit() ?: return false
+    // Returns:
+    //   true  — successfully enumerated firewall rules AND found an allowing one
+    //   false — successfully enumerated firewall rules AND found no allowing one
+    //   null  — could not enumerate (NetFwPolicy2 unavailable, restricted account,
+    //           QueryInterface failed, ...). Callers must NOT treat this as "blocked".
+    private fun queryMDnsAllowed(profile: NetworkProfile): Boolean? {
+        val profileBit = profile.firewallBit() ?: return null
 
         val ppPolicy = PointerByReference()
         val hr =
@@ -167,24 +176,24 @@ object WindowsNetworkApi {
             )
         if (!COMUtils.SUCCEEDED(hr)) {
             logger.warn { "CoCreateInstance(NetFwPolicy2) failed: 0x${Integer.toHexString(hr.toInt())}" }
-            return false
+            return null
         }
 
         val policy = NetFwPolicy2(ppPolicy.value)
         try {
             val ppRules = PointerByReference()
-            if (!COMUtils.SUCCEEDED(policy.getRules(ppRules))) return false
+            if (!COMUtils.SUCCEEDED(policy.getRules(ppRules))) return null
             val rules = NetFwRules(ppRules.value)
             try {
                 val ppEnum = PointerByReference()
-                if (!COMUtils.SUCCEEDED(rules.getNewEnum(ppEnum))) return false
+                if (!COMUtils.SUCCEEDED(rules.getNewEnum(ppEnum))) return null
 
                 // _NewEnum hands back IUnknown — promote it to IEnumVARIANT.
                 val rawEnum = Unknown(ppEnum.value)
                 val ppEnumVariant = PointerByReference()
                 val qiHr = rawEnum.QueryInterface(REFIID(EnumVariant.IID), ppEnumVariant)
                 rawEnum.Release()
-                if (!COMUtils.SUCCEEDED(qiHr)) return false
+                if (!COMUtils.SUCCEEDED(qiHr)) return null
 
                 val enumVariant = EnumVariant(ppEnumVariant.value)
                 try {
@@ -207,13 +216,18 @@ object WindowsNetworkApi {
         while (true) {
             val batch = enumVariant.Next(BATCH_SIZE)
             if (batch.isEmpty()) break
-            for (variant in batch) {
-                try {
+            try {
+                for (variant in batch) {
                     if (variant.getVarType().toInt() != Variant.VT_DISPATCH) continue
                     val dispatch = variant.getValue() as? Dispatch ?: continue
                     if (ruleAllowsDiscovery(dispatch, profileBit)) return true
-                } finally {
-                    // VariantClear releases the contained IDispatch/IUnknown reference.
+                }
+            } finally {
+                // VariantClear releases the contained IDispatch/IUnknown reference.
+                // Must clear EVERY variant in the batch — including ones not yet
+                // visited when we return early — otherwise each unprocessed entry
+                // leaks an IDispatch ref to an INetFwRule COM object.
+                for (variant in batch) {
                     OleAuto.INSTANCE.VariantClear(variant)
                 }
             }
