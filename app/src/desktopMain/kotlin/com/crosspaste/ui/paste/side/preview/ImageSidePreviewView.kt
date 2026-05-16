@@ -48,12 +48,12 @@ import java.awt.image.BufferedImage
 
 @Composable
 fun PasteDataScope.ImageSidePreviewView() {
-    val userImageLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.USER_IMAGE)
+    val copywriter = koinInject<GlobalCopywriter>()
     val imageHandler = koinInject<ImageHandler<BufferedImage>>()
     val platformContext = koinInject<PlatformContext>()
-    val userDataPathProvider = koinInject<UserDataPathProvider>()
     val userAttentionService = koinInject<UserAttentionService>()
-    val copywriter = koinInject<GlobalCopywriter>()
+    val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val userImageLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.USER_IMAGE)
     val fileUtils = remember { getFileUtils() }
     val smartImageDisplayStrategy = remember { SmartImageDisplayStrategy() }
 
