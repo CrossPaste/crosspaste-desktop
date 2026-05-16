@@ -1,5 +1,7 @@
 package com.crosspaste.app
 
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -10,6 +12,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
+
+private val attentiveLogger = KotlinLogging.logger {}
 
 // Exposes per-surface visibility signals so background services can gate work
 // on whether the user can actually see the result. Background pollers that
@@ -54,6 +58,11 @@ fun UserAttentionService.attentionOn(vararg surfaces: AttentionSurface): Flow<Bo
 // the loop restarts (firing `block` immediately if `runOnResume` is set, so
 // the user sees fresh state the moment they open the relevant surface
 // instead of waiting one interval).
+//
+// Exceptions thrown by `block` are caught and logged so a single bad tick
+// doesn't terminate the polling Job and silently stop all future ticks.
+// CancellationException is always rethrown to keep structured concurrency
+// semantics intact.
 fun CoroutineScope.launchWhileAttentive(
     attention: Flow<Boolean>,
     interval: Duration,
@@ -63,10 +72,20 @@ fun CoroutineScope.launchWhileAttentive(
     launch {
         attention.collectLatest { attentive ->
             if (!attentive) return@collectLatest
-            if (runOnResume) block()
+            if (runOnResume) runTick(block)
             while (true) {
                 delay(interval)
-                block()
+                runTick(block)
             }
         }
     }
+
+private suspend fun runTick(block: suspend () -> Unit) {
+    try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        attentiveLogger.warn(e) { "launchWhileAttentive block threw; continuing on next tick" }
+    }
+}
