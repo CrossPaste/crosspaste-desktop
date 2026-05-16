@@ -5,13 +5,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
-import com.crosspaste.app.AttentionSurface
 import com.crosspaste.app.UserAttentionService
-import com.crosspaste.app.attentionOn
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.TransparentBackground
 import okio.Path
@@ -23,14 +20,11 @@ fun BoxScope.AnimatedImageSidePreview(
     smartImageDisplayStrategy: SmartImageDisplayStrategy,
     userAttentionService: UserAttentionService,
 ) {
-    // Pause animation when neither host window is visible — saves CPU/redraws
-    // while still resuming instantly when the user opens either surface.
-    val isAttentive by remember(userAttentionService) {
-        userAttentionService.attentionOn(
-            AttentionSurface.MAIN_WINDOW,
-            AttentionSurface.SEARCH_WINDOW,
-        )
-    }.collectAsState(initial = false)
+    // The side preview is mounted only inside the search window
+    // (see SideSearchWindowContent), so we gate solely on that surface — the
+    // main window's visibility is irrelevant here, and watching it would keep
+    // the frame loop running while the GIF is not actually on screen.
+    val isAttentive by userAttentionService.isSearchWindowVisible.collectAsState()
 
     TransparentBackground(modifier = Modifier.matchParentSize())
 
