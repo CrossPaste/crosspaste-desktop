@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.awt.Frame
 
 fun getDesktopAppWindowManager(
     appInfo: AppInfo,
@@ -176,16 +177,23 @@ abstract class DesktopAppWindowManager(
     }
 
     fun showMainWindow(windowTrigger: WindowTrigger) {
-        if (!_mainWindowInfo.value.show) {
-            _mainWindowInfo.value =
-                _mainWindowInfo.value.copy(
-                    show = true,
-                    trigger = windowTrigger,
-                )
-        } else {
-            mainCoroutineDispatcher.launch {
-                focusMainWindow(windowTrigger)
+        _mainWindowInfo.value =
+            _mainWindowInfo.value.copy(
+                show = true,
+                trigger = windowTrigger,
+            )
+        mainCoroutineDispatcher.launch {
+            // AWT-level bring-to-front handles the already-visible case via the JVM's
+            // platform window APIs; focusMainWindow then runs the platform-specific
+            // aggressive activation (handles tray-menu focus race / app activation policy).
+            mainComposeWindow?.let { window ->
+                if (window.state == Frame.ICONIFIED) {
+                    window.state = Frame.NORMAL
+                }
+                window.toFront()
+                window.requestFocus()
             }
+            focusMainWindow(windowTrigger)
         }
     }
 

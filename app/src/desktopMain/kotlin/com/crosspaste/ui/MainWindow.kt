@@ -10,7 +10,6 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +59,6 @@ fun MainWindow(windowIcon: Painter?) {
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val config by configManager.config.collectAsState()
-
-    LaunchedEffect(mainWindowInfo.show) {
-        if (mainWindowInfo.show) {
-            appWindowManager.focusMainWindow(mainWindowInfo.trigger)
-        }
-    }
 
     DecoratedWindow(
         onCloseRequest = {
