@@ -2,19 +2,14 @@ package com.crosspaste.ui.paste.side.preview
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Badge
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -22,24 +17,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import coil3.ImageLoader
 import coil3.PlatformContext
-import coil3.compose.AsyncImagePainter
-import coil3.compose.SubcomposeAsyncImage
-import coil3.compose.SubcomposeAsyncImageContent
-import coil3.request.ImageRequest
-import coil3.request.crossfade
-import coil3.size.Precision
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Broken_image
+import com.crosspaste.app.UserAttentionService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageHandler
-import com.crosspaste.image.coil.ImageItem
 import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.paste.item.PasteFileCoordinate
 import com.crosspaste.paste.item.PasteImages
@@ -52,12 +37,9 @@ import com.crosspaste.ui.base.ImageFileSize
 import com.crosspaste.ui.base.ImageInfoLabel
 import com.crosspaste.ui.base.ImageResolution
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
-import com.crosspaste.ui.base.TransparentBackground
 import com.crosspaste.ui.paste.PasteDataScope
-import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
-import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
@@ -70,24 +52,19 @@ fun PasteDataScope.ImageSidePreviewView() {
     val imageHandler = koinInject<ImageHandler<BufferedImage>>()
     val platformContext = koinInject<PlatformContext>()
     val userDataPathProvider = koinInject<UserDataPathProvider>()
+    val userAttentionService = koinInject<UserAttentionService>()
+    val copywriter = koinInject<GlobalCopywriter>()
     val fileUtils = remember { getFileUtils() }
-
     val smartImageDisplayStrategy = remember { SmartImageDisplayStrategy() }
 
-    val copywriter = koinInject<GlobalCopywriter>()
-
     val imagePasteItem = getPasteItem(PasteImages::class)
-
     val imageCount = remember(pasteData.id) { imagePasteItem.getDirectChildrenCount() }
-
     val isInDownloads = remember(imagePasteItem) { imagePasteItem.isInDownloads() }
 
     var index by remember(pasteData.id) { mutableStateOf(0) }
 
     val filePaths = remember(imagePasteItem) { imagePasteItem.getFilePaths(userDataPathProvider) }
-    if (filePaths.isEmpty()) {
-        return
-    }
+    if (filePaths.isEmpty()) return
 
     val safeIndex = index.coerceIn(filePaths.indices)
     val imagePath = filePaths[safeIndex]
@@ -97,25 +74,18 @@ fun PasteDataScope.ImageSidePreviewView() {
             PasteFileCoordinate(pasteData.getPasteCoordinate(), imagePath)
         }
 
-    val appSizeValue = LocalDesktopAppSizeValueState.current
     val density = LocalDensity.current
-    val targetUiSize = appSizeValue.sidePasteContentSize
+    val targetUiSize = LocalDesktopAppSizeValueState.current.sidePasteContentSize
     val targetSizePx =
         with(density) {
             Size(targetUiSize.width.toPx(), targetUiSize.height.toPx())
         }
 
-    val intSize by produceState<IntSize?>(
-        initialValue = null,
-        key1 = imagePath,
-    ) {
+    val intSize by produceState<IntSize?>(initialValue = null, key1 = imagePath) {
         value = imageHandler.readSize(imagePath)
     }
 
-    val fileSize by produceState(
-        initialValue = 0L,
-        key1 = imagePath,
-    ) {
+    val fileSize by produceState(initialValue = 0L, key1 = imagePath) {
         value = fileUtils.getFileSize(imagePath)
     }
 
@@ -128,111 +98,78 @@ fun PasteDataScope.ImageSidePreviewView() {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            val imgSize = intSize
-            val requestSize =
-                remember(targetSizePx, imgSize) {
-                    if (imgSize != null && imgSize.width > 0 && imgSize.height > 0) {
-                        smartImageDisplayStrategy.computeRequestSize(
-                            srcSize = Size(imgSize.width.toFloat(), imgSize.height.toFloat()),
-                            dstSize = targetSizePx,
-                        )
-                    } else {
-                        targetSizePx
-                    }
-                }
+            if (imagePath.isAnimatedImage()) {
+                AnimatedImageSidePreview(
+                    imagePath = imagePath,
+                    targetSizePx = targetSizePx,
+                    smartImageDisplayStrategy = smartImageDisplayStrategy,
+                    userAttentionService = userAttentionService,
+                )
+            } else {
+                StaticImageSidePreview(
+                    imagePath = imagePath,
+                    pasteFileCoordinate = pasteFileCoordinate,
+                    intSize = intSize,
+                    targetSizePx = targetSizePx,
+                    smartImageDisplayStrategy = smartImageDisplayStrategy,
+                    imageLoader = userImageLoader,
+                    platformContext = platformContext,
+                )
+            }
 
-            val request =
-                remember(pasteFileCoordinate, requestSize) {
-                    ImageRequest
-                        .Builder(platformContext)
-                        .data(ImageItem(pasteFileCoordinate, false))
-                        .size(width = requestSize.width.toInt(), height = requestSize.height.toInt())
-                        .precision(Precision.INEXACT)
-                        .crossfade(true)
-                        .build()
-                }
+            ImageCountBadge(imageCount)
 
-            SubcomposeAsyncImage(
-                modifier = Modifier.fillMaxSize().clipToBounds(),
-                model = request,
-                imageLoader = userImageLoader,
-                contentDescription = "imageType",
-                contentScale = ContentScale.Fit,
-                content = {
-                    val state by painter.state.collectAsState()
-                    when (state) {
-                        is AsyncImagePainter.State.Loading -> {
-                            Row(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(gigantic),
-                                    strokeWidth = tiny,
-                                )
-                            }
-                        }
-                        is AsyncImagePainter.State.Error -> {
-                            Icon(
-                                imageVector = MaterialSymbols.Rounded.Broken_image,
-                                contentDescription = imagePath.name,
-                                modifier = Modifier.size(gigantic),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-                        else -> {
-                            val intrinsicSize = painter.intrinsicSize
-
-                            val displayResult =
-                                smartImageDisplayStrategy.compute(
-                                    srcSize = Size(intrinsicSize.width, intrinsicSize.height),
-                                    dstSize = targetSizePx,
-                                )
-
-                            TransparentBackground(modifier = Modifier.matchParentSize())
-
-                            SubcomposeAsyncImageContent(
-                                contentScale = displayResult.contentScale,
-                                alignment = displayResult.alignment,
-                            )
-                        }
-                    }
-                },
+            ImageInfoLabels(
+                isInDownloads = isInDownloads,
+                fileFormat = fileFormat,
+                intSize = intSize,
+                fileSize = fileSize,
+                copywriter = copywriter,
             )
+        }
+    }
+}
 
-            if (imageCount > 1L) {
-                val label = remember(imageCount) { if (imageCount > 99) "99+" else imageCount.toString() }
-                Badge(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = medium, end = medium),
-                ) {
-                    Text(label)
-                }
-            }
+@Composable
+private fun BoxScope.ImageCountBadge(imageCount: Long) {
+    if (imageCount <= 1L) return
+    val label = remember(imageCount) { if (imageCount > 99) "99+" else imageCount.toString() }
+    Badge(
+        modifier =
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = medium, end = medium),
+    ) {
+        Text(label)
+    }
+}
 
-            Column(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = small2X),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(tiny3X),
-            ) {
-                if (isInDownloads) {
-                    ImageInfoLabel(text = copywriter.getText("in_downloads"))
-                }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(tiny3X, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(tiny3X),
-                ) {
-                    ImageFileFormat(format = fileFormat)
-                    ImageResolution(imageSize = intSize)
-                    ImageFileSize(fileSize = fileSize)
-                }
-            }
+@Composable
+private fun BoxScope.ImageInfoLabels(
+    isInDownloads: Boolean,
+    fileFormat: String,
+    intSize: IntSize?,
+    fileSize: Long,
+    copywriter: GlobalCopywriter,
+) {
+    Column(
+        modifier =
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = small2X),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(tiny3X),
+    ) {
+        if (isInDownloads) {
+            ImageInfoLabel(text = copywriter.getText("in_downloads"))
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(tiny3X, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(tiny3X),
+        ) {
+            ImageFileFormat(format = fileFormat)
+            ImageResolution(imageSize = intSize)
+            ImageFileSize(fileSize = fileSize)
         }
     }
 }
