@@ -40,7 +40,7 @@ private val logger = KotlinLogging.logger {}
 
 // Many GIFs declare 0ms per frame; browsers clamp to ~100ms. 20ms (~50fps) is
 // a conservative floor that still respects intentionally fast animations.
-private const val MIN_FRAME_DURATION_MS = 20
+internal const val MIN_FRAME_DURATION_MS = 20
 
 // Extensions whose animation Coil 3 cannot play on desktop, so we route them
 // through Skia's Codec instead. Add new entries here when extending support
@@ -48,6 +48,9 @@ private const val MIN_FRAME_DURATION_MS = 20
 private val animatedImageExtensions: Set<String> = setOf("gif")
 
 fun Path.isAnimatedImage(): Boolean = extension.lowercase() in animatedImageExtensions
+
+internal fun frameDurationMs(rawDurationMs: Int?): Int =
+    (rawDurationMs ?: MIN_FRAME_DURATION_MS).coerceAtLeast(MIN_FRAME_DURATION_MS)
 
 private sealed interface CodecState {
     data object Loading : CodecState
@@ -93,50 +96,64 @@ private fun AnimatedFrames(
     modifier: Modifier,
     contentDescription: String,
 ) {
-    val workBitmap =
+    // Two bitmaps so the next frame can be decoded into the back buffer on IO
+    // while the front buffer keeps drawing. The swap publishes on the UI
+    // thread once readPixels returns.
+    val bitmaps =
         remember(codec) {
-            Bitmap().apply { allocPixels(codec.imageInfo) }
+            Array(2) { Bitmap().apply { allocPixels(codec.imageInfo) } }
         }
 
-    DisposableEffect(workBitmap) {
-        onDispose { workBitmap.close() }
+    DisposableEffect(bitmaps) {
+        onDispose { bitmaps.forEach { it.close() } }
     }
 
     val frameInfos = remember(codec) { codec.framesInfo }
     val frameCount = remember(codec) { codec.frameCount.coerceAtLeast(1) }
 
     var frameIndex by remember(codec) { mutableIntStateOf(0) }
+    var frontIndex by remember(codec) { mutableIntStateOf(0) }
     var frameTick by remember(codec) { mutableIntStateOf(0) }
 
-    LaunchedEffect(codec) {
-        // Prime frame 0 so something is drawable before the loop runs and so
-        // single-frame inputs (frameCount == 1) still render.
-        runCatching { codec.readPixels(workBitmap, 0) }
-            .onFailure { logger.warn(it) { "Failed to decode initial frame" } }
-        frameTick = 1
-    }
-
     LaunchedEffect(codec, isPlaying, frameCount) {
+        // Prime frame 0 once per codec so something is drawable before the
+        // loop runs and so single-frame inputs (frameCount == 1) still render.
+        // Skipping on re-launch keeps the current frame visible when
+        // isPlaying toggles mid-playback.
+        if (frameTick == 0) {
+            withContext(ioDispatcher) {
+                runCatching { codec.readPixels(bitmaps[0], 0) }
+                    .onFailure { logger.warn(it) { "Failed to decode initial frame" } }
+            }
+            frameTick = 1
+        }
+
         if (!isPlaying || frameCount <= 1) return@LaunchedEffect
+
         while (true) {
-            val durationMs =
-                frameInfos
-                    .getOrNull(frameIndex)
-                    ?.duration
-                    ?.coerceAtLeast(MIN_FRAME_DURATION_MS)
-                    ?: MIN_FRAME_DURATION_MS
+            val durationMs = frameDurationMs(frameInfos.getOrNull(frameIndex)?.duration)
             delay(durationMs.milliseconds)
             val nextIndex = (frameIndex + 1) % frameCount
-            runCatching { codec.readPixels(workBitmap, nextIndex) }
-                .onFailure { logger.warn(it) { "Failed to decode frame $nextIndex" } }
-            frameIndex = nextIndex
-            frameTick++
+            val backIndex = 1 - frontIndex
+            // Decode off the UI thread; LZW decompression on large frames
+            // can otherwise eat the next render window.
+            val success =
+                withContext(ioDispatcher) {
+                    runCatching { codec.readPixels(bitmaps[backIndex], nextIndex) }
+                        .onFailure { logger.warn(it) { "Failed to decode frame $nextIndex" } }
+                        .isSuccess
+                }
+            if (success) {
+                frameIndex = nextIndex
+                frontIndex = backIndex
+                frameTick++
+            }
         }
     }
 
     val imageBitmap =
-        remember(workBitmap, frameTick) {
-            workBitmap.asComposeImageBitmap()
+        remember(frontIndex, frameTick) {
+            bitmaps[frontIndex].asComposeImageBitmap()
         }
 
     val displayResult =
