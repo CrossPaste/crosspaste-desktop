@@ -66,6 +66,13 @@ class SqlPasteDao(
             getNoDeletePasteDataBlock(id)
         }
 
+    override suspend fun filterExistingIds(ids: List<Long>): List<Long> {
+        if (ids.isEmpty()) return emptyList()
+        return withContext(ioDispatcher) {
+            pasteDatabaseQueries.filterExistingIds(ids).executeAsList()
+        }
+    }
+
     override suspend fun getLoadingPasteData(id: Long): PasteData? =
         withContext(ioDispatcher) {
             pasteDatabaseQueries
