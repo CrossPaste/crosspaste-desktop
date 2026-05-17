@@ -30,6 +30,13 @@ interface PasteTagDao : QueryPasteTag {
 
     fun getPasteTagsBlock(pasteDataId: Long): List<Long>
 
+    suspend fun addTagsToPastes(
+        pasteDataIds: List<Long>,
+        pasteTagIds: Set<Long>,
+    )
+
+    suspend fun countTagsForPastes(pasteDataIds: List<Long>): Map<Long, Int>
+
     fun deletePasteTagBlock(id: Long)
 
     fun getAllTagsBlock(): List<PasteTag>

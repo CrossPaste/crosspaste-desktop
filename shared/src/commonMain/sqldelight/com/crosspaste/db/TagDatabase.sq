@@ -21,11 +21,20 @@ INSERT INTO TagEntity(name, color, sortOrder) VALUES (?, ?, ?);
 pinPasteTag:
 INSERT INTO PasteTagEntity(pasteId, tagId) VALUES (?, ?);
 
+pinPasteTagIgnore:
+INSERT OR IGNORE INTO PasteTagEntity(pasteId, tagId) VALUES (?, ?);
+
 unPinPasteTag:
 DELETE FROM PasteTagEntity WHERE pasteId = ? AND tagId = ?;
 
 getPasteTags:
 SELECT tagId FROM PasteTagEntity WHERE pasteId = ?;
+
+countTagsForPastes:
+SELECT tagId, COUNT(*) AS pasteCount
+FROM PasteTagEntity
+WHERE pasteId IN ?
+GROUP BY tagId;
 
 isPinnedPasteTag:
 SELECT EXISTS(SELECT 1 FROM PasteTagEntity WHERE pasteId = ? AND tagId = ?);

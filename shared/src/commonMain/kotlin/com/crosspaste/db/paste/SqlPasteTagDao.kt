@@ -93,6 +93,32 @@ class SqlPasteTagDao(
     override fun getPasteTagsBlock(pasteDataId: Long): List<Long> =
         tagDatabaseQueries.getPasteTags(pasteDataId).executeAsList()
 
+    override suspend fun addTagsToPastes(
+        pasteDataIds: List<Long>,
+        pasteTagIds: Set<Long>,
+    ) {
+        if (pasteDataIds.isEmpty() || pasteTagIds.isEmpty()) return
+        withContext(ioDispatcher) {
+            database.transaction {
+                pasteDataIds.forEach { pasteId ->
+                    pasteTagIds.forEach { tagId ->
+                        tagDatabaseQueries.pinPasteTagIgnore(pasteId, tagId)
+                    }
+                }
+            }
+        }
+    }
+
+    override suspend fun countTagsForPastes(pasteDataIds: List<Long>): Map<Long, Int> {
+        if (pasteDataIds.isEmpty()) return emptyMap()
+        return withContext(ioDispatcher) {
+            tagDatabaseQueries
+                .countTagsForPastes(pasteDataIds)
+                .executeAsList()
+                .associate { it.tagId to it.pasteCount.toInt() }
+        }
+    }
+
     override fun deletePasteTagBlock(id: Long) {
         tagDatabaseQueries.deleteTag(id)
     }
