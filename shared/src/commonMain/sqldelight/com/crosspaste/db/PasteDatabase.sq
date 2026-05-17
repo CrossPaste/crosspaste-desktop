@@ -76,6 +76,10 @@ CASE WHEN :onlyTagged THEN EXISTS (SELECT 1 FROM PasteTagEntity WHERE PasteTagEn
 getPasteData:
 SELECT * FROM PasteDataEntity WHERE id = :id AND pasteState IN :states;
 
+filterExistingIds:
+SELECT id FROM PasteDataEntity
+WHERE id IN :ids AND pasteState != -1;
+
 getPasteDataListLimit:
 SELECT * FROM PasteDataEntity WHERE pasteState != -1 ORDER BY createTime DESC, id DESC LIMIT ?;
 
