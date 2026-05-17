@@ -29,6 +29,7 @@ node_modules/
 output*/
 /.claude/commands/
 /.claude/skills/
+/.claude/worktrees/
 /.dev-context/
 /code-review/
 /ai/
