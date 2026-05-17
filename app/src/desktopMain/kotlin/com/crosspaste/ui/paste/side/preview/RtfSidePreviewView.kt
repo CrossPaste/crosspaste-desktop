@@ -19,10 +19,12 @@ import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.utils.ColorAccessibility
+import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalRichTextApi::class)
 @Composable
 fun PasteDataScope.RtfSidePreviewView() {
     val copywriter = koinInject<GlobalCopywriter>()
