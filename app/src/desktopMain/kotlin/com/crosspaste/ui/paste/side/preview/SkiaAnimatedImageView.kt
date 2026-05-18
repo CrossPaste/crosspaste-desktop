@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -30,6 +31,7 @@ import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okio.Path
 import org.jetbrains.skia.Bitmap
@@ -97,51 +99,56 @@ fun SkiaAnimatedImageView(
             return@LaunchedEffect
         }
 
-        val bitmaps = Array(2) { Bitmap().apply { allocPixels(codec.imageInfo) } }
         try {
-            val frameInfos = codec.framesInfo
-            val frameCount = codec.frameCount.coerceAtLeast(1)
-            val srcSize = Size(codec.imageInfo.width.toFloat(), codec.imageInfo.height.toFloat())
+            val bitmaps = Array(2) { Bitmap().apply { allocPixels(codec.imageInfo) } }
+            try {
+                val frameInfos = codec.framesInfo
+                val frameCount = codec.frameCount.coerceAtLeast(1)
+                val srcSize = Size(codec.imageInfo.width.toFloat(), codec.imageInfo.height.toFloat())
 
-            // Prime frame 0 before publishing Ready so the first paint is the
-            // real first frame, not an empty bitmap.
-            withContext(ioDispatcher) {
-                runCatching { codec.readPixels(bitmaps[0], 0) }
-                    .onFailure { logger.warn(it) { "Failed to decode initial frame" } }
-            }
-
-            var frameIndex = 0
-            var frontIndex = 0
-            frameState = FrameState.Ready(bitmaps[frontIndex].asComposeImageBitmap(), srcSize)
-
-            if (frameCount <= 1) awaitCancellation()
-
-            while (true) {
-                if (!playing) {
-                    delay(MIN_FRAME_DURATION_MS.toLong().milliseconds)
-                    continue
+                // Prime frame 0 before publishing Ready so the first paint is the
+                // real first frame, not an empty bitmap.
+                withContext(ioDispatcher) {
+                    runCatching { codec.readPixels(bitmaps[0], 0) }
+                        .onFailure { logger.warn(it) { "Failed to decode initial frame" } }
                 }
-                val durationMs = frameDurationMs(frameInfos.getOrNull(frameIndex)?.duration)
-                delay(durationMs.milliseconds)
-                if (!playing) continue
-                val nextIndex = (frameIndex + 1) % frameCount
-                val backIndex = 1 - frontIndex
-                // Decode off the UI thread; LZW decompression on large frames
-                // can otherwise eat the next render window.
-                val success =
-                    withContext(ioDispatcher) {
-                        runCatching { codec.readPixels(bitmaps[backIndex], nextIndex) }
-                            .onFailure { logger.warn(it) { "Failed to decode frame $nextIndex" } }
-                            .isSuccess
+
+                var frameIndex = 0
+                var frontIndex = 0
+                frameState = FrameState.Ready(bitmaps[frontIndex].asComposeImageBitmap(), srcSize)
+
+                if (frameCount <= 1) awaitCancellation()
+
+                while (true) {
+                    if (!playing) {
+                        // Suspend until isPlaying flips back to true instead of
+                        // polling, so a hidden preview costs no wake-ups.
+                        snapshotFlow { playing }.first { it }
+                        continue
                     }
-                if (success) {
-                    frameIndex = nextIndex
-                    frontIndex = backIndex
-                    frameState = FrameState.Ready(bitmaps[frontIndex].asComposeImageBitmap(), srcSize)
+                    val durationMs = frameDurationMs(frameInfos.getOrNull(frameIndex)?.duration)
+                    delay(durationMs.milliseconds)
+                    if (!playing) continue
+                    val nextIndex = (frameIndex + 1) % frameCount
+                    val backIndex = 1 - frontIndex
+                    // Decode off the UI thread; LZW decompression on large frames
+                    // can otherwise eat the next render window.
+                    val success =
+                        withContext(ioDispatcher) {
+                            runCatching { codec.readPixels(bitmaps[backIndex], nextIndex) }
+                                .onFailure { logger.warn(it) { "Failed to decode frame $nextIndex" } }
+                                .isSuccess
+                        }
+                    if (success) {
+                        frameIndex = nextIndex
+                        frontIndex = backIndex
+                        frameState = FrameState.Ready(bitmaps[frontIndex].asComposeImageBitmap(), srcSize)
+                    }
                 }
+            } finally {
+                bitmaps.forEach { it.close() }
             }
         } finally {
-            bitmaps.forEach { it.close() }
             codec.close()
         }
     }
