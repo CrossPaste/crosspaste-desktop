@@ -36,6 +36,55 @@ esac
 GRADLE="./gradlew"
 [ "$OS" = "windows" ] && GRADLE="./gradlew.bat"
 
+# Jewel's DecoratedWindow requires JetBrainsRuntime (JBR). `app:run` would
+# otherwise use whatever JVM Gradle was launched with (CI gives us Temurin),
+# and the very first Composition would die with IllegalStateException. The
+# `app:build` step has already downloaded the platform JBR tarball into
+# app/jbr/ for nativeDistributions packaging — we just need to extract it and
+# point JAVA_HOME at it before launching.
+ARCH="$(uname -m 2>/dev/null || echo unknown)"
+case "$OS:$ARCH" in
+  linux:x86_64|linux:amd64) JBR_GLOB="jbrsdk-*-linux-x64-*.tar.gz" ;;
+  linux:aarch64|linux:arm64) JBR_GLOB="jbrsdk-*-linux-aarch64-*.tar.gz" ;;
+  mac:arm64) JBR_GLOB="jbrsdk-*-osx-aarch64-*.tar.gz" ;;
+  mac:x86_64) JBR_GLOB="jbrsdk-*-osx-x64-*.tar.gz" ;;
+  windows:*) JBR_GLOB="jbrsdk-*-windows-x64-*.tar.gz" ;;
+  *)
+    echo "[smoke] ERROR: no JBR mapping for os=$OS arch=$ARCH" >&2
+    exit 2
+    ;;
+esac
+
+JBR_DIR="$ROOT/app/jbr"
+# shellcheck disable=SC2086
+JBR_TARBALL="$(ls -1 $JBR_DIR/$JBR_GLOB 2>/dev/null | head -n1)"
+if [ -z "${JBR_TARBALL:-}" ]; then
+  echo "[smoke] ERROR: no JBR tarball matching '$JBR_GLOB' under $JBR_DIR." >&2
+  echo "[smoke]        Run './gradlew app:build' first to populate it." >&2
+  exit 2
+fi
+
+JBR_EXTRACT_DIR="$JBR_DIR/extracted"
+JBR_MARKER="$JBR_EXTRACT_DIR/$(basename "$JBR_TARBALL").extracted"
+if [ ! -f "$JBR_MARKER" ]; then
+  echo "[smoke] extracting $(basename "$JBR_TARBALL") -> $JBR_EXTRACT_DIR"
+  rm -rf "$JBR_EXTRACT_DIR"
+  mkdir -p "$JBR_EXTRACT_DIR"
+  tar -xzf "$JBR_TARBALL" -C "$JBR_EXTRACT_DIR"
+  touch "$JBR_MARKER"
+fi
+
+JAVA_BIN="$(find "$JBR_EXTRACT_DIR" -maxdepth 5 -type f \( -name java -o -name java.exe \) -path '*/bin/*' 2>/dev/null | head -n1)"
+if [ -z "$JAVA_BIN" ]; then
+  echo "[smoke] ERROR: extracted JBR has no bin/java under $JBR_EXTRACT_DIR" >&2
+  exit 2
+fi
+JAVA_HOME="$(cd "$(dirname "$JAVA_BIN")/.." && pwd)"
+export JAVA_HOME
+export PATH="$JAVA_HOME/bin:$PATH"
+echo "[smoke] JAVA_HOME=$JAVA_HOME"
+"$JAVA_BIN" -version 2>&1 | sed 's/^/[smoke] java: /'
+
 LAUNCHER=()
 if [ "$OS" = "linux" ]; then
   if [ -z "${DISPLAY:-}" ]; then

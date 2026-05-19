@@ -24,6 +24,47 @@ $LogFile = Join-Path $LogDir 'app.log'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 Set-Content -Path $LogFile -Value '' -Encoding UTF8
 
+# Jewel's DecoratedWindow requires JetBrainsRuntime (JBR). `app:run` would
+# otherwise use whatever JVM Gradle was launched with (CI gives us Temurin),
+# and the very first Composition would die with IllegalStateException. The
+# `app:build` step has already downloaded the platform JBR tarball into
+# app/jbr/ for nativeDistributions packaging — we just need to extract it and
+# point JAVA_HOME at it before launching.
+$JbrDir = Join-Path $Root 'app\jbr'
+$JbrTarball = Get-ChildItem -Path $JbrDir -Filter 'jbrsdk-*-windows-x64-*.tar.gz' -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+if (-not $JbrTarball) {
+    Write-Host "[smoke] ERROR: no JBR tarball matching 'jbrsdk-*-windows-x64-*.tar.gz' under $JbrDir."
+    Write-Host "[smoke]        Run '.\gradlew.bat app:build' first to populate it."
+    exit 2
+}
+
+$JbrExtractDir = Join-Path $JbrDir 'extracted'
+$JbrMarker = Join-Path $JbrExtractDir ($JbrTarball.Name + '.extracted')
+if (-not (Test-Path $JbrMarker)) {
+    Write-Host "[smoke] extracting $($JbrTarball.Name) -> $JbrExtractDir"
+    if (Test-Path $JbrExtractDir) { Remove-Item -Recurse -Force $JbrExtractDir }
+    New-Item -ItemType Directory -Force -Path $JbrExtractDir | Out-Null
+    & tar -xzf $JbrTarball.FullName -C $JbrExtractDir
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[smoke] ERROR: tar failed to extract $($JbrTarball.FullName)"
+        exit 2
+    }
+    New-Item -ItemType File -Force -Path $JbrMarker | Out-Null
+}
+
+$JavaExe = Get-ChildItem -Path $JbrExtractDir -Recurse -Filter 'java.exe' -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -match '\\bin\\java\.exe$' } |
+    Select-Object -First 1
+if (-not $JavaExe) {
+    Write-Host "[smoke] ERROR: extracted JBR has no bin\java.exe under $JbrExtractDir"
+    exit 2
+}
+$env:JAVA_HOME = Split-Path -Parent (Split-Path -Parent $JavaExe.FullName)
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+Write-Host "[smoke] JAVA_HOME=$env:JAVA_HOME"
+& $JavaExe.FullName -version 2>&1 | ForEach-Object { "[smoke] java: $_" } | Write-Host
+
 Write-Host "[smoke] os=windows boot_timeout=${BootTimeout}s compose_wait=${ComposeWait}s"
 Write-Host "[smoke] log file: $LogFile"
 Write-Host "[smoke] launching: .\gradlew.bat --no-daemon app:run"
