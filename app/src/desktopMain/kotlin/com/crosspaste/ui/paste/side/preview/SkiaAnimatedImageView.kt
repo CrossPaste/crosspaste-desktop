@@ -55,6 +55,92 @@ fun Path.isAnimatedImage(): Boolean = extension.lowercase() in animatedImageExte
 internal fun frameDurationMs(rawDurationMs: Int?): Int =
     (rawDurationMs ?: MIN_FRAME_DURATION_MS).coerceAtLeast(MIN_FRAME_DURATION_MS)
 
+// Abstraction over Skia's Codec so [runAnimationLoop] can be exercised in tests
+// without a real GIF on disk. Production wires it to [SkiaCodecDecoder].
+//
+// Contract: decodeFrame must NOT throw — return false on failure. Implementations
+// own any native pixel buffers and release them in [close].
+internal interface FrameDecoder {
+    val frameCount: Int
+    val srcSize: Size
+
+    fun frameDelayMs(index: Int): Int
+
+    fun newBuffer(): FrameBuffer
+
+    suspend fun decodeFrame(
+        into: FrameBuffer,
+        index: Int,
+    ): Boolean
+
+    fun close()
+}
+
+internal interface FrameBuffer {
+    fun asImageBitmap(): ImageBitmap
+
+    fun close()
+}
+
+// Regression guard: see commit bb9a3819. readPixels is a synchronous JNI call
+// that ignores coroutine cancellation. close() on the codec or any bitmap must
+// run only AFTER an in-flight decodeFrame returns, otherwise the JNI call frees
+// pixel buffers under its own feet and crashes the process.
+//
+// This is enforced structurally:
+//  - decoder + buffers are owned by THIS suspend function
+//  - finally blocks run after the last suspension point returns, so
+//    cancellation cannot race with an active decode
+//
+// Do NOT split decoder/buffer ownership across a sibling DisposableEffect or
+// produceState.awaitDispose — those run concurrently with this function's
+// withContext(ioDispatcher) and reintroduce the UAF.
+internal suspend fun runAnimationLoop(
+    decoder: FrameDecoder,
+    isPlaying: () -> Boolean,
+    awaitPlaying: suspend () -> Unit,
+    onReady: (ImageBitmap, Size) -> Unit,
+) {
+    try {
+        val bitmaps = Array(2) { decoder.newBuffer() }
+        try {
+            // Prime frame 0 before publishing Ready so the first paint is the
+            // real first frame, not an empty bitmap.
+            decoder.decodeFrame(bitmaps[0], 0)
+
+            var frameIndex = 0
+            var frontIndex = 0
+            onReady(bitmaps[frontIndex].asImageBitmap(), decoder.srcSize)
+
+            if (decoder.frameCount <= 1) awaitCancellation()
+
+            while (true) {
+                if (!isPlaying()) {
+                    // Suspend until isPlaying flips back to true instead of
+                    // polling, so a hidden preview costs no wake-ups.
+                    awaitPlaying()
+                    continue
+                }
+                val durationMs = decoder.frameDelayMs(frameIndex)
+                delay(durationMs.milliseconds)
+                if (!isPlaying()) continue
+                val nextIndex = (frameIndex + 1) % decoder.frameCount
+                val backIndex = 1 - frontIndex
+                val success = decoder.decodeFrame(bitmaps[backIndex], nextIndex)
+                if (success) {
+                    frameIndex = nextIndex
+                    frontIndex = backIndex
+                    onReady(bitmaps[frontIndex].asImageBitmap(), decoder.srcSize)
+                }
+            }
+        } finally {
+            bitmaps.forEach { it.close() }
+        }
+    } finally {
+        decoder.close()
+    }
+}
+
 private sealed interface FrameState {
     data object Loading : FrameState
 
@@ -77,80 +163,25 @@ fun SkiaAnimatedImageView(
     var frameState by remember(path) { mutableStateOf<FrameState>(FrameState.Loading) }
     val playing by rememberUpdatedState(isPlaying)
 
-    // Codec + double-buffered bitmaps are owned by this single LaunchedEffect
-    // so the finally block runs only after any in-flight readPixels returns.
-    // readPixels is a synchronous JNI call that ignores coroutine cancellation,
-    // so releasing native resources from a sibling DisposableEffect.onDispose
-    // (or produceState's awaitDispose) could free pixel buffers under an
-    // active decode and crash with SIGSEGV.
     LaunchedEffect(path) {
-        val codec =
+        val decoder =
             withContext(ioDispatcher) {
-                runCatching {
-                    val bytes = path.toFile().readBytes()
-                    Codec.makeFromData(Data.makeFromBytes(bytes))
-                }.onFailure {
-                    logger.warn(it) { "Failed to decode animated image: $path" }
-                }.getOrNull()
+                runCatching { SkiaCodecDecoder.load(path) }
+                    .onFailure { logger.warn(it) { "Failed to decode animated image: $path" } }
+                    .getOrNull()
             }
 
-        if (codec == null) {
+        if (decoder == null) {
             frameState = FrameState.Failed
             return@LaunchedEffect
         }
 
-        try {
-            val bitmaps = Array(2) { Bitmap().apply { allocPixels(codec.imageInfo) } }
-            try {
-                val frameInfos = codec.framesInfo
-                val frameCount = codec.frameCount.coerceAtLeast(1)
-                val srcSize = Size(codec.imageInfo.width.toFloat(), codec.imageInfo.height.toFloat())
-
-                // Prime frame 0 before publishing Ready so the first paint is the
-                // real first frame, not an empty bitmap.
-                withContext(ioDispatcher) {
-                    runCatching { codec.readPixels(bitmaps[0], 0) }
-                        .onFailure { logger.warn(it) { "Failed to decode initial frame" } }
-                }
-
-                var frameIndex = 0
-                var frontIndex = 0
-                frameState = FrameState.Ready(bitmaps[frontIndex].asComposeImageBitmap(), srcSize)
-
-                if (frameCount <= 1) awaitCancellation()
-
-                while (true) {
-                    if (!playing) {
-                        // Suspend until isPlaying flips back to true instead of
-                        // polling, so a hidden preview costs no wake-ups.
-                        snapshotFlow { playing }.first { it }
-                        continue
-                    }
-                    val durationMs = frameDurationMs(frameInfos.getOrNull(frameIndex)?.duration)
-                    delay(durationMs.milliseconds)
-                    if (!playing) continue
-                    val nextIndex = (frameIndex + 1) % frameCount
-                    val backIndex = 1 - frontIndex
-                    // Decode off the UI thread; LZW decompression on large frames
-                    // can otherwise eat the next render window.
-                    val success =
-                        withContext(ioDispatcher) {
-                            runCatching { codec.readPixels(bitmaps[backIndex], nextIndex) }
-                                .onFailure { logger.warn(it) { "Failed to decode frame $nextIndex" } }
-                                .isSuccess
-                        }
-                    if (success) {
-                        frameIndex = nextIndex
-                        frontIndex = backIndex
-                        frameState = FrameState.Ready(bitmaps[frontIndex].asComposeImageBitmap(), srcSize)
-                    }
-                }
-            } finally {
-                bitmaps.forEach { it.close() }
-            }
-        } finally {
-            codec.close()
-        }
+        runAnimationLoop(
+            decoder = decoder,
+            isPlaying = { playing },
+            awaitPlaying = { snapshotFlow { playing }.first { it } },
+            onReady = { bitmap, size -> frameState = FrameState.Ready(bitmap, size) },
+        )
     }
 
     when (val current = frameState) {
@@ -173,6 +204,49 @@ fun SkiaAnimatedImageView(
             )
         }
     }
+}
+
+private class SkiaCodecDecoder(
+    private val codec: Codec,
+) : FrameDecoder {
+    private val framesInfo = codec.framesInfo
+
+    override val frameCount: Int = codec.frameCount.coerceAtLeast(1)
+
+    override val srcSize: Size =
+        Size(codec.imageInfo.width.toFloat(), codec.imageInfo.height.toFloat())
+
+    override fun frameDelayMs(index: Int): Int = frameDurationMs(framesInfo.getOrNull(index)?.duration)
+
+    override fun newBuffer(): FrameBuffer = SkiaBitmapBuffer(Bitmap().apply { allocPixels(codec.imageInfo) })
+
+    override suspend fun decodeFrame(
+        into: FrameBuffer,
+        index: Int,
+    ): Boolean =
+        withContext(ioDispatcher) {
+            require(into is SkiaBitmapBuffer) { "Expected SkiaBitmapBuffer, got ${into::class}" }
+            runCatching { codec.readPixels(into.bitmap, index) }
+                .onFailure { logger.warn(it) { "Failed to decode frame $index" } }
+                .isSuccess
+        }
+
+    override fun close() = codec.close()
+
+    companion object {
+        fun load(path: Path): SkiaCodecDecoder {
+            val bytes = path.toFile().readBytes()
+            return SkiaCodecDecoder(Codec.makeFromData(Data.makeFromBytes(bytes)))
+        }
+    }
+}
+
+private class SkiaBitmapBuffer(
+    val bitmap: Bitmap,
+) : FrameBuffer {
+    override fun asImageBitmap(): ImageBitmap = bitmap.asComposeImageBitmap()
+
+    override fun close() = bitmap.close()
 }
 
 @Composable
