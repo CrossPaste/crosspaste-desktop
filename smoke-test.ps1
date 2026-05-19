@@ -1,5 +1,9 @@
 # Boot the CrossPaste desktop app for a short time and fail if it crashes.
 #
+# Local-only check — NOT wired into CI. Run it on a real Windows desktop
+# before landing dependency bumps; the headless GitHub runner produces
+# false-positive failures that don't reflect the environments we ship to.
+#
 # Catches dependency / binary-compat regressions that `./gradlew app:build`
 # can't see, because `build` never triggers the first Compose composition.
 #

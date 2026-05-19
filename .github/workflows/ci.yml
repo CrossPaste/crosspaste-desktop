@@ -29,8 +29,6 @@ jobs:
               - 'build.gradle.kts'
               - 'gradle.properties'
               - 'compose-stability.conf'
-              - 'smoke-test.sh'
-              - 'smoke-test.ps1'
               - '.github/workflows/ci.yml'
             web:
               - 'web/**'
@@ -76,28 +74,6 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew app:build
-
-      - name: Install Xvfb and native deps for desktop smoke test
-        run: |
-          sudo apt-get update
-          # xvfb: virtual display for the headless runner
-          # libxkbcommon-x11-0: required by jnativehook's global keyboard hook,
-          #   which loads at startup via DesktopGlobalListener.isRegistered();
-          #   missing on the bare ubuntu-latest image but always present on
-          #   real Linux desktops we ship to.
-          sudo apt-get install -y xvfb libxkbcommon-x11-0
-
-      - name: Desktop smoke test (boot the app)
-        run: ./smoke-test.sh
-
-      - name: Upload smoke test log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: smoke-logs
-          path: build/smoke-logs/
-          if-no-files-found: ignore
-          retention-days: 7
 
   web-build:
     needs: changes

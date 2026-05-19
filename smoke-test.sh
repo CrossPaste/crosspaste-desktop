@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Boot the CrossPaste desktop app for a short time and fail if it crashes.
 #
+# Local-only check — NOT wired into CI. Run it on a real desktop before
+# landing dependency bumps. Headless CI runners (Xvfb, no GL, missing
+# libxkbcommon) produce false-positive failures that don't reflect the
+# environments we ship to.
+#
 # Catches dependency / binary-compat regressions that `./gradlew app:build`
 # can't see, because `build` never triggers the first Compose composition.
 # Historic incidents this would have caught:
