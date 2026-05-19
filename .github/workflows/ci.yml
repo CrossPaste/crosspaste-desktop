@@ -29,6 +29,8 @@ jobs:
               - 'build.gradle.kts'
               - 'gradle.properties'
               - 'compose-stability.conf'
+              - 'smoke-test.sh'
+              - 'smoke-test.ps1'
               - '.github/workflows/ci.yml'
             web:
               - 'web/**'
@@ -74,6 +76,23 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew app:build
+
+      - name: Install Xvfb (virtual display for desktop smoke test)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Desktop smoke test (boot the app)
+        run: ./smoke-test.sh
+
+      - name: Upload smoke test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs
+          path: build/smoke-logs/
+          if-no-files-found: ignore
+          retention-days: 7
 
   web-build:
     needs: changes
