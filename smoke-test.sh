@@ -103,10 +103,13 @@ if [ "$OS" = "linux" ]; then
 fi
 
 echo "[smoke] os=$OS boot_timeout=${BOOT_TIMEOUT}s compose_wait=${COMPOSE_WAIT}s"
-echo "[smoke] launching: ${LAUNCHER[*]} $GRADLE --no-daemon app:run"
+# `${LAUNCHER[*]:-}` / `${LAUNCHER[@]+...}` keep an empty array safe under
+# `set -u`; macOS still ships bash 3.2 by default, where `${arr[@]}` on an
+# empty array trips "unbound variable" and aborts the script at line one.
+echo "[smoke] launching: ${LAUNCHER[*]:-} $GRADLE --no-daemon app:run"
 echo "[smoke] log file: $LOG_FILE"
 
-"${LAUNCHER[@]}" "$GRADLE" --no-daemon app:run >>"$LOG_FILE" 2>&1 &
+${LAUNCHER[@]+"${LAUNCHER[@]}"} "$GRADLE" --no-daemon app:run >>"$LOG_FILE" 2>&1 &
 APP_PID=$!
 echo "[smoke] launched, pid=$APP_PID"
 
@@ -144,7 +147,9 @@ fi
 pkill -KILL -P "$APP_PID" 2>/dev/null || true
 kill -KILL "$APP_PID" 2>/dev/null || true
 # Best-effort: clean any orphan JVM the Gradle wrapper may have spawned.
-pkill -KILL -f 'com\.crosspaste\.CrossPaste' 2>/dev/null || true
+# Narrow on `appEnv=DEVELOPMENT` so we never reach the user's locally
+# running PROD CrossPaste, which boots with `-DappEnv=PRODUCTION`.
+pkill -KILL -f 'appEnv=DEVELOPMENT.*com\.crosspaste\.CrossPaste' 2>/dev/null || true
 wait "$APP_PID" 2>/dev/null || true
 
 echo "----- smoke app log tail -----"
