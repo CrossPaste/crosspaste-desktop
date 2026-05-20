@@ -110,8 +110,14 @@ if (-not $proc.HasExited) {
         ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } catch {} }
 }
 # Best-effort: kill any java.exe whose command line references CrossPaste.
+# Narrow on `appEnv=DEVELOPMENT` so we never reach the user's locally
+# running PROD CrossPaste, which boots with `-DappEnv=PRODUCTION`.
 Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -match '^(java|javaw)\.exe$' -and $_.CommandLine -match 'com\.crosspaste\.CrossPaste' } |
+    Where-Object {
+        $_.Name -match '^(java|javaw)\.exe$' -and
+        $_.CommandLine -match 'com\.crosspaste\.CrossPaste' -and
+        $_.CommandLine -match 'appEnv=DEVELOPMENT'
+    } |
     ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } catch {} }
 
 if (Test-Path "$LogFile.err") {
