@@ -2,6 +2,140 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.0] - 2026-05-20
+# Highlights 🌟
+
+- 🧊 **Compose Multiplatform 1.11**
+  Upgraded the desktop UI stack to Compose Multiplatform 1.11 with matching
+  jewel / richeditor-compose / compose-shimmer bumps, and a temporary jewel
+  downgrade to 0.36.0-261 to stay Java 21 compatible (#4417 #4419 #4434 #4436).
+
+- 🛡️ **Windows Public Network detection**
+  CrossPaste now detects when the active connection is on a Public network
+  profile (where Windows Firewall blocks discovery) and offers a one-click
+  jump to the Windows settings page to switch it. Backed by a JNA-direct
+  COM reference path with the COM-leak fix (#4402 #4404).
+
+- 🔋 **Background polling gated by window visibility**
+  A new `UserAttentionService` suspends background pollers while the main
+  window is hidden, and `launchWhileAttentive` now isolates per-tick
+  exceptions so a single failed tick no longer kills the poller (#4406 #4414).
+
+- 🖼️ **Animated GIF + native video thumbnails in side preview**
+  GIFs are now decoded off the UI thread with double buffering via Skia
+  codec, video files render real native thumbnails in the side panel, and
+  Skia codec / bitmap close is serialized against in-flight reads to
+  eliminate a long-standing close-vs-readPixels race (#4353 #4410 #4422 #4438).
+
+- 🧪 **Real-device E2E test harness**
+  A new `:e2e` module ships a headless CrossPaste peer that participates
+  in pairing, push, and pull flows — usable for pre-release sanity tests
+  against a real desktop build (#4318).
+
+# Bug Fixes 🐛
+
+- :bug: Stop smoke-test from killing user's PROD CrossPaste and aborting on macOS bash 3.2 (#4445)
+- :bug: Serialize Skia codec/bitmap close with in-flight readPixels (#4438)
+- :bug: Bring main window to front on every showMainWindow call (#4408)
+- :bug: Fix COM ref leak and false-positive warning in Windows network detection (#4404)
+- :bug: Composite translucent HTML/RTF preview bg over theme to avoid double-blending (#4400)
+- :bug: Sort nvm node versions by parsed semver in web build (#4390)
+- :bug: Reset selected index when the search window opens (#4382)
+- :bug: Stop surfacing CancellationException as a refresh failure (#4373)
+- :bug: Stop ClientEncryptPlugin throwing on bodyless GET and harden pull error handling (#4371)
+- :bug: Harden thumbnail extraction and fix .ts TypeScript misclassification (#4367)
+- :bug: Resolve npm absolute path in :web build to fix daemon Exec error 2 (#4365)
+- :bug: Lower mac paste window level so drag preview is visible (#4361)
+- :bug: Skip empty Apple sync tasks and harden side drag preview (#4357)
+- :bug: Skip iPhone/iPad peers for Apple Universal Clipboard pastes (#4355)
+- :bug: Accept `java.net.URL` transfer data in `DesktopUrlTypePlugin` (#4349)
+- :bug: Fix side search crashes on fast horizontal scroll (#4347)
+- :bug: Route Apple Universal Clipboard pastes to non-Mac peers (#4344)
+- :bug: Correct `.gitignore` entry to `scheduled_tasks.lock`
+
+# New Features ✨
+
+- :sparkles: Add `PasteDao.filterExistingIds` for stale-id filtering (#4428)
+- :sparkles: Add bulk tag operations to `PasteTagDao` (#4426)
+- :sparkles: Animate GIFs in image side preview via Skia codec (#4410)
+- :sparkles: Add `UserAttentionService` to gate background pollers on window visibility (#4406)
+- :sparkles: Detect Windows Public network profile and offer one-click jump to settings (#4402)
+- :sparkles: Add drag-and-drop reordering for search tags (#4377)
+- :sparkles: Add Chrome extension release tooling and marketing preview (#4363)
+- :sparkles: Preview video files in side panel with native thumbnails (#4353)
+- :sparkles: Make device info values selectable for copy (#4320)
+
+# UI Improvements 💄
+
+- :art: Simplify settings description copy across all locales (#4315)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Opt in to `ExperimentalRichTextApi` in HTML/RTF side previews (#4424)
+- :hammer: Catch block exceptions inside `launchWhileAttentive` so a single failed tick doesn't kill the poller (#4415)
+- :hammer: Regenerate `web/package-lock.json` and `i18n/translations.generated.ts` (#4386)
+- :hammer: Lazy-resolve npm in `:web` Gradle config, drop interactive-shell probe (#4384)
+- :hammer: Consolidate `MacAcrylicEffect` and tidy small readability issues (#4369)
+- :hammer: Extract `hbitmapToBufferedImage` and add `Platform.isApple` (#4359)
+- :hammer: Introduce `PasteSourceContext` to bundle paste origin metadata (#4342)
+- :hammer: Use `Duration` form for `kotlinx.coroutines.delay` calls (#4340)
+- :hammer: Extract `AbstractGlobalCopywriter` to `commonMain` (#4338)
+- :hammer: Hoist shared i18n primitives to `commonMain` (#4336)
+- :hammer: Clarify `DiscoveryDriver.browse` contract and make `TargetCache` atomic (#4334)
+- :hammer: Harden `DiscoveryDriver.close()` and use `DateUtils` in e2e (#4332)
+- :hammer: `:e2e` harness review follow-ups (#4329)
+- :hammer: Harden `appInstanceId` `loadOrCreate` and surface `OneFilePersist` write failures (#4322)
+- :hammer: Harden `appInstanceId` migration against corrupt metadata (#4317)
+- :hammer: Extract `appInstanceId` out of `AppConfig` (#4313)
+- :hammer: Lazy-init `deviceId` / `deviceName` in `EndpointInfoFactory` (#4311)
+
+# Performance ⚡
+
+- :zap: Decode GIF frames off the UI thread with double buffering (#4422)
+- :zap: Defer `dragOffsetX` read to layer phase in `SearchTagsView` (#4388)
+- :zap: Stop firing side search load-more on every scroll frame (#4351)
+
+# Testing ✅
+
+- :white_check_mark: Regression test for `SkiaAnimatedImageView` close ordering (#4444)
+- :white_check_mark: Add `:e2e` real-device test harness (#4318)
+
+# Build & CI 👷
+
+- :construction_worker: Add desktop startup smoke test to CI (#4442)
+- :construction_worker: Drop `/hyperframes-demo/` from `.gitignore` (#4412)
+- :construction_worker: Ignore `/.claude/worktrees/`
+- :construction_worker: Ignore `scheduled_task.lock` and `skills-lock.json`
+- :construction_worker: Ignore `/hyperframes-demo/` directory
+- :construction_worker: Ignore `/.dev-context/` directory (#4309)
+
+# Documentation 📝
+
+- :memo: Refresh README, CHANGELOG and Roadmap for v2.0.0 release (#4327)
+
+# Dependencies ⬆️
+
+- ⬆️ **Compose Multiplatform** → 1.11.0 (#4417)
+- ⬆️ **Ktor** 3.4.2 → 3.5.0 (#4305 #4429)
+- ⬆️ **Kotlin** 2.3.20 → 2.3.21 (#4324)
+- ⬆️ **Jewel** 0.34.0-253 → 0.36.0-261 (#4307 #4432 #4434)
+- ⬆️ **Compose Shimmer** → 1.5.0-beta02 (#4325 #4436)
+- ⬆️ **richeditor-compose** → 1.0.0-rc14 (#4419)
+- ⬆️ **filekit-dialogs** 0.13.0 → 0.14.1 (#4430)
+- ⬆️ **Gradle Wrapper** 9.4.0 → 9.5.0 (#4394)
+- ⬆️ **atomicfu** 0.31.0 → 0.32.1 (#4391)
+- ⬆️ **kotlin-logging** 8.0.01 → 8.0.02 (#4392)
+- ⬆️ **kotlinx-datetime** bump (#4393)
+- ⬆️ **MCP Kotlin SDK Server** bump (#4431)
+- ⬆️ **semver** 3.0.0 → 3.1.0 (#4379)
+- ⬆️ **compose.hot-reload** bump (#4378)
+- ⬆️ **ksoup** 0.2.5 → 0.2.6 (#4380)
+- ⬆️ **icu4j** 78.2 → 78.3 (#4308)
+- ⬆️ **metadata-extractor** 2.19.0 → 2.20.0 (#4323)
+
+---
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/2.0.0.2192...2.1.0.2270
+
 # [2.0.0] - 2026-04-26
 # Highlights 🌟
 
