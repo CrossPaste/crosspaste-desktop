@@ -143,16 +143,6 @@ kotlin {
             implementation(libs.jnativehook)
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.classic)
-            implementation(
-                libs.material.menu
-                    .get()
-                    .toString(),
-            ) {
-                // This library transitively depends on an old Compose Desktop (desktop:1.7.3),
-                // which pulls in skiko-awt-runtime-linux-x64:0.8.18 conflicting with current 0.9.x.
-                // We already have the correct Compose Desktop dependency, so exclude its transitive one.
-                exclude(group = "org.jetbrains.compose.desktop")
-            }
             implementation(libs.mcp.server)
             implementation(libs.metadata.extractor)
             implementation(libs.native.tray)
