@@ -2,13 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.1.0] - 2026-05-20
+# [2.1.1] - 2026-05-20
 # Highlights 🌟
 
 - 🧊 **Compose Multiplatform 1.11**
   Upgraded the desktop UI stack to Compose Multiplatform 1.11 with matching
   jewel / richeditor-compose / compose-shimmer bumps, and a temporary jewel
   downgrade to 0.36.0-261 to stay Java 21 compatible (#4417 #4419 #4434 #4436).
+  The unmaintained `dzirbel/compose-material-context-menu` library was
+  incompatible with the new `TextContextMenu` API and crashed on text
+  fields; replaced with an in-tree Material context menu (#4448).
 
 - 🛡️ **Windows Public Network detection**
   CrossPaste now detects when the active connection is on a Public network
@@ -34,6 +37,7 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Replace `dzirbel/compose-material-context-menu` (incompatible with Compose 1.11 `TextContextMenu` API) with an in-tree Material context menu to fix text-field crash (#4448)
 - :bug: Stop smoke-test from killing user's PROD CrossPaste and aborting on macOS bash 3.2 (#4445)
 - :bug: Serialize Skia codec/bitmap close with in-flight readPixels (#4438)
 - :bug: Bring main window to front on every showMainWindow call (#4408)
@@ -134,7 +138,7 @@ All notable changes to this project will be documented in this file.
 - ⬆️ **metadata-extractor** 2.19.0 → 2.20.0 (#4323)
 
 ---
-**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/2.0.0.2192...2.1.0.2270
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/2.0.0.2192...2.1.1.2273
 
 # [2.0.0] - 2026-04-26
 # Highlights 🌟
