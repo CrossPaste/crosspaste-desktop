@@ -9,12 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ExperimentalComposeUiApi
 import com.crosspaste.app.WindowInfo
+import com.crosspaste.ui.contextmenu.ContextMenuColors
+import com.crosspaste.ui.contextmenu.ContextMenuMeasurements
+import com.crosspaste.ui.contextmenu.MaterialContextMenuRepresentation
+import com.crosspaste.ui.contextmenu.MaterialTextContextMenu
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
-import com.dzirbel.contextmenu.ContextMenuColors
-import com.dzirbel.contextmenu.ContextMenuMeasurements
-import com.dzirbel.contextmenu.MaterialContextMenuRepresentation
-import com.dzirbel.contextmenu.MaterialTextContextMenu
 
 object DesktopContext {
 
@@ -29,13 +29,19 @@ object DesktopContext {
                             ContextMenuMeasurements(
                                 minWidth = AppUISize.giant,
                                 maxWidth = AppUISize.gigantic,
-                                itemMinHeight = AppUISize.large2X,
-                                itemPadding = PaddingValues(AppUISize.medium, AppUISize.tiny2X),
+                                itemMinHeight = AppUISize.xLarge,
+                                itemPadding = PaddingValues(AppUISize.medium, AppUISize.tiny3X),
+                                menuTopPadding = AppUISize.tiny3X,
+                                menuBottomPadding = AppUISize.tiny3X,
+                                iconPadding = AppUISize.tiny,
+                                dividerHeight = AppUISize.small2X,
                             ),
                         colors =
                             ContextMenuColors(
                                 surface = MaterialTheme.colorScheme.surface,
                                 text = MaterialTheme.colorScheme.onSurface,
+                                itemHover = MaterialTheme.colorScheme.primary,
+                                itemHoverText = MaterialTheme.colorScheme.onPrimary,
                             ),
                     ),
                 LocalTextContextMenu provides MaterialTextContextMenu,

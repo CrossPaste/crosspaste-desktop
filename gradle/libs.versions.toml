@@ -36,7 +36,6 @@ lifecycle = "2.11.0-beta01"
 mcp-kotlin-sdk = "0.12.0"
 logback = "1.5.32"
 material3 = "1.11.0-alpha07"
-menu = "0.3.1"
 metadata-extractor = "2.20.0"
 mockk = "1.14.9"
 navigation = "2.9.2"
@@ -122,7 +121,6 @@ lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-vie
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 material-desktop = { module = "org.jetbrains.compose.material:material-desktop", version.ref = "compose-plugin" }
-material-menu = { module = "io.github.dzirbel:compose-material-context-menu", version.ref = "menu" }
 mcp-server = { module = "io.modelcontextprotocol:kotlin-sdk-server", version.ref = "mcp-kotlin-sdk" }
 metadata-extractor = { module = "com.drewnoakes:metadata-extractor", version.ref = "metadata-extractor" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation" }

@@ -20,13 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.contextmenu.ContextMenuDivider
+import com.crosspaste.ui.contextmenu.ContextMenuParams
+import com.crosspaste.ui.contextmenu.GenericContextMenuItem
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
-import com.dzirbel.contextmenu.ContextMenuDivider
-import com.dzirbel.contextmenu.ContextMenuParams
-import com.dzirbel.contextmenu.GenericContextMenuItem
 import kotlinx.coroutines.launch
 
 class DesktopPasteTagMenuService(
