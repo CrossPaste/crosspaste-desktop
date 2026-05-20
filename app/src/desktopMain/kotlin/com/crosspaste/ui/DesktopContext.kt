@@ -3,6 +3,7 @@ package com.crosspaste.ui
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.text.LocalTextContextMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -11,6 +12,7 @@ import com.crosspaste.app.WindowInfo
 import com.crosspaste.ui.contextmenu.ContextMenuColors
 import com.crosspaste.ui.contextmenu.ContextMenuMeasurements
 import com.crosspaste.ui.contextmenu.MaterialContextMenuRepresentation
+import com.crosspaste.ui.contextmenu.MaterialTextContextMenu
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.CrossPasteTheme.Theme
 
@@ -42,6 +44,7 @@ object DesktopContext {
                                 itemHoverText = MaterialTheme.colorScheme.onPrimary,
                             ),
                     ),
+                LocalTextContextMenu provides MaterialTextContextMenu,
             ) {
                 content()
             }
