@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.1.1] - 2026-05-20
+# [2.1.2] - 2026-05-21
 # Highlights 🌟
 
 - 🧊 **Compose Multiplatform 1.11**
@@ -37,6 +37,8 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Bypass JVM system proxy for LAN sync traffic so peer sync no longer hangs behind a configured HTTP proxy (#4449)
+- :bug: Make smoke-test orphan-JVM kill order-independent so cleanup keeps working if the launcher reorders `-D` flags (#4452)
 - :bug: Replace `dzirbel/compose-material-context-menu` (incompatible with Compose 1.11 `TextContextMenu` API) with an in-tree Material context menu to fix text-field crash (#4448)
 - :bug: Stop smoke-test from killing user's PROD CrossPaste and aborting on macOS bash 3.2 (#4445)
 - :bug: Serialize Skia codec/bitmap close with in-flight readPixels (#4438)
@@ -75,6 +77,7 @@ All notable changes to this project will be documented in this file.
 
 # Multiplatform · Refactor · Code Style 🔨
 
+- :hammer: Extract `DesktopBootstrap` to consolidate process-wide hooks (#4450)
 - :hammer: Opt in to `ExperimentalRichTextApi` in HTML/RTF side previews (#4424)
 - :hammer: Catch block exceptions inside `launchWhileAttentive` so a single failed tick doesn't kill the poller (#4415)
 - :hammer: Regenerate `web/package-lock.json` and `i18n/translations.generated.ts` (#4386)
@@ -101,6 +104,7 @@ All notable changes to this project will be documented in this file.
 
 # Testing ✅
 
+- :white_check_mark: Regression tests for `MaterialContextMenu` hover-index and submenu position (#4454)
 - :white_check_mark: Regression test for `SkiaAnimatedImageView` close ordering (#4444)
 - :white_check_mark: Add `:e2e` real-device test harness (#4318)
 
@@ -115,6 +119,7 @@ All notable changes to this project will be documented in this file.
 
 # Documentation 📝
 
+- :memo: Require English for GitHub issue and PR content
 - :memo: Refresh README, CHANGELOG and Roadmap for v2.0.0 release (#4327)
 
 # Dependencies ⬆️
@@ -138,7 +143,7 @@ All notable changes to this project will be documented in this file.
 - ⬆️ **metadata-extractor** 2.19.0 → 2.20.0 (#4323)
 
 ---
-**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/2.0.0.2192...2.1.1.2273
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/2.0.0.2192...2.1.2.2279
 
 # [2.0.0] - 2026-04-26
 # Highlights 🌟
