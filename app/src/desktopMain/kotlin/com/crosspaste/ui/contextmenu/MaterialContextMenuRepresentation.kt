@@ -476,7 +476,7 @@ internal fun rememberNestedDropdownPositionProvider(
  * internal vertical padding (`menuTopPadding` / `menuBottomPadding`) is canceled out so the
  * visible hover background lines up across the popup boundary instead of being inset by it.
  */
-private class NestedDropdownPositionProvider(
+internal class NestedDropdownPositionProvider(
     private val windowMarginPx: Int,
     private val menuTopPaddingPx: Int,
     private val menuBottomPaddingPx: Int,
