@@ -32,6 +32,7 @@ import com.crosspaste.db.DriverFactory
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.mcp.McpServer
+import com.crosspaste.net.LanBypassProxySelector
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.ResourcesClient
@@ -319,6 +320,12 @@ class CrossPaste {
         @JvmStatic
         fun main(args: Array<String>) {
             headless = args.contains("--headless") || java.awt.GraphicsEnvironment.isHeadless()
+            // Must run before any HttpClient is constructed: Ktor CIO consults the JVM
+            // default ProxySelector when no engine.proxy is configured, and JBR mirrors
+            // OS proxy settings into the JVM with CIDR-based nonProxyHosts that Java's
+            // wildcard matcher cannot parse. Without this, LAN sync requests get routed
+            // through the user's system proxy and time out.
+            LanBypassProxySelector.install()
             initModule()
 
             System.setProperty("sun.awt.exception.handler", AwtExceptionHandler::class.java.name)
