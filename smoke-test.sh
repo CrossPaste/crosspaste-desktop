@@ -148,8 +148,12 @@ pkill -KILL -P "$APP_PID" 2>/dev/null || true
 kill -KILL "$APP_PID" 2>/dev/null || true
 # Best-effort: clean any orphan JVM the Gradle wrapper may have spawned.
 # Narrow on `appEnv=DEVELOPMENT` so we never reach the user's locally
-# running PROD CrossPaste, which boots with `-DappEnv=PRODUCTION`.
-pkill -KILL -f 'appEnv=DEVELOPMENT.*com\.crosspaste\.CrossPaste' 2>/dev/null || true
+# running PROD CrossPaste, which boots with `-DappEnv=PRODUCTION`. Match the
+# two substrings independently (mirrors smoke-test.ps1) so the kill survives
+# any future launcher that reorders JVM args.
+pgrep -f 'com\.crosspaste\.CrossPaste' 2>/dev/null \
+  | xargs -I{} sh -c 'ps -p {} -o command= 2>/dev/null | grep -q "appEnv=DEVELOPMENT" && kill -KILL {}' \
+  2>/dev/null || true
 wait "$APP_PID" 2>/dev/null || true
 
 echo "----- smoke app log tail -----"
