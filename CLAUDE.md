@@ -123,3 +123,7 @@ Examples from this project:
 - :construction_worker: bump kotlin to 2.0.0
 
 Language: English for commit messages
+
+## Issue and Pull Request Language
+
+All GitHub issue titles/bodies and pull request titles/bodies (including summaries, descriptions, and notes) MUST be written in English. Do not use Chinese or any other language in issue/PR content, even when the conversation with the user is in another language. If translating existing non-English text, preserve the technical detail and intent exactly.
