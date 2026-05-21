@@ -23,16 +23,14 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.DesktopPidFileService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.NativeMessagingHostService
-import com.crosspaste.bootstrap.JvmSystemPropertiesOverride
+import com.crosspaste.bootstrap.DesktopBootstrap
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.config.migrateAppInstanceIdIfNeeded
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.mcp.McpServer
-import com.crosspaste.net.LanBypassProxySelector
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.ResourcesClient
@@ -48,7 +46,6 @@ import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
-import com.crosspaste.ui.AwtExceptionHandler
 import com.crosspaste.ui.CrossPasteWindows
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
@@ -94,14 +91,6 @@ class CrossPaste {
 
         private val localeUtils = DesktopLocaleUtils
 
-        init {
-            JvmSystemPropertiesOverride.apply(
-                FilePersist.createOneFilePersist(
-                    appPathProvider.resolve(JvmSystemPropertiesOverride.FILE_NAME, AppFileType.USER),
-                ),
-            )
-        }
-
         private val configFilePersist =
             FilePersist.createOneFilePersist(
                 appPathProvider.resolve("appConfig.json", AppFileType.USER),
@@ -113,7 +102,11 @@ class CrossPaste {
             )
 
         init {
-            migrateAppInstanceIdIfNeeded(metadataFilePersist, configFilePersist)
+            DesktopBootstrap.preClassLoad(
+                appPathProvider = appPathProvider,
+                metadataFilePersist = metadataFilePersist,
+                configFilePersist = configFilePersist,
+            )
         }
 
         private val appMetadataRepository =
@@ -320,19 +313,8 @@ class CrossPaste {
         @JvmStatic
         fun main(args: Array<String>) {
             headless = args.contains("--headless") || java.awt.GraphicsEnvironment.isHeadless()
-            // Must run before any HttpClient is constructed: Ktor CIO consults the JVM
-            // default ProxySelector when no engine.proxy is configured, and JBR mirrors
-            // OS proxy settings into the JVM with CIDR-based nonProxyHosts that Java's
-            // wildcard matcher cannot parse. Without this, LAN sync requests get routed
-            // through the user's system proxy and time out.
-            LanBypassProxySelector.install()
+            DesktopBootstrap.preStart(logger)
             initModule()
-
-            System.setProperty("sun.awt.exception.handler", AwtExceptionHandler::class.java.name)
-
-            Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-                logger.error(throwable) { "Uncaught exception in thread: $thread" }
-            }
 
             logger.info { "Starting CrossPaste${if (headless) " (headless)" else ""}" }
             runBlocking { startApplication() }
