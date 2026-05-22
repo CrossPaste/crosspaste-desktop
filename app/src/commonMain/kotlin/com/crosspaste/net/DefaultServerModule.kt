@@ -13,11 +13,13 @@ import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.pasteRouting
 import com.crosspaste.net.routing.pullRouting
+import com.crosspaste.net.routing.pushRouting
 import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.net.routing.wsRouting
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.CacheManager
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
@@ -25,6 +27,7 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.PendingKeyExchangeStore
+import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
@@ -52,6 +55,8 @@ open class DefaultServerModule(
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
     private val pastePullService: PastePullService,
+    private val pasteReleaseService: PasteReleaseService,
+    private val pushSessionManager: PushSessionManager,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
     private val secureStore: SecureStore,
     private val syncApi: SyncApi,
@@ -114,14 +119,22 @@ open class DefaultServerModule(
                 pasteRouting(
                     appControl,
                     pasteboardService,
+                    pasteReleaseService,
                     pastePullService,
                     pasteRoutingScope,
+                    pushSessionManager,
                     syncRoutingApi,
                 )
                 pullRouting(
                     appInfo,
                     cacheManager,
                     pasteDao,
+                    syncRoutingApi,
+                    userDataPathProvider,
+                )
+                pushRouting(
+                    appInfo,
+                    pushSessionManager,
                     syncRoutingApi,
                     userDataPathProvider,
                 )

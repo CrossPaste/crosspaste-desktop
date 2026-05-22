@@ -112,7 +112,7 @@ class PullFileTaskExecutor(
                     val updatedPasteData = applyRenameMapToPasteData(pasteData, result.renameMap)
                     pasteDao.updateFilePath(updatedPasteData)
                 }
-                pasteboardService.tryWriteRemotePasteboardWithFile(pasteData)
+                pasteboardService.tryWriteRemotePasteboardWithFile(pasteData.id)
                 soundService.successSound()
                 SuccessPasteTaskResult()
             }
