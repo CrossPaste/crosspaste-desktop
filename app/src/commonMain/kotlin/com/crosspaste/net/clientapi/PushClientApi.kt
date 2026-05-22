@@ -164,7 +164,7 @@ class PushClientApi(
         errorCode: StandardErrorCode,
         contextKey: String,
     ): ClientApiResult =
-        if (response.status.value == 200) {
+        if (response.status.isSuccess()) {
             SuccessResult()
         } else {
             runCatching {

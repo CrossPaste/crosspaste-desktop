@@ -1,6 +1,5 @@
 package com.crosspaste.sync
 
-import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.push.PushCompleteResponse
 import com.crosspaste.dto.push.PushPrepareResponse
 import com.crosspaste.exception.StandardErrorCode
@@ -18,6 +17,7 @@ import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.URLBuilder
+import kotlinx.coroutines.CancellationException
 
 /**
  * Client-side orchestrator for the file push protocol. Pairs with the
@@ -43,7 +43,6 @@ import io.ktor.http.URLBuilder
  * caller (SyncPasteTaskExecutor) can fall back to pull-mode metadata send.
  */
 class FilePushService(
-    @Suppress("unused") private val configManager: CommonConfigManager,
     private val pasteSyncProcessManager: PasteSyncProcessManager<Long>,
     private val pushClientApi: PushClientApi,
     private val userDataPathProvider: UserDataPathProvider,
@@ -63,14 +62,6 @@ class FilePushService(
 ) {
 
     companion object {
-        /**
-         * Per-device upload concurrency cap. Note that the actual fan-out is
-         * gated by [com.crosspaste.paste.DefaultPasteSyncProcessManager]'s
-         * shared semaphore (10) — this constant is kept for documentation and
-         * future per-device tuning (M5).
-         */
-        const val PER_DEVICE_CONCURRENCY: Int = 4
-
         /**
          * Bound on the prepare → upload → complete retry loop. One initial
          * round + one retry of any reported `missingChunks`. Two is enough to
@@ -97,81 +88,84 @@ class FilePushService(
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
-        // 1. prepare
-        val prepareResult = pushClientApi.preparePush(pasteData, targetAppInstanceId, toUrl)
-        if (prepareResult !is SuccessResult) {
-            logger.warn { "push preparePush failed for target=$targetAppInstanceId: $prepareResult" }
-            return prepareResult
-        }
-        val prepare = prepareResult.getResult<PushPrepareResponse>()
-
-        // 2. build local index with the server-provided chunkSize
-        val filesIndex = filesIndexFactory(pasteData, userDataPathProvider, prepare.chunkSize)
-        val localChunkCount = filesIndex.getChunkCount()
-        if (localChunkCount != prepare.chunkCount) {
-            logger.error {
-                "push chunkCount mismatch for target=$targetAppInstanceId: " +
-                    "local=$localChunkCount server=${prepare.chunkCount} chunkSize=${prepare.chunkSize}"
+        try {
+            // 1. prepare
+            val prepareResult = pushClientApi.preparePush(pasteData, targetAppInstanceId, toUrl)
+            if (prepareResult !is SuccessResult) {
+                logger.warn { "push preparePush failed for target=$targetAppInstanceId: $prepareResult" }
+                return prepareResult
             }
+            val prepare = prepareResult.getResult<PushPrepareResponse>()
+
+            // 2. build local index with the server-provided chunkSize
+            val filesIndex = filesIndexFactory(pasteData, userDataPathProvider, prepare.chunkSize)
+            val localChunkCount = filesIndex.getChunkCount()
+            if (localChunkCount != prepare.chunkCount) {
+                logger.error {
+                    "push chunkCount mismatch for target=$targetAppInstanceId: " +
+                        "local=$localChunkCount server=${prepare.chunkCount} chunkSize=${prepare.chunkSize}"
+                }
+                return createFailureResult(
+                    StandardErrorCode.PUSH_CHUNK_COUNT_MISMATCH,
+                    "chunkCount mismatch local=$localChunkCount server=${prepare.chunkCount}",
+                )
+            }
+
+            // 3. + 4. upload chunks, retrying only missing ones up to MAX_COMPLETE_ROUNDS.
+            var chunksToUpload: List<Int> = (0 until prepare.chunkCount).toList()
+            var round = 0
+            while (round < MAX_COMPLETE_ROUNDS) {
+                round += 1
+                val uploadFailures =
+                    uploadChunks(
+                        prepare = prepare,
+                        targetAppInstanceId = targetAppInstanceId,
+                        pasteDataId = pasteData.id,
+                        chunkIndices = chunksToUpload,
+                        filesIndex = filesIndex,
+                        toUrl = toUrl,
+                    )
+                if (uploadFailures.isNotEmpty()) {
+                    logger.warn {
+                        "push round=$round had ${uploadFailures.size} upload failures " +
+                            "for target=$targetAppInstanceId pasteId=${prepare.pasteId}"
+                    }
+                    return uploadFailures.values.first()
+                }
+
+                val completeResult =
+                    pushClientApi.completePush(
+                        pasteId = prepare.pasteId,
+                        sessionToken = prepare.sessionToken,
+                        targetAppInstanceId = targetAppInstanceId,
+                        toUrl = toUrl,
+                    )
+                if (completeResult !is SuccessResult) {
+                    logger.warn {
+                        "push completePush failed for target=$targetAppInstanceId " +
+                            "pasteId=${prepare.pasteId}: $completeResult"
+                    }
+                    return completeResult
+                }
+                val complete = completeResult.getResult<PushCompleteResponse>()
+                if (complete.isComplete) {
+                    maybePushIcon(prepare, pasteData, targetAppInstanceId, toUrl)
+                    return SuccessResult()
+                }
+                logger.info {
+                    "push pasteId=${prepare.pasteId} missing=${complete.missingChunks.size} " +
+                        "after round=$round, retrying"
+                }
+                chunksToUpload = complete.missingChunks
+            }
+
             return createFailureResult(
-                StandardErrorCode.PUSH_CHUNK_COUNT_MISMATCH,
-                "chunkCount mismatch local=$localChunkCount server=${prepare.chunkCount}",
+                StandardErrorCode.PUSH_COMPLETE_FAIL,
+                "pasteId=${prepare.pasteId} still has missing chunks after $MAX_COMPLETE_ROUNDS rounds",
             )
+        } finally {
+            pasteSyncProcessManager.cleanProcess(pasteData.id)
         }
-
-        // 3. + 4. upload chunks, retrying only missing ones up to MAX_COMPLETE_ROUNDS.
-        var chunksToUpload: List<Int> = (0 until prepare.chunkCount).toList()
-        var round = 0
-        while (round < MAX_COMPLETE_ROUNDS) {
-            round += 1
-            val uploadFailures =
-                uploadChunks(
-                    prepare = prepare,
-                    targetAppInstanceId = targetAppInstanceId,
-                    pasteDataId = pasteData.id,
-                    chunkIndices = chunksToUpload,
-                    filesIndex = filesIndex,
-                    toUrl = toUrl,
-                )
-            if (uploadFailures.isNotEmpty()) {
-                logger.warn {
-                    "push round=$round had ${uploadFailures.size} upload failures " +
-                        "for target=$targetAppInstanceId pasteId=${prepare.pasteId}"
-                }
-                return uploadFailures.values.first()
-            }
-
-            val completeResult =
-                pushClientApi.completePush(
-                    pasteId = prepare.pasteId,
-                    sessionToken = prepare.sessionToken,
-                    targetAppInstanceId = targetAppInstanceId,
-                    toUrl = toUrl,
-                )
-            if (completeResult !is SuccessResult) {
-                logger.warn {
-                    "push completePush failed for target=$targetAppInstanceId " +
-                        "pasteId=${prepare.pasteId}: $completeResult"
-                }
-                return completeResult
-            }
-            val complete = completeResult.getResult<PushCompleteResponse>()
-            if (complete.isComplete) {
-                pasteSyncProcessManager.cleanProcess(pasteData.id)
-                maybePushIcon(prepare, pasteData, targetAppInstanceId, toUrl)
-                return SuccessResult()
-            }
-            logger.info {
-                "push pasteId=${prepare.pasteId} missing=${complete.missingChunks.size} " +
-                    "after round=$round, retrying"
-            }
-            chunksToUpload = complete.missingChunks
-        }
-
-        return createFailureResult(
-            StandardErrorCode.PUSH_COMPLETE_FAIL,
-            "pasteId=${prepare.pasteId} still has missing chunks after $MAX_COMPLETE_ROUNDS rounds",
-        )
     }
 
     /**
@@ -184,7 +178,7 @@ class FilePushService(
         targetAppInstanceId: String,
         pasteDataId: Long,
         chunkIndices: List<Int>,
-        filesIndex: com.crosspaste.presist.FilesIndex,
+        filesIndex: FilesIndex,
         toUrl: URLBuilder.() -> Unit,
     ): Map<Int, FailureResult> {
         if (chunkIndices.isEmpty()) return emptyMap()
@@ -192,7 +186,7 @@ class FilePushService(
         val tasks: List<suspend () -> Pair<Int, ClientApiResult>> =
             chunkIndices.map { chunkIndex ->
                 {
-                    runCatching {
+                    try {
                         val chunk = filesIndex.getChunk(chunkIndex)
                         if (chunk == null) {
                             Pair(
@@ -215,12 +209,14 @@ class FilePushService(
                                 )
                             Pair(chunkIndex, result)
                         }
-                    }.getOrElse {
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
                         Pair(
                             chunkIndex,
                             createFailureResult(
                                 StandardErrorCode.PUSH_CHUNK_UPLOAD_FAIL,
-                                "push chunk $chunkIndex failed: ${it.message}",
+                                "push chunk $chunkIndex failed: ${e.message}",
                             ),
                         )
                     }
@@ -264,8 +260,8 @@ class FilePushService(
                 return
             }
             val bytes =
-                fileUtils.readFilesChunkToByteArrayOrNull(iconPath)
-                    ?: return
+                runCatching { fileUtils.fileSystem.read(iconPath) { readByteArray() } }
+                    .getOrNull() ?: return
             val result =
                 pushClientApi.pushIcon(
                     source = source,
@@ -282,10 +278,4 @@ class FilePushService(
             logger.warn(e) { "push icon errored for source=${pasteData.source} target=$targetAppInstanceId" }
         }
     }
-
-    /** Reads an entire file into memory. Used for the small icon payload. */
-    private fun FileUtils.readFilesChunkToByteArrayOrNull(path: okio.Path): ByteArray? =
-        runCatching {
-            fileSystem.read(path) { readByteArray() }
-        }.getOrNull()
 }

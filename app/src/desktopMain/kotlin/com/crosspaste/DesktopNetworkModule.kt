@@ -92,7 +92,6 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<PasteClientApi> { PasteClientApi(get(), get()) }
         single<FilePushService> {
             FilePushService(
-                configManager = get(),
                 pasteSyncProcessManager = get(),
                 pushClientApi = get(),
                 userDataPathProvider = get(),

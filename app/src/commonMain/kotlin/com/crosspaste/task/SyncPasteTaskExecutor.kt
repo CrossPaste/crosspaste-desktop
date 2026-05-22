@@ -241,19 +241,16 @@ class SyncPasteTaskExecutor(
         val hostAddress = handler.getConnectHostAddress()
         if (hostAddress != null) {
             val hostAndPort = HostAndPort(hostAddress, port)
-            // 2a. File-type pastes to a same-version, non-extension peer take
-            //     the push path: sender drives chunk uploads instead of waiting
-            //     for the receiver to pull. This keeps iOS Share Extension (and
-            //     any short-lived sender) reliable when the peer's PasteServer
-            //     is suspended. EQUAL_TO gating ensures the peer implements the
+            // 2a. File-type pastes to a same-version peer take the push path:
+            //     sender drives chunk uploads instead of waiting for the
+            //     receiver to pull. This keeps iOS Share Extension (and any
+            //     short-lived sender) reliable when the peer's PasteServer is
+            //     suspended. EQUAL_TO gating ensures the peer implements the
             //     M1+M2 server endpoints (`/sync/paste` push mode, `/sync/file/push`,
             //     `/sync/paste/push/complete`). Any failure falls through to
             //     pull-mode metadata send so behavior is preserved end-to-end.
-            if (
-                pasteData.isFileType() &&
-                !syncRuntimeInfo.platform.isExtension() &&
-                handler.currentVersionRelation == VersionRelation.EQUAL_TO
-            ) {
+            //     (Extension peers were already routed to WebSocket above.)
+            if (shouldUsePushPath(pasteData, handler)) {
                 val pushResult =
                     filePushService.pushFiles(pasteData, targetAppInstanceId) {
                         buildUrl(hostAndPort)
@@ -280,6 +277,16 @@ class SyncPasteTaskExecutor(
                 "Failed to get connect host address by $handlerKey and WebSocket unavailable",
             )
     }
+
+    /**
+     * Should this paste use the M4 push path instead of pull-mode metadata send?
+     * Push requires (a) actual file payload to ship and (b) a peer that implements
+     * the M1+M2 server endpoints — gated by `EQUAL_TO` version match.
+     */
+    private fun shouldUsePushPath(
+        pasteData: PasteData,
+        handler: SyncHandler,
+    ): Boolean = pasteData.isFileType() && handler.currentVersionRelation == VersionRelation.EQUAL_TO
 
     private suspend fun trySendViaWebSocket(
         targetAppInstanceId: String,
