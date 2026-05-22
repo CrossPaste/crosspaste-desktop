@@ -13,6 +13,7 @@ import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.reflect.*
 
@@ -65,6 +66,32 @@ class PasteClient(
                 urlBuilder()
             }
             setBody(message, messageType)
+        }
+
+    /**
+     * Sends a binary payload (chunk bytes, icon bytes, etc.). When the caller
+     * sets the `secure: 1` header [ClientEncryptPlugin] intercepts the
+     * [ByteArrayContent] at HttpSendPipeline.Before and replaces it with the
+     * encrypted bytes (and rewrites Content-Type to application/json) — no
+     * SecureStore plumbing needed at this layer.
+     */
+    suspend fun postBinary(
+        bytes: ByteArray,
+        timeout: Long = 30_000L,
+        contentType: ContentType = ContentType.Application.OctetStream,
+        headersBuilder: (HeadersBuilder.() -> Unit) = {},
+        urlBuilder: URLBuilder.() -> Unit,
+    ): HttpResponse =
+        client.post {
+            header("appInstanceId", appInfo.appInstanceId)
+            headers(headersBuilder)
+            timeout {
+                requestTimeoutMillis = timeout
+            }
+            url {
+                urlBuilder()
+            }
+            setBody(ByteArrayContent(bytes, contentType = contentType))
         }
 
     suspend fun get(
