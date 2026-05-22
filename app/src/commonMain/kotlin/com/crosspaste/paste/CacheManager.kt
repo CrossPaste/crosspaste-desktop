@@ -1,16 +1,12 @@
 package com.crosspaste.paste
 
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
-import com.crosspaste.presist.FilesIndexBuilder
+import com.crosspaste.presist.buildFilesIndex
 import com.crosspaste.sync.FilePullService
-import com.crosspaste.utils.DateUtils
 
 interface CacheManager {
-
-    val dateUtils: DateUtils
 
     val pasteDao: PasteDao
 
@@ -20,25 +16,6 @@ interface CacheManager {
 
     fun loadKey(id: Long): FilesIndex? =
         pasteDao.getLoadedPasteDataBlock(id)?.let { pasteData ->
-            val dateString =
-                dateUtils.getYMD(
-                    dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
-                )
-            val filesIndexBuilder = FilesIndexBuilder(FilePullService.CHUNK_SIZE)
-            val fileItems = pasteData.getPasteAppearItems().filter { it is PasteFiles }
-            val pasteDataId = pasteData.id
-            val appInstanceId = pasteData.appInstanceId
-            for (pasteAppearItem in fileItems) {
-                val pasteFiles = pasteAppearItem as PasteFiles
-                userDataPathProvider.resolve(
-                    appInstanceId,
-                    dateString,
-                    pasteDataId,
-                    pasteFiles,
-                    false,
-                    filesIndexBuilder,
-                )
-            }
-            filesIndexBuilder.build()
+            buildFilesIndex(pasteData, userDataPathProvider, FilePullService.CHUNK_SIZE)
         }
 }

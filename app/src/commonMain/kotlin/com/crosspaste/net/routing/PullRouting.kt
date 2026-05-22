@@ -9,6 +9,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.requireSyncHandler
+import com.crosspaste.utils.requireTargetAppInstance
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.request.*
@@ -28,20 +30,10 @@ fun Routing.pullRouting(
 
     post("/pull/file") {
         getAppInstanceId(call)?.let { fromAppInstanceId ->
-            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
-            if (targetAppInstanceId != appInfo.appInstanceId) {
-                logger.debug { "pull file targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}" }
-                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
-                return@let
-            }
+            if (!requireTargetAppInstance(call, appInfo)) return@let
             val pullFileRequest: PullFileRequest = call.receive()
 
-            val syncHandler =
-                syncRoutingApi.getSyncHandler(fromAppInstanceId) ?: run {
-                    logger.error { "not found appInstance id: $fromAppInstanceId" }
-                    failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
-                    return@let
-                }
+            val syncHandler = requireSyncHandler(call, syncRoutingApi, fromAppInstanceId) ?: return@let
 
             if (!syncHandler.currentSyncRuntimeInfo.allowSend) {
                 logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
@@ -51,7 +43,7 @@ fun Routing.pullRouting(
 
             val filesIndex =
                 cacheManager.getFilesIndex(pullFileRequest.id) ?: run {
-                    logger.error { "$fromAppInstanceId get $targetAppInstanceId filesIndex not found" }
+                    logger.error { "$fromAppInstanceId get ${appInfo.appInstanceId} filesIndex not found" }
                     failResponse(call, StandardErrorCode.NOT_FOUND_FILES_INDEX.toErrorCode())
                     return@let
                 }
@@ -59,7 +51,7 @@ fun Routing.pullRouting(
             val chunk =
                 filesIndex.getChunk(pullFileRequest.chunkIndex) ?: run {
                     logger.error {
-                        "$fromAppInstanceId get $targetAppInstanceId chunk out range: " +
+                        "$fromAppInstanceId get ${appInfo.appInstanceId} chunk out range: " +
                             "${pullFileRequest.chunkIndex}"
                     }
                     failResponse(
@@ -109,21 +101,9 @@ fun Routing.pullRouting(
 
     get("/pull/pasteBatch") {
         getAppInstanceId(call)?.let { fromAppInstanceId ->
-            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
-            if (targetAppInstanceId != appInfo.appInstanceId) {
-                logger.debug {
-                    "pull pasteBatch targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}"
-                }
-                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
-                return@let
-            }
+            if (!requireTargetAppInstance(call, appInfo)) return@let
 
-            val syncHandler =
-                syncRoutingApi.getSyncHandler(fromAppInstanceId) ?: run {
-                    logger.error { "not found appInstance id: $fromAppInstanceId" }
-                    failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
-                    return@let
-                }
+            val syncHandler = requireSyncHandler(call, syncRoutingApi, fromAppInstanceId) ?: return@let
 
             if (!syncHandler.currentSyncRuntimeInfo.allowSend) {
                 logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
@@ -148,21 +128,9 @@ fun Routing.pullRouting(
 
     get("/pull/paste") {
         getAppInstanceId(call)?.let { fromAppInstanceId ->
-            val targetAppInstanceId = call.request.headers["targetAppInstanceId"]
-            if (targetAppInstanceId != appInfo.appInstanceId) {
-                logger.debug {
-                    "pull paste targetAppInstanceId $targetAppInstanceId not match ${appInfo.appInstanceId}"
-                }
-                failResponse(call, StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode())
-                return@let
-            }
+            if (!requireTargetAppInstance(call, appInfo)) return@let
 
-            val syncHandler =
-                syncRoutingApi.getSyncHandler(fromAppInstanceId) ?: run {
-                    logger.error { "not found appInstance id: $fromAppInstanceId" }
-                    failResponse(call, StandardErrorCode.NOT_FOUND_APP_INSTANCE_ID.toErrorCode())
-                    return@let
-                }
+            val syncHandler = requireSyncHandler(call, syncRoutingApi, fromAppInstanceId) ?: return@let
 
             if (!syncHandler.currentSyncRuntimeInfo.allowSend) {
                 logger.debug { "sync handler ($fromAppInstanceId) not allow send" }

@@ -12,6 +12,7 @@ import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.CacheManager
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
@@ -19,6 +20,7 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.PendingKeyExchangeStore
+import com.crosspaste.sync.PushSessionManager
 import io.ktor.server.application.*
 import io.ktor.server.plugins.compression.*
 
@@ -35,6 +37,8 @@ class DesktopServerModule(
     pasteboardService: PasteboardService,
     pasteDao: PasteDao,
     pastePullService: PastePullService,
+    pasteReleaseService: PasteReleaseService,
+    pushSessionManager: PushSessionManager,
     secureKeyPairSerializer: SecureKeyPairSerializer,
     secureStore: SecureStore,
     syncApi: SyncApi,
@@ -58,6 +62,8 @@ class DesktopServerModule(
         pasteboardService,
         pasteDao,
         pastePullService,
+        pasteReleaseService,
+        pushSessionManager,
         secureKeyPairSerializer,
         secureStore,
         syncApi,

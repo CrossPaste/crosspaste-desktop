@@ -53,5 +53,5 @@ interface PasteboardService : PasteboardMonitor {
 
     suspend fun tryWriteRemotePasteboardList(pasteDataList: List<PasteData>): Result<Unit?>
 
-    suspend fun tryWriteRemotePasteboardWithFile(pasteData: PasteData): Result<Unit?>
+    suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?>
 }

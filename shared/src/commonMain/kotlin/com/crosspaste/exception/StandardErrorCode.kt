@@ -58,6 +58,10 @@ enum class StandardErrorCode(
     CLI_FORBIDDEN(6000, ErrorType.EXTERNAL_ERROR),
     CLI_NOT_FOUND(6001, ErrorType.EXTERNAL_ERROR),
     CLI_INVALID_REQUEST(6002, ErrorType.EXTERNAL_ERROR),
+
+    NOT_FOUND_PUSH_SESSION(7000, ErrorType.EXTERNAL_ERROR),
+    PUSH_SESSION_REJECTED(7001, ErrorType.EXTERNAL_ERROR),
+    PUSH_NOT_FILE_TYPE(7002, ErrorType.EXTERNAL_ERROR),
     ;
 
     private val errorCode: ErrorCode = ErrorCode(code, name, errorType)
