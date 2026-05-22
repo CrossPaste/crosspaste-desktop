@@ -26,6 +26,7 @@ import com.crosspaste.net.SyncApi
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
+import com.crosspaste.net.clientapi.PushClientApi
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
@@ -34,6 +35,7 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.GeneralNearbyDeviceManager
 import com.crosspaste.sync.GeneralSyncManager
 import com.crosspaste.sync.MarketingNearbyDeviceManager
@@ -86,7 +88,16 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         }
         single<PasteClient> { PasteClient(get(), get(), get()) }
         single<PullClientApi> { PullClientApi(get(), get(), get()) }
+        single<PushClientApi> { PushClientApi(get(), get(), get()) }
         single<PasteClientApi> { PasteClientApi(get(), get()) }
+        single<FilePushService> {
+            FilePushService(
+                configManager = get(),
+                pasteSyncProcessManager = get(),
+                pushClientApi = get(),
+                userDataPathProvider = get(),
+            )
+        }
         single<Server> {
             DesktopPasteServer(
                 get(named("readWritePort")),

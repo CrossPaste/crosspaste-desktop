@@ -24,6 +24,7 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.HostAndPort
@@ -43,6 +44,7 @@ class SyncPasteTaskExecutor(
     private val configManager: CommonConfigManager,
     private val pasteDao: PasteDao,
     private val pasteClientApi: PasteClientApi,
+    private val filePushService: FilePushService,
     private val secureStore: SecureStore,
     private val syncManager: SyncManager,
     private val wsSessionManager: WsSessionManager,
@@ -239,6 +241,30 @@ class SyncPasteTaskExecutor(
         val hostAddress = handler.getConnectHostAddress()
         if (hostAddress != null) {
             val hostAndPort = HostAndPort(hostAddress, port)
+            // 2a. File-type pastes to a same-version, non-extension peer take
+            //     the push path: sender drives chunk uploads instead of waiting
+            //     for the receiver to pull. This keeps iOS Share Extension (and
+            //     any short-lived sender) reliable when the peer's PasteServer
+            //     is suspended. EQUAL_TO gating ensures the peer implements the
+            //     M1+M2 server endpoints (`/sync/paste` push mode, `/sync/file/push`,
+            //     `/sync/paste/push/complete`). Any failure falls through to
+            //     pull-mode metadata send so behavior is preserved end-to-end.
+            if (
+                pasteData.isFileType() &&
+                !syncRuntimeInfo.platform.isExtension() &&
+                handler.currentVersionRelation == VersionRelation.EQUAL_TO
+            ) {
+                val pushResult =
+                    filePushService.pushFiles(pasteData, targetAppInstanceId) {
+                        buildUrl(hostAndPort)
+                    }
+                if (pushResult is SuccessResult) {
+                    return pushResult
+                }
+                logger.warn {
+                    "push to $handlerKey failed ($pushResult), falling back to pull-mode metadata send"
+                }
+            }
             return pasteClientApi.sendPaste(
                 pasteData,
                 targetAppInstanceId,

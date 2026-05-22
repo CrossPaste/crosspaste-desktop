@@ -18,6 +18,7 @@ import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
@@ -47,6 +48,7 @@ class SyncPasteTaskExecutorTest {
         val configManager: CommonConfigManager = mockk(relaxed = true)
         val pasteDao: PasteDao = mockk(relaxed = true)
         val pasteClientApi: PasteClientApi = mockk(relaxed = true)
+        val filePushService: FilePushService = mockk(relaxed = true)
         val secureStore: SecureStore = mockk(relaxed = true)
         val syncManager: SyncManager = mockk(relaxed = true)
         val wsSessionManager: WsSessionManager =
@@ -75,6 +77,7 @@ class SyncPasteTaskExecutorTest {
                 configManager = configManager,
                 pasteDao = pasteDao,
                 pasteClientApi = pasteClientApi,
+                filePushService = filePushService,
                 secureStore = secureStore,
                 syncManager = syncManager,
                 wsSessionManager = wsSessionManager,
@@ -384,5 +387,82 @@ class SyncPasteTaskExecutorTest {
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
+        }
+
+    // ========== E. Push branch (M4) ==========
+
+    @Test
+    fun doExecuteTask_fileTypeEqualToNonExtension_takesPushPath() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task = createPasteTask()
+            val pasteData = createMockPasteData(PasteType.FILE_TYPE)
+            every { pasteData.isFileType() } returns true
+
+            val handler = createMockSyncHandler("remote-1", versionRelation = VersionRelation.EQUAL_TO)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery { deps.filePushService.pushFiles(any(), any(), any()) } returns SuccessResult()
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is SuccessPasteTaskResult)
+            coVerify(exactly = 1) { deps.filePushService.pushFiles(any(), eq("remote-1"), any()) }
+            // Push succeeded → pull-mode metadata send must not run as a backup.
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), any(), any()) }
+        }
+
+    @Test
+    fun doExecuteTask_pushFails_fallsBackToPullSend() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task = createPasteTask()
+            val pasteData = createMockPasteData(PasteType.FILE_TYPE)
+            every { pasteData.isFileType() } returns true
+
+            val handler = createMockSyncHandler("remote-1", versionRelation = VersionRelation.EQUAL_TO)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery { deps.filePushService.pushFiles(any(), any(), any()) } returns
+                FailureResult(
+                    PasteException(
+                        StandardErrorCode.PUSH_PREPARE_FAIL.toErrorCode(),
+                        "prepare 500",
+                    ),
+                )
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+
+            val result = executor.doExecuteTask(task)
+
+            // The fallback path returns success → overall task succeeds.
+            assertTrue(result is SuccessPasteTaskResult)
+            coVerify(exactly = 1) { deps.filePushService.pushFiles(any(), eq("remote-1"), any()) }
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
+        }
+
+    @Test
+    fun doExecuteTask_nonFileType_doesNotInvokePush() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task = createPasteTask()
+            val pasteData = createMockPasteData(PasteType.TEXT_TYPE)
+            every { pasteData.isFileType() } returns false
+
+            val handler = createMockSyncHandler("remote-1", versionRelation = VersionRelation.EQUAL_TO)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is SuccessPasteTaskResult)
+            coVerify(exactly = 0) { deps.filePushService.pushFiles(any(), any(), any()) }
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), any(), any()) }
         }
 }
