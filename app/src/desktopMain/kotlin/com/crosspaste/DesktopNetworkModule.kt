@@ -43,6 +43,7 @@ import com.crosspaste.sync.MarketingSyncManager
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.PushSessionManager
+import com.crosspaste.sync.SharePushOrchestrator
 import com.crosspaste.sync.SyncDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
@@ -97,6 +98,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 userDataPathProvider = get(),
             )
         }
+        single<SharePushOrchestrator> { SharePushOrchestrator(get(), get(), get()) }
         single<Server> {
             DesktopPasteServer(
                 get(named("readWritePort")),
