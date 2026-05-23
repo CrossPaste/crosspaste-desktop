@@ -124,4 +124,4 @@ Here are some [FAQs](doc/en/FQA.md) that have been collected. If you have other 
 </a>
 
 ## 💖 Sponsors
-<img src="https://avatars.githubusercontent.com/u/27792976?s=60&v=4"/>
+<!-- sponsors --><!-- sponsors -->
