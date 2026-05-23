@@ -115,6 +115,8 @@ private suspend fun handleFilePushChunk(
     val writeFailed =
         runCatching {
             fileUtils.writeFilesChunk(filesChunk, call.receiveChannel())
+        }.onFailure { e ->
+            logger.error(e) { "failed to write files chunk" }
         }.isFailure
     if (writeFailed) {
         logger.error { "push chunk: write failed pasteId=${headers.pasteId} chunkIndex=${headers.chunkIndex}" }

@@ -11,7 +11,7 @@ import com.crosspaste.paste.item.bindItem
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
-import com.crosspaste.presist.buildFilesIndex
+import com.crosspaste.presist.buildFilesIndexForReceive
 import com.crosspaste.sync.FilePullService
 import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
@@ -289,7 +289,8 @@ class PasteReleaseService(
                     }
                 val id = newPasteData.id
 
-                val filesIndex = buildFilesIndex(newPasteData, userDataPathProvider, FilePullService.CHUNK_SIZE)
+                val filesIndex =
+                    buildFilesIndexForReceive(newPasteData, userDataPathProvider, FilePullService.CHUNK_SIZE)
                 if (filesIndex.getChunkCount() <= 0) {
                     logger.warn { "releaseRemotePasteDataForPush: empty filesIndex for pasteId=$id" }
                     pasteDao.markDeletePasteData(id)
