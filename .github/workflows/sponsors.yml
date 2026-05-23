@@ -27,3 +27,9 @@ jobs:
           token: ${{ secrets.SPONSORS_TOKEN }}
           organization: true
           file: 'README.zh-CN.md'
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: ":construction_worker: update sponsors in README"
+          file_pattern: 'README.md README.zh-CN.md'
