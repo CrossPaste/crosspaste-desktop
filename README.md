@@ -124,4 +124,4 @@ Here are some [FAQs](doc/en/FQA.md) that have been collected. If you have other 
 </a>
 
 ## 💖 Sponsors
-<!-- sponsors --><a href="https://github.com/liaokaime"><img src="https:&#x2F;&#x2F;github.com&#x2F;liaokaime.png" width="60px" alt="User avatar: liaokai" /></a><a href="https://github.com/jaepil-choi"><img src="https:&#x2F;&#x2F;github.com&#x2F;jaepil-choi.png" width="60px" alt="User avatar: Jaepil.Choi" /></a><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/liaokaime"><img src="https://wsrv.nl/?url=github.com/liaokaime.png&w=120&h=120&fit=cover&mask=circle" width="60" height="60" alt="liaokai" /></a>&nbsp;<a href="https://github.com/jaepil-choi"><img src="https://wsrv.nl/?url=github.com/jaepil-choi.png&w=120&h=120&fit=cover&mask=circle" width="60" height="60" alt="Jaepil.Choi" /></a>&nbsp;<!-- sponsors -->
