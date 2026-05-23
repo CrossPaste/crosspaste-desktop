@@ -19,6 +19,7 @@ jobs:
         with:
           token: ${{ secrets.SPONSORS_TOKEN }}
           organization: true
+          active-only: false
           file: 'README.md'
 
       - name: Update sponsors in README.zh-CN.md
@@ -26,6 +27,7 @@ jobs:
         with:
           token: ${{ secrets.SPONSORS_TOKEN }}
           organization: true
+          active-only: false
           file: 'README.zh-CN.md'
 
       - name: Commit and push changes
