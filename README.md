@@ -124,4 +124,4 @@ Here are some [FAQs](doc/en/FQA.md) that have been collected. If you have other 
 </a>
 
 ## 💖 Sponsors
-<!-- sponsors --><!-- sponsors -->
+<!-- sponsors --><a href="https://github.com/jaepil-choi"><img src="https:&#x2F;&#x2F;github.com&#x2F;jaepil-choi.png" width="60px" alt="User avatar: Jaepil.Choi" /></a><!-- sponsors -->
