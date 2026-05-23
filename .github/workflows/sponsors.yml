@@ -21,6 +21,7 @@ jobs:
           organization: true
           active-only: false
           file: 'README.md'
+          template: '<a href="https://github.com/{{{ login }}}"><img src="https://wsrv.nl/?url=github.com/{{{ login }}}.png&w=120&h=120&fit=cover&mask=circle" width="60" height="60" alt="{{{ name }}}" /></a>&nbsp;'
 
       - name: Update sponsors in README.zh-CN.md
         uses: JamesIves/github-sponsors-readme-action@v1
@@ -29,6 +30,7 @@ jobs:
           organization: true
           active-only: false
           file: 'README.zh-CN.md'
+          template: '<a href="https://github.com/{{{ login }}}"><img src="https://wsrv.nl/?url=github.com/{{{ login }}}.png&w=120&h=120&fit=cover&mask=circle" width="60" height="60" alt="{{{ name }}}" /></a>&nbsp;'
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
