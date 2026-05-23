@@ -8,6 +8,7 @@ import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -166,7 +167,7 @@ class PasteCollectorTest {
 
             collector.completeCollect(1L)
 
-            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any(), any()) }
+            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any(), any<PasteSourceContext>()) }
         }
 
     @Test
@@ -197,7 +198,32 @@ class PasteCollectorTest {
             collector.completeCollect(1L)
 
             // Should still release since not all active indices errored
-            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any(), any()) }
+            coVerify { pasteReleaseService.releaseLocalPasteData(1L, any(), any<PasteSourceContext>()) }
+        }
+
+    @Test
+    fun `completeCollect forwards forcePush in sourceContext to releaseLocalPasteData`() =
+        runTest {
+            val forcePushContext =
+                PasteSourceContext(
+                    source = null,
+                    remote = false,
+                    forcePush = true,
+                )
+            val collector =
+                PasteCollector(1, appInfo, pasteDao, pasteReleaseService, forcePushContext)
+            val item = createTextPasteItem(text = "test")
+            collector.preCollectItem(0, TestPasteTypePlugin::class, item)
+
+            val captured = slot<PasteSourceContext>()
+            coEvery {
+                pasteReleaseService.releaseLocalPasteData(any(), any(), capture(captured))
+            } returns Unit
+
+            collector.completeCollect(1L)
+
+            assertTrue(captured.isCaptured, "releaseLocalPasteData must be invoked")
+            assertTrue(captured.captured.forcePush, "forcePush must flow through sourceContext")
         }
 
     @Test
@@ -207,8 +233,9 @@ class PasteCollectorTest {
             val item = createTextPasteItem(text = "test")
             collector.preCollectItem(0, TestPasteTypePlugin::class, item)
 
-            coEvery { pasteReleaseService.releaseLocalPasteData(any(), any(), any()) } throws
-                RuntimeException("release error")
+            coEvery {
+                pasteReleaseService.releaseLocalPasteData(any(), any(), any<PasteSourceContext>())
+            } throws RuntimeException("release error")
 
             collector.completeCollect(1L)
 

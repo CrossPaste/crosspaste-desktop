@@ -118,7 +118,7 @@ class PasteCollector(
                                 }
                             }
                     }
-                    pasteReleaseService.releaseLocalPasteData(id, pasteItems, sourceContext.targetAppInstanceIds)
+                    pasteReleaseService.releaseLocalPasteData(id, pasteItems, sourceContext)
                 }.onFailure { e ->
                     logger.error(e) { "Failed to complete paste $id" }
                     markDeletePasteData(id)

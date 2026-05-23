@@ -10,6 +10,8 @@ class SyncExtraInfo(
     val appInstanceId: String,
     @SerialName("targetAppInstanceIds")
     val targetAppInstanceIds: Set<String>? = null,
+    @SerialName("forcePush")
+    val forcePush: Boolean = false,
 ) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")

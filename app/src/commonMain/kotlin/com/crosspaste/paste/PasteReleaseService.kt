@@ -76,8 +76,9 @@ class PasteReleaseService(
     suspend fun releaseLocalPasteData(
         id: Long,
         pasteItems: List<PasteItem>,
-        targetAppInstanceIds: Set<String>?,
+        sourceContext: PasteSourceContext,
     ) = withContext(ioDispatcher) {
+        val targetAppInstanceIds = sourceContext.targetAppInstanceIds
         pasteDao.getLoadingPasteData(id)?.let { pasteData ->
             var pasteAppearItems = pasteItems
             for (pastePlugin in pasteProcessPlugins) {
@@ -135,7 +136,13 @@ class PasteReleaseService(
                     // items skip Apple peers).
                     val hasValidSyncTargets = targetAppInstanceIds == null || targetAppInstanceIds.isNotEmpty()
                     if (!pasteData.remote && hasValidSyncTargets) {
-                        addSyncTask(id, maxFileSize, pasteData.appInstanceId, targetAppInstanceIds)
+                        addSyncTask(
+                            id,
+                            maxFileSize,
+                            pasteData.appInstanceId,
+                            targetAppInstanceIds,
+                            forcePush = sourceContext.forcePush,
+                        )
                     }
 
                     if (pasteType.isFile() || pasteType.isImage()) {

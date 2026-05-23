@@ -112,7 +112,7 @@ class SyncPasteTaskExecutor(
         val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
 
         for (handler in getEligibleSyncHandlers(syncExtraInfo)) {
-            val deferred = createSyncTask(handler.key, handler.value, pasteData)
+            val deferred = createSyncTask(handler.key, handler.value, pasteData, syncExtraInfo)
             deferredResults.add(deferred)
         }
 
@@ -159,10 +159,11 @@ class SyncPasteTaskExecutor(
         handlerKey: String,
         handler: SyncHandler,
         pasteData: PasteData,
+        syncExtraInfo: SyncExtraInfo,
     ): Deferred<Pair<String, ClientApiResult>> =
         ioScope.async {
             runCatching {
-                val result = syncPasteToTarget(handlerKey, handler, pasteData)
+                val result = syncPasteToTarget(handlerKey, handler, pasteData, syncExtraInfo)
 
                 if (result is SuccessResult) {
                     appControl.completeSendOperation()
@@ -195,6 +196,7 @@ class SyncPasteTaskExecutor(
         handlerKey: String,
         handler: SyncHandler,
         pasteData: PasteData,
+        syncExtraInfo: SyncExtraInfo,
     ): ClientApiResult {
         val syncRuntimeInfo = handler.currentSyncRuntimeInfo
         val port = syncRuntimeInfo.port
@@ -241,25 +243,19 @@ class SyncPasteTaskExecutor(
         val hostAddress = handler.getConnectHostAddress()
         if (hostAddress != null) {
             val hostAndPort = HostAndPort(hostAddress, port)
-            // 2a. File-type pastes to a same-version peer take the push path:
-            //     sender drives chunk uploads instead of waiting for the
-            //     receiver to pull. This keeps iOS Share Extension (and any
-            //     short-lived sender) reliable when the peer's PasteServer is
-            //     suspended. EQUAL_TO gating ensures the peer implements the
-            //     M1+M2 server endpoints (`/sync/paste` push mode, `/sync/file/push`,
-            //     `/sync/paste/push/complete`). Any failure falls through to
-            //     pull-mode metadata send so behavior is preserved end-to-end.
-            //     (Extension peers were already routed to WebSocket above.)
-            if (shouldUsePushPath(pasteData, handler)) {
-                val pushResult =
-                    filePushService.pushFiles(pasteData, targetAppInstanceId) {
-                        buildUrl(hostAndPort)
-                    }
-                if (pushResult is SuccessResult) {
-                    return pushResult
-                }
-                logger.warn {
-                    "push to $handlerKey failed ($pushResult), falling back to pull-mode metadata send"
+            // 2a. Push path is opt-in via SyncExtraInfo.forcePush. Sender drives
+            //     chunk uploads instead of waiting for the receiver to pull, which is
+            //     required when the sender cannot host a PasteServer for reverse pulls
+            //     (e.g. iOS Share Extension). EQUAL_TO gating ensures the peer
+            //     implements the M1+M2 server endpoints (`/sync/paste` push mode,
+            //     `/sync/file/push`, `/sync/paste/push/complete`). On failure we
+            //     return the FailureResult unchanged: same-version peers necessarily
+            //     implement push, and reverse-pull fallback was creating a doomed
+            //     second LOADING entry on the receiver. The SyncTask will retry on
+            //     the next executor pass when applicable.
+            if (shouldUsePushPath(pasteData, handler, syncExtraInfo)) {
+                return filePushService.pushFiles(pasteData, targetAppInstanceId) {
+                    buildUrl(hostAndPort)
                 }
             }
             return pasteClientApi.sendPaste(
@@ -280,13 +276,19 @@ class SyncPasteTaskExecutor(
 
     /**
      * Should this paste use the M4 push path instead of pull-mode metadata send?
-     * Push requires (a) actual file payload to ship and (b) a peer that implements
-     * the M1+M2 server endpoints — gated by `EQUAL_TO` version match.
+     * Push is opt-in (`forcePush`): callers that cannot host reverse-pull (iOS Share
+     * Extension) request it explicitly. We also require (a) actual file payload to
+     * ship and (b) a peer that implements the M1+M2 server endpoints — gated by
+     * `EQUAL_TO` version match.
      */
     private fun shouldUsePushPath(
         pasteData: PasteData,
         handler: SyncHandler,
-    ): Boolean = pasteData.isFileType() && handler.currentVersionRelation == VersionRelation.EQUAL_TO
+        syncExtraInfo: SyncExtraInfo,
+    ): Boolean =
+        syncExtraInfo.forcePush &&
+            pasteData.isFileType() &&
+            handler.currentVersionRelation == VersionRelation.EQUAL_TO
 
     private suspend fun trySendViaWebSocket(
         targetAppInstanceId: String,

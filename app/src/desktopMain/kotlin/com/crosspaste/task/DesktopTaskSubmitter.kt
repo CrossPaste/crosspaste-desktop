@@ -77,13 +77,14 @@ class DesktopTaskBuilder(
         fileSize: Long,
         appInstanceId: String,
         targetAppInstanceIds: Set<String>?,
+        forcePush: Boolean,
     ): TaskBuilder {
         if (appControl.isFileSizeSyncEnabled(fileSize)) {
             taskIds.add(
                 taskDao.createTaskBlock(
                     id,
                     TaskType.SYNC_PASTE_TASK,
-                    SyncExtraInfo(appInstanceId, targetAppInstanceIds),
+                    SyncExtraInfo(appInstanceId, targetAppInstanceIds, forcePush),
                 ),
             )
         }

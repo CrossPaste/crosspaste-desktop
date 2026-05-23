@@ -26,6 +26,7 @@ interface TaskBuilder {
         fileSize: Long,
         appInstanceId: String,
         targetAppInstanceIds: Set<String>? = null,
+        forcePush: Boolean = false,
     ): TaskBuilder
 
     fun addRelaySyncTask(

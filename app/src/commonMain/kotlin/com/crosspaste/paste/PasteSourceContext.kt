@@ -5,4 +5,5 @@ data class PasteSourceContext(
     val remote: Boolean,
     val dragAndDrop: Boolean = false,
     val targetAppInstanceIds: Set<String>? = null,
+    val forcePush: Boolean = false,
 )
