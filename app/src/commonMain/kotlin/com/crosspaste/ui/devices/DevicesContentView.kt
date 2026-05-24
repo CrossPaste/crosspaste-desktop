@@ -238,7 +238,7 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                     SearchingNearbyDevices()
                 }
             } else if (nearbyDevicesList.isNotEmpty()) {
-                items(nearbyDevicesList, key = { item -> item.appInfo.appInstanceId }) { syncInfo ->
+                items(nearbyDevicesList, key = { item -> "nearby-${item.appInfo.appInstanceId}" }) { syncInfo ->
                     val currentSyncInfo by rememberUpdatedState(syncInfo)
                     val scope =
                         remember(currentSyncInfo) {
