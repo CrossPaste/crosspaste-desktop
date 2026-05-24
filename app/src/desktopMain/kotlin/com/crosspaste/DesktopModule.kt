@@ -58,6 +58,7 @@ import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KLogger
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 class DesktopModule(
@@ -88,7 +89,7 @@ class DesktopModule(
 
     override fun extensionModule() =
         module {
-            single<OCRModule> { DesktopOCRModule(get(), get(), get(), get(), get()) }
+            single { DesktopOCRModule(get(), get(), get(), get(), get()) } bind OCRModule::class
         }
 
     // SqlDelight

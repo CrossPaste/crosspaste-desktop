@@ -174,6 +174,12 @@ class DesktopOCRModule(
         }
     }
 
+    suspend fun setLanguages(trainedDataNames: List<String>) {
+        mutex.withLock {
+            updateOrCreateApi(trainedDataNames.joinToString("+"))
+        }
+    }
+
     override suspend fun extractText(path: Path): Result<String> =
         mutex.withLock {
             val ocrLanguage = configManager.getCurrentConfig().ocrLanguage
