@@ -107,7 +107,7 @@ jobs:
             core.setOutput('pr-body', pr.data.body || 'No description provided');
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ steps.pr-details.outputs.head-sha }}
