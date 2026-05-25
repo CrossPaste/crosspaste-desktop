@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -180,8 +182,8 @@ private fun LoadedLanguageSection(
 ) {
     val density = LocalDensity.current
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
-    var dragOffsetY by remember { mutableStateOf(0f) }
-    var rowHeightPx by remember { mutableStateOf(0) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var rowHeightPx by remember { mutableIntStateOf(0) }
     val gapPx = with(density) { small2X.toPx() }
     val rowStepPx = rowHeightPx + gapPx
 
@@ -212,7 +214,9 @@ private fun LoadedLanguageSection(
                 language = language,
                 translationY = translationY,
                 isDragging = index == source,
-                onMeasured = { rowHeightPx = it },
+                onMeasured = { measured ->
+                    if (rowHeightPx == 0) rowHeightPx = measured
+                },
                 onDragStart = {
                     draggedIndex = index
                     dragOffsetY = 0f
