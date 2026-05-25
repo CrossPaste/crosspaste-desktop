@@ -5,50 +5,41 @@ All notable changes to this project will be documented in this file.
 # [2.1.3] - 2026-05-25
 # Highlights 🌟
 
-- 📤 **Push-mode sync for file pastes**
-  A new sender-driven push flow lets the source device deliver file
-  chunks to peers instead of waiting for them to pull. The desktop ships
-  both the server endpoints (`/sync/paste` push mode, `/sync/file/push`,
-  `/sync/paste/push/complete`) and the matching client, with the
-  push path extracted into a `SharePushOrchestrator` (#4456 #4457 #4467
-  #4468). This unblocks the iOS Share Extension, which has to deliver
-  files before its `PasteServer` is suspended.
+- 📤 **Faster file sharing across devices**
+  Sharing files between your devices is now snappier and more reliable.
+  The device you copied from delivers files directly to your other
+  devices, instead of making them ask for the data first. This also
+  paves the way for the upcoming iOS Share Extension, letting you share
+  files straight from any app on your iPhone or iPad to your desktop
+  (#4456 #4457 #4467 #4468).
 
-- 🅾️ **OCR settings redesign with drag-to-reorder**
-  Loaded OCR languages now live on per-row rounded cards with compact
-  pill-shaped action buttons, and each loaded row has a drag handle so
-  you can reorder priorities live — `TessBaseAPI` is re-initialized with
-  the new order on drop (#4473).
+- 🅾️ **Redesigned OCR language settings**
+  The OCR (text-from-image) language settings got a cleaner look, with
+  each loaded language on its own card. You can now drag languages up
+  and down to set their priority — useful when CrossPaste needs to pick
+  which language to try first on multilingual images (#4473).
 
-- 🧊 **Compose Multiplatform 1.11**
-  Upgraded the desktop UI stack to Compose Multiplatform 1.11 with matching
-  jewel / richeditor-compose / compose-shimmer bumps, and a temporary jewel
-  downgrade to 0.36.0-261 to stay Java 21 compatible (#4417 #4419 #4434 #4436).
-  The unmaintained `dzirbel/compose-material-context-menu` library was
-  incompatible with the new `TextContextMenu` API and crashed on text
-  fields; replaced with an in-tree Material context menu (#4448).
+- 🛡️ **Windows: heads-up when your network blocks CrossPaste**
+  On Windows, if your network is set to "Public", the Windows Firewall
+  silently blocks CrossPaste from finding nearby devices. CrossPaste
+  now detects this and offers a one-click shortcut to the Windows
+  setting where you can switch the network to Private (#4402 #4404).
 
-- 🛡️ **Windows Public Network detection**
-  CrossPaste now detects when the active connection is on a Public network
-  profile (where Windows Firewall blocks discovery) and offers a one-click
-  jump to the Windows settings page to switch it. Backed by a JNA-direct
-  COM reference path with the COM-leak fix (#4402 #4404).
+- 🖱️ **Smoother drag-and-drop from CrossPaste**
+  Dragging items from the CrossPaste side panel into other apps is
+  now much better. On macOS, the drag preview no longer hides behind
+  the paste window — you can finally see what you're dragging. The
+  side panel also handles edge cases more gracefully, so drags don't
+  get blocked while previews are still loading, and dragging stays
+  smooth even with lots of items on screen. Bonus: you can now drag
+  to reorder your search tags too (#4361 #4357 #4377 #4388).
 
-- 🔋 **Background polling gated by window visibility**
-  A new `UserAttentionService` suspends background pollers while the main
-  window is hidden, and `launchWhileAttentive` now isolates per-tick
-  exceptions so a single failed tick no longer kills the poller (#4406 #4414).
-
-- 🖼️ **Animated GIF + native video thumbnails in side preview**
-  GIFs are now decoded off the UI thread with double buffering via Skia
-  codec, video files render real native thumbnails in the side panel, and
-  Skia codec / bitmap close is serialized against in-flight reads to
-  eliminate a long-standing close-vs-readPixels race (#4353 #4410 #4422 #4438).
-
-- 🧪 **Real-device E2E test harness**
-  A new `:e2e` module ships a headless CrossPaste peer that participates
-  in pairing, push, and pull flows — usable for pre-release sanity tests
-  against a real desktop build (#4318).
+- 🖼️ **Animated GIFs and real video thumbnails in the side preview**
+  GIFs in your clipboard history now actually animate (smoothly, even
+  for large ones), and video files show a real thumbnail of the first
+  frame in the side panel instead of a generic icon. We also fixed a
+  rare crash that could happen while previews were loading (#4353 #4410
+  #4422 #4438).
 
 # Bug Fixes 🐛
 
