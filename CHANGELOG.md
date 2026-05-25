@@ -2,8 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.1.2] - 2026-05-21
+# [2.1.3] - 2026-05-25
 # Highlights 🌟
+
+- 📤 **Push-mode sync for file pastes**
+  A new sender-driven push flow lets the source device deliver file
+  chunks to peers instead of waiting for them to pull. The desktop ships
+  both the server endpoints (`/sync/paste` push mode, `/sync/file/push`,
+  `/sync/paste/push/complete`) and the matching client, with the
+  push path extracted into a `SharePushOrchestrator` (#4456 #4457 #4467
+  #4468). This unblocks the iOS Share Extension, which has to deliver
+  files before its `PasteServer` is suspended.
+
+- 🅾️ **OCR settings redesign with drag-to-reorder**
+  Loaded OCR languages now live on per-row rounded cards with compact
+  pill-shaped action buttons, and each loaded row has a drag handle so
+  you can reorder priorities live — `TessBaseAPI` is re-initialized with
+  the new order on drop (#4473).
 
 - 🧊 **Compose Multiplatform 1.11**
   Upgraded the desktop UI stack to Compose Multiplatform 1.11 with matching
@@ -37,6 +52,8 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Pre-allocate file slots on push receive so the first chunk has somewhere to land (#4468)
+- :bug: Namespace nearby device LazyColumn keys to avoid a Compose 1.11 duplicate-key crash (#4470)
 - :bug: Bypass JVM system proxy for LAN sync traffic so peer sync no longer hangs behind a configured HTTP proxy (#4449)
 - :bug: Make smoke-test orphan-JVM kill order-independent so cleanup keeps working if the launcher reorders `-D` flags (#4452)
 - :bug: Replace `dzirbel/compose-material-context-menu` (incompatible with Compose 1.11 `TextContextMenu` API) with an in-tree Material context menu to fix text-field crash (#4448)
@@ -61,6 +78,9 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
+- :sparkles: Add desktop file push protocol — `/sync/paste` push mode + `/sync/file/push` + `/sync/paste/push/complete` (M1+M2) (#4456)
+- :sparkles: Add desktop-side client for the file push protocol (M4) (#4457)
+- :sparkles: Redesign OCR language rows and add drag-to-reorder for loaded languages (#4473)
 - :sparkles: Add `PasteDao.filterExistingIds` for stale-id filtering (#4428)
 - :sparkles: Add bulk tag operations to `PasteTagDao` (#4426)
 - :sparkles: Animate GIFs in image side preview via Skia codec (#4410)
@@ -77,6 +97,7 @@ All notable changes to this project will be documented in this file.
 
 # Multiplatform · Refactor · Code Style 🔨
 
+- :hammer: Extract push out of `SyncPasteTaskExecutor` into `SharePushOrchestrator` (#4467)
 - :hammer: Extract `DesktopBootstrap` to consolidate process-wide hooks (#4450)
 - :hammer: Opt in to `ExperimentalRichTextApi` in HTML/RTF side previews (#4424)
 - :hammer: Catch block exceptions inside `launchWhileAttentive` so a single failed tick doesn't kill the poller (#4415)
@@ -110,6 +131,7 @@ All notable changes to this project will be documented in this file.
 
 # Build & CI 👷
 
+- :construction_worker: Auto-update GitHub Sponsors avatars in README, with historical sponsors and rounded avatar rendering (#4458 #4462 #4464)
 - :construction_worker: Add desktop startup smoke test to CI (#4442)
 - :construction_worker: Drop `/hyperframes-demo/` from `.gitignore` (#4412)
 - :construction_worker: Ignore `/.claude/worktrees/`
@@ -124,6 +146,10 @@ All notable changes to this project will be documented in this file.
 
 # Dependencies ⬆️
 
+- ⬆️ **kotlinx-coroutines** 1.10.2 → 1.11.0 (#4474)
+- ⬆️ **kotlinx-serialization-json** bump (#4475)
+- ⬆️ **kotlin-logging** 8.0.02 → 8.0.03 (#4477)
+- ⬆️ **kotter** 1.2.1 → 1.3.0 (#4478)
 - ⬆️ **Compose Multiplatform** → 1.11.0 (#4417)
 - ⬆️ **Ktor** 3.4.2 → 3.5.0 (#4305 #4429)
 - ⬆️ **Kotlin** 2.3.20 → 2.3.21 (#4324)
@@ -143,7 +169,7 @@ All notable changes to this project will be documented in this file.
 - ⬆️ **metadata-extractor** 2.19.0 → 2.20.0 (#4323)
 
 ---
-**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/2.0.0.2192...2.1.2.2279
+**Full Changelog**: https://github.com/CrossPaste/crosspaste-desktop/compare/2.0.0.2192...2.1.3.2297
 
 # [2.0.0] - 2026-04-26
 # Highlights 🌟
