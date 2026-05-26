@@ -4,7 +4,6 @@ import com.crosspaste.cli.platform.NativePlatformPathProvider
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.path.PlatformUserDataPathProvider
-import com.crosspaste.utils.DeviceUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -21,7 +20,6 @@ import okio.Path
  */
 @Serializable
 data class CliReadOnlyAppConfig(
-    override val appInstanceId: String = "",
     override val language: String = "en",
     override val font: String = "",
     override val isFollowSystemTheme: Boolean = true,
@@ -84,15 +82,6 @@ class CliConfigManager(
         nativePathProvider.getDefaultUserDataPath().resolve("appConfig.json")
 
     private val _config = MutableStateFlow<AppConfig>(loadConfigFromFile())
-
-    override val deviceUtils: DeviceUtils =
-        object : DeviceUtils {
-            override fun createAppInstanceId(): String = _config.value.appInstanceId
-
-            override fun getDeviceId(): String = ""
-
-            override fun getDeviceName(): String = "CLI"
-        }
 
     override val config: StateFlow<AppConfig> = _config
 

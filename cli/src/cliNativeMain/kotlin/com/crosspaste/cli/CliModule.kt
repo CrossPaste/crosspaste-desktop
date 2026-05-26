@@ -5,6 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.cli.platform.CliConfigReader
 import com.crosspaste.cli.platform.NativePlatformPathProvider
 import com.crosspaste.cli.platform.createNativePlatformPathProvider
+import com.crosspaste.config.AppMetadata
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.db.NativeDriverFactory
@@ -26,8 +27,12 @@ import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
+import kotlinx.serialization.json.Json
+import okio.FileSystem
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
+
+private val metadataJson = Json { ignoreUnknownKeys = true }
 
 val cliModule =
     module {
@@ -42,9 +47,15 @@ val cliDatabaseModule =
         single<PlatformUserDataPathProvider> { CliPlatformUserDataPathProvider(get()) }
         single<UserDataPathProvider> { UserDataPathProvider(get(), get()) }
         single<AppInfo> {
-            val configManager = get<CommonConfigManager>()
+            val metadataPath =
+                get<NativePlatformPathProvider>().getDefaultUserDataPath().resolve(".metadata")
+            val appInstanceId =
+                runCatching {
+                    val content = FileSystem.SYSTEM.read(metadataPath) { readUtf8() }
+                    metadataJson.decodeFromString<AppMetadata>(content).appInstanceId
+                }.getOrDefault("")
             AppInfo(
-                appInstanceId = configManager.getCurrentConfig().appInstanceId,
+                appInstanceId = appInstanceId,
                 appVersion = "cli",
                 appRevision = "Unknown",
                 userName = "",
