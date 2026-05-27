@@ -64,3 +64,51 @@ export function applyImageDragData(
   dataTransfer.setData("DownloadURL", `${mime}:${fileName}:${imageUrl}`);
   dataTransfer.effectAllowed = "copy";
 }
+
+/**
+ * Replace Chrome's default rectangular drag snapshot with a rounded one.
+ *
+ * Why: the card source has `border-radius` + `overflow: hidden`, but Chrome's
+ * default drag image rasterizes the bounding box and paints the corners
+ * opaque, so the ghost looks rectangular even though the card on screen is
+ * rounded. We render an off-screen clone (carrying the same styles) and feed
+ * it to `setDragImage` so the captured snapshot keeps the rounded corners.
+ *
+ * Iframes inside the clone (HTML preview) are swapped for placeholders — a
+ * reattached iframe re-fetches its srcdoc and would snapshot blank anyway.
+ */
+export function setRoundedDragImage(
+  source: HTMLElement,
+  dataTransfer: DataTransfer,
+  pointerX: number,
+  pointerY: number,
+): void {
+  const rect = source.getBoundingClientRect();
+  const clone = source.cloneNode(true) as HTMLElement;
+
+  clone.querySelectorAll("iframe").forEach((iframe) => {
+    const placeholder = document.createElement("div");
+    placeholder.className = iframe.className;
+    placeholder.style.cssText = iframe.style.cssText;
+    iframe.replaceWith(placeholder);
+  });
+
+  Object.assign(clone.style, {
+    position: "fixed",
+    top: "-10000px",
+    left: "-10000px",
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+    margin: "0",
+    pointerEvents: "none",
+  });
+  document.body.appendChild(clone);
+
+  dataTransfer.setDragImage(
+    clone,
+    pointerX - rect.left,
+    pointerY - rect.top,
+  );
+
+  setTimeout(() => clone.remove(), 0);
+}

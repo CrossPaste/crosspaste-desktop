@@ -20,7 +20,7 @@ import { isDarkColor } from "@/shared/utils/html-color";
 import { NotificationManager } from "@/shared/notification/notification-manager";
 import { useImageUrl } from "@/shared/hooks/use-image-url";
 import { useCopyWithNotification } from "@/shared/hooks/use-copy-with-notification";
-import { applyImageDragData, getDragText } from "@/shared/paste/paste-drag";
+import { applyImageDragData, getDragText, setRoundedDragImage } from "@/shared/paste/paste-drag";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -254,7 +254,7 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
     }
   }, [data]);
 
-  const handleDragStart = useCallback((e: React.DragEvent) => {
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (data.pasteType === PasteTypeInt.FILE) {
       e.preventDefault();
       NotificationManager.warning(t("file_drag_not_supported"), undefined, 3000, {
@@ -269,6 +269,7 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
         return;
       }
       applyImageDragData(e.dataTransfer, dragImageUrl, dragImageFileName);
+      setRoundedDragImage(e.currentTarget, e.dataTransfer, e.clientX, e.clientY);
       return;
     }
     if (!dragText) {
@@ -277,6 +278,7 @@ export function PasteCard({ data, onClick, onDelete }: Props) {
     }
     e.dataTransfer.setData("text/plain", dragText);
     e.dataTransfer.effectAllowed = "copy";
+    setRoundedDragImage(e.currentTarget, e.dataTransfer, e.clientX, e.clientY);
   }, [data.pasteType, dragText, dragImageUrl, dragImageFileName, t, handleDownload]);
 
   const canDrag =
