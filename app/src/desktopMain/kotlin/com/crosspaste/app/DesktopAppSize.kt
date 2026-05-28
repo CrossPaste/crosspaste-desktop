@@ -12,7 +12,6 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.contains
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
@@ -161,7 +160,9 @@ class DesktopAppSize(
 
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
-            huge + tiny
+            // Native Window has no Jewel leftInset compensation, so this is the
+            // pin button's distance to the window's right edge directly.
+            medium
         } else if (platform.isWindows()) {
             medium
         } else {

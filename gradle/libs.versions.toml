@@ -17,7 +17,6 @@ hot-reload = "1.1.1"
 icons-material-symbols = "2.2.1"
 icu4j = "78.3"
 imageio = "3.13.1"
-jewel = "0.36.0-261.24374.151"
 jmdns = "3.6.3"
 jna = "5.18.1"
 jnativehook = "2.2.2"
@@ -79,11 +78,6 @@ icons-material-symbols-rounded-filled = { module = "com.composables:icons-materi
 icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "imageio" }
 imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "imageio" }
-jewel-decorated-window = { module = "org.jetbrains.jewel:jewel-decorated-window", version.ref = "jewel" }
-jewel-foundation = { module = "org.jetbrains.jewel:jewel-foundation", version.ref = "jewel" }
-jewel-int-ui-decorated-window = { module = "org.jetbrains.jewel:jewel-int-ui-decorated-window", version.ref = "jewel" }
-jewel-int-ui-standalone = { module = "org.jetbrains.jewel:jewel-int-ui-standalone", version.ref = "jewel" }
-jewel-ui = { module = "org.jetbrains.jewel:jewel-ui", version.ref = "jewel" }
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
