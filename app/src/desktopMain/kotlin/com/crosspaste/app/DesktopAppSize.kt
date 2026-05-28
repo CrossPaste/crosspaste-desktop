@@ -160,7 +160,8 @@ class DesktopAppSize(
 
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
-            // 不再依赖 Jewel TitleBar 的 leftInset 偏移补偿，原生 Window 下图钉距窗口右边即为此值
+            // Native Window has no Jewel leftInset compensation, so this is the
+            // pin button's distance to the window's right edge directly.
             medium
         } else if (platform.isWindows()) {
             medium

@@ -63,10 +63,10 @@ import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef
 import org.koin.compose.koinInject
 
-// macOS 交通灯按钮组（红/黄/绿）占用的水平宽度
+// Horizontal space reserved on macOS for the system traffic light buttons.
 private val MAC_TRAFFIC_LIGHT_INSET = 78.dp
 
-// Windows/Linux 自绘关闭按钮的 hot zone 宽度
+// Width of the custom close button hot zone on Windows/Linux.
 private val CLOSE_BUTTON_WIDTH = 48.dp
 
 @Composable
@@ -101,7 +101,8 @@ fun MainWindow(windowIcon: Painter?) {
         icon = windowIcon,
         alwaysOnTop = alwaysOnTop,
         resizable = false,
-        // macOS 保留原生窗口装饰以拿到系统交通灯；其他平台完全自绘
+        // Keep native decoration on macOS so the system can draw the traffic lights;
+        // Windows/Linux paint the whole title bar themselves.
         undecorated = !isMacos,
     ) {
         DisposableEffect(Unit) {
@@ -110,10 +111,10 @@ fun MainWindow(windowIcon: Painter?) {
 
             when {
                 isMacos -> {
-                    // JBR/Apple JDK 客户端属性：
-                    // - fullWindowContent: 内容延伸到标题栏区域
-                    // - transparentTitleBar: 标题栏背景透明
-                    // - windowTitleVisible: 隐藏系统画的标题文本
+                    // JBR / Apple JDK client properties:
+                    // - fullWindowContent: extend Compose content into the title bar
+                    // - transparentTitleBar: make the system title bar background transparent
+                    // - windowTitleVisible: hide the system-drawn title text
                     window.rootPane.apply {
                         putClientProperty("apple.awt.fullWindowContent", true)
                         putClientProperty("apple.awt.transparentTitleBar", true)
@@ -141,54 +142,50 @@ fun MainWindow(windowIcon: Painter?) {
                     .height(appSizeValue.windowDecorationHeight)
                     .background(AppUIColors.appBackground)
 
+            // Single Row layout for all platforms.
+            //   - macOS: pin only; padding(start) reserves space for the traffic lights.
+            //   - Windows/Linux: pin followed by a full-height close button on the right.
             val titleBarContent: @Composable () -> Unit = {
-                Box(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
-                    // 图钉按钮：受 pushpinPadding 控制距右距离；Windows/Linux 还要额外腾出关闭按钮宽度
-                    Row(
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    GeneralIconButton(
                         modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(top = medium)
-                                .padding(
-                                    start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp,
-                                    end =
-                                        if (isMacos) {
-                                            pushpinPadding
-                                        } else {
-                                            CLOSE_BUTTON_WIDTH + pushpinPadding
-                                        },
-                                ),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        GeneralIconButton(
-                            imageVector =
-                                if (alwaysOnTop) {
-                                    MaterialSymbols.RoundedFilled.Push_pin
-                                } else {
-                                    MaterialSymbols.Rounded.Push_pin
-                                },
-                            desc = "always_on_top",
-                            colors =
-                                IconButtonDefaults.iconButtonColors(
-                                    containerColor = Color.Transparent,
-                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                ),
-                            buttonSize = xxLarge,
-                            iconSize = large2X,
-                            shape = tiny2XRoundedCornerShape,
-                            onClick = {
-                                appWindowManager.switchAlwaysOnTopMainWindow()
+                            Modifier.padding(
+                                top = medium,
+                                end = pushpinPadding,
+                            ),
+                        imageVector =
+                            if (alwaysOnTop) {
+                                MaterialSymbols.RoundedFilled.Push_pin
+                            } else {
+                                MaterialSymbols.Rounded.Push_pin
                             },
-                        )
-                    }
+                        desc = "always_on_top",
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        buttonSize = xxLarge,
+                        iconSize = large2X,
+                        shape = tiny2XRoundedCornerShape,
+                        onClick = {
+                            appWindowManager.switchAlwaysOnTopMainWindow()
+                        },
+                    )
 
-                    // macOS 由系统交通灯负责关闭；Windows/Linux 自绘关闭按钮占据右上角
                     if (!isMacos) {
+                        // Close is handled by the system traffic lights on macOS;
+                        // Windows/Linux paint their own close button at the top-right.
                         TitleBarCloseButton(
                             modifier =
                                 Modifier
-                                    .align(Alignment.TopEnd)
                                     .width(CLOSE_BUTTON_WIDTH)
                                     .fillMaxHeight(),
                             onClick = { appWindowManager.hideMainWindow() },
@@ -198,10 +195,10 @@ fun MainWindow(windowIcon: Painter?) {
             }
 
             if (isMacos) {
-                // macOS：系统已提供标题栏拖拽，直接画内容
+                // macOS already provides title bar dragging via the system frame.
                 Box(modifier = titleBarOuterModifier) { titleBarContent() }
             } else {
-                // Windows/Linux：完全无装饰窗口，由 Compose 提供拖拽区
+                // Windows/Linux: undecorated window, drag handled by Compose.
                 WindowDraggableArea {
                     Box(modifier = titleBarOuterModifier) { titleBarContent() }
                 }
