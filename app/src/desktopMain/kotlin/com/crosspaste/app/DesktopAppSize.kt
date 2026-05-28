@@ -12,7 +12,6 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.utils.contains
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
@@ -161,7 +160,8 @@ class DesktopAppSize(
 
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
-            huge + tiny
+            // 不再依赖 Jewel TitleBar 的 leftInset 偏移补偿，原生 Window 下图钉距窗口右边即为此值
+            medium
         } else if (platform.isWindows()) {
             medium
         } else {
