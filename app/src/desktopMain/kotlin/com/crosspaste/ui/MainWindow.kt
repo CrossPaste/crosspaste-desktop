@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Close
 import com.composables.icons.materialsymbols.rounded.Push_pin
 import com.composables.icons.materialsymbols.roundedfilled.Push_pin
 import com.crosspaste.app.DesktopAppLaunchState
@@ -151,6 +152,25 @@ fun MainWindow(windowIcon: Painter?) {
                             appWindowManager.switchAlwaysOnTopMainWindow()
                         },
                     )
+
+                    if (!isMacos) {
+                        // macOS 由系统的交通灯按钮承担关闭，Windows/Linux 自绘窗口需自带关闭按钮
+                        GeneralIconButton(
+                            imageVector = MaterialSymbols.Rounded.Close,
+                            desc = "close_window",
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            buttonSize = xxLarge,
+                            iconSize = large2X,
+                            shape = tiny2XRoundedCornerShape,
+                            onClick = {
+                                appWindowManager.hideMainWindow()
+                            },
+                        )
+                    }
                 }
             }
 
