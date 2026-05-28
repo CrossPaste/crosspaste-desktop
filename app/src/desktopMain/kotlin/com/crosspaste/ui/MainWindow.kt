@@ -16,9 +16,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.window.WindowDraggableArea
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +46,7 @@ import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.MainWindowContext
@@ -214,11 +222,14 @@ fun MainWindow(windowIcon: Painter?) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TitleBarCloseButton(
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
+    val copywriter = koinInject<GlobalCopywriter>()
+
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
@@ -241,23 +252,36 @@ private fun TitleBarCloseButton(
         label = "closeButtonTint",
     )
 
-    Box(
-        modifier =
-            modifier
-                .background(containerColor)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick,
-                ),
-        contentAlignment = Alignment.Center,
+    val tooltipState = rememberTooltipState()
+    val positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Below)
+
+    TooltipBox(
+        positionProvider = positionProvider,
+        tooltip = {
+            PlainTooltip {
+                Text(copywriter.getText("hide_window"))
+            }
+        },
+        state = tooltipState,
     ) {
-        Icon(
-            imageVector = MaterialSymbols.Rounded.Close,
-            contentDescription = "close_window",
-            modifier = Modifier.size(large2X),
-            tint = iconColor,
-        )
+        Box(
+            modifier =
+                modifier
+                    .background(containerColor)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick,
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = MaterialSymbols.Rounded.Close,
+                contentDescription = copywriter.getText("hide_window"),
+                modifier = Modifier.size(large2X),
+                tint = iconColor,
+            )
+        }
     }
 }
 
