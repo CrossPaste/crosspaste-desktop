@@ -1,14 +1,22 @@
 package com.crosspaste.ui
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.window.WindowDraggableArea
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -48,6 +56,9 @@ import org.koin.compose.koinInject
 
 // macOS 交通灯按钮组（红/黄/绿）占用的水平宽度
 private val MAC_TRAFFIC_LIGHT_INSET = 78.dp
+
+// Windows/Linux 自绘关闭按钮的 hot zone 宽度
+private val CLOSE_BUTTON_WIDTH = 48.dp
 
 @Composable
 fun MainWindow(windowIcon: Painter?) {
@@ -115,49 +126,40 @@ fun MainWindow(windowIcon: Painter?) {
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            val titleBarModifier =
+            val titleBarOuterModifier =
                 Modifier
                     .fillMaxWidth()
                     .height(appSizeValue.windowDecorationHeight)
                     .background(AppUIColors.appBackground)
-                    .padding(top = medium)
-                    .padding(
-                        start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp,
-                        end = pushpinPadding,
-                    )
 
             val titleBarContent: @Composable () -> Unit = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    GeneralIconButton(
-                        imageVector =
-                            if (alwaysOnTop) {
-                                MaterialSymbols.RoundedFilled.Push_pin
-                            } else {
-                                MaterialSymbols.Rounded.Push_pin
-                            },
-                        desc = "always_on_top",
-                        colors =
-                            IconButtonDefaults.iconButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                        buttonSize = xxLarge,
-                        iconSize = large2X,
-                        shape = tiny2XRoundedCornerShape,
-                        onClick = {
-                            appWindowManager.switchAlwaysOnTopMainWindow()
-                        },
-                    )
-
-                    if (!isMacos) {
-                        // macOS 由系统的交通灯按钮承担关闭，Windows/Linux 自绘窗口需自带关闭按钮
+                Box(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
+                    // 图钉按钮：受 pushpinPadding 控制距右距离；Windows/Linux 还要额外腾出关闭按钮宽度
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = medium)
+                                .padding(
+                                    start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp,
+                                    end =
+                                        if (isMacos) {
+                                            pushpinPadding
+                                        } else {
+                                            CLOSE_BUTTON_WIDTH + pushpinPadding
+                                        },
+                                ),
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.End,
+                    ) {
                         GeneralIconButton(
-                            imageVector = MaterialSymbols.Rounded.Close,
-                            desc = "close_window",
+                            imageVector =
+                                if (alwaysOnTop) {
+                                    MaterialSymbols.RoundedFilled.Push_pin
+                                } else {
+                                    MaterialSymbols.Rounded.Push_pin
+                                },
+                            desc = "always_on_top",
                             colors =
                                 IconButtonDefaults.iconButtonColors(
                                     containerColor = Color.Transparent,
@@ -167,8 +169,20 @@ fun MainWindow(windowIcon: Painter?) {
                             iconSize = large2X,
                             shape = tiny2XRoundedCornerShape,
                             onClick = {
-                                appWindowManager.hideMainWindow()
+                                appWindowManager.switchAlwaysOnTopMainWindow()
                             },
+                        )
+                    }
+
+                    // macOS 由系统交通灯负责关闭；Windows/Linux 自绘关闭按钮占据右上角
+                    if (!isMacos) {
+                        TitleBarCloseButton(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.TopEnd)
+                                    .width(CLOSE_BUTTON_WIDTH)
+                                    .fillMaxHeight(),
+                            onClick = { appWindowManager.hideMainWindow() },
                         )
                     }
                 }
@@ -176,11 +190,11 @@ fun MainWindow(windowIcon: Painter?) {
 
             if (isMacos) {
                 // macOS：系统已提供标题栏拖拽，直接画内容
-                Box(modifier = titleBarModifier) { titleBarContent() }
+                Box(modifier = titleBarOuterModifier) { titleBarContent() }
             } else {
                 // Windows/Linux：完全无装饰窗口，由 Compose 提供拖拽区
                 WindowDraggableArea {
-                    Box(modifier = titleBarModifier) { titleBarContent() }
+                    Box(modifier = titleBarOuterModifier) { titleBarContent() }
                 }
             }
 
@@ -197,6 +211,53 @@ fun MainWindow(windowIcon: Painter?) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TitleBarCloseButton(
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val containerColor by animateColorAsState(
+        targetValue =
+            if (isHovered) {
+                MaterialTheme.colorScheme.error
+            } else {
+                Color.Transparent
+            },
+        label = "closeButtonBackground",
+    )
+    val iconColor by animateColorAsState(
+        targetValue =
+            if (isHovered) {
+                MaterialTheme.colorScheme.onError
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        label = "closeButtonTint",
+    )
+
+    Box(
+        modifier =
+            modifier
+                .background(containerColor)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = MaterialSymbols.Rounded.Close,
+            contentDescription = "close_window",
+            modifier = Modifier.size(large2X),
+            tint = iconColor,
+        )
     }
 }
 
