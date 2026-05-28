@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -255,6 +256,10 @@ private fun TitleBarCloseButton(
     val tooltipState = rememberTooltipState()
     val positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Below)
 
+    // Layout modifiers (align/width/fillMaxHeight) must be on TooltipBox itself
+    // — TooltipBox is the actual child of the parent BoxScope, so ParentData
+    // like Alignment.TopEnd has to attach there to take effect. The inner Box
+    // then fills the slot TooltipBox lays out and owns hover/click visuals.
     TooltipBox(
         positionProvider = positionProvider,
         tooltip = {
@@ -263,10 +268,12 @@ private fun TitleBarCloseButton(
             }
         },
         state = tooltipState,
+        modifier = modifier,
     ) {
         Box(
             modifier =
-                modifier
+                Modifier
+                    .fillMaxSize()
                     .background(containerColor)
                     .clickable(
                         interactionSource = interactionSource,
