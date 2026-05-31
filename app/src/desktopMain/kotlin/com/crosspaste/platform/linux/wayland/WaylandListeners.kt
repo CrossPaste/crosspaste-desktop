@@ -18,17 +18,13 @@ internal object WaylandListeners {
 
     private val PTR_SIZE = Native.POINTER_SIZE.toLong()
 
-    // Callbacks attached via `wl_proxy_add_listener` must remain reachable for
-    // the proxy's lifetime — Wayland never detaches a listener. Anything that
-    // outlives the call-site Kotlin scope gets pinned here.
-    private val rooted: MutableList<Any> = mutableListOf()
-
-    @Synchronized
-    fun pin(refs: List<Any>) {
-        rooted.addAll(refs)
-    }
-
-    /** Build a contiguous block of C function pointers, in declaration order. */
+    /**
+     * Build a contiguous block of C function pointers, in declaration order.
+     *
+     * The caller is responsible for keeping both [callbacks] and the returned
+     * [Memory] reachable for the proxy's lifetime — Wayland has no
+     * listener-detach call, so live function pointers can fire at any time.
+     */
     fun packListener(callbacks: List<Callback>): Memory {
         val block = Memory(PTR_SIZE * callbacks.size)
         callbacks.forEachIndexed { i, cb ->

@@ -79,26 +79,24 @@ private fun linuxPasteboardService(
     sourceExclusionService: DesktopSourceExclusionService,
 ): AbstractPasteboardService {
     if (LinuxSession.isWayland()) {
-        // Try wlr-data-control. Returns null on compositors that don't
-        // implement it (notably GNOME/Mutter) — fall back to X11/XWayland.
-        runCatching { WaylandClipboardSession.connect() }
-            .onFailure { e -> logger.warn(e) { "Wayland clipboard probe threw — falling back to X11" } }
-            .getOrNull()
-            ?.let { session ->
-                logger.info { "Using LinuxWaylandPasteboardService (wlr-data-control)" }
-                return LinuxWaylandPasteboardService(
-                    appWindowManager,
-                    configManager,
-                    currentPaste,
-                    notificationManager,
-                    pasteConsumer,
-                    pasteProducer,
-                    pasteReleaseService,
-                    soundService,
-                    sourceExclusionService,
-                    session,
-                )
-            }
+        val available =
+            runCatching { WaylandClipboardSession.isAvailable() }
+                .onFailure { e -> logger.warn(e) { "Wayland clipboard probe threw — falling back to X11" } }
+                .getOrDefault(false)
+        if (available) {
+            logger.info { "Using LinuxWaylandPasteboardService (wlr-data-control)" }
+            return LinuxWaylandPasteboardService(
+                appWindowManager,
+                configManager,
+                currentPaste,
+                notificationManager,
+                pasteConsumer,
+                pasteProducer,
+                pasteReleaseService,
+                soundService,
+                sourceExclusionService,
+            )
+        }
         logger.info { "Wayland session detected but wlr-data-control unavailable — using X11 fallback" }
     }
     return LinuxX11PasteboardService(

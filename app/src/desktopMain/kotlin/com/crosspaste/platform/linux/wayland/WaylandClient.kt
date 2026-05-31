@@ -30,6 +30,18 @@ interface WaylandClient : Library {
 
     fun wl_display_get_fd(display: Pointer): Int
 
+    /**
+     * The prepare_read / read_events / cancel_read trio is the supported way to
+     * integrate libwayland with an external event loop (e.g. poll on the socket
+     * fd plus a wake fd). It avoids the blocking `wl_display_dispatch` so we
+     * can cleanly interrupt the dispatch thread on shutdown.
+     */
+    fun wl_display_prepare_read(display: Pointer): Int
+
+    fun wl_display_read_events(display: Pointer): Int
+
+    fun wl_display_cancel_read(display: Pointer)
+
     fun wl_proxy_destroy(proxy: Pointer)
 
     fun wl_proxy_get_version(proxy: Pointer): Int

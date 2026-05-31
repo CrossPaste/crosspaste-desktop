@@ -38,7 +38,6 @@ class LinuxWaylandPasteboardService(
     override val pasteReleaseService: PasteReleaseService,
     override val soundService: SoundService,
     override val sourceExclusionService: DesktopSourceExclusionService,
-    private val session: WaylandClipboardSession,
 ) : AbstractPasteboardService() {
 
     override val logger: KLogger = KotlinLogging.logger {}
@@ -56,17 +55,37 @@ class LinuxWaylandPasteboardService(
 
     private val expectingOwnEcho: AtomicBoolean = AtomicBoolean(false)
 
+    // Each toggle off/on rebuilds the session — WaylandClipboardSession is
+    // single-use (its dispatch thread tears down all native resources on
+    // close).
+    @Volatile
+    private var session: WaylandClipboardSession? = null
+
     init {
         startRemotePasteboardListener()
     }
 
+    @Synchronized
     override fun start() {
-        session.onSelection { payload -> onSelection(payload) }
-        session.start()
+        if (session != null) return
+        val newSession =
+            runCatching { WaylandClipboardSession.connect() }
+                .onFailure { e -> logger.warn(e) { "Wayland clipboard reconnect failed" } }
+                .getOrNull()
+        if (newSession == null) {
+            logger.warn { "Wayland clipboard unavailable on start — clipboard monitoring disabled" }
+            return
+        }
+        newSession.onSelection { payload -> onSelection(payload) }
+        newSession.start()
+        session = newSession
     }
 
+    @Synchronized
     override fun stop() {
-        session.close()
+        val s = session ?: return
+        session = null
+        s.close()
     }
 
     override fun writePasteboard(
