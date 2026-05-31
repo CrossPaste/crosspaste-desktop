@@ -39,7 +39,11 @@ class WaylandSyntheticTransferable(
         }
     }
 
-    private data class Entry(
+    // Not a data class: holding a ByteArray + relying on the synthesized
+    // equals/hashCode would compare arrays by reference, which is misleading
+    // (and tripped detekt's array-in-data-class check). Entry is never used
+    // as a map key or in equality checks here, so a plain class is fine.
+    private class Entry(
         val rawMime: String,
         val bytes: ByteArray,
     ) {

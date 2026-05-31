@@ -107,7 +107,15 @@ class WaylandClipboardSession private constructor(
             }
         val finishedCb =
             ZwlrDataControlDeviceFinished { _, _ ->
-                logger.info { "Compositor revoked data-control device — shutting down" }
+                // The compositor has destroyed the manager (e.g. its security
+                // policy revoked our access, or wlroots was restarted). The
+                // session can't recover on its own — clipboard monitoring will
+                // be silent until the user toggles the service off/on (which
+                // triggers a fresh WaylandClipboardSession.connect()) or
+                // restarts the app.
+                logger.warn {
+                    "Compositor revoked data-control device; clipboard monitoring stopped until restart/toggle"
+                }
                 shouldStop = true
             }
         val primaryCb =
@@ -311,6 +319,13 @@ class WaylandClipboardSession private constructor(
      * pin the dispatch thread forever. Each [READ_STALL_TIMEOUT_MS] window
      * resets on a successful read, so legitimately large payloads (images)
      * still get through.
+     *
+     * Known limitation: the payload buffers entirely into a [ByteArray] and
+     * eventually a `Map<String, ByteArray>` per mime; a 50 MB image briefly
+     * doubles in heap residency before downstream plugins persist it. The
+     * X11 path has the same behavior — the abstraction is byte-array-shaped
+     * end-to-end. Streaming into the persistence layer is a separate, larger
+     * refactor.
      */
     private fun drainFd(fd: Int): ByteArray {
         val buf = Memory(READ_CHUNK_BYTES)
