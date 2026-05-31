@@ -23,7 +23,7 @@ import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
 
-class LinuxPasteboardService(
+class LinuxX11PasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
     override val configManager: CommonConfigManager,
     override val currentPaste: CurrentPaste,
@@ -58,7 +58,7 @@ class LinuxPasteboardService(
     }
 
     private fun run(): Job =
-        serviceScope.launch(CoroutineName("LinuxPasteboardService")) {
+        serviceScope.launch(CoroutineName("LinuxX11PasteboardService")) {
             val firstChange = changeCount == configManager.getCurrentConfig().lastPasteboardChangeCount
 
             if (firstChange && !configManager.getCurrentConfig().enableSkipPreLaunchPasteboardContent) {
@@ -151,7 +151,7 @@ class LinuxPasteboardService(
         if (contents != ownerTransferable) {
             contents?.let {
                 ownerTransferable = it
-                scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
+                scope.launch(CoroutineName("LinuxX11PasteboardServiceConsumer")) {
                     val pasteTransferable = DesktopReadTransferable(it)
                     pasteConsumer.consume(
                         pasteTransferable,

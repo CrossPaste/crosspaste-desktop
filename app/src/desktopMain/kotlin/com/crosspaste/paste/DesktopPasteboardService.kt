@@ -4,8 +4,13 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.linux.LinuxSession
+import com.crosspaste.platform.linux.wayland.WaylandClipboardSession
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.SyncManager
+import io.github.oshai.kotlinlogging.KotlinLogging
+
+private val logger = KotlinLogging.logger {}
 
 fun getDesktopPasteboardService(
     appWindowManager: DesktopAppWindowManager,
@@ -47,7 +52,7 @@ fun getDesktopPasteboardService(
             sourceExclusionService,
         )
     } else if (platform.isLinux()) {
-        LinuxPasteboardService(
+        linuxPasteboardService(
             appWindowManager,
             configManager,
             currentPaste,
@@ -61,3 +66,50 @@ fun getDesktopPasteboardService(
     } else {
         throw IllegalStateException("Unsupported platform: ${platform.name}")
     }
+
+private fun linuxPasteboardService(
+    appWindowManager: DesktopAppWindowManager,
+    configManager: CommonConfigManager,
+    currentPaste: CurrentPaste,
+    notificationManager: NotificationManager,
+    pasteConsumer: TransferableConsumer,
+    pasteProducer: TransferableProducer,
+    pasteReleaseService: PasteReleaseService,
+    soundService: SoundService,
+    sourceExclusionService: DesktopSourceExclusionService,
+): AbstractPasteboardService {
+    if (LinuxSession.isWayland()) {
+        // Try wlr-data-control. Returns null on compositors that don't
+        // implement it (notably GNOME/Mutter) — fall back to X11/XWayland.
+        runCatching { WaylandClipboardSession.connect() }
+            .onFailure { e -> logger.warn(e) { "Wayland clipboard probe threw — falling back to X11" } }
+            .getOrNull()
+            ?.let { session ->
+                logger.info { "Using LinuxWaylandPasteboardService (wlr-data-control)" }
+                return LinuxWaylandPasteboardService(
+                    appWindowManager,
+                    configManager,
+                    currentPaste,
+                    notificationManager,
+                    pasteConsumer,
+                    pasteProducer,
+                    pasteReleaseService,
+                    soundService,
+                    sourceExclusionService,
+                    session,
+                )
+            }
+        logger.info { "Wayland session detected but wlr-data-control unavailable — using X11 fallback" }
+    }
+    return LinuxX11PasteboardService(
+        appWindowManager,
+        configManager,
+        currentPaste,
+        notificationManager,
+        pasteConsumer,
+        pasteProducer,
+        pasteReleaseService,
+        soundService,
+        sourceExclusionService,
+    )
+}
