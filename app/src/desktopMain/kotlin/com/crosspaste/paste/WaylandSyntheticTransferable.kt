@@ -4,6 +4,9 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.ByteArrayInputStream
 import java.io.InputStream
+import java.nio.charset.Charset
+import java.nio.charset.IllegalCharsetNameException
+import java.nio.charset.UnsupportedCharsetException
 
 /**
  * Bridges a raw MIME → bytes payload (as produced by Wayland's
@@ -12,9 +15,13 @@ import java.io.InputStream
  * [com.crosspaste.paste.plugin.type.PasteTypePlugin] can consume Wayland
  * clipboard data without changes.
  *
- * MIME parameters (e.g. `;charset=utf-8`) are stripped for the flavor's
- * `humanPresentableName` so plugin identifiers like `text/plain` / `text/html`
- * keep matching.
+ * MIME parameters are stripped for the flavor's `humanPresentableName` so
+ * plugin identifiers like `text/plain` / `text/html` keep matching, but the
+ * `charset=` parameter is honored when decoding bytes → String. This is
+ * critical for sources (IntelliJ / JBR, Qt, etc.) that publish multiple
+ * variants like `text/plain;charset=utf-8` AND `text/plain;charset=Unicode`
+ * (UTF-16 with BOM) for the same content — decoding either as plain UTF-8
+ * produces mojibake.
  */
 class WaylandSyntheticTransferable(
     payload: Map<String, ByteArray>,
@@ -34,7 +41,7 @@ class WaylandSyntheticTransferable(
     override fun getTransferData(flavor: DataFlavor): Any {
         val entry = entries.firstOrNull { it.flavor.equals(flavor) } ?: error("Unsupported flavor: $flavor")
         return when (entry.kind) {
-            EntryKind.TEXT -> String(entry.bytes, Charsets.UTF_8)
+            EntryKind.TEXT -> String(entry.bytes, entry.charset)
             EntryKind.BINARY -> ByteArrayInputStream(entry.bytes) as InputStream
         }
     }
@@ -49,11 +56,20 @@ class WaylandSyntheticTransferable(
     ) {
         val baseMime: String = rawMime.substringBefore(';').trim()
         val kind: EntryKind = if (isTextMime(baseMime, rawMime)) EntryKind.TEXT else EntryKind.BINARY
+
+        /**
+         * Charset for decoding [bytes] when [kind] is TEXT. Parsed from the
+         * `charset=` parameter; defaults to UTF-8 when unspecified (modern
+         * desktop Linux is UTF-8 throughout). `Charset.forName` already
+         * resolves Java aliases like `Unicode` → UTF-16.
+         */
+        val charset: Charset = parseCharsetParam(rawMime) ?: Charsets.UTF_8
+
         val flavor: DataFlavor =
             when (kind) {
                 EntryKind.TEXT ->
                     DataFlavor(
-                        "$baseMime; class=java.lang.String; charset=UTF-8",
+                        "$baseMime; class=java.lang.String; charset=${charset.name()}",
                         baseMime,
                     )
                 EntryKind.BINARY ->
@@ -79,5 +95,28 @@ class WaylandSyntheticTransferable(
             baseMime.startsWith("text/") ||
                 baseMime in LEGACY_TEXT_MIMES ||
                 rawMime in LEGACY_TEXT_MIMES
+
+        /**
+         * Parse `charset=<name>` from a MIME parameter list. Returns null if
+         * absent, malformed, or the charset isn't installed on the JVM.
+         */
+        private fun parseCharsetParam(rawMime: String): Charset? {
+            val params = rawMime.split(';').drop(1)
+            for (param in params) {
+                val kv = param.split('=', limit = 2)
+                if (kv.size == 2 && kv[0].trim().equals("charset", ignoreCase = true)) {
+                    val name = kv[1].trim().removeSurrounding("\"")
+                    if (name.isEmpty()) return null
+                    return try {
+                        Charset.forName(name)
+                    } catch (_: UnsupportedCharsetException) {
+                        null
+                    } catch (_: IllegalCharsetNameException) {
+                        null
+                    }
+                }
+            }
+            return null
+        }
     }
 }
