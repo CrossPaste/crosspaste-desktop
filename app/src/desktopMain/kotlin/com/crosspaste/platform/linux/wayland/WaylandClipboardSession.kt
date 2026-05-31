@@ -49,10 +49,18 @@ class WaylandClipboardSession private constructor(
     // each `offer.offer` event appends a MIME, the eventual `selection` /
     // `primary_selection` event consumes (and destroys) it.
     //
-    // Accessed only from the dispatch thread → no synchronization needed.
+    // Written by main thread during [connect]'s post-construction roundtrip
+    // (events fire into the listener attached in init), then handed off to the
+    // dispatch thread by `Thread.start()`'s happens-before. No further
+    // cross-thread access after that.
     private val offers: MutableMap<Long, OfferState> = mutableMapOf()
 
-    private var pendingOffer: Pointer? = null
+    // Selection events queued for [consumePendingSelection]. A single
+    // dispatch_pending call can deliver multiple selection events (e.g. when
+    // initial roundtrip catches up with several rapid clipboard changes); a
+    // queue preserves each as a distinct snapshot instead of dropping all but
+    // the last.
+    private val pendingOffers: ArrayDeque<Pointer> = ArrayDeque()
 
     private val started = AtomicBoolean(false)
     private val closed = AtomicBoolean(false)
@@ -70,10 +78,49 @@ class WaylandClipboardSession private constructor(
         }
     private val offerListenerMem: Memory = WaylandListeners.packListener(listOf(offerEventCallback))
 
-    // Device listener callbacks — created in [start], pinned here for the
-    // device proxy's lifetime.
-    private var deviceCallbacks: List<Callback> = emptyList()
-    private var deviceListenerMem: Memory? = null
+    // Device listener callbacks — kept reachable for the device proxy's
+    // lifetime so the function pointers libwayland holds remain valid.
+    private val deviceCallbacks: List<Callback>
+    private val deviceListenerMem: Memory
+
+    init {
+        // Build + attach the device listener immediately so the initial
+        // `wl_display_roundtrip` in [connect] can deliver pre-existing
+        // clipboard events (`data_offer` → `offer.offer` → `selection`) into
+        // our handlers. Attaching only at [start] time lost the first
+        // selection event.
+        val dataOfferCb =
+            ZwlrDataControlDeviceDataOffer { _, _, offer ->
+                offers[Pointer.nativeValue(offer)] = OfferState()
+                WaylandClient.INSTANCE.wl_proxy_add_listener(offer, offerListenerMem, null)
+            }
+        val selectionCb =
+            ZwlrDataControlDeviceSelection { _, _, offer ->
+                if (offer == null) {
+                    // Clipboard cleared: discard any queued (now stale) selections.
+                    while (pendingOffers.isNotEmpty()) {
+                        destroyOffer(pendingOffers.removeFirst())
+                    }
+                } else {
+                    pendingOffers.addLast(offer)
+                }
+            }
+        val finishedCb =
+            ZwlrDataControlDeviceFinished { _, _ ->
+                logger.info { "Compositor revoked data-control device — shutting down" }
+                shouldStop = true
+            }
+        val primaryCb =
+            ZwlrDataControlDevicePrimarySelection { _, _, offer ->
+                // Primary selection (middle-click on X11) isn't part of the
+                // clipboard pipeline; release compositor refs immediately.
+                offer?.let { destroyOffer(it) }
+            }
+
+        deviceCallbacks = listOf(dataOfferCb, selectionCb, finishedCb, primaryCb)
+        deviceListenerMem = WaylandListeners.packListener(deviceCallbacks)
+        WaylandClient.INSTANCE.wl_proxy_add_listener(device, deviceListenerMem, null)
+    }
 
     fun onSelection(callback: (Map<String, ByteArray>) -> Unit) {
         onSelectionCallback = callback
@@ -83,7 +130,9 @@ class WaylandClipboardSession private constructor(
     fun start() {
         check(!closed.get()) { "WaylandClipboardSession is closed" }
         if (!started.compareAndSet(false, true)) return
-        attachDeviceListener()
+        // Device listener was attached in init; any events queued by
+        // [connect]'s roundtrip are already buffered in libwayland and will
+        // be drained on the dispatch thread's first iteration.
         dispatchThread =
             thread(name = "WaylandClipboardDispatch", isDaemon = true) {
                 logger.info { "Wayland dispatch loop started" }
@@ -124,12 +173,14 @@ class WaylandClipboardSession private constructor(
     }
 
     private fun cleanupResources() {
-        // Destroy any offers still in flight.
+        // Destroy any offers still in flight. Queue entries point at proxies
+        // that are also in `offers`, so the offers loop covers them; clear
+        // the queue to drop stale references first.
+        pendingOffers.clear()
         for (offerPtr in offers.keys.toList()) {
             runCatching { WaylandClient.INSTANCE.wl_proxy_destroy(Pointer(offerPtr)) }
         }
         offers.clear()
-        pendingOffer = null
 
         runCatching { WaylandClient.INSTANCE.wl_proxy_destroy(device) }
         runCatching { WaylandClient.INSTANCE.wl_proxy_destroy(manager) }
@@ -192,17 +243,18 @@ class WaylandClipboardSession private constructor(
     // ─── Selection / offer handling ──────────────────────────────────────────
 
     private fun consumePendingSelection() {
-        val offer = pendingOffer ?: return
-        pendingOffer = null
-        if (shouldStop) {
+        while (pendingOffers.isNotEmpty()) {
+            val offer = pendingOffers.removeFirst()
+            if (shouldStop) {
+                destroyOffer(offer)
+                continue
+            }
+            val state = offers[Pointer.nativeValue(offer)]
+            val mimes = state?.mimes?.toList().orEmpty()
+            val payload = readOffer(offer, mimes)
             destroyOffer(offer)
-            return
+            onSelectionCallback?.invoke(payload)
         }
-        val state = offers[Pointer.nativeValue(offer)]
-        val mimes = state?.mimes?.toList().orEmpty()
-        val payload = readOffer(offer, mimes)
-        destroyOffer(offer)
-        onSelectionCallback?.invoke(payload)
     }
 
     private fun readOffer(
@@ -253,12 +305,30 @@ class WaylandClipboardSession private constructor(
         }
     }
 
+    /**
+     * Drain the offer pipe into a byte array, bounded by a no-progress timeout
+     * so a misbehaving source app (opens fd but never writes/closes) can't
+     * pin the dispatch thread forever. Each [READ_STALL_TIMEOUT_MS] window
+     * resets on a successful read, so legitimately large payloads (images)
+     * still get through.
+     */
     private fun drainFd(fd: Int): ByteArray {
         val buf = Memory(READ_CHUNK_BYTES)
+        val pollOne = Memory(8L) // sizeof(struct pollfd) = 4 + 2 + 2
         val out = java.io.ByteArrayOutputStream()
         while (true) {
+            if (shouldStop) break
+            pollOne.setInt(0L, fd)
+            pollOne.setShort(4L, WaylandLibC.POLLIN)
+            pollOne.setShort(6L, 0)
+            val pollRc = WaylandLibC.INSTANCE.poll(pollOne, NativeLong(1), READ_STALL_TIMEOUT_MS)
+            if (pollRc < 0) continue // EINTR — retry
+            if (pollRc == 0) {
+                logger.warn { "Clipboard read stalled (${out.size()} bytes so far); abandoning fd" }
+                break
+            }
             val n = WaylandLibC.INSTANCE.read(fd, buf, READ_CHUNK_BYTES)
-            if (n <= 0L) break
+            if (n <= 0L) break // EOF or error
             out.write(buf.getByteArray(0L, n.toInt()))
         }
         return out.toByteArray()
@@ -267,48 +337,6 @@ class WaylandClipboardSession private constructor(
     private fun destroyOffer(offer: Pointer) {
         runCatching { WaylandClient.INSTANCE.wl_proxy_destroy(offer) }
         offers.remove(Pointer.nativeValue(offer))
-    }
-
-    // ─── Device listener wiring ──────────────────────────────────────────────
-
-    private fun attachDeviceListener() {
-        // `data_offer` fires first; we then receive a series of `offer.offer`
-        // events on the new offer to enumerate MIME types, and finally
-        // `selection` (or `primary_selection`) which adopts that offer.
-        val dataOfferCb =
-            ZwlrDataControlDeviceDataOffer { _, _, offer ->
-                offers[Pointer.nativeValue(offer)] = OfferState()
-                WaylandClient.INSTANCE.wl_proxy_add_listener(offer, offerListenerMem, null)
-            }
-        val selectionCb =
-            ZwlrDataControlDeviceSelection { _, _, offer ->
-                val previous = pendingOffer
-                if (offer == null) {
-                    pendingOffer = null
-                    previous?.let { destroyOffer(it) }
-                } else {
-                    pendingOffer = offer
-                    if (previous != null && Pointer.nativeValue(previous) != Pointer.nativeValue(offer)) {
-                        destroyOffer(previous)
-                    }
-                }
-            }
-        val finishedCb =
-            ZwlrDataControlDeviceFinished { _, _ ->
-                logger.info { "Compositor revoked data-control device — shutting down" }
-                shouldStop = true
-            }
-        val primaryCb =
-            ZwlrDataControlDevicePrimarySelection { _, _, offer ->
-                // Primary selection (middle-click on X11) isn't part of the
-                // clipboard pipeline; release compositor refs immediately.
-                offer?.let { destroyOffer(it) }
-            }
-
-        deviceCallbacks = listOf(dataOfferCb, selectionCb, finishedCb, primaryCb)
-        val mem = WaylandListeners.packListener(deviceCallbacks)
-        deviceListenerMem = mem
-        WaylandClient.INSTANCE.wl_proxy_add_listener(device, mem, null)
     }
 
     private class OfferState(
@@ -320,6 +348,13 @@ class WaylandClipboardSession private constructor(
         private val logger = KotlinLogging.logger {}
 
         private const val READ_CHUNK_BYTES = 8192L
+
+        /**
+         * Max time (ms) we'll wait for new bytes on an offer pipe without any
+         * progress before giving up. Resets after every successful read, so
+         * large payloads stream through; only true stalls trigger the bail.
+         */
+        private const val READ_STALL_TIMEOUT_MS = 2000
 
         // Opcodes from the protocol XML (zwlr-data-control-unstable-v1).
         private const val DISPLAY_GET_REGISTRY_OPCODE = 1

@@ -4,6 +4,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteText
 import com.crosspaste.platform.linux.wayland.WaylandClipboardSession
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.getControlUtils
@@ -53,7 +54,15 @@ class LinuxWaylandPasteboardService(
     private val skipFirstSelection: AtomicBoolean =
         AtomicBoolean(configManager.getCurrentConfig().enableSkipPreLaunchPasteboardContent)
 
-    private val expectingOwnEcho: AtomicBoolean = AtomicBoolean(false)
+    /**
+     * Pending echoes from our own writes. Each [writePasteboard] enqueues an
+     * entry; each [onSelection] tries to match-and-consume by text content
+     * (preferred) or fall through by FIFO if the payload has no text mime.
+     * Entries older than [SELF_WRITE_WINDOW_MS] expire so a missed echo can't
+     * pin the queue and eat future external changes.
+     */
+    private val pendingSelfWrites: ArrayDeque<SelfWrite> = ArrayDeque()
+    private val pendingSelfWritesLock = Any()
 
     // Each toggle off/on rebuilds the session — WaylandClipboardSession is
     // single-use (its dispatch thread tears down all native resources on
@@ -92,7 +101,7 @@ class LinuxWaylandPasteboardService(
         pasteItem: PasteItem,
         transferable: DesktopWriteTransferable,
     ) {
-        expectingOwnEcho.set(true)
+        recordSelfWrite((pasteItem as? PasteText)?.text)
         super.writePasteboard(pasteItem, transferable)
     }
 
@@ -100,7 +109,7 @@ class LinuxWaylandPasteboardService(
         pasteData: PasteData,
         transferable: DesktopWriteTransferable,
     ) {
-        expectingOwnEcho.set(true)
+        recordSelfWrite(pasteData.getPasteItem(PasteText::class)?.text)
         super.writePasteboard(pasteData, transferable)
     }
 
@@ -111,6 +120,71 @@ class LinuxWaylandPasteboardService(
         owner = false
     }
 
+    private fun recordSelfWrite(text: String?) {
+        synchronized(pendingSelfWritesLock) {
+            pendingSelfWrites.addLast(SelfWrite(System.nanoTime(), text))
+        }
+    }
+
+    /**
+     * Returns true if [payload] should be treated as the echo of one of our
+     * own writes. Matches by text content when possible (handles concurrent
+     * writes ordered differently than they were enqueued); otherwise consumes
+     * the oldest non-text entry within the time window.
+     */
+    private fun consumeSelfEchoIfMatches(payload: Map<String, ByteArray>): Boolean {
+        val now = System.nanoTime()
+        synchronized(pendingSelfWritesLock) {
+            // Drop expired entries first so a single missed echo can't pin
+            // the queue forever.
+            while (pendingSelfWrites.isNotEmpty() &&
+                ageMillis(now, pendingSelfWrites.first().timestamp) > SELF_WRITE_WINDOW_MS
+            ) {
+                pendingSelfWrites.removeFirst()
+            }
+            if (pendingSelfWrites.isEmpty()) return false
+
+            val incomingText = extractText(payload)
+            if (incomingText != null) {
+                val iter = pendingSelfWrites.iterator()
+                while (iter.hasNext()) {
+                    val sw = iter.next()
+                    if (sw.text != null && sw.text == incomingText) {
+                        iter.remove()
+                        return true
+                    }
+                }
+                // Text payload but no enqueued text-match — it's a genuine
+                // external change (likely an app pasted something while we
+                // had a non-text write pending).
+                return false
+            }
+
+            // Non-text incoming: consume the oldest non-text pending write.
+            val iter = pendingSelfWrites.iterator()
+            while (iter.hasNext()) {
+                val sw = iter.next()
+                if (sw.text == null) {
+                    iter.remove()
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
+    private fun extractText(payload: Map<String, ByteArray>): String? {
+        for (mime in TEXT_MIME_PRIORITY) {
+            payload[mime]?.let { return it.toString(Charsets.UTF_8) }
+        }
+        return null
+    }
+
+    private fun ageMillis(
+        now: Long,
+        nanos: Long,
+    ): Long = (now - nanos) / 1_000_000L
+
     private fun onSelection(payload: Map<String, ByteArray>) {
         if (payload.isEmpty()) return
 
@@ -118,7 +192,7 @@ class LinuxWaylandPasteboardService(
             logger.info { "Skipping pre-launch Wayland selection (${payload.size} mime(s))" }
             return
         }
-        if (expectingOwnEcho.compareAndSet(true, false)) {
+        if (consumeSelfEchoIfMatches(payload)) {
             logger.debug { "Skipping own clipboard echo (${payload.size} mime(s))" }
             return
         }
@@ -143,5 +217,31 @@ class LinuxWaylandPasteboardService(
                 PasteSourceContext(source = source, remote = false),
             )
         }
+    }
+
+    private data class SelfWrite(
+        val timestamp: Long,
+        val text: String?,
+    )
+
+    companion object {
+        /**
+         * How long a self-write stays "expected" before being treated as a
+         * dropped echo. Wayland round-trip is typically < 50ms; 1500ms gives
+         * generous headroom while still expiring within a single user-action
+         * gap so a stuck entry can't eat the next real external copy.
+         */
+        private const val SELF_WRITE_WINDOW_MS = 1500L
+
+        // Order matters: more specific encodings first so we don't pick up a
+        // less-precise text payload when both are present.
+        private val TEXT_MIME_PRIORITY =
+            listOf(
+                "text/plain;charset=utf-8",
+                "text/plain",
+                "UTF8_STRING",
+                "STRING",
+                "TEXT",
+            )
     }
 }
