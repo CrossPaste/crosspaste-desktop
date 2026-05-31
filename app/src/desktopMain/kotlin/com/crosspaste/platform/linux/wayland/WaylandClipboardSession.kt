@@ -259,6 +259,7 @@ class WaylandClipboardSession private constructor(
             }
             val state = offers[Pointer.nativeValue(offer)]
             val mimes = state?.mimes?.toList().orEmpty()
+            logger.info { "selection offer ${Pointer.nativeValue(offer)} mimes=$mimes" }
             val payload = readOffer(offer, mimes)
             destroyOffer(offer)
             onSelectionCallback?.invoke(payload)
@@ -273,11 +274,22 @@ class WaylandClipboardSession private constructor(
         for (mime in mimes) {
             if (shouldStop) break
             runCatching { readMime(offer, mime) }
-                .onSuccess { out[mime] = it }
-                .onFailure { e -> logger.warn(e) { "Failed to read mime $mime" } }
+                .onSuccess { bytes ->
+                    out[mime] = bytes
+                    logger.debug { "read mime '$mime' size=${bytes.size} headHex=${hexHead(bytes)}" }
+                }.onFailure { e -> logger.warn(e) { "Failed to read mime $mime" } }
         }
         return out
     }
+
+    private fun hexHead(
+        bytes: ByteArray,
+        n: Int = 32,
+    ): String =
+        bytes
+            .take(n)
+            .joinToString(" ") { "%02x".format(it.toInt() and 0xff) }
+            .let { if (bytes.size > n) "$it…" else it }
 
     private fun readMime(
         offer: Pointer,

@@ -1,5 +1,6 @@
 package com.crosspaste.paste
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.ByteArrayInputStream
@@ -34,6 +35,18 @@ class WaylandSyntheticTransferable(
             .map { it.flavor }
             .toTypedArray()
 
+    init {
+        if (logger.isDebugEnabled()) {
+            for (entry in entries) {
+                logger.debug {
+                    "wayland flavor: raw='${entry.rawMime}' base='${entry.baseMime}' " +
+                        "kind=${entry.kind} charset=${entry.charset.name()} " +
+                        "size=${entry.bytes.size} headHex=${hexHead(entry.bytes)}"
+                }
+            }
+        }
+    }
+
     override fun getTransferDataFlavors(): Array<DataFlavor> = flavors
 
     override fun isDataFlavorSupported(flavor: DataFlavor): Boolean = flavors.any { it.equals(flavor) }
@@ -41,7 +54,14 @@ class WaylandSyntheticTransferable(
     override fun getTransferData(flavor: DataFlavor): Any {
         val entry = entries.firstOrNull { it.flavor.equals(flavor) } ?: error("Unsupported flavor: $flavor")
         return when (entry.kind) {
-            EntryKind.TEXT -> String(entry.bytes, entry.charset)
+            EntryKind.TEXT -> {
+                val text = String(entry.bytes, entry.charset)
+                logger.debug {
+                    "wayland decode '${entry.rawMime}' as ${entry.charset.name()} → " +
+                        "len=${text.length} preview='${preview(text)}'"
+                }
+                text
+            }
             EntryKind.BINARY -> ByteArrayInputStream(entry.bytes) as InputStream
         }
     }
@@ -84,6 +104,8 @@ class WaylandSyntheticTransferable(
 
     companion object {
 
+        private val logger = KotlinLogging.logger {}
+
         // Wayland-native text identifiers occasionally appear without a slash
         // (legacy X selection targets surfaced through XWayland).
         private val LEGACY_TEXT_MIMES = setOf("UTF8_STRING", "STRING", "TEXT")
@@ -95,6 +117,23 @@ class WaylandSyntheticTransferable(
             baseMime.startsWith("text/") ||
                 baseMime in LEGACY_TEXT_MIMES ||
                 rawMime in LEGACY_TEXT_MIMES
+
+        private fun hexHead(
+            bytes: ByteArray,
+            n: Int = 32,
+        ): String =
+            bytes
+                .take(n)
+                .joinToString(" ") { "%02x".format(it.toInt() and 0xff) }
+                .let { if (bytes.size > n) "$it…" else it }
+
+        private fun preview(
+            text: String,
+            n: Int = 80,
+        ): String {
+            val trimmed = text.replace('\n', '⏎').replace('\r', '⏎')
+            return if (trimmed.length <= n) trimmed else "${trimmed.take(n)}…"
+        }
 
         /**
          * Parse `charset=<name>` from a MIME parameter list. Returns null if
