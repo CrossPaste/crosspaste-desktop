@@ -276,7 +276,7 @@ class WaylandClipboardSession private constructor(
             runCatching { readMime(offer, mime) }
                 .onSuccess { bytes ->
                     out[mime] = bytes
-                    logger.debug { "read mime '$mime' size=${bytes.size} headHex=${hexHead(bytes)}" }
+                    logger.info { "read mime '$mime' size=${bytes.size} headHex=${hexHead(bytes)}" }
                 }.onFailure { e -> logger.warn(e) { "Failed to read mime $mime" } }
         }
         return out

@@ -36,13 +36,11 @@ class WaylandSyntheticTransferable(
             .toTypedArray()
 
     init {
-        if (logger.isDebugEnabled()) {
-            for (entry in entries) {
-                logger.debug {
-                    "wayland flavor: raw='${entry.rawMime}' base='${entry.baseMime}' " +
-                        "kind=${entry.kind} charset=${entry.charset.name()} " +
-                        "size=${entry.bytes.size} headHex=${hexHead(entry.bytes)}"
-                }
+        for (entry in entries) {
+            logger.info {
+                "wayland flavor: raw='${entry.rawMime}' base='${entry.baseMime}' " +
+                    "kind=${entry.kind} charset=${entry.charset.name()} " +
+                    "size=${entry.bytes.size} headHex=${hexHead(entry.bytes)}"
             }
         }
     }
@@ -56,7 +54,7 @@ class WaylandSyntheticTransferable(
         return when (entry.kind) {
             EntryKind.TEXT -> {
                 val text = String(entry.bytes, entry.charset)
-                logger.debug {
+                logger.info {
                     "wayland decode '${entry.rawMime}' as ${entry.charset.name()} → " +
                         "len=${text.length} preview='${preview(text)}'"
                 }
