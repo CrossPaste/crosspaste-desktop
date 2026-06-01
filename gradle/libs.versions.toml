@@ -1,5 +1,5 @@
 [versions]
-atomicfu = "0.32.1"
+atomicfu = "0.33.0"
 awesome-brans = "2.2.1"
 caffeine = "3.2.3"
 clikt = "5.1.0"
