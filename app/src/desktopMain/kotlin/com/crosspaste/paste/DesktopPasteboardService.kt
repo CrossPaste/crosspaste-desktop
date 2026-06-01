@@ -78,13 +78,23 @@ private fun linuxPasteboardService(
     soundService: SoundService,
     sourceExclusionService: DesktopSourceExclusionService,
 ): AbstractPasteboardService {
-    if (LinuxSession.isWayland()) {
+    val waylandDisplay = System.getenv("WAYLAND_DISPLAY")
+    val xdgSessionType = System.getenv("XDG_SESSION_TYPE")
+    val display = System.getenv("DISPLAY")
+    val isWayland = LinuxSession.isWayland()
+    logger.info {
+        "Linux session probe: isWayland=$isWayland " +
+            "WAYLAND_DISPLAY='$waylandDisplay' XDG_SESSION_TYPE='$xdgSessionType' DISPLAY='$display'"
+    }
+
+    if (isWayland) {
         val available =
             runCatching { WaylandClipboardSession.isAvailable() }
                 .onFailure { e -> logger.warn(e) { "Wayland clipboard probe threw — falling back to X11" } }
                 .getOrDefault(false)
+        logger.info { "Wayland wlr-data-control available=$available" }
         if (available) {
-            logger.info { "Using LinuxWaylandPasteboardService (wlr-data-control)" }
+            logger.info { "Selected pasteboard service: LinuxWaylandPasteboardService (Wayland, wlr-data-control)" }
             return LinuxWaylandPasteboardService(
                 appWindowManager,
                 configManager,
@@ -97,8 +107,9 @@ private fun linuxPasteboardService(
                 sourceExclusionService,
             )
         }
-        logger.info { "Wayland session detected but wlr-data-control unavailable — using X11 fallback" }
+        logger.info { "Wayland session detected but wlr-data-control unavailable — using X11/XWayland fallback" }
     }
+    logger.info { "Selected pasteboard service: LinuxX11PasteboardService (X11${if (isWayland) "/XWayland" else ""})" }
     return LinuxX11PasteboardService(
         appWindowManager,
         configManager,
