@@ -1,7 +1,7 @@
 [versions]
 atomicfu = "0.33.0"
 awesome-brans = "2.2.1"
-caffeine = "3.2.3"
+caffeine = "3.2.4"
 clikt = "5.1.0"
 coil = "3.4.0"
 compose-plugin = "1.11.0"
