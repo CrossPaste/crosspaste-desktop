@@ -54,6 +54,22 @@ class DesktopShortcutKeysLoader(
                 }
             }
 
+        // The system paste keystroke (e.g. Cmd+V / Ctrl+V) is reserved: CrossPaste
+        // simulates it to perform a paste, and that simulated keystroke is seen again
+        // by the global listener. If any other action is bound to the same combination
+        // (stale config or a hand-edited properties file), firing it would re-simulate
+        // the paste and loop forever (issue #4500). Compute those colliding actions once
+        // here so dispatch can ignore them without per-event allocation.
+        val pasteKeys: List<KeyboardKey> = keys[DesktopShortcutKeys.PASTE] ?: emptyList()
+        val reservedConflictKeys: Set<String> =
+            if (pasteKeys.isEmpty()) {
+                emptySet()
+            } else {
+                keys
+                    .filter { (name, combo) -> name != DesktopShortcutKeys.PASTE && combo.sameShortcutAs(pasteKeys) }
+                    .keys
+            }
+
         return EventConsumer { event ->
             for (entry in keys) {
                 entry.value
@@ -63,6 +79,9 @@ class DesktopShortcutKeysLoader(
                         eventCheck(event)
                     }.let { match ->
                         if (match) {
+                            if (entry.key in reservedConflictKeys) {
+                                return@EventConsumer
+                            }
                             shortcutKeysAction.action(entry.key, event)
                             return@EventConsumer
                         }
