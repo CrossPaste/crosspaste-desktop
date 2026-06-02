@@ -27,6 +27,9 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.listener.sameShortcutAs
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
 import com.crosspaste.ui.base.DialogButtonType
@@ -45,6 +48,7 @@ fun SetShortcutKeysDialog(
     val copywriter = koinInject<GlobalCopywriter>()
     val shortcutKeys = koinInject<ShortcutKeys>()
     val shortcutKeysListener = koinInject<ShortcutKeysListener>()
+    val notificationManager = koinInject<NotificationManager>()
 
     val appSizeValue = LocalAppSizeValueState.current
 
@@ -132,6 +136,19 @@ fun SetShortcutKeysDialog(
                 text = copywriter.getText("confirm"),
                 type = DialogButtonType.TONAL,
             ) {
+                // Cmd+V (the system paste keystroke) is reserved: CrossPaste itself
+                // simulates it to perform a paste. Binding any other action to the same
+                // combination makes the simulated keystroke re-trigger that action,
+                // causing an infinite paste loop (issue #4500). Reject such a binding.
+                val pasteKeys = shortcutKeys.shortcutKeysCore.value.keys[PASTE] ?: emptyList()
+                val newKeys = shortcutKeysListener.currentKeys
+                if (name != PASTE && newKeys.isNotEmpty() && newKeys.sameShortcutAs(pasteKeys)) {
+                    notificationManager.sendNotification(
+                        title = { it.getText("shortcut_reserved_for_paste") },
+                        messageType = MessageType.Error,
+                    )
+                    return@DialogActionButton
+                }
                 if (name != PASTE || shortcutKeysListener.currentKeys.isNotEmpty()) {
                     shortcutKeys.update(name, shortcutKeysListener.currentKeys)
                 }
