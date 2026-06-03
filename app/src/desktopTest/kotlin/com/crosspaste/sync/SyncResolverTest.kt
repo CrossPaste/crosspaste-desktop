@@ -36,8 +36,10 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class SyncResolverTest {
@@ -181,11 +183,32 @@ class SyncResolverTest {
         }
 
     @Test
-    fun resolveDisconnected_switchHostReturnsNull_staysDisconnected() =
+    fun resolveDisconnected_switchHostReturnsNull_alreadyDisconnected_doesNotRewriteDb() =
         runTest {
+            // Convergence guard: a device that is already DISCONNECTED and still has no
+            // reachable host must NOT be re-persisted. Re-writing DISCONNECTED on every
+            // poll bumps modifyTime, re-emits the DB flow, and churns the handler.
             val deps = TestDeps()
             val resolver = deps.createResolver()
-            val syncRuntimeInfo = createSyncRuntimeInfo()
+            val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+
+            val callback = createTestCallback()
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
+
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun resolveDisconnected_switchHostReturnsNull_fromNonDisconnected_persistsDisconnected() =
+        runTest {
+            // When the device was NOT already DISCONNECTED, losing the host must still
+            // persist the DISCONNECTED transition exactly once.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.INCOMPATIBLE)
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
@@ -209,14 +232,12 @@ class SyncResolverTest {
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
 
-            val capturedInfo = slot<SyncRuntimeInfo>()
-            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
-
             val callback = createTestCallback()
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
 
             coVerify { deps.telnetHelper.switchHost(emptyList(), any(), any()) }
-            assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
+            // Already DISCONNECTED with no host → no redundant DB write.
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
         }
 
     // ========== B. resolveConnecting ==========
@@ -883,6 +904,44 @@ class SyncResolverTest {
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
 
             assertTrue(onCompleteCalled)
+        }
+
+    @Test
+    fun processEvent_cancellationException_propagatesNotSwallowed() =
+        runTest {
+            // Regression guard for the resolver infinite-loop: a CancellationException
+            // raised while resolving (e.g. scope teardown / shutdown) MUST propagate out
+            // of processEvent instead of being caught-and-logged. Swallowing it broke
+            // structured-concurrency cancellation and let buffered Resolve events
+            // re-process endlessly ("Failed to process event" flood).
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } throws
+                CancellationException("scope cancelled")
+
+            assertFailsWith<CancellationException> {
+                resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            }
+        }
+
+    @Test
+    fun processEvent_nonCancellationException_swallowedAndLogged() =
+        runTest {
+            // Counterpart to the cancellation test: ordinary failures must still be
+            // caught (not propagated), so one bad device cannot tear down the pipeline.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } throws
+                RuntimeException("boom")
+
+            // Should NOT throw — the runtime exception is swallowed.
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
         }
 
     @Test

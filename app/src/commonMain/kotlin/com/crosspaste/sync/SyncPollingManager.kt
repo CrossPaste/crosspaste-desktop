@@ -73,13 +73,16 @@ class SyncPollingManager(
     fun startPollingResolve(action: suspend () -> Unit): Job =
         syncHandlerScope.launch {
             while (isActive) {
-                runCatching {
+                try {
                     waitForNextExecution()
                     action()
-                }.onFailure { e ->
-                    if (e !is CancellationException) {
-                        logger.error(e) { "polling error" }
-                    }
+                } catch (e: CancellationException) {
+                    // Honor cancellation: rethrow so the loop terminates
+                    // immediately instead of spinning and re-emitting Resolve
+                    // events into a cancelled scope.
+                    throw e
+                } catch (e: Throwable) {
+                    logger.error(e) { "polling error" }
                 }
             }
         }

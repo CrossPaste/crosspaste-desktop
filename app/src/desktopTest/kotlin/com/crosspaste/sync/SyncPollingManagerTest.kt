@@ -6,7 +6,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -201,6 +203,36 @@ class SyncPollingManagerTest {
 
             assertTrue(actionCount > firstCount, "Polling should continue after exception")
             job.cancel()
+            childScope.cancel()
+        }
+
+    @Test
+    fun startPollingResolve_actionCancellationException_stopsPolling() =
+        runBlocking {
+            // Regression guard: if the action raises CancellationException, the polling
+            // loop must terminate instead of swallowing it and spinning (which fed the
+            // resolver infinite-loop). The job should complete and the action must not
+            // run a second time.
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val manager = SyncPollingManager(childScope)
+            var actionCount = 0
+
+            manager.fail() // short backoff so the first run happens quickly
+
+            val job =
+                manager.startPollingResolve {
+                    actionCount++
+                    throw CancellationException("simulated cancellation")
+                }
+
+            // With the fix the cancellation propagates and the job completes promptly.
+            // Without it, join() would never return and this times out.
+            withTimeout(5.seconds) {
+                job.join()
+            }
+
+            assertTrue(job.isCompleted, "Polling job should complete after cancellation")
+            assertEquals(1, actionCount, "Action must not run again after cancellation")
             childScope.cancel()
         }
 
