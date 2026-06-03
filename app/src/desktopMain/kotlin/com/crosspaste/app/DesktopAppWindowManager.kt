@@ -6,6 +6,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
+import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -24,6 +25,7 @@ fun getDesktopAppWindowManager(
     appSize: DesktopAppSize,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
+    lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
     platform: Platform,
     userDataPathProvider: UserDataPathProvider,
 ): DesktopAppWindowManager =
@@ -32,6 +34,7 @@ fun getDesktopAppWindowManager(
             appInfo,
             appSize,
             lazyShortcutKeys,
+            lazyShortcutKeysListener,
             userDataPathProvider,
         )
     } else if (platform.isWindows()) {
@@ -39,6 +42,7 @@ fun getDesktopAppWindowManager(
             appInfo,
             appSize,
             lazyShortcutKeys,
+            lazyShortcutKeysListener,
             userDataPathProvider,
         )
     } else if (platform.isLinux()) {
@@ -47,6 +51,7 @@ fun getDesktopAppWindowManager(
             appSize,
             lazyShortcutKeys,
             lazyShortcutKeysAction,
+            lazyShortcutKeysListener,
             userDataPathProvider,
         )
     } else {
