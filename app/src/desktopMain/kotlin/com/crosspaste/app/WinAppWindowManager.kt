@@ -3,6 +3,7 @@ package com.crosspaste.app
 import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
+import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.windows.WinAppInfo
 import com.crosspaste.platform.windows.WinAppInfoCaches
@@ -22,6 +23,7 @@ class WinAppWindowManager(
     appInfo: AppInfo,
     appSize: DesktopAppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
     userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
@@ -176,6 +178,9 @@ class WinAppWindowManager(
                 it.map { key -> key.rawCode }
             } ?: listOf()
 
+        lazyShortcutKeysListener.value.beginPasteSuppression(
+            ShortcutKeysListener.PASTE_INJECTION_SUPPRESS_TIMEOUT,
+        )
         WindowsFocusUtils.paste(keyCodes)
     }
 

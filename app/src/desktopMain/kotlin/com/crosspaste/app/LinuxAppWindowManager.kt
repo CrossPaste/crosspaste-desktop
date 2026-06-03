@@ -4,6 +4,7 @@ import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
+import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
@@ -22,6 +23,7 @@ class LinuxAppWindowManager(
     appSize: DesktopAppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
+    private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
@@ -180,6 +182,9 @@ class LinuxAppWindowManager(
             lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
                 it.map { key -> key.rawCode }
             } ?: listOf()
+        lazyShortcutKeysListener.value.beginPasteSuppression(
+            ShortcutKeysListener.PASTE_INJECTION_SUPPRESS_TIMEOUT,
+        )
         X11Api.toPaste(keyCodes)
     }
 

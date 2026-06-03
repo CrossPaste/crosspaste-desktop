@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.listener.ShortcutKeys
+import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacPasteUtils
@@ -16,6 +17,7 @@ class MacAppWindowManager(
     private val appInfo: AppInfo,
     appSize: DesktopAppSize,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
@@ -159,6 +161,9 @@ class MacAppWindowManager(
     }
 
     override suspend fun toPaste() {
+        lazyShortcutKeysListener.value.beginPasteSuppression(
+            ShortcutKeysListener.PASTE_INJECTION_SUPPRESS_TIMEOUT,
+        )
         macPasteUtils.simulatePasteCommand()
     }
 }
