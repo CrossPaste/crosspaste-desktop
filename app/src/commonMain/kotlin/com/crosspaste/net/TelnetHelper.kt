@@ -8,6 +8,7 @@ import io.ktor.client.statement.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Mutex
@@ -39,19 +40,30 @@ class TelnetHelper(
                 val result = CompletableDeferred<Pair<HostInfo, VersionRelation>?>()
                 val mutex = Mutex()
 
-                hostInfoList.forEach { hostInfo ->
-                    launch(CoroutineName("SwitchHost")) {
-                        runCatching {
-                            telnet(hostInfo.hostAddress, port, timeout)?.let {
-                                mutex.withLock {
-                                    if (!result.isCompleted) {
-                                        result.complete(Pair(hostInfo, it))
+                val probeJobs =
+                    hostInfoList.map { hostInfo ->
+                        launch(CoroutineName("SwitchHost")) {
+                            runCatching {
+                                telnet(hostInfo.hostAddress, port, timeout)?.let {
+                                    mutex.withLock {
+                                        if (!result.isCompleted) {
+                                            result.complete(Pair(hostInfo, it))
+                                        }
                                     }
                                 }
+                            }.onFailure { e ->
+                                logger.debug(e) { "switchHost telnet failed for ${hostInfo.hostAddress}:$port" }
                             }
-                        }.onFailure { e ->
-                            logger.debug(e) { "switchHost telnet failed for ${hostInfo.hostAddress}:$port" }
                         }
+                    }
+
+                // When every probe finishes without a success, complete with null so
+                // result.await() returns immediately instead of blocking until the
+                // outer withTimeoutOrNull expires.
+                launch {
+                    probeJobs.joinAll()
+                    if (!result.isCompleted) {
+                        result.complete(null)
                     }
                 }
 

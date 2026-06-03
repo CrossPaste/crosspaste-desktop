@@ -10,12 +10,14 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.seconds
 
 class TelnetHelperTest {
 
@@ -198,6 +200,32 @@ class TelnetHelperTest {
             val result = helper.switchHost(hostInfoList, 13129, 5000L)
 
             assertNotNull(result)
+        }
+
+    @Test
+    fun switchHost_allFail_returnsImmediatelyWithoutWaitingForTimeout() =
+        runBlocking {
+            // Regression guard: when every probe fails, switchHost must complete its
+            // result with null as soon as all probes finish, NOT block until the internal
+            // withTimeoutOrNull expires. The internal timeout is set very high (10s) and
+            // the whole call is wrapped in a 2s deadline — if it returned only on timeout,
+            // this would throw TimeoutCancellationException.
+            val pasteClient = createMockPasteClient()
+            coEvery { pasteClient.get(any(), any(), any()) } throws RuntimeException("connection failed")
+
+            val helper = createTelnetHelper(pasteClient)
+            val hostInfoList =
+                listOf(
+                    HostInfo(24, "192.168.1.100"),
+                    HostInfo(24, "192.168.1.101"),
+                )
+
+            val result =
+                withTimeout(2.seconds) {
+                    helper.switchHost(hostInfoList, 13129, 10_000L)
+                }
+
+            assertNull(result)
         }
 
     @Test

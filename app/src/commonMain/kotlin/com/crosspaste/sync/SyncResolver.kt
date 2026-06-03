@@ -32,6 +32,7 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.coroutines.cancellation.CancellationException
 
 class SyncResolver(
     private val appInfo: AppInfo,
@@ -77,13 +78,13 @@ class SyncResolver(
     }
 
     private suspend fun processEvent(event: SyncEvent) {
-        runCatching {
+        try {
             if (event is SyncEvent.SyncRunTimeInfoEvent) {
                 // Re-read from DB to avoid stale snapshots.
                 // Events are queued in a SharedFlow and may be processed after the DB has changed.
                 val syncRuntimeInfo =
                     syncRuntimeInfoDao.getSyncRuntimeInfo(event.syncRuntimeInfo.appInstanceId)
-                        ?: return@runCatching
+                        ?: return
 
                 when (event) {
                     is SyncEvent.Resolve -> {
@@ -146,9 +147,15 @@ class SyncResolver(
                     }
                 }
             }
-        }.onFailure { e ->
+        } catch (e: CancellationException) {
+            // Never swallow cancellation — rethrow so structured concurrency
+            // can tear down the resolve pipeline instead of re-processing
+            // buffered events in a cancelled scope (which previously produced
+            // an unbounded "Failed to process event" loop on shutdown/teardown).
+            throw e
+        } catch (e: Throwable) {
             logger.error(e) { "Failed to process event: $event" }
-        }.apply {
+        } finally {
             if (event is SyncEvent.CallbackEvent) {
                 event.callback.onComplete()
             }
@@ -241,7 +248,12 @@ class SyncResolver(
         val result =
             discoverReachableHost() ?: run {
                 logger.info { "$appInstanceId no reachable host, hostInfoList: $hostInfoList" }
-                updateConnectState(SyncState.DISCONNECTED)
+                // Only persist when the state actually changes. Re-writing
+                // DISCONNECTED on every poll bumps modifyTime, re-emits the
+                // DB flow, and churns the handler for no reason.
+                if (connectState != SyncState.DISCONNECTED) {
+                    updateConnectState(SyncState.DISCONNECTED)
+                }
                 return
             }
 
