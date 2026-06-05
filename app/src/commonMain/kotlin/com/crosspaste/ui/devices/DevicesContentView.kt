@@ -3,7 +3,6 @@ package com.crosspaste.ui.devices
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,7 +15,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,14 +27,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.text.font.FontWeight
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Devices
 import com.composables.icons.materialsymbols.rounded.Refresh
-import com.crosspaste.db.sync.SyncRuntimeInfo
-import com.crosspaste.db.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.sync.NearbyDeviceManager
@@ -69,18 +63,14 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
 
     val searching by nearbyDeviceManager.searching.collectAsState()
 
-    val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
+    val deviceGroups = rememberDeviceGroups()
+    val hasDevices = deviceGroups.hasDevices
 
     val unverifiedSyncRuntimeInfo by syncManager.unverifiedSyncRuntimeInfo.collectAsState()
 
     var showAddDeviceDialog by remember { mutableStateOf(false) }
     var showCurrentDeviceDialog by remember { mutableStateOf(false) }
     var offlineExpanded by rememberSaveable { mutableStateOf(false) }
-
-    val (onlineDevices, offlineDevices) =
-        remember(syncRuntimeInfos) {
-            syncRuntimeInfos.partition { it.connectState != SyncState.DISCONNECTED }
-        }
 
     LaunchedEffect(Unit) {
         syncManager.refresh { }
@@ -175,42 +165,19 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
             contentPadding = PaddingValues(bottom = titanic),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
-            if (syncRuntimeInfos.isNotEmpty()) {
-                stickyHeader {
-                    SectionHeader(
-                        text = "my_devices",
-                        trailingContent =
-                            if (offlineDevices.isNotEmpty()) {
-                                {
-                                    OfflineToggle(
-                                        count = offlineDevices.size,
-                                        checked = offlineExpanded,
-                                        onCheckedChange = { offlineExpanded = it },
-                                    )
-                                }
-                            } else {
-                                null
-                            },
-                    )
-                }
-            }
-
-            items(onlineDevices, key = { it.appInstanceId }) { syncRuntimeInfo ->
-                SyncDeviceItem(deviceScopeFactory, syncRuntimeInfo)
-            }
-
-            if (offlineExpanded) {
-                items(offlineDevices, key = { "offline-${it.appInstanceId}" }) { syncRuntimeInfo ->
-                    SyncDeviceItem(deviceScopeFactory, syncRuntimeInfo)
-                }
-            }
+            myDevicesSection(
+                deviceGroups = deviceGroups,
+                offlineExpanded = offlineExpanded,
+                onOfflineExpandedChange = { offlineExpanded = it },
+                deviceScopeFactory = deviceScopeFactory,
+            )
 
             stickyHeader {
                 SectionHeader(
                     text = "nearby_devices",
                     backgroundColor = MaterialTheme.colorScheme.surface,
                     topPadding =
-                        if (syncRuntimeInfos.isNotEmpty()) {
+                        if (hasDevices) {
                             medium
                         } else {
                             zero
@@ -252,42 +219,5 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SyncDeviceItem(
-    deviceScopeFactory: DeviceScopeFactory,
-    syncRuntimeInfo: SyncRuntimeInfo,
-) {
-    val scope =
-        remember(syncRuntimeInfo) {
-            deviceScopeFactory.createDeviceScope(syncRuntimeInfo)
-        }
-    scope.DeviceConnectView()
-}
-
-@Composable
-private fun OfflineToggle(
-    count: Int,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    val copywriter = koinInject<GlobalCopywriter>()
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(tiny2X),
-    ) {
-        Switch(
-            modifier = Modifier.scale(0.7f),
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-        )
-        Text(
-            text = "${copywriter.getText(if (checked) "hide_offline" else "show_offline")} ($count)",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Medium,
-        )
     }
 }
