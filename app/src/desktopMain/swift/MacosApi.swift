@@ -3,6 +3,7 @@ import ApplicationServices
 import Cocoa
 import CoreGraphics
 import ImageIO
+import Network
 import QuickLookThumbnailing
 import Security
 
@@ -853,5 +854,41 @@ public func trayCleanup() {
         menu = nil
         handlers.removeAll()
         callbackPointer = nil
+    }
+}
+
+// MARK: - Network state monitor
+
+private var networkPathMonitor: NWPathMonitor?
+private var networkStateCallback: (@convention(c) () -> Void)?
+private let networkMonitorQueue = DispatchQueue(label: "com.crosspaste.networkStateMonitor")
+
+@_cdecl("startNetworkStateMonitor")
+public func startNetworkStateMonitor(callback: @escaping @convention(c) () -> Void) {
+    // All access to the two globals is funnelled through networkMonitorQueue — the
+    // same queue NWPathMonitor delivers updates on — so the callback read in the
+    // update handler never races the writes from start/stop (called on JNA threads).
+    networkMonitorQueue.async {
+        // Replace any existing monitor so repeated start calls don't leak.
+        networkPathMonitor?.cancel()
+        networkStateCallback = callback
+
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { _ in
+            // NWPathMonitor fires an initial update on start (free cold-start signal)
+            // and again on every interface up/down, IP change, or reachability change.
+            networkStateCallback?()
+        }
+        monitor.start(queue: networkMonitorQueue)
+        networkPathMonitor = monitor
+    }
+}
+
+@_cdecl("stopNetworkStateMonitor")
+public func stopNetworkStateMonitor() {
+    networkMonitorQueue.async {
+        networkPathMonitor?.cancel()
+        networkPathMonitor = nil
+        networkStateCallback = nil
     }
 }
