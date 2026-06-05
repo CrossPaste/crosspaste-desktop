@@ -166,10 +166,27 @@ class SqlSyncRuntimeInfoDao(
                                 ).executeAsOneOrNull()
 
                         if (existing != null) {
-                            val hostInfoList = (existing.hostInfoList + syncInfo.endpointInfo.hostInfoList).distinct()
+                            // Recency-ordered, capacity-capped merge (LRU) instead of an
+                            // unbounded union — bounds ghost-address accumulation (#4499).
+                            val hostInfoList =
+                                HostInfo.mergeRecent(
+                                    existing = existing.hostInfoList,
+                                    incoming = syncInfo.endpointInfo.hostInfoList,
+                                    now = now,
+                                )
 
-                            val connectNetworkPrefixLength: Long? = connectInfo?.networkPrefixLength?.toLong()
-                            val connectHostAddress: String? = connectInfo?.hostAddress
+                            // When this update carries no connectInfo (e.g. an mDNS
+                            // re-advertisement), preserve the existing connect address /
+                            // prefix instead of nulling them. The connectState column is
+                            // already preserved via a CASE on the -1 sentinel; the address
+                            // must be preserved too, otherwise a peer's IP-change broadcast
+                            // wipes connectHostAddress and forces a visible disconnect
+                            // (#4499 weakness ①).
+                            val connectNetworkPrefixLength: Long? =
+                                connectInfo?.networkPrefixLength?.toLong()
+                                    ?: existing.connectNetworkPrefixLength?.toLong()
+                            val connectHostAddress: String? =
+                                connectInfo?.hostAddress ?: existing.connectHostAddress
                             val connectState: Long = if (connectInfo != null) SyncState.CONNECTED.toLong() else -1L
 
                             val hostInfoChanged =
@@ -225,7 +242,15 @@ class SqlSyncRuntimeInfoDao(
                                     SyncState.DISCONNECTED.toLong()
                                 }
 
-                            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(syncInfo.endpointInfo.hostInfoList)
+                            // Stamp recency and apply the capacity cap on first insert too,
+                            // so a peer can't seed an unbounded address list.
+                            val hostInfoList =
+                                HostInfo.mergeRecent(
+                                    existing = emptyList(),
+                                    incoming = syncInfo.endpointInfo.hostInfoList,
+                                    now = now,
+                                )
+                            val hostInfoArrayJson = jsonUtils.JSON.encodeToString(hostInfoList)
                             syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
                                 syncInfo.appInfo.appInstanceId,
                                 syncInfo.appInfo.appVersion,

@@ -219,6 +219,155 @@ class DtoSerializationTest {
         assertEquals(1, merged.endpointInfo.hostInfoList.size)
     }
 
+    // --- HostInfo.mergeRecent (Phase B: recency-ordered, capacity-capped) ---
+
+    @Test
+    fun `mergeRecent orders incoming first and stamps now`() {
+        val existing = listOf(HostInfo(24, "192.168.1.1", lastSeen = 100L))
+        val incoming = listOf(HostInfo(24, "192.168.1.2"))
+
+        val merged = HostInfo.mergeRecent(existing, incoming, now = 5000L)
+
+        assertEquals(2, merged.size)
+        assertEquals("192.168.1.2", merged[0].hostAddress)
+        assertEquals(5000L, merged[0].lastSeen)
+        assertEquals("192.168.1.1", merged[1].hostAddress)
+        assertEquals(100L, merged[1].lastSeen)
+    }
+
+    @Test
+    fun `mergeRecent dedups by address keeping fresh lastSeen`() {
+        val existing = listOf(HostInfo(24, "192.168.1.1", lastSeen = 100L))
+        val incoming = listOf(HostInfo(24, "192.168.1.1"))
+
+        val merged = HostInfo.mergeRecent(existing, incoming, now = 5000L)
+
+        assertEquals(1, merged.size)
+        assertEquals("192.168.1.1", merged[0].hostAddress)
+        assertEquals(5000L, merged[0].lastSeen)
+    }
+
+    @Test
+    fun `mergeRecent caps at MAX_RECENT_HOST_INFO dropping oldest`() {
+        // Existing already at the cap, each older than the next.
+        val existing =
+            (1..HostInfo.MAX_RECENT_HOST_INFO).map { i ->
+                HostInfo(24, "10.0.0.$i", lastSeen = i.toLong())
+            }
+        // A brand-new address arrives.
+        val incoming = listOf(HostInfo(24, "10.0.0.99"))
+
+        val merged = HostInfo.mergeRecent(existing, incoming, now = 1_000L)
+
+        assertEquals(HostInfo.MAX_RECENT_HOST_INFO, merged.size)
+        // Newest is the incoming one.
+        assertEquals("10.0.0.99", merged[0].hostAddress)
+        // The oldest existing (lastSeen = 1, "10.0.0.1") was evicted.
+        assertTrue(merged.none { it.hostAddress == "10.0.0.1" })
+    }
+
+    @Test
+    fun `mergeRecent dedups incoming-internal duplicates`() {
+        // incoming = [a, a, b] -> result must not contain duplicate a.
+        val incoming =
+            listOf(
+                HostInfo(24, "10.0.0.1"),
+                HostInfo(24, "10.0.0.1"),
+                HostInfo(24, "10.0.0.2"),
+            )
+
+        val merged = HostInfo.mergeRecent(emptyList(), incoming, now = 100L)
+
+        assertEquals(2, merged.size)
+        assertEquals(1, merged.count { it.hostAddress == "10.0.0.1" })
+        assertTrue(merged.any { it.hostAddress == "10.0.0.2" })
+    }
+
+    @Test
+    fun `mergeRecent dedups duplicate addresses within incoming and does not crowd out history`() {
+        // A peer (or a buggy/hostile TXT record) advertises the same address many times.
+        // It must collapse to a single entry — not fill the cap and evict real history.
+        val existing = listOf(HostInfo(24, "10.0.0.1", lastSeen = 1L))
+        val incoming = List(HostInfo.MAX_RECENT_HOST_INFO) { HostInfo(24, "10.0.0.5") }
+
+        val merged = HostInfo.mergeRecent(existing, incoming, now = 100L)
+
+        assertEquals(2, merged.size)
+        assertEquals(1, merged.count { it.hostAddress == "10.0.0.5" })
+        assertTrue(merged.any { it.hostAddress == "10.0.0.1" })
+    }
+
+    @Test
+    fun `mergeRecent output has no duplicate addresses even from legacy existing`() {
+        // Legacy data could hold the same address twice (old .distinct() kept entries that
+        // differed only by prefix). The merged result must still be address-unique.
+        val existing =
+            listOf(
+                HostInfo(24, "10.0.0.7", lastSeen = 5L),
+                HostInfo(32, "10.0.0.7", lastSeen = 3L),
+            )
+        val incoming = listOf(HostInfo(24, "10.0.0.8"))
+
+        val merged = HostInfo.mergeRecent(existing, incoming, now = 100L)
+
+        assertEquals(1, merged.count { it.hostAddress == "10.0.0.7" })
+        assertEquals(merged.map { it.hostAddress }, merged.map { it.hostAddress }.distinct())
+    }
+
+    @Test
+    fun `mergeRecent is capacity-only and never time-prunes a stale-but-present address`() {
+        // An address with an ancient lastSeen survives as long as it fits in the cap —
+        // there is no clock-based TTL (a stable device must never be aged out).
+        val existing = listOf(HostInfo(24, "192.168.1.1", lastSeen = 1L))
+        val incoming = listOf(HostInfo(24, "192.168.1.2"))
+
+        val merged = HostInfo.mergeRecent(existing, incoming, now = 9_000_000L)
+
+        assertTrue(merged.any { it.hostAddress == "192.168.1.1" })
+    }
+
+    // --- HostInfo cross-version wire compatibility (Phase B: lastSeen field) ---
+
+    @Test
+    fun `HostInfo decode from old wire without lastSeen uses default`() {
+        // old build -> new build: a peer that predates the lastSeen field omits it.
+        val oldWire = """{"networkPrefixLength":24,"hostAddress":"192.168.1.4"}"""
+        val decoded = json.decodeFromString<HostInfo>(oldWire)
+        assertEquals("192.168.1.4", decoded.hostAddress)
+        assertEquals(24.toShort(), decoded.networkPrefixLength)
+        assertEquals(0L, decoded.lastSeen)
+    }
+
+    @Test
+    fun `HostInfo decode tolerates lastSeen plus unknown future keys`() {
+        // new build -> old build: the configured Json (ignoreUnknownKeys=true) must not
+        // throw on fields it doesn't know. This is the exact mechanism that lets an OLD
+        // peer (same config) ignore our new lastSeen — guarding cross-version wire compat.
+        val futureWire =
+            """{"networkPrefixLength":24,"hostAddress":"192.168.1.4","lastSeen":7,"futureX":1}"""
+        val decoded = json.decodeFromString<HostInfo>(futureWire)
+        assertEquals("192.168.1.4", decoded.hostAddress)
+        assertEquals(7L, decoded.lastSeen)
+    }
+
+    @Test
+    fun `SyncInfo decode tolerates unknown future key on nested HostInfo`() {
+        // Same tolerance must hold through the full SyncInfo envelope (the shape that
+        // actually crosses the wire), not just a bare HostInfo.
+        val wire =
+            """
+            {"appInfo":{"appInstanceId":"id","appVersion":"1.0.0","appRevision":"r","userName":"u"},
+             "endpointInfo":{"deviceId":"d","deviceName":"n",
+              "platform":{"name":"TestOS","arch":"x86_64","bitMode":64,"version":"1.0.0"},
+              "hostInfoList":[{"networkPrefixLength":24,"hostAddress":"10.0.0.1","lastSeen":5,"futureX":1}],
+              "port":13129}}
+            """.trimIndent()
+        val decoded = json.decodeFromString<SyncInfo>(wire)
+        assertEquals(1, decoded.endpointInfo.hostInfoList.size)
+        assertEquals("10.0.0.1", decoded.endpointInfo.hostInfoList[0].hostAddress)
+        assertEquals(5L, decoded.endpointInfo.hostInfoList[0].lastSeen)
+    }
+
     // --- PairingRequest ---
 
     @Test

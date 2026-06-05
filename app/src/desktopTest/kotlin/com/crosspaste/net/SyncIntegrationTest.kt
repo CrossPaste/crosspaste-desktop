@@ -294,10 +294,12 @@ class SyncIntegrationTest {
             val b = createInstance("device-b")
             a.start()
 
-            val versionRelation = b.telnetHelper.telnet("localhost", a.getPort())
+            val result = b.telnetHelper.telnet("localhost", a.getPort())
 
-            assertNotNull(versionRelation)
-            assertEquals(VersionRelation.EQUAL_TO, versionRelation)
+            assertNotNull(result)
+            assertEquals(VersionRelation.EQUAL_TO, result.versionRelation)
+            // Phase A: the server advertises its identity in the telnet response header.
+            assertEquals(a.appInfo.appInstanceId, result.peerAppInstanceId)
         }
 
     // ---- Test 9: SwitchHost first responder wins ----
@@ -316,11 +318,13 @@ class SyncIntegrationTest {
                 )
 
             val b = createInstance("device-b")
-            val result = b.telnetHelper.switchHost(hostInfoList, a.getPort())
+            val result =
+                b.telnetHelper.switchHost(hostInfoList, a.getPort(), expectedAppInstanceId = a.appInfo.appInstanceId)
 
             assertNotNull(result)
             assertEquals("127.0.0.1", result.first.hostAddress)
-            assertEquals(VersionRelation.EQUAL_TO, result.second)
+            assertEquals(VersionRelation.EQUAL_TO, result.second.versionRelation)
+            assertEquals(a.appInfo.appInstanceId, result.second.peerAppInstanceId)
         }
 
     // ---- Test 10: Notify remove ----

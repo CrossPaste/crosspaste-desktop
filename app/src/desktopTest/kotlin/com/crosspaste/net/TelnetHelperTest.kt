@@ -1,6 +1,7 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.utils.HEADER_APP_INSTANCE_ID
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.mockk.coEvery
@@ -11,10 +12,12 @@ import io.mockk.unmockkStatic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.seconds
@@ -37,11 +40,18 @@ class TelnetHelperTest {
     private fun createMockResponse(
         statusCode: Int,
         body: String,
+        appInstanceId: String? = null,
     ): HttpResponse {
         val response = mockk<HttpResponse>(relaxed = true)
         val statusObj = HttpStatusCode.fromValue(statusCode)
         every { response.status } returns statusObj
         coEvery { response.bodyAsText(any()) } returns body
+        every { response.headers } returns
+            if (appInstanceId != null) {
+                headersOf(HEADER_APP_INSTANCE_ID, appInstanceId)
+            } else {
+                Headers.Empty
+            }
         return response
     }
 
@@ -63,7 +73,7 @@ class TelnetHelperTest {
             val result = helper.telnet("192.168.1.100", 13129)
 
             assertNotNull(result)
-            assertEquals(VersionRelation.EQUAL_TO, result)
+            assertEquals(VersionRelation.EQUAL_TO, result.versionRelation)
         }
 
     @Test
@@ -77,7 +87,7 @@ class TelnetHelperTest {
             val result = helper.telnet("192.168.1.100", 13129)
 
             assertNotNull(result)
-            assertEquals(VersionRelation.HIGHER_THAN, result)
+            assertEquals(VersionRelation.HIGHER_THAN, result.versionRelation)
         }
 
     @Test
@@ -91,7 +101,7 @@ class TelnetHelperTest {
             val result = helper.telnet("192.168.1.100", 13129)
 
             assertNotNull(result)
-            assertEquals(VersionRelation.LOWER_THAN, result)
+            assertEquals(VersionRelation.LOWER_THAN, result.versionRelation)
         }
 
     @Test
@@ -132,6 +142,20 @@ class TelnetHelperTest {
             assertNull(result)
         }
 
+    @Test
+    fun telnet_cancellationException_propagatesNotSwallowed() =
+        runTest {
+            // A coroutine cancellation must NOT be swallowed and turned into a null
+            // "unreachable" result — it must propagate (matches the #4503 convention).
+            val pasteClient = createMockPasteClient()
+            coEvery { pasteClient.get(any(), any(), any()) } throws CancellationException("cancelled")
+
+            val helper = createTelnetHelper(pasteClient)
+            assertFailsWith<CancellationException> {
+                helper.telnet("192.168.1.100", 13129)
+            }
+        }
+
     // ========== B. switchHost (parallel) ==========
     // switchHost uses CoroutineScope(ioDispatcher) internally so tests need real time
 
@@ -145,11 +169,11 @@ class TelnetHelperTest {
             val helper = createTelnetHelper(pasteClient)
             val hostInfoList = listOf(HostInfo(24, "192.168.1.100"))
 
-            val result = helper.switchHost(hostInfoList, 13129, 5000L)
+            val result = helper.switchHost(hostInfoList, 13129, timeout = 5000L)
 
             assertNotNull(result)
             assertEquals("192.168.1.100", result.first.hostAddress)
-            assertEquals(VersionRelation.EQUAL_TO, result.second)
+            assertEquals(VersionRelation.EQUAL_TO, result.second.versionRelation)
         }
 
     @Test
@@ -176,7 +200,7 @@ class TelnetHelperTest {
                     HostInfo(24, "192.168.1.101"),
                 )
 
-            val result = helper.switchHost(hostInfoList, 13129, 2000L)
+            val result = helper.switchHost(hostInfoList, 13129, timeout = 2000L)
 
             assertNull(result)
         }
@@ -197,7 +221,7 @@ class TelnetHelperTest {
                     HostInfo(24, "192.168.1.101"),
                 )
 
-            val result = helper.switchHost(hostInfoList, 13129, 5000L)
+            val result = helper.switchHost(hostInfoList, 13129, timeout = 5000L)
 
             assertNotNull(result)
         }
@@ -222,7 +246,7 @@ class TelnetHelperTest {
 
             val result =
                 withTimeout(2.seconds) {
-                    helper.switchHost(hostInfoList, 13129, 10_000L)
+                    helper.switchHost(hostInfoList, 13129, timeout = 10_000L)
                 }
 
             assertNull(result)
@@ -238,8 +262,91 @@ class TelnetHelperTest {
             val helper = createTelnetHelper(pasteClient)
             val hostInfoList = listOf(HostInfo(24, "192.168.1.100"))
 
-            val result = helper.switchHost(hostInfoList, 13129, 2000L)
+            val result = helper.switchHost(hostInfoList, 13129, timeout = 2000L)
 
             assertNull(result)
+        }
+
+    // ========== C. identity (Phase A: identity-aware discovery) ==========
+
+    @Test
+    fun telnet_readsPeerAppInstanceIdFromHeader() =
+        runTest {
+            val pasteClient = createMockPasteClient()
+            val response = createMockResponse(200, SyncApi.VERSION.toString(), appInstanceId = "peer-123")
+            coEvery { pasteClient.get(any(), any(), any()) } returns response
+
+            val helper = createTelnetHelper(pasteClient)
+            val result = helper.telnet("192.168.1.100", 13129)
+
+            assertNotNull(result)
+            assertEquals("peer-123", result.peerAppInstanceId)
+        }
+
+    @Test
+    fun telnet_oldPeerWithoutHeader_peerAppInstanceIdNull() =
+        runTest {
+            val pasteClient = createMockPasteClient()
+            val response = createMockResponse(200, SyncApi.VERSION.toString())
+            coEvery { pasteClient.get(any(), any(), any()) } returns response
+
+            val helper = createTelnetHelper(pasteClient)
+            val result = helper.telnet("192.168.1.100", 13129)
+
+            assertNotNull(result)
+            assertNull(result.peerAppInstanceId)
+        }
+
+    @Test
+    fun switchHost_identityMismatch_rejectsHost() =
+        runBlocking {
+            val pasteClient = createMockPasteClient()
+            // Reachable, but advertises a different identity (a ghost on a historical IP).
+            val response = createMockResponse(200, SyncApi.VERSION.toString(), appInstanceId = "ghost-999")
+            coEvery { pasteClient.get(any(), any(), any()) } returns response
+
+            val helper = createTelnetHelper(pasteClient)
+            val hostInfoList = listOf(HostInfo(24, "192.168.1.100"))
+
+            val result =
+                helper.switchHost(hostInfoList, 13129, expectedAppInstanceId = "real-1", timeout = 2000L)
+
+            assertNull(result)
+        }
+
+    @Test
+    fun switchHost_identityMatch_acceptsHost() =
+        runBlocking {
+            val pasteClient = createMockPasteClient()
+            val response = createMockResponse(200, SyncApi.VERSION.toString(), appInstanceId = "real-1")
+            coEvery { pasteClient.get(any(), any(), any()) } returns response
+
+            val helper = createTelnetHelper(pasteClient)
+            val hostInfoList = listOf(HostInfo(24, "192.168.1.100"))
+
+            val result =
+                helper.switchHost(hostInfoList, 13129, expectedAppInstanceId = "real-1", timeout = 5000L)
+
+            assertNotNull(result)
+            assertEquals("192.168.1.100", result.first.hostAddress)
+            assertEquals("real-1", result.second.peerAppInstanceId)
+        }
+
+    @Test
+    fun switchHost_oldPeerUnknownIdentity_admittedAsFallback() =
+        runBlocking {
+            val pasteClient = createMockPasteClient()
+            // Old peer: reachable, no identity header. Must still be admitted (heartbeat vets it).
+            val response = createMockResponse(200, SyncApi.VERSION.toString())
+            coEvery { pasteClient.get(any(), any(), any()) } returns response
+
+            val helper = createTelnetHelper(pasteClient)
+            val hostInfoList = listOf(HostInfo(24, "192.168.1.100"))
+
+            val result =
+                helper.switchHost(hostInfoList, 13129, expectedAppInstanceId = "real-1", timeout = 5000L)
+
+            assertNotNull(result)
+            assertNull(result.second.peerAppInstanceId)
         }
 }

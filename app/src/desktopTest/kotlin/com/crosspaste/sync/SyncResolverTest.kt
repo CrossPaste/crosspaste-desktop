@@ -12,6 +12,7 @@ import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
+import com.crosspaste.net.TelnetResult
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.ConnectionRefused
 import com.crosspaste.net.clientapi.DecryptFail
@@ -123,8 +124,8 @@ class SyncResolverTest {
             val hostInfo = HostInfo(24, "192.168.1.100")
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
-                Pair(hostInfo, VersionRelation.EQUAL_TO)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns
+                Pair(hostInfo, TelnetResult(VersionRelation.EQUAL_TO, null))
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.EQUAL_TO)
@@ -141,6 +142,53 @@ class SyncResolverTest {
         }
 
     @Test
+    fun resolveDisconnected_fastProbeIdentityMismatch_fallsThroughToCorrectHost() =
+        runTest {
+            // #4499 Phase A: a ghost squats on our last address (.108) advertising a
+            // different identity. The fast probe must reject it and fall through to the
+            // full-list probe, which finds the real peer that moved to .109.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.DISCONNECTED,
+                    connectHostAddress = "192.168.1.108",
+                    hostInfoList =
+                        listOf(
+                            HostInfo(24, "192.168.1.108"),
+                            HostInfo(24, "192.168.1.109"),
+                        ),
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            // Fast probe of .108 is reachable but returns a foreign identity.
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.EQUAL_TO, "ghost-app-id")
+            // Full-list probe surfaces the real peer (identity-matched) at .109.
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns
+                Pair(
+                    HostInfo(24, "192.168.1.109"),
+                    TelnetResult(VersionRelation.EQUAL_TO, syncRuntimeInfo.appInstanceId),
+                )
+            coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            val capturedInfos = mutableListOf<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfos)) } returns "test-app-1"
+
+            val callback = createTestCallback()
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
+
+            // Never connected to the ghost .108; converged on the real .109.
+            assertEquals(SyncState.CONNECTING, capturedInfos[0].connectState)
+            assertEquals("192.168.1.109", capturedInfos[0].connectHostAddress)
+            assertEquals(SyncState.CONNECTED, capturedInfos[1].connectState)
+            assertEquals("192.168.1.109", capturedInfos[1].connectHostAddress)
+            coVerify { deps.telnetHelper.switchHost(any(), any(), any(), any()) }
+        }
+
+    @Test
     fun resolveDisconnected_switchHostReturnsLowerThan_setsIncompatible() =
         runTest {
             val deps = TestDeps()
@@ -149,8 +197,8 @@ class SyncResolverTest {
             val hostInfo = HostInfo(24, "192.168.1.100")
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
-                Pair(hostInfo, VersionRelation.LOWER_THAN)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns
+                Pair(hostInfo, TelnetResult(VersionRelation.LOWER_THAN, null))
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -170,8 +218,8 @@ class SyncResolverTest {
             val hostInfo = HostInfo(24, "192.168.1.100")
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
-                Pair(hostInfo, VersionRelation.HIGHER_THAN)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns
+                Pair(hostInfo, TelnetResult(VersionRelation.HIGHER_THAN, null))
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -193,7 +241,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
 
             val callback = createTestCallback()
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
@@ -211,7 +259,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.INCOMPATIBLE)
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -230,14 +278,148 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(hostInfoList = emptyList())
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
 
             val callback = createTestCallback()
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
 
-            coVerify { deps.telnetHelper.switchHost(emptyList(), any(), any()) }
+            coVerify { deps.telnetHelper.switchHost(emptyList(), any(), any(), any()) }
             // Already DISCONNECTED with no host → no redundant DB write.
             coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    // ========== A2. Phase E: recency-first probing + active switch ==========
+
+    @Test
+    fun discoverReachableHost_fastProbesFreshestAddressFirst() =
+        runTest {
+            // Two known addresses; .109 was advertised more recently than .108.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.DISCONNECTED,
+                    hostInfoList =
+                        listOf(
+                            HostInfo(24, "192.168.1.108", lastSeen = 1L),
+                            HostInfo(24, "192.168.1.109", lastSeen = 100L),
+                        ),
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.EQUAL_TO, syncRuntimeInfo.appInstanceId)
+            coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            val capturedInfos = mutableListOf<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfos)) } returns "test-app-1"
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            // Fresh .109 is the fast-probe target and the address we connect on.
+            coVerify { deps.telnetHelper.telnet("192.168.1.109", any(), any()) }
+            assertEquals(SyncState.CONNECTING, capturedInfos[0].connectState)
+            assertEquals("192.168.1.109", capturedInfos[0].connectHostAddress)
+        }
+
+    @Test
+    fun verifyConnection_currentAddressDead_activeSwitchesWithoutDisconnect() =
+        runTest {
+            // CONNECTED on .108; heartbeat there fails, but the peer is reachable at the
+            // freshly-advertised .109. Must switch CONNECTED -> CONNECTING -> CONNECTED
+            // with NO intervening DISCONNECTED write (#4499 weakness ①).
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.CONNECTED,
+                    connectHostAddress = "192.168.1.108",
+                    connectNetworkPrefixLength = 24,
+                    hostInfoList =
+                        listOf(
+                            HostInfo(24, "192.168.1.108", lastSeen = 1L),
+                            HostInfo(24, "192.168.1.109", lastSeen = 100L),
+                        ),
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.EQUAL_TO, syncRuntimeInfo.appInstanceId)
+            // First heartbeat (verify .108) fails; second (authenticate .109) succeeds.
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returnsMany
+                listOf(ConnectionRefused, SuccessResult(VersionRelation.EQUAL_TO))
+
+            val capturedInfos = mutableListOf<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfos)) } returns "test-app-1"
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertTrue(capturedInfos.none { it.connectState == SyncState.DISCONNECTED })
+            assertEquals(SyncState.CONNECTING, capturedInfos[0].connectState)
+            assertEquals("192.168.1.109", capturedInfos[0].connectHostAddress)
+            assertEquals(SyncState.CONNECTED, capturedInfos.last().connectState)
+            assertEquals("192.168.1.109", capturedInfos.last().connectHostAddress)
+        }
+
+    @Test
+    fun verifyConnection_connectAddressNotInHostInfoList_butAlive_staysConnected() =
+        runTest {
+            // Intentional Phase E boundary: connectHostAddress may have been LRU-evicted
+            // from hostInfoList (the peer broadcast newer addresses) yet still be alive.
+            // verifyConnection must heartbeat it DIRECTLY and keep the connection — it must
+            // NOT require connectHostAddress to be a member of hostInfoList. This guards
+            // against a future refactor that only ever probes hostInfoList.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.CONNECTED,
+                    connectHostAddress = "192.168.1.5",
+                    connectNetworkPrefixLength = 24,
+                    // .5 is deliberately absent from the host list.
+                    hostInfoList =
+                        (1..HostInfo.MAX_RECENT_HOST_INFO).map { i ->
+                            HostInfo(24, "192.168.9.$i", lastSeen = i.toLong())
+                        },
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            // Heartbeat on the (off-list) connect address succeeded → still CONNECTED,
+            // no state write at all.
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun verifyConnection_currentAddressDeadAndNoReachableHost_setsDisconnected() =
+        runTest {
+            // CONNECTED, heartbeat fails, and re-discovery finds nothing reachable ->
+            // the active-switch path falls through to DISCONNECTED.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns ConnectionRefused
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
+
+            val capturedInfo = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
         }
 
     // ========== B. resolveConnecting ==========
@@ -324,7 +506,8 @@ class SyncResolverTest {
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             // No token cached -> telnet
-            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns VersionRelation.EQUAL_TO
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.EQUAL_TO, null)
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -347,7 +530,7 @@ class SyncResolverTest {
                 )
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -616,7 +799,8 @@ class SyncResolverTest {
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.syncClientApi.trust(any(), any(), any(), any()) } returns
                 FailureResult(PasteException(StandardErrorCode.TOKEN_INVALID.toErrorCode(), "invalid"))
-            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns VersionRelation.EQUAL_TO
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.EQUAL_TO, null)
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -635,7 +819,8 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
-            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns VersionRelation.EQUAL_TO
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.EQUAL_TO, null)
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -654,7 +839,8 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
-            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns VersionRelation.LOWER_THAN
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.LOWER_THAN, null)
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -696,7 +882,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -802,7 +988,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -810,7 +996,7 @@ class SyncResolverTest {
             val callback = createTestCallback()
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
 
-            coVerify { deps.telnetHelper.switchHost(any(), any(), any()) }
+            coVerify { deps.telnetHelper.switchHost(any(), any(), any(), any()) }
         }
 
     @Test
@@ -821,7 +1007,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.INCOMPATIBLE)
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
 
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
@@ -829,7 +1015,7 @@ class SyncResolverTest {
             val callback = createTestCallback()
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
 
-            coVerify { deps.telnetHelper.switchHost(any(), any(), any()) }
+            coVerify { deps.telnetHelper.switchHost(any(), any(), any(), any()) }
         }
 
     @Test
@@ -850,7 +1036,7 @@ class SyncResolverTest {
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, callback))
 
             // resolveConnecting path is taken, which calls telnet (not switchHost)
-            coVerify(exactly = 0) { deps.telnetHelper.switchHost(any(), any(), any()) }
+            coVerify(exactly = 0) { deps.telnetHelper.switchHost(any(), any(), any(), any()) }
         }
 
     @Test
@@ -861,14 +1047,14 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(any()) } returns "test-app-1"
 
             val callback = createTestCallback()
             resolver.emitEvent(SyncEvent.ForceResolve(syncRuntimeInfo, callback))
 
             verify { deps.pasteBonjourService.refreshTarget(any(), any()) }
-            coVerify { deps.telnetHelper.switchHost(any(), any(), any()) }
+            coVerify { deps.telnetHelper.switchHost(any(), any(), any(), any()) }
         }
 
     @Test
@@ -891,7 +1077,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo()
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } throws RuntimeException("test error")
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } throws RuntimeException("test error")
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(any()) } returns "test-app-1"
 
             var onCompleteCalled = false
@@ -919,7 +1105,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } throws
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } throws
                 CancellationException("scope cancelled")
 
             assertFailsWith<CancellationException> {
@@ -937,7 +1123,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } throws
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } throws
                 RuntimeException("boom")
 
             // Should NOT throw — the runtime exception is swallowed.
@@ -953,8 +1139,8 @@ class SyncResolverTest {
             val hostInfo = HostInfo(24, "192.168.1.100")
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.telnetHelper.switchHost(any(), any(), any()) } returns
-                Pair(hostInfo, VersionRelation.EQUAL_TO)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns
+                Pair(hostInfo, TelnetResult(VersionRelation.EQUAL_TO, null))
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
                 SuccessResult(VersionRelation.EQUAL_TO)
