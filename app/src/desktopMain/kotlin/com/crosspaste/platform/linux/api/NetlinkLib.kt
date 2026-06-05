@@ -7,12 +7,14 @@ import com.sun.jna.Structure
 /**
  * Minimal JNA binding to libc for RTNETLINK (`NETLINK_ROUTE`) socket monitoring.
  *
- * Drives the event-driven [com.crosspaste.net.LinuxNetworkStateMonitor]: a blocking
- * `recv` on a netlink socket bound to the link/address multicast groups wakes up
- * whenever the kernel reports an interface or address change.
+ * Drives the event-driven [com.crosspaste.net.LinuxNetworkStateMonitor]: a netlink
+ * socket bound to the link/address multicast groups becomes readable whenever the
+ * kernel reports an interface or address change. The monitor `poll`s the socket and
+ * `recv`s only when it is readable.
  *
  * Sizes assume a 64-bit (LP64) build: `size_t`/`ssize_t` are 8 bytes and map to
- * Kotlin [Long]; `socklen_t` is 4 bytes and maps to [Int].
+ * Kotlin [Long]; `socklen_t` is 4 bytes and maps to [Int]; `nfds_t` is 8 bytes and
+ * maps to [Long].
  */
 interface NetlinkLib : Library {
 
@@ -35,7 +37,28 @@ interface NetlinkLib : Library {
         flags: Int,
     ): Long
 
+    /**
+     * Waits up to [timeout] ms for events on [fds] (here a single socket). Returns the
+     * number of ready descriptors, 0 on timeout, or < 0 on error. The bounded timeout
+     * lets the monitor notice [com.crosspaste.net.LinuxNetworkStateMonitor.stop].
+     */
+    fun poll(
+        fds: PollFd,
+        nfds: Long,
+        timeout: Int,
+    ): Int
+
     fun close(fd: Int): Int
+
+    /** `struct pollfd` (8 bytes). */
+    @Structure.FieldOrder("fd", "events", "revents")
+    class PollFd : Structure() {
+        @JvmField var fd: Int = 0
+
+        @JvmField var events: Short = 0
+
+        @JvmField var revents: Short = 0
+    }
 
     /** `struct sockaddr_nl` (12 bytes). */
     @Structure.FieldOrder("nlFamily", "nlPad", "nlPid", "nlGroups")
@@ -60,5 +83,8 @@ interface NetlinkLib : Library {
         const val RTMGRP_LINK = 0x1
         const val RTMGRP_IPV4_IFADDR = 0x10
         const val RTMGRP_IPV6_IFADDR = 0x100
+
+        // poll() events: data available to read.
+        const val POLLIN: Short = 0x0001
     }
 }

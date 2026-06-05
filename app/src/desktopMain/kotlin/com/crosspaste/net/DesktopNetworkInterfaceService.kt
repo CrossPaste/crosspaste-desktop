@@ -59,10 +59,18 @@ open class DesktopNetworkInterfaceService(
 
     /**
      * Reads a fresh snapshot of the live interfaces and resolves them against the
-     * configured selection. Auto-selects a preferred interface when discovery is on
-     * and either nothing is configured or none of the configured interfaces are
-     * currently present — this is what unsticks the cold-start empty state once the
-     * network comes up.
+     * configured selection.
+     *
+     * The persisted [DesktopAppConfig.useNetworkInterfaces] holds the user's
+     * *preference*; the value this returns is the *active* selection actually bound
+     * by discovery. They diverge only while the preferred interface is offline:
+     *
+     *  - Fresh install (discovery on, nothing chosen yet): auto-select a preferred
+     *    interface and persist it as the bootstrap default.
+     *  - Preferred interface(s) all offline but the machine is online via another
+     *    interface: bind to it in-memory so discovery keeps working, but do NOT
+     *    persist — the preference must survive the outage so we heal back to it once
+     *    it returns (which a later network event re-resolves).
      */
     private fun resolveNetworkInterfaceInfos(useNetworkInterfacesJson: String): List<NetworkInterfaceInfo> {
         // Drop cached provider values so auto-select reflects the current network.
@@ -73,7 +81,7 @@ open class DesktopNetworkInterfaceService(
             jsonUtils.JSON.decodeFromString<List<String>>(useNetworkInterfacesJson)
 
         if (config.enableDiscovery && useNetworkInterfaces.isEmpty()) {
-            autoSelectAndSavePreferredInterface()?.let { return it }
+            autoSelectPreferredInterface(persist = true)?.let { return it }
         }
 
         val allNetworkInterfaceInfos = getAllNetworkInterfaceInfo()
@@ -81,18 +89,19 @@ open class DesktopNetworkInterfaceService(
         val interfaceInfos = allNetworkInterfaceInfos.filter { it.name in useNetworkInterfaces }
 
         if (interfaceInfos.isEmpty() && allNetworkInterfaceInfos.isNotEmpty()) {
-            autoSelectAndSavePreferredInterface()?.let { return it }
+            autoSelectPreferredInterface(persist = false)?.let { return it }
         }
 
         return interfaceInfos
     }
 
-    private fun autoSelectAndSavePreferredInterface(): List<NetworkInterfaceInfo>? =
+    private fun autoSelectPreferredInterface(persist: Boolean): List<NetworkInterfaceInfo>? =
         getPreferredNetworkInterface()?.let {
-            val useNetworkInterfacesJson =
-                jsonUtils.JSON.encodeToString(listOf(it.name))
-            configManager.updateConfig("useNetworkInterfaces", useNetworkInterfacesJson)
-
+            if (persist) {
+                val useNetworkInterfacesJson =
+                    jsonUtils.JSON.encodeToString(listOf(it.name))
+                configManager.updateConfig("useNetworkInterfaces", useNetworkInterfacesJson)
+            }
             listOf(it)
         }
 

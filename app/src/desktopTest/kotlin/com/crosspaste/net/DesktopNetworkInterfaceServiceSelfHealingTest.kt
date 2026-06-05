@@ -5,6 +5,7 @@ import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +36,7 @@ private object LiveSnapshot {
  * a real OS network change (delivered via [NetworkStateMonitor]) re-reads the
  * live interface snapshot and re-emits, even when the config never changes.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class DesktopNetworkInterfaceServiceSelfHealingTest {
 
     @Suppress("unused")
@@ -42,6 +44,7 @@ class DesktopNetworkInterfaceServiceSelfHealingTest {
 
     private val en0 = NetworkInterfaceInfo("en0", 24, "192.168.1.5")
     private val en0NewIp = NetworkInterfaceInfo("en0", 24, "192.168.1.9")
+    private val en5 = NetworkInterfaceInfo("en5", 24, "10.0.0.5")
 
     /** Pushes network-change signals on demand, like the native monitor would. */
     private class FakeNetworkStateMonitor : NetworkStateMonitor {
@@ -167,5 +170,44 @@ class DesktopNetworkInterfaceServiceSelfHealingTest {
             job.cancel()
 
             assertEquals(listOf(listOf(en0)), emissions)
+        }
+
+    @Test
+    fun `runtime loss of the chosen interface falls back in memory without clobbering the preference`() =
+        runTest {
+            val configManager = newConfigManager()
+            // The user explicitly picked en5 while several interfaces were available.
+            configManager.updateConfig(
+                "useNetworkInterfaces",
+                jsonUtils.JSON.encodeToString(listOf("en5")),
+            )
+
+            setLiveSnapshot(listOf(en5))
+            val monitor = FakeNetworkStateMonitor()
+            val job = Job()
+            val service = TestableService(configManager, monitor, CoroutineScope(coroutineContext + job))
+            advanceUntilIdle()
+            assertEquals(listOf(en5), service.networkInterfaces.value)
+
+            // en5 goes offline, only en0 remains: bind to en0 so discovery survives...
+            setLiveSnapshot(listOf(en0))
+            monitor.fireNetworkChange()
+            advanceUntilIdle()
+            assertEquals(listOf(en0), service.networkInterfaces.value)
+            // ...but the persisted preference must be left untouched.
+            assertEquals(
+                listOf("en5"),
+                jsonUtils.JSON.decodeFromString<List<String>>(
+                    configManager.getCurrentConfig().useNetworkInterfaces,
+                ),
+            )
+
+            // en5 returns: heal back to the user's actual choice.
+            setLiveSnapshot(listOf(en5))
+            monitor.fireNetworkChange()
+            advanceUntilIdle()
+            assertEquals(listOf(en5), service.networkInterfaces.value)
+
+            job.cancel()
         }
 }

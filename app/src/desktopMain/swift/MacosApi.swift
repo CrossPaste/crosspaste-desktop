@@ -865,23 +865,30 @@ private let networkMonitorQueue = DispatchQueue(label: "com.crosspaste.networkSt
 
 @_cdecl("startNetworkStateMonitor")
 public func startNetworkStateMonitor(callback: @escaping @convention(c) () -> Void) {
-    // Replace any existing monitor so repeated start calls don't leak.
-    networkPathMonitor?.cancel()
-    networkStateCallback = callback
+    // All access to the two globals is funnelled through networkMonitorQueue — the
+    // same queue NWPathMonitor delivers updates on — so the callback read in the
+    // update handler never races the writes from start/stop (called on JNA threads).
+    networkMonitorQueue.async {
+        // Replace any existing monitor so repeated start calls don't leak.
+        networkPathMonitor?.cancel()
+        networkStateCallback = callback
 
-    let monitor = NWPathMonitor()
-    monitor.pathUpdateHandler = { _ in
-        // NWPathMonitor fires an initial update on start (free cold-start signal)
-        // and again on every interface up/down, IP change, or reachability change.
-        networkStateCallback?()
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { _ in
+            // NWPathMonitor fires an initial update on start (free cold-start signal)
+            // and again on every interface up/down, IP change, or reachability change.
+            networkStateCallback?()
+        }
+        monitor.start(queue: networkMonitorQueue)
+        networkPathMonitor = monitor
     }
-    monitor.start(queue: networkMonitorQueue)
-    networkPathMonitor = monitor
 }
 
 @_cdecl("stopNetworkStateMonitor")
 public func stopNetworkStateMonitor() {
-    networkPathMonitor?.cancel()
-    networkPathMonitor = nil
-    networkStateCallback = nil
+    networkMonitorQueue.async {
+        networkPathMonitor?.cancel()
+        networkPathMonitor = nil
+        networkStateCallback = nil
+    }
 }
