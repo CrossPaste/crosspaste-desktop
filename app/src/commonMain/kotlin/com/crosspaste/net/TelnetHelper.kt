@@ -6,6 +6,7 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.statement.*
+import io.ktor.util.collections.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.cancelChildren
@@ -59,6 +60,13 @@ class TelnetHelper(
     }
 
     private val logger = KotlinLogging.logger {}
+
+    // Last address set we successfully advertised to each peer (keyed by the probed host
+    // address). We push our address once per peer and then stay quiet until it actually
+    // changes — re-advertising on every probe would re-run the server-side addDevice (and
+    // its trackSignificantAction) far more often than mDNS does. A real IP change recomputes
+    // a different list here, so the next probe naturally re-advertises (#4518 review).
+    private val lastAdvertised: MutableMap<String, List<HostInfo>> = ConcurrentMap()
 
     suspend fun switchHost(
         hostInfoList: List<HostInfo>,
@@ -127,10 +135,17 @@ class TelnetHelper(
             val hostAndPort = HostAndPort(hostAddress, port)
             // Piggyback our current address onto the probe so the peer learns where to
             // reach us back without waiting for the next mDNS round (#4509 phase 3). We
-            // advertise only the local interface(s) on the peer's subnet — that is the
-            // address it can actually route to. Best-effort: a failure here must never
-            // turn a reachable host into an "unreachable" result.
-            val advertiseHeader = buildAdvertiseHeader(hostAddress)
+            // advertise only the local interface(s) on the peer's subnet — the address it
+            // can actually route to — and only when it differs from what we last delivered
+            // to this peer, so a steady network tells each peer exactly once. Best-effort:
+            // a failure here must never turn a reachable host into an "unreachable" result.
+            val advertiseHostInfo = currentAdvertiseHostInfo(hostAddress)
+            val advertiseHeader =
+                if (advertiseHostInfo.isNotEmpty() && lastAdvertised[hostAddress] != advertiseHostInfo) {
+                    buildAdvertiseHeader(advertiseHostInfo)
+                } else {
+                    null
+                }
             val httpResponse =
                 pasteClient.get(
                     timeout = timeout,
@@ -144,6 +159,11 @@ class TelnetHelper(
             logger.info { "httpResponse.status = ${httpResponse.status.value} $hostAddress:$port" }
 
             if (httpResponse.status.value == 200) {
+                // Mark as delivered only on a 200 we actually sent the header on, so a
+                // failed probe re-advertises next time instead of going silent.
+                if (advertiseHeader != null) {
+                    lastAdvertised[hostAddress] = advertiseHostInfo
+                }
                 val result = httpResponse.bodyAsText()
                 result.toIntOrNull()?.let { version ->
                     // Identity rides back on the same response (header), so version +
@@ -166,33 +186,34 @@ class TelnetHelper(
         }.getOrNull()
 
     /**
-     * Build the value for [SyncInfoHeaderCodec.HEADER] advertising the local address the
-     * peer at [peerAddress] should use to reach us: our interface(s) on the peer's subnet
-     * (#4509 phase 3). Reuses [HostInfo.filter] — the same subnet match the trust flow uses
-     * to pick a reachable address. Returns null when no local interface shares the peer's
-     * subnet (cross-subnet / offline), in which case we advertise nothing and leave address
-     * recovery to mDNS / discovery self-healing. Best-effort: swallows non-cancellation
-     * failures so building the hint can never fail the probe itself.
+     * The local address(es) the peer at [peerAddress] should use to reach us: our
+     * interface(s) on the peer's subnet (#4509 phase 3). Reuses [HostInfo.filter] — the same
+     * subnet match the trust flow uses to pick a reachable address. Empty when no local
+     * interface shares the peer's subnet (cross-subnet / offline). Cheap and non-blocking,
+     * so it can drive the "did our address change?" check on every probe.
      */
-    private suspend fun buildAdvertiseHeader(peerAddress: String): String? =
+    private fun currentAdvertiseHostInfo(peerAddress: String): List<HostInfo> =
+        networkInterfaceService
+            .getCurrentUseNetworkInterfaces()
+            .map { it.toHostInfo() }
+            .filter { it.filter(peerAddress) }
+
+    /**
+     * Encode [hostInfoList] into the value for [SyncInfoHeaderCodec.HEADER]. Best-effort:
+     * swallows non-cancellation failures so building the hint can never fail the probe, and
+     * is time-bounded because [SyncInfoFactory.createSyncInfo] waits on our own server port
+     * ([ADVERTISE_BUILD_TIMEOUT]) — a not-yet-ready server just means "no hint this round".
+     */
+    private suspend fun buildAdvertiseHeader(hostInfoList: List<HostInfo>): String? =
         runCatching {
-            val hostInfoList =
-                networkInterfaceService
-                    .getCurrentUseNetworkInterfaces()
-                    .map { it.toHostInfo() }
-                    .filter { it.filter(peerAddress) }
-            if (hostInfoList.isEmpty()) {
-                null
-            } else {
-                // withTimeoutOrNull returns null on its own timeout (no throw) but still
-                // propagates a real parent cancellation — exactly the best-effort semantics
-                // we want for the hint.
-                withTimeoutOrNull(ADVERTISE_BUILD_TIMEOUT) {
-                    SyncInfoHeaderCodec.encode(syncInfoFactory.createSyncInfo(hostInfoList))
-                }
+            // withTimeoutOrNull returns null on its own timeout (no throw) but still
+            // propagates a real parent cancellation — exactly the best-effort semantics
+            // we want for the hint.
+            withTimeoutOrNull(ADVERTISE_BUILD_TIMEOUT) {
+                SyncInfoHeaderCodec.encode(syncInfoFactory.createSyncInfo(hostInfoList))
             }
         }.onFailure {
             if (it is CancellationException) throw it
-            logger.debug(it) { "failed to build advertise header for $peerAddress" }
+            logger.debug(it) { "failed to build advertise header for $hostInfoList" }
         }.getOrNull()
 }
