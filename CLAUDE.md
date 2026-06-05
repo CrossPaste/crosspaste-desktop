@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Interaction Language
+
+Default to communicating with developers in Chinese (中文), unless explicitly asked to use another language. Note that this applies only to conversational interaction; code, commit messages, and GitHub issue/PR content still follow their respective conventions documented below (which require English).
+
 ## Build Commands
 
 CrossPaste is a Kotlin Multiplatform application using Gradle. Key commands:
