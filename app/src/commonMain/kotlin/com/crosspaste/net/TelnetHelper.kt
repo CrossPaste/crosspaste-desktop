@@ -41,13 +41,21 @@ data class TelnetResult(
 }
 
 class TelnetHelper(
+    private val networkInterfaceService: NetworkInterfaceService,
     private val pasteClient: PasteClient,
     private val syncApi: SyncApi,
+    private val syncInfoFactory: SyncInfoFactory,
 ) {
 
     companion object {
         const val FAST_TIMEOUT = 500L
         const val SLOW_TIMEOUT = 2000L
+
+        // Building the advertise hint must never stall the probe. createSyncInfo waits
+        // for our own server port (portFlow.first { it > 0 }), which is instant once the
+        // server is up but blocks during the cold-start window before it is. Cap it so a
+        // not-yet-ready local server just means "no hint this round", not a delayed probe.
+        private val ADVERTISE_BUILD_TIMEOUT = 100.milliseconds
     }
 
     private val logger = KotlinLogging.logger {}
@@ -117,8 +125,19 @@ class TelnetHelper(
     ): TelnetResult? =
         runCatching {
             val hostAndPort = HostAndPort(hostAddress, port)
+            // Piggyback our current address onto the probe so the peer learns where to
+            // reach us back without waiting for the next mDNS round (#4509 phase 3). We
+            // advertise only the local interface(s) on the peer's subnet — that is the
+            // address it can actually route to. Best-effort: a failure here must never
+            // turn a reachable host into an "unreachable" result.
+            val advertiseHeader = buildAdvertiseHeader(hostAddress)
             val httpResponse =
-                pasteClient.get(timeout = timeout) {
+                pasteClient.get(
+                    timeout = timeout,
+                    headersBuilder = {
+                        advertiseHeader?.let { append(SyncInfoHeaderCodec.HEADER, it) }
+                    },
+                ) {
                     buildUrl(hostAndPort)
                     buildUrl("sync", "telnet")
                 }
@@ -144,5 +163,36 @@ class TelnetHelper(
             // #4503 fix). Other failures genuinely mean the host is unreachable.
             if (it is CancellationException) throw it
             logger.debug(it) { "telnet $hostAddress fail" }
+        }.getOrNull()
+
+    /**
+     * Build the value for [SyncInfoHeaderCodec.HEADER] advertising the local address the
+     * peer at [peerAddress] should use to reach us: our interface(s) on the peer's subnet
+     * (#4509 phase 3). Reuses [HostInfo.filter] — the same subnet match the trust flow uses
+     * to pick a reachable address. Returns null when no local interface shares the peer's
+     * subnet (cross-subnet / offline), in which case we advertise nothing and leave address
+     * recovery to mDNS / discovery self-healing. Best-effort: swallows non-cancellation
+     * failures so building the hint can never fail the probe itself.
+     */
+    private suspend fun buildAdvertiseHeader(peerAddress: String): String? =
+        runCatching {
+            val hostInfoList =
+                networkInterfaceService
+                    .getCurrentUseNetworkInterfaces()
+                    .map { it.toHostInfo() }
+                    .filter { it.filter(peerAddress) }
+            if (hostInfoList.isEmpty()) {
+                null
+            } else {
+                // withTimeoutOrNull returns null on its own timeout (no throw) but still
+                // propagates a real parent cancellation — exactly the best-effort semantics
+                // we want for the hint.
+                withTimeoutOrNull(ADVERTISE_BUILD_TIMEOUT) {
+                    SyncInfoHeaderCodec.encode(syncInfoFactory.createSyncInfo(hostInfoList))
+                }
+            }
+        }.onFailure {
+            if (it is CancellationException) throw it
+            logger.debug(it) { "failed to build advertise header for $peerAddress" }
         }.getOrNull()
 }

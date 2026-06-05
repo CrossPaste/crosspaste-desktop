@@ -15,9 +15,11 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
+import com.crosspaste.net.SyncInfoHeaderCodec
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PendingKeyExchange
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils
@@ -25,20 +27,18 @@ import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HEADER_APP_INSTANCE_ID
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
-import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 fun Routing.syncRouting(
     appInfo: AppInfo,
     appTokenApi: AppTokenApi,
     configManager: CommonConfigManager,
     exceptionHandler: ExceptionHandler,
+    nearbyDeviceManager: NearbyDeviceManager,
     networkInterfaceService: NetworkInterfaceService,
     pendingKeyExchangeStore: PendingKeyExchangeStore,
     secureKeyPairSerializer: SecureKeyPairSerializer,
@@ -49,16 +49,14 @@ fun Routing.syncRouting(
     trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
 ) {
     val logger = KotlinLogging.logger {}
-    val json = getJsonUtils().JSON
 
-    @OptIn(ExperimentalEncodingApi::class)
     fun ApplicationCall.clientSyncInfo(): SyncInfo? =
-        request.headers["crosspaste-sync-info"]?.let { encoded ->
-            runCatching {
-                val decoded = Base64.decode(encoded).decodeToString()
-                json.decodeFromString<SyncInfo>(decoded)
-            }.onFailure { e -> logger.warn(e) { "Failed to parse crosspaste-sync-info header" } }
-                .getOrNull()
+        request.headers[SyncInfoHeaderCodec.HEADER]?.let { encoded ->
+            SyncInfoHeaderCodec.decode(encoded)
+                ?: run {
+                    logger.warn { "Failed to parse ${SyncInfoHeaderCodec.HEADER} header" }
+                    null
+                }
         }
 
     suspend fun validateHeartbeat(
@@ -162,6 +160,15 @@ fun Routing.syncRouting(
     }
 
     get("/sync/telnet") {
+        // Address push (#4509 phase 3): the probe may carry the caller's subnet-matched
+        // SyncInfo so we learn its current address without waiting for the next mDNS
+        // round. This is an UNAUTHENTICATED routing hint — the same trust level as an
+        // mDNS TXT record — so it flows through the identical addDevice path: for an
+        // unknown peer it only populates the in-memory nearby list (never the DB), and
+        // for an already-known peer it merges into its hostInfoList. Trust is still
+        // granted solely by the ECDH heartbeat.
+        call.clientSyncInfo()?.let { nearbyDeviceManager.addDevice(it) }
+
         // Advertise our identity alongside the version so discovery can vet the peer
         // atomically. Unauthenticated, selection-only (trust is via ECDH); body is
         // unchanged so older clients ignore the extra header. See #4499 / #4500.

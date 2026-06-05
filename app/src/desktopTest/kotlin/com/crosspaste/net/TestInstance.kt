@@ -111,7 +111,7 @@ class TestInstance(
     val syncClientApi =
         SyncClientApi(pasteClient, exceptionHandler, secureKeyPairSerializer, secureStore, syncApi)
 
-    val telnetHelper = TelnetHelper(pasteClient, syncApi)
+    val telnetHelper = TelnetHelper(networkInterfaceService, pasteClient, syncApi, syncInfoFactory)
 
     suspend fun start() {
         pasteServer.start()
