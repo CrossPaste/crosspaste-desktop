@@ -304,7 +304,13 @@ class SyncResolver(
                 }
 
                 else -> {
-                    updateConnectState(SyncState.DISCONNECTED)
+                    // Persist DISCONNECTED at the address we actually tried, not the
+                    // stale snapshot's connectHostAddress. Reverting to the old address
+                    // here makes connectHostAddress oscillate (CONNECTING@new ->
+                    // DISCONNECTED@stale) within a single resolve pass, which the DB flow
+                    // reads as an address change and re-emits Resolve, bypassing backoff
+                    // (#4499 / #4500 tight loop).
+                    updateConnectState(SyncState.DISCONNECTED, host, networkPrefixLength)
                 }
             }
         } else {
@@ -327,7 +333,7 @@ class SyncResolver(
             ratingPromptManager.trackSignificantAction()
         } else {
             // Verify host is still reachable before showing UNVERIFIED to user
-            telnetHelper.telnet(host, port)?.let { versionRelation ->
+            telnetHelper.telnet(host, port)?.versionRelation?.let { versionRelation ->
                 if (versionRelation == VersionRelation.EQUAL_TO) {
                     logger.info { "$appInstanceId to unverified $host $port" }
                     updateConnectState(SyncState.UNVERIFIED, host, networkPrefixLength)
@@ -352,7 +358,7 @@ class SyncResolver(
                 return
             }
             // Verify host still reachable; only update DB if state changes
-            telnetHelper.telnet(host, port)?.let { versionRelation ->
+            telnetHelper.telnet(host, port)?.versionRelation?.let { versionRelation ->
                 callback.updateVersionRelation(versionRelation)
                 if (versionRelation != VersionRelation.EQUAL_TO) {
                     updateConnectState(SyncState.INCOMPATIBLE, host, connectNetworkPrefixLength)
@@ -373,6 +379,11 @@ class SyncResolver(
             return
         }
         connectHostAddress?.let { host ->
+            // Heartbeat the current address DIRECTLY — it need not be a member of
+            // hostInfoList. With Phase B's capacity cap, a still-alive connectHostAddress
+            // can be LRU-evicted from hostInfoList once the peer advertises newer ones;
+            // keeping liveness checks bound to the address (not list membership) is what
+            // makes that boundary safe. Do not change this to "only probe hostInfoList".
             val state = heartbeat(host, port, appInstanceId, callback)
             when (state) {
                 SyncState.CONNECTED -> {
@@ -390,10 +401,17 @@ class SyncResolver(
                 }
 
                 else -> {
-                    updateConnectState(SyncState.DISCONNECTED)
+                    // Active switch (#4499 weakness ①): the current address is unreachable.
+                    // Instead of dropping to DISCONNECTED (a visible disconnect, then a
+                    // separate reconnect pass), re-discover among the peer's advertised
+                    // addresses in the same pass. An IP move resolves as
+                    // CONNECTED -> CONNECTING -> CONNECTED with no gap; if nothing is
+                    // reachable, discoverAndConnect persists DISCONNECTED itself.
+                    logger.info { "$appInstanceId heartbeat failed on $host, switching via discovery" }
+                    discoverAndConnect(callback)
                 }
             }
-        } ?: updateConnectState(SyncState.DISCONNECTED)
+        } ?: discoverAndConnect(callback)
     }
 
     private suspend fun SyncRuntimeInfo.forceResolve(callback: ResolveCallback) {
@@ -403,25 +421,41 @@ class SyncResolver(
     }
 
     /**
-     * Fast-then-slow host discovery: try the last known address first
-     * with a short timeout, then fall back to probing all addresses
-     * with a longer timeout.
+     * Recency-first, fast-then-slow host discovery: probe the most-recently-advertised
+     * address first with a short timeout (the currently-connected address wins ties),
+     * then fall back to racing the full recency-ordered list with a longer timeout.
+     *
+     * Ordering by lastSeen means a peer that moved to a new IP is reached on the fresh
+     * address immediately, instead of wasting the fast timeout on a now-dead old one
+     * (#4499 weakness ②). switchHost admits only identity-matching (or identity-unknown)
+     * hosts so a ghost on a historical IP is never selected.
      */
     private suspend fun SyncRuntimeInfo.discoverReachableHost(): Pair<HostInfo, VersionRelation>? {
-        // Fast path: try the previously connected address first
-        connectHostAddress?.let { lastHost ->
-            val lastHostInfo = hostInfoList.firstOrNull { it.hostAddress == lastHost }
-            if (lastHostInfo != null) {
-                logger.info { "$appInstanceId fast probe $lastHost:$port" }
-                telnetHelper.telnet(lastHost, port, TelnetHelper.FAST_TIMEOUT)?.let { version ->
-                    return@discoverReachableHost Pair(lastHostInfo, version)
+        val ordered =
+            hostInfoList.sortedWith(
+                compareByDescending<HostInfo> { it.lastSeen }
+                    .thenByDescending { it.hostAddress == connectHostAddress },
+            )
+
+        // Fast path: probe the freshest address first (skipped when there are none).
+        ordered.firstOrNull()?.let { freshest ->
+            logger.info { "$appInstanceId fast probe ${freshest.hostAddress}:$port (lastSeen=${freshest.lastSeen})" }
+            telnetHelper.telnet(freshest.hostAddress, port, TelnetHelper.FAST_TIMEOUT)?.let { telnetResult ->
+                if (telnetResult.identityAccepted(appInstanceId)) {
+                    return@discoverReachableHost Pair(freshest, telnetResult.versionRelation)
                 }
-                logger.info { "$appInstanceId fast probe failed, falling back to full list" }
+                logger.info {
+                    "$appInstanceId fast probe identity mismatch " +
+                        "(${telnetResult.peerAppInstanceId}), skipping ${freshest.hostAddress}"
+                }
             }
+            logger.info { "$appInstanceId fast probe failed, falling back to full list" }
         }
 
-        // Slow path: try all addresses in parallel with a longer timeout
-        return telnetHelper.switchHost(hostInfoList, port, TelnetHelper.SLOW_TIMEOUT)
+        // Slow path: race the recency-ordered list in parallel with a longer timeout.
+        return telnetHelper
+            .switchHost(ordered, port, appInstanceId, TelnetHelper.SLOW_TIMEOUT)
+            ?.let { (hostInfo, telnetResult) -> Pair(hostInfo, telnetResult.versionRelation) }
     }
 
     // ──────────────────────────────────────────────────────────────

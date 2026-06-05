@@ -22,6 +22,7 @@ import com.crosspaste.sync.PendingKeyExchange
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
+import com.crosspaste.utils.HEADER_APP_INSTANCE_ID
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.getJsonUtils
@@ -161,6 +162,10 @@ fun Routing.syncRouting(
     }
 
     get("/sync/telnet") {
+        // Advertise our identity alongside the version so discovery can vet the peer
+        // atomically. Unauthenticated, selection-only (trust is via ECDH); body is
+        // unchanged so older clients ignore the extra header. See #4499 / #4500.
+        call.response.headers.append(HEADER_APP_INSTANCE_ID, appInfo.appInstanceId)
         successResponse(call, syncApi.VERSION)
     }
 

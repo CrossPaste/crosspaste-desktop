@@ -247,6 +247,115 @@ class GeneralSyncHandlerTest {
             childScope.cancel()
         }
 
+    /**
+     * Regression for #4499 / #4500: within a single failing resolve pass the address
+     * thrashes (CONNECTING@new -> DISCONNECTED@stale). The DISCONNECTED write changes
+     * BOTH state and address. The address-change branch must NOT short-circuit with an
+     * immediate Resolve here — that bypassed SyncPollingManager's backoff and produced
+     * the ~530ms tight loop. Instead the DISCONNECTED handling must run: increment the
+     * fail count (backoff) and emit RefreshSyncInfo, but no Resolve (previous != CONNECTED).
+     */
+    @Test
+    fun handleValueChange_addressThrashOnFailure_appliesBackoffWithoutResolve() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncRuntimeInfo =
+                createConnectingSyncRuntimeInfo(hostAddress = "192.168.1.109")
+
+            val handler = GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emitter.events.clear()
+            val failBefore = handler.syncPollingManager.currentFailCount
+
+            // Failure path reverted the address to a stale snapshot value while also
+            // dropping to DISCONNECTED — the exact write that used to bypass backoff.
+            handler.updateSyncRuntimeInfo(
+                syncRuntimeInfo.copy(
+                    connectState = SyncState.DISCONNECTED,
+                    connectHostAddress = "192.168.1.117",
+                ),
+            )
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            assertTrue(emitter.events.none { it is SyncEvent.Resolve })
+            assertTrue(emitter.events.any { it is SyncEvent.RefreshSyncInfo })
+            assertEquals(failBefore + 1, handler.syncPollingManager.currentFailCount)
+            childScope.cancel()
+        }
+
+    /**
+     * A connect-address change while NOT connected (here: staying CONNECTING) must not
+     * trigger an immediate Resolve — only CONNECTED address changes do.
+     */
+    @Test
+    fun handleValueChange_addressChangeWhileConnecting_doesNotEmitResolve() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncRuntimeInfo =
+                createConnectingSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            val handler = GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emitter.events.clear()
+
+            handler.updateSyncRuntimeInfo(
+                syncRuntimeInfo.copy(connectHostAddress = "192.168.1.109"),
+            )
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            assertTrue(emitter.events.none { it is SyncEvent.Resolve })
+            childScope.cancel()
+        }
+
+    /**
+     * Phase E + #4500 guard: an active switch makes the resolver write the sequence
+     * CONNECTED@old → CONNECTING@new → CONNECTED@new within one pass. Fed through the
+     * handler, this must stay bounded — the CONNECTING write (address changed but state
+     * != CONNECTED) must NOT re-emit Resolve (the old backoff-bypass), only the final
+     * CONNECTED transition emits exactly one verify Resolve, and no fail()/backoff fires.
+     *
+     * (The resolver half — that it produces this sequence with no DISCONNECTED — is
+     * covered by SyncResolverTest.verifyConnection_currentAddressDead_activeSwitches...;
+     * a single fully-wired live loop is impractical here because GeneralSyncHandler's
+     * polling loop reads wall-clock, so the two halves are asserted independently.)
+     */
+    @Test
+    fun handleValueChange_activeSwitchSequence_boundedResolvesNoBackoffBypass() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val connectedOld = createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            val handler = GeneralSyncHandler(connectedOld, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emitter.events.clear()
+            val failBefore = handler.syncPollingManager.currentFailCount
+
+            // The exact DB-write sequence an active switch produces in one resolve pass.
+            handler.updateSyncRuntimeInfo(
+                connectedOld.copy(
+                    connectState = SyncState.CONNECTING,
+                    connectHostAddress = "192.168.1.109",
+                ),
+            )
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            handler.updateSyncRuntimeInfo(
+                connectedOld.copy(
+                    connectState = SyncState.CONNECTED,
+                    connectHostAddress = "192.168.1.109",
+                ),
+            )
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            // Exactly one Resolve (the final CONNECTED verify); the CONNECTING address
+            // change did NOT bypass backoff with an extra Resolve.
+            assertEquals(1, emitter.events.count { it is SyncEvent.Resolve })
+            assertEquals(failBefore, handler.syncPollingManager.currentFailCount)
+            childScope.cancel()
+        }
+
     // ========== C. API delegation ==========
 
     @Test

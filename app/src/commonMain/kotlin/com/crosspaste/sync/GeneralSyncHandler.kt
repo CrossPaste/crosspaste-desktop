@@ -97,7 +97,15 @@ class GeneralSyncHandler(
             return
         }
 
-        if (previous.connectHostAddress != null &&
+        // A changed connect address only warrants an immediate re-resolve when the
+        // device is currently CONNECTED (e.g. mDNS advertised a new address for a
+        // live peer). For CONNECTING / DISCONNECTED / etc. we must NOT short-circuit
+        // here — let the connectState handling below run so SyncPollingManager applies
+        // exponential backoff. Otherwise a discover -> authenticate -> fail pass that
+        // thrashes the address (CONNECTING@new <-> DISCONNECTED@stale) re-emits Resolve
+        // on every DB write and bypasses backoff (#4499 / #4500 tight loop).
+        if (current.connectState == SyncState.CONNECTED &&
+            previous.connectHostAddress != null &&
             current.connectHostAddress != null &&
             previous.connectHostAddress != current.connectHostAddress
         ) {

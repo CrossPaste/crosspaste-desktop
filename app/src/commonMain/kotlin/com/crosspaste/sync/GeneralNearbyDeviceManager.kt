@@ -4,6 +4,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
@@ -81,13 +82,12 @@ class GeneralNearbyDeviceManager(
         val appInstanceId = syncInfo.appInfo.appInstanceId
         if (!isSelf(appInstanceId)) {
             logger.info { "Service resolved: $syncInfo" }
+            val now = DateUtils.nowEpochMilliseconds()
             syncInfos.update { current ->
                 val existSyncInfo = current[appInstanceId]
-                if (existSyncInfo == null) {
-                    current + (appInstanceId to syncInfo)
-                } else {
-                    current + (appInstanceId to existSyncInfo.merge(syncInfo))
-                }
+                val merged =
+                    existSyncInfo?.merge(syncInfo, now) ?: syncInfo.withStampedHostInfo(now)
+                current + (appInstanceId to merged)
             }
 
             syncInfos.value[appInstanceId]?.let { mergedInfo ->

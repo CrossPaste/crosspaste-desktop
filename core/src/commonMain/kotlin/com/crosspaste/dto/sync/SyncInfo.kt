@@ -1,6 +1,8 @@
 package com.crosspaste.dto.sync
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.utils.DateUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -9,13 +11,21 @@ data class SyncInfo(
     val appInfo: AppInfo,
     val endpointInfo: EndpointInfo,
 ) {
-    fun merge(other: SyncInfo): SyncInfo {
-        val hostInfoList = endpointInfo.hostInfoList
-        val otherHostInfoList = other.endpointInfo.hostInfoList
-
+    /**
+     * Merge [other]'s freshly-advertised endpoint into this one. [other] wins on metadata
+     * and its addresses are stamped newest; the host list is recency-ordered and capped
+     * via [HostInfo.mergeRecent] so accumulated addresses stay bounded (#4499).
+     */
+    fun merge(
+        other: SyncInfo,
+        now: Long = DateUtils.nowEpochMilliseconds(),
+    ): SyncInfo {
         val mergedList =
-            (hostInfoList + otherHostInfoList)
-                .distinctBy { it.hostAddress }
+            HostInfo.mergeRecent(
+                existing = endpointInfo.hostInfoList,
+                incoming = other.endpointInfo.hostInfoList,
+                now = now,
+            )
 
         val appInfo = other.appInfo
         val endpointInfo =
@@ -28,6 +38,23 @@ data class SyncInfo(
             )
         return SyncInfo(appInfo, endpointInfo)
     }
+
+    /**
+     * Stamp and bound this endpoint's host list on first sight (no prior entry to merge
+     * with). Keeps the wire-supplied addresses but applies recency + the capacity cap.
+     */
+    fun withStampedHostInfo(now: Long = DateUtils.nowEpochMilliseconds()): SyncInfo =
+        copy(
+            endpointInfo =
+                endpointInfo.copy(
+                    hostInfoList =
+                        HostInfo.mergeRecent(
+                            existing = emptyList(),
+                            incoming = endpointInfo.hostInfoList,
+                            now = now,
+                        ),
+                ),
+        )
 
     override fun toString(): String = Json.encodeToString(this)
 }
