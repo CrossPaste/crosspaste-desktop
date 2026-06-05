@@ -49,7 +49,12 @@ class DesktopPasteBonjourService(
 
     private val logger = KotlinLogging.logger {}
 
-    private val actionChannel = Channel<List<NetworkInterfaceInfo>>(Channel.UNLIMITED)
+    // CONFLATED, not UNLIMITED: a single close()+setup() rebuild can take seconds
+    // (jmDNS teardown + re-registration), and the event-driven NetworkStateMonitor
+    // can emit several interface snapshots while one rebuild is in flight. We only
+    // ever need to converge on the *latest* snapshot, so collapse intermediate
+    // bursts instead of replaying every transient state (#4509 phase 2 debounce).
+    private val actionChannel = Channel<List<NetworkInterfaceInfo>>(Channel.CONFLATED)
 
     private val serviceListener = DesktopServiceListener(nearbyDeviceManager)
 
@@ -74,7 +79,11 @@ class DesktopPasteBonjourService(
     }
 
     suspend fun processNetworkChange(interfaces: List<NetworkInterfaceInfo>) {
-        close()
+        // Suspending teardown: the network-change consumer is a single coroutine, so
+        // a blocking close() (runBlocking) here would freeze the consumer's thread for
+        // the whole jmDNS shutdown. Drive it through the suspend path instead so the
+        // dispatcher stays free while interfaces tear down (#4509 phase 2).
+        closeServices()
 
         setup(interfaces)
     }
@@ -215,10 +224,17 @@ class DesktopPasteBonjourService(
         }
     }
 
-    override fun close() {
+    /**
+     * Suspending teardown of all registered jmDNS instances. Used on the network-change
+     * hot path ([processNetworkChange]) so a rebuild never blocks the consumer coroutine.
+     * jmDNS unregister/close are themselves blocking calls — they run on [scope]'s IO
+     * dispatcher inside [withTimeout] so a single misbehaving interface can't stall the
+     * rebuild past [CLOSE_TIMEOUT].
+     */
+    private suspend fun closeServices() {
         runCatching {
-            runBlocking {
-                withTimeout(CLOSE_TIMEOUT) {
+            withTimeout(CLOSE_TIMEOUT) {
+                coroutineScope {
                     jmdnsMap.values
                         .map { jmDNS ->
                             async {
@@ -233,6 +249,17 @@ class DesktopPasteBonjourService(
             deviceResolveThrottle.clear()
         }.onFailure { e ->
             logger.warn(e) { "Error closing Bonjour service" }
+        }
+    }
+
+    /**
+     * Lifecycle teardown (interface contract). Bridges the suspend [closeServices] to the
+     * synchronous shutdown path via [runBlocking]. This is a one-shot app-exit call, not
+     * the per-network-change hot path, so the brief block here is acceptable.
+     */
+    override fun close() {
+        runBlocking {
+            closeServices()
         }
     }
 }
