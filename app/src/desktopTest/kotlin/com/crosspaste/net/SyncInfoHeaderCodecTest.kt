@@ -4,6 +4,7 @@ import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.sync.SyncTestFixtures
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class SyncInfoHeaderCodecTest {
@@ -26,5 +27,11 @@ class SyncInfoHeaderCodecTest {
     fun decode_garbage_returnsNull() {
         assertNull(SyncInfoHeaderCodec.decode("not-base64-or-json!!!"))
         assertNull(SyncInfoHeaderCodec.decode(""))
+    }
+
+    @Test
+    fun decodeOrThrow_garbage_throws() {
+        // decodeOrThrow preserves the failure so callers can log the cause.
+        assertFailsWith<Throwable> { SyncInfoHeaderCodec.decodeOrThrow("not-base64-or-json!!!") }
     }
 }

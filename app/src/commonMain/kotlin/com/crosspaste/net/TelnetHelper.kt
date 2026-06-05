@@ -66,6 +66,12 @@ class TelnetHelper(
     // changes — re-advertising on every probe would re-run the server-side addDevice (and
     // its trackSignificantAction) far more often than mDNS does. A real IP change recomputes
     // a different list here, so the next probe naturally re-advertises (#4518 review).
+    //
+    // Keyed by probed address (not peer identity, which we only learn from the response):
+    // switchHost racing a peer's N candidate addresses therefore advertises once per
+    // candidate on first contact (N <= MAX_RECENT_HOST_INFO, each correct for its own
+    // subnet), then never again until our address changes. That bounded, one-time fan-out
+    // is acceptable.
     private val lastAdvertised: MutableMap<String, List<HostInfo>> = ConcurrentMap()
 
     suspend fun switchHost(

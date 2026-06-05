@@ -52,11 +52,9 @@ fun Routing.syncRouting(
 
     fun ApplicationCall.clientSyncInfo(): SyncInfo? =
         request.headers[SyncInfoHeaderCodec.HEADER]?.let { encoded ->
-            SyncInfoHeaderCodec.decode(encoded)
-                ?: run {
-                    logger.warn { "Failed to parse ${SyncInfoHeaderCodec.HEADER} header" }
-                    null
-                }
+            runCatching { SyncInfoHeaderCodec.decodeOrThrow(encoded) }
+                .onFailure { e -> logger.warn(e) { "Failed to parse ${SyncInfoHeaderCodec.HEADER} header" } }
+                .getOrNull()
         }
 
     suspend fun validateHeartbeat(
