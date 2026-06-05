@@ -131,6 +131,10 @@ interface MacosApi : Library {
 
     fun trayCleanup()
 
+    fun startNetworkStateMonitor(callback: NetworkChangeCallback)
+
+    fun stopNetworkStateMonitor()
+
     companion object {
         val INSTANCE: MacosApi = Native.load("MacosApi", MacosApi::class.java)
 
@@ -159,4 +163,8 @@ fun interface FileResolverCallback : Callback {
         buffer: Pointer,
         bufferSize: Int,
     ): Int
+}
+
+fun interface NetworkChangeCallback : Callback {
+    fun invoke()
 }

@@ -14,8 +14,12 @@ import com.crosspaste.net.DesktopPasteServer
 import com.crosspaste.net.DesktopResourcesClient
 import com.crosspaste.net.DesktopServerFactory
 import com.crosspaste.net.DesktopServerModule
+import com.crosspaste.net.LinuxNetworkStateMonitor
+import com.crosspaste.net.MacosNetworkStateMonitor
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.NetworkProfileService
+import com.crosspaste.net.NetworkStateMonitor
+import com.crosspaste.net.NoopNetworkStateMonitor
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.ResourcesClient
@@ -24,6 +28,7 @@ import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.TelnetHelper
+import com.crosspaste.net.WindowsNetworkStateMonitor
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.PushClientApi
@@ -35,6 +40,7 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.platform.Platform
 import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.GeneralNearbyDeviceManager
 import com.crosspaste.sync.GeneralSyncManager
@@ -76,7 +82,16 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 GeneralNearbyDeviceManager(get(), get(), get(), get())
             }
         }
-        single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get()) }
+        single<NetworkStateMonitor> {
+            val platform = get<Platform>()
+            when {
+                platform.isMacos() -> MacosNetworkStateMonitor()
+                platform.isWindows() -> WindowsNetworkStateMonitor()
+                platform.isLinux() -> LinuxNetworkStateMonitor()
+                else -> NoopNetworkStateMonitor()
+            }
+        }
+        single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get(), get()) }
         single<NetworkProfileService> { DesktopNetworkProfileService(get(), get(), get(), get()) }
         single<ResourcesClient> { DesktopResourcesClient(get(), get()) }
         single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
