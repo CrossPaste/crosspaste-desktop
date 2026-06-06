@@ -13,6 +13,12 @@ object About : Route {
 }
 
 @Serializable
+object ChangeLog : Route {
+    const val NAME: String = "change_log"
+    override val name: String = NAME
+}
+
+@Serializable
 object ExtensionGraph : Route {
     override val name = "extension_graph"
 }

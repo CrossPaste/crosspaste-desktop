@@ -63,6 +63,9 @@ data class DesktopAppConfig(
     // Fingerprint of the most recently dismissed network-blocking diagnosis ("profile|mDnsAllowed"),
     // or empty when the user has not dismissed the current warning.
     val networkBlockingDismissedFingerprint: String = "",
+    // Highest app version whose changelog the user has already seen. Empty until seeded on
+    // first launch; drives the highlight badge on the changelog menu entry after an upgrade.
+    val lastSeenChangelogVersion: String = "",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -170,6 +173,12 @@ data class DesktopAppConfig(
                     toString(value)
                 } else {
                     networkBlockingDismissedFingerprint
+                },
+            lastSeenChangelogVersion =
+                if (key == "lastSeenChangelogVersion") {
+                    toString(value)
+                } else {
+                    lastSeenChangelogVersion
                 },
         )
 }

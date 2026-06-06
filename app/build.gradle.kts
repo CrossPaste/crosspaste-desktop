@@ -232,8 +232,57 @@ tasks.register<Copy>("copyDevProperties") {
     }
 }
 
+tasks.register("verifyChangelogVersion") {
+    group = "verification"
+    description =
+        "Fails the build when the bundled product changelog (whats-new/*.md) " +
+        "has no entry for the current app version, so releasing without release notes is impossible."
+
+    val appVersion = versionProperties.getProperty("version")
+    val changelogDir = layout.projectDirectory.dir("src/desktopMain/resources/whats-new")
+    // At least Simplified Chinese and English must be kept in sync with the version.
+    val requiredChangelogs = listOf("zh.md", "en.md")
+    val headerRegex = Regex("""^#\s*\[([^]]+)]\s*-\s*.+$""")
+
+    inputs.property("appVersion", appVersion)
+    requiredChangelogs.forEach { inputs.file(changelogDir.file(it)) }
+
+    doLast {
+        val problems = mutableListOf<String>()
+        requiredChangelogs.forEach { name ->
+            val file = changelogDir.file(name).asFile
+            if (!file.exists()) {
+                problems.add("missing changelog file: ${file.path}")
+                return@forEach
+            }
+            val latest =
+                file
+                    .readLines()
+                    .firstNotNullOfOrNull { line ->
+                        headerRegex.find(line.trim())?.groupValues?.get(1)?.trim()
+                    }
+            when {
+                latest == null ->
+                    problems.add("$name has no version header in the form '# [version] - date'")
+                latest != appVersion ->
+                    problems.add("$name latest entry is [$latest] but app version is [$appVersion]")
+            }
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("Changelog version check failed for app version [$appVersion].")
+                    appendLine("Add a '# [$appVersion] - <date>' section to each file under")
+                    appendLine("src/desktopMain/resources/whats-new/ before building:")
+                    problems.forEach { appendLine("  - $it") }
+                },
+            )
+        }
+    }
+}
+
 tasks.named("desktopProcessResources") {
-    dependsOn("copyDevProperties")
+    dependsOn("copyDevProperties", "verifyChangelogVersion")
 }
 
 private fun initJvmArgs(

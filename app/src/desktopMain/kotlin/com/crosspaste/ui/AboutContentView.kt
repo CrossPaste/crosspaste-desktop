@@ -66,6 +66,7 @@ fun AboutContentView() {
     val uiSupport = koinInject<UISupport>()
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val navigationManager = koinInject<NavigationManager>()
     val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
@@ -168,7 +169,7 @@ fun AboutContentView() {
                     subtitle = "change_log_desc",
                     icon = IconData(MaterialSymbols.Rounded.Auto_awesome, themeExt.purpleIconColor),
                 ) {
-                    uiSupport.openUrlInBrowser(appUrls.changeLogUrl)
+                    navigationManager.navigateAndClearStack(ChangeLog)
                 }
             }
         }
