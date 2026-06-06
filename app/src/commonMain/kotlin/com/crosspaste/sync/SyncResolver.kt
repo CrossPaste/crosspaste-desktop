@@ -32,6 +32,7 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.util.collections.ConcurrentMap
 import kotlin.coroutines.cancellation.CancellationException
 
 class SyncResolver(
@@ -56,6 +57,16 @@ class SyncResolver(
     private val logger = KotlinLogging.logger {}
 
     private val deviceMutex = StripedMutex()
+
+    // Last subnet-matched address set we advertised to each peer over the liveness heartbeat,
+    // keyed by appInstanceId. We piggyback our address onto the heartbeat so a peer learns our
+    // (possibly changed) return address without waiting for the next mDNS round (#4509), but
+    // only when it actually changed — re-posting every cycle would re-run the peer's
+    // trustSyncInfo (a DB write) on every heartbeat. A real IP change recomputes a different
+    // list, so the next heartbeat re-advertises; any non-success drops the entry so a
+    // reconnect re-advertises too. Cleared on MarkExit/RemoveDevice so a gracefully-departed
+    // device leaves nothing behind (no heartbeat would ever come to evict it otherwise).
+    private val lastHeartbeatAdvertised: MutableMap<String, List<HostInfo>> = ConcurrentMap()
 
     private fun getRemotePairingVersion(appInstanceId: String): Int? =
         lazyNearbyDeviceManager.value.nearbySyncInfos.value
@@ -130,10 +141,15 @@ class SyncResolver(
 
                     is SyncEvent.MarkExit -> {
                         syncDeviceManager.markExit(syncRuntimeInfo)
+                        // No more heartbeats will come to clear this on failure; drop it now
+                        // so the entry can't linger after a graceful exit (a reconnect starts
+                        // with an empty marker and re-advertises, which is what we want).
+                        lastHeartbeatAdvertised.remove(syncRuntimeInfo.appInstanceId)
                     }
 
                     is SyncEvent.RemoveDevice -> {
                         syncDeviceManager.removeDevice(syncRuntimeInfo)
+                        lastHeartbeatAdvertised.remove(syncRuntimeInfo.appInstanceId)
                     }
                 }
             } else {
@@ -516,12 +532,35 @@ class SyncResolver(
         callback: ResolveCallback,
     ): Int {
         val hostAndPort = HostAndPort(host, port)
+
+        // Piggyback our current return address onto the heartbeat (#4509). Advertise only the
+        // local interface(s) on the peer's subnet — the address it can actually route to — and
+        // only when it differs from what we last delivered, so a steady connection tells each
+        // peer exactly once and then sends plain GET heartbeats.
+        val advertiseHostInfo = subnetMatchedHostInfo(host)
+        val advertiseSyncInfo =
+            if (advertiseHostInfo.isNotEmpty() && lastHeartbeatAdvertised[targetAppInstanceId] != advertiseHostInfo) {
+                syncInfoFactory.createSyncInfo(advertiseHostInfo)
+            } else {
+                null
+            }
+
         val result =
             syncClientApi.heartbeat(
+                syncInfo = advertiseSyncInfo,
                 targetAppInstanceId = targetAppInstanceId,
             ) {
                 buildUrl(hostAndPort)
             }
+
+        if (result is SuccessResult) {
+            // Mark delivered only on success, so a failed heartbeat re-advertises next time.
+            advertiseSyncInfo?.let { lastHeartbeatAdvertised[targetAppInstanceId] = advertiseHostInfo }
+        } else {
+            // Forget on any failure so the next successful heartbeat (e.g. after a reconnect)
+            // re-advertises our address to the peer.
+            lastHeartbeatAdvertised.remove(targetAppInstanceId)
+        }
 
         return when (result) {
             is SuccessResult -> {
@@ -582,18 +621,7 @@ class SyncResolver(
                     }
 
                 if (result is SuccessResult) {
-                    val hostInfoList =
-                        networkInterfaceService
-                            .getCurrentUseNetworkInterfaces()
-                            .map { it.toHostInfo() }
-                            .filter { it.filter(host) }
-                    val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
-                    syncClientApi.heartbeat(
-                        syncInfo = syncInfo,
-                        targetAppInstanceId = appInstanceId,
-                    ) {
-                        buildUrl(HostAndPort(host, port))
-                    }
+                    advertiseAddressViaHeartbeat(host, port, appInstanceId)
                     return@trustByTokenCache true
                 }
             }
@@ -629,18 +657,7 @@ class SyncResolver(
                 }
 
             if (result is SuccessResult) {
-                val hostInfoList =
-                    networkInterfaceService
-                        .getCurrentUseNetworkInterfaces()
-                        .map { it.toHostInfo() }
-                        .filter { it.filter(host) }
-                val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
-                syncClientApi.heartbeat(
-                    syncInfo = syncInfo,
-                    targetAppInstanceId = appInstanceId,
-                ) {
-                    buildUrl(HostAndPort(host, port))
-                }
+                advertiseAddressViaHeartbeat(host, port, appInstanceId)
                 syncRuntimeInfoDao.updateConnectInfo(
                     this.copy(
                         connectState = SyncState.CONNECTED,
@@ -708,18 +725,7 @@ class SyncResolver(
             // Step 4: Save remote key locally and send heartbeat
             secureStore.saveCryptPublicKey(appInstanceId, response.cryptPublicKey)
 
-            val hostInfoList =
-                networkInterfaceService
-                    .getCurrentUseNetworkInterfaces()
-                    .map { it.toHostInfo() }
-                    .filter { it.filter(host) }
-            val syncInfo = syncInfoFactory.createSyncInfo(hostInfoList)
-            syncClientApi.heartbeat(
-                syncInfo = syncInfo,
-                targetAppInstanceId = appInstanceId,
-            ) {
-                buildUrl(HostAndPort(host, port))
-            }
+            advertiseAddressViaHeartbeat(host, port, appInstanceId)
             syncRuntimeInfoDao.updateConnectInfo(
                 this.copy(
                     connectState = SyncState.CONNECTED,
@@ -755,5 +761,41 @@ class SyncResolver(
         hostInfoList: List<HostInfo>,
     ) {
         lazyPasteBonjourService.value.refreshTarget(appInstanceId, hostInfoList)
+    }
+
+    /**
+     * Our local interface address(es) on [host]'s subnet — the address the peer at [host] can
+     * actually route back to. Reuses [HostInfo.filter], the same subnet match the discovery and
+     * trust flows use. Empty when no local interface shares the peer's subnet (cross-subnet /
+     * offline), in which case we advertise nothing and leave reachability to the next mDNS round.
+     */
+    private fun subnetMatchedHostInfo(host: String): List<HostInfo> =
+        networkInterfaceService
+            .getCurrentUseNetworkInterfaces()
+            .map { it.toHostInfo() }
+            .filter { it.filter(host) }
+
+    /**
+     * Heartbeat that always carries our subnet-matched address — used by the trust handshakes,
+     * where the peer must receive our [SyncInfo] to finish pairing. Records what we advertised
+     * (on success) into [lastHeartbeatAdvertised] so the subsequent steady-state liveness
+     * heartbeat doesn't redundantly re-send the same address right after a fresh pairing.
+     */
+    private suspend fun advertiseAddressViaHeartbeat(
+        host: String,
+        port: Int,
+        appInstanceId: String,
+    ) {
+        val advertiseHostInfo = subnetMatchedHostInfo(host)
+        val result =
+            syncClientApi.heartbeat(
+                syncInfo = syncInfoFactory.createSyncInfo(advertiseHostInfo),
+                targetAppInstanceId = appInstanceId,
+            ) {
+                buildUrl(HostAndPort(host, port))
+            }
+        if (result is SuccessResult) {
+            lastHeartbeatAdvertised[appInstanceId] = advertiseHostInfo
+        }
     }
 }

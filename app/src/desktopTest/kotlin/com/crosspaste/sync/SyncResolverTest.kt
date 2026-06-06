@@ -6,6 +6,7 @@ import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceInfo
@@ -42,6 +43,8 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SyncResolverTest {
@@ -480,6 +483,192 @@ class SyncResolverTest {
             assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
         }
 
+    // ========== A2. steady-state heartbeat address advertise (#4509) ==========
+
+    @Test
+    fun verifyConnection_advertisesSubnetMatchedAddressOncePerChange() =
+        runTest {
+            // Steady state: the liveness heartbeat piggybacks our subnet-matched return
+            // address so the peer learns it without waiting for mDNS — but only the first
+            // time. A second heartbeat with the same local address must send GET (null
+            // syncInfo) so the peer's trustSyncInfo isn't re-run every cycle.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(2, advertised.size)
+            assertNotNull(advertised[0], "first heartbeat should advertise our address")
+            assertNull(advertised[1], "unchanged address must not re-advertise")
+        }
+
+    @Test
+    fun verifyConnection_localAddressChanges_reAdvertises() =
+        runTest {
+            // When our own interface address changes between heartbeats, the recomputed
+            // subnet-matched list differs from what we last delivered, so we advertise again.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+
+            var localInterfaces = listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } answers { localInterfaces }
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            // Our IP moves within the peer's subnet.
+            localInterfaces = listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.3"))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(2, advertised.size)
+            assertNotNull(advertised[0], "first heartbeat advertises")
+            assertNotNull(advertised[1], "changed local address must re-advertise")
+        }
+
+    @Test
+    fun verifyConnection_crossSubnetPeer_advertisesNothing() =
+        runTest {
+            // No local interface shares the peer's subnet → nothing routable to advertise;
+            // the heartbeat falls back to a plain GET and discovery self-healing covers it.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "10.0.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(1, advertised.size)
+            assertNull(advertised[0], "cross-subnet peer must not be advertised to")
+            coVerify(exactly = 0) { deps.syncInfoFactory.createSyncInfo(any()) }
+        }
+
+    @Test
+    fun verifyConnection_failedHeartbeatReAdvertisesOnReconnect() =
+        runTest {
+            // A non-success heartbeat must forget what we advertised, so the next successful
+            // heartbeat (after a reconnect) re-advertises even though the address is unchanged.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+            // Reconnect probes (after the failure) find nothing, so the pass settles without
+            // changing the device we re-read from the DB on the next pass.
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns null
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returnsMany
+                listOf(
+                    SuccessResult(VersionRelation.EQUAL_TO),
+                    ConnectionRefused,
+                    SuccessResult(VersionRelation.EQUAL_TO),
+                )
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNotNull(advertised[0], "first heartbeat advertises")
+            assertNull(advertised[1], "address unchanged → failing heartbeat was a plain GET")
+            assertNotNull(advertised[2], "failure cleared the marker → re-advertise on recovery")
+        }
+
+    @Test
+    fun markExit_clearsAdvertiseMarker_soReconnectReAdvertises() =
+        runTest {
+            // A graceful exit removes the dedup marker; otherwise no heartbeat would ever
+            // come to evict it. After exit, a reconnect re-advertises even though our address
+            // never changed (without the cleanup the second heartbeat would be a silent GET).
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.MarkExit(syncRuntimeInfo))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(2, advertised.size)
+            assertNotNull(advertised[0], "first heartbeat advertises")
+            assertNotNull(advertised[1], "exit cleared the marker → reconnect re-advertises")
+        }
+
+    @Test
+    fun trustHandshake_recordsAdvertiseMarker_soNextHeartbeatStaysQuiet() =
+        runTest {
+            // A fresh pairing (trustByTokenCache) sends our SyncInfo as part of the handshake.
+            // It must record what it advertised, so the very next steady-state heartbeat does
+            // NOT redundantly re-send the same address (map would otherwise still be empty).
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val connecting = createConnectingSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(connecting)
+            deps.tokenCache.setToken(connecting.appInstanceId, 123456)
+            coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
+            coEvery { deps.syncClientApi.trust(any(), any(), any(), any()) } returns SuccessResult(true)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            // Pass 1: pairing via token cache → handshake heartbeat carries our address.
+            resolver.emitEvent(SyncEvent.Resolve(connecting, createTestCallback()))
+
+            // Pass 2: now CONNECTED → steady-state liveness heartbeat on the same address.
+            deps.stubDbRead(createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108"))
+            resolver.emitEvent(SyncEvent.Resolve(connecting, createTestCallback()))
+
+            assertEquals(2, advertised.size)
+            assertNotNull(advertised[0], "pairing handshake advertises our address")
+            assertNull(advertised[1], "handshake recorded the marker → steady heartbeat is a GET")
+        }
+
     // ========== B. resolveConnecting ==========
 
     @Test
@@ -513,13 +702,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
-            coEvery {
-                deps.syncClientApi.heartbeat(
-                    syncInfo = isNull(),
-                    targetAppInstanceId = any(),
-                    toUrl = any(),
-                )
-            } returns DecryptFail
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns DecryptFail
 
             // No token cached, telnet returns null -> DISCONNECTED
             coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns null
