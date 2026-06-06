@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Auto_awesome
 import com.composables.icons.materialsymbols.rounded.Devices
 import com.composables.icons.materialsymbols.rounded.Download
 import com.composables.icons.materialsymbols.rounded.Exit_to_app
@@ -44,6 +47,7 @@ import com.composables.icons.materialsymbols.rounded.Vpn_key
 import com.composables.icons.materialsymbols.rounded.Warning
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunch
+import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.ExitMode
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
@@ -55,16 +59,19 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
+import io.github.z4kn4fein.semver.Version
 import org.koin.compose.koinInject
 
 @Composable
 fun MainMenuView() {
     val appLaunch = koinInject<DesktopAppLaunch>()
+    val appLaunchState = koinInject<DesktopAppLaunchState>()
     val appUpdateService = koinInject<AppUpdateService>()
     val configManager = koinInject<DesktopConfigManager>()
     val navigateManage = koinInject<NavigationManager>()
@@ -95,6 +102,34 @@ fun MainMenuView() {
         }
 
     val config by configManager.config.collectAsState()
+    val currentVersion by appUpdateService.currentVersion.collectAsState()
+
+    // Seed the baseline once, when no "last seen" version has been recorded yet:
+    // - brand-new install -> seed the current version so the badge never shows,
+    //   since there is nothing the user has "missed".
+    // - existing user upgrading into this feature -> seed a floor version so the
+    //   current release's changelog is highlighted exactly once.
+    LaunchedEffect(currentVersion) {
+        if (configManager.config.value.lastSeenChangelogVersion
+                .isBlank()
+        ) {
+            val seed =
+                if (appLaunchState.firstLaunch) {
+                    currentVersion.toString()
+                } else {
+                    "0.0.0"
+                }
+            configManager.updateConfig("lastSeenChangelogVersion", seed)
+        }
+    }
+
+    val showChangelogBadge =
+        remember(config.lastSeenChangelogVersion, currentVersion) {
+            config.lastSeenChangelogVersion.takeIf { it.isNotBlank() }?.let { lastSeen ->
+                runCatching { Version.parse(lastSeen) < currentVersion }.getOrDefault(false)
+            } ?: false
+        }
+
     val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
     val navController = LocalNavHostController.current
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -167,6 +202,15 @@ fun MainMenuView() {
             }
 
             MainMenuItemView(
+                title = "change_log",
+                icon = MaterialSymbols.Rounded.Auto_awesome,
+                selected = rootRouteName == ChangeLog.NAME,
+                onClick = { navigateManage.navigateAndClearStack(ChangeLog) },
+                compact = true,
+                showBadge = showChangelogBadge,
+            )
+
+            MainMenuItemView(
                 title = "check_for_updates",
                 icon = MaterialSymbols.Rounded.Refresh,
                 selected = false,
@@ -194,6 +238,7 @@ fun MainMenuItemView(
     onClick: () -> Unit,
     compact: Boolean = false,
     tintColor: Color? = null,
+    showBadge: Boolean = false,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
 
@@ -227,12 +272,24 @@ fun MainMenuItemView(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(small3X),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(iconSize),
-            tint = contentColor,
-        )
+        Box {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(iconSize),
+                tint = contentColor,
+            )
+            if (showBadge) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .size(tiny2X)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error),
+                )
+            }
+        }
         Text(
             text = copywriter.getText(title),
             maxLines = 1,

@@ -135,6 +135,7 @@ class DesktopScreenProvider(
             popExitTransition = { ExitTransition.None },
         ) {
             composable<About> { AboutScreen() }
+            composable<ChangeLog> { ChangeLogScreen() }
 
             navigation<DevicesGraph>(startDestination = Devices) {
                 composable<Devices> {
@@ -236,6 +237,13 @@ class DesktopScreenProvider(
     private fun AboutScreen() {
         DesktopScreenLayout {
             AboutContentView()
+        }
+    }
+
+    @Composable
+    private fun ChangeLogScreen() {
+        DesktopScreenLayout {
+            ChangeLogContentView()
         }
     }
 

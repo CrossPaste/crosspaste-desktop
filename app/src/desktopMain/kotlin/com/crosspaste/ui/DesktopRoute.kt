@@ -6,6 +6,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 fun getRouteName(dest: NavDestination): String? =
     when {
         dest.hasRoute<About>() -> About.NAME
+        dest.hasRoute<ChangeLog>() -> ChangeLog.NAME
         dest.hasRoute<DeviceDetail>() -> DeviceDetail.NAME
         dest.hasRoute<Devices>() -> Devices.NAME
         dest.hasRoute<Export>() -> Export.NAME
@@ -29,6 +30,7 @@ fun getRouteName(dest: NavDestination): String? =
 fun getRootRouteName(dest: NavDestination): String? =
     when {
         dest.hasRoute<About>() -> About.NAME
+        dest.hasRoute<ChangeLog>() -> ChangeLog.NAME
         dest.hasRoute<DeviceDetail>() -> Devices.NAME
         dest.hasRoute<Devices>() -> Devices.NAME
         dest.hasRoute<Export>() -> Export.NAME
