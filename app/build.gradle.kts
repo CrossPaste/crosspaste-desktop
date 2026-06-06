@@ -259,7 +259,11 @@ tasks.register("verifyChangelogVersion") {
                 file
                     .readLines()
                     .firstNotNullOfOrNull { line ->
-                        headerRegex.find(line.trim())?.groupValues?.get(1)?.trim()
+                        headerRegex
+                            .find(line.trim())
+                            ?.groupValues
+                            ?.get(1)
+                            ?.trim()
                     }
             when {
                 latest == null ->
