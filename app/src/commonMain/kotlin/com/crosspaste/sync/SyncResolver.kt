@@ -185,7 +185,9 @@ class SyncResolver(
     // ──────────────────────────────────────────────────────────────
 
     private suspend fun SyncRuntimeInfo.resolve(callback: ResolveCallback) {
-        logger.info { "Resolve $appInstanceId (state=$connectState)" }
+        // Per-poll entry trace: debug only. At INFO we log just the state transitions
+        // (connected / disconnected / incompatible / …), so steady-state polling stays quiet.
+        logger.debug { "Resolve $appInstanceId (state=$connectState)" }
 
         // Extensions (e.g. Chrome) are client-only: they connect TO us via WebSocket
         // and have no server to telnet/heartbeat back to. Use WebSocket liveness instead.
@@ -277,11 +279,15 @@ class SyncResolver(
 
         val result =
             discoverReachableHost() ?: run {
-                logger.info { "$appInstanceId no reachable host, hostInfoList: $hostInfoList" }
-                // Only persist when the state actually changes. Re-writing
-                // DISCONNECTED on every poll bumps modifyTime, re-emits the
-                // DB flow, and churns the handler for no reason.
+                // Log + persist only on the transition into DISCONNECTED. Re-writing
+                // DISCONNECTED every poll bumps modifyTime, re-emits the DB flow, and
+                // churns the handler; re-logging it floods the log. Kept at INFO (not
+                // debug) so a user's default-level logs still capture when and why a peer
+                // went unreachable — connection issues get reported far more often than
+                // anyone will re-run with debug enabled, and the connection layer is new
+                // enough that losing this signal would hurt triage.
                 if (connectState != SyncState.DISCONNECTED) {
+                    logger.info { "$appInstanceId no reachable host, hostInfoList: $hostInfoList" }
                     updateConnectState(SyncState.DISCONNECTED)
                 }
                 return
@@ -291,7 +297,11 @@ class SyncResolver(
         callback.updateVersionRelation(versionRelation)
 
         if (versionRelation != VersionRelation.EQUAL_TO) {
-            logger.info { "$appInstanceId version incompatible: $versionRelation" }
+            // INCOMPATIBLE re-enters discoverAndConnect on every poll; log only on the
+            // transition into it so a version mismatch doesn't repeat the same line forever.
+            if (connectState != SyncState.INCOMPATIBLE) {
+                logger.info { "$appInstanceId version incompatible: $versionRelation" }
+            }
             updateConnectState(SyncState.INCOMPATIBLE, hostInfo.hostAddress, hostInfo.networkPrefixLength)
             return
         }
@@ -469,17 +479,22 @@ class SyncResolver(
 
         // Fast path: probe the freshest address first (skipped when there are none).
         ordered.firstOrNull()?.let { freshest ->
-            logger.info { "$appInstanceId fast probe ${freshest.hostAddress}:$port (lastSeen=${freshest.lastSeen})" }
+            // Per-poll probe trace stays at debug; the conclusion (connecting / no reachable
+            // host) is logged at info by the caller, so dropping this loses nothing for triage.
+            logger.debug { "$appInstanceId fast probe ${freshest.hostAddress}:$port (lastSeen=${freshest.lastSeen})" }
             telnetHelper.telnet(freshest.hostAddress, port, TelnetHelper.FAST_TIMEOUT)?.let { telnetResult ->
                 if (telnetResult.identityAccepted(appInstanceId)) {
                     return@discoverReachableHost Pair(freshest, telnetResult.versionRelation)
                 }
+                // INFO: a reachable address answered with the wrong identity (stale/reused IP,
+                // ghost peer). This is the only signal that separates "unreachable" from
+                // "reached the wrong device", so it must survive at the user's default level.
                 logger.info {
                     "$appInstanceId fast probe identity mismatch " +
                         "(${telnetResult.peerAppInstanceId}), skipping ${freshest.hostAddress}"
                 }
             }
-            logger.info { "$appInstanceId fast probe failed, falling back to full list" }
+            logger.debug { "$appInstanceId fast probe failed, falling back to full list" }
         }
 
         // Slow path: race the recency-ordered list in parallel with a longer timeout.
