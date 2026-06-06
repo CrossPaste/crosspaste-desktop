@@ -44,7 +44,7 @@ buildscript {
 }
 
 composeCompiler {
-    stabilityConfigurationFile = rootProject.layout.projectDirectory.file("compose-stability.conf")
+    stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose-stability.conf"))
 }
 
 ktlint {
