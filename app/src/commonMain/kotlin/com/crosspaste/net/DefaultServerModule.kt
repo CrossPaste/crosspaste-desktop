@@ -107,6 +107,7 @@ open class DefaultServerModule(
                     appTokenApi,
                     configManager,
                     exceptionHandler,
+                    nearbyDeviceManager,
                     networkInterfaceService,
                     pendingKeyExchangeStore,
                     secureKeyPairSerializer,

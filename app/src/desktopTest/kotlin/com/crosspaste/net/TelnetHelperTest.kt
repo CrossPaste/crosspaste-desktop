@@ -1,13 +1,16 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.sync.SyncTestFixtures
 import com.crosspaste.utils.HEADER_APP_INSTANCE_ID
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.slot
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -58,7 +61,9 @@ class TelnetHelperTest {
     private fun createTelnetHelper(
         pasteClient: PasteClient,
         syncApi: SyncApi = SyncApi,
-    ): TelnetHelper = TelnetHelper(pasteClient, syncApi)
+        networkInterfaceService: NetworkInterfaceService = mockk(relaxed = true),
+        syncInfoFactory: SyncInfoFactory = mockk(relaxed = true),
+    ): TelnetHelper = TelnetHelper(networkInterfaceService, pasteClient, syncApi, syncInfoFactory)
 
     // ========== A. telnet (single host) ==========
 
@@ -331,6 +336,147 @@ class TelnetHelperTest {
             assertEquals("192.168.1.100", result.first.hostAddress)
             assertEquals("real-1", result.second.peerAppInstanceId)
         }
+
+    // ========== D. address push (#4509 phase 3: subnet-matched advertise header) ==========
+
+    @Test
+    fun telnet_advertisesOnlySubnetMatchedInterfaceInHeader() =
+        runTest {
+            // We probe a peer at 192.168.1.20. Of our local interfaces, only en0
+            // (192.168.1.11/24) shares the peer's subnet; the 10.x interface must not be
+            // advertised — that address is unreachable from the peer.
+            val pasteClient = createMockPasteClient()
+            val response = createMockResponse(200, SyncApi.VERSION.toString())
+            val headersSlot = slot<HeadersBuilder.() -> Unit>()
+            coEvery { pasteClient.get(any(), capture(headersSlot), any()) } returns response
+
+            val networkInterfaceService = mockk<NetworkInterfaceService>(relaxed = true)
+            every { networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(
+                    NetworkInterfaceInfo("en0", 24, "192.168.1.11"),
+                    NetworkInterfaceInfo("en1", 24, "10.0.0.5"),
+                )
+
+            val advertised =
+                SyncTestFixtures.createSyncInfo(
+                    hostInfoList = listOf(HostInfo(24, "192.168.1.11")),
+                )
+            val capturedList = slot<List<HostInfo>>()
+            val syncInfoFactory = mockk<SyncInfoFactory>()
+            coEvery { syncInfoFactory.createSyncInfo(capture(capturedList)) } returns advertised
+
+            val helper =
+                createTelnetHelper(
+                    pasteClient,
+                    networkInterfaceService = networkInterfaceService,
+                    syncInfoFactory = syncInfoFactory,
+                )
+            helper.telnet("192.168.1.20", 13129)
+
+            // Only the same-subnet interface fed the advertised SyncInfo.
+            assertEquals(listOf(HostInfo(24, "192.168.1.11")), capturedList.captured)
+
+            // The probe carries the advertise header, and it round-trips to the SyncInfo.
+            val builtHeaders = HeadersBuilder().apply(headersSlot.captured).build()
+            val headerValue = builtHeaders[SyncInfoHeaderCodec.HEADER]
+            assertNotNull(headerValue)
+            assertEquals(advertised, SyncInfoHeaderCodec.decode(headerValue))
+        }
+
+    @Test
+    fun telnet_noSubnetMatch_omitsAdvertiseHeader() =
+        runTest {
+            // None of our interfaces share the peer's subnet (cross-subnet / routed): we
+            // advertise nothing rather than leak an unreachable address.
+            val pasteClient = createMockPasteClient()
+            val response = createMockResponse(200, SyncApi.VERSION.toString())
+            val headersSlot = slot<HeadersBuilder.() -> Unit>()
+            coEvery { pasteClient.get(any(), capture(headersSlot), any()) } returns response
+
+            val networkInterfaceService = mockk<NetworkInterfaceService>(relaxed = true)
+            every { networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(NetworkInterfaceInfo("en0", 24, "10.0.0.5"))
+            val syncInfoFactory = mockk<SyncInfoFactory>(relaxed = true)
+
+            val helper =
+                createTelnetHelper(
+                    pasteClient,
+                    networkInterfaceService = networkInterfaceService,
+                    syncInfoFactory = syncInfoFactory,
+                )
+            helper.telnet("192.168.1.20", 13129)
+
+            val builtHeaders = HeadersBuilder().apply(headersSlot.captured).build()
+            assertNull(builtHeaders[SyncInfoHeaderCodec.HEADER])
+            coVerify(exactly = 0) { syncInfoFactory.createSyncInfo(any()) }
+        }
+
+    @Test
+    fun telnet_doesNotReAdvertiseToSamePeerWhenAddressUnchanged() =
+        runTest {
+            // Once a peer has received our address, a steady network must not keep
+            // re-advertising on every probe — that would re-run server-side addDevice each
+            // poll. The second probe to the same peer carries no header.
+            val pasteClient = createMockPasteClient()
+            val response = createMockResponse(200, SyncApi.VERSION.toString())
+            val headersList = mutableListOf<HeadersBuilder.() -> Unit>()
+            coEvery { pasteClient.get(any(), capture(headersList), any()) } returns response
+
+            val networkInterfaceService = mockk<NetworkInterfaceService>(relaxed = true)
+            every { networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.11"))
+            val syncInfoFactory = mockk<SyncInfoFactory>()
+            coEvery { syncInfoFactory.createSyncInfo(any()) } returns
+                SyncTestFixtures.createSyncInfo(hostInfoList = listOf(HostInfo(24, "192.168.1.11")))
+
+            val helper =
+                createTelnetHelper(
+                    pasteClient,
+                    networkInterfaceService = networkInterfaceService,
+                    syncInfoFactory = syncInfoFactory,
+                )
+            helper.telnet("192.168.1.20", 13129)
+            helper.telnet("192.168.1.20", 13129)
+
+            assertNotNull(HeadersBuilder().apply(headersList[0]).build()[SyncInfoHeaderCodec.HEADER])
+            assertNull(HeadersBuilder().apply(headersList[1]).build()[SyncInfoHeaderCodec.HEADER])
+            coVerify(exactly = 1) { syncInfoFactory.createSyncInfo(any()) }
+        }
+
+    @Test
+    fun telnet_reAdvertisesAfterLocalAddressChanges() =
+        runTest {
+            // When our address on the peer's subnet changes (DHCP / network switch), the
+            // next probe must advertise again so the peer isn't left with a dead address.
+            val pasteClient = createMockPasteClient()
+            val response = createMockResponse(200, SyncApi.VERSION.toString())
+            val headersList = mutableListOf<HeadersBuilder.() -> Unit>()
+            coEvery { pasteClient.get(any(), capture(headersList), any()) } returns response
+
+            val networkInterfaceService = mockk<NetworkInterfaceService>(relaxed = true)
+            every { networkInterfaceService.getCurrentUseNetworkInterfaces() } returnsMany
+                listOf(
+                    listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.11")),
+                    listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.12")),
+                )
+            val syncInfoFactory = mockk<SyncInfoFactory>(relaxed = true)
+            coEvery { syncInfoFactory.createSyncInfo(any()) } returns SyncTestFixtures.createSyncInfo()
+
+            val helper =
+                createTelnetHelper(
+                    pasteClient,
+                    networkInterfaceService = networkInterfaceService,
+                    syncInfoFactory = syncInfoFactory,
+                )
+            helper.telnet("192.168.1.20", 13129)
+            helper.telnet("192.168.1.20", 13129)
+
+            assertNotNull(HeadersBuilder().apply(headersList[0]).build()[SyncInfoHeaderCodec.HEADER])
+            assertNotNull(HeadersBuilder().apply(headersList[1]).build()[SyncInfoHeaderCodec.HEADER])
+            coVerify(exactly = 2) { syncInfoFactory.createSyncInfo(any()) }
+        }
+
+    // ========== E. identity (Phase A continued) ==========
 
     @Test
     fun switchHost_oldPeerUnknownIdentity_admittedAsFallback() =

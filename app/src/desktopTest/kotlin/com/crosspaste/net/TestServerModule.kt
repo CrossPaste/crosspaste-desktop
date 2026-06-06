@@ -10,6 +10,8 @@ import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.sync.MarketingNearbyDeviceManager
+import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.getJsonUtils
 import io.ktor.serialization.kotlinx.json.*
@@ -22,6 +24,7 @@ class TestServerModule(
     private val appTokenApi: AppTokenApi,
     private val configManager: CommonConfigManager,
     private val exceptionHandler: ExceptionHandler,
+    private val nearbyDeviceManager: NearbyDeviceManager = MarketingNearbyDeviceManager(),
     private val networkInterfaceService: NetworkInterfaceService,
     private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
@@ -45,6 +48,7 @@ class TestServerModule(
                     appTokenApi,
                     configManager,
                     exceptionHandler,
+                    nearbyDeviceManager,
                     networkInterfaceService,
                     pendingKeyExchangeStore,
                     secureKeyPairSerializer,

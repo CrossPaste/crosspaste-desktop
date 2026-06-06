@@ -228,5 +228,5 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
             )
         }
         single<SyncRoutingApi> { get<SyncManager>() }
-        single<TelnetHelper> { TelnetHelper(get(), get()) }
+        single<TelnetHelper> { TelnetHelper(get(), get(), get(), get()) }
     }
