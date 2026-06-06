@@ -6,6 +6,7 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.statement.*
+import io.ktor.http.isSuccess
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
@@ -102,6 +103,9 @@ class TelnetHelper(
                                             }
                                         }
                                     } else {
+                                        // INFO: reached this address but it is the wrong peer
+                                        // (stale/reused IP, ghost). The only signal that tells a
+                                        // failed switch apart from a genuinely unreachable peer.
                                         logger.info {
                                             "switchHost skip ${hostInfo.hostAddress}:$port " +
                                                 "identity mismatch (${telnetResult.peerAppInstanceId} != $expectedAppInstanceId)"
@@ -162,7 +166,14 @@ class TelnetHelper(
                     buildUrl(hostAndPort)
                     buildUrl("sync", "telnet")
                 }
-            logger.info { "httpResponse.status = ${httpResponse.status.value} $hostAddress:$port" }
+            // A 200 is the steady-state norm and runs every poll while disconnected, so keep it at
+            // debug; surface any non-200 at info — it means we reached the host but its server
+            // answered abnormally, which "no reachable host" alone can't distinguish.
+            if (httpResponse.status.isSuccess()) {
+                logger.debug { "httpResponse.status = ${httpResponse.status.value} $hostAddress:$port" }
+            } else {
+                logger.info { "httpResponse.status = ${httpResponse.status.value} $hostAddress:$port" }
+            }
 
             if (httpResponse.status.value == 200) {
                 // Mark as delivered only on a 200 we actually sent the header on, so a
