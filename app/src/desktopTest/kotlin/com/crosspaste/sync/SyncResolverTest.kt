@@ -8,6 +8,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.SyncInfoFactory
@@ -51,7 +52,14 @@ class SyncResolverTest {
             mockk(relaxed = true) {
                 every { nearbySyncInfos } returns MutableStateFlow(emptyList())
             }
-        val networkInterfaceService: NetworkInterfaceService = mockk(relaxed = true)
+        val networkInterfaceService: NetworkInterfaceService =
+            mockk(relaxed = true) {
+                // Default to "online": discoverAndConnect now gates on having a usable
+                // local interface, so the resolver must see at least one by default.
+                // Tests covering the offline path override this to emptyList().
+                every { getCurrentUseNetworkInterfaces() } returns
+                    listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
+            }
         val ratingPromptManager: RatingPromptManager = mockk(relaxed = true)
         val secureKeyPairSerializer: com.crosspaste.secure.SecureKeyPairSerializer = mockk(relaxed = true)
         val secureStore: SecureStore = mockk(relaxed = true)
@@ -286,6 +294,56 @@ class SyncResolverTest {
             coVerify { deps.telnetHelper.switchHost(emptyList(), any(), any(), any()) }
             // Already DISCONNECTED with no host → no redundant DB write.
             coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun discoverAndConnect_noLocalInterface_skipsProbingAndStaysDisconnected() =
+        runTest {
+            // #4509 phase 2: with no usable local interface, every telnet would fail and
+            // spam "no reachable host". The gate must skip discovery entirely — no telnet,
+            // no switchHost — and not re-persist an already-DISCONNECTED device.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.DISCONNECTED,
+                    hostInfoList = listOf(HostInfo(24, "192.168.1.100")),
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns emptyList()
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            coVerify(exactly = 0) { deps.telnetHelper.telnet(any(), any(), any()) }
+            coVerify(exactly = 0) { deps.telnetHelper.switchHost(any(), any(), any(), any()) }
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun discoverAndConnect_noLocalInterface_fromNonDisconnected_persistsDisconnectedOnce() =
+        runTest {
+            // A device that was CONNECTED loses all local interfaces: the gate must still
+            // record the DISCONNECTED transition exactly once (so the UI reflects reality)
+            // without probing any host.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            // Heartbeat on the current address fails → falls through to discoverAndConnect.
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns ConnectionRefused
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns emptyList()
+
+            val capturedInfo = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
+            coVerify(exactly = 0) { deps.telnetHelper.switchHost(any(), any(), any(), any()) }
         }
 
     // ========== A2. Phase E: recency-first probing + active switch ==========

@@ -245,6 +245,20 @@ class SyncResolver(
      * to probing the full address list with a longer timeout.
      */
     private suspend fun SyncRuntimeInfo.discoverAndConnect(callback: ResolveCallback) {
+        // Gate discovery when the machine has no usable local interface (cold-start
+        // before the network is up, sleep/wake, cable pulled). Every telnet would fail
+        // with UnresolvedAddressException, and the per-poll "no reachable host" line
+        // turns into a log storm (#4509 / #4499: 700+ lines in one offline session).
+        // Skip probing entirely and stay DISCONNECTED; the NetworkStateMonitor re-emits
+        // interfaces the moment connectivity returns, and the next poll resolves cleanly.
+        if (networkInterfaceService.getCurrentUseNetworkInterfaces().isEmpty()) {
+            logger.debug { "$appInstanceId offline (no local interface), skipping discovery" }
+            if (connectState != SyncState.DISCONNECTED) {
+                updateConnectState(SyncState.DISCONNECTED)
+            }
+            return
+        }
+
         val result =
             discoverReachableHost() ?: run {
                 logger.info { "$appInstanceId no reachable host, hostInfoList: $hostInfoList" }
