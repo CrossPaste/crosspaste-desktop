@@ -3,8 +3,10 @@ package com.crosspaste.sync
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.KeyedThrottler
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
@@ -35,6 +37,10 @@ class GeneralNearbyDeviceManager(
     override val searching: StateFlow<Boolean> = _searching
 
     private val syncInfos = MutableStateFlow<Map<String, SyncInfo>>(mapOf())
+
+    // Collapse the burst of serviceResolved callbacks (mDNS cache replay across interfaces)
+    // into a single discovery-driven reconnect per device per cooldown window.
+    private val reconnectThrottle = KeyedThrottler<String>(FAST_RECONNECT_COOLDOWN_MS)
 
     private val isSelf: (String) -> Boolean = { appInstanceId ->
         appInstanceId == appInfo.appInstanceId
@@ -97,6 +103,19 @@ class GeneralNearbyDeviceManager(
                         if (existing.diffSyncInfo(mergedInfo)) {
                             syncManager.updateSyncInfo(mergedInfo)
                         }
+
+                        // Discovery-driven fast reconnect: a paired DISCONNECTED peer
+                        // just proved reachable (serviceResolved). For a same-IP
+                        // reappearance diffSyncInfo is false, so nothing is written to the
+                        // DB and the sync state machine never sees it — drive the reconnect
+                        // from here. Excludes UNMATCHED / INCOMPATIBLE / UNVERIFIED
+                        // ("reachable but rejected"): those are not address-reachability
+                        // problems and are left to polling backoff.
+                        if (existing.connectState == SyncState.DISCONNECTED &&
+                            reconnectThrottle.tryAcquire(appInstanceId, now)
+                        ) {
+                            syncManager.fastReconnect(appInstanceId)
+                        }
                     }
             }
 
@@ -126,5 +145,11 @@ class GeneralNearbyDeviceManager(
 
     override fun stopSearching() {
         _searching.value = false
+    }
+
+    companion object {
+        // serviceResolved is an edge signal that arrives in short bursts; one reconnect
+        // per device per this window is enough (discovery-driven-fast-reconnect §4.2).
+        private const val FAST_RECONNECT_COOLDOWN_MS = 5000L
     }
 }

@@ -164,7 +164,7 @@ class GeneralSyncHandlerTest {
         }
 
     @Test
-    fun handleValueChange_stateToDisconnected_emitsFailAndRefreshSyncInfo() =
+    fun handleValueChange_stateToDisconnected_emitsRefreshSyncInfo() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -251,12 +251,16 @@ class GeneralSyncHandlerTest {
      * Regression for #4499 / #4500: within a single failing resolve pass the address
      * thrashes (CONNECTING@new -> DISCONNECTED@stale). The DISCONNECTED write changes
      * BOTH state and address. The address-change branch must NOT short-circuit with an
-     * immediate Resolve here — that bypassed SyncPollingManager's backoff and produced
-     * the ~530ms tight loop. Instead the DISCONNECTED handling must run: increment the
-     * fail count (backoff) and emit RefreshSyncInfo, but no Resolve (previous != CONNECTED).
+     * immediate Resolve here — that bypassed backoff and produced the ~530ms tight loop.
+     * It still emits RefreshSyncInfo (previous != CONNECTED, so no Resolve).
+     *
+     * Backoff is NO LONGER applied from this DB write (discovery-driven-fast-reconnect,
+     * fix one): handleValueChange must not call fail(), so external/discovery DB writes
+     * can't starve polling. The real backoff for a failed attempt comes from the polling
+     * callback's markPollFailure (covered by pollingCallback_markPollFailure_incrementsFailCount).
      */
     @Test
-    fun handleValueChange_addressThrashOnFailure_appliesBackoffWithoutResolve() =
+    fun handleValueChange_addressThrashOnFailure_noResolveNoBackoffFromDbWrite() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -280,7 +284,73 @@ class GeneralSyncHandlerTest {
 
             assertTrue(emitter.events.none { it is SyncEvent.Resolve })
             assertTrue(emitter.events.any { it is SyncEvent.RefreshSyncInfo })
-            assertEquals(failBefore + 1, handler.syncPollingManager.currentFailCount)
+            assertEquals(failBefore, handler.syncPollingManager.currentFailCount)
+            childScope.cancel()
+        }
+
+    /**
+     * Case 5 (fix one regression): repeated external DB emits for a DISCONNECTED device
+     * (e.g. mDNS address jitter writing the row) must NOT touch the backoff. Before fix one
+     * the trailing `when` block called fail() on every such write, starving the polling
+     * alarm. Now fail() is never called from handleValueChange, so fail count stays put and
+     * no Resolve is emitted (the device is not CONNECTED).
+     */
+    @Test
+    fun handleValueChange_repeatedDisconnectedDbWrites_doNotStarveBackoff() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val base =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.DISCONNECTED,
+                    hostInfoList = listOf(HostInfo(24, "192.168.1.100")),
+                )
+
+            val handler = GeneralSyncHandler(base, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emitter.events.clear()
+            val failBefore = handler.syncPollingManager.currentFailCount
+
+            // Several external DB emits (address jitter) while staying DISCONNECTED.
+            handler.updateSyncRuntimeInfo(base.copy(hostInfoList = listOf(HostInfo(24, "192.168.1.101"))))
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            handler.updateSyncRuntimeInfo(base.copy(hostInfoList = listOf(HostInfo(24, "192.168.1.102"))))
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            handler.updateSyncRuntimeInfo(base.copy(hostInfoList = listOf(HostInfo(24, "192.168.1.103"))))
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            assertEquals(failBefore, handler.syncPollingManager.currentFailCount)
+            assertTrue(emitter.events.none { it is SyncEvent.Resolve })
+            childScope.cancel()
+        }
+
+    /**
+     * fastReconnect (discovery-driven, fix two): clears the connection-failure backoff and
+     * emits a ForceResolve. serviceResolved is a reachability edge, so a fresh start is
+     * warranted; a successful reconnect would also reset via the CONNECTED transition, but
+     * resetting up front lets the polling fallback retry promptly if this attempt races.
+     */
+    @Test
+    fun fastReconnect_resetsBackoffAndEmitsForceResolve() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncRuntimeInfo = createSyncRuntimeInfo(connectState = SyncState.DISCONNECTED)
+
+            val handler = GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            // Build up backoff via real poll failures.
+            handler.createPollingCallback().markPollFailure()
+            handler.createPollingCallback().markPollFailure()
+            assertTrue(handler.syncPollingManager.currentFailCount > 0)
+            emitter.events.clear()
+
+            handler.fastReconnect()
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            assertEquals(0, handler.syncPollingManager.currentFailCount)
+            assertTrue(emitter.events.any { it is SyncEvent.ForceResolve })
             childScope.cancel()
         }
 

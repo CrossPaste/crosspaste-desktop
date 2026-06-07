@@ -31,6 +31,17 @@ interface SyncHandler {
 
     suspend fun forceResolve()
 
+    /**
+     * Discovery-driven fast reconnect: invoked when mDNS re-discovers a paired but
+     * DISCONNECTED peer. The same-IP reappearance never writes the DB, so the normal
+     * state-machine path can't observe it — discovery drives the reconnect directly.
+     * Default behaviour is a plain [forceResolve]; [GeneralSyncHandler] additionally
+     * resets the connection-failure backoff first.
+     */
+    suspend fun fastReconnect() {
+        forceResolve()
+    }
+
     suspend fun updateAllowSend(allowSend: Boolean)
 
     suspend fun updateAllowReceive(allowReceive: Boolean)
