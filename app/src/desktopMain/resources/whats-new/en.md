@@ -1,3 +1,17 @@
+# [2.1.4] - 2026-06-07
+
+## 🔄 Faster, more reliable reconnection
+This release focuses on the connection between your devices. When you switch Wi-Fi networks, your network address changes, or your computer wakes from sleep, CrossPaste now rediscovers your other devices and reconnects much faster — no more being stuck "offline" for a long time. Even when a device's IP address changes, it reconnects reliably.
+
+## 🆕 In-app changelog and upgrade reminder
+You can now see what each update brings right inside the app. When a new version is available, a small dot appears in the left menu to remind you to upgrade.
+
+## 🖱️ Fixed a paste loop
+Fixed an issue where pressing Cmd/Ctrl+V could trigger an endless paste loop in some situations. Pasting is now more reliable.
+
+## ✨ Smoother device list
+The device list no longer flickers while re-checking offline devices, so it stays steady.
+
 # [2.1.3] - 2026-05-25
 
 ## 📤 Faster file sharing across devices
