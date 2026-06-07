@@ -160,12 +160,17 @@ fun Routing.syncRouting(
     get("/sync/telnet") {
         // Address push (#4509 phase 3): the probe may carry the caller's subnet-matched
         // SyncInfo so we learn its current address without waiting for the next mDNS
-        // round. This is an UNAUTHENTICATED routing hint — the same trust level as an
-        // mDNS TXT record — so it flows through the identical addDevice path: for an
-        // unknown peer it only populates the in-memory nearby list (never the DB), and
-        // for an already-known peer it merges into its hostInfoList. Trust is still
-        // granted solely by the ECDH heartbeat.
-        call.clientSyncInfo()?.let { nearbyDeviceManager.addDevice(it) }
+        // round. This is an UNAUTHENTICATED routing hint, so we only honor it for a peer
+        // we have already paired with (ECDH crypt key on file) — its purpose is to let a
+        // known peer reconnect fast after an IP change. Unknown-peer discovery stays
+        // mDNS's job; gating here keeps the in-memory nearby map bounded by the number of
+        // real paired devices instead of by attacker-controlled appInstanceId headers.
+        // Trust is still granted solely by the ECDH heartbeat.
+        call.clientSyncInfo()?.let { syncInfo ->
+            if (secureStore.existCryptPublicKey(syncInfo.appInfo.appInstanceId)) {
+                nearbyDeviceManager.addDevice(syncInfo)
+            }
+        }
 
         // Advertise our identity alongside the version so discovery can vet the peer
         // atomically. Unauthenticated, selection-only (trust is via ECDH); body is
