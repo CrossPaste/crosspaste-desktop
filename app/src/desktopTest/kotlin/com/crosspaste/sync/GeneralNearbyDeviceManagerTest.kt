@@ -4,6 +4,7 @@ import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
+import com.crosspaste.db.sync.SyncState
 import com.crosspaste.sync.SyncTestFixtures.createSyncInfo
 import com.crosspaste.sync.SyncTestFixtures.createSyncRuntimeInfo
 import io.mockk.every
@@ -12,6 +13,7 @@ import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -218,6 +220,125 @@ class GeneralNearbyDeviceManagerTest {
 
             // diffSyncInfo should detect port change and trigger updateSyncInfo
             verify { deps.syncManager.updateSyncInfo(any()) }
+        }
+
+    // ========== Discovery-driven fast reconnect (§6 cases 1-4) ==========
+
+    /**
+     * Case 1 (core): a paired DISCONNECTED device is re-discovered at the SAME address.
+     * diffSyncInfo is false, so nothing is written to the DB (updateSyncInfo not called),
+     * yet the discovery edge must still drive exactly one fast reconnect.
+     */
+    @Test
+    fun addDevice_disconnectedPairedDevice_sameAddress_triggersFastReconnect() =
+        runTest {
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val deps = TestDeps(childScope)
+            val manager = deps.createManager(childScope)
+
+            deps.realTimeSyncRuntimeInfos.value =
+                listOf(
+                    createSyncRuntimeInfo(
+                        appInstanceId = "other-app-1",
+                        connectState = SyncState.DISCONNECTED,
+                    ),
+                )
+            advanceUntilIdle()
+
+            manager.addDevice(createSyncInfo(appInstanceId = "other-app-1"))
+            advanceUntilIdle()
+
+            verify(exactly = 1) { deps.syncManager.fastReconnect("other-app-1") }
+            verify(exactly = 0) { deps.syncManager.updateSyncInfo(any()) }
+            childScope.cancel()
+        }
+
+    /** Case 2: a paired DISCONNECTED device re-discovered at a NEW address also reconnects. */
+    @Test
+    fun addDevice_disconnectedPairedDevice_newAddress_triggersFastReconnect() =
+        runTest {
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val deps = TestDeps(childScope)
+            val manager = deps.createManager(childScope)
+
+            deps.realTimeSyncRuntimeInfos.value =
+                listOf(
+                    createSyncRuntimeInfo(
+                        appInstanceId = "other-app-1",
+                        connectState = SyncState.DISCONNECTED,
+                        hostInfoList = listOf(HostInfo(24, "192.168.1.100")),
+                    ),
+                )
+            advanceUntilIdle()
+
+            manager.addDevice(
+                createSyncInfo(
+                    appInstanceId = "other-app-1",
+                    hostInfoList = listOf(HostInfo(24, "10.0.0.1")),
+                ),
+            )
+            advanceUntilIdle()
+
+            verify(exactly = 1) { deps.syncManager.fastReconnect("other-app-1") }
+            childScope.cancel()
+        }
+
+    /** Case 3: a burst of serviceResolved within the cooldown window collapses to one reconnect. */
+    @Test
+    fun addDevice_burst_fastReconnectThrottledToOnce() =
+        runTest {
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val deps = TestDeps(childScope)
+            val manager = deps.createManager(childScope)
+
+            deps.realTimeSyncRuntimeInfos.value =
+                listOf(
+                    createSyncRuntimeInfo(
+                        appInstanceId = "other-app-1",
+                        connectState = SyncState.DISCONNECTED,
+                    ),
+                )
+            advanceUntilIdle()
+
+            repeat(8) { manager.addDevice(createSyncInfo(appInstanceId = "other-app-1")) }
+            advanceUntilIdle()
+
+            verify(exactly = 1) { deps.syncManager.fastReconnect("other-app-1") }
+            childScope.cancel()
+        }
+
+    /**
+     * Case 4: "reachable but rejected" states (UNMATCHED / INCOMPATIBLE / UNVERIFIED) and the
+     * already-CONNECTED state must NOT trigger fast reconnect — only DISCONNECTED does.
+     */
+    @Test
+    fun addDevice_nonDisconnectedStates_doNotFastReconnect() =
+        runTest {
+            listOf(
+                SyncState.UNMATCHED,
+                SyncState.INCOMPATIBLE,
+                SyncState.UNVERIFIED,
+                SyncState.CONNECTED,
+            ).forEach { state ->
+                val childScope = CoroutineScope(coroutineContext + Job())
+                val deps = TestDeps(childScope)
+                val manager = deps.createManager(childScope)
+
+                deps.realTimeSyncRuntimeInfos.value =
+                    listOf(
+                        createSyncRuntimeInfo(
+                            appInstanceId = "other-app-1",
+                            connectState = state,
+                        ),
+                    )
+                advanceUntilIdle()
+
+                manager.addDevice(createSyncInfo(appInstanceId = "other-app-1"))
+                advanceUntilIdle()
+
+                verify(exactly = 0) { deps.syncManager.fastReconnect(any()) }
+                childScope.cancel()
+            }
         }
 
     companion object {

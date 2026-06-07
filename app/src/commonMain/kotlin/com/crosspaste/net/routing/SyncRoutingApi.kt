@@ -25,6 +25,14 @@ interface SyncRoutingApi {
         }
     }
 
+    fun fastReconnect(appInstanceId: String) {
+        getSyncHandler(appInstanceId)?.let { syncHandler ->
+            realTimeSyncScope.launch(CoroutineName("FastReconnect")) {
+                syncHandler.fastReconnect()
+            }
+        }
+    }
+
     fun notifyExit() {
         val logger = KotlinLogging.logger {}
         // Ensure that all notifications are completed before exiting, with a timeout

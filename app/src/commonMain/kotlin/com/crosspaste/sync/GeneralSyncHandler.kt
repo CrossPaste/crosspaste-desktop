@@ -100,10 +100,12 @@ class GeneralSyncHandler(
         // A changed connect address only warrants an immediate re-resolve when the
         // device is currently CONNECTED (e.g. mDNS advertised a new address for a
         // live peer). For CONNECTING / DISCONNECTED / etc. we must NOT short-circuit
-        // here — let the connectState handling below run so SyncPollingManager applies
-        // exponential backoff. Otherwise a discover -> authenticate -> fail pass that
-        // thrashes the address (CONNECTING@new <-> DISCONNECTED@stale) re-emits Resolve
-        // on every DB write and bypasses backoff (#4499 / #4500 tight loop).
+        // here — that would re-emit Resolve on every DB write and reproduce the #4499 /
+        // #4500 tight loop (a discover -> authenticate -> fail pass thrashes the address
+        // CONNECTING@new <-> DISCONNECTED@stale). Backoff is no longer applied in
+        // handleValueChange at all: it is driven solely by the polling loop's
+        // markPollFailure (see createPollingCallback), so external/discovery DB writes
+        // can never starve polling (discovery-driven-fast-reconnect, fix one).
         if (current.connectState == SyncState.CONNECTED &&
             previous.connectHostAddress != null &&
             current.connectHostAddress != null &&
@@ -116,12 +118,12 @@ class GeneralSyncHandler(
         if (current.connectState != previous.connectState) {
             when (current.connectState) {
                 SyncState.DISCONNECTED -> {
-                    syncPollingManager.fail()
                     emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId, current.hostInfoList))
                     // Only attempt immediate reconnection when transitioning from CONNECTED.
                     // For CONNECTING -> DISCONNECTED (a failed connection attempt),
                     // let polling handle retry with backoff to avoid tight retry loops
-                    // (e.g. NOT_MATCH_APP_INSTANCE_ID on dual-boot machines).
+                    // (e.g. NOT_MATCH_APP_INSTANCE_ID on dual-boot machines). Backoff is
+                    // applied by the failed poll's markPollFailure, not by this DB write.
                     if (previous.connectState == SyncState.CONNECTED) {
                         emitEvent(SyncEvent.Resolve(current, createCallback()))
                     }
@@ -130,7 +132,6 @@ class GeneralSyncHandler(
                 SyncState.UNMATCHED,
                 SyncState.UNVERIFIED,
                 -> {
-                    syncPollingManager.fail()
                     emitEvent(SyncEvent.RefreshSyncInfo(current.appInstanceId, current.hostInfoList))
                 }
                 SyncState.CONNECTING -> {
@@ -153,16 +154,6 @@ class GeneralSyncHandler(
         if (!hostInfoListEqual(previous.hostInfoList, current.hostInfoList)) {
             if (current.connectState == SyncState.CONNECTED) {
                 emitEvent(SyncEvent.Resolve(current, createCallback()))
-            }
-        }
-
-        when (current.connectState) {
-            SyncState.DISCONNECTED,
-            SyncState.INCOMPATIBLE,
-            SyncState.UNMATCHED,
-            SyncState.UNVERIFIED,
-            -> {
-                syncPollingManager.fail()
             }
         }
     }
@@ -189,6 +180,15 @@ class GeneralSyncHandler(
 
     override suspend fun forceResolve() {
         emitEvent(SyncEvent.ForceResolve(currentSyncRuntimeInfo, createCallback()))
+    }
+
+    override suspend fun fastReconnect() {
+        // A paired-but-DISCONNECTED peer just proved reachable via mDNS serviceResolved.
+        // Treat that reachability edge as a fresh start: clear the connection-failure
+        // backoff so the polling fallback retries promptly if this immediate attempt
+        // races the peer's server coming up, then drive an immediate reconnect.
+        syncPollingManager.reset()
+        forceResolve()
     }
 
     override suspend fun updateAllowSend(allowSend: Boolean) {
