@@ -12,5 +12,10 @@ object DesktopAppUrls : AppUrls {
 
     override val checkMetadataUrl: String = appUrlsProperties.getProperty("check-metadata-url")
 
+    // Desktop-only: fallback version endpoint when GitHub ([checkMetadataUrl] host)
+    // is unreachable, e.g. for users in mainland China. Intentionally NOT on the
+    // shared [AppUrls] interface — mobile (which copies commonMain) does not use it.
+    val versionApiUrl: String = appUrlsProperties.getProperty("version-api-url")
+
     override val issueTrackerUrl: String = appUrlsProperties.getProperty("issue-tracker-url")
 }

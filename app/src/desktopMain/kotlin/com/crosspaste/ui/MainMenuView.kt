@@ -52,7 +52,6 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkProfileService
-import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -214,6 +213,10 @@ fun MainMenuView() {
                 title = "check_for_updates",
                 icon = MaterialSymbols.Rounded.Refresh,
                 selected = false,
+                // Single entry point for every channel (same as the tray's check):
+                // portable-zip re-arms the update dialog (or reports "no new version"),
+                // others delegate to Store / Conveyor / browser. Avoids a "fake check"
+                // that only navigated without any feedback.
                 onClick = { appUpdateService.tryTriggerUpdate() },
                 compact = true,
             )

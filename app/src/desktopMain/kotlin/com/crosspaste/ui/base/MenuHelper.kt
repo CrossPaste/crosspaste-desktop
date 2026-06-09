@@ -4,9 +4,11 @@ import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.WindowTrigger
+import com.crosspaste.app.WindowsZipUpdater
 import com.crosspaste.i18n.Copywriter
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.About
+import com.crosspaste.ui.ChangeLog
 import com.crosspaste.ui.Devices
 import com.crosspaste.ui.Export
 import com.crosspaste.ui.Extension
@@ -25,8 +27,22 @@ class MenuHelper(
     private val appWindowManager: DesktopAppWindowManager,
     private val copywriter: GlobalCopywriter,
     private val navigationManager: NavigationManager,
+    private val windowsZipUpdater: WindowsZipUpdater,
     uiSupport: UISupport,
 ) {
+
+    /**
+     * Start the Windows portable-zip download and open the changelog screen so the user
+     * sees download/verify progress and the restart prompt. Shared by the update dialog,
+     * the tray "update" item, and the search-window hint button.
+     */
+    fun triggerPortableUpdate() {
+        windowsZipUpdater.startDownload()
+        mainCoroutineDispatcher.launch(CoroutineName("Open changelog for update")) {
+            navigationManager.navigateAndClearStack(ChangeLog)
+            appWindowManager.showMainWindow(WindowTrigger.MENU)
+        }
+    }
 
     val about =
         MenuItem(

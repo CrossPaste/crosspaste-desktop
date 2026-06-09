@@ -28,6 +28,8 @@ import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopPidFileService
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.NativeMessagingHostService
+import com.crosspaste.app.UpdateMetadataFetcher
+import com.crosspaste.app.WindowsZipUpdater
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
@@ -106,7 +108,9 @@ fun desktopAppModule(
         single<AppStartUpService> { DesktopAppStartUpService(get(), get(), get(), get()) }
         single<DesktopPidFileService> { DesktopPidFileService(get(), get()) }
         single<NativeMessagingHostService> { NativeMessagingHostService(get(), get(), get()) }
-        single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get()) }
+        single<UpdateMetadataFetcher> { UpdateMetadataFetcher(get()) }
+        single<WindowsZipUpdater> { WindowsZipUpdater(get(), get(), get(), get(), get(), get()) }
+        single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get(), get(), get()) }
         single<AppUrls> { DesktopAppUrls }
         single<ChangelogService> { ChangelogService(get()) }
         single<CrossPasteWebService> { CrossPasteWebService(get(), get()) }

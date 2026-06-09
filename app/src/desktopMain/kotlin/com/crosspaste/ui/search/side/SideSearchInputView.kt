@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults.iconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
@@ -48,10 +49,14 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Search
 import com.composables.icons.materialsymbols.rounded.Settings
+import com.composables.icons.materialsymbols.rounded.System_update
 import com.composables.icons.materialsymbols.rounded.Undo
+import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
+import com.crosspaste.app.WindowsUpdateChannel
+import com.crosspaste.app.WindowsZipUpdater
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopPasteMenuService
@@ -61,6 +66,7 @@ import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.GeneralIconButton
+import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.TutorialButton
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
@@ -86,13 +92,22 @@ import org.koin.compose.koinInject
 @Composable
 fun SideSearchInputView() {
     val appLaunch = koinInject<DesktopAppLaunch>()
+    val appUpdateService = koinInject<AppUpdateService>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val menuHelper = koinInject<MenuHelper>()
     val navigationManager = koinInject<NavigationManager>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+    val windowsZipUpdater = koinInject<WindowsZipUpdater>()
+
+    // Windows portable-zip only: a hint to update, shown when a newer version exists.
+    val isPortableZipUpdate =
+        remember { windowsZipUpdater.channel == WindowsUpdateChannel.PORTABLE_ZIP }
+    val hasNewVersion by remember { appUpdateService.existNewVersion() }
+        .collectAsState(initial = false)
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val searchWindowInfo = LocalSearchWindowInfoState.current
@@ -162,11 +177,44 @@ fun SideSearchInputView() {
                 QuickPasteView()
             }
 
+            // Keep QuickPasteView on the left; push the tutorial / update
+            // affordances to the right end so they sit next to the centered
+            // search box instead of crowding it.
+            Spacer(modifier = Modifier.weight(1f))
+
             if (firstLaunchCompleted && config.showTutorial) {
-                if (prevAppName != null) {
-                    Spacer(modifier = Modifier.width(large))
-                }
                 TutorialButton()
+                Spacer(modifier = Modifier.width(large))
+            }
+
+            // Windows portable-zip only: a labeled update affordance, right of
+            // this section (left of the search box) where there is room. A text
+            // button reads clearer than a bare icon, and TextButton gives it a
+            // native hover highlight while matching TutorialButton's sizing.
+            if (isPortableZipUpdate && hasNewVersion) {
+                TextButton(
+                    onClick = {
+                        menuHelper.triggerPortableUpdate()
+                        scope.launch { appWindowManager.hideSearchWindow() }
+                    },
+                ) {
+                    Icon(
+                        modifier = Modifier.size(small),
+                        imageVector = MaterialSymbols.Rounded.System_update,
+                        contentDescription = "update_available",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(tiny2X))
+                    Text(
+                        text = copywriter.getText("update_now"),
+                        color = MaterialTheme.colorScheme.primary,
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                lineHeight = TextUnit.Unspecified,
+                            ),
+                    )
+                }
+                Spacer(modifier = Modifier.width(large))
             }
         }
 
