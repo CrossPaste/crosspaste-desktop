@@ -80,5 +80,7 @@ fun CrossPasteMainWindowContent() {
         screenProvider.DragTargetView()
 
         NetworkWarningDialogHost()
+
+        UpdateDialogHost()
     }
 }

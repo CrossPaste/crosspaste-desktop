@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,6 +35,10 @@ import androidx.compose.ui.text.withStyle
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.ChangelogEntry
 import com.crosspaste.app.ChangelogService
+import com.crosspaste.app.ExitMode
+import com.crosspaste.app.UpdateState
+import com.crosspaste.app.WindowsUpdateChannel
+import com.crosspaste.app.WindowsZipUpdater
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -45,6 +52,7 @@ import org.koin.compose.koinInject
 fun ChangeLogContentView() {
     val changelogService = koinInject<ChangelogService>()
     val appUpdateService = koinInject<AppUpdateService>()
+    val windowsZipUpdater = koinInject<WindowsZipUpdater>()
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
 
@@ -62,15 +70,21 @@ fun ChangeLogContentView() {
     }
 
     if (entries.isEmpty()) {
-        Box(
+        Column(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
+            verticalArrangement = Arrangement.spacedBy(medium),
         ) {
-            Text(
-                text = copywriter.getText("change_log_desc"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            UpdateAvailableBanner(appUpdateService, windowsZipUpdater, copywriter)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = copywriter.getText("change_log_desc"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         return
     }
@@ -88,6 +102,8 @@ fun ChangeLogContentView() {
                 .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(medium),
     ) {
+        UpdateAvailableBanner(appUpdateService, windowsZipUpdater, copywriter)
+
         ChangelogEntryView(primaryEntry)
 
         if (showAll) {
@@ -108,6 +124,115 @@ fun ChangeLogContentView() {
                 )
             }
         }
+    }
+}
+
+/**
+ * Portable-zip self-update banner. Only rendered for the [WindowsUpdateChannel.PORTABLE_ZIP]
+ * channel; other channels update through the Store or Conveyor and show nothing here.
+ */
+@Composable
+private fun UpdateAvailableBanner(
+    appUpdateService: AppUpdateService,
+    windowsZipUpdater: WindowsZipUpdater,
+    copywriter: GlobalCopywriter,
+) {
+    if (windowsZipUpdater.channel != WindowsUpdateChannel.PORTABLE_ZIP) return
+
+    val hasNewVersion by remember { appUpdateService.existNewVersion() }
+        .collectAsState(initial = false)
+    val lastVersion by appUpdateService.lastVersion.collectAsState()
+    val updateState by windowsZipUpdater.updateState.collectAsState()
+
+    // Show when a newer version exists, or while an update is already in flight.
+    if (!hasNewVersion && updateState is UpdateState.Idle) return
+
+    val exitApplication = LocalExitApplication.current
+    val versionSuffix = lastVersion?.let { " v$it" } ?: ""
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.primaryContainer,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(medium),
+            verticalArrangement = Arrangement.spacedBy(small),
+        ) {
+            Text(
+                text = copywriter.getText("update_available") + versionSuffix,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+
+            when (val state = updateState) {
+                is UpdateState.Idle -> {
+                    Button(onClick = { windowsZipUpdater.startDownload() }) {
+                        Text(copywriter.getText("update_download"))
+                    }
+                }
+                is UpdateState.Checking ->
+                    UpdateProgressRow(copywriter.getText("update_checking"))
+                is UpdateState.Downloading -> {
+                    val percent = state.percent
+                    UpdateStatusText(
+                        copywriter.getText("update_downloading") +
+                            if (percent >= 0) " $percent%" else "",
+                    )
+                    if (percent >= 0) {
+                        LinearProgressIndicator(
+                            progress = { percent / 100f },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+                is UpdateState.Verifying ->
+                    UpdateProgressRow(copywriter.getText("update_verifying"))
+                is UpdateState.Extracting ->
+                    UpdateProgressRow(copywriter.getText("update_extracting"))
+                is UpdateState.ReadyToApply -> {
+                    UpdateStatusText(copywriter.getText("update_ready"))
+                    Button(
+                        onClick = {
+                            windowsZipUpdater.applyUpdate { exitApplication(ExitMode.EXIT) }
+                        },
+                    ) {
+                        Text(copywriter.getText("update_restart_now"))
+                    }
+                }
+                is UpdateState.Applying ->
+                    UpdateProgressRow(copywriter.getText("update_restarting"))
+                is UpdateState.Failed -> {
+                    Text(
+                        text = copywriter.getText(state.reasonKey),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Button(onClick = { windowsZipUpdater.startDownload() }) {
+                        Text(copywriter.getText("update_retry"))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpdateStatusText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onPrimaryContainer,
+    )
+}
+
+@Composable
+private fun UpdateProgressRow(text: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(tiny)) {
+        UpdateStatusText(text)
+        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
     }
 }
 

@@ -74,7 +74,7 @@ fun desktopUiModule(): Module =
         single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
         single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
         single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
-        single<MenuHelper> { MenuHelper(get(), get(), get(), get(), get()) }
+        single<MenuHelper> { MenuHelper(get(), get(), get(), get(), get(), get()) }
         single<NavigationManager> { get<DesktopScreenProvider>() }
         single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
         single<NativeMouseListener> { get<DesktopAppSize>() }
