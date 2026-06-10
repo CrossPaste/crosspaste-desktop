@@ -6,6 +6,8 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.linux.LinuxActiveAppResolver
+import com.crosspaste.platform.linux.LinuxDesktopAppIcon
 import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
 import com.sun.jna.NativeLong
@@ -28,6 +30,11 @@ class LinuxAppWindowManager(
 ) : DesktopAppWindowManager(appSize) {
 
     private val prevLinuxAppInfo: MutableStateFlow<LinuxAppInfo?> = MutableStateFlow(null)
+
+    // Wayland sessions resolve the focused app through compositor IPC where
+    // available; X11 sessions (and the paste-back focus logic below, which is
+    // X11-only either way) keep the _NET_ACTIVE_WINDOW path.
+    private val activeAppResolver = LinuxActiveAppResolver.detect()
 
     private val classNameSet: MutableSet<String> = ConcurrentSet()
 
@@ -60,8 +67,8 @@ class LinuxAppWindowManager(
         }
 
     override fun getCurrentActiveAppName(): String? =
-        X11Api.getActiveWindow()?.let { linuxAppInfo ->
-            getAppName(linuxAppInfo)
+        activeAppResolver.getActiveApp()?.let { activeApp ->
+            registerApp(activeApp.appName, activeApp.x11Window)
         }
 
     override fun getRunningAppNames(): List<String> =
@@ -84,29 +91,39 @@ class LinuxAppWindowManager(
             }
         }
 
-    private fun getAppName(linuxAppInfo: LinuxAppInfo): String {
-        val className = linuxAppInfo.className
-        if (!classNameSet.contains(className)) {
+    private fun getAppName(linuxAppInfo: LinuxAppInfo): String =
+        registerApp(linuxAppInfo.className, linuxAppInfo.window)
+
+    private fun registerApp(
+        appName: String,
+        window: Window?,
+    ): String {
+        if (!classNameSet.contains(appName)) {
             ioScope.launch {
-                saveAppImage(linuxAppInfo.window, className)
+                saveAppImage(appName, window)
             }
-            classNameSet.add(className)
+            classNameSet.add(appName)
         }
-        return className
+        return appName
     }
 
     @Synchronized
     private fun saveAppImage(
-        window: Window,
-        className: String,
+        appName: String,
+        window: Window?,
     ) {
         runCatching {
-            val iconPath = userDataPathProvider.resolveIconPath(appInfo.appInstanceId, className)
-            if (!iconPath.toFile().exists()) {
+            val iconPath = userDataPathProvider.resolveIconPath(appInfo.appInstanceId, appName)
+            if (iconPath.toFile().exists()) {
+                return
+            }
+            if (window != null) {
                 X11Api.saveAppIcon(window, iconPath.toNioPath())
+            } else if (!LinuxDesktopAppIcon.saveAppIcon(appName, iconPath.toNioPath())) {
+                logger.debug { "No desktop-entry icon found for $appName" }
             }
         }.onFailure { e ->
-            logger.warn(e) { "Failed to save app icon for $className" }
+            logger.warn(e) { "Failed to save app icon for $appName" }
         }
     }
 
