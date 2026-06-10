@@ -2,6 +2,103 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.4] - 2026-06-10
+# Highlights 🌟
+
+- 🔄 **Faster, more reliable reconnection**
+  This release focuses on the connection between your devices. When you
+  switch Wi-Fi networks, your network address changes, or your computer
+  wakes from sleep, CrossPaste now rediscovers your other devices and
+  reconnects much faster — no more being stuck "offline" for a long
+  time. Even when a device's IP address changes, it reconnects reliably
+  (#4506 #4510 #4515 #4519 #4521 #4527 #4529).
+
+- 🆕 **In-app changelog and upgrade reminder**
+  You can now see what each update brings right inside the app. When a
+  new version is available, a small dot appears in the left menu to
+  remind you to upgrade (#4525).
+
+- ⬆️ **Windows (portable zip): update from within the app**
+  The Windows portable (zip) build can now update itself. When a new
+  version is available, CrossPaste downloads and verifies it, then swaps
+  in the new build and restarts — no more manually downloading and
+  extracting a fresh zip (#4537).
+
+- 🖱️ **Fixed an endless paste loop**
+  Fixed an issue where pressing Cmd/Ctrl+V could trigger an endless
+  paste loop in some situations. Pasting is now more reliable (#4501
+  #4502).
+
+- ✨ **Smoother device list**
+  The device list no longer flickers while re-checking offline devices,
+  so it stays steady (#4508).
+
+- 🔤 **No more garbled rich text**
+  Copying formatted text from apps such as JetBrains IDEs no longer
+  produces garbled characters — clipboard HTML charset detection is now
+  much more robust (#4542 #4550).
+
+- 🐧 **Better clipboard on Linux**
+  On Wayland, copied content is picked up with much lower latency, and
+  CrossPaste now correctly identifies which app a copy came from on
+  Hyprland and Sway (#4544 #4546).
+
+# Bug Fixes 🐛
+
+- :bug: Distrust implausible wide-charset labels when decoding clipboard HTML (#4550)
+- :bug: Resolve clipboard source app on Wayland via compositor IPC (#4546)
+- :bug: Probe X11 clipboard readiness before reading to cut XWayland latency (#4544)
+- :bug: Fix garbled clipboard HTML copied from JetBrains IDEs (#4542)
+- :bug: Gate `/sync/telnet` address-push to already-paired peers (#4529)
+- :bug: Harden network discovery: non-blocking mDNS teardown, debounced rebuild, offline gate (#4515)
+- :bug: Stop device list flicker when re-probing offline devices (#4508)
+- :bug: Decouple device identity from IP for reliable reconnection (#4506)
+- :bug: Suppress shortcut recognition during simulated paste (#4502)
+- :bug: Stop swallowing CancellationException in sync resolve loop (#4504)
+- :bug: Prevent infinite paste loop from Cmd+V shortcut binding (#4501)
+- :bug: Round drag preview corners on web paste cards (#4485)
+- :bug: Fix CLI native build after `appInstanceId` moved out of `AppConfig` (#4482)
+
+# New Features ✨
+
+- :sparkles: In-app self-update for the Windows portable-zip distribution (#4537)
+- :sparkles: Discovery-driven fast reconnect for paired peers (#4527)
+- :sparkles: In-app What's New changelog screen with upgrade badge (#4525)
+- :sparkles: Push subnet-matched address on steady-state heartbeat (#4521)
+- :sparkles: Push subnet-matched address on `/sync/telnet` to cut mDNS reconnection latency (#4519)
+- :sparkles: Self-heal mDNS discovery on OS network changes (#4510)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Measure backoff budget with a monotonic clock (#4548)
+- :hammer: Remove Jewel dependency in favor of native Compose Window (#4489)
+- :art: Reduce SyncResolver connection-polling log noise (#4523)
+
+# Build & CI 👷
+
+- :construction_worker: Regenerate web version and translation artifacts (#4487)
+- :construction_worker: Upgrade GitHub Actions to Node.js 24 runtime (#4480)
+
+# Documentation 📝
+
+- :memo: Default to Chinese for developer interaction in CLAUDE.md (#4512)
+
+# Dependencies ⬆️
+
+- ⬆️ **composenativetray-jvm** bump (#4535)
+- ⬆️ **logback-classic** 1.5.32 → 1.5.34 (#4497 #4534)
+- ⬆️ **web build deps** rollup / postcss security bump (#4533)
+- ⬆️ **Kotlin** 2.3.21 → 2.4.0 (#4513)
+- ⬆️ **Compose Multiplatform** 1.11.0 → 1.11.1 (#4511)
+- ⬆️ **MCP Kotlin SDK Server** bump (#4517)
+- ⬆️ **JNA** 5.18.1 → 5.19.0 (#4516)
+- ⬆️ **ph-css** 8.1.1 → 8.2.1 (#4498)
+- ⬆️ **Gradle Wrapper** 9.5.0 → 9.5.1 (#4491)
+- ⬆️ **kotlin-logging** 8.0.03 → 8.0.4 (#4492)
+- ⬆️ **MockK** 1.14.9 → 1.14.11 (#4493)
+- ⬆️ **Caffeine** bump (#4494)
+- ⬆️ **atomicfu** 0.32.1 → 0.33.0 (#4495)
+
 # [2.1.3] - 2026-05-25
 # Highlights 🌟
 
