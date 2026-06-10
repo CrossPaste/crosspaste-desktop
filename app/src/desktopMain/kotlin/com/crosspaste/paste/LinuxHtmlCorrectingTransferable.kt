@@ -3,7 +3,10 @@ package com.crosspaste.paste
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.io.Reader
 import java.io.StringReader
+import java.nio.charset.Charset
 
 /**
  * Wraps an AWT clipboard [Transferable], overriding only its `text/html`
@@ -27,26 +30,22 @@ class LinuxHtmlCorrectingTransferable(
         val representationClass = flavor.representationClass
         return when {
             String::class.java.isAssignableFrom(representationClass) -> correctedHtml
-            java.io.Reader::class.java.isAssignableFrom(representationClass) -> StringReader(correctedHtml)
-            java.io.InputStream::class.java.isAssignableFrom(representationClass) ->
+            Reader::class.java.isAssignableFrom(representationClass) -> StringReader(correctedHtml)
+            InputStream::class.java.isAssignableFrom(representationClass) ->
                 ByteArrayInputStream(correctedHtml.toByteArray(flavorCharset(flavor)))
             else -> delegate.getTransferData(flavor)
         }
     }
 
-    private fun isHtmlFlavor(flavor: DataFlavor): Boolean = flavor.primaryType == "text" && flavor.subType == "html"
-
-    private fun flavorCharset(flavor: DataFlavor): java.nio.charset.Charset =
+    private fun flavorCharset(flavor: DataFlavor): Charset =
         flavor.getParameter("charset")?.let {
-            runCatching {
-                java.nio.charset.Charset
-                    .forName(it)
-            }.getOrNull()
+            runCatching { Charset.forName(it) }.getOrNull()
         } ?: Charsets.UTF_8
 
     companion object {
 
-        fun supportsHtml(transferable: Transferable): Boolean =
-            transferable.transferDataFlavors.any { it.primaryType == "text" && it.subType == "html" }
+        fun supportsHtml(transferable: Transferable): Boolean = transferable.transferDataFlavors.any(::isHtmlFlavor)
+
+        private fun isHtmlFlavor(flavor: DataFlavor): Boolean = flavor.primaryType == "text" && flavor.subType == "html"
     }
 }

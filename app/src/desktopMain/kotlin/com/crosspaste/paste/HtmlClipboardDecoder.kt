@@ -24,8 +24,12 @@ object HtmlClipboardDecoder {
 
     private val logger = KotlinLogging.logger {}
 
-    // charset="x" / charset='x' / charset=x  (from <meta> or an http-equiv content type)
-    private val META_CHARSET = Regex("""charset\s*=\s*["']?\s*([a-zA-Z0-9_\-:.]+)""", RegexOption.IGNORE_CASE)
+    // charset="x" / charset='x' / charset=x, anchored inside a <meta> tag
+    // (either <meta charset=…> or an http-equiv content type). The anchor keeps
+    // a literal "charset=gbk" in body text (e.g. copied code discussing
+    // encodings) from being mistaken for a declaration.
+    private val META_CHARSET =
+        Regex("""<meta[^>]{0,256}?charset\s*=\s*["']?\s*([a-zA-Z0-9_\-:.]+)""", RegexOption.IGNORE_CASE)
 
     // encoding="x" from an <?xml … ?> prolog
     private val XML_ENCODING =

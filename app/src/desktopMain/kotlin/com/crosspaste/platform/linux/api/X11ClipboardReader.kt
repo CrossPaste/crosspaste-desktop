@@ -1,13 +1,16 @@
 package com.crosspaste.platform.linux.api
 
+import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
+import com.sun.jna.Pointer
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.AtomByReference
 import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import com.sun.jna.ptr.PointerByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.io.ByteArrayOutputStream
 
 /**
  * Reads the `text/html` payload of the X11 `CLIPBOARD` selection as **raw
@@ -41,7 +44,34 @@ object X11ClipboardReader {
     // at 16 MiB of payload, looping on bytesAfter for anything larger.
     private const val MAX_READ_LONGS = (16L * 1024 * 1024) / 4
 
+    // Upper bound on the total accumulated payload; anything larger is not a
+    // plausible html clipboard and falls back to AWT's value instead of
+    // ballooning the heap.
+    private const val MAX_TOTAL_BYTES = 64L * 1024 * 1024
+
     private val CHARSET_PARAM = Regex("""charset\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
+
+    // ICCCM prefers the timestamp of the user event that triggered the request,
+    // but this reader runs outside any X event stream, so CurrentTime is the
+    // only option (xclip/xsel do the same); owners accept it in practice.
+    private val NO_EVENT_TIMESTAMP = NativeLong(X11.CurrentTime.toLong())
+
+    /**
+     * JNA's bundled [X11] interface declares `XGetAtomName` as returning a Java
+     * `String`, which copies the native `char*` but never `XFree`s it, leaking a
+     * few bytes per call. This minimal re-binding returns the raw [Pointer] so
+     * [atomName] can free it.
+     */
+    private interface X11AtomNameApi : Library {
+        fun XGetAtomName(
+            display: X11.Display,
+            atom: X11.Atom,
+        ): Pointer?
+
+        companion object {
+            val INSTANCE: X11AtomNameApi = Native.load("X11", X11AtomNameApi::class.java)
+        }
+    }
 
     /**
      * Raw clipboard html bytes plus the charset we already know from the chosen
@@ -161,7 +191,7 @@ object X11ClipboardReader {
     ): List<String> {
         val targets = x11.XInternAtom(display, "TARGETS", false)
         val property = x11.XInternAtom(display, "CROSSPASTE_TARGETS", false)
-        x11.XConvertSelection(display, clipboard, targets, property, window, NativeLong(X11.CurrentTime.toLong()))
+        x11.XConvertSelection(display, clipboard, targets, property, window, NO_EVENT_TIMESTAMP)
         x11.XFlush(display)
 
         val notify = waitForSelectionNotify(x11, display, window) ?: return emptyList()
@@ -207,7 +237,7 @@ object X11ClipboardReader {
                 if (id == 0L) {
                     null
                 } else {
-                    runCatching { x11.XGetAtomName(display, X11.Atom(id)) }.getOrNull()
+                    atomName(x11, display, X11.Atom(id))
                 }
             }
         } finally {
@@ -227,7 +257,7 @@ object X11ClipboardReader {
         val target = x11.XInternAtom(display, targetName, false)
         val property = x11.XInternAtom(display, "CROSSPASTE_CLIPBOARD", false)
 
-        x11.XConvertSelection(display, clipboard, target, property, window, NativeLong(X11.CurrentTime.toLong()))
+        x11.XConvertSelection(display, clipboard, target, property, window, NO_EVENT_TIMESTAMP)
         x11.XFlush(display)
 
         val notify = waitForSelectionNotify(x11, display, window) ?: return null
@@ -243,14 +273,31 @@ object X11ClipboardReader {
         return bytes
     }
 
+    /** Resolves an atom's name, freeing the native string JNA would otherwise leak. */
+    private fun atomName(
+        x11: X11Api,
+        display: X11.Display,
+        atom: X11.Atom,
+    ): String? =
+        runCatching {
+            X11AtomNameApi.INSTANCE.XGetAtomName(display, atom)?.let { ptr ->
+                try {
+                    ptr.getString(0)
+                } finally {
+                    x11.XFree(ptr)
+                }
+            }
+        }.getOrNull()
+
     private fun waitForSelectionNotify(
         x11: X11Api,
         display: X11.Display,
         window: X11.Window,
     ): X11.XSelectionEvent? {
         val event = X11.XEvent()
-        val deadline = System.currentTimeMillis() + SELECTION_TIMEOUT_MS
-        while (System.currentTimeMillis() < deadline) {
+        // Monotonic clock: a wall-clock (NTP) jump must not stretch or cut the wait.
+        val deadlineNanos = System.nanoTime() + SELECTION_TIMEOUT_MS * 1_000_000
+        while (System.nanoTime() < deadlineNanos) {
             if (x11.XCheckTypedWindowEvent(display, window, X11.SelectionNotify, event)) {
                 event.setType(X11.XSelectionEvent::class.java)
                 event.read()
@@ -269,7 +316,7 @@ object X11ClipboardReader {
         property: X11.Atom,
         incr: X11.Atom,
     ): ByteArray? {
-        val result = ArrayList<Byte>()
+        val result = ByteArrayOutputStream()
         var offsetLongs = 0L
         while (true) {
             val actualType = AtomByReference()
@@ -313,10 +360,13 @@ object X11ClipboardReader {
                 }
 
                 val chunk = pointer.getByteArray(0, count.toInt())
-                result.ensureCapacity(result.size + chunk.size)
-                for (b in chunk) {
-                    result.add(b)
+                if (result.size().toLong() + chunk.size > MAX_TOTAL_BYTES) {
+                    logger.warn {
+                        "Clipboard html exceeds $MAX_TOTAL_BYTES bytes; skipping native read"
+                    }
+                    return null
                 }
+                result.write(chunk)
 
                 // long_offset advances in 32-bit units; format-8 data packs 4
                 // bytes per unit.
@@ -330,6 +380,6 @@ object X11ClipboardReader {
         }
 
         x11.XDeleteProperty(display, window, property)
-        return if (result.isEmpty()) null else result.toByteArray()
+        return if (result.size() == 0) null else result.toByteArray()
     }
 }

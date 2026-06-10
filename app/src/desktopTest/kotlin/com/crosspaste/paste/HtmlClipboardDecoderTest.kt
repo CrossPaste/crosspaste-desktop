@@ -58,6 +58,16 @@ class HtmlClipboardDecoderTest {
     }
 
     @Test
+    fun `ignores charset literal in body text without a meta tag`() {
+        // No declaration at all; the body merely *talks about* charsets. The
+        // literal "charset=gbk" must not be mistaken for a declaration, or
+        // these UTF-8 bytes would be decoded as GBK and mojibaked.
+        val html = "<html><body><p>设置 charset=gbk 会导致乱码，正确做法是使用 UTF-8 编码保存文件。</p></body></html>"
+
+        assertEquals(html, HtmlClipboardDecoder.decode(html.toByteArray(Charsets.UTF_8)))
+    }
+
+    @Test
     fun `honors xml encoding prolog`() {
         val html = """<?xml version="1.0" encoding="ISO-8859-1"?><html><body>café résumé</body></html>"""
         val bytes = html.toByteArray(Charsets.ISO_8859_1)

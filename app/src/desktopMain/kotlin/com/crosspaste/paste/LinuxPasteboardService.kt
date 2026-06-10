@@ -153,9 +153,8 @@ class LinuxPasteboardService(
         if (contents != ownerTransferable) {
             contents?.let {
                 ownerTransferable = it
-                val effective = correctHtmlEncoding(it)
                 scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
-                    val pasteTransferable = DesktopReadTransferable(effective)
+                    val pasteTransferable = DesktopReadTransferable(correctHtmlEncoding(it))
                     pasteConsumer.consume(
                         pasteTransferable,
                         PasteSourceContext(source = source, remote = false),
@@ -171,6 +170,15 @@ class LinuxPasteboardService(
      * arrives mojibaked. Re-read the raw `text/html` bytes straight from the
      * X11 selection and decode them with proper charset detection, overriding
      * just that flavor. Falls back to the original transferable on any failure.
+     *
+     * Known tradeoff: this raw read happens after AWT captured [transferable]
+     * (the backoff in [onChange] can add up to ~1s, plus the dispatch of the
+     * consumer coroutine this runs in), so a copy performed inside
+     * that window would pair the newer clipboard's html with the older entry's
+     * other flavors. The window is narrow and the result is still well-formed
+     * html, so we accept it — there is no reliable cheap equivalence check
+     * between html and the other flavors, and a false mismatch would silently
+     * reintroduce the mojibake this fix exists to remove.
      */
     private fun correctHtmlEncoding(transferable: Transferable): Transferable =
         runCatching {
