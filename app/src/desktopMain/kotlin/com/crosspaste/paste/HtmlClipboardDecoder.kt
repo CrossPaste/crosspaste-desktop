@@ -45,7 +45,8 @@ object HtmlClipboardDecoder {
      *  1. A leading BOM (and it is stripped).
      *  2. An in-document `<meta>` / XML charset declaration.
      *  3. [knownCharset], when supplied — the charset named by the X11 target we
-     *     requested (e.g. `text/html;charset=UTF-16`).
+     *     requested (e.g. `text/html;charset=UTF-16`) — unless the label is
+     *     implausible for the bytes (see [isPlausibleLabel]).
      *  4. ICU4J's statistical detection.
      *  5. UTF-8 as a last resort.
      *
@@ -77,8 +78,13 @@ object HtmlClipboardDecoder {
         }
 
         if (knownCharset != null) {
-            logger.info { "Decoding clipboard html as known charset ${knownCharset.name()}" }
-            return String(bytes, knownCharset)
+            if (isPlausibleLabel(knownCharset, bytes)) {
+                logger.info { "Decoding clipboard html as known charset ${knownCharset.name()}" }
+                return String(bytes, knownCharset)
+            }
+            logger.info {
+                "Known charset ${knownCharset.name()} is implausible for these bytes; falling back to detection"
+            }
         }
 
         detectByContent(bytes)?.let { charset ->
@@ -99,6 +105,26 @@ object HtmlClipboardDecoder {
         bytes
             .take(limit)
             .joinToString(" ") { "%02x".format(it.toInt() and 0xff) }
+
+    /**
+     * Whether [charset] can plausibly describe [bytes]. A `text/html` payload
+     * starts with an ASCII character (`<` or whitespace; a BOM was handled
+     * earlier), so bytes genuinely encoded as UTF-16/32 must carry a NUL within
+     * the first two bytes. A wide-charset label on NUL-free bytes is a lying
+     * transport label — AWT / JBR advertise `text/html;charset=UTF-16` targets
+     * while serving UTF-8 bytes — and trusting it would re-mojibake the text
+     * that reading the selection bytes directly was meant to rescue.
+     */
+    private fun isPlausibleLabel(
+        charset: Charset,
+        bytes: ByteArray,
+    ): Boolean {
+        val name = charset.name().uppercase()
+        if (!name.startsWith("UTF-16") && !name.startsWith("UTF-32")) {
+            return true
+        }
+        return bytes.size < 2 || bytes[0] == 0.toByte() || bytes[1] == 0.toByte()
+    }
 
     private fun detectByBom(bytes: ByteArray): Pair<Charset, Int>? {
         fun has(vararg prefix: Int): Boolean =

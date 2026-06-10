@@ -125,6 +125,24 @@ class HtmlClipboardDecoderTest {
     }
 
     @Test
+    fun `falls back to detection when a utf-16 label lies about bare utf-8 bytes`() {
+        // IntelliJ / JBR serves UTF-8 bytes for text/html;charset=UTF-16. With
+        // no BOM and no in-document declaration, the lying label must not be
+        // trusted: genuine UTF-16 html starts with an ASCII '<', so its first
+        // two bytes would contain a NUL. These bytes have none, so the label is
+        // implausible and content detection must win.
+        val html = "<html><body><p>你好，世界 — IntelliJ 复制的中文</p></body></html>"
+
+        val decoded =
+            HtmlClipboardDecoder.decode(
+                html.toByteArray(Charsets.UTF_8),
+                knownCharset = Charset.forName("UTF-16"),
+            )
+
+        assertEquals(html, decoded)
+    }
+
+    @Test
     fun `bom overrides a wrong known charset`() {
         // Bytes are UTF-8 with a BOM; even if a bogus known charset is supplied,
         // the BOM must win so the document is not corrupted.
