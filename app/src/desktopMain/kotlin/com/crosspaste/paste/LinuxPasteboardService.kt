@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
+import java.nio.charset.Charset
 
 class LinuxPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -174,10 +175,22 @@ class LinuxPasteboardService(
     private fun correctHtmlEncoding(transferable: Transferable): Transferable =
         runCatching {
             if (!LinuxHtmlCorrectingTransferable.supportsHtml(transferable)) {
+                logger.debug { "correctHtmlEncoding: transferable has no text/html flavor, skipping" }
                 return transferable
             }
-            val bytes = X11ClipboardReader.readClipboardTargetBytes("text/html") ?: return transferable
-            val html = HtmlClipboardDecoder.decode(bytes)
+            val htmlBytes = X11ClipboardReader.readClipboardHtml()
+            if (htmlBytes == null) {
+                logger.warn {
+                    "correctHtmlEncoding: X11 read returned null, falling back to AWT value (may be mojibaked)"
+                }
+                return transferable
+            }
+            val knownCharset =
+                htmlBytes.charsetName?.let { name ->
+                    runCatching { Charset.forName(name) }.getOrNull()
+                }
+            val html = HtmlClipboardDecoder.decode(htmlBytes.bytes, knownCharset)
+            logger.debug { "correctHtmlEncoding: corrected html prefix=${html.take(120)}" }
             LinuxHtmlCorrectingTransferable(transferable, html)
         }.getOrElse { e ->
             logger.warn(e) { "Failed to correct html clipboard encoding" }

@@ -77,6 +77,57 @@ class HtmlClipboardDecoderTest {
     }
 
     @Test
+    fun `decodes known utf-16 charset target (IntelliJ-style)`() {
+        // IntelliJ / JBR offers html only as text/html;charset=UTF-16, encoded
+        // with a BOM. We know the charset from the target name and pass it in.
+        val utf16 = Charset.forName("UTF-16")
+        val html = "<html><body><p>你好，世界 — IntelliJ 复制的中文</p></body></html>"
+
+        val decoded = HtmlClipboardDecoder.decode(html.toByteArray(utf16), knownCharset = utf16)
+
+        assertEquals(html, decoded)
+    }
+
+    @Test
+    fun `in-document meta overrides a lying utf-16 target label`() {
+        // IntelliJ / JBR serves UTF-8 bytes for every text/html;charset=* target,
+        // including text/html;charset=UTF-16. Trusting that label would re-mojibake
+        // the text; the document's own <meta charset=UTF-8> must win.
+        val html =
+            "<html><head>" +
+                """<meta http-equiv="content-type" content="text/html; charset=UTF-8">""" +
+                "</head><body><p>你好，世界 — IntelliJ 复制的中文</p></body></html>"
+        val utf8Bytes = html.toByteArray(Charsets.UTF_8)
+
+        val decoded = HtmlClipboardDecoder.decode(utf8Bytes, knownCharset = Charset.forName("UTF-16"))
+
+        assertEquals(html, decoded)
+    }
+
+    @Test
+    fun `decodes known utf-16le charset target without bom`() {
+        val utf16le = Charset.forName("UTF-16LE")
+        val html = "<html><body><p>简体中文，无 BOM</p></body></html>"
+
+        val decoded = HtmlClipboardDecoder.decode(html.toByteArray(utf16le), knownCharset = utf16le)
+
+        assertEquals(html, decoded)
+    }
+
+    @Test
+    fun `bom overrides a wrong known charset`() {
+        // Bytes are UTF-8 with a BOM; even if a bogus known charset is supplied,
+        // the BOM must win so the document is not corrupted.
+        val html = "<html><body>café 世界</body></html>"
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
+        val bytes = bom + html.toByteArray(Charsets.UTF_8)
+
+        val decoded = HtmlClipboardDecoder.decode(bytes, knownCharset = Charset.forName("ISO-8859-1"))
+
+        assertEquals(html, decoded)
+    }
+
+    @Test
     fun `returns empty string for empty input`() {
         assertEquals("", HtmlClipboardDecoder.decode(ByteArray(0)))
     }

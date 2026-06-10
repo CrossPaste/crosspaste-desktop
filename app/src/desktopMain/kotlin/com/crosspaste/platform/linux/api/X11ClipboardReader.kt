@@ -1,5 +1,6 @@
 package com.crosspaste.platform.linux.api
 
+import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.AtomByReference
@@ -9,15 +10,21 @@ import com.sun.jna.ptr.PointerByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
- * Reads a single target of the X11 `CLIPBOARD` selection as **raw bytes**,
- * bypassing AWT's charset handling.
+ * Reads the `text/html` payload of the X11 `CLIPBOARD` selection as **raw
+ * bytes**, bypassing AWT's charset handling.
  *
- * AWT exposes `text/html` only through `charset=Unicode` (UTF-16) String/Reader
- * flavors. When a source (IntelliJ / JBR, Qt, …) actually publishes that target
- * as UTF-8 — or any other encoding — AWT decodes it with the wrong charset and
- * the result is irreversibly mangled (non-ASCII bytes can collapse into
- * U+FFFD). To recover, we must read the selection bytes ourselves and detect
- * the real encoding downstream.
+ * AWT exposes `text/html` to consumers only through `charset=Unicode` (UTF-16)
+ * String/Reader flavors and, on Linux, picks the source target with logic that
+ * can mangle non-ASCII text (e.g. IntelliJ / JBR html copied as CJK arrives as
+ * U+FFFD garbage). To recover, we enumerate the selection's real `TARGETS`,
+ * pick the html target whose encoding preserves every character, read its bytes
+ * ourselves, and decode them downstream with a charset we actually know.
+ *
+ * Toolkits advertise html differently:
+ *  - IntelliJ / JBR (AWT source) offer only charset-tagged variants such as
+ *    `text/html;charset=UTF-16` / `;charset=ISO-8859-1` — there is **no** bare
+ *    `text/html` and no UTF-8 variant, so a UTF-16 target is the lossless pick.
+ *  - Browsers / GTK / Qt typically offer a bare `text/html` carrying UTF-8.
  *
  * This performs a standard ICCCM selection transfer on its own display
  * connection: convert the selection into a property on a throwaway window, wait
@@ -34,31 +41,49 @@ object X11ClipboardReader {
     // at 16 MiB of payload, looping on bytesAfter for anything larger.
     private const val MAX_READ_LONGS = (16L * 1024 * 1024) / 4
 
+    private val CHARSET_PARAM = Regex("""charset\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
+
     /**
-     * Returns the raw bytes of [targetMime] (e.g. `text/html`) from the
-     * `CLIPBOARD` selection, or null if there is no owner, the owner does not
-     * offer the target, the data arrives via INCR, or anything fails.
+     * Raw clipboard html bytes plus the charset we already know from the chosen
+     * target name ([charsetName] is null for a bare `text/html` target, where
+     * the caller must detect the encoding instead).
      */
-    fun readClipboardTargetBytes(targetMime: String): ByteArray? {
+    class HtmlBytes(
+        val bytes: ByteArray,
+        val charsetName: String?,
+    )
+
+    /**
+     * Reads the best available `text/html` target of the `CLIPBOARD` selection.
+     * Returns null if there is no owner, no usable html target, the data arrives
+     * via INCR, or anything fails — in every such case the caller keeps AWT's
+     * (possibly mojibaked) value.
+     */
+    fun readClipboardHtml(): HtmlBytes? {
         val x11 = X11Api.INSTANCE
-        val display = x11.XOpenDisplay(null) ?: return null
+        val display = x11.XOpenDisplay(null)
+        if (display == null) {
+            logger.warn { "readClipboardHtml: XOpenDisplay returned null" }
+            return null
+        }
         return try {
-            readClipboardTargetBytes(x11, display, targetMime)
+            readClipboardHtml(x11, display)
         } catch (e: Throwable) {
-            logger.warn(e) { "Failed to read X11 selection target '$targetMime'" }
+            logger.warn(e) { "Failed to read X11 clipboard html" }
             null
         } finally {
             x11.XCloseDisplay(display)
         }
     }
 
-    private fun readClipboardTargetBytes(
+    private fun readClipboardHtml(
         x11: X11Api,
         display: X11.Display,
-        targetMime: String,
-    ): ByteArray? {
+    ): HtmlBytes? {
         val clipboard = x11.XInternAtom(display, "CLIPBOARD", false)
-        if (x11.XGetSelectionOwner(display, clipboard) == null) {
+        val selectionOwner = x11.XGetSelectionOwner(display, clipboard)
+        if (selectionOwner == null) {
+            logger.warn { "readClipboardHtml: CLIPBOARD has no selection owner" }
             return null
         }
 
@@ -67,23 +92,155 @@ object X11ClipboardReader {
         return try {
             x11.XSelectInput(display, window, NativeLong(X11.PropertyChangeMask.toLong()))
 
-            val target = x11.XInternAtom(display, targetMime, false)
-            val property = x11.XInternAtom(display, "CROSSPASTE_CLIPBOARD", false)
+            val targets = queryTargets(x11, display, window, clipboard)
+            logger.debug { "Clipboard TARGETS (${targets.size}): $targets" }
 
-            x11.XConvertSelection(display, clipboard, target, property, window, NativeLong(X11.CurrentTime.toLong()))
-            x11.XFlush(display)
-
-            val notify = waitForSelectionNotify(x11, display, window) ?: return null
-            // property == None means the owner could not provide the target.
-            if (notify.property == null || notify.property.toLong() == 0L) {
+            val htmlTarget = chooseHtmlTarget(targets)
+            if (htmlTarget == null) {
+                logger.warn { "readClipboardHtml: no usable text/html target among $targets" }
                 return null
             }
+            logger.debug { "readClipboardHtml: requesting target '$htmlTarget'" }
 
-            val incr = x11.XInternAtom(display, "INCR", false)
-            readProperty(x11, display, window, notify.property, incr)
+            val bytes = convertAndReadBytes(x11, display, window, clipboard, htmlTarget) ?: return null
+            HtmlBytes(bytes, htmlTargetCharset(htmlTarget))
         } finally {
             x11.XDestroyWindow(display, window)
         }
+    }
+
+    /**
+     * Picks the html target whose encoding best preserves the original text.
+     * Prefers UTF-8, then a bare `text/html` (detected downstream, usually
+     * UTF-8), then a lossless UTF-16/32 variant, and only falls back to a legacy
+     * single-byte charset when nothing better is offered.
+     */
+    private fun chooseHtmlTarget(targets: List<String>): String? {
+        var best: String? = null
+        var bestScore = Int.MIN_VALUE
+        for (target in targets) {
+            val lower = target.lowercase()
+            if (lower != "text/html" && !lower.startsWith("text/html;")) {
+                continue
+            }
+            val charset = htmlTargetCharset(target)
+            val score =
+                when {
+                    charset == null -> 90
+                    charset == "utf-8" -> 100
+                    charset == "utf-16" || charset == "unicode" -> 82
+                    charset == "utf-16le" || charset == "utf-16be" -> 80
+                    charset.startsWith("utf-32") -> 70
+                    else -> 10
+                }
+            if (score > bestScore) {
+                bestScore = score
+                best = target
+            }
+        }
+        return best
+    }
+
+    private fun htmlTargetCharset(target: String): String? {
+        val semicolon = target.indexOf(';')
+        if (semicolon < 0) return null
+        return CHARSET_PARAM
+            .find(target.substring(semicolon + 1))
+            ?.groupValues
+            ?.get(1)
+            ?.trim()
+            ?.lowercase()
+    }
+
+    /** Enumerates the `TARGETS` the selection owner advertises. */
+    private fun queryTargets(
+        x11: X11Api,
+        display: X11.Display,
+        window: X11.Window,
+        clipboard: X11.Atom,
+    ): List<String> {
+        val targets = x11.XInternAtom(display, "TARGETS", false)
+        val property = x11.XInternAtom(display, "CROSSPASTE_TARGETS", false)
+        x11.XConvertSelection(display, clipboard, targets, property, window, NativeLong(X11.CurrentTime.toLong()))
+        x11.XFlush(display)
+
+        val notify = waitForSelectionNotify(x11, display, window) ?: return emptyList()
+        if (notify.property == null || notify.property.toLong() == 0L) {
+            logger.warn { "TARGETS request returned property=None" }
+            return emptyList()
+        }
+
+        val actualType = AtomByReference()
+        val actualFormat = IntByReference()
+        val nItems = NativeLongByReference()
+        val bytesAfter = NativeLongByReference()
+        val prop = PointerByReference()
+        val status =
+            x11.XGetWindowProperty(
+                display,
+                window,
+                notify.property,
+                NativeLong(0),
+                NativeLong(1024),
+                false,
+                X11.Atom(X11.AnyPropertyType.toLong()),
+                actualType,
+                actualFormat,
+                nItems,
+                bytesAfter,
+                prop,
+            )
+        if (status != X11.Success || prop.value == null) {
+            logger.warn { "TARGETS XGetWindowProperty failed status=$status" }
+            return emptyList()
+        }
+        return try {
+            val count = nItems.value.toInt()
+            // format-32 atom list is returned as an array of C long.
+            val atomIds =
+                when (Native.LONG_SIZE) {
+                    java.lang.Long.BYTES -> prop.value.getLongArray(0, count).toList()
+                    Integer.BYTES -> prop.value.getIntArray(0, count).map { it.toLong() }
+                    else -> emptyList()
+                }
+            atomIds.mapNotNull { id ->
+                if (id == 0L) {
+                    null
+                } else {
+                    runCatching { x11.XGetAtomName(display, X11.Atom(id)) }.getOrNull()
+                }
+            }
+        } finally {
+            prop.value?.let { x11.XFree(it) }
+            x11.XDeleteProperty(display, window, notify.property)
+        }
+    }
+
+    /** Converts the selection into [targetName] and reads the resulting bytes. */
+    private fun convertAndReadBytes(
+        x11: X11Api,
+        display: X11.Display,
+        window: X11.Window,
+        clipboard: X11.Atom,
+        targetName: String,
+    ): ByteArray? {
+        val target = x11.XInternAtom(display, targetName, false)
+        val property = x11.XInternAtom(display, "CROSSPASTE_CLIPBOARD", false)
+
+        x11.XConvertSelection(display, clipboard, target, property, window, NativeLong(X11.CurrentTime.toLong()))
+        x11.XFlush(display)
+
+        val notify = waitForSelectionNotify(x11, display, window) ?: return null
+        // property == None means the owner could not provide the target.
+        if (notify.property == null || notify.property.toLong() == 0L) {
+            logger.warn { "convertAndReadBytes('$targetName'): owner returned property=None" }
+            return null
+        }
+
+        val incr = x11.XInternAtom(display, "INCR", false)
+        val bytes = readProperty(x11, display, window, notify.property, incr)
+        logger.debug { "convertAndReadBytes('$targetName'): read ${bytes?.size ?: -1} bytes" }
+        return bytes
     }
 
     private fun waitForSelectionNotify(
