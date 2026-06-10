@@ -14,7 +14,9 @@ import java.io.ByteArrayOutputStream
 
 /**
  * Reads the `text/html` payload of the X11 `CLIPBOARD` selection as **raw
- * bytes**, bypassing AWT's charset handling.
+ * bytes**, bypassing AWT's charset handling. Also hosts
+ * [awaitClipboardReadable], a selection-readiness probe built on the same
+ * ICCCM machinery.
  *
  * AWT exposes `text/html` to consumers only through `charset=Unicode` (UTF-16)
  * String/Reader flavors and, on Linux, picks the source target with logic that
@@ -39,6 +41,11 @@ object X11ClipboardReader {
     private val logger = KotlinLogging.logger {}
 
     private const val SELECTION_TIMEOUT_MS = 1000L
+
+    // Readiness probe cadence: how long to wait for each TARGETS answer and
+    // how long to pause before re-asking an owner that said "not yet".
+    private const val PROBE_NOTIFY_TIMEOUT_MS = 200L
+    private const val PROBE_INTERVAL_MS = 20L
 
     // long_length for XGetWindowProperty is in 32-bit units; cap a single read
     // at 16 MiB of payload, looping on bytesAfter for anything larger.
@@ -82,6 +89,90 @@ object X11ClipboardReader {
         val bytes: ByteArray,
         val charsetName: String?,
     )
+
+    /**
+     * Blocks until the `CLIPBOARD` selection owner can actually convert data,
+     * or [timeoutMs] elapses.
+     *
+     * X11 has no "owner is ready" event — XFixes only reports that ownership
+     * changed, and the only readiness signal ICCCM offers is a successful
+     * conversion. Under XWayland the bridge often answers conversions with
+     * `property=None` ("Owner failed to convert data" in AWT) for hundreds of
+     * ms after the ownership change, so reading via AWT right after the notify
+     * fails repeatedly. This probe issues cheap `TARGETS` conversions every
+     * [PROBE_INTERVAL_MS] until one succeeds, letting the caller's real read
+     * start as soon as the owner is actually serving data.
+     *
+     * Returns true once the owner answers a `TARGETS` request. Returns false
+     * fast when the selection has no owner (a cleared clipboard; the next copy
+     * fires its own XFixes notify) and false on timeout or any X error.
+     * Callers should still read defensively: `TARGETS` success does not
+     * guarantee that every concrete data target converts.
+     */
+    fun awaitClipboardReadable(timeoutMs: Long): Boolean {
+        val x11 = X11Api.INSTANCE
+        val display = x11.XOpenDisplay(null)
+        if (display == null) {
+            logger.warn { "awaitClipboardReadable: XOpenDisplay returned null" }
+            return false
+        }
+        return try {
+            awaitClipboardReadable(x11, display, timeoutMs)
+        } catch (e: Throwable) {
+            logger.warn(e) { "Failed to probe X11 clipboard readiness" }
+            false
+        } finally {
+            x11.XCloseDisplay(display)
+        }
+    }
+
+    private fun awaitClipboardReadable(
+        x11: X11Api,
+        display: X11.Display,
+        timeoutMs: Long,
+    ): Boolean {
+        val clipboard = x11.XInternAtom(display, "CLIPBOARD", false)
+        val targets = x11.XInternAtom(display, "TARGETS", false)
+        val property = x11.XInternAtom(display, "CROSSPASTE_READY_PROBE", false)
+        val root = x11.XDefaultRootWindow(display)
+        val window = x11.XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0, 0, 0)
+        try {
+            x11.XSelectInput(display, window, NativeLong(X11.PropertyChangeMask.toLong()))
+            // Monotonic clock: a wall-clock (NTP) jump must not stretch or cut the wait.
+            val deadlineNanos = System.nanoTime() + timeoutMs * 1_000_000
+            while (true) {
+                if (x11.XGetSelectionOwner(display, clipboard) == null) {
+                    logger.debug { "awaitClipboardReadable: CLIPBOARD has no owner" }
+                    return false
+                }
+                x11.XConvertSelection(display, clipboard, targets, property, window, NO_EVENT_TIMESTAMP)
+                x11.XFlush(display)
+
+                val remainingMs = (deadlineNanos - System.nanoTime()) / 1_000_000
+                if (remainingMs <= 0) {
+                    return false
+                }
+                val notify =
+                    waitForSelectionNotify(
+                        x11,
+                        display,
+                        window,
+                        timeoutMs = minOf(PROBE_NOTIFY_TIMEOUT_MS, remainingMs),
+                    )
+                if (notify?.property != null && notify.property.toLong() != 0L) {
+                    x11.XDeleteProperty(display, window, notify.property)
+                    return true
+                }
+
+                if (System.nanoTime() + PROBE_INTERVAL_MS * 1_000_000 >= deadlineNanos) {
+                    return false
+                }
+                Thread.sleep(PROBE_INTERVAL_MS)
+            }
+        } finally {
+            x11.XDestroyWindow(display, window)
+        }
+    }
 
     /**
      * Reads the best available `text/html` target of the `CLIPBOARD` selection.
@@ -293,10 +384,11 @@ object X11ClipboardReader {
         x11: X11Api,
         display: X11.Display,
         window: X11.Window,
+        timeoutMs: Long = SELECTION_TIMEOUT_MS,
     ): X11.XSelectionEvent? {
         val event = X11.XEvent()
         // Monotonic clock: a wall-clock (NTP) jump must not stretch or cut the wait.
-        val deadlineNanos = System.nanoTime() + SELECTION_TIMEOUT_MS * 1_000_000
+        val deadlineNanos = System.nanoTime() + timeoutMs * 1_000_000
         while (System.nanoTime() < deadlineNanos) {
             if (x11.XCheckTypedWindowEvent(display, window, X11.SelectionNotify, event)) {
                 event.setType(X11.XSelectionEvent::class.java)
@@ -305,7 +397,12 @@ object X11ClipboardReader {
             }
             Thread.sleep(5L)
         }
-        logger.warn { "Timed out waiting for SelectionNotify" }
+        if (timeoutMs >= SELECTION_TIMEOUT_MS) {
+            logger.warn { "Timed out waiting for SelectionNotify" }
+        } else {
+            // Short-timeout waits are probe attempts that retry anyway.
+            logger.debug { "Timed out waiting for SelectionNotify (${timeoutMs}ms probe)" }
+        }
         return null
     }
 

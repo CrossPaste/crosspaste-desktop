@@ -39,6 +39,10 @@ class LinuxPasteboardService(
 
     companion object {
         const val XFIXES_SET_SELECTION_OWNER_NOTIFY_MASK = (1 shl 0).toLong()
+
+        // Generous headroom for XWayland's bridge to start serving the new
+        // selection; native X11 owners typically answer the first probe.
+        private const val CLIPBOARD_READY_TIMEOUT_MS = 2000L
     }
 
     override val logger: KLogger = KotlinLogging.logger {}
@@ -142,14 +146,28 @@ class LinuxPasteboardService(
             return
         }
 
+        // XFixes only says the selection owner changed, not that the owner can
+        // already serve data. Under XWayland the bridge keeps failing conversions
+        // ("Owner failed to convert data") for hundreds of ms after the notify,
+        // so probe TARGETS directly and start the AWT read only once the owner
+        // actually answers — the read below then almost always succeeds first try.
+        if (!X11ClipboardReader.awaitClipboardReadable(CLIPBOARD_READY_TIMEOUT_MS)) {
+            logger.warn {
+                "Clipboard owner not ready within ${CLIPBOARD_READY_TIMEOUT_MS}ms, reading anyway"
+            }
+        }
+
         val contents =
-            controlUtils.exponentialBackoffUntilValid(
+            controlUtils.linearBackoffUntilValid(
                 initTime = 20L,
                 maxTime = 1000L,
                 isValidResult = ::isValidContents,
             ) {
                 getPasteboardContentsBySafe()
             }
+        if (!isValidContents(contents)) {
+            logger.warn { "Clipboard contents still invalid after backoff; this change may be lost" }
+        }
         if (contents != ownerTransferable) {
             contents?.let {
                 ownerTransferable = it
@@ -172,8 +190,9 @@ class LinuxPasteboardService(
      * just that flavor. Falls back to the original transferable on any failure.
      *
      * Known tradeoff: this raw read happens after AWT captured [transferable]
-     * (the backoff in [onChange] can add up to ~1s, plus the dispatch of the
-     * consumer coroutine this runs in), so a copy performed inside
+     * (the readiness probe plus backoff in [onChange] can add up to a few
+     * seconds, plus the dispatch of the consumer coroutine this runs in), so a
+     * copy performed inside
      * that window would pair the newer clipboard's html with the older entry's
      * other flavors. The window is narrow and the result is still well-formed
      * html, so we accept it — there is no reliable cheap equivalence check
