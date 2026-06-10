@@ -4,6 +4,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.linux.api.X11Api
+import com.crosspaste.platform.linux.api.X11ClipboardReader
 import com.crosspaste.platform.linux.api.XFixes
 import com.crosspaste.platform.linux.api.XFixesSelectionNotifyEvent
 import com.crosspaste.sound.SoundService
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
+import java.nio.charset.Charset
 
 class LinuxPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -152,7 +154,7 @@ class LinuxPasteboardService(
             contents?.let {
                 ownerTransferable = it
                 scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
-                    val pasteTransferable = DesktopReadTransferable(it)
+                    val pasteTransferable = DesktopReadTransferable(correctHtmlEncoding(it))
                     pasteConsumer.consume(
                         pasteTransferable,
                         PasteSourceContext(source = source, remote = false),
@@ -161,6 +163,47 @@ class LinuxPasteboardService(
             }
         }
     }
+
+    /**
+     * AWT exposes `text/html` only through a `charset=Unicode` (UTF-16) flavor,
+     * so html published in any other encoding (e.g. UTF-8 from IntelliJ / JBR)
+     * arrives mojibaked. Re-read the raw `text/html` bytes straight from the
+     * X11 selection and decode them with proper charset detection, overriding
+     * just that flavor. Falls back to the original transferable on any failure.
+     *
+     * Known tradeoff: this raw read happens after AWT captured [transferable]
+     * (the backoff in [onChange] can add up to ~1s, plus the dispatch of the
+     * consumer coroutine this runs in), so a copy performed inside
+     * that window would pair the newer clipboard's html with the older entry's
+     * other flavors. The window is narrow and the result is still well-formed
+     * html, so we accept it — there is no reliable cheap equivalence check
+     * between html and the other flavors, and a false mismatch would silently
+     * reintroduce the mojibake this fix exists to remove.
+     */
+    private fun correctHtmlEncoding(transferable: Transferable): Transferable =
+        runCatching {
+            if (!LinuxHtmlCorrectingTransferable.supportsHtml(transferable)) {
+                logger.debug { "correctHtmlEncoding: transferable has no text/html flavor, skipping" }
+                return transferable
+            }
+            val htmlBytes = X11ClipboardReader.readClipboardHtml()
+            if (htmlBytes == null) {
+                logger.warn {
+                    "correctHtmlEncoding: X11 read returned null, falling back to AWT value (may be mojibaked)"
+                }
+                return transferable
+            }
+            val knownCharset =
+                htmlBytes.charsetName?.let { name ->
+                    runCatching { Charset.forName(name) }.getOrNull()
+                }
+            val html = HtmlClipboardDecoder.decode(htmlBytes.bytes, knownCharset)
+            logger.debug { "correctHtmlEncoding: corrected html prefix=${html.take(120)}" }
+            LinuxHtmlCorrectingTransferable(transferable, html)
+        }.getOrElse { e ->
+            logger.warn(e) { "Failed to correct html clipboard encoding" }
+            transferable
+        }
 
     override fun start() {
         if (job?.isActive != true) {
