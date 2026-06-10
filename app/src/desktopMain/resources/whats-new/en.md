@@ -1,4 +1,4 @@
-# [2.1.4] - 2026-06-09
+# [2.1.4] - 2026-06-10
 
 ## 🔄 Faster, more reliable reconnection
 This release focuses on the connection between your devices. When you switch Wi-Fi networks, your network address changes, or your computer wakes from sleep, CrossPaste now rediscovers your other devices and reconnects much faster — no more being stuck "offline" for a long time. Even when a device's IP address changes, it reconnects reliably.
@@ -14,6 +14,12 @@ Fixed an issue where pressing Cmd/Ctrl+V could trigger an endless paste loop in 
 
 ## ✨ Smoother device list
 The device list no longer flickers while re-checking offline devices, so it stays steady.
+
+## 🔤 No more garbled rich text
+Fixed an issue where copying formatted text from apps such as JetBrains IDEs could produce garbled characters. Clipboard text encoding detection is now much more reliable.
+
+## 🐧 Better clipboard on Linux
+On Wayland desktops, copied content is now picked up faster. On Hyprland and Sway, CrossPaste also correctly identifies which app your copy came from.
 
 # [2.1.3] - 2026-05-25
 

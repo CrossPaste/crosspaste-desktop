@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.1.4] - 2026-06-09
+# [2.1.4] - 2026-06-10
 # Highlights 🌟
 
 - 🔄 **Faster, more reliable reconnection**
@@ -33,8 +33,22 @@ All notable changes to this project will be documented in this file.
   The device list no longer flickers while re-checking offline devices,
   so it stays steady (#4508).
 
+- 🔤 **No more garbled rich text**
+  Copying formatted text from apps such as JetBrains IDEs no longer
+  produces garbled characters — clipboard HTML charset detection is now
+  much more robust (#4542 #4550).
+
+- 🐧 **Better clipboard on Linux**
+  On Wayland, copied content is picked up with much lower latency, and
+  CrossPaste now correctly identifies which app a copy came from on
+  Hyprland and Sway (#4544 #4546).
+
 # Bug Fixes 🐛
 
+- :bug: Distrust implausible wide-charset labels when decoding clipboard HTML (#4550)
+- :bug: Resolve clipboard source app on Wayland via compositor IPC (#4546)
+- :bug: Probe X11 clipboard readiness before reading to cut XWayland latency (#4544)
+- :bug: Fix garbled clipboard HTML copied from JetBrains IDEs (#4542)
 - :bug: Gate `/sync/telnet` address-push to already-paired peers (#4529)
 - :bug: Harden network discovery: non-blocking mDNS teardown, debounced rebuild, offline gate (#4515)
 - :bug: Stop device list flicker when re-probing offline devices (#4508)
@@ -56,6 +70,7 @@ All notable changes to this project will be documented in this file.
 
 # Multiplatform · Refactor · Code Style 🔨
 
+- :hammer: Measure backoff budget with a monotonic clock (#4548)
 - :hammer: Remove Jewel dependency in favor of native Compose Window (#4489)
 - :art: Reduce SyncResolver connection-polling log noise (#4523)
 
