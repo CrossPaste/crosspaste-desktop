@@ -7,6 +7,7 @@ import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Display
 import com.sun.jna.platform.unix.X11.Window
+import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
@@ -31,6 +32,12 @@ interface X11Api : X11 {
         display: Display,
         selection: X11.Atom,
     ): Window?
+
+    fun XGetInputFocus(
+        display: Display,
+        focusReturn: X11.WindowByReference,
+        revertToReturn: IntByReference,
+    ): Int
 
     companion object {
 
