@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 expect fun getControlUtils(): ControlUtils
 
@@ -97,15 +99,16 @@ private suspend fun <T> backoffUntilValid(
     isValidResult: (T) -> Boolean,
     action: suspend () -> T,
 ): T {
-    val start = nowEpochMilliseconds()
+    // Monotonic clock: a wall-clock (NTP) jump must not stretch or cut the budget.
+    val start = TimeSource.Monotonic.markNow()
     var result = action()
     var waiting = initTime
     while (!isValidResult(result)) {
-        val remaining = maxTime - (nowEpochMilliseconds() - start)
-        if (remaining <= 0) {
+        val remaining = maxTime.milliseconds - start.elapsedNow()
+        if (remaining <= Duration.ZERO) {
             break
         }
-        delay(minOf(waiting, remaining).milliseconds)
+        delay(minOf(waiting.milliseconds, remaining))
         waiting = nextWaiting(waiting)
         result = action()
     }
