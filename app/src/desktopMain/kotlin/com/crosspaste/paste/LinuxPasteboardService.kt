@@ -4,6 +4,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.linux.api.X11Api
+import com.crosspaste.platform.linux.api.X11ClipboardReader
 import com.crosspaste.platform.linux.api.XFixes
 import com.crosspaste.platform.linux.api.XFixesSelectionNotifyEvent
 import com.crosspaste.sound.SoundService
@@ -151,8 +152,9 @@ class LinuxPasteboardService(
         if (contents != ownerTransferable) {
             contents?.let {
                 ownerTransferable = it
+                val effective = correctHtmlEncoding(it)
                 scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
-                    val pasteTransferable = DesktopReadTransferable(it)
+                    val pasteTransferable = DesktopReadTransferable(effective)
                     pasteConsumer.consume(
                         pasteTransferable,
                         PasteSourceContext(source = source, remote = false),
@@ -161,6 +163,26 @@ class LinuxPasteboardService(
             }
         }
     }
+
+    /**
+     * AWT exposes `text/html` only through a `charset=Unicode` (UTF-16) flavor,
+     * so html published in any other encoding (e.g. UTF-8 from IntelliJ / JBR)
+     * arrives mojibaked. Re-read the raw `text/html` bytes straight from the
+     * X11 selection and decode them with proper charset detection, overriding
+     * just that flavor. Falls back to the original transferable on any failure.
+     */
+    private fun correctHtmlEncoding(transferable: Transferable): Transferable =
+        runCatching {
+            if (!LinuxHtmlCorrectingTransferable.supportsHtml(transferable)) {
+                return transferable
+            }
+            val bytes = X11ClipboardReader.readClipboardTargetBytes("text/html") ?: return transferable
+            val html = HtmlClipboardDecoder.decode(bytes)
+            LinuxHtmlCorrectingTransferable(transferable, html)
+        }.getOrElse { e ->
+            logger.warn(e) { "Failed to correct html clipboard encoding" }
+            transferable
+        }
 
     override fun start() {
         if (job?.isActive != true) {

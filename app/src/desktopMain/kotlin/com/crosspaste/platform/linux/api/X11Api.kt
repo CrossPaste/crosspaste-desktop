@@ -16,6 +16,22 @@ import kotlin.time.Duration.Companion.milliseconds
 
 interface X11Api : X11 {
 
+    // libX11 selection APIs that JNA's bundled X11 interface does not declare;
+    // bound by symbol name from libX11 at load time.
+    fun XConvertSelection(
+        display: Display,
+        selection: X11.Atom,
+        target: X11.Atom,
+        property: X11.Atom,
+        requestor: Window,
+        time: NativeLong,
+    ): Int
+
+    fun XGetSelectionOwner(
+        display: Display,
+        selection: X11.Atom,
+    ): Window?
+
     companion object {
 
         private val logger = KotlinLogging.logger {}
