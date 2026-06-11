@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.5] - 2026-06-11
+# Highlights 🌟
+
+- 🛠️ **Fixed "Check for Updates" throwing an error**
+  Clicking Check for Updates when a newer version was available threw
+  "Cannot call invokeAndWait from the event dispatcher thread" on
+  Conveyor-packaged builds (Windows installer and macOS). The trigger
+  now runs directly when already on the event dispatch thread, so
+  manual update checks work reliably again (#4554 #4555).
+
 # [2.1.4] - 2026-06-10
 # Highlights 🌟
 
