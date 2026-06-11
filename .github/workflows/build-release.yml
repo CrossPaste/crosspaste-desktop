@@ -235,6 +235,13 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
+      # Snapshot the pure Conveyor site before later steps mutate output/
+      # (AppImage/extension get added, CheckSum deletes icon.svg/download.html).
+      # This copy is mirrored to a stable OSS prefix that will become the
+      # CDN-served update site (#4558).
+      - name: Stage update site for OSS mirror
+        run: cp -r output update-site
+
       - name: Package AppImage
         run: |
           chmod +x ./.github/scripts/package_appimage.sh
@@ -267,6 +274,24 @@ jobs:
         run: |
           echo "Uploading release app to OSS..."
           ossutil cp -r output/ oss://crosspaste-desktop/${{ env.VERSION }}.${{ env.REVISION }}/
+
+      # Mirror the Conveyor site to the stable site/ prefix (#4558). Clients do
+      # not use this path yet (base-url still points at GitHub); it goes live in
+      # a later release. Two-pass upload: packages first, update metadata last,
+      # so a half-finished upload never leaves metadata pointing at missing files.
+      # Cache-Control set per group: packages are version-named and immutable,
+      # metadata must revalidate quickly through the CDN.
+      - name: Mirror update site to OSS
+        run: |
+          mkdir update-site-meta
+          for f in metadata.properties appcast-*.rss crosspaste.appinstaller \
+                   InRelease Release Packages Packages.xz install.ps1; do
+            if compgen -G "update-site/$f" > /dev/null; then
+              mv update-site/$f update-site-meta/
+            fi
+          done
+          ossutil cp -r -f --meta "Cache-Control:public, max-age=2592000" update-site/ oss://crosspaste-desktop/site/
+          ossutil cp -r -f --meta "Cache-Control:public, max-age=300" update-site-meta/ oss://crosspaste-desktop/site/
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment
