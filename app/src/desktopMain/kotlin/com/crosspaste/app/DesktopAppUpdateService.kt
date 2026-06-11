@@ -149,7 +149,7 @@ class DesktopAppUpdateService(
                 SwingUtilities.invokeAndWait(trigger)
             }
             result
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logger.error(e) { "Failed to trigger update check UI" }
             false
         }
