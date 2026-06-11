@@ -124,21 +124,32 @@ class DesktopAppUpdateService(
     private fun SoftwareUpdateController.tryTriggerUpdateUI(): Boolean =
         try {
             var result = false
-            SwingUtilities.invokeAndWait {
-                result =
-                    when (canTriggerUpdateCheckUI()) {
-                        SoftwareUpdateController.Availability.AVAILABLE -> {
-                            triggerUpdateCheckUI()
-                            true
+            val trigger =
+                Runnable {
+                    result =
+                        when (canTriggerUpdateCheckUI()) {
+                            SoftwareUpdateController.Availability.AVAILABLE -> {
+                                triggerUpdateCheckUI()
+                                true
+                            }
+                            else -> {
+                                logger.warn {
+                                    "SoftwareUpdateController is not available, cannot trigger update check UI"
+                                }
+                                false
+                            }
                         }
-                        else -> {
-                            logger.warn { "SoftwareUpdateController is not available, cannot trigger update check UI" }
-                            false
-                        }
-                    }
+                }
+            // Conveyor requires the trigger to run on the EDT, but the menu click that
+            // gets us here already runs there — invokeAndWait from the EDT throws
+            // java.lang.Error, which the catch below would not even see.
+            if (SwingUtilities.isEventDispatchThread()) {
+                trigger.run()
+            } else {
+                SwingUtilities.invokeAndWait(trigger)
             }
             result
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logger.error(e) { "Failed to trigger update check UI" }
             false
         }
