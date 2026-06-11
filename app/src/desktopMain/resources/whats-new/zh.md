@@ -1,3 +1,8 @@
+# [2.1.5] - 2026-06-11
+
+## 🛠️ 修复"检查更新"报错
+修复了在有新版本可用时,点击"检查更新"会弹出错误(Cannot call invokeAndWait from the event dispatcher thread)的问题。该问题影响 Windows 安装版与 macOS 用户,现在手动检查更新可以正常工作了。
+
 # [2.1.4] - 2026-06-10
 
 ## 🔄 设备连接更稳、重连更快

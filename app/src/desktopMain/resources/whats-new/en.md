@@ -1,3 +1,8 @@
+# [2.1.5] - 2026-06-11
+
+## 🛠️ Fixed the "Check for Updates" error
+Fixed an error (Cannot call invokeAndWait from the event dispatcher thread) that appeared when clicking Check for Updates while a new version was available. This affected the Windows installer and macOS builds; manual update checks now work reliably again.
+
 # [2.1.4] - 2026-06-10
 
 ## 🔄 Faster, more reliable reconnection
