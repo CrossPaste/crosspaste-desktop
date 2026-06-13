@@ -87,4 +87,11 @@ object DesktopContext {
             content()
         }
     }
+
+    @Composable
+    fun MouseSettingsWindowContext(content: @Composable () -> Unit) {
+        BaseContext {
+            content()
+        }
+    }
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.DesktopContext
 import org.koin.compose.koinInject
 import java.awt.Dimension
 
@@ -45,13 +46,18 @@ fun MouseSettingsWindow(windowIcon: Painter?) {
             onDispose {}
         }
 
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-        ) {
-            MouseSettingsScreen()
+        // Like every other Compose window (Main/Search/Bubble), wrap content in
+        // the app theme. Without it MaterialTheme.colorScheme falls back to the
+        // unthemed default, painting the header black with dark, unreadable text.
+        DesktopContext.MouseSettingsWindowContext {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+            ) {
+                MouseSettingsScreen()
+            }
         }
     }
 }
