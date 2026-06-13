@@ -1,9 +1,8 @@
 package com.crosspaste.ui.mouse
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
@@ -46,15 +45,15 @@ fun MouseSettingsWindow(windowIcon: Painter?) {
             onDispose {}
         }
 
-        // Like every other Compose window (Main/Search/Bubble), wrap content in
-        // the app theme. Without it MaterialTheme.colorScheme falls back to the
-        // unthemed default, painting the header black with dark, unreadable text.
+        // Wrap content in the app theme (like Main/Search/Bubble) so colors track
+        // the real light/dark scheme. Use a Surface, not a bare Box: Surface sets
+        // LocalContentColor to onBackground, so the header text is readable. A
+        // plain Box only paints the background and leaves text at the default
+        // Color.Black — black-on-black in dark mode.
         DesktopContext.MouseSettingsWindowContext {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
             ) {
                 MouseSettingsScreen()
             }
