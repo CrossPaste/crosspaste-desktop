@@ -5,10 +5,14 @@ import com.crosspaste.mouse.LocalScreensProvider
 import com.crosspaste.mouse.MouseLayoutStore
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.ScreenInfo
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class RemoteDeviceInfo(
     val name: String,
@@ -20,19 +24,24 @@ class ScreenArrangementViewModel(
     private val events: SharedFlow<IpcEvent>,
     private val layoutStore: MouseLayoutStore,
     private val localScreensProvider: LocalScreensProvider? = null,
+    private val seedDispatcher: CoroutineDispatcher = ioDispatcher,
 ) {
     /**
-     * Seeded synchronously from [localScreensProvider] so the canvas can
-     * render the user's monitors even before the daemon spawns (or when
-     * the daemon's [IpcEvent.Initialized] fires before [observe] starts
-     * collecting — `MouseDaemonManager.events` is `replay = 0`, so a
-     * late subscriber never sees that event again).
+     * Seeded lazily from [localScreensProvider] inside [observe] (off the UI
+     * thread) so the canvas can render the user's monitors even before the
+     * daemon spawns — or when the daemon's [IpcEvent.Initialized] fires before
+     * [observe] starts collecting (`MouseDaemonManager.events` is `replay = 0`,
+     * so a late subscriber never sees that event again).
      *
-     * `Initialized` / `LocalScreens` events still take precedence — the
-     * daemon's reading is more authoritative since it goes through the
-     * native APIs the daemon will actually move the cursor across.
+     * The seed is NOT run in the constructor: [localScreensProvider.snapshot]
+     * does blocking native I/O on macOS (reads each monitor's wallpaper and
+     * re-encodes it to a PNG), and the view model is a Koin `factory` resolved
+     * during composition — running it synchronously froze the UI thread on
+     * every window open. It now loads on [ioDispatcher] and only fills the
+     * still-empty list, so any authoritative `Initialized` / `LocalScreens`
+     * event that arrives first keeps precedence.
      */
-    private val _localScreens = MutableStateFlow(localScreensProvider?.snapshot().orEmpty())
+    private val _localScreens = MutableStateFlow<List<ScreenInfo>>(emptyList())
     val localScreens: StateFlow<List<ScreenInfo>> = _localScreens.asStateFlow()
 
     private val _remoteDevices = MutableStateFlow<Map<String, RemoteDeviceInfo>>(emptyMap())
@@ -50,37 +59,47 @@ class ScreenArrangementViewModel(
             _remoteDevices.value + (deviceId to RemoteDeviceInfo(name, screens, position))
     }
 
-    suspend fun observe() {
-        events.collect { ev ->
-            when (ev) {
-                is IpcEvent.Initialized -> _localScreens.value = ev.screens
-                is IpcEvent.LocalScreens -> _localScreens.value = ev.screens
-                is IpcEvent.PeerScreensLearned -> {
-                    val existing = _remoteDevices.value[ev.deviceId]
-                    _remoteDevices.value =
-                        _remoteDevices.value + (
-                            ev.deviceId to
-                                RemoteDeviceInfo(
-                                    name = existing?.name ?: ev.deviceId,
-                                    screens = ev.screens,
-                                    position =
-                                        existing?.position
-                                            ?: layoutStore.get(ev.deviceId)
-                                            ?: Position(0, 0),
-                                )
-                        )
+    suspend fun observe(): Unit =
+        coroutineScope {
+            // Seed the canvas off the UI thread; snapshot() does blocking native
+            // I/O (wallpaper PNG encode per monitor) on macOS. Only fills the list
+            // if no authoritative screen event has populated it yet.
+            launch(seedDispatcher) {
+                val seed = localScreensProvider?.snapshot().orEmpty()
+                if (seed.isNotEmpty() && _localScreens.value.isEmpty()) {
+                    _localScreens.value = seed
                 }
-                is IpcEvent.PeerConnected -> {
-                    val existing = _remoteDevices.value[ev.deviceId]
-                    if (existing != null && existing.name != ev.name) {
+            }
+            events.collect { ev ->
+                when (ev) {
+                    is IpcEvent.Initialized -> _localScreens.value = ev.screens
+                    is IpcEvent.LocalScreens -> _localScreens.value = ev.screens
+                    is IpcEvent.PeerScreensLearned -> {
+                        val existing = _remoteDevices.value[ev.deviceId]
                         _remoteDevices.value =
-                            _remoteDevices.value + (ev.deviceId to existing.copy(name = ev.name))
+                            _remoteDevices.value + (
+                                ev.deviceId to
+                                    RemoteDeviceInfo(
+                                        name = existing?.name ?: ev.deviceId,
+                                        screens = ev.screens,
+                                        position =
+                                            existing?.position
+                                                ?: layoutStore.get(ev.deviceId)
+                                                ?: Position(0, 0),
+                                    )
+                            )
                     }
+                    is IpcEvent.PeerConnected -> {
+                        val existing = _remoteDevices.value[ev.deviceId]
+                        if (existing != null && existing.name != ev.name) {
+                            _remoteDevices.value =
+                                _remoteDevices.value + (ev.deviceId to existing.copy(name = ev.name))
+                        }
+                    }
+                    else -> Unit
                 }
-                else -> Unit
             }
         }
-    }
 
     fun onDragDevice(
         deviceId: String,

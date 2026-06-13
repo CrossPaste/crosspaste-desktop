@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import kotlin.test.Test
@@ -85,18 +87,30 @@ class ScreenArrangementViewModelTest {
     }
 
     @Test
-    fun `seeds local screens from provider at construction`() {
-        val provider =
-            LocalScreensProvider {
-                listOf(
-                    ScreenInfo(0, 1920, 1080, 0, 0, 1.0, true),
-                    ScreenInfo(1, 2560, 1440, 1920, 0, 2.0, false),
+    fun `seeds local screens from provider when observing`() =
+        runTest {
+            val provider =
+                LocalScreensProvider {
+                    listOf(
+                        ScreenInfo(0, 1920, 1080, 0, 0, 1.0, true),
+                        ScreenInfo(1, 2560, 1440, 1920, 0, 2.0, false),
+                    )
+                }
+            val vm =
+                ScreenArrangementViewModel(
+                    MutableSharedFlow(),
+                    store(),
+                    provider,
+                    UnconfinedTestDispatcher(testScheduler),
                 )
-            }
-        val vm = ScreenArrangementViewModel(MutableSharedFlow(), store(), provider)
-        assertEquals(2, vm.localScreens.value.size)
-        assertEquals(2560, vm.localScreens.value[1].width)
-    }
+            // Seed is loaded off the UI thread inside observe(), not at construction.
+            assertEquals(0, vm.localScreens.value.size)
+            val job = launch { vm.observe() }
+            advanceUntilIdle()
+            assertEquals(2, vm.localScreens.value.size)
+            assertEquals(2560, vm.localScreens.value[1].width)
+            job.cancel()
+        }
 
     @Test
     fun `daemon Initialized event overrides provider seed`() =
@@ -106,15 +120,15 @@ class ScreenArrangementViewModelTest {
                 LocalScreensProvider {
                     listOf(ScreenInfo(0, 1280, 720, 0, 0, 1.0, true))
                 }
-            val vm = ScreenArrangementViewModel(events.asSharedFlow(), store(), provider)
-            assertEquals(
-                1280,
-                vm.localScreens.value
-                    .single()
-                    .width,
-            )
+            val vm =
+                ScreenArrangementViewModel(
+                    events.asSharedFlow(),
+                    store(),
+                    provider,
+                    UnconfinedTestDispatcher(testScheduler),
+                )
             val job = launch { vm.observe() }
-            yield()
+            advanceUntilIdle()
             events.emit(
                 IpcEvent.Initialized(
                     screens = listOf(ScreenInfo(0, 3840, 2160, 0, 0, 2.0, true)),

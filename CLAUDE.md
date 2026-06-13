@@ -91,6 +91,7 @@ SQLDelight manages database schema in `.sq` files:
 - **UI sizing**: When adding size/dimension constants in UI code, prefer using values defined in `com.crosspaste.ui.theme.AppUISize` instead of inline literal `dp`/`sp` values.
 - **Thread-safe collections**: In `commonMain` code, prefer thread-safe Map/Set from `io.ktor.util.collections` (e.g., `ConcurrentMap`, `ConcurrentSet`) over platform-specific concurrent collections.
 - **Coroutine `delay`**: Always pass a `Duration` to `kotlinx.coroutines.delay`, never a raw number. Write `delay(280L.milliseconds)` / `delay(2.seconds)`, not `delay(280L)` or `delay(2000)`. Add `import kotlin.time.Duration.Companion.milliseconds` (or `.seconds`) as needed. This applies to both production code and tests.
+- **Coroutine dispatchers**: Never reference `kotlinx.coroutines.Dispatchers.IO` / `.Main` / `.Default` directly. Use the project's multiplatform dispatcher vals from `com.crosspaste.utils`: `ioDispatcher`, `mainDispatcher`, `cpuDispatcher` (declared as `expect` in `DispatcherUtils.kt`, with per-platform `actual`s in `DispatcherUtils.desktop.kt` / `.native.kt`). When a class needs a dispatcher for offloading blocking work, inject it as a constructor parameter defaulting to the appropriate val (e.g. `seedDispatcher: CoroutineDispatcher = ioDispatcher`) so tests can substitute a `TestDispatcher`.
 
 ## Key Technical Details
 
