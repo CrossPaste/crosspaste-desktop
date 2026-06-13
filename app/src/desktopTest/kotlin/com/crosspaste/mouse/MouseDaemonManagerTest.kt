@@ -157,6 +157,53 @@ class MouseDaemonManagerTest {
             job.cancel()
         }
 
+    @Test
+    fun `clientFactory failure surfaces Error and keeps manager alive for retry`() =
+        runBlocking {
+            val store = inMemoryStore()
+            val enabled = MutableStateFlow(true)
+            val handle = FakeHandle()
+            var attempts = 0
+            val mgr =
+                MouseDaemonManager(
+                    enabledFlow = enabled,
+                    portFlow = MutableStateFlow(4243),
+                    layoutStore = store,
+                    syncRuntimeInfosFlow = MutableStateFlow(emptyList()),
+                    clientFactory = {
+                        attempts++
+                        // First spawn fails like a missing/un-executable daemon binary.
+                        if (attempts == 1) {
+                            throw IllegalStateException("crosspaste-mouse binary not found")
+                        }
+                        MouseDaemonClient(handle)
+                    },
+                )
+            val job = launch { mgr.run() }
+            delay(50)
+            // The thrown exception must NOT terminate run(): manager stays alive,
+            // surfacing Error instead of freezing forever on Starting.
+            assertTrue(
+                mgr.state.value is MouseState.Error,
+                "expected Error after factory failure, got ${mgr.state.value}",
+            )
+            assertEquals(1, attempts)
+
+            // Toggle off→on: the next distinct input re-enters spawnClient and retries.
+            enabled.value = false
+            delay(50)
+            enabled.value = true
+            delay(50)
+            assertEquals(2, attempts)
+            handle.emit(IpcEvent.Initialized(emptyList(), 2))
+            delay(50)
+            assertTrue(
+                mgr.state.value is MouseState.Running,
+                "expected Running after successful retry, got ${mgr.state.value}",
+            )
+            job.cancel()
+        }
+
     // --- test helpers ---
     private fun inMemoryStore(): MouseLayoutStore {
         val backing =

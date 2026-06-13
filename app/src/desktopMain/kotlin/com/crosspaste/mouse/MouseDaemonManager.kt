@@ -1,6 +1,7 @@
 package com.crosspaste.mouse
 
 import com.crosspaste.db.sync.SyncRuntimeInfo
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
@@ -98,6 +99,9 @@ class MouseDaemonManager(
                             session == null -> spawnClient(inputs)
                             else -> updateClientLayout(session!!, inputs)
                         }
+                    // spawnClient returns null when client creation/start failed
+                    // (e.g. missing daemon binary). The manager stays alive so a
+                    // later input change (toggle off→on, fixed path) re-spawns.
                 }
         }
 
@@ -113,13 +117,41 @@ class MouseDaemonManager(
         return null
     }
 
-    /** Create a new client, wire up event forwarding, send the initial `Start`. */
-    private suspend fun CoroutineScope.spawnClient(inputs: MergedInputs): Session {
+    /**
+     * Create a new client, wire up event forwarding, send the initial `Start`.
+     *
+     * Returns `null` if the client could not be created or started — e.g.
+     * [clientFactory] throws when the bundled daemon binary is missing, or
+     * `MouseDaemonProcess.spawn` throws when it isn't executable. Such failures
+     * must NOT propagate out of the `combine().collect{}` in [run]: that would
+     * terminate the whole orchestrator and freeze the UI on "Starting" forever,
+     * unrecoverable without an app restart. Instead we surface [MouseState.Error]
+     * and leave the manager running so the next input change can retry.
+     */
+    private suspend fun CoroutineScope.spawnClient(inputs: MergedInputs): Session? {
         _state.value = MouseState.Starting
-        val client = clientFactory()
+        val client =
+            try {
+                clientFactory()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                _state.value = MouseState.Error(e.message ?: "Failed to create mouse daemon client")
+                return null
+            }
         val runJob = launch { client.run() }
         val eventJob = launch { forwardClientEvents(client.events) }
-        client.start(inputs.port, inputs.peers)
+        try {
+            client.start(inputs.port, inputs.peers)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            eventJob.cancel()
+            runJob.cancel()
+            runCatching { client.close() }
+            _state.value = MouseState.Error(e.message ?: "Failed to start mouse daemon client")
+            return null
+        }
         return Session(client, runJob, eventJob, inputs.port, inputs.peers)
     }
 

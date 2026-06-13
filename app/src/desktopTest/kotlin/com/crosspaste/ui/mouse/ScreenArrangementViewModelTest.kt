@@ -144,4 +144,49 @@ class ScreenArrangementViewModelTest {
             )
             job.cancel()
         }
+
+    @Test
+    fun `daemon screens keep local name and wallpaper enrichment`() =
+        runTest {
+            val events = MutableSharedFlow<IpcEvent>(replay = 0, extraBufferCapacity = 16)
+            val provider =
+                LocalScreensProvider {
+                    listOf(
+                        ScreenInfo(
+                            id = 7,
+                            width = 1920,
+                            height = 1080,
+                            x = 0,
+                            y = 0,
+                            scaleFactor = 1.0,
+                            isPrimary = true,
+                            name = "DELL U2725QE",
+                            wallpaperPath = "/tmp/wp-7.png",
+                        ),
+                    )
+                }
+            val vm =
+                ScreenArrangementViewModel(
+                    events.asSharedFlow(),
+                    store(),
+                    provider,
+                    UnconfinedTestDispatcher(testScheduler),
+                )
+            val job = launch { vm.observe() }
+            advanceUntilIdle()
+            // Daemon reports the same display id with authoritative geometry but
+            // null name/wallpaper (both @Transient, never cross the IPC boundary).
+            events.emit(
+                IpcEvent.Initialized(
+                    screens = listOf(ScreenInfo(7, 3840, 2160, 0, 0, 2.0, true)),
+                    protocolVersion = 2,
+                ),
+            )
+            advanceUntilIdle()
+            val screen = vm.localScreens.value.single()
+            assertEquals(3840, screen.width) // daemon geometry wins
+            assertEquals("DELL U2725QE", screen.name) // local enrichment preserved
+            assertEquals("/tmp/wp-7.png", screen.wallpaperPath)
+            job.cancel()
+        }
 }

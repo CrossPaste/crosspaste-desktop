@@ -44,6 +44,23 @@ class ScreenArrangementViewModel(
     private val _localScreens = MutableStateFlow<List<ScreenInfo>>(emptyList())
     val localScreens: StateFlow<List<ScreenInfo>> = _localScreens.asStateFlow()
 
+    private val screensLock = Any()
+
+    /**
+     * Local platform snapshot (geometry + enriched `name` / `wallpaperPath`).
+     * The daemon's IPC screens carry geometry only — `name` / `wallpaperPath`
+     * are `@Transient` on [ScreenInfo] and never cross the IPC boundary — so we
+     * keep this snapshot to re-attach the enrichment by display id whenever the
+     * daemon reports screens. Guarded by [screensLock].
+     */
+    private var seedScreens: List<ScreenInfo> = emptyList()
+
+    /**
+     * Latest daemon-reported local screens (authoritative geometry), or null
+     * before the daemon initializes. Guarded by [screensLock].
+     */
+    private var daemonScreens: List<ScreenInfo>? = null
+
     private val _remoteDevices = MutableStateFlow<Map<String, RemoteDeviceInfo>>(emptyMap())
     val remoteDevices: StateFlow<Map<String, RemoteDeviceInfo>> = _remoteDevices.asStateFlow()
 
@@ -59,21 +76,54 @@ class ScreenArrangementViewModel(
             _remoteDevices.value + (deviceId to RemoteDeviceInfo(name, screens, position))
     }
 
+    /**
+     * Re-attach local `name` / `wallpaperPath` to a daemon-reported screen by
+     * matching display id. Falls back to the daemon screen unchanged when no
+     * local match exists (disjoint ids, or the AWT fallback that carries no
+     * names) — enrichment is best-effort and never degrades geometry.
+     *
+     * Assumes the daemon emits the same display id space as
+     * [com.crosspaste.mouse.MacosLocalScreensProvider] (CGDirectDisplayID on
+     * macOS); if they ever diverge, the match simply misses and we render the
+     * daemon screen as-is, same as before this enrichment existed.
+     */
+    private fun ScreenInfo.withLocalEnrichment(): ScreenInfo {
+        val local = seedScreens.firstOrNull { it.id == id } ?: return this
+        return copy(
+            name = name ?: local.name,
+            wallpaperPath = wallpaperPath ?: local.wallpaperPath,
+        )
+    }
+
+    /**
+     * Recompute and publish the canvas's local-screen list under [screensLock]:
+     * daemon geometry enriched with local names/wallpaper once the daemon has
+     * reported, otherwise the raw local snapshot as a pre-daemon seed.
+     */
+    private fun updateScreens(mutate: () -> Unit) {
+        synchronized(screensLock) {
+            mutate()
+            _localScreens.value =
+                daemonScreens?.map { it.withLocalEnrichment() } ?: seedScreens
+        }
+    }
+
     suspend fun observe(): Unit =
         coroutineScope {
             // Seed the canvas off the UI thread; snapshot() does blocking native
-            // I/O (wallpaper PNG encode per monitor) on macOS. Only fills the list
-            // if no authoritative screen event has populated it yet.
+            // I/O (wallpaper PNG encode per monitor) on macOS. Publishing merges
+            // with any daemon screens already reported, so the enrichment is
+            // re-attached even if Initialized arrived first.
             launch(seedDispatcher) {
                 val seed = localScreensProvider?.snapshot().orEmpty()
-                if (seed.isNotEmpty() && _localScreens.value.isEmpty()) {
-                    _localScreens.value = seed
+                if (seed.isNotEmpty()) {
+                    updateScreens { seedScreens = seed }
                 }
             }
             events.collect { ev ->
                 when (ev) {
-                    is IpcEvent.Initialized -> _localScreens.value = ev.screens
-                    is IpcEvent.LocalScreens -> _localScreens.value = ev.screens
+                    is IpcEvent.Initialized -> updateScreens { daemonScreens = ev.screens }
+                    is IpcEvent.LocalScreens -> updateScreens { daemonScreens = ev.screens }
                     is IpcEvent.PeerScreensLearned -> {
                         val existing = _remoteDevices.value[ev.deviceId]
                         _remoteDevices.value =

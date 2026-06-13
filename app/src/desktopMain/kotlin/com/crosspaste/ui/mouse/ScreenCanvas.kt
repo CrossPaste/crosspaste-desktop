@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.mouse.Position
 import com.crosspaste.mouse.ScreenInfo
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import java.io.File
 
@@ -479,19 +481,30 @@ private fun DrawScope.drawWallpaper(
  * recomposition. We key on the path list so adding/removing/swapping a screen
  * triggers a reload, but redraws (pan, zoom, drag) hit the cache.
  *
+ * Decoding runs in a [LaunchedEffect] on [ioDispatcher], never in composition:
+ * `File.readBytes()` + 4K PNG decode on the Compose UI thread janked the first
+ * frame when the settings window opened or the screen set changed. The cache
+ * keeps the previous bitmaps until the new ones finish decoding, so redraws
+ * stay smooth during the reload.
+ *
  * Skia decodes PNG/JPEG natively. HEIC is handled in Swift before we get
  * here — see `getDesktopWallpaperPng` in MacosApi.swift.
  */
 @Composable
 private fun rememberWallpaperBitmaps(screens: List<ScreenInfo>): Map<String, ImageBitmap> {
     val paths = screens.mapNotNull { it.wallpaperPath }.distinct()
-    return remember(paths) {
-        paths
-            .mapNotNull { path ->
-                runCatching {
-                    val bytes = File(path).readBytes()
-                    path to Image.makeFromEncoded(bytes).toComposeImageBitmap()
-                }.getOrNull()
-            }.toMap()
+    var bitmaps by remember { mutableStateOf<Map<String, ImageBitmap>>(emptyMap()) }
+    LaunchedEffect(paths) {
+        bitmaps =
+            withContext(ioDispatcher) {
+                paths
+                    .mapNotNull { path ->
+                        runCatching {
+                            val bytes = File(path).readBytes()
+                            path to Image.makeFromEncoded(bytes).toComposeImageBitmap()
+                        }.getOrNull()
+                    }.toMap()
+            }
     }
+    return bitmaps
 }
