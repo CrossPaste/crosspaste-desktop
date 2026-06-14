@@ -13,6 +13,7 @@ import com.crosspaste.e2e.scenario.Scenario
 import com.crosspaste.e2e.scenario.ScenarioContext
 import com.crosspaste.e2e.scenario.ScenarioResult
 import com.crosspaste.e2e.scenario.TargetSpec
+import com.crosspaste.e2e.scenario.TelnetScenario
 import com.crosspaste.e2e.scenario.WrongTokenScenario
 import com.crosspaste.utils.getDateUtils
 import com.github.ajalt.clikt.core.CliktCommand
@@ -22,13 +23,14 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.long
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import kotlin.coroutines.cancellation.CancellationException
 
 class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
     private val scenario by option(
         "--scenario",
         "-s",
         help =
-            "Scenario to run: discovery, pair, wrong-token, push-text, push-url, " +
+            "Scenario to run: discovery, pair, wrong-token, telnet, push-text, push-url, " +
                 "push-html, push-rtf, push-color, pull-icon, or all.",
     ).default("discovery")
 
@@ -115,7 +117,15 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
                 runBlocking {
                     scenarios.map { s ->
                         val started = System.nanoTime()
-                        val result = s.run(ctx)
+                        // A scenario that throws (e.g. a probe hitting an unreachable port)
+                        // must not abort the whole batch — capture it as a Fail so later
+                        // scenarios still run and the summary/JUnit report are still emitted.
+                        val result =
+                            runCatching { s.run(ctx) }
+                                .getOrElse { e ->
+                                    if (e is CancellationException) throw e
+                                    ScenarioResult.Fail("Scenario '${s.name}' threw", e)
+                                }
                         val durationMs = (System.nanoTime() - started) / 1_000_000.0
                         RunResult(s.name, result, durationMs)
                     }
@@ -155,6 +165,7 @@ private fun selectScenarios(
         "discovery" -> listOf(DiscoveryScenario())
         "pair" -> listOf(PairScenario())
         "wrong-token" -> listOf(WrongTokenScenario())
+        "telnet" -> listOf(TelnetScenario())
         "push-text" -> listOf(PushTextScenario(payloads.text))
         "push-url" -> listOf(PushUrlScenario(payloads.url))
         "push-html" -> listOf(PushHtmlScenario(payloads.html))
@@ -167,6 +178,9 @@ private fun selectScenarios(
                 DiscoveryScenario(),
                 WrongTokenScenario(),
                 PairScenario(),
+                // After pair: peer is trusted, so telnet's address-push exercises the gated
+                // server merge path; its identity-header check needs no trust.
+                TelnetScenario(),
                 PushTextScenario(payloads.text),
                 PushUrlScenario(payloads.url),
                 PushHtmlScenario(payloads.html),
