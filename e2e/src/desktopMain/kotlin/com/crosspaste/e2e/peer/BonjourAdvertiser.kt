@@ -2,10 +2,7 @@ package com.crosspaste.e2e.peer
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.sync.HostInfo
-import com.crosspaste.dto.sync.EndpointInfo
-import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.e2e.net.NetworkUtils
-import com.crosspaste.platform.Platform
 import com.crosspaste.utils.TxtRecordUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javax.jmdns.JmDNS
@@ -51,24 +48,7 @@ class BonjourAdvertiser(
                         networkPrefixLength = prefix,
                         hostAddress = addr.hostAddress,
                     )
-                val syncInfo =
-                    SyncInfo(
-                        appInfo = appInfo,
-                        endpointInfo =
-                            EndpointInfo(
-                                deviceId = appInfo.appInstanceId,
-                                deviceName = appInfo.userName,
-                                platform =
-                                    Platform(
-                                        name = Platform.UNKNOWN_OS,
-                                        arch = "x64",
-                                        bitMode = 64,
-                                        version = appInfo.appVersion,
-                                    ),
-                                hostInfoList = listOf(hostInfo),
-                                port = advertisedPort,
-                            ),
-                    )
+                val syncInfo = buildPeerSyncInfo(appInfo, listOf(hostInfo), advertisedPort)
                 val txt = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
                 val info =
                     ServiceInfo.create(
