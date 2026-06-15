@@ -66,6 +66,13 @@ data class DesktopAppConfig(
     // Highest app version whose changelog the user has already seen. Empty until seeded on
     // first launch; drives the highlight badge on the changelog menu entry after an upgrade.
     val lastSeenChangelogVersion: String = "",
+    // Mouse daemon (crosspaste-mouse plugin)
+    val mouseEnabled: Boolean = false,
+    val mouseListenPort: Int = 4243,
+    // JSON-encoded Map<String, Position> (deviceId → virtual-desktop offset).
+    // Stored as a String so it flows through the scalar copy(key, value) path,
+    // matching the blacklist / sourceExclusions / useNetworkInterfaces pattern.
+    val mouseLayout: String = "{}",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -180,5 +187,8 @@ data class DesktopAppConfig(
                 } else {
                     lastSeenChangelogVersion
                 },
+            mouseEnabled = if (key == "mouseEnabled") toBoolean(value) else mouseEnabled,
+            mouseListenPort = if (key == "mouseListenPort") toInt(value) else mouseListenPort,
+            mouseLayout = if (key == "mouseLayout") toString(value) else mouseLayout,
         )
 }
