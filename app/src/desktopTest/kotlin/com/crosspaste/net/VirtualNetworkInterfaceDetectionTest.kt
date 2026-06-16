@@ -191,29 +191,31 @@ class NetworkInterfaceSortingTest {
     }
 
     @Test
-    fun `among physical interfaces sorting by prefix length then octet then name`() {
+    fun `among known LAN interfaces subnet preference then octet decides`() {
         val eth0 = NetworkInterfaceInfo("eth0", 24, "192.168.1.50", isLikelyVirtual = false)
         val en0 = NetworkInterfaceInfo("en0", 24, "192.168.1.100", isLikelyVirtual = false)
         val wlan0 = NetworkInterfaceInfo("wlan0", 16, "10.0.0.200", isLikelyVirtual = false)
 
         val sorted = sort(listOf(wlan0, en0, eth0))
 
-        // eth0 and en0 both /24, en0 has higher last octet -> en0 first among /24
-        // then eth0, then wlan0 (/16)
+        // All three are known-LAN (tier 0), index 0. eth0/en0 are on 192.168.x (subnet
+        // rank 0), wlan0 on 10.x (subnet rank 2) -> wlan0 last. eth0 vs en0: same subnet
+        // and prefix, en0 has higher last octet -> en0 first.
         assertEquals("en0", sorted[0].name)
         assertEquals("eth0", sorted[1].name)
         assertEquals("wlan0", sorted[2].name)
     }
 
     @Test
-    fun `among virtual interfaces same sorting rules apply`() {
+    fun `among virtual interfaces lower index wins`() {
         val vmnet1 = NetworkInterfaceInfo("vmnet1", 24, "192.168.100.1", isLikelyVirtual = true)
         val docker0 = NetworkInterfaceInfo("docker0", 16, "172.17.0.1", isLikelyVirtual = true)
 
-        val sorted = sort(listOf(docker0, vmnet1))
+        val sorted = sort(listOf(vmnet1, docker0))
 
-        assertEquals("vmnet1", sorted[0].name)
-        assertEquals("docker0", sorted[1].name)
+        // Both virtual (tier 2); index decides first: docker0 (0) before vmnet1 (1).
+        assertEquals("docker0", sorted[0].name)
+        assertEquals("vmnet1", sorted[1].name)
     }
 
     @Test
@@ -252,7 +254,8 @@ class NetworkInterfaceSortingTest {
         val sorted = sort(interfaces)
 
         assertEquals(2, sorted.size)
-        assertEquals("vmnet8", sorted[0].name)
+        // Both virtual; index decides: docker0 (0) before vmnet8 (8).
+        assertEquals("docker0", sorted[0].name)
     }
 
     @Test
@@ -272,14 +275,119 @@ class NetworkInterfaceSortingTest {
     }
 
     @Test
-    fun `eth preferred over en with same prefix and octet`() {
-        val eth = NetworkInterfaceInfo("eth0", 24, "192.168.1.100", isLikelyVirtual = false)
-        val en = NetworkInterfaceInfo("en0", 24, "192.168.1.100", isLikelyVirtual = false)
+    fun `wifi preferred over cellular - issue 4567`() {
+        // Real-world report: rmnet_data4 (cellular, /30) was selected over wlan0 (/24),
+        // making the device undiscoverable on the LAN.
+        val rmnet = NetworkInterfaceInfo("rmnet_data4", 30, "10.123.45.6", isLikelyVirtual = false)
+        val wlan0 = NetworkInterfaceInfo("wlan0", 24, "192.168.1.50", isLikelyVirtual = false)
 
-        val sorted = sort(listOf(en, eth))
+        val sorted = sort(listOf(rmnet, wlan0))
+
+        assertEquals("wlan0", sorted[0].name)
+        assertEquals("rmnet_data4", sorted[1].name)
+    }
+
+    @Test
+    fun `ethernet preferred over cellular even with longer prefix`() {
+        val eth0 = NetworkInterfaceInfo("eth0", 24, "192.168.1.50", isLikelyVirtual = false)
+        val rmnet = NetworkInterfaceInfo("rmnet0", 32, "10.8.0.2", isLikelyVirtual = false)
+
+        val sorted = sort(listOf(rmnet, eth0))
 
         assertEquals("eth0", sorted[0].name)
-        assertEquals("en0", sorted[1].name)
+    }
+
+    @Test
+    fun `cellular ranked last behind unknown and virtual interfaces`() {
+        val rmnet = NetworkInterfaceInfo("rmnet_data4", 30, "10.123.45.6", isLikelyVirtual = false)
+        val unknown = NetworkInterfaceInfo("ppp0", 24, "192.168.5.2", isLikelyVirtual = false)
+        val virtual = NetworkInterfaceInfo("vmnet8", 24, "192.168.200.1", isLikelyVirtual = true)
+
+        val sorted = sort(listOf(rmnet, virtual, unknown))
+
+        // unknown physical (tier 1) < virtual (tier 2) < cellular (tier 3)
+        assertEquals("ppp0", sorted[0].name)
+        assertEquals("vmnet8", sorted[1].name)
+        assertEquals("rmnet_data4", sorted[2].name)
+    }
+
+    @Test
+    fun `lower interface index preferred - eth0 before eth1`() {
+        val eth1 = NetworkInterfaceInfo("eth1", 24, "192.168.1.100", isLikelyVirtual = false)
+        val eth0 = NetworkInterfaceInfo("eth0", 24, "192.168.1.50", isLikelyVirtual = false)
+
+        val sorted = sort(listOf(eth1, eth0))
+
+        // Index decides before subnet/octet: eth0 wins despite lower last octet.
+        assertEquals("eth0", sorted[0].name)
+        assertEquals("eth1", sorted[1].name)
+    }
+
+    @Test
+    fun `eth0 and wlan0 share type and index priority - address decides`() {
+        // eth0 and wlan0 are both known-LAN (tier 0) with index 0, so neither name wins;
+        // the same subnet/prefix here means the higher last octet decides deterministically.
+        val eth0 = NetworkInterfaceInfo("eth0", 24, "192.168.1.10", isLikelyVirtual = false)
+        val wlan0 = NetworkInterfaceInfo("wlan0", 24, "192.168.1.20", isLikelyVirtual = false)
+
+        val sortedA = sort(listOf(eth0, wlan0))
+        val sortedB = sort(listOf(wlan0, eth0))
+
+        // Order is independent of input order and driven by the address tiebreaker.
+        assertEquals("wlan0", sortedA[0].name)
+        assertEquals("wlan0", sortedB[0].name)
+    }
+
+    @Test
+    fun `192_168 subnet preferred over 10 subnet for same interface type`() {
+        val wlanHome = NetworkInterfaceInfo("wlan0", 24, "192.168.1.50", isLikelyVirtual = false)
+        val ethCorp = NetworkInterfaceInfo("eth1", 24, "10.20.30.40", isLikelyVirtual = false)
+
+        // Different index (0 vs 1) would normally favor index 0 anyway; use same index to
+        // isolate the subnet rule.
+        val wlanTen = NetworkInterfaceInfo("wlan0", 24, "10.0.0.50", isLikelyVirtual = false)
+        val ethHome = NetworkInterfaceInfo("eth0", 24, "192.168.1.60", isLikelyVirtual = false)
+
+        assertEquals("wlan0", sort(listOf(ethCorp, wlanHome)).first().name)
+        // Same type and index: 192.168 (eth0) beats 10.x (wlan0).
+        assertEquals("eth0", sort(listOf(wlanTen, ethHome)).first().name)
+    }
+
+    @Test
+    fun `systemd predictable wifi name treated as known LAN`() {
+        val wlp = NetworkInterfaceInfo("wlp2s0", 24, "192.168.1.50", isLikelyVirtual = false)
+        val rmnet = NetworkInterfaceInfo("rmnet_data4", 30, "10.123.45.6", isLikelyVirtual = false)
+
+        val sorted = sort(listOf(rmnet, wlp))
+
+        assertEquals("wlp2s0", sorted[0].name)
+    }
+
+    @Test
+    fun `systemd predictable name index is not parsed from bus numbers`() {
+        // enp0s3's trailing "3" is a PCI slot number, NOT an interface index. It must
+        // default to index 0 so it is not pushed behind eth0; the address decides instead.
+        val enp = NetworkInterfaceInfo("enp0s3", 24, "192.168.1.90", isLikelyVirtual = false)
+        val eth0 = NetworkInterfaceInfo("eth0", 24, "192.168.1.10", isLikelyVirtual = false)
+
+        val sorted = sort(listOf(eth0, enp))
+
+        // Both index 0 -> same subnet/prefix -> higher last octet wins (enp0s3 = 90).
+        assertEquals("enp0s3", sorted[0].name)
+        assertEquals("eth0", sorted[1].name)
+    }
+
+    @Test
+    fun `systemd names with embedded digits ordered by address not bus numbers`() {
+        // enp3s0 and wlp2s0 have digits embedded mid-name (bus/slot), so both default to
+        // index 0 instead of 3/2; the address tiebreaker decides, not the bus numbers.
+        val enp3s0 = NetworkInterfaceInfo("enp3s0", 24, "192.168.1.80", isLikelyVirtual = false)
+        val wlp2s0 = NetworkInterfaceInfo("wlp2s0", 24, "192.168.1.40", isLikelyVirtual = false)
+
+        val sorted = sort(listOf(wlp2s0, enp3s0))
+
+        // Both index 0 -> enp3s0 has higher last octet -> enp3s0 first.
+        assertEquals("enp3s0", sorted[0].name)
     }
 
     @Test
