@@ -72,7 +72,7 @@ class DesktopImageTypePlugin(
         }
     }
 
-    override fun doLoadRepresentation(
+    override suspend fun doLoadRepresentation(
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
@@ -209,7 +209,7 @@ class DesktopImageTypePlugin(
         return bufferedImage
     }
 
-    override fun buildTransferable(
+    override suspend fun buildTransferable(
         pasteItem: PasteItem,
         mixedCategory: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,

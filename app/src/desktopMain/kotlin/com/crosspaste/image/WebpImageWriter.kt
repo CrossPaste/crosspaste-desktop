@@ -18,7 +18,7 @@ class WebpImageWriter : ImageWriter<BufferedImage> {
 
     private val fileUtils = getFileUtils()
 
-    override fun writeImage(
+    override suspend fun writeImage(
         image: BufferedImage,
         formatName: String,
         imagePath: Path,

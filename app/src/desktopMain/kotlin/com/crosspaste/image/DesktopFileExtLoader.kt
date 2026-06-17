@@ -14,7 +14,7 @@ class DesktopFileExtLoader(
     userDataPathProvider: UserDataPathProvider,
 ) : AbstractFileExtImageLoader(userDataPathProvider) {
 
-    private val toSave: (String, Path, Path) -> Unit =
+    private val toSave: suspend (String, Path, Path) -> Unit =
         if (platform.isMacos()) {
             { key, _, result -> macSaveExtIcon(key, result) }
         } else if (platform.isWindows()) {
@@ -41,7 +41,7 @@ private fun macSaveExtIcon(
     MacAppUtils.saveIconByExt(key, savePath.toString())
 }
 
-private fun windowsSaveExtIcon(
+private suspend fun windowsSaveExtIcon(
     filePath: Path,
     savePath: Path,
     imageHandler: ImageHandler<BufferedImage>,
