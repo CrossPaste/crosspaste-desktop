@@ -64,10 +64,8 @@ import org.koin.dsl.module
 
 fun desktopNetworkModule(marketingMode: Boolean): Module =
     module {
-        single<ExceptionHandler> { DesktopExceptionHandler() }
-        single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
+        // region MCP
         single<McpResourceProvider> { McpResourceProvider(get(), get()) }
-        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get(), get(), get()) }
         single<McpServer> {
             DesktopMcpServer(
                 mcpPort = (get<DesktopConfigManager>().getCurrentConfig()).mcpServerPort,
@@ -75,13 +73,13 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 mcpResourceProvider = get(),
             )
         }
-        single<NearbyDeviceManager> {
-            if (marketingMode) {
-                MarketingNearbyDeviceManager()
-            } else {
-                GeneralNearbyDeviceManager(get(), get(), get(), get())
-            }
-        }
+        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get(), get(), get()) }
+        // endregion
+
+        // region Network core
+        single<ExceptionHandler> { DesktopExceptionHandler() }
+        single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get(), get()) }
+        single<NetworkProfileService> { DesktopNetworkProfileService(get(), get(), get(), get()) }
         single<NetworkStateMonitor> {
             val platform = get<Platform>()
             when {
@@ -91,29 +89,21 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 else -> NoopNetworkStateMonitor()
             }
         }
-        single<NetworkInterfaceService> { DesktopNetworkInterfaceService(get(), get()) }
-        single<NetworkProfileService> { DesktopNetworkProfileService(get(), get(), get(), get()) }
-        single<ResourcesClient> { DesktopResourcesClient(get(), get()) }
         single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
-        single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
-        single<PushSessionManager> {
-            PushSessionManager(
-                pasteDao = get(),
-                pasteboardService = get(),
-            )
-        }
+        single<TelnetHelper> { TelnetHelper(get(), get(), get(), get()) }
+        // endregion
+
+        // region HTTP client & API
+        single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
         single<PasteClient> { PasteClient(get(), get(), get()) }
+        single<PasteClientApi> { PasteClientApi(get(), get()) }
         single<PullClientApi> { PullClientApi(get(), get(), get()) }
         single<PushClientApi> { PushClientApi(get(), get(), get()) }
-        single<PasteClientApi> { PasteClientApi(get(), get()) }
-        single<FilePushService> {
-            FilePushService(
-                pasteSyncProcessManager = get(),
-                pushClientApi = get(),
-                userDataPathProvider = get(),
-            )
-        }
-        single<SharePushOrchestrator> { SharePushOrchestrator(get(), get(), get()) }
+        single<ResourcesClient> { DesktopResourcesClient(get(), get()) }
+        single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(), get()) }
+        // endregion
+
+        // region Server
         single<Server> {
             DesktopPasteServer(
                 get(named("readWritePort")),
@@ -124,39 +114,6 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         }
         single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
             DesktopServerFactory()
-        }
-        single<WsSessionManager> {
-            WsSessionManager()
-        }
-        single<WsPendingRequests> {
-            WsPendingRequests()
-        }
-        single<WsMessageHandler> {
-            WsMessageHandler(
-                lazyAppControl = lazy { get() },
-                lazyCacheManager = lazy { get() },
-                lazyPasteDao = lazy { get() },
-                lazyPasteboardService = lazy { get() },
-                lazySyncRoutingApi = lazy { get() },
-                secureStore = get(),
-                userDataPathProvider = get(),
-                wsPendingRequests = get(),
-                wsSessionManager = get(),
-            )
-        }
-        single<WsClientConnector> {
-            val wsHttpClient =
-                HttpClient(CIO) {
-                    install(WebSockets) {
-                        pingIntervalMillis = 30_000
-                    }
-                }
-            WsClientConnector(
-                appInfo = get(),
-                client = wsHttpClient,
-                wsSessionManager = get(),
-                wsMessageHandler = get(),
-            )
         }
         single<ServerModule> {
             DesktopServerModule(
@@ -187,7 +144,76 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
             )
         }
         single<SyncApi> { SyncApi }
-        single<SyncClientApi> { SyncClientApi(get(), get(), get(), get(), get()) }
+        single<SyncRoutingApi> { get<SyncManager>() }
+        // endregion
+
+        // region WebSocket
+        single<WsClientConnector> {
+            val wsHttpClient =
+                HttpClient(CIO) {
+                    install(WebSockets) {
+                        pingIntervalMillis = 30_000
+                    }
+                }
+            WsClientConnector(
+                appInfo = get(),
+                client = wsHttpClient,
+                wsSessionManager = get(),
+                wsMessageHandler = get(),
+            )
+        }
+        single<WsMessageHandler> {
+            WsMessageHandler(
+                lazyAppControl = lazy { get() },
+                lazyCacheManager = lazy { get() },
+                lazyPasteDao = lazy { get() },
+                lazyPasteboardService = lazy { get() },
+                lazySyncRoutingApi = lazy { get() },
+                secureStore = get(),
+                userDataPathProvider = get(),
+                wsPendingRequests = get(),
+                wsSessionManager = get(),
+            )
+        }
+        single<WsPendingRequests> {
+            WsPendingRequests()
+        }
+        single<WsSessionManager> {
+            WsSessionManager()
+        }
+        // endregion
+
+        // region Sync & devices
+        single<FilePushService> {
+            FilePushService(
+                pasteSyncProcessManager = get(),
+                pushClientApi = get(),
+                userDataPathProvider = get(),
+            )
+        }
+        single<NearbyDeviceManager> {
+            if (marketingMode) {
+                MarketingNearbyDeviceManager()
+            } else {
+                GeneralNearbyDeviceManager(get(), get(), get(), get())
+            }
+        }
+        single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
+        single<PushSessionManager> {
+            PushSessionManager(
+                pasteDao = get(),
+                pasteboardService = get(),
+            )
+        }
+        single<SharePushOrchestrator> { SharePushOrchestrator(get(), get(), get()) }
+        single<SyncDeviceManager> {
+            SyncDeviceManager(
+                secureStore = get(),
+                syncClientApi = get(),
+                syncRuntimeInfoDao = get(),
+                wsSessionManager = get(),
+            )
+        }
         single<SyncManager> {
             if (marketingMode) {
                 MarketingSyncManager()
@@ -198,14 +224,6 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                     wsSessionManager = get(),
                 )
             }
-        }
-        single<SyncDeviceManager> {
-            SyncDeviceManager(
-                secureStore = get(),
-                syncClientApi = get(),
-                syncRuntimeInfoDao = get(),
-                wsSessionManager = get(),
-            )
         }
         single<SyncResolverApi> {
             SyncResolver(
@@ -227,6 +245,5 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 wsSessionManager = get(),
             )
         }
-        single<SyncRoutingApi> { get<SyncManager>() }
-        single<TelnetHelper> { TelnetHelper(get(), get(), get(), get()) }
+        // endregion
     }

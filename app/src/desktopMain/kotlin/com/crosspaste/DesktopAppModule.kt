@@ -95,61 +95,46 @@ fun desktopAppModule(
     platform: Platform,
 ): Module =
     module {
+        // region App
         single<AppControl> { DesktopAppControl(get()) }
         single<AppEnv> { appEnv }
         single<AppExitService> { DesktopAppExitService }
         single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
         single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
-        single<AppMetadataRepository> { appMetadataRepository }
         single<AppLaunchState> { get<DesktopAppLaunchState>() }
         single<AppLock> { get<DesktopAppLaunch>() }
-        single<AppPathProvider> { appPathProvider }
         single<AppRestartService> { DesktopAppRestartService(get(), get()) }
         single<AppStartUpService> { DesktopAppStartUpService(get(), get(), get(), get()) }
-        single<DesktopPidFileService> { DesktopPidFileService(get(), get()) }
-        single<NativeMessagingHostService> { NativeMessagingHostService(get(), get(), get()) }
-        single<UpdateMetadataFetcher> { UpdateMetadataFetcher(get()) }
-        single<WindowsZipUpdater> { WindowsZipUpdater(get(), get(), get(), get(), get(), get()) }
         single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get(), get(), get()) }
         single<AppUrls> { DesktopAppUrls }
         single<ChangelogService> { ChangelogService(get()) }
         single<CrossPasteWebService> { CrossPasteWebService(get(), get()) }
-        single<CacheManager> { DesktopCacheManager(get(), get()) }
-        single<CommonConfigManager> { configManager as CommonConfigManager }
-        single<CrossPasteLogger> { crossPasteLogger }
         single<DesktopAppLaunch> { DesktopAppLaunch(get(), get()) }
         single<DesktopAppLaunchState> { runBlocking { get<DesktopAppLaunch>().launch() } }
-        single<DesktopConfigManager> { configManager }
-        single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
-        single<ModuleDownloadManager> { ModuleDownloadManager(get(), get()) }
-        single<ModuleManager> {
-            val ocrModule = get<com.crosspaste.image.OCRModule>()
-            ModuleManager(
-                mapOf(
-                    ocrModule.moduleId to ocrModule,
-                ),
-            )
-        }
-        single<DeviceUtils> { deviceUtils }
+        single<DesktopPidFileService> { DesktopPidFileService(get(), get()) }
         single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
+        single<NativeMessagingHostService> { NativeMessagingHostService(get(), get(), get()) }
+        single<UpdateMetadataFetcher> { UpdateMetadataFetcher(get()) }
+        single<WindowsZipUpdater> { WindowsZipUpdater(get(), get(), get(), get(), get(), get()) }
+        // endregion
+
+        // region Config
+        single<AppMetadataRepository> { appMetadataRepository }
+        single<CommonConfigManager> { configManager as CommonConfigManager }
+        single<DesktopConfigManager> { configManager }
+        single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
+        single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
+        // endregion
+
+        // region Image & Coil
         single<FileExtImageLoader> { DesktopFileExtLoader(get(), get(), get()) }
-        single<FilePersist> { FilePersist }
         single<ImageHandler<BufferedImage>> { DesktopImageHandler }
-        single<MemoryCache> {
-            MemoryCache
-                .Builder()
-                .strongReferencesEnabled(true)
-                .weakReferencesEnabled(true)
-                .maxSizeBytes(256L * 1024L * 1024L)
-                .maxSizePercent(get<PlatformContext>(), 0.85)
-                .build()
-        }
-        single<ImageLoader>(ImageLoaderQualifiers.GENERATE_IMAGE) {
+        single<ImageLoader>(ImageLoaderQualifiers.APP_SOURCE) {
             ImageLoader
                 .Builder(get<PlatformContext>())
                 .components {
-                    add(GenerateImageFactory(get()))
-                        .add(GenerateImageKeyer())
+                    add(AppSourceFactory(get()))
+                        .add(AppSourceKeyer())
                 }.memoryCache { get<MemoryCache>() }
                 .build()
         }
@@ -162,12 +147,12 @@ fun desktopAppModule(
                 }.memoryCache { get<MemoryCache>() }
                 .build()
         }
-        single<ImageLoader>(ImageLoaderQualifiers.APP_SOURCE) {
+        single<ImageLoader>(ImageLoaderQualifiers.GENERATE_IMAGE) {
             ImageLoader
                 .Builder(get<PlatformContext>())
                 .components {
-                    add(AppSourceFactory(get()))
-                        .add(AppSourceKeyer())
+                    add(GenerateImageFactory(get()))
+                        .add(GenerateImageKeyer())
                 }.memoryCache { get<MemoryCache>() }
                 .build()
         }
@@ -180,16 +165,48 @@ fun desktopAppModule(
                 }.memoryCache { get<MemoryCache>() }
                 .build()
         }
+        single<MemoryCache> {
+            MemoryCache
+                .Builder()
+                .strongReferencesEnabled(true)
+                .weakReferencesEnabled(true)
+                .maxSizeBytes(256L * 1024L * 1024L)
+                .maxSizePercent(get<PlatformContext>(), 0.85)
+                .build()
+        }
+        single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
+        single<VideoThumbnailLoader> { DesktopVideoThumbnailLoader(get(), get()) }
+        // endregion
+
+        // region Module loader
+        single<ModuleDownloadManager> { ModuleDownloadManager(get(), get()) }
+        single<ModuleManager> {
+            val ocrModule = get<com.crosspaste.image.OCRModule>()
+            ModuleManager(
+                mapOf(
+                    ocrModule.moduleId to ocrModule,
+                ),
+            )
+        }
+        // endregion
+
+        // region Path
+        single<AppPathProvider> { appPathProvider }
+        single<DesktopMigration> { DesktopMigration(get(), get(), get(), get()) }
+        single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider(get())) }
+        // endregion
+
+        // region Infra & misc
+        single<AppShareService> { DesktopAppShareService(get(), get(), get(), get()) }
+        single<CacheManager> { DesktopCacheManager(get(), get()) }
+        single<CrossPasteLogger> { crossPasteLogger }
+        single<DeviceUtils> { deviceUtils }
+        single<FilePersist> { FilePersist }
+        single<FontManager> { DesktopFontManager(get()) }
         single<KLogger> { klogger }
         single<LocaleUtils> { DesktopLocaleUtils }
-        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
-        single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
-        single<AppShareService> { DesktopAppShareService(get(), get(), get(), get()) }
         single<Platform> { platform }
-        single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
+        single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
         single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }
-        single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
-        single<UserDataPathProvider> { UserDataPathProvider(get(), getPlatformPathProvider(get())) }
-        single<VideoThumbnailLoader> { DesktopVideoThumbnailLoader(get(), get()) }
-        single<FontManager> { DesktopFontManager(get()) }
+        // endregion
     }

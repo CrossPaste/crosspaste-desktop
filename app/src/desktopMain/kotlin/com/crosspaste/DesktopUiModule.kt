@@ -58,43 +58,44 @@ import org.koin.dsl.module
 
 fun desktopUiModule(): Module =
     module {
-        single<ActiveGraphicsDevice> { get<DesktopAppSize>() }
+        // region App & window
         single<AppFileChooser> { DesktopAppFileChooser(get()) }
         single<AppSize> { get<DesktopAppSize>() }
-        single<AppSourceIconTransformer> { DefaultAppSourceIconTransformer }
         single<AppTokenApi> { DesktopAppTokenService(get(), get()) }
         single<AppWindowManager> { get<DesktopAppWindowManager>() }
         single<DesktopAppSize> { DesktopAppSize(get()) }
         single<DesktopAppWindowManager> {
             getDesktopAppWindowManager(get(), get(), lazy { get() }, lazy { get() }, lazy { get() }, get(), get())
         }
-        single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-        single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get(), get()) }
+        single<RatingPromptManager> { DesktopRatingPromptManager() }
+        single<UserAttentionService> { DesktopUserAttentionService(get<DesktopAppWindowManager>()) }
+        // endregion
+
+        // region Input & listeners
+        single<ActiveGraphicsDevice> { get<DesktopAppSize>() }
         single<DesktopShortcutKeysListener> { DesktopShortcutKeysListener(get(), get()) }
-        single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
-        single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
         single<GlobalListener> { DesktopGlobalListener(get(), get(), get(), get()) }
-        single<MenuHelper> { MenuHelper(get(), get(), get(), get(), get(), get()) }
-        single<NavigationManager> { get<DesktopScreenProvider>() }
         single<NativeKeyListener> { get<DesktopShortcutKeysListener>() }
         single<NativeMouseListener> { get<DesktopAppSize>() }
-        single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get()) }
-        single<PlatformContext> { PlatformContext.INSTANCE }
-        single<RatingPromptManager> { DesktopRatingPromptManager() }
-        single<ScreenProvider> { get<DesktopScreenProvider>() }
         single<ShortcutKeys> { DesktopShortcutKeys(get(), get(), get()) }
         single<ShortcutKeysAction> {
             DesktopShortKeysAction(get(), get(), get(), get(), get(), get(), get())
         }
         single<ShortcutKeysListener> { get<DesktopShortcutKeysListener>() }
         single<ShortcutKeysLoader> { DesktopShortcutKeysLoader(get(), get()) }
+        // endregion
+
+        // region UI screens & navigation
+        single<DesktopScreenProvider> { DesktopScreenProvider(get(), get(), get(), get(), get(), get()) }
+        single<DeviceScopeFactory> { DesktopDeviceScopeFactory() }
+        single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
+        single<MenuHelper> { MenuHelper(get(), get(), get(), get(), get(), get()) }
+        single<NavigationManager> { get<DesktopScreenProvider>() }
+        single<ScreenProvider> { get<DesktopScreenProvider>() }
         single<SmartImageDisplayStrategy> { SmartImageDisplayStrategy() }
-        single<UserAttentionService> { DesktopUserAttentionService(get<DesktopAppWindowManager>()) }
-        single<SoundService> { DesktopSoundService(get()) }
         single<StoragePathManager> { DesktopStoragePathManager() }
         single<SyncScopeFactory> { DesktopSyncScopeFactory() }
         single<ThemeDetector> { DesktopThemeDetector(get()) }
-        single<TokenCacheApi> { TokenCache }
         single<UISupport> {
             DesktopUISupport(
                 get(),
@@ -106,4 +107,14 @@ fun desktopUiModule(): Module =
                 get<DesktopAppWindowManager>(),
             )
         }
+        // endregion
+
+        // region Misc
+        single<AppSourceIconTransformer> { DefaultAppSourceIconTransformer }
+        single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
+        single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get()) }
+        single<PlatformContext> { PlatformContext.INSTANCE }
+        single<SoundService> { DesktopSoundService(get()) }
+        single<TokenCacheApi> { TokenCache }
+        // endregion
     }

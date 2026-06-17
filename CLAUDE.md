@@ -91,6 +91,7 @@ SQLDelight manages database schema in `.sq` files:
 - **UI sizing**: When adding size/dimension constants in UI code, prefer using values defined in `com.crosspaste.ui.theme.AppUISize` instead of inline literal `dp`/`sp` values.
 - **Thread-safe collections**: In `commonMain` code, prefer thread-safe Map/Set from `io.ktor.util.collections` (e.g., `ConcurrentMap`, `ConcurrentSet`) over platform-specific concurrent collections.
 - **Coroutine `delay`**: Always pass a `Duration` to `kotlinx.coroutines.delay`, never a raw number. Write `delay(280L.milliseconds)` / `delay(2.seconds)`, not `delay(280L)` or `delay(2000)`. Add `import kotlin.time.Duration.Companion.milliseconds` (or `.seconds`) as needed. This applies to both production code and tests.
+- **Koin module declaration order**: Inside a Koin `module { }`, declaration order is irrelevant at runtime (`single { }` is lazy and resolved by type — confirmed no `createdAtStart` eager singletons), so order serves readability only. Group bindings by functional sub-domain with `// region <Name>` / `// endregion` markers, and sort alphabetically by bound type within each group. Do not order the whole module strictly alphabetically (it scatters related bindings). Modules that are already cohesive single-responsibility functions need no extra regions.
 
 ## Key Technical Details
 
