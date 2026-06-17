@@ -94,6 +94,10 @@ class DesktopAppLaunch(
         resetLock = true
     }
 
+    // Kept only to satisfy the shared commonMain AppLaunch interface, whose launch() is
+    // suspend so mobile platforms can perform suspending work during launch. The desktop
+    // launch path is fully synchronous and does not use this method: DI and callers invoke
+    // launchSync() directly, avoiding the runBlocking that would otherwise be needed here.
     override suspend fun launch(): DesktopAppLaunchState = launchSync()
 
     fun launchSync(): DesktopAppLaunchState {
