@@ -4,7 +4,7 @@ import okio.Path
 
 interface ImageWriter<Image> {
 
-    fun writeImage(
+    suspend fun writeImage(
         image: Image,
         formatName: String,
         imagePath: Path,

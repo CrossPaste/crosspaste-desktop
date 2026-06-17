@@ -21,7 +21,7 @@ interface PasteTypePlugin {
     )
 
     // identity: unused on Desktop, required by Android/iOS to resolve platform-specific representations
-    fun loadRepresentation(
+    suspend fun loadRepresentation(
         pasteId: Long,
         itemIndex: Int,
         identity: String,
@@ -49,7 +49,7 @@ interface PasteTypePlugin {
         }
     }
 
-    fun doLoadRepresentation(
+    suspend fun doLoadRepresentation(
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
@@ -69,7 +69,7 @@ interface PasteTypePlugin {
         pasteCollector.collectError(pasteId, itemIndex, error)
     }
 
-    fun buildTransferable(
+    suspend fun buildTransferable(
         pasteItem: PasteItem,
         mixedCategory: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,

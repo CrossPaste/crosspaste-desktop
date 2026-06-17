@@ -39,7 +39,7 @@ class DesktopUrlTypePlugin(
         }
     }
 
-    override fun doLoadRepresentation(
+    override suspend fun doLoadRepresentation(
         transferData: Any,
         pasteId: Long,
         itemIndex: Int,
@@ -76,7 +76,7 @@ class DesktopUrlTypePlugin(
         }
     }
 
-    override fun buildTransferable(
+    override suspend fun buildTransferable(
         pasteItem: PasteItem,
         mixedCategory: Boolean,
         map: MutableMap<PasteDataFlavor, Any>,

@@ -7,11 +7,11 @@ import okio.Path
 
 interface ImageHandler<Image> : ImageWriter<Image> {
 
-    fun readImage(imagePath: Path): Image?
+    suspend fun readImage(imagePath: Path): Image?
 
-    fun readImage(source: Source): Image?
+    suspend fun readImage(source: Source): Image?
 
-    fun readImage(byteReadChannel: ByteReadChannel): Image?
+    suspend fun readImage(byteReadChannel: ByteReadChannel): Image?
 
-    fun readSize(imagePath: Path): IntSize?
+    suspend fun readSize(imagePath: Path): IntSize?
 }

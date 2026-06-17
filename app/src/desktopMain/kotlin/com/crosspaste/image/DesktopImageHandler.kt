@@ -16,6 +16,7 @@ import com.drew.metadata.webp.WebpDirectory
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.io.Source
+import kotlinx.io.asInputStream
 import okio.Path
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
@@ -91,7 +92,7 @@ object DesktopImageHandler : ImageHandler<BufferedImage> {
             },
         )
 
-    override fun writeImage(
+    override suspend fun writeImage(
         image: BufferedImage,
         formatName: String,
         imagePath: Path,
@@ -112,19 +113,22 @@ object DesktopImageHandler : ImageHandler<BufferedImage> {
             }
         }
 
-    override fun readImage(imagePath: Path): BufferedImage? =
+    override suspend fun readImage(imagePath: Path): BufferedImage? =
         runCatching {
             ImageIO.read(imagePath.toFile())
         }.getOrNull()
 
-    override fun readImage(source: Source): BufferedImage? = readImage(ByteReadChannel(source))
+    override suspend fun readImage(source: Source): BufferedImage? =
+        runCatching {
+            ImageIO.read(source.asInputStream())
+        }.getOrNull()
 
-    override fun readImage(byteReadChannel: ByteReadChannel): BufferedImage? =
+    override suspend fun readImage(byteReadChannel: ByteReadChannel): BufferedImage? =
         runCatching {
             ImageIO.read(byteReadChannel.toInputStream())
         }.getOrNull()
 
-    override fun readSize(imagePath: Path): IntSize? =
+    override suspend fun readSize(imagePath: Path): IntSize? =
         runCatching {
             val metadata = ImageMetadataReader.readMetadata(imagePath.toFile())
             extractors.firstNotNullOfOrNull { extractor -> extractor(metadata) }

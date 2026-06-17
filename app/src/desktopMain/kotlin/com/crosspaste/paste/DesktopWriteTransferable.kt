@@ -11,7 +11,7 @@ class DesktopWriteTransferableBuilder {
 
     fun isEmpty(): Boolean = map.isEmpty()
 
-    fun add(
+    suspend fun add(
         pasteTypePlugin: PasteTypePlugin,
         pasteItem: PasteItem,
         mixedCategory: Boolean,

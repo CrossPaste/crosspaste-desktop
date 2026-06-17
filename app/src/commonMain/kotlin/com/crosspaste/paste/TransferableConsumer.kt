@@ -2,6 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import com.crosspaste.utils.LoggerExtension.logExecutionTime
+import com.crosspaste.utils.LoggerExtension.logSuspendExecutionTime
 import io.github.oshai.kotlinlogging.KLogger
 import kotlin.collections.component1
 
@@ -38,13 +39,13 @@ interface TransferableConsumer {
         }
     }
 
-    fun updatePasteData(
+    suspend fun updatePasteData(
         pasteId: Long,
         dataFlavorMap: Map<String, List<PasteDataFlavor>>,
         pasteTransferable: PasteTransferable,
         pasteCollector: PasteCollector,
     ) {
-        logExecutionTime(logger, "updatePasteData") {
+        logSuspendExecutionTime(logger, "updatePasteData") {
             for ((itemIndex, entry) in dataFlavorMap.entries.withIndex()) {
                 val (identity, flavors) = entry
                 val plugin = getPlugin(identity) ?: continue
