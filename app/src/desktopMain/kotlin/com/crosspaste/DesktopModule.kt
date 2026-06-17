@@ -95,8 +95,8 @@ class DesktopModule(
     // SqlDelight
     override fun sqlDelightModule() =
         module {
-            single<DriverFactory> { DesktopDriverFactory(get()) }
             single<Database> { createDatabase(get()) }
+            single<DriverFactory> { DesktopDriverFactory(get()) }
             single<PasteDao> {
                 SqlPasteDao(
                     appInfo = get(),

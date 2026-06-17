@@ -73,61 +73,8 @@ import java.awt.image.BufferedImage
 
 fun desktopPasteComponentModule(headless: Boolean): Module =
     module {
-        single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
+        // region Pasteboard & transfer
         single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
-        single<RenderingService<String>>(named("urlRendering")) {
-            OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get())
-        }
-        single<DesktopPasteMenuService> {
-            DesktopPasteMenuService(
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
-        single<DesktopPasteTagMenuService> {
-            DesktopPasteTagMenuService(get(), get())
-        }
-        single<FilePullService> { FilePullService(get(), get(), get(), get(), get(), get()) }
-        single<PastePullService> { PastePullService(get(), get(), get(), get()) }
-        single<PasteReleaseService> {
-            PasteReleaseService(
-                commonConfigManager = get(),
-                currentPaste = get(),
-                database = get(),
-                pasteDao = get(),
-                pasteItemReader = get(),
-                pasteProcessPlugins =
-                    listOf(
-                        RemoveInvalidPlugin,
-                        DistinctPlugin(get()),
-                        GenerateTextPlugin(get()),
-                        GenerateUrlPlugin,
-                        TextToColorPlugin,
-                        FilesToImagesPlugin(get()),
-                        FileToUrlPlugin(get()),
-                        RemoveFolderImagePlugin(get()),
-                        RemoveHtmlImagePlugin(get()),
-                        SortPlugin,
-                    ),
-                searchContentService = get(),
-                taskSubmitter = get(),
-                userDataPathProvider = get(),
-            )
-        }
-        single<GenerateImageService> { GenerateImageService() }
-        single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get(), get()) }
         single<DesktopSourceExclusionService> { DesktopSourceExclusionService(get()) }
         single<PasteboardService> {
             if (headless) {
@@ -148,34 +95,6 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 )
             }
         }
-        single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }
-        single<PasteExportService> { PasteExportService(get(), get(), get()) }
-        single<PasteImportParamFactory<Path>> { DesktopPasteImportParamFactory() }
-        single<PasteImportService> { PasteImportService(get(), get(), get(), get(), get()) }
-        single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
-        single<PasteItemReader> { DefaultPasteItemReader() }
-        single<PasteDataHelper> { PasteDataHelper(get()) }
-        single<SearchContentService> { DesktopSearchContentService() }
-        single<TaskExecutor> {
-            TaskExecutor(
-                listOf(
-                    CleanPasteTaskExecutor(get(), get()),
-                    CleanTaskTaskExecutor(get()),
-                    DelayedDeletePasteTaskExecutor(get()),
-                    DeletePasteTaskExecutor(get()),
-                    OpenGraphTaskExecutor(
-                        lazy { get<RenderingService<String>>(named("urlRendering")) },
-                        get(),
-                    ),
-                    PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
-                    PullIconTaskExecutor(get(), get(), get(), get()),
-                    SwitchLanguageTaskExecutor(get(), get()),
-                    SyncPasteTaskExecutor(get(), get(), get(), get(), get(), get(), get(), get()),
-                ),
-                get(),
-            )
-        }
-        single<TaskSubmitter> { DesktopTaskSubmitter(get(), get(), get(), lazy { get() }) }
         single<TransferableConsumer> {
             DesktopTransferableConsumer(
                 get(),
@@ -204,7 +123,108 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 ),
             )
         }
+        // endregion
+
+        // region Paste menu
+        single<DesktopPasteMenuService> {
+            DesktopPasteMenuService(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
+        }
+        single<DesktopPasteTagMenuService> {
+            DesktopPasteTagMenuService(get(), get())
+        }
+        // endregion
+
+        // region Import & Export
+        single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }
+        single<PasteExportService> { PasteExportService(get(), get(), get()) }
+        single<PasteImportParamFactory<Path>> { DesktopPasteImportParamFactory() }
+        single<PasteImportService> { PasteImportService(get(), get(), get(), get(), get()) }
+        // endregion
+
+        // region Paste data & items
+        single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get(), get()) }
+        single<PasteDataHelper> { PasteDataHelper(get()) }
+        single<PasteItemReader> { DefaultPasteItemReader() }
+        single<PasteReleaseService> {
+            PasteReleaseService(
+                commonConfigManager = get(),
+                currentPaste = get(),
+                database = get(),
+                pasteDao = get(),
+                pasteItemReader = get(),
+                pasteProcessPlugins =
+                    listOf(
+                        RemoveInvalidPlugin,
+                        DistinctPlugin(get()),
+                        GenerateTextPlugin(get()),
+                        GenerateUrlPlugin,
+                        TextToColorPlugin,
+                        FilesToImagesPlugin(get()),
+                        FileToUrlPlugin(get()),
+                        RemoveFolderImagePlugin(get()),
+                        RemoveHtmlImagePlugin(get()),
+                        SortPlugin,
+                    ),
+                searchContentService = get(),
+                taskSubmitter = get(),
+                userDataPathProvider = get(),
+            )
+        }
+        single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
+        single<SearchContentService> { DesktopSearchContentService() }
         single<UpdatePasteItemHelper> {
             UpdatePasteItemHelper(get(), get(), get())
         }
+        // endregion
+
+        // region Sync pull
+        single<FilePullService> { FilePullService(get(), get(), get(), get(), get(), get()) }
+        single<PastePullService> { PastePullService(get(), get(), get(), get()) }
+        // endregion
+
+        // region Tasks
+        single<TaskExecutor> {
+            TaskExecutor(
+                listOf(
+                    CleanPasteTaskExecutor(get(), get()),
+                    CleanTaskTaskExecutor(get()),
+                    DelayedDeletePasteTaskExecutor(get()),
+                    DeletePasteTaskExecutor(get()),
+                    OpenGraphTaskExecutor(
+                        lazy { get<RenderingService<String>>(named("urlRendering")) },
+                        get(),
+                    ),
+                    PullFileTaskExecutor(get(), get(), get(), get(), get(), get()),
+                    PullIconTaskExecutor(get(), get(), get(), get()),
+                    SwitchLanguageTaskExecutor(get(), get()),
+                    SyncPasteTaskExecutor(get(), get(), get(), get(), get(), get(), get(), get()),
+                ),
+                get(),
+            )
+        }
+        single<TaskSubmitter> { DesktopTaskSubmitter(get(), get(), get(), lazy { get() }) }
+        // endregion
+
+        // region Misc
+        single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
+        single<GenerateImageService> { GenerateImageService() }
+        single<RenderingService<String>>(named("urlRendering")) {
+            OpenGraphService(get(), get<ImageHandler<BufferedImage>>(), get(), get(), get())
+        }
+        // endregion
     }
