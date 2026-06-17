@@ -77,7 +77,6 @@ import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
 import io.github.oshai.kotlinlogging.KLogger
-import kotlinx.coroutines.runBlocking
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -110,7 +109,7 @@ fun desktopAppModule(
         single<ChangelogService> { ChangelogService(get()) }
         single<CrossPasteWebService> { CrossPasteWebService(get(), get()) }
         single<DesktopAppLaunch> { DesktopAppLaunch(get(), get()) }
-        single<DesktopAppLaunchState> { runBlocking { get<DesktopAppLaunch>().launch() } }
+        single<DesktopAppLaunchState> { get<DesktopAppLaunch>().launchSync() }
         single<DesktopPidFileService> { DesktopPidFileService(get(), get()) }
         single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
         single<NativeMessagingHostService> { NativeMessagingHostService(get(), get(), get()) }

@@ -94,7 +94,9 @@ class DesktopAppLaunch(
         resetLock = true
     }
 
-    override suspend fun launch(): DesktopAppLaunchState {
+    override suspend fun launch(): DesktopAppLaunchState = launchSync()
+
+    fun launchSync(): DesktopAppLaunchState {
         val appLockState = acquireLock()
         val pid = ProcessHandle.current().pid()
         val acquiredLock = appLockState.acquiredLock
