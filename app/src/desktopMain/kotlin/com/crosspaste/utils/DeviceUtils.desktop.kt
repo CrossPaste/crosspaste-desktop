@@ -2,11 +2,11 @@ package com.crosspaste.utils
 
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacDeviceUtils
+import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.Kernel32Util
+import com.sun.jna.platform.win32.WinReg
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 import java.net.InetAddress
 import java.util.UUID
 
@@ -36,26 +36,28 @@ object WindowsDeviceUtils : DeviceUtils {
 
     private val logger = KotlinLogging.logger {}
 
-    private fun getProductUUID(): String? {
+    // HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid is a stable per-OS-install
+    // identifier present on every supported Windows version. It replaces the
+    // deprecated `wmic csproduct get UUID`, which is removed on Windows 11 24H2+.
+    private const val CRYPTOGRAPHY_KEY = "SOFTWARE\\Microsoft\\Cryptography"
+    private const val MACHINE_GUID_VALUE = "MachineGuid"
+
+    private fun getMachineGuid(): String? =
         runCatching {
-            val command = listOf("wmic", "csproduct", "get", "UUID")
-            val process = ProcessBuilder(command).start()
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            var line: String
-            while (reader.readLine().also { line = it } != null) {
-                if (line.trim { it <= ' ' }.isNotEmpty() && line.trim { it <= ' ' } != "UUID") {
-                    return line.trim { it <= ' ' }
-                }
-            }
+            Advapi32Util
+                .registryGetStringValue(
+                    WinReg.HKEY_LOCAL_MACHINE,
+                    CRYPTOGRAPHY_KEY,
+                    MACHINE_GUID_VALUE,
+                ).trim()
+                .takeIf { it.isNotEmpty() }
         }.onFailure { e ->
-            logger.error(e) { "Failed to get product UUID" }
-        }
-        return null
-    }
+            logger.warn(e) { "Failed to read MachineGuid from registry" }
+        }.getOrNull()
 
-    override fun createAppInstanceId(): String = getProductUUID() ?: UUID.randomUUID().toString()
+    override fun createAppInstanceId(): String = getMachineGuid() ?: UUID.randomUUID().toString()
 
-    override fun getDeviceId(): String = getProductUUID() ?: "Unknown"
+    override fun getDeviceId(): String = getMachineGuid() ?: "Unknown"
 
     override fun getDeviceName(): String = Kernel32Util.getComputerName()
 }
