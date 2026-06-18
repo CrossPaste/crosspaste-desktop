@@ -11,6 +11,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.isSuccess
 import okio.Path
+import kotlin.coroutines.cancellation.CancellationException
 
 abstract class AbstractResourcesClient(
     val userDataPathProvider: UserDataPathProvider,
@@ -76,15 +77,23 @@ abstract class AbstractResourcesClient(
             }
     }
 
-    override suspend fun request(url: String): Result<ClientResponse> {
-        val response = clientRequest(url, getHttpClient())
-        return if (response.status.isSuccess()) {
-            Result.success(ClientResponse(response))
-        } else {
-            logger.warn { "Failed to fetch data from $url, status code: ${response.status.value}" }
-            Result.failure(kotlin.Exception("HTTP error: ${response.status.value}"))
+    override suspend fun request(url: String): Result<ClientResponse> =
+        runCatching {
+            val response = clientRequest(url, getHttpClient())
+            if (response.status.isSuccess()) {
+                ClientResponse(response)
+            } else {
+                logger.warn { "Failed to fetch data from $url, status code: ${response.status.value}" }
+                throw kotlin.Exception("HTTP error: ${response.status.value}")
+            }
+        }.onFailure { e ->
+            // Network/TLS failures (e.g. SunCertPathBuilderException behind a
+            // TLS-intercepting proxy) must surface as Result.failure, not propagate:
+            // callers rely on getOrNull()/onSuccess, and an escaping throw here would
+            // crash the periodic update-check coroutine for the whole session.
+            if (e is CancellationException) throw e
+            logger.warn(e) { "Failed to request $url" }
         }
-    }
 
     abstract suspend fun clientRequest(
         url: String,
