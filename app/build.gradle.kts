@@ -176,6 +176,7 @@ dependencies {
     macAarch64(libs.compose.desktop.macos.arm64)
     windowsAmd64(libs.compose.desktop.windows.x64)
     linuxAmd64(libs.compose.desktop.linux.x64)
+    linuxAarch64(libs.compose.desktop.linux.arm64)
 }
 
 // Force Conveyor platform configurations to align transitive dependency versions with the main build.
@@ -566,11 +567,23 @@ compose.desktop {
 
                     modules("jdk.security.auth")
 
-                    getJbrReleases(
-                        "linux-x64",
-                        jbrReleases,
-                        jbrDir,
-                    )
+                    val architecture = System.getProperty("os.arch")
+
+                    if (architecture == "amd64" || architecture == "x86_64" || buildFullPlatform) {
+                        getJbrReleases(
+                            "linux-x64",
+                            jbrReleases,
+                            jbrDir,
+                        )
+                    }
+
+                    if (architecture.contains("aarch64") || architecture.contains("arm") || buildFullPlatform) {
+                        getJbrReleases(
+                            "linux-aarch64",
+                            jbrReleases,
+                            jbrDir,
+                        )
+                    }
                 }
             }
         }

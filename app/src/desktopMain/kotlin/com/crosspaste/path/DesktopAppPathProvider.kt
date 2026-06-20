@@ -147,7 +147,11 @@ class DevelopmentAppPathProvider(
                     "macos-arm64"
                 }
             } else if (platform.isLinux() && platform.is64bit()) {
-                "linux-x64"
+                if (platform.arch.contains("aarch64") || platform.arch.contains("arm")) {
+                    "linux-arm64"
+                } else {
+                    "linux-x64"
+                }
             } else {
                 throw IllegalStateException("Unknown platform: ${platform.name}")
             }

@@ -208,10 +208,6 @@ const config = {
             section: 'app.inputs'
         },
         {
-            pattern: 'javacpp-.*-linux-arm64.jar',
-            section: 'app.inputs'
-        },
-        {
             pattern: 'javacpp-.*-linux-riscv64.jar',
             section: 'app.inputs'
         },
@@ -224,15 +220,7 @@ const config = {
             section: 'app.inputs'
         },
         {
-            pattern: 'leptonica-.*-linux-arm64.jar',
-            section: 'app.inputs'
-        },
-        {
             pattern: 'tesseract-.*-android-.*.jar',
-            section: 'app.inputs'
-        },
-        {
-            pattern: 'tesseract-.*-linux-arm64.jar',
             section: 'app.inputs'
         },
     ],
@@ -253,6 +241,11 @@ const config = {
             pattern: 'linux-x86_64',
             from: 'app.inputs',
             to: 'app.linux.amd64.glibc.inputs'
+        },
+        {
+            pattern: 'linux-arm64',
+            from: 'app.inputs',
+            to: 'app.linux.aarch64.glibc.inputs'
         },
         {
             pattern: 'windows-x86_64',
