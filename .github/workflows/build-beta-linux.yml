@@ -5,11 +5,15 @@ name: "Build Beta (Linux)"
 #
 # This deliberately does NOT reuse the release pipeline: it never uploads to
 # the production OSS bucket, never mirrors the update site, and never touches
-# the auto-update metadata. Linux packages need no code signing, so it runs
-# with only the built-in GITHUB_TOKEN and publishes the artifacts to a single
-# rolling "beta" GitHub pre-release. The "beta" tag does not match the
-# `x.y.z.w` pattern that triggers build-release.yml, so it cannot kick off a
-# real release.
+# the auto-update metadata. It only builds the two Linux machines and
+# publishes the artifacts to a single rolling "beta" GitHub pre-release. The
+# "beta" tag does not match the `x.y.z.w` pattern that triggers
+# build-release.yml, so it cannot kick off a real release.
+#
+# The Conveyor GitHub action requires a signing_key input even for Linux, so
+# we pass the project's SIGNING_KEY. On a Linux-only build that key only signs
+# the generated apt repo metadata (InRelease) — which we do not publish here —
+# so no production distribution channel or auto-update path is involved.
 
 on:
   workflow_dispatch:
@@ -114,6 +118,7 @@ jobs:
         with:
           command: make site
           extra_flags: -f beta.conveyor.conf
+          signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
       - name: Package AppImage (best effort)
