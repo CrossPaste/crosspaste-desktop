@@ -99,10 +99,10 @@ object WindowsProcessUtils {
                             return lplpBuffer.value.getWideString(0)
                         }
                     } else {
-                        logger.error { "FileDescription GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
+                        logger.debug { "FileDescription GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
                     }
                 } else {
-                    logger.error { "Translation GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
+                    logger.debug { "Translation GetLastError ${Kernel32.INSTANCE.GetLastError()}" }
                 }
             }
         }
