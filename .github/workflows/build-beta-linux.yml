@@ -1,0 +1,147 @@
+name: "Build Beta (Linux)"
+
+# Manually-triggered beta build for Linux (amd64 + aarch64), intended for
+# community testing — e.g. the ARM64 request in #4581.
+#
+# This deliberately does NOT reuse the release pipeline: it never uploads to
+# the production OSS bucket, never mirrors the update site, and never touches
+# the auto-update metadata. Linux packages need no code signing, so it runs
+# with only the built-in GITHUB_TOKEN and publishes the artifacts to a single
+# rolling "beta" GitHub pre-release. The "beta" tag does not match the
+# `x.y.z.w` pattern that triggers build-release.yml, so it cannot kick off a
+# real release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Release notes shown on the beta pre-release"
+        required: false
+        default: "Linux beta build for testing. Unsigned — do not use the in-app auto-updater."
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-beta-linux
+  cancel-in-progress: false
+
+jobs:
+  build-beta-linux:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_FULL_PLATFORM: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # https://github.com/actions/runner-images/issues/2840
+      - name: Clear unnecessary files to free up space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Install script dependencies
+        run: npm install semver fs-extra axios
+
+      - name: Set revision
+        run: |
+          REVISION=$(git rev-list --count HEAD)
+          echo "REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo -e "\nrevision=$REVISION" >> app/src/desktopMain/resources/crosspaste-version.properties
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          check-latest: true
+
+      - name: Install FUSE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 file
+
+      - name: Set up AppImageTool
+        run: |
+          wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool.AppImage
+          chmod +x appimagetool.AppImage
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: >
+            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
+            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+
+      - name: Cache JetBrains Runtime JDK
+        uses: actions/cache@v5
+        with:
+          path: ./app/jbr
+          key: jbr-${{ hashFiles('**/jbr.yaml') }}
+
+      - name: Build with Gradle
+        run: ./gradlew app:build
+
+      - name: Prepare Conveyor config (Linux only)
+        run: |
+          ./gradlew -q writeConveyorConfig -PappEnv=PRODUCTION
+          mv app/generated.conveyor.conf generated.conveyor.conf
+          node ./.github/scripts/rewriteConveyorConf.js generated.conveyor.conf
+          node ./.github/scripts/processJarFiles.js "tesseract-.*-macosx-arm64.jar" generated.conveyor.conf
+          node ./.github/scripts/processJarFiles.js "tesseract-.*-macosx-x86_64.jar" generated.conveyor.conf
+          # Beta override: build only the Linux machines (no signing required),
+          # so mac/windows signing secrets are never needed.
+          cat > beta.conveyor.conf <<CONF
+          include required("conveyor.conf")
+          app.machines = [ "linux.amd64.glibc", "linux.aarch64.glibc" ]
+          app.revision = ${REVISION}
+          CONF
+
+      - name: Conveyor build (Linux deb + tarball)
+        uses: hydraulic-software/conveyor/actions/build@v21.0
+        with:
+          command: make site
+          extra_flags: -f beta.conveyor.conf
+          agree_to_license: 1
+
+      - name: Package AppImage (best effort)
+        continue-on-error: true
+        run: |
+          chmod +x ./.github/scripts/package_appimage.sh
+          ./.github/scripts/package_appimage.sh
+
+      - name: Collect Linux beta artifacts
+        run: |
+          mkdir -p beta-dist
+          find output -maxdepth 2 -name 'crosspaste-*-linux-*.tar.gz' -exec cp {} beta-dist/ \;
+          find output -maxdepth 2 -name '*.deb' -exec cp {} beta-dist/ \;
+          find output -maxdepth 2 -name 'crosspaste-*.AppImage' -exec cp {} beta-dist/ \;
+          (cd beta-dist && sha256sum * > SHA256SUMS.txt)
+          echo "Collected beta artifacts:"
+          ls -la beta-dist
+
+      - name: Publish rolling "beta" pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=beta
+          # Replace the previous beta release+tag so the pre-release always
+          # reflects the latest build and keeps a stable download URL.
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" beta-dist/* \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "CrossPaste Linux Beta (build ${{ env.REVISION }})" \
+            --notes "${{ github.event.inputs.notes }}"
