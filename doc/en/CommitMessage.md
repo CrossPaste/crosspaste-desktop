@@ -18,7 +18,7 @@ Using emoji prefixes to mark commit messages is a popular practice that makes co
 | :lock:                                   | `:lock:`                      | Fix security issues                                   |
 | :apple:                                  | `:apple:`                     | Fix macOS-specific content                            |
 | :penguin:                                | `:penguin:`                   | Fix Linux-specific content                            |
-| :checkered_flag:                         | `:checked_flag:`              | Fix Windows-specific content                          |
+| :checkered_flag:                         | `:checkered_flag:`            | Fix Windows-specific content                          |
 | :robot:                                  | `:robot:`                     | Fix Android-specific content                          |
 | :green_apple:                            | `:green_apple:`               | Fix iOS-specific issues                               |
 | :bookmark:                               | `:bookmark:`                  | Release/Version tags                                  |
