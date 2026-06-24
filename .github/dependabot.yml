@@ -9,7 +9,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
-  - package-ecosystem: "npm" # Web browser extension dependencies
-    directory: "/web"
-    schedule:
-      interval: "weekly"
+  # NOTE: npm ecosystem for /web is intentionally NOT configured. The web project
+  # depends on a build artifact via `file:../core/build/dist/js/productionLibrary`,
+  # which Dependabot cannot resolve, so it fails every run. Web npm dependencies
+  # (including security patches) are bumped manually instead.
