@@ -64,7 +64,22 @@ class WinAppWindowManager(
             appInfo?.getAppName(winAppInfoCaches)
         }
 
+    /**
+     * Resolves the app behind the current clipboard change.
+     *
+     * Prefers User32 GetClipboardOwner — the window that actually wrote the clipboard — so
+     * that background tools writing the clipboard without taking focus (e.g. dictation tools
+     * injecting text into another app) are attributed correctly instead of being mistaken for
+     * the foreground app. Falls back to the foreground window when the clipboard owner is null
+     * (owner already exited or a delayed-rendering clipboard) or its app name cannot be
+     * resolved.
+     */
     override fun getCurrentActiveAppName(): String? =
+        INSTANCE.GetClipboardOwner()?.let { ownerHwnd ->
+            WinAppInfo(ownerHwnd).getAppName(winAppInfoCaches)
+        } ?: getForegroundAppName()
+
+    private fun getForegroundAppName(): String? =
         WinAppInfo(INSTANCE.GetForegroundWindow()).getAppName(winAppInfoCaches)
 
     override fun getRunningAppNames(): List<String> {

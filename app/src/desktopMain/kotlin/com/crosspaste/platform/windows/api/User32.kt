@@ -91,6 +91,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
     fun GetClipboardData(uFormat: Int): HANDLE?
 
+    fun GetClipboardOwner(): HWND?
+
     fun IsClipboardFormatAvailable(format: Int): Boolean
 
     fun EnumClipboardFormats(format: Int): Int
