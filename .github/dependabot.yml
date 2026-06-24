@@ -9,3 +9,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+  - package-ecosystem: "npm" # Web browser extension dependencies
+    directory: "/web"
+    schedule:
+      interval: "weekly"
