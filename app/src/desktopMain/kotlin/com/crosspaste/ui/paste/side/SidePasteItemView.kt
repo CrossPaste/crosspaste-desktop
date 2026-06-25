@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -33,8 +32,6 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteContextMenuView
-import com.crosspaste.ui.model.FocusedElement
-import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.highlightedCardElevation
@@ -55,8 +52,6 @@ fun PasteDataScope.SidePasteItemView(
     val configManager = koinInject<CommonConfigManager>()
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteProducer = koinInject<TransferableProducer>()
-    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
-    val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
@@ -115,12 +110,12 @@ fun PasteDataScope.SidePasteItemView(
                     )
                 }.border(
                     3.dp,
+                    // Highlight the selected item the same way whether the search input or the
+                    // paste list holds focus: while typing, the first match is the candidate that
+                    // Enter will paste, so it must read as clearly selected rather than a faint
+                    // preview.
                     if (selected) {
-                        if (focusedElement == FocusedElement.PASTE_LIST) {
-                            AppUIColors.importantColor
-                        } else {
-                            AppUIColors.lightBorderColor
-                        }
+                        AppUIColors.importantColor
                     } else {
                         Color.Transparent
                     },

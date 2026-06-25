@@ -99,6 +99,10 @@ fun SearchWindow(windowIcon: Painter?) {
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
             ignoreFocusLoss.set(true)
+            // Reset selection and scroll to the newest item before the window paints. This runs
+            // here (not in the window content) because the content's composition is paused while
+            // the window is hidden and would not observe the reopen.
+            pasteSelectionViewModel.resetToTop()
             appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
             delay(1000.milliseconds)
         }

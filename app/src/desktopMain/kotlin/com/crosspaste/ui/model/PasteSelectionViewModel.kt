@@ -95,6 +95,19 @@ class PasteSelectionViewModel(
         _selectedIndexes.value = listOf(0)
     }
 
+    /**
+     * Reset the search list back to the newest item: select index 0 and scroll to the top.
+     *
+     * Must be driven from a composable that stays in the composition while the search window is
+     * hidden (e.g. SearchWindow). The window content's own composition is paused while the window
+     * is invisible, so effects inside it never observe the hide/show transition and cannot reliably
+     * reset on reopen.
+     */
+    suspend fun resetToTop() {
+        _selectedIndexes.value = listOf(0)
+        searchListState?.scrollToItem(0)
+    }
+
     fun clickSelectedIndex(
         selectedIndex: Int,
         isShiftPressed: Boolean = false,
