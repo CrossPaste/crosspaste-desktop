@@ -2,7 +2,6 @@ package com.crosspaste.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +21,7 @@ import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.paste.side.SideSearchListStateHolder
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.cpuDispatcher
@@ -40,12 +40,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun SearchWindow(
-    windowIcon: Painter?,
-    searchListState: LazyListState,
-) {
+fun SearchWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+    val sideSearchListStateHolder = koinInject<SideSearchListStateHolder>()
     val platform = koinInject<Platform>()
     val themeDetector = koinInject<ThemeDetector>()
 
@@ -106,9 +104,10 @@ fun SearchWindow(
             // Reset selection and scroll to the newest item before the window paints. This runs
             // here (not in the window content) because the content's composition is paused while
             // the window is hidden and would not observe the reopen. The ViewModel owns selection;
-            // the scroll is a UI concern performed directly on the hoisted list state.
+            // the scroll is a UI concern performed on the list state, reached via the UI holder
+            // (the state itself lives in the window content's composition for smooth scrolling).
             pasteSelectionViewModel.initSelectIndex()
-            searchListState.scrollToItem(0)
+            sideSearchListStateHolder.listState?.scrollToItem(0)
             appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
             delay(1000.milliseconds)
         }
@@ -172,7 +171,7 @@ fun SearchWindow(
         }
 
         SearchWindowContext(searchWindowInfo) {
-            SideSearchWindowContent(searchListState)
+            SideSearchWindowContent()
         }
     }
 }

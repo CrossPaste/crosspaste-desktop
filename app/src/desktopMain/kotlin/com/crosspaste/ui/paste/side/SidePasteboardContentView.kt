@@ -83,10 +83,11 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SidePasteboardContentView(searchListState: LazyListState) {
+fun SidePasteboardContentView() {
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+    val sideSearchListStateHolder = koinInject<SideSearchListStateHolder>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val searchWindowInfo = LocalSearchWindowInfoState.current
@@ -94,10 +95,15 @@ fun SidePasteboardContentView(searchListState: LazyListState) {
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
     val loadAll by pasteSearchViewModel.loadAll.collectAsState()
 
-    // searchListState is hoisted in CrossPasteWindows and passed in: it is shared with BubbleWindow
-    // and survives this content's composition pause while the window is hidden. The list is reset to
-    // the top on window open from SearchWindow (always composed) and on query change via
-    // scrollToTopEvents below; both are UI concerns driven off ViewModel-declared intent.
+    // Create the scroll state here, inside the search window's composition, so it lives in the same
+    // ComposeScene as the LazyRow below — hoisting it higher (e.g. into the application composition)
+    // makes scrolling janky. The stable `remember` survives this content's composition pause while
+    // the window is hidden. It is published to a UI holder so the always-composed SearchWindow body
+    // (reopen scroll) and the sibling BubbleWindow can reach the same instance; the ViewModel itself
+    // never touches it. Reset-to-top happens from SearchWindow on open and via scrollToTopEvents on
+    // query change.
+    val searchListState = remember { LazyListState() }
+    sideSearchListStateHolder.listState = searchListState
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }

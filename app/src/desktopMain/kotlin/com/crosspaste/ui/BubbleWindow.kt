@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -48,6 +47,7 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteHtmlEditContentView
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
+import com.crosspaste.ui.paste.side.SideSearchListStateHolder
 import com.crosspaste.utils.getPlatformUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
@@ -117,13 +117,11 @@ private class BubbleShape(
 }
 
 @Composable
-fun BubbleWindow(
-    windowIcon: Painter?,
-    searchListState: LazyListState,
-) {
+fun BubbleWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteDao = koinInject<PasteDao>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
+    val sideSearchListStateHolder = koinInject<SideSearchListStateHolder>()
     val platform = getPlatformUtils().platform
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val density = LocalDensity.current
@@ -147,12 +145,13 @@ fun BubbleWindow(
     val itemCenterXInSearchWindow: Dp? by remember(bubbleWindowInfo.pasteId) {
         derivedStateOf {
             if (!bubbleWindowInfo.show) return@derivedStateOf null
+            val listState = sideSearchListStateHolder.listState ?: return@derivedStateOf null
 
             val index = searchResults.indexOfFirst { it.id == bubbleWindowInfo.pasteId }
             if (index < 0) return@derivedStateOf null
 
             val itemInfo =
-                searchListState.layoutInfo.visibleItemsInfo.find { it.index == index }
+                listState.layoutInfo.visibleItemsInfo.find { it.index == index }
                     ?: return@derivedStateOf null
 
             // Each LazyRow slot = [Spacer(sideSearchPaddingSize)] [Card(sidePasteSize)]
@@ -211,8 +210,10 @@ fun BubbleWindow(
         if (bubbleWindowInfo.show && itemCenterXInSearchWindow == null) {
             // Small delay to avoid flicker during fast scroll
             delay(100.milliseconds)
-            if (searchListState.layoutInfo.visibleItemsInfo
-                    .none { it.index == searchResults.indexOfFirst { r -> r.id == bubbleWindowInfo.pasteId } }
+            if (sideSearchListStateHolder.listState
+                    ?.layoutInfo
+                    ?.visibleItemsInfo
+                    ?.none { it.index == searchResults.indexOfFirst { r -> r.id == bubbleWindowInfo.pasteId } } == true
             ) {
                 appWindowManager.hideBubbleWindow()
             }
