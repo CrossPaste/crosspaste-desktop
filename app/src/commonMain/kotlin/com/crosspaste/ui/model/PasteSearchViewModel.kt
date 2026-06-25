@@ -8,11 +8,14 @@ import com.crosspaste.utils.getDateUtils
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.concurrent.Volatile
 
@@ -67,6 +70,23 @@ abstract class PasteSearchViewModel : ViewModel() {
                 limit = searchBaseParams.limit,
             )
         }
+
+    /**
+     * Emits whenever the query identity changes — a new term, sort, type filter, or tag — but not
+     * when only the pagination limit grows. Derived from [searchParams] (the single source of the
+     * debounced query) by dropping the limit, so it stays aligned with [searchResults]. Consumers
+     * (e.g. selection reset) observe this to know when to snap back to the first match.
+     */
+    val searchQuery: Flow<SearchQuery> =
+        searchParams
+            .map { params ->
+                SearchQuery(
+                    searchTerms = params.searchTerms,
+                    pasteTypeList = params.pasteTypeList,
+                    sort = params.sort,
+                    tag = params.tag,
+                )
+            }.distinctUntilChanged()
 
     abstract val tagList: StateFlow<List<PasteTag>>
 

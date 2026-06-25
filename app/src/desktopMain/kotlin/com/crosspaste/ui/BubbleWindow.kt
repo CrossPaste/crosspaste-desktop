@@ -43,11 +43,11 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
 import com.crosspaste.ui.DesktopContext.BubbleWindowContext
 import com.crosspaste.ui.model.PasteSearchViewModel
-import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.paste.createPasteDataScope
 import com.crosspaste.ui.paste.edit.PasteHtmlEditContentView
 import com.crosspaste.ui.paste.edit.PasteTextEditContentView
+import com.crosspaste.ui.paste.side.SideSearchListStateHolder
 import com.crosspaste.utils.getPlatformUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
@@ -121,7 +121,7 @@ fun BubbleWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteDao = koinInject<PasteDao>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
-    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+    val sideSearchListStateHolder = koinInject<SideSearchListStateHolder>()
     val platform = getPlatformUtils().platform
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val density = LocalDensity.current
@@ -145,7 +145,7 @@ fun BubbleWindow(windowIcon: Painter?) {
     val itemCenterXInSearchWindow: Dp? by remember(bubbleWindowInfo.pasteId) {
         derivedStateOf {
             if (!bubbleWindowInfo.show) return@derivedStateOf null
-            val listState = pasteSelectionViewModel.searchListState ?: return@derivedStateOf null
+            val listState = sideSearchListStateHolder.listState ?: return@derivedStateOf null
 
             val index = searchResults.indexOfFirst { it.id == bubbleWindowInfo.pasteId }
             if (index < 0) return@derivedStateOf null
@@ -210,7 +210,7 @@ fun BubbleWindow(windowIcon: Painter?) {
         if (bubbleWindowInfo.show && itemCenterXInSearchWindow == null) {
             // Small delay to avoid flicker during fast scroll
             delay(100.milliseconds)
-            if (pasteSelectionViewModel.searchListState
+            if (sideSearchListStateHolder.listState
                     ?.layoutInfo
                     ?.visibleItemsInfo
                     ?.none { it.index == searchResults.indexOfFirst { r -> r.id == bubbleWindowInfo.pasteId } } == true

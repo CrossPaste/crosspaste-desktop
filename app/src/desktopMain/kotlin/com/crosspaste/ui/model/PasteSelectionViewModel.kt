@@ -1,19 +1,23 @@
 package com.crosspaste.ui.model
 
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -23,9 +27,6 @@ class PasteSelectionViewModel(
     private val pasteboardService: PasteboardService,
     private val searchViewModel: PasteSearchViewModel,
 ) : ViewModel() {
-
-    /** Set by SidePasteboardContentView so BubbleWindow can read item positions. */
-    var searchListState: LazyListState? = null
 
     private val _focusedElement: MutableStateFlow<FocusedElement> =
         MutableStateFlow(FocusedElement.PASTE_LIST)
@@ -65,6 +66,30 @@ class PasteSelectionViewModel(
     private val _uiEvent = MutableSharedFlow<UIEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
+    // One-shot "scroll the list back to the newest item" signal. The LazyListState lives in the UI
+    // layer (hoisted in CrossPasteWindows), so the ViewModel never touches Compose objects: it only
+    // declares the intent and the UI performs the scroll. extraBufferCapacity = 1 + DROP_OLDEST lets
+    // emit() never suspend even when momentarily no collector is active.
+    private val _scrollToTopEvents =
+        MutableSharedFlow<Unit>(
+            extraBufferCapacity = 1,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
+    val scrollToTopEvents: SharedFlow<Unit> = _scrollToTopEvents.asSharedFlow()
+
+    init {
+        // Declaratively reset selection to the first match whenever the query identity changes
+        // (term, sort, type, or tag). drop(1) skips the initial value so opening the window does
+        // not count as a change. This replaces the imperative initSelectIndex()/scrollToItem(0)
+        // calls that the search content view used to fire from query-keyed effects.
+        searchViewModel.searchQuery
+            .drop(1)
+            .onEach {
+                _selectedIndexes.value = listOf(0)
+                _scrollToTopEvents.tryEmit(Unit)
+            }.launchIn(viewModelScope)
+    }
+
     fun requestPasteListFocus() {
         viewModelScope.launch { _uiEvent.emit(RequestPasteListFocus) }
     }
@@ -91,21 +116,13 @@ class PasteSelectionViewModel(
         _focusedElement.value = focusedElement
     }
 
+    /**
+     * Reset selection to the newest item (index 0). Called when the search window opens; the UI
+     * layer is responsible for the matching scroll-to-top, driven off [scrollToTopEvents] or the
+     * window's own open transition.
+     */
     fun initSelectIndex() {
         _selectedIndexes.value = listOf(0)
-    }
-
-    /**
-     * Reset the search list back to the newest item: select index 0 and scroll to the top.
-     *
-     * Must be driven from a composable that stays in the composition while the search window is
-     * hidden (e.g. SearchWindow). The window content's own composition is paused while the window
-     * is invisible, so effects inside it never observe the hide/show transition and cannot reliably
-     * reset on reopen.
-     */
-    suspend fun resetToTop() {
-        _selectedIndexes.value = listOf(0)
-        searchListState?.scrollToItem(0)
     }
 
     fun clickSelectedIndex(

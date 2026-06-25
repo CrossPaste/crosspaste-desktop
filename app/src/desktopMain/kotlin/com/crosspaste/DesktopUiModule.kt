@@ -47,6 +47,7 @@ import com.crosspaste.ui.devices.DesktopDeviceScopeFactory
 import com.crosspaste.ui.devices.DesktopSyncScopeFactory
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.SyncScopeFactory
+import com.crosspaste.ui.paste.side.SideSearchListStateHolder
 import com.crosspaste.ui.settings.DesktopStoragePathManager
 import com.crosspaste.ui.settings.StoragePathManager
 import com.crosspaste.ui.theme.DesktopThemeDetector
@@ -92,6 +93,7 @@ fun desktopUiModule(): Module =
         single<MenuHelper> { MenuHelper(get(), get(), get(), get(), get(), get()) }
         single<NavigationManager> { get<DesktopScreenProvider>() }
         single<ScreenProvider> { get<DesktopScreenProvider>() }
+        single<SideSearchListStateHolder> { SideSearchListStateHolder() }
         single<SmartImageDisplayStrategy> { SmartImageDisplayStrategy() }
         single<StoragePathManager> { DesktopStoragePathManager() }
         single<SyncScopeFactory> { DesktopSyncScopeFactory() }

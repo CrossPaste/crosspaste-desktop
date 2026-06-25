@@ -21,6 +21,7 @@ import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.paste.side.SideSearchListStateHolder
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.ThemeDetector
 import com.crosspaste.utils.cpuDispatcher
@@ -42,6 +43,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun SearchWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+    val sideSearchListStateHolder = koinInject<SideSearchListStateHolder>()
     val platform = koinInject<Platform>()
     val themeDetector = koinInject<ThemeDetector>()
 
@@ -101,8 +103,11 @@ fun SearchWindow(windowIcon: Painter?) {
             ignoreFocusLoss.set(true)
             // Reset selection and scroll to the newest item before the window paints. This runs
             // here (not in the window content) because the content's composition is paused while
-            // the window is hidden and would not observe the reopen.
-            pasteSelectionViewModel.resetToTop()
+            // the window is hidden and would not observe the reopen. The ViewModel owns selection;
+            // the scroll is a UI concern performed on the list state, reached via the UI holder
+            // (the state itself lives in the window content's composition for smooth scrolling).
+            pasteSelectionViewModel.initSelectIndex()
+            sideSearchListStateHolder.listState?.scrollToItem(0)
             appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
             delay(1000.milliseconds)
         }
