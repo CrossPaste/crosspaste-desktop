@@ -254,6 +254,42 @@ class PasteSelectionViewModelTest {
         }
 
     @Test
+    fun `query identity change resets selection to first match`() =
+        runTest {
+            resultsFlow.value = createMockResults(5)
+            val vm = createVm()
+            advanceUntilIdle()
+
+            vm.clickSelectedIndex(3)
+            advanceUntilIdle()
+            assertEquals(listOf(3), vm.awaitSelectedIndexes())
+
+            // Changing a filter (sort) changes the query identity → selection snaps back to 0.
+            searchViewModel.switchSort()
+            advanceUntilIdle()
+
+            assertEquals(listOf(0), vm.awaitSelectedIndexes())
+        }
+
+    @Test
+    fun `growing the page limit does not reset selection`() =
+        runTest {
+            resultsFlow.value = createMockResults(50)
+            val vm = createVm()
+            advanceUntilIdle()
+
+            vm.clickSelectedIndex(10)
+            advanceUntilIdle()
+            assertEquals(listOf(10), vm.awaitSelectedIndexes())
+
+            // tryAddLimit only grows the pagination cursor, not the query identity.
+            searchViewModel.tryAddLimit()
+            advanceUntilIdle()
+
+            assertEquals(listOf(10), vm.awaitSelectedIndexes())
+        }
+
+    @Test
     fun `selectedIndexes filters out-of-range indexes when results shrink`() =
         runTest {
             resultsFlow.value = createMockResults(5)

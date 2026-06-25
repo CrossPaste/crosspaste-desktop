@@ -1,5 +1,6 @@
 package com.crosspaste.ui
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,11 +43,17 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
 
     MainWindow(windowIcon)
 
-    SearchWindow(windowIcon)
+    // The side search list's scroll state is hoisted here, the common parent of both the search
+    // window and the bubble window, so it lives in the UI layer (not the ViewModel) yet stays shared
+    // across both windows. It also survives the search window content's composition pause while the
+    // window is hidden, which a remember inside that content would not.
+    val searchListState = remember { LazyListState() }
+
+    SearchWindow(windowIcon, searchListState)
 
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val bubbleWindowInfo by appWindowManager.bubbleWindowInfo.collectAsState()
     if (bubbleWindowInfo.show) {
-        BubbleWindow(windowIcon)
+        BubbleWindow(windowIcon, searchListState)
     }
 }

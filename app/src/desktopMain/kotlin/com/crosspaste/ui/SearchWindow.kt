@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -39,7 +40,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun SearchWindow(windowIcon: Painter?) {
+fun SearchWindow(
+    windowIcon: Painter?,
+    searchListState: LazyListState,
+) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
@@ -101,8 +105,10 @@ fun SearchWindow(windowIcon: Painter?) {
             ignoreFocusLoss.set(true)
             // Reset selection and scroll to the newest item before the window paints. This runs
             // here (not in the window content) because the content's composition is paused while
-            // the window is hidden and would not observe the reopen.
-            pasteSelectionViewModel.resetToTop()
+            // the window is hidden and would not observe the reopen. The ViewModel owns selection;
+            // the scroll is a UI concern performed directly on the hoisted list state.
+            pasteSelectionViewModel.initSelectIndex()
+            searchListState.scrollToItem(0)
             appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
             delay(1000.milliseconds)
         }
@@ -166,7 +172,7 @@ fun SearchWindow(windowIcon: Painter?) {
         }
 
         SearchWindowContext(searchWindowInfo) {
-            SideSearchWindowContent()
+            SideSearchWindowContent(searchListState)
         }
     }
 }

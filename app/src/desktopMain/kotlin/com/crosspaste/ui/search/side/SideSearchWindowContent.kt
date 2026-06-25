@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @Composable
-fun SideSearchWindowContent() {
+fun SideSearchWindowContent(searchListState: LazyListState) {
     val viewModel = koinInject<PasteSelectionViewModel>()
     val platform = koinInject<Platform>()
 
@@ -48,7 +49,7 @@ fun SideSearchWindowContent() {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SideSearchInputView()
-            SidePasteboardContentView()
+            SidePasteboardContentView(searchListState)
         }
     }
 }

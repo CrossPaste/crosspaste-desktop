@@ -74,8 +74,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -85,25 +83,21 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SidePasteboardContentView() {
+fun SidePasteboardContentView(searchListState: LazyListState) {
     val pasteMenuService = koinInject<DesktopPasteMenuService>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val searchWindowInfo = LocalSearchWindowInfoState.current
-    val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
-    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
     val searchResult by pasteSearchViewModel.searchResults.collectAsState()
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
     val loadAll by pasteSearchViewModel.loadAll.collectAsState()
 
-    // Stable scroll state shared with the ViewModel. The list is reset to the top on window open
-    // from SearchWindow.resetToTop(), not here: the window content's composition is paused while
-    // the window is hidden, so a show-keyed effect/remember inside this composable never observes
-    // the hide/show transition and cannot reliably reset scroll on reopen.
-    val searchListState = remember { LazyListState() }
-    pasteSelectionViewModel.searchListState = searchListState
+    // searchListState is hoisted in CrossPasteWindows and passed in: it is shared with BubbleWindow
+    // and survives this content's composition pause while the window is hidden. The list is reset to
+    // the top on window open from SearchWindow (always composed) and on query change via
+    // scrollToTopEvents below; both are UI concerns driven off ViewModel-declared intent.
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
     var scrollJob: Job? by remember { mutableStateOf(null) }
@@ -122,32 +116,20 @@ fun SidePasteboardContentView() {
         }
     }
 
-    // Reset key modifier state and selection when the window opens, so it matches
-    // the freshly recreated scroll state above.
+    // Reset transient key modifier state when the window opens. Selection reset is owned by the
+    // ViewModel (initSelectIndex from SearchWindow on open, declarative reset on query change).
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
             isCtrlPressed = false
             isShiftPressed = false
-            pasteSelectionViewModel.initSelectIndex()
         }
     }
 
-    // Reset selection to the first match and scroll to the top whenever the search query or any
-    // filter changes (term, sort, type, or tag). Input is debounced, so the matching results
-    // arrive a moment after the params change: re-assert once they land so the first item is
-    // selected and scrolled into view. This also covers the case where nothing matches.
-    LaunchedEffect(
-        inputSearch,
-        searchBaseParams.sort,
-        searchBaseParams.pasteTypeList,
-        searchBaseParams.tag,
-    ) {
-        if (searchWindowInfo.show) {
-            pasteSelectionViewModel.initSelectIndex()
-            searchListState.scrollToItem(0)
-            // Wait for the debounced query to produce its new result set, then pin to the top.
-            snapshotFlow { searchResult }.drop(1).first()
-            pasteSelectionViewModel.initSelectIndex()
+    // Scroll back to the newest item when the ViewModel signals a query-identity change. Selection
+    // has already been reset to index 0 in the ViewModel; this is the matching UI scroll. The
+    // window-open scroll is handled in SearchWindow, which stays composed while the window is hidden.
+    LaunchedEffect(Unit) {
+        pasteSelectionViewModel.scrollToTopEvents.collect {
             searchListState.scrollToItem(0)
         }
     }
