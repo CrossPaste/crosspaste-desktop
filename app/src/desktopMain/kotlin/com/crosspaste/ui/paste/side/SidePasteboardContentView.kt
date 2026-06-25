@@ -74,6 +74,8 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -96,10 +98,11 @@ fun SidePasteboardContentView() {
     val selectedIndexes by pasteSelectionViewModel.selectedIndexes.collectAsState()
     val loadAll by pasteSearchViewModel.loadAll.collectAsState()
 
-    // Recreate scroll state on each show/hide transition so every window open starts at position 0.
-    // scrollToItem(0) is unreliable when the window is hidden because the layout engine skips
-    // hidden windows, so we create a fresh LazyListState instead.
-    val searchListState = remember(searchWindowInfo.show) { LazyListState() }
+    // Stable scroll state shared with the ViewModel. The list is reset to the top on window open
+    // from SearchWindow.resetToTop(), not here: the window content's composition is paused while
+    // the window is hidden, so a show-keyed effect/remember inside this composable never observes
+    // the hide/show transition and cannot reliably reset scroll on reopen.
+    val searchListState = remember { LazyListState() }
     pasteSelectionViewModel.searchListState = searchListState
     val adapter = rememberScrollbarAdapter(scrollState = searchListState)
     var showScrollbar by remember { mutableStateOf(false) }
@@ -129,13 +132,21 @@ fun SidePasteboardContentView() {
         }
     }
 
-    // Reset selection and scroll position when search parameters change while window is visible.
+    // Reset selection to the first match and scroll to the top whenever the search query or any
+    // filter changes (term, sort, type, or tag). Input is debounced, so the matching results
+    // arrive a moment after the params change: re-assert once they land so the first item is
+    // selected and scrolled into view. This also covers the case where nothing matches.
     LaunchedEffect(
         inputSearch,
         searchBaseParams.sort,
         searchBaseParams.pasteTypeList,
+        searchBaseParams.tag,
     ) {
         if (searchWindowInfo.show) {
+            pasteSelectionViewModel.initSelectIndex()
+            searchListState.scrollToItem(0)
+            // Wait for the debounced query to produce its new result set, then pin to the top.
+            snapshotFlow { searchResult }.drop(1).first()
             pasteSelectionViewModel.initSelectIndex()
             searchListState.scrollToItem(0)
         }
@@ -226,6 +237,22 @@ fun SidePasteboardContentView() {
             val currentFirstItemId = searchResult.first().id
 
             if (currentFirstItemId != previousFirstItemId) {
+                // Auto-scroll to the newest item only when the user is already viewing the top
+                // of the list. Detect that via the previously-newest item's key rather than
+                // firstVisibleItemIndex: the list is keyed by item.id, so when several items are
+                // prepended at once (e.g. clipboard changes while the search window was closed),
+                // the LazyList anchors to the old top item and its index jumps past 1. The old
+                // `firstVisibleItemIndex <= 1` guard misread that as "scrolled away" and skipped
+                // the scroll, leaving the newest items off-screen above the viewport.
+                val firstVisibleKey =
+                    searchListState.layoutInfo.visibleItemsInfo
+                        .firstOrNull()
+                        ?.key
+                val wasAtTop =
+                    firstVisibleKey == null ||
+                        previousFirstItemId == null ||
+                        firstVisibleKey == previousFirstItemId
+
                 snapshotFlow { searchListState.layoutInfo }
                     .take(2)
                     .collect { layoutInfo ->
@@ -234,7 +261,7 @@ fun SidePasteboardContentView() {
                             showScrollbar = true
                         }
 
-                        if (searchListState.firstVisibleItemIndex <= 1) {
+                        if (wasAtTop) {
                             searchListState.animateScrollToItem(0)
                         }
                     }
