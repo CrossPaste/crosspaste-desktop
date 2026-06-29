@@ -18,7 +18,7 @@
 | :lock: (锁)                          | `:lock:`                      | 修复安全问题                 |
 | :apple: (苹果)                        | `:apple:`                     | 修复 macOS 下的内容          |
 | :penguin: (企鹅)                      | `:penguin:`                   | 修复 Linux 下的内容          |
-| :checkered_flag: (旗帜)               | `:checked_flag:`              | 修复 Windows 下的内容        |
+| :checkered_flag: (旗帜)               | `:checkered_flag:`            | 修复 Windows 下的内容        |
 | :robot: (Android机器人)                | `:robot:`                     | 修复Android上的某些内容。    |
 | :green_apple: (绿苹果)                 | `:green_apple:`               | 解决iOS上的某些问题。        |
 | :bookmark: (书签)                     | `:bookmark:`                  | 发行/版本标签                |
