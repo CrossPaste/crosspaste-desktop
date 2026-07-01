@@ -46,12 +46,9 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         param: Any?,
     ): HWND?
 
-    fun SetClipboardViewer(hWndNewViewer: HWND?): HWND?
+    fun AddClipboardFormatListener(hWnd: HWND?): Boolean
 
-    fun ChangeClipboardChain(
-        hWndRemove: HWND?,
-        hWndNewNext: HWND?,
-    ): Boolean
+    fun RemoveClipboardFormatListener(hWnd: HWND?): Boolean
 
     fun MsgWaitForMultipleObjects(
         nCount: Int,
@@ -122,8 +119,7 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         const val WM_DESTROY = 0x0002
         const val WM_RENDERFORMAT = 0x0305
         const val WM_RENDERALLFORMATS = 0x0306
-        const val WM_CHANGECBCHAIN = 0x030D
-        const val WM_DRAWCLIPBOARD = 0x0308
+        const val WM_CLIPBOARDUPDATE = 0x031D
 
         /**
          * PeekMessage() Options

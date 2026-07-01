@@ -14,7 +14,6 @@ import com.crosspaste.utils.DesktopControlUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
 import com.crosspaste.utils.namedScope
-import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
@@ -65,7 +64,6 @@ class WindowsPasteboardService(
 
     private var job: Job? = null
     private var viewer: HWND? = null
-    private var nextViewer: HWND? = null
     private val event =
         Kernel32.INSTANCE.CreateEvent(
             null,
@@ -94,7 +92,6 @@ class WindowsPasteboardService(
                 0,
                 null,
             )
-        nextViewer = User32.INSTANCE.SetClipboardViewer(viewer)
         if (platform.is64bit()) {
             User32.INSTANCE.SetWindowLongPtr(
                 viewer,
@@ -107,6 +104,13 @@ class WindowsPasteboardService(
                 User32.GWL_WNDPROC,
                 this,
             )
+        }
+        if (User32.INSTANCE.AddClipboardFormatListener(viewer)) {
+            logger.info { "Clipboard format listener registered" }
+        } else {
+            logger.error {
+                "AddClipboardFormatListener failed, err=${Kernel32.INSTANCE.GetLastError()}"
+            }
         }
         val msg = MSG()
         val handles = arrayOf(event)
@@ -123,6 +127,7 @@ class WindowsPasteboardService(
             existNew = true
 
             if (result == Kernel32.WAIT_OBJECT_0) {
+                User32.INSTANCE.RemoveClipboardFormatListener(viewer)
                 User32.INSTANCE.DestroyWindow(viewer)
                 return
             }
@@ -227,41 +232,18 @@ class WindowsPasteboardService(
         uParam: WPARAM?,
         lParam: LPARAM?,
     ): Int {
-        when (uMsg) {
-            User32.WM_CHANGECBCHAIN -> {
-                // If the next window is closing, repair the chain.
-                val nv = nextViewer
-                if (nv != null && uParam != null && nv.toNative() == uParam.toNative()) {
-                    nextViewer =
-                        lParam?.let { HWND(Pointer.createConstant(it.toLong())) }
-                } else if (nv != null) {
-                    // Otherwise, pass the message to the next link
-                    User32.INSTANCE.SendMessage(nv, uMsg, uParam, lParam)
-                }
-                return 0
-            }
-
-            User32.WM_DRAWCLIPBOARD -> {
-                if (existNew) {
-                    existNew = false
-                    runCatching {
-                        val clipboardSequenceNumber = User32.INSTANCE.GetClipboardSequenceNumber()
-                        if (changeCount != clipboardSequenceNumber) {
-                            changeCount = clipboardSequenceNumber
-                            onChange()
-                        }
-                    }.apply {
-                        User32.INSTANCE.SendMessage(nextViewer, uMsg, uParam, lParam)
+        if (uMsg == User32.WM_CLIPBOARDUPDATE) {
+            if (existNew) {
+                existNew = false
+                runCatching {
+                    val clipboardSequenceNumber = User32.INSTANCE.GetClipboardSequenceNumber()
+                    if (changeCount != clipboardSequenceNumber) {
+                        changeCount = clipboardSequenceNumber
+                        onChange()
                     }
                 }
-                return 0
             }
-
-            User32.WM_DESTROY ->
-                User32.INSTANCE.ChangeClipboardChain(
-                    viewer,
-                    nextViewer,
-                )
+            return 0
         }
         return User32.INSTANCE.DefWindowProc(hWnd, uMsg, uParam, lParam).toInt()
     }
