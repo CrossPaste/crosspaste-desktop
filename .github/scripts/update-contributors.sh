@@ -6,7 +6,7 @@ cd "$(dirname "$0")/../.."
 
 html=""
 while read -r login; do
-  html+="<a href=\"https://github.com/${login}\"><img src=\"https://wsrv.nl/?url=github.com/${login}.png&w=120&h=120&fit=cover&mask=circle\" width=\"60\" height=\"60\" alt=\"${login}\" /></a>&nbsp;"
+  html+="<a href=\"https://github.com/${login}\"><img src=\"https://wsrv.nl/?url=github.com/${login}.png&w=120&h=120&fit=cover&mask=circle&output=png\" width=\"60\" height=\"60\" alt=\"${login}\" /></a>&nbsp;"
 done < <(gh api "repos/${REPO}/contributors?per_page=100" --paginate --jq '.[] | select(.type == "User") | .login')
 
 if [ -z "$html" ]; then
