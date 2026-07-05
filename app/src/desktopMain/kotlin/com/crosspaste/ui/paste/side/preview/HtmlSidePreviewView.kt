@@ -20,7 +20,7 @@ import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.utils.ColorAccessibility
 import com.mohamedrejeb.richeditor.annotation.ExperimentalRichTextApi
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
+import com.mohamedrejeb.richeditor.model.RichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichText
 import org.koin.compose.koinInject
 
@@ -60,7 +60,7 @@ fun PasteDataScope.HtmlSidePreviewView() {
             )
         },
     ) {
-        val state = rememberRichTextState()
+        val state = remember { RichTextState() }
 
         LaunchedEffect(htmlPasteItem.hash) {
             pasteItemReader.getPreviewHtml(htmlPasteItem)?.let { state.setHtml(it) }
