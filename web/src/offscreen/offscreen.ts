@@ -123,6 +123,37 @@ function readClipboard(): Promise<ClipboardResult> {
   });
 }
 
+/**
+ * Fallback clipboard write via a synthetic copy event. Some Chromium forks
+ * (e.g. Brave) reject navigator.clipboard.write in offscreen documents with
+ * "Document is not focused" (#4619); execCommand("copy") with a copy-event
+ * listener is the documented offscreen-safe path. Text and HTML only —
+ * clipboardData.setData cannot carry images.
+ */
+function writeViaExecCommand(data: { text?: string; html?: string }): boolean {
+  const onCopy = (e: ClipboardEvent) => {
+    e.preventDefault();
+    if (data.text) e.clipboardData?.setData("text/plain", data.text);
+    if (data.html) e.clipboardData?.setData("text/html", data.html);
+  };
+  document.addEventListener("copy", onCopy);
+  try {
+    // execCommand("copy") only fires with an active selection.
+    div.textContent = "x";
+    const range = document.createRange();
+    range.selectNodeContents(div);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    const ok = document.execCommand("copy");
+    selection?.removeAllRanges();
+    return ok;
+  } finally {
+    document.removeEventListener("copy", onCopy);
+    div.textContent = "";
+  }
+}
+
 async function writeClipboard(data: {
   text?: string;
   html?: string;
@@ -150,6 +181,10 @@ async function writeClipboard(data: {
     await navigator.clipboard.write([new ClipboardItem(blobs)]);
     return true;
   } catch (e) {
+    if (data.text || data.html) {
+      const ok = writeViaExecCommand(data);
+      if (ok) return true;
+    }
     console.error("[Offscreen] writeClipboard failed:", e);
     return false;
   }
