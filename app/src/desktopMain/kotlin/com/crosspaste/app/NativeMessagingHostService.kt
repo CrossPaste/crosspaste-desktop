@@ -3,10 +3,10 @@ package com.crosspaste.app
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.presist.FilePersist
+import com.sun.jna.platform.win32.Advapi32Util
+import com.sun.jna.platform.win32.WinReg
 import io.github.oshai.kotlinlogging.KotlinLogging
 import okio.Path
-import okio.Path.Companion.toOkioPath
-import java.io.File
 import java.util.Properties
 
 class NativeMessagingHostService(
@@ -20,6 +20,19 @@ class NativeMessagingHostService(
     companion object {
         const val HOST_NAME = "com.crosspaste.desktop"
         const val MANIFEST_FILE = "$HOST_NAME.json"
+
+        // On Windows, Chromium-family browsers discover native messaging hosts
+        // ONLY through the registry — manifest files inside the browser profile
+        // are never scanned (https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging).
+        // Edge and Brave also fall back to the Chrome key, but registering their
+        // own vendor keys keeps discovery independent of that fallback.
+        internal val WINDOWS_REGISTRY_KEYS =
+            listOf(
+                "Software\\Google\\Chrome\\NativeMessagingHosts\\$HOST_NAME",
+                "Software\\Chromium\\NativeMessagingHosts\\$HOST_NAME",
+                "Software\\Microsoft\\Edge\\NativeMessagingHosts\\$HOST_NAME",
+                "Software\\BraveSoftware\\Brave-Browser\\NativeMessagingHosts\\$HOST_NAME",
+            )
 
         val CHROME_EXTENSION_IDS: List<String> by lazy {
             val props = Properties()
@@ -78,11 +91,13 @@ class NativeMessagingHostService(
             done
             """.trimIndent()
 
+        // NOTE: PowerShell's $PID is a read-only automatic variable — assigning to it
+        // throws, so the desktop process id must live in its own variable ($appPid).
         internal fun buildWindowsBridgeScript(pidFilePath: String): String {
             val normalized = pidFilePath.replace("/", "\\")
             return """
                 @echo off
-                powershell -NoProfile -Command "${'$'}stdin=[Console]::OpenStandardInput(); ${'$'}null=[System.Threading.Tasks.Task]::Run({${'$'}buf=New-Object byte[] 4096; while(${'$'}stdin.Read(${'$'}buf,0,4096) -gt 0){}}); ${'$'}stdout=[Console]::OpenStandardOutput(); ${'$'}msg=[System.Text.Encoding]::UTF8.GetBytes('{\"status\":\"running\"}'); ${'$'}lenBytes=[System.BitConverter]::GetBytes(${'$'}msg.Length); ${'$'}pidFile='$normalized'; while(${'$'}true){ if(-not(Test-Path ${'$'}pidFile)){exit}; ${'$'}pid=[int](Get-Content ${'$'}pidFile -ErrorAction SilentlyContinue); if(-not(Get-Process -Id ${'$'}pid -ErrorAction SilentlyContinue)){exit}; ${'$'}stdout.Write(${'$'}lenBytes,0,4); ${'$'}stdout.Write(${'$'}msg,0,${'$'}msg.Length); ${'$'}stdout.Flush(); Start-Sleep -Seconds 5 }"
+                powershell -NoProfile -Command "${'$'}stdin=[Console]::OpenStandardInput(); ${'$'}null=[System.Threading.Tasks.Task]::Run({${'$'}buf=New-Object byte[] 4096; while(${'$'}stdin.Read(${'$'}buf,0,4096) -gt 0){}}); ${'$'}stdout=[Console]::OpenStandardOutput(); ${'$'}msg=[System.Text.Encoding]::UTF8.GetBytes('{\"status\":\"running\"}'); ${'$'}lenBytes=[System.BitConverter]::GetBytes(${'$'}msg.Length); ${'$'}pidFile='$normalized'; while(${'$'}true){ if(-not(Test-Path ${'$'}pidFile)){exit}; ${'$'}appPid=[int](Get-Content ${'$'}pidFile -ErrorAction SilentlyContinue); if(-not(Get-Process -Id ${'$'}appPid -ErrorAction SilentlyContinue)){exit}; ${'$'}stdout.Write(${'$'}lenBytes,0,4); ${'$'}stdout.Write(${'$'}msg,0,${'$'}msg.Length); ${'$'}stdout.Flush(); Start-Sleep -Seconds 5 }"
                 """.trimIndent()
         }
     }
@@ -118,6 +133,11 @@ class NativeMessagingHostService(
     private fun writeManifests(bridgeScriptPath: Path) {
         val manifest = buildManifest(CHROME_EXTENSION_IDS, bridgeScriptPath.toString())
 
+        if (platform.isWindows()) {
+            registerWindowsManifest(manifest)
+            return
+        }
+
         for (dir in getManifestDirs()) {
             val dirFile = dir.toFile()
             if (!dirFile.parentFile.exists()) continue
@@ -128,6 +148,31 @@ class NativeMessagingHostService(
                     .saveBytes(manifest.encodeToByteArray())
             }.onFailure { e ->
                 logger.warn(e) { "Failed to write manifest to $dir" }
+            }
+        }
+    }
+
+    // Windows browsers resolve native messaging hosts via the registry, not via
+    // manifest files in the profile directory: write one manifest under the app
+    // data dir and point each vendor's HKCU key at it.
+    private fun registerWindowsManifest(manifest: String) {
+        val manifestPath = appPathProvider.pasteUserPath.resolve(MANIFEST_FILE)
+        FilePersist
+            .createOneFilePersist(manifestPath)
+            .saveBytes(manifest.encodeToByteArray())
+        val manifestFilePath = manifestPath.toFile().absolutePath
+
+        for (keyPath in WINDOWS_REGISTRY_KEYS) {
+            runCatching {
+                Advapi32Util.registryCreateKey(WinReg.HKEY_CURRENT_USER, keyPath)
+                Advapi32Util.registrySetStringValue(
+                    WinReg.HKEY_CURRENT_USER,
+                    keyPath,
+                    "",
+                    manifestFilePath,
+                )
+            }.onFailure { e ->
+                logger.warn(e) { "Failed to register native messaging host key: $keyPath" }
             }
         }
     }
@@ -158,20 +203,8 @@ class NativeMessagingHostService(
                 ".config/BraveSoftware/Brave-Browser/NativeMessagingHosts",
                 ".config/microsoft-edge/NativeMessagingHosts",
             ).map { home.resolve(it) }
-        } else if (platform.isWindows()) {
-            windowsManifestDirs()
         } else {
             emptyList()
         }
-    }
-
-    private fun windowsManifestDirs(): List<Path> {
-        val localAppData = System.getenv("LOCALAPPDATA") ?: return emptyList()
-        return listOf(
-            "Google/Chrome/User Data/NativeMessagingHosts",
-            "Chromium/User Data/NativeMessagingHosts",
-            "BraveSoftware/Brave-Browser/User Data/NativeMessagingHosts",
-            "Microsoft/Edge/User Data/NativeMessagingHosts",
-        ).map { File(localAppData).resolve(it).toOkioPath() }
     }
 }

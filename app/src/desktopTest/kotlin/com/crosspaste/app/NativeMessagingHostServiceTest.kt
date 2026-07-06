@@ -126,4 +126,26 @@ class NativeMessagingHostServiceTest {
             "pidFile path not normalized to backslashes",
         )
     }
+
+    @Test
+    fun buildWindowsBridgeScript_doesNotAssignReadOnlyPidVariable() {
+        val script =
+            NativeMessagingHostService.buildWindowsBridgeScript("C:/Users/me/data/crosspaste.pid")
+
+        // PowerShell's $PID is a read-only automatic variable; assigning to it throws.
+        assertTrue(!script.contains("\$pid="), "script must not assign to read-only \$pid")
+        assertTrue(script.contains("\$appPid="), "desktop pid must be read into \$appPid")
+        assertTrue(script.contains("Get-Process -Id \$appPid"), "liveness check must use \$appPid")
+    }
+
+    @Test
+    fun windowsRegistryKeys_coverChromiumFamilyAndEndWithHostName() {
+        val keys = NativeMessagingHostService.WINDOWS_REGISTRY_KEYS
+
+        assertTrue(keys.isNotEmpty())
+        assertTrue(keys.all { it.endsWith("\\${NativeMessagingHostService.HOST_NAME}") })
+        assertTrue(keys.any { it.contains("Google\\Chrome") }, "missing Chrome key")
+        assertTrue(keys.any { it.contains("Microsoft\\Edge") }, "missing Edge key")
+        assertTrue(keys.any { it.contains("BraveSoftware") }, "missing Brave key")
+    }
 }

@@ -3,8 +3,10 @@ import { parsePasteData, type PasteData } from "@/shared/models/paste-data";
 import { PasteType } from "@/shared/models/paste-item";
 import type { FilesPasteItem, ImagesPasteItem } from "@/shared/models/paste-item";
 import { BlobStore } from "@/shared/storage/blob-store";
+import { PasteStore } from "@/shared/storage/paste-store";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
 import { writeRemotePasteToClipboard } from "@/shared/clipboard/clipboard-sync-writer";
+import { shouldWriteRemotePaste } from "./paste-push-policy";
 
 /** Payload of a FILE_PULL_REQUEST message (matches Kotlin WsPullFileRequest sealed class). */
 interface WsChunkRequest {
@@ -41,6 +43,16 @@ export interface WsMessageHandlerDeps {
   broadcastToSidePanel: (message: unknown) => void;
   /** Set the clipboard last hash after writing to clipboard, so poll skips it. */
   setLastHash: (hash: string) => Promise<void>;
+  /** Read the clipboard last hash tracked by the poll loop. */
+  getLastHash: () => Promise<string>;
+  /**
+   * Arm the post-write suppress window BEFORE writing to the clipboard, so the
+   * next poll absorbs the browser-sanitized re-read (whose bytes never match
+   * the pushed hash) instead of ingesting it as a new local copy.
+   */
+  armClipboardWriteSuppress: () => Promise<void>;
+  /** Clear the suppress window when the clipboard write did not happen. */
+  disarmClipboardWriteSuppress: () => Promise<void>;
   /** Handle remote removal: remove device from storage and disconnect WebSocket. */
   onRemoteRemoveDevice: (targetAppInstanceId: string) => Promise<void>;
   /** Surface an oversize-paste rejection from [sourceAppInstanceId] to the user. */
@@ -102,13 +114,30 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
         return;
       }
 
+      // Query BEFORE ingest: after ingest the latest same-hash entry is the
+      // paste we just stored, which would defeat the echo check.
+      const priorReceivedAt = await PasteStore.latestReceivedAtByHash(pasteData.hash);
+
       const newId = await ingestPaste(pasteData, deps.broadcastToSidePanel);
       if (newId !== null) {
         await pullFilesIfNeeded(appInstanceId, pasteData);
 
-        const written = await writeRemotePasteToClipboard(pasteData);
-        if (written) {
-          await deps.setLastHash(pasteData.hash);
+        const writeAllowed = shouldWriteRemotePaste({
+          hash: pasteData.hash,
+          lastHash: await deps.getLastHash(),
+          priorReceivedAt,
+          now: Date.now(),
+        });
+        if (writeAllowed) {
+          await deps.armClipboardWriteSuppress();
+          const written = await writeRemotePasteToClipboard(pasteData);
+          if (written) {
+            await deps.setLastHash(pasteData.hash);
+          } else {
+            // Nothing hit the clipboard, so leaving the window armed would
+            // absorb (and silently drop) the user's next real copy.
+            await deps.disarmClipboardWriteSuppress();
+          }
         }
       }
 

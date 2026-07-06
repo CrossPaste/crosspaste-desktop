@@ -107,10 +107,12 @@ let offscreenReady = false;
 
 const CLIPBOARD_POLL_INTERVAL_MS = 1000; // 1 second
 const STORAGE_KEY_LAST_HASH = "clipboard_lastHash";
-// After a LOCAL_COPY, Chrome's clipboard.write sanitizes text/html and may
-// regenerate text/plain from the HTML, so the first post-write poll reads
-// bytes that don't match the original paste's hash. Within this window we
-// absorb the re-read hash into lastHash once instead of ingesting it.
+// After any clipboard write of our own (LOCAL_COPY from the side panel, or a
+// remote paste_push written via the offscreen document), Chrome's
+// clipboard.write sanitizes text/html and may regenerate text/plain from the
+// HTML, so the first post-write poll reads bytes that don't match the original
+// paste's hash. Within this window we absorb the re-read hash into lastHash
+// once instead of ingesting it.
 const STORAGE_KEY_LOCAL_COPY_UNTIL = "clipboard_localCopyUntil";
 const LOCAL_COPY_SUPPRESS_MS = 2000;
 
@@ -377,9 +379,10 @@ async function syncAllDevices(): Promise<void> {
         targetAppInstanceId: device.targetAppInstanceId,
       });
       if (data) {
-        if ((await ingestPaste(data, broadcastToSidePanel)) !== null) {
-          await setLastHash(data.hash);
-        }
+        // Do NOT touch lastHash here: pulling stores the paste without writing
+        // the clipboard, so lastHash must keep tracking the actual clipboard
+        // content or the next poll re-ingests it as a new local copy.
+        await ingestPaste(data, broadcastToSidePanel);
       }
       await updateRuntime(device.targetAppInstanceId, (s) => {
         s.lastHttpSuccessAt = Date.now();
@@ -533,6 +536,9 @@ async function initializeWebSocket(): Promise<void> {
     },
     broadcastToSidePanel,
     setLastHash,
+    getLastHash,
+    armClipboardWriteSuppress: () => setLocalCopyUntil(Date.now() + LOCAL_COPY_SUPPRESS_MS),
+    disarmClipboardWriteSuppress: () => setLocalCopyUntil(0),
     showOversizePasteNotice,
     onRemoteRemoveDevice: async (targetId) => {
       wsManager?.disconnectDevice(targetId);

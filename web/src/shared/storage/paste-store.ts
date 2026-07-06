@@ -150,6 +150,30 @@ export const PasteStore = {
     return items;
   },
 
+  /**
+   * Latest receivedAt among non-deleted entries with the given hash, or null.
+   * Used to detect clipboard echo loops: a paste_push whose hash we already
+   * ingested moments ago is a bounce of our own push, not new user content.
+   */
+  async latestReceivedAtByHash(hash: string): Promise<number | null> {
+    const db = await getDb();
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const hashIndex = tx.store.index("hash");
+    let latest: number | null = null;
+
+    let cursor = await hashIndex.openCursor(hash);
+    while (cursor) {
+      const entry = cursor.value as PasteData;
+      if (entry.pasteState !== PasteState.DELETED && entry.receivedAt !== undefined) {
+        if (latest === null || entry.receivedAt > latest) latest = entry.receivedAt;
+      }
+      cursor = await cursor.continue();
+    }
+
+    await tx.done;
+    return latest;
+  },
+
   /** Mark a paste as DELETED by auto-increment ID. Returns the hash if found. */
   async deleteById(id: number): Promise<string | null> {
     const db = await getDb();
