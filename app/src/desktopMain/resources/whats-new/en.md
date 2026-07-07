@@ -1,3 +1,23 @@
+# [2.1.6] - 2026-07-07
+
+## 🔁 Fixed a clipboard loop between the Chrome extension and desktop
+Fixed an issue where running the Chrome extension and the desktop app together could bounce the same clipboard entry back and forth endlessly, flooding your history with duplicates. Both sides now recognize content written by the other and no longer re-trigger each other.
+
+## 🪟 Upgraded clipboard monitoring on Windows
+Clipboard monitoring on Windows now uses the system's recommended event notification mechanism, so copied content is picked up faster and more reliably. Source detection is fixed too — the "copied from" app shown in your history is now the program that actually wrote to the clipboard, not whichever window happened to be in the foreground.
+
+## 🪟 Works on newer Windows builds without wmic
+Newer Windows 11 builds have removed the wmic tool, which prevented CrossPaste from generating a device identifier. It now reads from the system registry instead, so CrossPaste works correctly on up-to-date Windows.
+
+## 🔍 The search window no longer holds a grudge
+Reopening the search window or changing your query now scrolls the list back to the top and selects the newest entry, instead of staying at your previous position or keeping a selection that no longer matches.
+
+## 📶 Device discovery prefers your LAN
+When your computer has multiple network connections (such as a cellular modem or a phone hotspot), CrossPaste now prefers the local network for discovering nearby devices, making discovery and connection more reliable.
+
+## 🐧 New Linux ARM64 build
+CrossPaste now ships a Linux ARM64 (aarch64) package, so ARM-based Linux devices are supported too.
+
 # [2.1.5] - 2026-06-11
 
 ## 🛠️ Fixed the "Check for Updates" error
