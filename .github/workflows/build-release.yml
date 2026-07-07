@@ -255,10 +255,22 @@ jobs:
           cd web/dist
           zip -r "${{ github.workspace }}/output/crosspaste-chrome-extension-${{ env.VERSION }}.${{ env.REVISION }}.zip" .
 
+      # Multi-arch Linux builds emit the apt repository as an output/debian/
+      # directory tree instead of flat files at the site root. Surface the
+      # .debs at the top level so the versioned OSS dir and the GitHub Release
+      # keep the same flat inventory as before.
+      - name: Flatten Linux debs
+        run: |
+          if [ -d output/debian ]; then
+            find output/debian -type f -name '*.deb' -exec cp -n {} output/ \;
+          fi
+
       - name: CheckSum
         run: |
           rm -f icon.svg download.html
-          shasum -a 256 * > checksum.txt
+          for f in *; do
+            if [ -f "$f" ]; then shasum -a 256 "$f"; fi
+          done > checksum.txt
         working-directory: ./output
 
       - name: Setup ossutil
@@ -290,6 +302,15 @@ jobs:
               mv update-site/$f update-site-meta/
             fi
           done
+          # Multi-arch builds nest the apt repository under debian/. Its index
+          # metadata must also revalidate quickly, while the version-named
+          # .debs inside stay immutable, so split it the same way.
+          if [ -d update-site/debian ]; then
+            (cd update-site && find debian -type f ! -name '*.deb') | while read -r f; do
+              mkdir -p "update-site-meta/$(dirname "$f")"
+              mv "update-site/$f" "update-site-meta/$f"
+            done
+          fi
           ossutil cp -r -f --meta "Cache-Control:public, max-age=2592000" update-site/ oss://crosspaste-desktop/site/
           ossutil cp -r -f --meta "Cache-Control:public, max-age=300" update-site-meta/ oss://crosspaste-desktop/site/
 
