@@ -2,6 +2,95 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.6] - 2026-07-07
+# Highlights 🌟
+
+- 🔁 **Fixed a clipboard loop between the Chrome extension and desktop**
+  Running the Chrome extension and the desktop app on the same machine
+  could bounce the same clipboard entry back and forth endlessly,
+  flooding the history with duplicates. Both sides now recognize
+  content written by the other and no longer re-trigger each other
+  (#4619 #4620).
+
+- 🪟 **Upgraded clipboard monitoring on Windows**
+  Clipboard monitoring on Windows now uses the AddClipboardFormatListener
+  event mechanism, so copied content is picked up faster and more
+  reliably. The "copied from" app is now resolved via GetClipboardOwner
+  — the program that actually wrote to the clipboard — instead of
+  whichever window happened to be in the foreground (#4597 #4606).
+
+- 🪟 **Works on newer Windows builds without wmic**
+  Newer Windows 11 builds have removed the wmic tool, which prevented
+  CrossPaste from generating a device identifier. It now reads the
+  registry MachineGuid instead (#4580).
+
+- 🔍 **Search window resets properly on reopen**
+  Reopening the search window or changing the query now scrolls the
+  list back to the top and selects the newest entry, instead of keeping
+  a stale position or selection (#4595 #4600).
+
+- 📶 **Device discovery prefers your LAN**
+  When a computer has multiple network connections (such as a cellular
+  modem or a phone hotspot), CrossPaste now ranks local network
+  interfaces first when discovering nearby devices (#4568).
+
+- 🐧 **New Linux ARM64 build**
+  CrossPaste now ships a Linux ARM64 (aarch64) package, so ARM-based
+  Linux devices are supported too (#4581 #4582).
+
+# Bug Fixes 🐛
+
+- :bug: Fix endless clipboard duplication loop between Chrome extension and desktop (#4620)
+- :bug: Force PNG output for README avatars to keep circle-mask corners transparent (#4615)
+- :bug: Migrate Windows clipboard monitoring to AddClipboardFormatListener (#4606)
+- :bug: Reset side search selection and scroll to newest on reopen and query change (#4600)
+- :bug: Resolve Windows clipboard source via GetClipboardOwner instead of foreground window (#4597)
+- :bug: Pass signing_key to Conveyor in the Linux beta workflow (#4584)
+- :bug: Replace deprecated wmic with registry MachineGuid for Windows device UUID (#4580)
+- :bug: Lower WindowsProcessUtils version-resource log from error to debug (#4578)
+- :bug: Capture network errors in ResourcesClient.request() instead of throwing (#4577)
+- :bug: Rank LAN interfaces above cellular for device discovery (#4568)
+
+# New Features ✨
+
+- :sparkles: Add Linux aarch64 (ARM64) build target (#4582)
+- :sparkles: Add telnet scenario to e2e harness (#4562)
+
+# Performance ⚡
+
+- :zap: Use plain remember for RichTextState in side preview views (#4618)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Remove runBlocking from DesktopAppLaunchState DI assembly (#4575)
+- :hammer: Group Koin module declarations by sub-domain with regions (#4573)
+- :hammer: Make ImageHandler and ImageWriter I/O methods suspend (#4570)
+
+# Build & CI 👷
+
+- :construction_worker: Replace contrib.rocks with manually triggered contributors README workflow (#4613)
+- :construction_worker: Add manual Linux beta build workflow (#4583)
+- :construction_worker: Serve updates from the OSS-backed CDN site (#4560)
+- :construction_worker: Mirror the Conveyor update site to a stable OSS prefix (#4559)
+
+# Documentation 📝
+
+- :memo: Fix checkered flag emoji code in commit guide (#4598)
+
+# Dependencies ⬆️
+
+- ⬆️ **Gradle Wrapper** 9.5.1 → 9.6.1 (#4589 #4608)
+- ⬆️ **logback-classic** 1.5.34 → 1.5.37 (#4592 #4611)
+- ⬆️ **Ktor** 3.5.0 → 3.5.1 (#4607)
+- ⬆️ **web build deps** vite / @babel/core security bump (#4593)
+- ⬆️ **composenativetray-jvm** bump (#4591)
+- ⬆️ **webp-imageio** 0.10.2 → 0.11.0 (#4588)
+- ⬆️ **Koin** 4.2.1 → 4.2.2 (#4585)
+- ⬆️ **Coil** 3.4.0 → 3.5.0 (#4566)
+- ⬆️ **filekit-dialogs** 0.14.1 → 0.14.2 (#4565)
+- ⬆️ **HikariCP** 7.0.2 → 7.1.0 (#4564)
+- ⬆️ **JNA** 5.19.0 → 5.19.1 (#4563)
+
 # [2.1.5] - 2026-06-11
 # Highlights 🌟
 
