@@ -20,9 +20,14 @@ on:
         description: "Full version whose staged site to publish (e.g. 2.1.6.2400)"
         required: true
 
+# This workflow only talks to OSS via ossutil; it never uses GITHUB_TOKEN.
+permissions: {}
+
 # Never let two publishes interleave (e.g. a release-triggered run racing a
-# manual rollback). Later runs queue instead of cancelling: a rollback must
-# not be silently dropped.
+# manual rollback): an in-progress run always finishes. Caveat: GitHub keeps
+# only ONE pending run per group — a newly queued run replaces (cancels) a
+# previously pending one, so if a rollback dispatch was queued and another
+# run superseded it, re-dispatch the rollback.
 concurrency:
   group: publish-update-site
   cancel-in-progress: false
@@ -59,11 +64,13 @@ jobs:
           access-key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
           access-key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
 
-      # Guard against publishing the wrong tag or a tag whose build never
-      # staged: the staged metadata must exist and identify exactly the
-      # requested version.
+      # Guard against publishing the wrong tag, a tag whose build never
+      # staged, or a build still mid-upload: the staging-complete marker is
+      # written by build-release.yml only after both staging passes finish,
+      # and the staged metadata must identify exactly the requested version.
       - name: Verify staged site matches version
         run: |
+          ossutil stat oss://crosspaste-desktop/site-staging/${{ env.VERSION_FULL }}/staging-complete
           ossutil cp -f oss://crosspaste-desktop/site-staging/${{ env.VERSION_FULL }}/meta/metadata.properties staged-metadata.properties
           grep -q "^app.version=${{ env.VERSION }}$" staged-metadata.properties
           grep -q "^app.revision=${{ env.REVISION }}$" staged-metadata.properties

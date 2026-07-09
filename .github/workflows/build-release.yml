@@ -313,8 +313,16 @@ jobs:
               mv "update-site/$f" "update-site-meta/$f"
             done
           fi
+          # Drop any marker left by a previous run of this version first, so a
+          # re-run never exposes a "complete" flag over a half-re-uploaded
+          # staging prefix (|| true: the marker usually doesn't exist yet).
+          ossutil rm -f oss://crosspaste-desktop/site-staging/${{ env.VERSION }}.${{ env.REVISION }}/staging-complete || true
           ossutil cp -r -f --meta "Cache-Control:public, max-age=2592000" update-site/ oss://crosspaste-desktop/site-staging/${{ env.VERSION }}.${{ env.REVISION }}/packages/
           ossutil cp -r -f --meta "Cache-Control:public, max-age=300" update-site-meta/ oss://crosspaste-desktop/site-staging/${{ env.VERSION }}.${{ env.REVISION }}/meta/
+          # Written last: publish-release.yml refuses to publish a staging
+          # prefix that lacks this marker (i.e. an unfinished upload).
+          echo "${{ env.VERSION }}.${{ env.REVISION }}" > staging-complete
+          ossutil cp -f staging-complete oss://crosspaste-desktop/site-staging/${{ env.VERSION }}.${{ env.REVISION }}/staging-complete
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment
