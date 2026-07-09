@@ -257,12 +257,15 @@ jobs:
 
       # Multi-arch Linux builds emit the apt repository as an output/debian/
       # directory tree instead of flat files at the site root. Surface the
-      # .debs at the top level so the versioned OSS dir and the GitHub Release
-      # keep the same flat inventory as before.
+      # .debs at the top level for the versioned OSS dir and the GitHub
+      # Release, then drop the rest of the apt repo from output/: it lives on
+      # the update site (already snapshotted above), and its index metadata
+      # references debian/-relative paths, so flat copies of it are unusable.
       - name: Flatten Linux debs
         run: |
           if [ -d output/debian ]; then
-            find output/debian -type f -name '*.deb' -exec cp -n {} output/ \;
+            find output/debian -type f -name '*.deb' -exec mv -n {} output/ \;
+            rm -rf output/debian
           fi
 
       - name: CheckSum
