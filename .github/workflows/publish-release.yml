@@ -1,0 +1,94 @@
+name: "Publish Update Site"
+
+# Publishes a staged update site to the live site/ prefix that clients poll
+# for updates (#4629). Building and publishing are deliberately separate
+# stages: build-release.yml only stages the Conveyor site to
+# site-staging/<version>/, and this workflow flips site/ when the maintainer
+# publishes the GitHub Release — the same manual act that already gates the
+# GitHub distribution channel.
+#
+# workflow_dispatch is the manual fallback: re-run a publish after a partial
+# failure, or roll BACK by publishing a previous version's staged site again
+# (staging prefixes are version-named and kept around).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Full version whose staged site to publish (e.g. 2.1.6.2400)"
+        required: true
+
+# This workflow only talks to OSS via ossutil; it never uses GITHUB_TOKEN.
+permissions: {}
+
+# Never let two publishes interleave (e.g. a release-triggered run racing a
+# manual rollback): an in-progress run always finishes. Caveat: GitHub keeps
+# only ONE pending run per group — a newly queued run replaces (cancels) a
+# previously pending one, so if a rollback dispatch was queued and another
+# run superseded it, re-dispatch the rollback.
+concurrency:
+  group: publish-update-site
+  cancel-in-progress: false
+
+jobs:
+  publish-site:
+    runs-on: ubuntu-latest
+    # The rolling `beta` pre-release (build-beta-linux.yml) and any other
+    # pre-release must never flip the production update site.
+    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
+    steps:
+      - name: Resolve version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION_FULL="$INPUT_VERSION"
+          else
+            VERSION_FULL="$RELEASE_TAG"
+          fi
+          if ! echo "$VERSION_FULL" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "'$VERSION_FULL' is not a release version (expected N.N.N.N), refusing to publish."
+            exit 1
+          fi
+          echo "VERSION_FULL=$VERSION_FULL" >> "$GITHUB_ENV"
+          echo "VERSION=${VERSION_FULL%.*}" >> "$GITHUB_ENV"
+          echo "REVISION=${VERSION_FULL##*.}" >> "$GITHUB_ENV"
+
+      - name: Setup ossutil
+        uses: manyuanrong/setup-ossutil@v3.0
+        with:
+          endpoint: "oss-cn-shenzhen.aliyuncs.com"
+          access-key-id: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          access-key-secret: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+
+      # Guard against publishing the wrong tag, a tag whose build never
+      # staged, or a build still mid-upload: the staging-complete marker is
+      # written by build-release.yml only after both staging passes finish,
+      # and the staged metadata must identify exactly the requested version.
+      - name: Verify staged site matches version
+        run: |
+          ossutil stat oss://crosspaste-desktop/site-staging/${{ env.VERSION_FULL }}/staging-complete
+          ossutil cp -f oss://crosspaste-desktop/site-staging/${{ env.VERSION_FULL }}/meta/metadata.properties staged-metadata.properties
+          grep -q "^app.version=${{ env.VERSION }}$" staged-metadata.properties
+          grep -q "^app.revision=${{ env.REVISION }}$" staged-metadata.properties
+          echo "Staged site identifies as ${{ env.VERSION }}.${{ env.REVISION }}."
+
+      # Two-pass server-side copy: packages first, metadata last, so clients
+      # never read metadata that points at missing files. Cache-Control is
+      # re-stamped per group (packages are version-named and immutable,
+      # metadata must revalidate quickly through the CDN).
+      - name: Publish packages
+        run: ossutil cp -r -f --meta "Cache-Control:public, max-age=2592000" oss://crosspaste-desktop/site-staging/${{ env.VERSION_FULL }}/packages/ oss://crosspaste-desktop/site/
+
+      - name: Publish update metadata
+        run: ossutil cp -r -f --meta "Cache-Control:public, max-age=300" oss://crosspaste-desktop/site-staging/${{ env.VERSION_FULL }}/meta/ oss://crosspaste-desktop/site/
+
+      - name: Verify published site
+        run: |
+          ossutil cp -f oss://crosspaste-desktop/site/metadata.properties published-metadata.properties
+          grep -q "^app.version=${{ env.VERSION }}$" published-metadata.properties
+          grep -q "^app.revision=${{ env.REVISION }}$" published-metadata.properties
+          echo "site/ now serves ${{ env.VERSION }}.${{ env.REVISION }} (CDN edge caches converge within max-age=300)."
