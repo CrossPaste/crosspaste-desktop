@@ -237,8 +237,8 @@ jobs:
 
       # Snapshot the pure Conveyor site before later steps mutate output/
       # (AppImage/extension get added, CheckSum deletes icon.svg/download.html).
-      # This copy is mirrored to a stable OSS prefix that will become the
-      # CDN-served update site (#4558).
+      # This copy is staged to a version-named OSS prefix; publishing it to the
+      # live CDN-served site/ prefix is a separate human-gated workflow (#4629).
       - name: Stage update site for OSS mirror
         run: cp -r output update-site
 
@@ -287,13 +287,15 @@ jobs:
           echo "Uploading release app to OSS..."
           ossutil cp -r output/ oss://crosspaste-desktop/${{ env.VERSION }}.${{ env.REVISION }}/
 
-      # Mirror the Conveyor site to the stable site/ prefix (#4558). Clients do
-      # not use this path yet (base-url still points at GitHub); it goes live in
-      # a later release. Two-pass upload: packages first, update metadata last,
-      # so a half-finished upload never leaves metadata pointing at missing files.
-      # Cache-Control set per group: packages are version-named and immutable,
-      # metadata must revalidate quickly through the CDN.
-      - name: Mirror update site to OSS
+      # Stage the Conveyor site to a version-named staging prefix (#4629). The
+      # build never touches the live site/ prefix that clients poll for
+      # updates: publish-release.yml copies staging to site/ when the GitHub
+      # Release is published (build is build, publish is publish). The
+      # packages/meta split is preserved so the publish step can copy packages
+      # first and flip metadata last, and Cache-Control is stamped per group
+      # here: packages are version-named and immutable, metadata must
+      # revalidate quickly through the CDN.
+      - name: Stage update site to OSS staging
         run: |
           mkdir update-site-meta
           for f in metadata.properties appcast-*.rss crosspaste.appinstaller \
@@ -311,8 +313,8 @@ jobs:
               mv "update-site/$f" "update-site-meta/$f"
             done
           fi
-          ossutil cp -r -f --meta "Cache-Control:public, max-age=2592000" update-site/ oss://crosspaste-desktop/site/
-          ossutil cp -r -f --meta "Cache-Control:public, max-age=300" update-site-meta/ oss://crosspaste-desktop/site/
+          ossutil cp -r -f --meta "Cache-Control:public, max-age=2592000" update-site/ oss://crosspaste-desktop/site-staging/${{ env.VERSION }}.${{ env.REVISION }}/packages/
+          ossutil cp -r -f --meta "Cache-Control:public, max-age=300" update-site-meta/ oss://crosspaste-desktop/site-staging/${{ env.VERSION }}.${{ env.REVISION }}/meta/
 
       # conveyor default cache directory is .conveyor/cache
       # Avoid caching it, causing Github space payment
