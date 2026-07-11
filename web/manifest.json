@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "CrossPaste",
   "description": "Clipboard sync with CrossPaste",
-  "version": "2.1.4",
+  "version": "2.1.6",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtV+dMYIzcX3QQEdzq2wJ0ng6OWmDIqGbVmKKxYji9WF7JjdFJwswnm1KOD48LUcTYMQlGai+wIMMLLaRII434RiqQ2HjWQZUOfPQCnnwJMehOgmisQltiCNlUwfnOgl7ACKjm+v+k2Fzvq7fMrwyHay6GiqAvkZ0tqWf6snNt4rjdS/7DDCZWULah72v3WN8FqCMyJ2ldI45JO2R6Q1EMgQZFCyff1bWcpBiQtu2DH0WviijPWO/xg/lwQ2lDnW6zR2TJqDCFGZ5eLJXEMF7wISx2cHViVkbLHSzKtILPTAKy5F7CxkfJsD10VIraoAYCC/4x5qMLHin3/57EYuitwIDAQAB",
   "permissions": ["storage", "sidePanel", "alarms", "offscreen", "clipboardRead", "clipboardWrite", "downloads", "nativeMessaging"],
   "optional_host_permissions": ["http://*/*"],
   "side_panel": {
