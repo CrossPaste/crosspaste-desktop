@@ -1,4 +1,4 @@
 // Auto-generated from app/src/desktopMain/resources/crosspaste-version.properties
 // Do not edit manually — run ./gradlew :web:generateVersion to regenerate
 
-export const APP_VERSION = "2.1.3";
+export const APP_VERSION = "2.1.6";
