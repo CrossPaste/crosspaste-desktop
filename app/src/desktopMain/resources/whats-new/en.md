@@ -1,7 +1,7 @@
-# [2.1.6] - 2026-07-07
+# [2.1.6] - 2026-07-14
 
 ## 🔁 Fixed a clipboard loop between the Chrome extension and desktop
-Fixed an issue where running the Chrome extension and the desktop app together could bounce the same clipboard entry back and forth endlessly, flooding your history with duplicates. Both sides now recognize content written by the other and no longer re-trigger each other.
+Fixed an issue where running the Chrome extension and the desktop app together could bounce the same clipboard entry back and forth endlessly, flooding your history with duplicates. Both sides now recognize content written by the other and no longer re-trigger each other. Same-machine detection on Windows is fixed too — while the desktop app is running, the extension on the same computer now pauses its own clipboard capture instead of competing with it.
 
 ## 🪟 Upgraded clipboard monitoring on Windows
 Clipboard monitoring on Windows now uses the system's recommended event notification mechanism, so copied content is picked up faster and more reliably. Source detection is fixed too — the "copied from" app shown in your history is now the program that actually wrote to the clipboard, not whichever window happened to be in the foreground.
