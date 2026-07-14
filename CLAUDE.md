@@ -100,6 +100,15 @@ SQLDelight manages database schema in `.sq` files:
 - **Storage**: Local-only architecture with no cloud dependencies
 - **Performance**: Coroutines for async operations, caching for clipboard history
 
+## Windows cmd.exe / PowerShell Interop Pitfalls
+
+Lessons from #4633 (native messaging bridge never launched). They apply to any generated script, manifest, or config that Windows will execute:
+
+- **Never normalize Windows paths to forward slashes when the path will be executed by cmd.exe** (`.bat`/`.cmd` hosts, `cmd /c` invocations — e.g. Chromium launches non-`.exe` native messaging hosts via `cmd /d /s /c "<path>"`). cmd.exe cannot execute a forward-slash path. In JSON, keep backslashes and escape them (`\\`) instead of converting to `/`. Forward-slash paths appearing to work in manual tests (PowerShell `Start-Process`, Win32 APIs) proves nothing about cmd.exe.
+- **Never embed literal non-ASCII paths in generated `.bat` files.** The files are written as UTF-8 but cmd.exe reads them in the OEM code page (e.g. GBK), garbling non-ASCII (e.g. Chinese user profile) paths. Derive paths at run time instead (`%~dp0` for script-relative files); cmd expands it in Unicode.
+- **Target Windows PowerShell 5.1 semantics in generated PowerShell**, not PowerShell 7. Known trap: `[System.Threading.Tasks.Task]::Run({ ScriptBlock })` fails overload resolution on 5.1 (`MethodCountCouldNotFindBest`) — and even when converted, ScriptBlocks can't run on non-runspace threads. Prefer pure .NET calls (e.g. `$stream.CopyToAsync(...)`).
+- Reference implementation for all three rules: `NativeMessagingHostService` and its test.
+
 ## Code Formatting
 
 Before attempting to compile or build the project, always run `./gradlew ktlintFormat` first. If the command fails with errors, investigate and fix the issues. If it succeeds and modifies files, understand that the changes are purely stylistic and semantically equivalent to the original code — do not treat reformatted code as something that needs review or further modification.
