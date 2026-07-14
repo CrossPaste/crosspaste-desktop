@@ -12,8 +12,6 @@
       <a href="https://deepwiki.com/CrossPaste/crosspaste-desktop" target="_blank">Wiki</a>
        ·
       <a href="https://crosspaste.com/en/download" target="_blank">Download</a>
-       ·
-      <a href="https://crosspaste.com/en/video?from=github" target="_blank">Video</a>
       <br />
    </p>
 
