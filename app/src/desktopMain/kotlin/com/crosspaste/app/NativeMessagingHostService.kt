@@ -49,6 +49,10 @@ class NativeMessagingHostService(
                 .map { it.trim() }
                 .filter { it.isNotEmpty() }
 
+        // The path must keep native separators: Chromium launches non-.exe hosts
+        // via `cmd.exe /d /s /c "<path> <origin>"` (launch_context_win.cc), and
+        // cmd.exe cannot execute a forward-slash path — so on Windows the
+        // backslashes are JSON-escaped rather than normalized to "/".
         internal fun buildManifest(
             extensionIds: List<String>,
             bridgeScriptPath: String,
@@ -58,7 +62,7 @@ class NativeMessagingHostService(
                 {
                   "name": "$HOST_NAME",
                   "description": "CrossPaste Desktop Native Messaging Host",
-                  "path": "${bridgeScriptPath.replace("\\", "/")}",
+                  "path": "${bridgeScriptPath.replace("\\", "\\\\")}",
                   "type": "stdio",
                   "allowed_origins": [$origins]
                 }
@@ -93,13 +97,17 @@ class NativeMessagingHostService(
 
         // NOTE: PowerShell's $PID is a read-only automatic variable — assigning to it
         // throws, so the desktop process id must live in its own variable ($appPid).
-        internal fun buildWindowsBridgeScript(pidFilePath: String): String {
-            val normalized = pidFilePath.replace("/", "\\")
-            return """
-                @echo off
-                powershell -NoProfile -Command "${'$'}stdin=[Console]::OpenStandardInput(); ${'$'}null=[System.Threading.Tasks.Task]::Run({${'$'}buf=New-Object byte[] 4096; while(${'$'}stdin.Read(${'$'}buf,0,4096) -gt 0){}}); ${'$'}stdout=[Console]::OpenStandardOutput(); ${'$'}msg=[System.Text.Encoding]::UTF8.GetBytes('{\"status\":\"running\"}'); ${'$'}lenBytes=[System.BitConverter]::GetBytes(${'$'}msg.Length); ${'$'}pidFile='$normalized'; while(${'$'}true){ if(-not(Test-Path ${'$'}pidFile)){exit}; ${'$'}appPid=[int](Get-Content ${'$'}pidFile -ErrorAction SilentlyContinue); if(-not(Get-Process -Id ${'$'}appPid -ErrorAction SilentlyContinue)){exit}; ${'$'}stdout.Write(${'$'}lenBytes,0,4); ${'$'}stdout.Write(${'$'}msg,0,${'$'}msg.Length); ${'$'}stdout.Flush(); Start-Sleep -Seconds 5 }"
-                """.trimIndent()
-        }
+        // The pid file is located via %~dp0 (the script's own directory — both files
+        // live in pasteUserPath): the script is saved as UTF-8 but cmd.exe reads it
+        // in the OEM code page, so a literal non-ASCII path (e.g. a Chinese user
+        // profile) would be garbled, while %~dp0 expands at run time in Unicode.
+        // Stdin draining uses CopyToAsync because a ScriptBlock passed to
+        // Task::Run fails overload resolution on Windows PowerShell 5.1.
+        internal fun buildWindowsBridgeScript(pidFileName: String): String =
+            """
+            @echo off
+            powershell -NoProfile -Command "${'$'}stdin=[Console]::OpenStandardInput(); ${'$'}null=${'$'}stdin.CopyToAsync([System.IO.Stream]::Null); ${'$'}stdout=[Console]::OpenStandardOutput(); ${'$'}msg=[System.Text.Encoding]::UTF8.GetBytes('{\"status\":\"running\"}'); ${'$'}lenBytes=[System.BitConverter]::GetBytes(${'$'}msg.Length); ${'$'}pidFile='%~dp0$pidFileName'; while(${'$'}true){ if(-not(Test-Path ${'$'}pidFile)){exit}; ${'$'}appPid=[int](Get-Content ${'$'}pidFile -ErrorAction SilentlyContinue); if(-not(Get-Process -Id ${'$'}appPid -ErrorAction SilentlyContinue)){exit}; ${'$'}stdout.Write(${'$'}lenBytes,0,4); ${'$'}stdout.Write(${'$'}msg,0,${'$'}msg.Length); ${'$'}stdout.Flush(); Start-Sleep -Seconds 5 }"
+            """.trimIndent()
     }
 
     fun register() {
@@ -114,12 +122,11 @@ class NativeMessagingHostService(
 
     private fun writeBridgeScript(): Path {
         val scriptPath = getBridgeScriptPath()
-        val pidFilePath = pidFileService.pidFilePath.toString()
         val content =
             if (platform.isWindows()) {
-                buildWindowsBridgeScript(pidFilePath)
+                buildWindowsBridgeScript(DesktopPidFileService.PID_FILE_NAME)
             } else {
-                buildUnixBridgeScript(pidFilePath)
+                buildUnixBridgeScript(pidFileService.pidFilePath.toString())
             }
         FilePersist
             .createOneFilePersist(scriptPath)

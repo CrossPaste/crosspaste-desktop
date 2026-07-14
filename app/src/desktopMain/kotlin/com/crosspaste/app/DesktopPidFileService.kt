@@ -12,8 +12,14 @@ class DesktopPidFileService(
 
     private val logger = KotlinLogging.logger {}
 
+    companion object {
+        // The Windows native messaging bridge script locates this file via %~dp0,
+        // so it must stay in the same directory as the script (pasteUserPath).
+        const val PID_FILE_NAME = "crosspaste.pid"
+    }
+
     val pidFilePath: Path
-        get() = appPathProvider.pasteUserPath.resolve("crosspaste.pid")
+        get() = appPathProvider.pasteUserPath.resolve(PID_FILE_NAME)
 
     fun start() {
         val pid = ProcessHandle.current().pid().toString()
