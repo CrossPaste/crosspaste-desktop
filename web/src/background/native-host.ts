@@ -43,6 +43,11 @@ function attemptConnect(): void {
     });
 
     port.onDisconnect.addListener(() => {
+      // Reading lastError marks it as checked, silencing Chrome's
+      // "Unchecked runtime.lastError" console noise on every reconnect.
+      const reason =
+        chrome.runtime.lastError?.message ?? "host closed the connection";
+      console.log(`[NativeMessaging] disconnected: ${reason}`);
       port = null;
       if (initialResolve) {
         initialResolve(false);
@@ -53,7 +58,8 @@ function attemptConnect(): void {
       }
       scheduleReconnect();
     });
-  } catch {
+  } catch (e) {
+    console.log("[NativeMessaging] connectNative failed:", e);
     if (initialResolve) {
       initialResolve(false);
       initialResolve = null;
