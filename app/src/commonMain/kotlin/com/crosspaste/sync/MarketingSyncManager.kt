@@ -86,8 +86,8 @@ class MarketingSyncManager : SyncManager {
     override fun rememberPairingCredentialType(syncInfo: SyncInfo) {
     }
 
-    override fun refreshPairingCredentialType(appInstanceId: String) {
-    }
+    override suspend fun refreshPairingCredentialType(appInstanceId: String): PairingCredentialRefreshResult =
+        PairingCredentialRefreshResult.DeviceUnavailable
 
     override fun updateAllowSend(
         appInstanceId: String,

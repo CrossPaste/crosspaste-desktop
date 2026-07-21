@@ -77,8 +77,6 @@ class GeneralSyncManager(
     override val pairingCredentialTypes: StateFlow<Map<String, PairingCredentialType>> =
         _pairingCredentialTypes.asStateFlow()
 
-    private val pairingCredentialTypeRequests: MutableSet<String> = ConcurrentSet()
-
     private val internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
     private val eventChannel = Channel<SyncEvent>(Channel.UNLIMITED)
@@ -177,38 +175,33 @@ class GeneralSyncManager(
     }
 
     override fun rememberPairingCredentialType(syncInfo: SyncInfo) {
-        val credentialType =
-            if (SyncApi.supportsSASPairing(syncInfo.appInfo.pairingVersion)) {
-                PairingCredentialType.SAS_CODE
-            } else {
-                PairingCredentialType.QR_BEARER_TOKEN
-            }
+        val credentialType = pairingCredentialType(syncInfo)
         _pairingCredentialTypes.update {
             it + (syncInfo.appInfo.appInstanceId to credentialType)
         }
     }
 
-    override fun refreshPairingCredentialType(appInstanceId: String) {
-        if (_pairingCredentialTypes.value.containsKey(appInstanceId)) return
+    override suspend fun refreshPairingCredentialType(appInstanceId: String): PairingCredentialRefreshResult {
+        _pairingCredentialTypes.value[appInstanceId]?.let {
+            return PairingCredentialRefreshResult.Resolved(it)
+        }
 
         val syncRuntimeInfo =
             realTimeSyncRuntimeInfos.value.firstOrNull {
                 it.appInstanceId == appInstanceId && it.connectState == SyncState.UNVERIFIED
             }
-                ?: return
-        val host = syncRuntimeInfo.connectHostAddress ?: return
-        if (!pairingCredentialTypeRequests.add(appInstanceId)) return
+                ?: return PairingCredentialRefreshResult.DeviceUnavailable
+        val host = syncRuntimeInfo.connectHostAddress ?: return PairingCredentialRefreshResult.RetryableFailure
 
-        realTimeSyncScope.launch {
-            try {
-                val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
-                val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
-                if (result !is SuccessResult) {
-                    logger.warn {
-                        "Failed to fetch pairing metadata for $appInstanceId: ${result::class.simpleName}"
-                    }
-                    return@launch
+        return try {
+            val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+            val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
+            if (result !is SuccessResult) {
+                logger.warn {
+                    "Failed to fetch pairing metadata for $appInstanceId: ${result::class.simpleName}"
                 }
+                PairingCredentialRefreshResult.RetryableFailure
+            } else {
                 val syncInfo = result.getResult<SyncInfo>()
                 when {
                     syncInfo.appInfo.appInstanceId != appInstanceId -> {
@@ -216,21 +209,37 @@ class GeneralSyncManager(
                             "Pairing metadata identity mismatch: expected $appInstanceId, " +
                                 "received ${syncInfo.appInfo.appInstanceId}"
                         }
+                        PairingCredentialRefreshResult.IdentityMismatch
                     }
                     realTimeSyncRuntimeInfos.value.none { it.appInstanceId == appInstanceId } -> {
-                        // device removed while the request was in flight; drop the result
+                        PairingCredentialRefreshResult.DeviceUnavailable
                     }
-                    else -> rememberPairingCredentialType(syncInfo)
+                    else -> {
+                        val credentialType = pairingCredentialType(syncInfo)
+                        rememberPairingCredentialType(syncInfo)
+                        if (realTimeSyncRuntimeInfos.value.none { it.appInstanceId == appInstanceId }) {
+                            _pairingCredentialTypes.update { it - appInstanceId }
+                            PairingCredentialRefreshResult.DeviceUnavailable
+                        } else {
+                            PairingCredentialRefreshResult.Resolved(credentialType)
+                        }
+                    }
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logger.warn(e) { "Failed to refresh pairing metadata for $appInstanceId" }
-            } finally {
-                pairingCredentialTypeRequests.remove(appInstanceId)
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to refresh pairing metadata for $appInstanceId" }
+            PairingCredentialRefreshResult.RetryableFailure
         }
     }
+
+    private fun pairingCredentialType(syncInfo: SyncInfo): PairingCredentialType =
+        if (SyncApi.supportsSASPairing(syncInfo.appInfo.pairingVersion)) {
+            PairingCredentialType.SAS_CODE
+        } else {
+            PairingCredentialType.QR_BEARER_TOKEN
+        }
 
     private fun resolveSyncs(callback: () -> Unit) {
         realTimeSyncScope.launch {

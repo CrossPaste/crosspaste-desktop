@@ -49,6 +49,7 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Key
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.sync.PairingCredentialRefreshResult
 import com.crosspaste.sync.PairingCredentialType
 import com.crosspaste.sync.QrBearerToken
 import com.crosspaste.sync.SasCode
@@ -67,6 +68,7 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -77,13 +79,7 @@ fun DeviceScope.TrustDeviceDialog() {
     val appSizeValue = LocalAppSizeValueState.current
     val appInstanceId = syncRuntimeInfo.appInstanceId
     val pairingCredentialTypes by syncManager.pairingCredentialTypes.collectAsState()
-
-    // The manager may never learn the type (peer predates GET /sync/syncInfo, or stays
-    // unreachable while the dialog is open). After the retry ladder below gives up we fall
-    // back to the bearer-token path, which every version serves via POST /sync/trust; a
-    // real sighting later still overrides the fallback because the map entry wins.
-    var fallbackCredentialType by remember(appInstanceId) { mutableStateOf<PairingCredentialType?>(null) }
-    val pairingCredentialType = pairingCredentialTypes[appInstanceId] ?: fallbackCredentialType
+    val pairingCredentialType = pairingCredentialTypes[appInstanceId]
     val isPairingTypeKnown = pairingCredentialType != null
 
     val tokenCount = 6
@@ -122,14 +118,7 @@ fun DeviceScope.TrustDeviceDialog() {
     }
 
     LaunchedEffect(appInstanceId) {
-        var backoff = 1.seconds
-        repeat(4) {
-            if (syncManager.pairingCredentialTypes.value.containsKey(appInstanceId)) return@LaunchedEffect
-            syncManager.refreshPairingCredentialType(appInstanceId)
-            delay(backoff)
-            backoff *= 2
-        }
-        fallbackCredentialType = PairingCredentialType.QR_BEARER_TOKEN
+        refreshPairingCredentialTypeUntilKnown(syncManager, appInstanceId)
     }
 
     LaunchedEffect(appInstanceId, pairingCredentialType) {
@@ -228,6 +217,30 @@ fun DeviceScope.TrustDeviceDialog() {
             }
         },
     )
+}
+
+internal suspend fun refreshPairingCredentialTypeUntilKnown(
+    syncManager: SyncManager,
+    appInstanceId: String,
+    initialBackoff: Duration = 1.seconds,
+    maxBackoff: Duration = 30.seconds,
+    delayAction: suspend (Duration) -> Unit = { delay(it) },
+): PairingCredentialRefreshResult {
+    var backoff = initialBackoff
+    while (true) {
+        val result = syncManager.refreshPairingCredentialType(appInstanceId)
+        when (result) {
+            is PairingCredentialRefreshResult.Resolved,
+            PairingCredentialRefreshResult.IdentityMismatch,
+            PairingCredentialRefreshResult.DeviceUnavailable,
+            -> return result
+
+            PairingCredentialRefreshResult.RetryableFailure -> {
+                delayAction(backoff)
+                backoff = (backoff * 2).coerceAtMost(maxBackoff)
+            }
+        }
+    }
 }
 
 @Composable

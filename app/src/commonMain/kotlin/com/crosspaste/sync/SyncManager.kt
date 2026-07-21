@@ -25,7 +25,7 @@ interface SyncManager : SyncRoutingApi {
 
     fun rememberPairingCredentialType(syncInfo: SyncInfo)
 
-    fun refreshPairingCredentialType(appInstanceId: String)
+    suspend fun refreshPairingCredentialType(appInstanceId: String): PairingCredentialRefreshResult
 
     fun updateAllowSend(
         appInstanceId: String,

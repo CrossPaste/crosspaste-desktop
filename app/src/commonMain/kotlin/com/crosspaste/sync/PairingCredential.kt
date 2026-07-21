@@ -7,6 +7,18 @@ enum class PairingCredentialType {
     SAS_CODE,
 }
 
+sealed interface PairingCredentialRefreshResult {
+    data class Resolved(
+        val credentialType: PairingCredentialType,
+    ) : PairingCredentialRefreshResult
+
+    data object RetryableFailure : PairingCredentialRefreshResult
+
+    data object IdentityMismatch : PairingCredentialRefreshResult
+
+    data object DeviceUnavailable : PairingCredentialRefreshResult
+}
+
 /**
  * Two distinct 6-digit pairing credentials that must never be interchanged.
  *
