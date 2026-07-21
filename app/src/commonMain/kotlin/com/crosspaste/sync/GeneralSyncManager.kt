@@ -203,18 +203,24 @@ class GeneralSyncManager(
             try {
                 val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
                 val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
-                if (result is SuccessResult) {
-                    val syncInfo = result.getResult<SyncInfo>()
-                    if (syncInfo.appInfo.appInstanceId == appInstanceId &&
-                        realTimeSyncRuntimeInfos.value.any { it.appInstanceId == appInstanceId }
-                    ) {
-                        rememberPairingCredentialType(syncInfo)
-                    } else {
+                if (result !is SuccessResult) {
+                    logger.warn {
+                        "Failed to fetch pairing metadata for $appInstanceId: ${result::class.simpleName}"
+                    }
+                    return@launch
+                }
+                val syncInfo = result.getResult<SyncInfo>()
+                when {
+                    syncInfo.appInfo.appInstanceId != appInstanceId -> {
                         logger.warn {
                             "Pairing metadata identity mismatch: expected $appInstanceId, " +
                                 "received ${syncInfo.appInfo.appInstanceId}"
                         }
                     }
+                    realTimeSyncRuntimeInfos.value.none { it.appInstanceId == appInstanceId } -> {
+                        // device removed while the request was in flight; drop the result
+                    }
+                    else -> rememberPairingCredentialType(syncInfo)
                 }
             } catch (e: CancellationException) {
                 throw e
