@@ -37,7 +37,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
@@ -51,10 +50,6 @@ class SyncResolverTest {
 
     private class TestDeps {
         val pasteBonjourService: PasteBonjourService = mockk(relaxed = true)
-        val nearbyDeviceManager: NearbyDeviceManager =
-            mockk(relaxed = true) {
-                every { nearbySyncInfos } returns MutableStateFlow(emptyList())
-            }
         val networkInterfaceService: NetworkInterfaceService =
             mockk(relaxed = true) {
                 // Default to "online": discoverAndConnect now gates on having a usable
@@ -91,7 +86,6 @@ class SyncResolverTest {
             SyncResolver(
                 appInfo = appInfo,
                 localPlatform = localPlatform,
-                lazyNearbyDeviceManager = lazy { nearbyDeviceManager },
                 lazyPasteBonjourService = lazy { pasteBonjourService },
                 networkInterfaceService = networkInterfaceService,
                 ratingPromptManager = ratingPromptManager,
@@ -109,16 +103,16 @@ class SyncResolverTest {
     }
 
     private class FakeTokenCache : TokenCacheApi {
-        private val tokens = mutableMapOf<String, Int>()
+        private val tokens = mutableMapOf<String, QrBearerToken>()
 
         override fun setToken(
             appInstanceId: String,
-            token: Int,
+            token: QrBearerToken,
         ) {
             tokens[appInstanceId] = token
         }
 
-        override fun getToken(appInstanceId: String): Int? = tokens.remove(appInstanceId)
+        override fun getToken(appInstanceId: String): QrBearerToken? = tokens.remove(appInstanceId)
     }
 
     // ========== A. resolveDisconnected ==========
@@ -646,7 +640,7 @@ class SyncResolverTest {
             val connecting = createConnectingSyncRuntimeInfo(hostAddress = "192.168.1.108")
 
             deps.stubDbRead(connecting)
-            deps.tokenCache.setToken(connecting.appInstanceId, 123456)
+            deps.tokenCache.setToken(connecting.appInstanceId, QrBearerToken(123456))
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.syncClientApi.trust(any(), any(), any(), any()) } returns SuccessResult(true)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
@@ -1008,7 +1002,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
             deps.stubDbRead(syncRuntimeInfo)
-            deps.tokenCache.setToken(syncRuntimeInfo.appInstanceId, 123456)
+            deps.tokenCache.setToken(syncRuntimeInfo.appInstanceId, QrBearerToken(123456))
 
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.syncClientApi.trust(any(), any(), any(), any()) } returns SuccessResult(true)
@@ -1035,7 +1029,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
 
             deps.stubDbRead(syncRuntimeInfo)
-            deps.tokenCache.setToken(syncRuntimeInfo.appInstanceId, 123456)
+            deps.tokenCache.setToken(syncRuntimeInfo.appInstanceId, QrBearerToken(123456))
 
             coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
             coEvery { deps.syncClientApi.trust(any(), any(), any(), any()) } returns
@@ -1133,10 +1127,10 @@ class SyncResolverTest {
             assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
         }
 
-    // ========== E. trustByToken ==========
+    // ========== E. trustByBearerToken ==========
 
     @Test
-    fun trustByToken_unverifiedAndTrustSucceeds_callbackTrueAndConnected() =
+    fun trustByBearerToken_unverifiedAndTrustSucceeds_callbackTrueAndConnected() =
         runTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
@@ -1154,7 +1148,7 @@ class SyncResolverTest {
 
             var callbackResult: Boolean? = null
             resolver.emitEvent(
-                SyncEvent.TrustByToken(syncRuntimeInfo, 123456) { callbackResult = it },
+                SyncEvent.TrustByBearerToken(syncRuntimeInfo, QrBearerToken(123456)) { callbackResult = it },
             )
 
             assertEquals(true, callbackResult)
@@ -1163,7 +1157,7 @@ class SyncResolverTest {
         }
 
     @Test
-    fun trustByToken_unverifiedAndTrustFails_callbackFalse() =
+    fun trustByBearerToken_unverifiedAndTrustFails_callbackFalse() =
         runTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
@@ -1175,14 +1169,14 @@ class SyncResolverTest {
 
             var callbackResult: Boolean? = null
             resolver.emitEvent(
-                SyncEvent.TrustByToken(syncRuntimeInfo, 123456) { callbackResult = it },
+                SyncEvent.TrustByBearerToken(syncRuntimeInfo, QrBearerToken(123456)) { callbackResult = it },
             )
 
             assertEquals(false, callbackResult)
         }
 
     @Test
-    fun trustByToken_notUnverified_callbackFalse() =
+    fun trustByBearerToken_notUnverified_callbackFalse() =
         runTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
@@ -1192,14 +1186,14 @@ class SyncResolverTest {
 
             var callbackResult: Boolean? = null
             resolver.emitEvent(
-                SyncEvent.TrustByToken(syncRuntimeInfo, 123456) { callbackResult = it },
+                SyncEvent.TrustByBearerToken(syncRuntimeInfo, QrBearerToken(123456)) { callbackResult = it },
             )
 
             assertEquals(false, callbackResult)
         }
 
     @Test
-    fun trustByToken_unverifiedNoConnectHostAddress_callbackFalse() =
+    fun trustByBearerToken_unverifiedNoConnectHostAddress_callbackFalse() =
         runTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
@@ -1213,7 +1207,7 @@ class SyncResolverTest {
 
             var callbackResult: Boolean? = null
             resolver.emitEvent(
-                SyncEvent.TrustByToken(syncRuntimeInfo, 123456) { callbackResult = it },
+                SyncEvent.TrustByBearerToken(syncRuntimeInfo, QrBearerToken(123456)) { callbackResult = it },
             )
 
             assertEquals(false, callbackResult)

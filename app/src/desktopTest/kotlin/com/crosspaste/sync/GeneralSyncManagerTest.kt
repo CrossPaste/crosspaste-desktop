@@ -154,7 +154,7 @@ class GeneralSyncManagerTest {
             val syncManager = createSyncManager(mocks, childScope)
 
             // Should not throw exception when handler doesn't exist
-            syncManager.trustByToken("non-existent", 123456) {
+            syncManager.trustByBearerToken("non-existent", QrBearerToken(123456)) {
                 // Callback should be called with false
                 assertEquals(false, it)
             }

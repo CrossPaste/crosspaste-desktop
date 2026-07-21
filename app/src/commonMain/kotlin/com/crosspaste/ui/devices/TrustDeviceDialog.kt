@@ -50,6 +50,8 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.SyncApi
 import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.QrBearerToken
+import com.crosspaste.sync.SasCode
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
@@ -78,6 +80,11 @@ fun DeviceScope.TrustDeviceDialog() {
 
     var isLoading by remember { mutableStateOf(false) }
 
+    // Decided once the remote's pairingVersion is known (see LaunchedEffect below): a
+    // pairingVersion>=2 peer displays a key-derived SAS the user types, everything else
+    // displays a random bearer token. This picks which typed trust entry confirmToken calls.
+    var useSasPairing by remember { mutableStateOf(false) }
+
     val focusRequesters = remember { List(tokenCount) { FocusRequester() } }
 
     val setError = { value: Boolean ->
@@ -95,6 +102,7 @@ fun DeviceScope.TrustDeviceDialog() {
                 setError = setError,
                 syncManager = syncManager,
                 syncRuntimeInfo = syncRuntimeInfo,
+                useSasPairing = useSasPairing,
             )
         }
     }
@@ -114,7 +122,8 @@ fun DeviceScope.TrustDeviceDialog() {
                 .firstOrNull { it.appInfo.appInstanceId == syncRuntimeInfo.appInstanceId }
                 ?.appInfo
                 ?.pairingVersion
-        if (SyncApi.supportsSASPairing(remotePairingVersion)) {
+        useSasPairing = SyncApi.supportsSASPairing(remotePairingVersion)
+        if (useSasPairing) {
             handler?.exchangeKeysForPairing()
         } else {
             handler?.showToken()
@@ -363,11 +372,18 @@ fun confirmToken(
     setError: (Boolean) -> Unit,
     syncManager: SyncManager,
     syncRuntimeInfo: SyncRuntimeInfo,
+    useSasPairing: Boolean,
 ) {
     tokens.joinToString("").let { token ->
         if (token.length == tokenCount) {
-            syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt()) {
-                setError(!it)
+            val appInstanceId = syncRuntimeInfo.appInstanceId
+            val callback = { success: Boolean -> setError(!success) }
+            // The user typed the code the remote showed: a SAS on a pairingVersion>=2 peer,
+            // otherwise a bearer token. Pick the matching typed entry — never cross them.
+            if (useSasPairing) {
+                syncManager.trustBySasCode(appInstanceId, SasCode(token.toInt()), callback)
+            } else {
+                syncManager.trustByBearerToken(appInstanceId, QrBearerToken(token.toInt()), callback)
             }
         } else {
             setError(true)

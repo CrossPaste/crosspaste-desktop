@@ -48,9 +48,15 @@ interface SyncHandler {
 
     suspend fun updateNoteName(noteName: String)
 
-    // use user input token to trust
-    suspend fun trustByToken(
-        token: Int,
+    // Trust using the random QR/screen bearer token (POST /sync/trust).
+    suspend fun trustByBearerToken(
+        token: QrBearerToken,
+        callback: (Boolean) -> Unit,
+    )
+
+    // Trust using the key-derived SAS the user enters (POST /sync/trust/v2/*).
+    suspend fun trustBySasCode(
+        code: SasCode,
         callback: (Boolean) -> Unit,
     )
 

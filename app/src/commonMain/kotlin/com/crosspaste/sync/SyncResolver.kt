@@ -10,7 +10,6 @@ import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
-import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.VersionRelation
@@ -38,7 +37,6 @@ import kotlin.coroutines.cancellation.CancellationException
 class SyncResolver(
     private val appInfo: AppInfo,
     private val localPlatform: Platform,
-    private val lazyNearbyDeviceManager: Lazy<NearbyDeviceManager>,
     private val lazyPasteBonjourService: Lazy<PasteBonjourService>,
     private val networkInterfaceService: NetworkInterfaceService,
     private val ratingPromptManager: RatingPromptManager,
@@ -67,12 +65,6 @@ class SyncResolver(
     // reconnect re-advertises too. Cleared on MarkExit/RemoveDevice so a gracefully-departed
     // device leaves nothing behind (no heartbeat would ever come to evict it otherwise).
     private val lastHeartbeatAdvertised: MutableMap<String, List<HostInfo>> = ConcurrentMap()
-
-    private fun getRemotePairingVersion(appInstanceId: String): Int? =
-        lazyNearbyDeviceManager.value.nearbySyncInfos.value
-            .firstOrNull { it.appInfo.appInstanceId == appInstanceId }
-            ?.appInfo
-            ?.pairingVersion
 
     private fun SyncEvent.appInstanceId(): String =
         when (this) {
@@ -106,8 +98,12 @@ class SyncResolver(
                         syncRuntimeInfo.forceResolve(event.callback)
                     }
 
-                    is SyncEvent.TrustByToken -> {
-                        syncRuntimeInfo.trustByToken(event.token, event.callback)
+                    is SyncEvent.TrustByBearerToken -> {
+                        syncRuntimeInfo.trustByBearerToken(event.token, event.callback)
+                    }
+
+                    is SyncEvent.TrustBySasCode -> {
+                        syncRuntimeInfo.trustBySasCode(event.code, event.callback)
                     }
 
                     is SyncEvent.UpdateAllowSend -> {
@@ -631,7 +627,7 @@ class SyncResolver(
             connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, port)
                 val result =
-                    syncClientApi.trust(appInstanceId, host, token) {
+                    syncClientApi.trust(appInstanceId, host, token.value) {
                         buildUrl(hostAndPort)
                     }
 
@@ -644,30 +640,22 @@ class SyncResolver(
         return false
     }
 
-    private suspend fun SyncRuntimeInfo.trustByToken(
-        token: Int,
+    // Bearer path (POST /sync/trust): the token is the random value the remote also holds
+    // while its QR / pairing code is on screen. Works for any pairingVersion — a v2 remote
+    // still serves /sync/trust and verifies via `sameToken`. This is the QR path; it must
+    // never be diverted into the SAS comparison.
+    private suspend fun SyncRuntimeInfo.trustByBearerToken(
+        token: QrBearerToken,
         callback: (Boolean) -> Unit,
     ) {
-        if (connectState == SyncState.UNVERIFIED) {
-            val remotePairingVersion = getRemotePairingVersion(appInstanceId)
-            if (SyncApi.supportsSASPairing(remotePairingVersion)) {
-                trustByTokenV2(token, callback)
-            } else {
-                trustByTokenV1(token, callback)
-            }
-        } else {
+        if (connectState != SyncState.UNVERIFIED) {
             callback(false)
+            return
         }
-    }
-
-    private suspend fun SyncRuntimeInfo.trustByTokenV1(
-        token: Int,
-        callback: (Boolean) -> Unit,
-    ) {
         connectHostAddress?.let { host ->
             val hostAndPort = HostAndPort(host, port)
             val result =
-                syncClientApi.trust(appInstanceId, host, token) {
+                syncClientApi.trust(appInstanceId, host, token.value) {
                     buildUrl(hostAndPort)
                 }
 
@@ -687,10 +675,17 @@ class SyncResolver(
         } ?: callback(false)
     }
 
-    private suspend fun SyncRuntimeInfo.trustByTokenV2(
-        token: Int,
+    // SAS path (POST /sync/trust/v2/*): the code is the key-derived value the user compares
+    // across both screens. Only reachable for pairingVersion>=2 peers, and only via a
+    // user-entered SasCode — never a machine-read QR bearer token.
+    private suspend fun SyncRuntimeInfo.trustBySasCode(
+        code: SasCode,
         callback: (Boolean) -> Unit,
     ) {
+        if (connectState != SyncState.UNVERIFIED) {
+            callback(false)
+            return
+        }
         connectHostAddress?.let { host ->
             val hostAndPort = HostAndPort(host, port)
 
@@ -719,8 +714,10 @@ class SyncResolver(
             val localSAS =
                 CryptographyUtils.computeSAS(localCryptPublicKey, response.cryptPublicKey)
 
-            if (token != localSAS) {
-                logger.warn { "v2 SAS mismatch for $appInstanceId: expected $localSAS, got $token (possible MITM)" }
+            if (code.value != localSAS) {
+                logger.warn {
+                    "v2 SAS mismatch for $appInstanceId: expected $localSAS, got ${code.value} (possible MITM)"
+                }
                 callback(false)
                 return
             }

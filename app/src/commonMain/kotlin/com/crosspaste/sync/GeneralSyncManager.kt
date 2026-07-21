@@ -215,14 +215,26 @@ class GeneralSyncManager(
         }
     }
 
-    override fun trustByToken(
+    override fun trustByBearerToken(
         appInstanceId: String,
-        token: Int,
+        token: QrBearerToken,
         callback: (Boolean) -> Unit,
     ) {
         internalSyncHandlers[appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch {
-                syncHandler.trustByToken(token, callback)
+                syncHandler.trustByBearerToken(token, callback)
+            }
+        } ?: callback(false)
+    }
+
+    override fun trustBySasCode(
+        appInstanceId: String,
+        code: SasCode,
+        callback: (Boolean) -> Unit,
+    ) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch {
+                syncHandler.trustBySasCode(code, callback)
             }
         } ?: callback(false)
     }

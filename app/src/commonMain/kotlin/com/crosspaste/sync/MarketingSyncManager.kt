@@ -98,9 +98,16 @@ class MarketingSyncManager : SyncManager {
     ) {
     }
 
-    override fun trustByToken(
+    override fun trustByBearerToken(
         appInstanceId: String,
-        token: Int,
+        token: QrBearerToken,
+        callback: (Boolean) -> Unit,
+    ) {
+    }
+
+    override fun trustBySasCode(
+        appInstanceId: String,
+        code: SasCode,
         callback: (Boolean) -> Unit,
     ) {
     }

@@ -30,12 +30,20 @@ sealed interface SyncEvent {
         override fun toString(): String = "ForceResolve ${syncRuntimeInfo.appInstanceId}"
     }
 
-    data class TrustByToken(
+    data class TrustByBearerToken(
         override val syncRuntimeInfo: SyncRuntimeInfo,
-        val token: Int,
+        val token: QrBearerToken,
         val callback: (Boolean) -> Unit,
     ) : SyncRunTimeInfoEvent {
-        override fun toString(): String = "TrustByToken ${syncRuntimeInfo.appInstanceId} $token"
+        override fun toString(): String = "TrustByBearerToken ${syncRuntimeInfo.appInstanceId}"
+    }
+
+    data class TrustBySasCode(
+        override val syncRuntimeInfo: SyncRuntimeInfo,
+        val code: SasCode,
+        val callback: (Boolean) -> Unit,
+    ) : SyncRunTimeInfoEvent {
+        override fun toString(): String = "TrustBySasCode ${syncRuntimeInfo.appInstanceId}"
     }
 
     data class UpdateAllowSend(

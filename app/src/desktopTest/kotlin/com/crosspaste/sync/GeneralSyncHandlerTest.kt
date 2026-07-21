@@ -507,7 +507,7 @@ class GeneralSyncHandlerTest {
         }
 
     @Test
-    fun trustByToken_emitsTrustByToken() =
+    fun trustByBearerToken_emitsTrustByBearerToken() =
         runTest {
             val emitter = TestEmitter()
             val childScope = CoroutineScope(coroutineContext + Job())
@@ -517,12 +517,12 @@ class GeneralSyncHandlerTest {
             advanceTimeBy(SMALL_ADVANCE_MS)
             emitter.events.clear()
 
-            handler.trustByToken(123456) { }
+            handler.trustByBearerToken(QrBearerToken(123456)) { }
             advanceTimeBy(SMALL_ADVANCE_MS)
 
-            val event = emitter.findEvent { it is SyncEvent.TrustByToken }
+            val event = emitter.findEvent { it is SyncEvent.TrustByBearerToken }
             assertNotNull(event)
-            assertEquals(123456, (event as SyncEvent.TrustByToken).token)
+            assertEquals(QrBearerToken(123456), (event as SyncEvent.TrustByBearerToken).token)
             childScope.cancel()
         }
 
