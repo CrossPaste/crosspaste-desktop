@@ -2,6 +2,11 @@ package com.crosspaste.sync
 
 import kotlin.jvm.JvmInline
 
+enum class PairingCredentialType {
+    QR_BEARER_TOKEN,
+    SAS_CODE,
+}
+
 /**
  * Two distinct 6-digit pairing credentials that must never be interchanged.
  *

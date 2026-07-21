@@ -23,12 +23,14 @@ object SyncTestFixtures {
         appVersion: String = "1.0.0",
         appRevision: String = "abc123",
         userName: String = "testUser",
+        pairingVersion: Int? = null,
     ): AppInfo =
         AppInfo(
             appInstanceId = appInstanceId,
             appVersion = appVersion,
             appRevision = appRevision,
             userName = userName,
+            pairingVersion = pairingVersion,
         )
 
     fun createEndpointInfo(
@@ -53,9 +55,15 @@ object SyncTestFixtures {
         deviceName: String = "Test Device",
         hostInfoList: List<HostInfo> = listOf(HostInfo(networkPrefixLength = 24, hostAddress = "192.168.1.100")),
         port: Int = 13129,
+        pairingVersion: Int? = null,
     ): SyncInfo =
         SyncInfo(
-            appInfo = createAppInfo(appInstanceId = appInstanceId, appVersion = appVersion),
+            appInfo =
+                createAppInfo(
+                    appInstanceId = appInstanceId,
+                    appVersion = appVersion,
+                    pairingVersion = pairingVersion,
+                ),
             endpointInfo =
                 createEndpointInfo(
                     deviceId = deviceId,

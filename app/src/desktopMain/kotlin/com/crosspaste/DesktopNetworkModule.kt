@@ -221,6 +221,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 GeneralSyncManager(
                     syncResolver = get(),
                     syncRuntimeInfoDao = get(),
+                    syncClientApi = get(),
                     wsSessionManager = get(),
                 )
             }

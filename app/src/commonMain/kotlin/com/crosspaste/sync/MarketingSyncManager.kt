@@ -56,6 +56,9 @@ class MarketingSyncManager : SyncManager {
     override val unverifiedSyncRuntimeInfo: StateFlow<SyncRuntimeInfo?> =
         MutableStateFlow(null)
 
+    override val pairingCredentialTypes: StateFlow<Map<String, PairingCredentialType>> =
+        MutableStateFlow(emptyMap())
+
     override suspend fun start() {
         internalSyncHandlers.putAll(
             syncRuntimeInfos.map { syncRuntimeInfo ->
@@ -78,6 +81,12 @@ class MarketingSyncManager : SyncManager {
     }
 
     override fun toVerify(appInstanceId: String) {
+    }
+
+    override fun rememberPairingCredentialType(syncInfo: SyncInfo) {
+    }
+
+    override fun refreshPairingCredentialType(appInstanceId: String) {
     }
 
     override fun updateAllowSend(

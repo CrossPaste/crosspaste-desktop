@@ -100,6 +100,7 @@ class GeneralNearbyDeviceManager(
                 syncManager.realTimeSyncRuntimeInfos.value
                     .find { it.appInstanceId == appInstanceId }
                     ?.let { existing ->
+                        syncManager.rememberPairingCredentialType(mergedInfo)
                         if (existing.diffSyncInfo(mergedInfo)) {
                             syncManager.updateSyncInfo(mergedInfo)
                         }

@@ -1,6 +1,7 @@
 package com.crosspaste.sync
 
 import com.crosspaste.db.sync.SyncRuntimeInfo
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.routing.SyncRoutingApi
 import kotlinx.coroutines.flow.StateFlow
 
@@ -9,6 +10,8 @@ interface SyncManager : SyncRoutingApi {
     val realTimeSyncRuntimeInfos: StateFlow<List<SyncRuntimeInfo>>
 
     val unverifiedSyncRuntimeInfo: StateFlow<SyncRuntimeInfo?>
+
+    val pairingCredentialTypes: StateFlow<Map<String, PairingCredentialType>>
 
     suspend fun start()
 
@@ -19,6 +22,10 @@ interface SyncManager : SyncRoutingApi {
     fun ignoreVerify(appInstanceId: String)
 
     fun toVerify(appInstanceId: String)
+
+    fun rememberPairingCredentialType(syncInfo: SyncInfo)
+
+    fun refreshPairingCredentialType(appInstanceId: String)
 
     fun updateAllowSend(
         appInstanceId: String,

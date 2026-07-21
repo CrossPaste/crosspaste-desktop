@@ -16,6 +16,7 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getJsonUtils
+import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -23,6 +24,20 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DtoSerializationTest {
+
+    @Serializable
+    private data class LegacyAppInfo(
+        val appInstanceId: String,
+        val appVersion: String,
+        val appRevision: String,
+        val userName: String,
+    )
+
+    @Serializable
+    private data class LegacySyncInfo(
+        val appInfo: LegacyAppInfo,
+        val endpointInfo: EndpointInfo,
+    )
 
     private val json = getJsonUtils().JSON
 
@@ -147,6 +162,42 @@ class DtoSerializationTest {
             )
         val encoded = json.encodeToString(original)
         val decoded = json.decodeFromString<SyncInfo>(encoded)
+
+        assertEquals("app-1", decoded.appInfo.appInstanceId)
+        assertEquals("dev-1", decoded.endpointInfo.deviceId)
+    }
+
+    @Test
+    fun `new SyncInfo decoder accepts legacy AppInfo without pairingVersion`() {
+        val legacyWire =
+            """
+            {"appInfo":{"appInstanceId":"app-1","appVersion":"1.0.0","appRevision":"rev","userName":"user"},
+             "endpointInfo":{"deviceId":"dev-1","deviceName":"Test",
+              "platform":{"name":"TestOS","arch":"x86_64","bitMode":64,"version":"1.0.0"},
+              "hostInfoList":[],"port":8080}}
+            """.trimIndent()
+
+        val decoded = json.decodeFromString<SyncInfo>(legacyWire)
+
+        assertEquals(null, decoded.appInfo.pairingVersion)
+    }
+
+    @Test
+    fun `legacy SyncInfo decoder ignores pairingVersion from new AppInfo`() {
+        val current =
+            SyncInfo(
+                appInfo = AppInfo("app-1", "1.0.0", "rev", "user", pairingVersion = 2),
+                endpointInfo =
+                    EndpointInfo(
+                        deviceId = "dev-1",
+                        deviceName = "Test",
+                        platform = testPlatform,
+                        hostInfoList = emptyList(),
+                        port = 8080,
+                    ),
+            )
+
+        val decoded = json.decodeFromString<LegacySyncInfo>(json.encodeToString(current))
 
         assertEquals("app-1", decoded.appInfo.appInstanceId)
         assertEquals("dev-1", decoded.endpointInfo.deviceId)

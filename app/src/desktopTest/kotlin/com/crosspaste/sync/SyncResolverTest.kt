@@ -6,6 +6,7 @@ import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
+import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
@@ -26,11 +27,13 @@ import com.crosspaste.net.clientapi.UnknownError
 import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.platform.Platform
+import com.crosspaste.secure.SecureKeyPair
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createConnectingSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createUnverifiedSyncRuntimeInfo
+import com.crosspaste.utils.CryptographyUtils
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -1213,7 +1216,122 @@ class SyncResolverTest {
             assertEquals(false, callbackResult)
         }
 
-    // ========== F. Event dispatch and callback ==========
+    // ========== F. trustBySasCode ==========
+
+    @Test
+    fun trustBySasCode_matchingCode_confirmsAndConnects() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val localKey = byteArrayOf(1, 2, 3)
+            val remoteKey = byteArrayOf(4, 5, 6)
+            val sasCode = CryptographyUtils.computeSAS(localKey, remoteKey)
+            val response = createKeyExchangeResponse(remoteKey)
+            val secureKeyPair = mockk<SecureKeyPair>()
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.secureStore.secureKeyPair } returns secureKeyPair
+            coEvery { secureKeyPair.getCryptPublicKeyBytes(any()) } returns localKey
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns SuccessResult(response)
+            coEvery { deps.syncClientApi.trustV2Confirm(any(), any(), any()) } returns SuccessResult(true)
+            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns SyncTestFixtures.createSyncInfo()
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            val capturedInfo = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
+
+            var callbackResult: Boolean? = null
+            resolver.emitEvent(
+                SyncEvent.TrustBySasCode(syncRuntimeInfo, SasCode(sasCode)) { callbackResult = it },
+            )
+
+            assertEquals(true, callbackResult)
+            assertEquals(SyncState.CONNECTED, capturedInfo.captured.connectState)
+            coVerify { deps.syncClientApi.trustV2Confirm(syncRuntimeInfo.appInstanceId, any(), any()) }
+            coVerify { deps.secureStore.saveCryptPublicKey(syncRuntimeInfo.appInstanceId, remoteKey) }
+            verify { deps.ratingPromptManager.trackSignificantAction() }
+        }
+
+    @Test
+    fun trustBySasCode_mismatch_doesNotConfirmOrSaveKey() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val localKey = byteArrayOf(1, 2, 3)
+            val remoteKey = byteArrayOf(4, 5, 6)
+            val matchingCode = CryptographyUtils.computeSAS(localKey, remoteKey)
+            val secureKeyPair = mockk<SecureKeyPair>()
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.secureStore.secureKeyPair } returns secureKeyPair
+            coEvery { secureKeyPair.getCryptPublicKeyBytes(any()) } returns localKey
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns
+                SuccessResult(createKeyExchangeResponse(remoteKey))
+
+            var callbackResult: Boolean? = null
+            resolver.emitEvent(
+                SyncEvent.TrustBySasCode(syncRuntimeInfo, SasCode((matchingCode + 1) % 1_000_000)) {
+                    callbackResult = it
+                },
+            )
+
+            assertEquals(false, callbackResult)
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Confirm(any(), any(), any()) }
+            coVerify(exactly = 0) { deps.secureStore.saveCryptPublicKey(any(), any()) }
+        }
+
+    @Test
+    fun trustBySasCode_exchangeFailure_returnsFalseWithoutConfirming() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns
+                FailureResult(PasteException(StandardErrorCode.EXCHANGE_FAIL.toErrorCode(), "exchange failed"))
+
+            var callbackResult: Boolean? = null
+            resolver.emitEvent(
+                SyncEvent.TrustBySasCode(syncRuntimeInfo, SasCode(123456)) { callbackResult = it },
+            )
+
+            assertEquals(false, callbackResult)
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Confirm(any(), any(), any()) }
+        }
+
+    @Test
+    fun trustBySasCode_confirmFailure_returnsFalseWithoutSavingKey() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val localKey = byteArrayOf(1, 2, 3)
+            val remoteKey = byteArrayOf(4, 5, 6)
+            val sasCode = CryptographyUtils.computeSAS(localKey, remoteKey)
+            val secureKeyPair = mockk<SecureKeyPair>()
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.secureStore.secureKeyPair } returns secureKeyPair
+            coEvery { secureKeyPair.getCryptPublicKeyBytes(any()) } returns localKey
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns
+                SuccessResult(createKeyExchangeResponse(remoteKey))
+            coEvery { deps.syncClientApi.trustV2Confirm(any(), any(), any()) } returns
+                FailureResult(PasteException(StandardErrorCode.TRUST_FAIL.toErrorCode(), "confirm failed"))
+
+            var callbackResult: Boolean? = null
+            resolver.emitEvent(
+                SyncEvent.TrustBySasCode(syncRuntimeInfo, SasCode(sasCode)) { callbackResult = it },
+            )
+
+            assertEquals(false, callbackResult)
+            coVerify(exactly = 0) { deps.secureStore.saveCryptPublicKey(any(), any()) }
+        }
+
+    // ========== G. Event dispatch and callback ==========
 
     @Test
     fun resolve_disconnected_callsSwitchHost() =
@@ -1523,5 +1641,13 @@ class SyncResolverTest {
         ResolveCallback(
             updateVersionRelation = {},
             onComplete = {},
+        )
+
+    private fun createKeyExchangeResponse(remoteKey: ByteArray): KeyExchangeResponse =
+        KeyExchangeResponse(
+            signPublicKey = byteArrayOf(7, 8, 9),
+            cryptPublicKey = remoteKey,
+            timestamp = 1L,
+            signature = byteArrayOf(10, 11, 12),
         )
 }

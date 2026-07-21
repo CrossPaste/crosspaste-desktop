@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,8 +49,7 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Key
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.net.SyncApi
-import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.PairingCredentialType
 import com.crosspaste.sync.QrBearerToken
 import com.crosspaste.sync.SasCode
 import com.crosspaste.sync.SyncManager
@@ -73,26 +73,26 @@ fun DeviceScope.TrustDeviceDialog() {
     val syncManager = koinInject<SyncManager>()
 
     val appSizeValue = LocalAppSizeValueState.current
+    val appInstanceId = syncRuntimeInfo.appInstanceId
+    val pairingCredentialTypes by syncManager.pairingCredentialTypes.collectAsState()
+    val pairingCredentialType = pairingCredentialTypes[appInstanceId]
+    val isPairingTypeKnown = pairingCredentialType != null
 
     val tokenCount = 6
-    val tokens = remember { mutableStateListOf(*Array(tokenCount) { "" }) }
-    var isError by remember { mutableStateOf(false) }
+    val tokens = remember(appInstanceId, pairingCredentialType) { mutableStateListOf(*Array(tokenCount) { "" }) }
+    var isError by remember(appInstanceId, pairingCredentialType) { mutableStateOf(false) }
 
-    var isLoading by remember { mutableStateOf(false) }
+    var isLoading by remember(appInstanceId, pairingCredentialType) { mutableStateOf(false) }
 
-    // Decided once the remote's pairingVersion is known (see LaunchedEffect below): a
-    // pairingVersion>=2 peer displays a key-derived SAS the user types, everything else
-    // displays a random bearer token. This picks which typed trust entry confirmToken calls.
-    var useSasPairing by remember { mutableStateOf(false) }
-
-    val focusRequesters = remember { List(tokenCount) { FocusRequester() } }
+    val focusRequesters = remember(appInstanceId, pairingCredentialType) { List(tokenCount) { FocusRequester() } }
 
     val setError = { value: Boolean ->
         isError = value
         if (value) isLoading = false
     }
 
-    val confirmAction = {
+    val confirmAction = confirm@{
+        val credentialType = pairingCredentialType ?: return@confirm
         if (!isLoading) {
             isLoading = true
             isError = false
@@ -102,7 +102,7 @@ fun DeviceScope.TrustDeviceDialog() {
                 setError = setError,
                 syncManager = syncManager,
                 syncRuntimeInfo = syncRuntimeInfo,
-                useSasPairing = useSasPairing,
+                pairingCredentialType = credentialType,
             )
         }
     }
@@ -113,20 +113,16 @@ fun DeviceScope.TrustDeviceDialog() {
         }
     }
 
-    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
+    LaunchedEffect(appInstanceId) {
+        syncManager.refreshPairingCredentialType(appInstanceId)
+    }
 
-    LaunchedEffect(Unit) {
-        val handler = syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-        val remotePairingVersion =
-            nearbyDeviceManager.nearbySyncInfos.value
-                .firstOrNull { it.appInfo.appInstanceId == syncRuntimeInfo.appInstanceId }
-                ?.appInfo
-                ?.pairingVersion
-        useSasPairing = SyncApi.supportsSASPairing(remotePairingVersion)
-        if (useSasPairing) {
-            handler?.exchangeKeysForPairing()
-        } else {
-            handler?.showToken()
+    LaunchedEffect(appInstanceId, pairingCredentialType) {
+        val handler = syncManager.getSyncHandlers()[appInstanceId]
+        when (pairingCredentialType) {
+            PairingCredentialType.SAS_CODE -> handler?.exchangeKeysForPairing()
+            PairingCredentialType.QR_BEARER_TOKEN -> handler?.showToken()
+            null -> Unit
         }
     }
 
@@ -188,13 +184,21 @@ fun DeviceScope.TrustDeviceDialog() {
                         }
                     },
                 )
-                TokenInputRow(tokens, isError, isLoading, focusRequesters, confirmAction, cancelAction)
+                TokenInputRow(
+                    tokens,
+                    isError,
+                    isLoading || !isPairingTypeKnown,
+                    focusRequesters,
+                    confirmAction,
+                    cancelAction,
+                )
             }
         },
         confirmButton = {
             DialogActionButton(
                 text = copywriter.getText("confirm"),
                 type = DialogButtonType.FILLED,
+                enabled = isPairingTypeKnown,
                 isLoading = isLoading,
             ) {
                 confirmAction()
@@ -372,18 +376,17 @@ fun confirmToken(
     setError: (Boolean) -> Unit,
     syncManager: SyncManager,
     syncRuntimeInfo: SyncRuntimeInfo,
-    useSasPairing: Boolean,
+    pairingCredentialType: PairingCredentialType,
 ) {
     tokens.joinToString("").let { token ->
         if (token.length == tokenCount) {
             val appInstanceId = syncRuntimeInfo.appInstanceId
             val callback = { success: Boolean -> setError(!success) }
-            // The user typed the code the remote showed: a SAS on a pairingVersion>=2 peer,
-            // otherwise a bearer token. Pick the matching typed entry — never cross them.
-            if (useSasPairing) {
-                syncManager.trustBySasCode(appInstanceId, SasCode(token.toInt()), callback)
-            } else {
-                syncManager.trustByBearerToken(appInstanceId, QrBearerToken(token.toInt()), callback)
+            when (pairingCredentialType) {
+                PairingCredentialType.SAS_CODE ->
+                    syncManager.trustBySasCode(appInstanceId, SasCode(token.toInt()), callback)
+                PairingCredentialType.QR_BEARER_TOKEN ->
+                    syncManager.trustByBearerToken(appInstanceId, QrBearerToken(token.toInt()), callback)
             }
         } else {
             setError(true)
