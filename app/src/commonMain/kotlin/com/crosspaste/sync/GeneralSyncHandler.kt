@@ -203,11 +203,18 @@ class GeneralSyncHandler(
         emitEvent(SyncEvent.UpdateNoteName(currentSyncRuntimeInfo, noteName))
     }
 
-    override suspend fun trustByToken(
-        token: Int,
+    override suspend fun trustByBearerToken(
+        token: QrBearerToken,
         callback: (Boolean) -> Unit,
     ) {
-        emitEvent(SyncEvent.TrustByToken(currentSyncRuntimeInfo, token, callback))
+        emitEvent(SyncEvent.TrustByBearerToken(currentSyncRuntimeInfo, token, callback))
+    }
+
+    override suspend fun trustBySasCode(
+        code: SasCode,
+        callback: (Boolean) -> Unit,
+    ) {
+        emitEvent(SyncEvent.TrustBySasCode(currentSyncRuntimeInfo, code, callback))
     }
 
     override suspend fun exchangeKeysForPairing() {

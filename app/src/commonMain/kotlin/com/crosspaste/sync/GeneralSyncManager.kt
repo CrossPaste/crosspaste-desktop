@@ -5,8 +5,13 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.SyncApi
+import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.filter
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.utils.HostAndPort
+import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
 import com.crosspaste.utils.namedScope
@@ -30,11 +35,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 class GeneralSyncManager(
     override val realTimeSyncScope: CoroutineScope = namedScope(ioDispatcher, "GeneralSyncManager"),
     private val syncResolver: SyncResolverApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val syncClientApi: SyncClientApi,
     private val wsSessionManager: WsSessionManager,
 ) : SyncManager {
 
@@ -63,6 +70,12 @@ class GeneralSyncManager(
             started = WhileSubscribed(5000),
             initialValue = null,
         )
+
+    // Keep protocol capability out of SyncRuntimeInfo so its persisted and serialized schema stays stable.
+    private val _pairingCredentialTypes = MutableStateFlow<Map<String, PairingCredentialType>>(emptyMap())
+
+    override val pairingCredentialTypes: StateFlow<Map<String, PairingCredentialType>> =
+        _pairingCredentialTypes.asStateFlow()
 
     private val internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
@@ -120,6 +133,9 @@ class GeneralSyncManager(
                         internalSyncHandlers.remove(appInstanceId)?.cancelScope()
                         wsSessionManager.unregisterSession(appInstanceId)
                     }
+                    if (deleteSet.isNotEmpty()) {
+                        _pairingCredentialTypes.update { it - deleteSet }
+                    }
 
                     newSet.forEach { appInstanceId ->
                         internalSyncHandlers[appInstanceId] =
@@ -157,6 +173,73 @@ class GeneralSyncManager(
     override fun toVerify(appInstanceId: String) {
         _ignoreVerifySet.update { it - appInstanceId }
     }
+
+    override fun rememberPairingCredentialType(syncInfo: SyncInfo) {
+        val credentialType = pairingCredentialType(syncInfo)
+        _pairingCredentialTypes.update {
+            it + (syncInfo.appInfo.appInstanceId to credentialType)
+        }
+    }
+
+    override suspend fun refreshPairingCredentialType(appInstanceId: String): PairingCredentialRefreshResult {
+        _pairingCredentialTypes.value[appInstanceId]?.let {
+            return PairingCredentialRefreshResult.Resolved(it)
+        }
+
+        val syncRuntimeInfo =
+            realTimeSyncRuntimeInfos.value.firstOrNull {
+                it.appInstanceId == appInstanceId && it.connectState == SyncState.UNVERIFIED
+            }
+                ?: return PairingCredentialRefreshResult.DeviceUnavailable
+        val host = syncRuntimeInfo.connectHostAddress ?: return PairingCredentialRefreshResult.RetryableFailure
+
+        return try {
+            val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+            val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
+            if (result !is SuccessResult) {
+                logger.warn {
+                    "Failed to fetch pairing metadata for $appInstanceId: ${result::class.simpleName}"
+                }
+                PairingCredentialRefreshResult.RetryableFailure
+            } else {
+                val syncInfo = result.getResult<SyncInfo>()
+                when {
+                    syncInfo.appInfo.appInstanceId != appInstanceId -> {
+                        logger.warn {
+                            "Pairing metadata identity mismatch: expected $appInstanceId, " +
+                                "received ${syncInfo.appInfo.appInstanceId}"
+                        }
+                        PairingCredentialRefreshResult.IdentityMismatch
+                    }
+                    realTimeSyncRuntimeInfos.value.none { it.appInstanceId == appInstanceId } -> {
+                        PairingCredentialRefreshResult.DeviceUnavailable
+                    }
+                    else -> {
+                        val credentialType = pairingCredentialType(syncInfo)
+                        rememberPairingCredentialType(syncInfo)
+                        if (realTimeSyncRuntimeInfos.value.none { it.appInstanceId == appInstanceId }) {
+                            _pairingCredentialTypes.update { it - appInstanceId }
+                            PairingCredentialRefreshResult.DeviceUnavailable
+                        } else {
+                            PairingCredentialRefreshResult.Resolved(credentialType)
+                        }
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to refresh pairing metadata for $appInstanceId" }
+            PairingCredentialRefreshResult.RetryableFailure
+        }
+    }
+
+    private fun pairingCredentialType(syncInfo: SyncInfo): PairingCredentialType =
+        if (SyncApi.supportsSASPairing(syncInfo.appInfo.pairingVersion)) {
+            PairingCredentialType.SAS_CODE
+        } else {
+            PairingCredentialType.QR_BEARER_TOKEN
+        }
 
     private fun resolveSyncs(callback: () -> Unit) {
         realTimeSyncScope.launch {
@@ -215,14 +298,26 @@ class GeneralSyncManager(
         }
     }
 
-    override fun trustByToken(
+    override fun trustByBearerToken(
         appInstanceId: String,
-        token: Int,
+        token: QrBearerToken,
         callback: (Boolean) -> Unit,
     ) {
         internalSyncHandlers[appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch {
-                syncHandler.trustByToken(token, callback)
+                syncHandler.trustByBearerToken(token, callback)
+            }
+        } ?: callback(false)
+    }
+
+    override fun trustBySasCode(
+        appInstanceId: String,
+        code: SasCode,
+        callback: (Boolean) -> Unit,
+    ) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch {
+                syncHandler.trustBySasCode(code, callback)
             }
         } ?: callback(false)
     }
@@ -261,6 +356,7 @@ class GeneralSyncManager(
     }
 
     override fun updateSyncInfo(syncInfo: SyncInfo) {
+        rememberPairingCredentialType(syncInfo)
         realTimeSyncScope.launch {
             syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
         }
@@ -270,6 +366,7 @@ class GeneralSyncManager(
         syncInfo: SyncInfo,
         host: String?,
     ) {
+        rememberPairingCredentialType(syncInfo)
         realTimeSyncScope.launch {
             val connectInfo =
                 host?.let { h ->

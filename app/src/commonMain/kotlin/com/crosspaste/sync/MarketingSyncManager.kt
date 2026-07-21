@@ -56,6 +56,9 @@ class MarketingSyncManager : SyncManager {
     override val unverifiedSyncRuntimeInfo: StateFlow<SyncRuntimeInfo?> =
         MutableStateFlow(null)
 
+    override val pairingCredentialTypes: StateFlow<Map<String, PairingCredentialType>> =
+        MutableStateFlow(emptyMap())
+
     override suspend fun start() {
         internalSyncHandlers.putAll(
             syncRuntimeInfos.map { syncRuntimeInfo ->
@@ -80,6 +83,12 @@ class MarketingSyncManager : SyncManager {
     override fun toVerify(appInstanceId: String) {
     }
 
+    override fun rememberPairingCredentialType(syncInfo: SyncInfo) {
+    }
+
+    override suspend fun refreshPairingCredentialType(appInstanceId: String): PairingCredentialRefreshResult =
+        PairingCredentialRefreshResult.DeviceUnavailable
+
     override fun updateAllowSend(
         appInstanceId: String,
         allowSend: Boolean,
@@ -98,9 +107,16 @@ class MarketingSyncManager : SyncManager {
     ) {
     }
 
-    override fun trustByToken(
+    override fun trustByBearerToken(
         appInstanceId: String,
-        token: Int,
+        token: QrBearerToken,
+        callback: (Boolean) -> Unit,
+    ) {
+    }
+
+    override fun trustBySasCode(
+        appInstanceId: String,
+        code: SasCode,
         callback: (Boolean) -> Unit,
     ) {
     }

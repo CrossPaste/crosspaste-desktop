@@ -123,7 +123,6 @@ class WsModuleDependencyTest : KoinTest {
                     SyncResolver(
                         appInfo = get(),
                         localPlatform = get(),
-                        lazyNearbyDeviceManager = lazy { get() },
                         lazyPasteBonjourService = lazy { get() },
                         networkInterfaceService = get(),
                         ratingPromptManager = get(),

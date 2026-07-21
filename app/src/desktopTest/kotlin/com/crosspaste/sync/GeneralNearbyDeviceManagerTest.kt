@@ -99,6 +99,14 @@ class GeneralNearbyDeviceManagerTest {
             // Already synced devices should not appear in nearby list
             val nearbyIds = manager.nearbySyncInfos.value.map { it.appInfo.appInstanceId }
             assertFalse(nearbyIds.contains("other-app-1"))
+            verify(exactly = 1) {
+                deps.syncManager.rememberPairingCredentialType(
+                    match {
+                        it.appInfo.appInstanceId == syncInfo.appInfo.appInstanceId &&
+                            it.appInfo.pairingVersion == syncInfo.appInfo.pairingVersion
+                    },
+                )
+            }
         }
 
     @Test

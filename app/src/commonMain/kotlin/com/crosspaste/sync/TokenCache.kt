@@ -6,21 +6,21 @@ interface TokenCacheApi {
 
     fun setToken(
         appInstanceId: String,
-        token: Int,
+        token: QrBearerToken,
     )
 
-    fun getToken(appInstanceId: String): Int?
+    fun getToken(appInstanceId: String): QrBearerToken?
 }
 
 object TokenCache : TokenCacheApi {
-    private val tokenCache: MutableMap<String, Int> = ConcurrentMap()
+    private val tokenCache: MutableMap<String, QrBearerToken> = ConcurrentMap()
 
     override fun setToken(
         appInstanceId: String,
-        token: Int,
+        token: QrBearerToken,
     ) {
         tokenCache[appInstanceId] = token
     }
 
-    override fun getToken(appInstanceId: String): Int? = tokenCache.remove(appInstanceId)
+    override fun getToken(appInstanceId: String): QrBearerToken? = tokenCache.remove(appInstanceId)
 }

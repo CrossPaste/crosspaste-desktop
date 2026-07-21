@@ -221,6 +221,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 GeneralSyncManager(
                     syncResolver = get(),
                     syncRuntimeInfoDao = get(),
+                    syncClientApi = get(),
                     wsSessionManager = get(),
                 )
             }
@@ -229,7 +230,6 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
             SyncResolver(
                 appInfo = get(),
                 localPlatform = get(),
-                lazyNearbyDeviceManager = lazy { get() },
                 lazyPasteBonjourService = lazy { get() },
                 networkInterfaceService = get(),
                 ratingPromptManager = get(),

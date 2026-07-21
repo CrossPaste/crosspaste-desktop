@@ -4,6 +4,9 @@ import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.clientapi.RequestTimeout
+import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.devices.DeviceScopeFactory
@@ -20,9 +23,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -33,6 +38,7 @@ class GeneralSyncManagerTest {
             deviceScopeFactory = mockk(relaxed = true),
             syncResolver = mockk(relaxed = true),
             syncRuntimeInfoDao = mockk(relaxed = true),
+            syncClientApi = mockk(relaxed = true),
         )
 
     private fun createSyncManager(
@@ -43,6 +49,7 @@ class GeneralSyncManagerTest {
             realTimeSyncScope = scope,
             syncResolver = mocks.syncResolver,
             syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
+            syncClientApi = mocks.syncClientApi,
             wsSessionManager = WsSessionManager(),
         )
 
@@ -73,6 +80,7 @@ class GeneralSyncManagerTest {
         val deviceScopeFactory: DeviceScopeFactory,
         val syncResolver: SyncResolverApi,
         val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+        val syncClientApi: SyncClientApi,
     )
 
     @Test
@@ -154,7 +162,7 @@ class GeneralSyncManagerTest {
             val syncManager = createSyncManager(mocks, childScope)
 
             // Should not throw exception when handler doesn't exist
-            syncManager.trustByToken("non-existent", 123456) {
+            syncManager.trustByBearerToken("non-existent", QrBearerToken(123456)) {
                 // Callback should be called with false
                 assertEquals(false, it)
             }
@@ -164,10 +172,7 @@ class GeneralSyncManagerTest {
     fun testUpdateSyncInfoNewInstance() =
         runTest {
             val mocks = createMocks()
-            val syncInfo =
-                mockk<SyncInfo> {
-                    every { appInfo.appInstanceId } returns "test-app-1"
-                }
+            val syncInfo = SyncTestFixtures.createSyncInfo(pairingVersion = 2)
 
             coEvery { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(any<SyncInfo>()) } just runs
 
@@ -176,9 +181,157 @@ class GeneralSyncManagerTest {
             syncManager.start()
 
             syncManager.updateSyncInfo(syncInfo)
+
+            assertEquals(
+                PairingCredentialType.SAS_CODE,
+                syncManager.pairingCredentialTypes.value[syncInfo.appInfo.appInstanceId],
+            )
             advanceUntilIdle()
 
             coVerify { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo) }
+        }
+
+    @Test
+    fun updateSyncInfo_legacyPeerWithoutPairingVersionUsesBearerToken() =
+        runTest {
+            val mocks = createMocks()
+            val syncInfo = SyncTestFixtures.createSyncInfo(pairingVersion = null)
+
+            coEvery { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(any<SyncInfo>()) } just runs
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+
+            syncManager.updateSyncInfo(syncInfo)
+
+            assertEquals(
+                PairingCredentialType.QR_BEARER_TOKEN,
+                syncManager.pairingCredentialTypes.value[syncInfo.appInfo.appInstanceId],
+            )
+        }
+
+    @Test
+    fun refreshPairingCredentialType_fetchesPersistedUnverifiedDeviceMetadata() =
+        runTest {
+            val mocks = createMocks()
+            val appInstanceId = "test-app-1"
+            val syncInfosFlow =
+                MutableStateFlow(
+                    listOf(
+                        createTestSyncRuntimeInfo(
+                            appInstanceId = appInstanceId,
+                            connectState = SyncState.UNVERIFIED,
+                        ).copy(connectHostAddress = "192.168.1.100"),
+                    ),
+                )
+            val syncInfo = SyncTestFixtures.createSyncInfo(appInstanceId = appInstanceId, pairingVersion = 2)
+
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
+            coEvery { mocks.syncClientApi.syncInfo(any()) } returns SuccessResult(syncInfo)
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+            advanceUntilIdle()
+
+            val result = syncManager.refreshPairingCredentialType(appInstanceId)
+
+            assertEquals(PairingCredentialRefreshResult.Resolved(PairingCredentialType.SAS_CODE), result)
+            assertEquals(
+                PairingCredentialType.SAS_CODE,
+                syncManager.pairingCredentialTypes.value[appInstanceId],
+            )
+        }
+
+    @Test
+    fun refreshPairingCredentialType_rejectsMismatchedDeviceIdentity() =
+        runTest {
+            val mocks = createMocks()
+            val appInstanceId = "test-app-1"
+            val syncInfosFlow =
+                MutableStateFlow(
+                    listOf(
+                        createTestSyncRuntimeInfo(
+                            appInstanceId = appInstanceId,
+                            connectState = SyncState.UNVERIFIED,
+                        ).copy(connectHostAddress = "192.168.1.100"),
+                    ),
+                )
+            val wrongDevice = SyncTestFixtures.createSyncInfo(appInstanceId = "different-app", pairingVersion = 2)
+
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
+            coEvery { mocks.syncClientApi.syncInfo(any()) } returns SuccessResult(wrongDevice)
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+            advanceUntilIdle()
+
+            val result = syncManager.refreshPairingCredentialType(appInstanceId)
+
+            assertEquals(PairingCredentialRefreshResult.IdentityMismatch, result)
+            assertNull(syncManager.pairingCredentialTypes.value[appInstanceId])
+        }
+
+    @Test
+    fun refreshPairingCredentialType_networkFailureIsRetryable() =
+        runTest {
+            val mocks = createMocks()
+            val appInstanceId = "test-app-1"
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(
+                    listOf(
+                        createTestSyncRuntimeInfo(
+                            appInstanceId = appInstanceId,
+                            connectState = SyncState.UNVERIFIED,
+                        ).copy(connectHostAddress = "192.168.1.100"),
+                    ),
+                )
+            coEvery { mocks.syncClientApi.syncInfo(any()) } returns RequestTimeout
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+            advanceUntilIdle()
+
+            val result = syncManager.refreshPairingCredentialType(appInstanceId)
+
+            assertEquals(PairingCredentialRefreshResult.RetryableFailure, result)
+            assertNull(syncManager.pairingCredentialTypes.value[appInstanceId])
+        }
+
+    @Test
+    fun refreshPairingCredentialType_deviceRemovedDuringRequestDropsMetadata() =
+        runTest {
+            val mocks = createMocks()
+            val appInstanceId = "test-app-1"
+            val syncInfosFlow =
+                MutableStateFlow(
+                    listOf(
+                        createTestSyncRuntimeInfo(
+                            appInstanceId = appInstanceId,
+                            connectState = SyncState.UNVERIFIED,
+                        ).copy(connectHostAddress = "192.168.1.100"),
+                    ),
+                )
+            val syncInfo = SyncTestFixtures.createSyncInfo(appInstanceId = appInstanceId, pairingVersion = 2)
+
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
+            coEvery { mocks.syncClientApi.syncInfo(any()) } coAnswers {
+                syncInfosFlow.value = emptyList()
+                yield()
+                SuccessResult(syncInfo)
+            }
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+            advanceUntilIdle()
+
+            val result = syncManager.refreshPairingCredentialType(appInstanceId)
+
+            assertEquals(PairingCredentialRefreshResult.DeviceUnavailable, result)
+            assertNull(syncManager.pairingCredentialTypes.value[appInstanceId])
         }
 
     @Test

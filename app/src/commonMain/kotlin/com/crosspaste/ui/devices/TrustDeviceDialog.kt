@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,8 +49,10 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Key
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.net.SyncApi
-import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.PairingCredentialRefreshResult
+import com.crosspaste.sync.PairingCredentialType
+import com.crosspaste.sync.QrBearerToken
+import com.crosspaste.sync.SasCode
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.base.DialogActionButton
@@ -63,7 +66,10 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
+import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun DeviceScope.TrustDeviceDialog() {
@@ -71,21 +77,26 @@ fun DeviceScope.TrustDeviceDialog() {
     val syncManager = koinInject<SyncManager>()
 
     val appSizeValue = LocalAppSizeValueState.current
+    val appInstanceId = syncRuntimeInfo.appInstanceId
+    val pairingCredentialTypes by syncManager.pairingCredentialTypes.collectAsState()
+    val pairingCredentialType = pairingCredentialTypes[appInstanceId]
+    val isPairingTypeKnown = pairingCredentialType != null
 
     val tokenCount = 6
-    val tokens = remember { mutableStateListOf(*Array(tokenCount) { "" }) }
-    var isError by remember { mutableStateOf(false) }
+    val tokens = remember(appInstanceId, pairingCredentialType) { mutableStateListOf(*Array(tokenCount) { "" }) }
+    var isError by remember(appInstanceId, pairingCredentialType) { mutableStateOf(false) }
 
-    var isLoading by remember { mutableStateOf(false) }
+    var isLoading by remember(appInstanceId, pairingCredentialType) { mutableStateOf(false) }
 
-    val focusRequesters = remember { List(tokenCount) { FocusRequester() } }
+    val focusRequesters = remember(appInstanceId, pairingCredentialType) { List(tokenCount) { FocusRequester() } }
 
     val setError = { value: Boolean ->
         isError = value
         if (value) isLoading = false
     }
 
-    val confirmAction = {
+    val confirmAction = confirm@{
+        val credentialType = pairingCredentialType ?: return@confirm
         if (!isLoading) {
             isLoading = true
             isError = false
@@ -95,6 +106,7 @@ fun DeviceScope.TrustDeviceDialog() {
                 setError = setError,
                 syncManager = syncManager,
                 syncRuntimeInfo = syncRuntimeInfo,
+                pairingCredentialType = credentialType,
             )
         }
     }
@@ -105,19 +117,16 @@ fun DeviceScope.TrustDeviceDialog() {
         }
     }
 
-    val nearbyDeviceManager = koinInject<NearbyDeviceManager>()
+    LaunchedEffect(appInstanceId) {
+        refreshPairingCredentialTypeUntilKnown(syncManager, appInstanceId)
+    }
 
-    LaunchedEffect(Unit) {
-        val handler = syncManager.getSyncHandlers()[syncRuntimeInfo.appInstanceId]
-        val remotePairingVersion =
-            nearbyDeviceManager.nearbySyncInfos.value
-                .firstOrNull { it.appInfo.appInstanceId == syncRuntimeInfo.appInstanceId }
-                ?.appInfo
-                ?.pairingVersion
-        if (SyncApi.supportsSASPairing(remotePairingVersion)) {
-            handler?.exchangeKeysForPairing()
-        } else {
-            handler?.showToken()
+    LaunchedEffect(appInstanceId, pairingCredentialType) {
+        val handler = syncManager.getSyncHandlers()[appInstanceId]
+        when (pairingCredentialType) {
+            PairingCredentialType.SAS_CODE -> handler?.exchangeKeysForPairing()
+            PairingCredentialType.QR_BEARER_TOKEN -> handler?.showToken()
+            null -> Unit
         }
     }
 
@@ -179,13 +188,21 @@ fun DeviceScope.TrustDeviceDialog() {
                         }
                     },
                 )
-                TokenInputRow(tokens, isError, isLoading, focusRequesters, confirmAction, cancelAction)
+                TokenInputRow(
+                    tokens,
+                    isError,
+                    isLoading || !isPairingTypeKnown,
+                    focusRequesters,
+                    confirmAction,
+                    cancelAction,
+                )
             }
         },
         confirmButton = {
             DialogActionButton(
                 text = copywriter.getText("confirm"),
                 type = DialogButtonType.FILLED,
+                enabled = isPairingTypeKnown,
                 isLoading = isLoading,
             ) {
                 confirmAction()
@@ -200,6 +217,30 @@ fun DeviceScope.TrustDeviceDialog() {
             }
         },
     )
+}
+
+internal suspend fun refreshPairingCredentialTypeUntilKnown(
+    syncManager: SyncManager,
+    appInstanceId: String,
+    initialBackoff: Duration = 1.seconds,
+    maxBackoff: Duration = 30.seconds,
+    delayAction: suspend (Duration) -> Unit = { delay(it) },
+): PairingCredentialRefreshResult {
+    var backoff = initialBackoff
+    while (true) {
+        val result = syncManager.refreshPairingCredentialType(appInstanceId)
+        when (result) {
+            is PairingCredentialRefreshResult.Resolved,
+            PairingCredentialRefreshResult.IdentityMismatch,
+            PairingCredentialRefreshResult.DeviceUnavailable,
+            -> return result
+
+            PairingCredentialRefreshResult.RetryableFailure -> {
+                delayAction(backoff)
+                backoff = (backoff * 2).coerceAtMost(maxBackoff)
+            }
+        }
+    }
 }
 
 @Composable
@@ -363,11 +404,17 @@ fun confirmToken(
     setError: (Boolean) -> Unit,
     syncManager: SyncManager,
     syncRuntimeInfo: SyncRuntimeInfo,
+    pairingCredentialType: PairingCredentialType,
 ) {
     tokens.joinToString("").let { token ->
         if (token.length == tokenCount) {
-            syncManager.trustByToken(syncRuntimeInfo.appInstanceId, token.toInt()) {
-                setError(!it)
+            val appInstanceId = syncRuntimeInfo.appInstanceId
+            val callback = { success: Boolean -> setError(!success) }
+            when (pairingCredentialType) {
+                PairingCredentialType.SAS_CODE ->
+                    syncManager.trustBySasCode(appInstanceId, SasCode(token.toInt()), callback)
+                PairingCredentialType.QR_BEARER_TOKEN ->
+                    syncManager.trustByBearerToken(appInstanceId, QrBearerToken(token.toInt()), callback)
             }
         } else {
             setError(true)
