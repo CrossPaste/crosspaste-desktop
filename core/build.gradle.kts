@@ -80,6 +80,12 @@ kotlin {
             }
         }
 
+        val desktopTest by getting {
+            dependencies {
+                implementation(libs.logback.classic)
+            }
+        }
+
         val jsMain by getting {
             dependencies {
                 implementation(libs.cryptography.provider.webcrypto)

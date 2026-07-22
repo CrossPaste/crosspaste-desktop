@@ -12,7 +12,10 @@ class HikariSqliteDriver(
 
     private val listeners = linkedMapOf<String, MutableSet<Query.Listener>>()
 
-    override fun addListener(vararg queryKeys: String, listener: Query.Listener) {
+    override fun addListener(
+        vararg queryKeys: String,
+        listener: Query.Listener,
+    ) {
         synchronized(listeners) {
             queryKeys.forEach {
                 listeners.getOrPut(it) { linkedSetOf() }.add(listener)
@@ -20,7 +23,10 @@ class HikariSqliteDriver(
         }
     }
 
-    override fun removeListener(vararg queryKeys: String, listener: Query.Listener) {
+    override fun removeListener(
+        vararg queryKeys: String,
+        listener: Query.Listener,
+    ) {
         synchronized(listeners) {
             queryKeys.forEach {
                 listeners[it]?.remove(listener)
@@ -36,9 +42,7 @@ class HikariSqliteDriver(
         listenersToNotify.forEach(Query.Listener::queryResultsChanged)
     }
 
-    override fun getConnection(): Connection {
-        return dataSource.connection
-    }
+    override fun getConnection(): Connection = dataSource.connection
 
     override fun closeConnection(connection: Connection) {
         connection.close()

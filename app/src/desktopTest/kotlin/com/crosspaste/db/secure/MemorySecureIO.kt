@@ -13,15 +13,12 @@ class MemorySecureIO : SecureIO {
         cryptPublicKeyMap[appInstanceId] = serialized
     }
 
-    override suspend fun existCryptPublicKey(appInstanceId: String): Boolean {
-        return cryptPublicKeyMap.containsKey(appInstanceId)
-    }
+    override suspend fun existCryptPublicKey(appInstanceId: String): Boolean =
+        cryptPublicKeyMap.containsKey(appInstanceId)
 
     override suspend fun deleteCryptPublicKey(appInstanceId: String) {
         cryptPublicKeyMap.remove(appInstanceId)
     }
 
-    override suspend fun serializedPublicKey(appInstanceId: String): ByteArray? {
-        return cryptPublicKeyMap[appInstanceId]
-    }
+    override suspend fun serializedPublicKey(appInstanceId: String): ByteArray? = cryptPublicKeyMap[appInstanceId]
 }

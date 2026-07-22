@@ -1,8 +1,8 @@
 package com.crosspaste.utils
 
-import org.junit.jupiter.api.Assertions.assertArrayEquals
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class MurmurHash3Test {
@@ -32,7 +32,7 @@ class MurmurHash3Test {
         streaming.update(input)
         val streamingResult = streaming.finish()
 
-        assertArrayEquals(regular, streamingResult, "Empty input should produce same result")
+        assertContentEquals(regular, streamingResult, "Empty input should produce same result")
     }
 
     @Test
@@ -46,7 +46,7 @@ class MurmurHash3Test {
         streaming.update(input)
         val streamingResult = streaming.finish()
 
-        assertArrayEquals(regular, streamingResult, "Single byte input should produce same result")
+        assertContentEquals(regular, streamingResult, "Single byte input should produce same result")
     }
 
     @Test
@@ -71,9 +71,9 @@ class MurmurHash3Test {
         // Compare with original algorithm
         val regular = MurmurHash3(seed).hash128x64(input)
 
-        assertArrayEquals(regular, result1, "Single streaming update should match regular")
-        assertArrayEquals(regular, result2, "Chunked streaming update should match regular")
-        assertArrayEquals(result1, result2, "Single and chunked streaming should match")
+        assertContentEquals(regular, result1, "Single streaming update should match regular")
+        assertContentEquals(regular, result2, "Chunked streaming update should match regular")
+        assertContentEquals(result1, result2, "Single and chunked streaming should match")
     }
 
     @Test
@@ -88,7 +88,7 @@ class MurmurHash3Test {
             streaming.update(input)
             val streamingResult = streaming.finish()
 
-            assertArrayEquals(regular, streamingResult, "Seed $seed should produce same result")
+            assertContentEquals(regular, streamingResult, "Seed $seed should produce same result")
         }
     }
 
@@ -102,7 +102,7 @@ class MurmurHash3Test {
         val streaming16 = StreamingMurmurHash3(seed)
         streaming16.update(input16)
         val streamingResult16 = streaming16.finish()
-        assertArrayEquals(regular16, streamingResult16, "16-byte input should match")
+        assertContentEquals(regular16, streamingResult16, "16-byte input should match")
 
         // Test 15-byte input
         val input15 = ByteArray(15) { it.toByte() }
@@ -110,7 +110,7 @@ class MurmurHash3Test {
         val streaming15 = StreamingMurmurHash3(seed)
         streaming15.update(input15)
         val streamingResult15 = streaming15.finish()
-        assertArrayEquals(regular15, streamingResult15, "15-byte input should match")
+        assertContentEquals(regular15, streamingResult15, "15-byte input should match")
 
         // Test 17-byte input
         val input17 = ByteArray(17) { it.toByte() }
@@ -118,7 +118,7 @@ class MurmurHash3Test {
         val streaming17 = StreamingMurmurHash3(seed)
         streaming17.update(input17)
         val streamingResult17 = streaming17.finish()
-        assertArrayEquals(regular17, streamingResult17, "17-byte input should match")
+        assertContentEquals(regular17, streamingResult17, "17-byte input should match")
     }
 
     @Test
@@ -144,7 +144,7 @@ class MurmurHash3Test {
             streaming.update(input)
             val streamingResult = streaming.finish()
 
-            assertArrayEquals(
+            assertContentEquals(
                 regular,
                 streamingResult,
                 "Test case '${testCase.input}' with seed ${testCase.seed} should match",
@@ -172,7 +172,7 @@ class MurmurHash3Test {
             }
             val streamingResult = streaming.finish()
 
-            assertArrayEquals(
+            assertContentEquals(
                 regular,
                 streamingResult,
                 "Large input with chunk size $chunkSize should match",

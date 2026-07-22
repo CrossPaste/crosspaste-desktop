@@ -56,12 +56,8 @@ ktlint {
             val path = element.path
             path.contains("\\generated\\") ||
                 path.contains("/generated/") ||
-                path.contains("\\desktopTest\\") ||
-                path.contains("/desktopTest/") ||
                 path.contains("\\commonMain\\kotlin\\androidx\\") ||
                 path.contains("/commonMain/kotlin/androidx/") ||
-                path.contains("\\db\\") ||
-                path.contains("/db/") ||
                 path.endsWith("Database.kt") ||
                 path.endsWith("DatabaseImpl.kt")
         }

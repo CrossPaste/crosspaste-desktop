@@ -32,7 +32,11 @@ output*/
 /.claude/worktrees/
 /.dev-context/
 /code-review/
-/ai/
+/ai/*
+!/ai/docs/
+/ai/docs/*
+!/ai/docs/reviews/
+!/ai/docs/reviews/**
 /.claude/skills/ui-ux-pro-max/
 /docs/superpowers/
 web/dist/

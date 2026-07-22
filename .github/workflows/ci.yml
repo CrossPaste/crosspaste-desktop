@@ -72,8 +72,8 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
-      - name: Build with Gradle
-        run: ./gradlew app:build
+      - name: Build common modules and desktop app
+        run: ./gradlew :core:build :shared:build :app:build
 
   web-build:
     needs: changes

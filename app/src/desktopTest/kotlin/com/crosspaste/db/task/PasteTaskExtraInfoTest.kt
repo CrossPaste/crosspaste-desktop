@@ -29,7 +29,7 @@ class PasteTaskExtraInfoTest {
                 endTime = 2000L,
                 status = TaskStatus.SUCCESS,
                 message = "completed",
-            )
+            ),
         )
         val encoded = json.encodeToString(original as PasteTaskExtraInfo)
         val decoded = json.decodeFromString<PasteTaskExtraInfo>(encoded)
@@ -61,7 +61,7 @@ class PasteTaskExtraInfoTest {
         original.syncFails.add("remote-1")
         original.syncFails.add("remote-2")
         original.executionHistories.add(
-            ExecutionHistory(1000, 2000, TaskStatus.FAILURE, "network error")
+            ExecutionHistory(1000, 2000, TaskStatus.FAILURE, "network error"),
         )
 
         val encoded = json.encodeToString(original as PasteTaskExtraInfo)
@@ -127,12 +127,13 @@ class PasteTaskExtraInfoTest {
 
     @Test
     fun `ExecutionHistory serialization roundtrip`() {
-        val original = ExecutionHistory(
-            startTime = 100L,
-            endTime = 200L,
-            status = TaskStatus.EXECUTING,
-            message = null,
-        )
+        val original =
+            ExecutionHistory(
+                startTime = 100L,
+                endTime = 200L,
+                status = TaskStatus.EXECUTING,
+                message = null,
+            )
         val encoded = json.encodeToString(original)
         val decoded = json.decodeFromString<ExecutionHistory>(encoded)
 
@@ -144,12 +145,13 @@ class PasteTaskExtraInfoTest {
 
     @Test
     fun `ExecutionHistory with message roundtrip`() {
-        val original = ExecutionHistory(
-            startTime = 100L,
-            endTime = 200L,
-            status = TaskStatus.FAILURE,
-            message = "Connection timeout",
-        )
+        val original =
+            ExecutionHistory(
+                startTime = 100L,
+                endTime = 200L,
+                status = TaskStatus.FAILURE,
+                message = "Connection timeout",
+            )
         val encoded = json.encodeToString(original)
         val decoded = json.decodeFromString<ExecutionHistory>(encoded)
 
@@ -160,12 +162,13 @@ class PasteTaskExtraInfoTest {
 
     @Test
     fun `different PasteTaskExtraInfo types can be deserialized polymorphically`() {
-        val infos: List<PasteTaskExtraInfo> = listOf(
-            BaseExtraInfo(),
-            SyncExtraInfo(appInstanceId = "app-1"),
-            PullExtraInfo(id = 1L),
-            SwitchLanguageInfo(language = "en"),
-        )
+        val infos: List<PasteTaskExtraInfo> =
+            listOf(
+                BaseExtraInfo(),
+                SyncExtraInfo(appInstanceId = "app-1"),
+                PullExtraInfo(id = 1L),
+                SwitchLanguageInfo(language = "en"),
+            )
 
         for (info in infos) {
             val encoded = json.encodeToString(info)
