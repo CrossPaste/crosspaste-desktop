@@ -174,7 +174,7 @@ object CreatePasteItemHelper {
         var size = urlBytes.size.toLong()
         extraInfo?.let {
             it[PasteItemProperties.TITLE]?.jsonPrimitive?.contentOrNull?.let { title ->
-                size += title.length.toLong()
+                size += title.encodeToByteArray().size.toLong()
             }
         }
         return UrlPasteItem(

@@ -368,8 +368,15 @@ class StreamingMurmurHash3(
     fun update(
         input: ByteArray,
         offset: Int = 0,
-        length: Int = input.size,
+        length: Int = input.size - offset,
     ) {
+        require(offset in 0..input.size) {
+            "Offset must be between 0 and ${input.size}, but was $offset"
+        }
+        require(length >= 0 && length <= input.size - offset) {
+            "Length must be between 0 and ${input.size - offset}, but was $length"
+        }
+
         var currentOffset = offset
         var remainingLength = length
 
@@ -411,26 +418,26 @@ class StreamingMurmurHash3(
             var k1 = 0uL
             var k2 = 0uL
 
-            if (bufferSize >= 15) k2 = k2 xor (buffer[14].toULong() shl 48)
-            if (bufferSize >= 14) k2 = k2 xor (buffer[13].toULong() shl 40)
-            if (bufferSize >= 13) k2 = k2 xor (buffer[12].toULong() shl 32)
-            if (bufferSize >= 12) k2 = k2 xor (buffer[11].toULong() shl 24)
-            if (bufferSize >= 11) k2 = k2 xor (buffer[10].toULong() shl 16)
-            if (bufferSize >= 10) k2 = k2 xor (buffer[9].toULong() shl 8)
+            if (bufferSize >= 15) k2 = k2 xor (buffer[14].toUByte().toULong() shl 48)
+            if (bufferSize >= 14) k2 = k2 xor (buffer[13].toUByte().toULong() shl 40)
+            if (bufferSize >= 13) k2 = k2 xor (buffer[12].toUByte().toULong() shl 32)
+            if (bufferSize >= 12) k2 = k2 xor (buffer[11].toUByte().toULong() shl 24)
+            if (bufferSize >= 11) k2 = k2 xor (buffer[10].toUByte().toULong() shl 16)
+            if (bufferSize >= 10) k2 = k2 xor (buffer[9].toUByte().toULong() shl 8)
             if (bufferSize >= 9) {
-                k2 = k2 xor buffer[8].toULong()
+                k2 = k2 xor buffer[8].toUByte().toULong()
                 h2 = h2 xor k2.mix(R3_128x64, C2_128x64, C1_128x64)
             }
 
-            if (bufferSize >= 8) k1 = k1 xor (buffer[7].toULong() shl 56)
-            if (bufferSize >= 7) k1 = k1 xor (buffer[6].toULong() shl 48)
-            if (bufferSize >= 6) k1 = k1 xor (buffer[5].toULong() shl 40)
-            if (bufferSize >= 5) k1 = k1 xor (buffer[4].toULong() shl 32)
-            if (bufferSize >= 4) k1 = k1 xor (buffer[3].toULong() shl 24)
-            if (bufferSize >= 3) k1 = k1 xor (buffer[2].toULong() shl 16)
-            if (bufferSize >= 2) k1 = k1 xor (buffer[1].toULong() shl 8)
+            if (bufferSize >= 8) k1 = k1 xor (buffer[7].toUByte().toULong() shl 56)
+            if (bufferSize >= 7) k1 = k1 xor (buffer[6].toUByte().toULong() shl 48)
+            if (bufferSize >= 6) k1 = k1 xor (buffer[5].toUByte().toULong() shl 40)
+            if (bufferSize >= 5) k1 = k1 xor (buffer[4].toUByte().toULong() shl 32)
+            if (bufferSize >= 4) k1 = k1 xor (buffer[3].toUByte().toULong() shl 24)
+            if (bufferSize >= 3) k1 = k1 xor (buffer[2].toUByte().toULong() shl 16)
+            if (bufferSize >= 2) k1 = k1 xor (buffer[1].toUByte().toULong() shl 8)
             if (bufferSize >= 1) {
-                k1 = k1 xor buffer[0].toULong()
+                k1 = k1 xor buffer[0].toUByte().toULong()
                 h1 = h1 xor k1.mix(R1_128x64, C1_128x64, C2_128x64)
             }
         }

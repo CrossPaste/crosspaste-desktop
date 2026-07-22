@@ -111,8 +111,8 @@ class PasteReleaseService(
             val change =
                 database.transactionWithResult {
                     database.pasteDatabaseQueries.updatePasteDataToLoaded(
-                        pasteAppearItem = firstItem.toJson(),
-                        pasteCollection = PasteCollection(remainingItems).toJson(),
+                        pasteAppearItem = firstItem.toStoredJson(),
+                        pasteCollection = PasteCollection(remainingItems).toStoredJson(),
                         pasteType = pasteType.type.toLong(),
                         pasteSearchContent =
                             searchContentService.createSearchContent(

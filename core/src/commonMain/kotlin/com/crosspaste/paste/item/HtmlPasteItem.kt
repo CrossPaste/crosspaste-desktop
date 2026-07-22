@@ -3,6 +3,7 @@ package com.crosspaste.paste.item
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItem.Companion.parseStoredIdentifiers
 import com.crosspaste.paste.item.PasteItemProperties.BACKGROUND
 import com.crosspaste.serializer.HtmlPasteItemSerializer
 import kotlinx.serialization.Serializable
@@ -24,7 +25,7 @@ class HtmlPasteItem(
     PasteHtml {
 
     constructor(jsonObject: JsonObject) : this(
-        identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
+        identifiers = parseStoredIdentifiers(jsonObject["identifiers"]!!.jsonPrimitive.content),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         html = jsonObject["html"]!!.jsonPrimitive.content,
@@ -52,7 +53,7 @@ class HtmlPasteItem(
             size > 0 &&
             html.isNotEmpty()
 
-    override fun toJson(): String =
+    override fun toStoredJson(): String =
         buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))

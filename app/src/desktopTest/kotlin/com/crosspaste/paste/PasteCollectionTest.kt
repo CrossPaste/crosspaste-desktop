@@ -44,8 +44,8 @@ class PasteCollectionTest {
     @Test
     fun `empty collection roundtrip`() {
         val original = PasteCollection(listOf())
-        val json = original.toJson()
-        val restored = PasteCollection.fromJson(json)
+        val json = original.toStoredJson()
+        val restored = PasteCollection.fromStoredJson(json)
         assertTrue(restored.pasteItems.isEmpty())
     }
 
@@ -54,8 +54,8 @@ class PasteCollectionTest {
         val textItem = createTextPasteItem(text = "hello")
         val original = PasteCollection(listOf(textItem))
 
-        val json = original.toJson()
-        val restored = PasteCollection.fromJson(json)
+        val json = original.toStoredJson()
+        val restored = PasteCollection.fromStoredJson(json)
 
         assertEquals(1, restored.pasteItems.size)
         val restoredItem = restored.pasteItems[0] as TextPasteItem
@@ -73,8 +73,8 @@ class PasteCollectionTest {
             )
         val original = PasteCollection(items)
 
-        val json = original.toJson()
-        val restored = PasteCollection.fromJson(json)
+        val json = original.toStoredJson()
+        val restored = PasteCollection.fromStoredJson(json)
 
         assertEquals(3, restored.pasteItems.size)
     }
@@ -84,8 +84,8 @@ class PasteCollectionTest {
         val htmlItem = createHtmlPasteItem(html = "<div>Hello <b>World</b></div>")
         val original = PasteCollection(listOf(htmlItem))
 
-        val json = original.toJson()
-        val restored = PasteCollection.fromJson(json)
+        val json = original.toStoredJson()
+        val restored = PasteCollection.fromStoredJson(json)
 
         assertEquals(1, restored.pasteItems.size)
     }

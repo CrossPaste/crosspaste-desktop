@@ -5,6 +5,9 @@ import java.nio.ByteOrder
 
 @OptIn(ExperimentalUnsignedTypes::class)
 actual fun ByteArray.asULongArray(): ULongArray {
+    require(size % 8 == 0) {
+        "ByteArray size must be a multiple of 8, but was $size"
+    }
     val buffer =
         ByteBuffer
             .wrap(this)

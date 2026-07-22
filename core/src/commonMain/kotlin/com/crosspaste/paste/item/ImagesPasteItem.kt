@@ -3,6 +3,7 @@ package com.crosspaste.paste.item
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItem.Companion.parseStoredIdentifiers
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.serialization.SerialName
@@ -22,7 +23,7 @@ import kotlinx.serialization.json.put
 @SerialName("images")
 data class ImagesPasteItem(
     override val identifiers: List<String>,
-    override var count: Long,
+    override val count: Long,
     override val hash: String,
     override val size: Long,
     @Transient
@@ -49,7 +50,7 @@ data class ImagesPasteItem(
         jsonObject: JsonObject,
         fileInfoTreeMap: Map<String, FileInfoTree>,
     ) : this(
-        identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
+        identifiers = parseStoredIdentifiers(jsonObject["identifiers"]!!.jsonPrimitive.content),
         count = fileInfoTreeMap.values.sumOf { it.getCount() },
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
@@ -86,7 +87,7 @@ data class ImagesPasteItem(
             relativePathList.isNotEmpty() &&
             relativePathList.size == fileInfoTreeMap.size
 
-    override fun toJson(): String =
+    override fun toStoredJson(): String =
         buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))

@@ -25,7 +25,7 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
             element<String>("hash")
             element<String>("rtf")
             element<Long>("size")
-            element<JsonElement?>("extraInfo")
+            element<String?>("extraInfo")
         }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -98,7 +98,7 @@ class RtfPasteItemSerializer : KSerializer<RtfPasteItem> {
         enc.encodeStringElement(descriptor, 1, value.hash)
         enc.encodeStringElement(descriptor, 2, value.rtf)
         enc.encodeLongElement(descriptor, 3, value.size)
-        enc.encodeNullableSerializableElement(descriptor, 4, String.serializer(), value.extraInfo.toString())
+        enc.encodeNullableSerializableElement(descriptor, 4, String.serializer(), value.extraInfo?.toString())
         enc.endStructure(descriptor)
     }
 }

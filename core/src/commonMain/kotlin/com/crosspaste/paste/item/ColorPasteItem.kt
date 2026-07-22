@@ -3,6 +3,7 @@ package com.crosspaste.paste.item
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItem.Companion.parseStoredIdentifiers
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -23,7 +24,7 @@ class ColorPasteItem(
     PasteColor {
 
     constructor(jsonObject: JsonObject) : this(
-        identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
+        identifiers = parseStoredIdentifiers(jsonObject["identifiers"]!!.jsonPrimitive.content),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         color = jsonObject["color"]!!.jsonPrimitive.content.toInt(),
@@ -41,7 +42,7 @@ class ColorPasteItem(
 
     override fun isValid(): Boolean = size == 8L && hash.isNotEmpty() && hash == color.toString()
 
-    override fun toJson(): String =
+    override fun toStoredJson(): String =
         buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))

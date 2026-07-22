@@ -117,8 +117,8 @@ class SqlPasteDao(
                 pasteDatabaseQueries.createPasteDataEntity(
                     pasteData.appInstanceId,
                     pasteData.favorite,
-                    pasteData.pasteAppearItem?.toJson(),
-                    pasteData.pasteCollection.toJson(),
+                    pasteData.pasteAppearItem?.toStoredJson(),
+                    pasteData.pasteCollection.toStoredJson(),
                     pasteData.pasteType.toLong(),
                     pasteData.source,
                     pasteData.size,
@@ -138,8 +138,8 @@ class SqlPasteDao(
     override suspend fun updateFilePath(pasteData: PasteData) {
         withContext(ioDispatcher) {
             pasteDatabaseQueries.updateRemotePasteDataWithFile(
-                pasteData.pasteAppearItem?.toJson(),
-                pasteData.pasteCollection.toJson(),
+                pasteData.pasteAppearItem?.toStoredJson(),
+                pasteData.pasteCollection.toStoredJson(),
                 searchContentService.createSearchContent(
                     pasteData.source,
                     pasteData.pasteAppearItem?.let { pasteItemReader.getSearchContent(it) },
@@ -285,7 +285,7 @@ class SqlPasteDao(
                 .transactionWithResult {
                     pasteDatabaseQueries.updatePasteAppearItem(
                         id = id,
-                        pasteAppearItem = pasteItem.toJson(),
+                        pasteAppearItem = pasteItem.toStoredJson(),
                         pasteSearchContent = pasteSearchContent,
                         addedSize = addedSize,
                         hash = pasteItem.hash,

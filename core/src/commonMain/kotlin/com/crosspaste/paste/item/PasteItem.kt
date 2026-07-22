@@ -21,7 +21,7 @@ sealed interface PasteItem {
 
         private val jsonUtils = getJsonUtils()
 
-        fun fromJson(json: String): PasteItem? =
+        fun fromStoredJson(json: String): PasteItem? =
             runCatching {
                 val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
                 jsonObject["type"]!!.jsonPrimitive.content.toInt().let {
@@ -43,6 +43,9 @@ sealed interface PasteItem {
                 logger.error(e) { "Failed to parse PasteItem from json" }
             }.getOrNull()
 
+        @Deprecated("Use fromStoredJson for the legacy database/import format")
+        fun fromJson(json: String): PasteItem? = fromStoredJson(json)
+
         fun getExtraInfoFromJson(jsonObject: JsonObject): JsonObject? {
             val extraInfo = jsonObject["extraInfo"] ?: return null
 
@@ -61,6 +64,13 @@ sealed interface PasteItem {
                 else -> null
             }
         }
+
+        internal fun parseStoredIdentifiers(value: String): List<String> =
+            if (value.isEmpty()) {
+                emptyList()
+            } else {
+                value.split(",")
+            }
 
         fun updateExtraInfo(
             extraInfo: JsonObject?,
@@ -116,5 +126,8 @@ sealed interface PasteItem {
 
     fun isValid(): Boolean
 
-    fun toJson(): String
+    fun toStoredJson(): String
+
+    @Deprecated("Use toStoredJson for the legacy database/import format")
+    fun toJson(): String = toStoredJson()
 }

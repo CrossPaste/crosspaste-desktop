@@ -226,8 +226,8 @@ class PasteDataTest {
     @Test
     fun `toJson and fromJson roundtrip preserves key fields`() {
         val pd = createTestPasteData(text = "roundtrip test")
-        val json = pd.toJson()
-        val restored = PasteData.fromJson(json)
+        val json = pd.toStoredJson()
+        val restored = PasteData.fromStoredJson(json)
 
         assertNotNull(restored)
         assertEquals(pd.appInstanceId, restored.appInstanceId)
@@ -238,11 +238,11 @@ class PasteDataTest {
 
     @Test
     fun `fromJson returns null for invalid json`() {
-        assertNull(PasteData.fromJson("not valid json"))
+        assertNull(PasteData.fromStoredJson("not valid json"))
     }
 
     @Test
     fun `fromJson returns null for empty json`() {
-        assertNull(PasteData.fromJson("{}"))
+        assertNull(PasteData.fromStoredJson("{}"))
     }
 }

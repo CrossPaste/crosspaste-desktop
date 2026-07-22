@@ -32,5 +32,20 @@ interface CodecsUtils {
 
     fun hashByString(string: String): String = hash(string.encodeToByteArray())
 
-    fun hashByArray(array: Array<String>): String
+    fun hashByArray(array: Array<String>): String {
+        if (array.isEmpty()) return ""
+        if (array.size == 1) return hashByString(array[0])
+
+        val parts = array.map { it.encodeToByteArray() }
+        val totalSize = parts.sumOf { it.size.toLong() }
+        require(totalSize <= Int.MAX_VALUE) { "Combined input is too large: $totalSize bytes" }
+
+        val combined = ByteArray(totalSize.toInt())
+        var offset = 0
+        parts.forEach { part ->
+            part.copyInto(combined, offset)
+            offset += part.size
+        }
+        return hash(combined)
+    }
 }

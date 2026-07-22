@@ -110,7 +110,7 @@ class UpdatePasteItemHelper(
                             pasteItemReader.getSearchContent(newUrlPasteItem),
                         ),
                     ),
-                addedSize = title.length.toLong(),
+                addedSize = newUrlPasteItem.size - urlPasteItem.size,
             ).map {
                 newUrlPasteItem
             }
@@ -122,6 +122,12 @@ class UpdatePasteItemHelper(
         name: String,
         pasteItem: T,
     ): Result<T> {
+        val oldNameSize =
+            pasteItem
+                .getUserEditName()
+                ?.encodeToByteArray()
+                ?.size
+                ?.toLong() ?: 0L
         val newPasteItem: T =
             pasteItem.copy {
                 put(PasteItemProperties.NAME, name)
@@ -139,7 +145,7 @@ class UpdatePasteItemHelper(
                             pasteItemReader.getSearchContent(newPasteItem),
                         ),
                     ),
-                addedSize = name.length.toLong(),
+                addedSize = name.encodeToByteArray().size.toLong() - oldNameSize,
             ).map {
                 newPasteItem
             }
