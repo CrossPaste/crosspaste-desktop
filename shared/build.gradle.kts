@@ -54,23 +54,34 @@ kotlin {
 
     val cliTarget = project.findProperty("cli.target") as? String
 
-    if (cliTarget != null) {
-        when (cliTarget) {
-            "macosArm64" -> macosArm64("nativeApp")
-            "macosX64" -> macosX64("nativeApp")
-            "linuxArm64" -> linuxArm64("nativeApp")
-            "linuxX64" -> linuxX64("nativeApp")
-            "mingwX64" -> mingwX64("nativeApp")
-            else -> throw GradleException("Unsupported CLI target: $cliTarget")
+    val nativeTarget =
+        if (cliTarget != null) {
+            when (cliTarget) {
+                "macosArm64" -> macosArm64("nativeApp")
+                "macosX64" -> macosX64("nativeApp")
+                "linuxArm64" -> linuxArm64("nativeApp")
+                "linuxX64" -> linuxX64("nativeApp")
+                "mingwX64" -> mingwX64("nativeApp")
+                else -> throw GradleException("Unsupported CLI target: $cliTarget")
+            }
+        } else {
+            when {
+                hostOs == "Mac OS X" && isArm64 -> macosArm64("nativeApp")
+                hostOs == "Mac OS X" && !isArm64 -> macosX64("nativeApp")
+                hostOs == "Linux" && isArm64 -> linuxArm64("nativeApp")
+                hostOs == "Linux" && !isArm64 -> linuxX64("nativeApp")
+                isMingwX64 -> mingwX64("nativeApp")
+                else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+            }
         }
-    } else {
-        when {
-            hostOs == "Mac OS X" && isArm64 -> macosArm64("nativeApp")
-            hostOs == "Mac OS X" && !isArm64 -> macosX64("nativeApp")
-            hostOs == "Linux" && isArm64 -> linuxArm64("nativeApp")
-            hostOs == "Linux" && !isArm64 -> linuxX64("nativeApp")
-            isMingwX64 -> mingwX64("nativeApp")
-            else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+
+    val isLinuxTarget = cliTarget?.startsWith("linux") ?: (hostOs == "Linux")
+
+    if (isLinuxTarget) {
+        nativeTarget.binaries.all {
+            // The SQLDelight native driver links against system sqlite3;
+            // on Linux, ld.lld needs explicit library search paths to find it
+            linkerOpts("-L/usr/lib", "-L/usr/lib/x86_64-linux-gnu", "-L/usr/lib/aarch64-linux-gnu")
         }
     }
 
