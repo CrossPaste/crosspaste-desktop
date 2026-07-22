@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class HostInfo(
     val networkPrefixLength: Short,
-    var hostAddress: String,
+    val hostAddress: String,
     val lastSeen: Long = 0L,
 ) {
     companion object {

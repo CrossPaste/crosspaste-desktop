@@ -51,7 +51,7 @@ data class PasteData(
 
         private val jsonUtils = getJsonUtils()
 
-        fun fromJson(json: String): PasteData? =
+        fun fromStoredJson(json: String): PasteData? =
             runCatching {
                 val jsonObject = jsonUtils.JSON.parseToJsonElement(json).jsonObject
                 PasteData(
@@ -59,10 +59,12 @@ data class PasteData(
                     favorite = jsonObject["favorite"]!!.jsonPrimitive.boolean,
                     pasteAppearItem =
                         jsonObject["pasteAppearItem"]?.let {
-                            PasteItem.fromJson(it.jsonPrimitive.content)
+                            requireNotNull(PasteItem.fromStoredJson(it.jsonPrimitive.content)) {
+                                "Unsupported or invalid stored pasteAppearItem"
+                            }
                         },
                     pasteCollection =
-                        PasteCollection.fromJson(
+                        PasteCollection.fromStoredJson(
                             jsonObject["pasteCollection"]!!.jsonPrimitive.content,
                         ),
                     pasteType = jsonObject["pasteType"]!!.jsonPrimitive.long.toInt(),
@@ -73,6 +75,9 @@ data class PasteData(
             }.onFailure { e ->
                 logger.error(e) { "Error while parsing PasteData" }
             }.getOrNull()
+
+        @Deprecated("Use fromStoredJson for the legacy database/import format")
+        fun fromJson(json: String): PasteData? = fromStoredJson(json)
 
         fun mapper(
             id: Long,
@@ -93,8 +98,14 @@ data class PasteData(
                 id,
                 appInstanceId,
                 favorite,
-                pasteAppearItem?.let { PasteItem.fromJson(it) },
-                PasteCollection.fromJson(pasteCollection),
+                pasteAppearItem?.let { storedItem ->
+                    PasteItem.fromStoredJson(storedItem).also { item ->
+                        if (item == null) {
+                            logger.error { "Unsupported or invalid stored pasteAppearItem; using null" }
+                        }
+                    }
+                },
+                PasteCollection.fromStoredJsonTolerant(pasteCollection),
                 pasteType.toInt(),
                 source,
                 size,
@@ -164,15 +175,18 @@ data class PasteData(
     fun getPasteCoordinate(id: Long? = null): PasteCoordinate =
         PasteCoordinate(id ?: this.id, appInstanceId, createTime)
 
-    fun toJson(): String =
+    fun toStoredJson(): String =
         buildJsonObject {
             put("appInstanceId", appInstanceId)
             put("favorite", favorite)
-            pasteAppearItem?.toJson()?.let { put("pasteAppearItem", it) }
-            put("pasteCollection", pasteCollection.toJson())
+            pasteAppearItem?.toStoredJson()?.let { put("pasteAppearItem", it) }
+            put("pasteCollection", pasteCollection.toStoredJson())
             put("pasteType", pasteType)
             source?.let { put("source", it) }
             put("size", size)
             put("hash", hash)
         }.toString()
+
+    @Deprecated("Use toStoredJson for the legacy database/import format")
+    fun toJson(): String = toStoredJson()
 }

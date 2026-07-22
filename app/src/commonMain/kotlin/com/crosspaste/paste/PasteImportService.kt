@@ -195,7 +195,7 @@ class PasteImportService(
 
     private fun readPasteData(line: String): PasteData? {
         val json = codecsUtils.base64Decode(line).decodeToString()
-        return PasteData.fromJson(json)
+        return PasteData.fromStoredJson(json)
     }
 
     private fun decompress(

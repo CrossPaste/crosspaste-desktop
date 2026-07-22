@@ -160,10 +160,10 @@ class CreatePasteItemHelperTest {
     @Test
     fun `createUrlPasteItem size includes title when provided`() {
         val url = "https://example.com"
-        val title = "Example"
+        val title = "示例🙂"
         val extraInfo = JsonObject(mapOf(PasteItemProperties.TITLE to JsonPrimitive(title)))
         val item = createUrlPasteItem(url = url, extraInfo = extraInfo)
-        assertEquals(url.encodeToByteArray().size.toLong() + title.length.toLong(), item.size)
+        assertEquals(url.encodeToByteArray().size.toLong() + title.encodeToByteArray().size.toLong(), item.size)
     }
 
     @Test

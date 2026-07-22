@@ -158,7 +158,7 @@ class PasteExportService(
                 copyResource(basePath, index, pasteData, pasteFiles)
             }
 
-            val json = pasteData.toJson()
+            val json = pasteData.toStoredJson()
             val base64 = codecsUtils.base64Encode(json.encodeToByteArray())
             sink.write(base64.encodeToByteArray())
             sink.writeUtf8("\n")

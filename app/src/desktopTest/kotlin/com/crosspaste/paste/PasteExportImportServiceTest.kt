@@ -131,10 +131,10 @@ class PasteExportImportServiceTest {
     }
 
     private fun assertExportImportRoundTrip(pasteData: PasteData) {
-        val json = pasteData.toJson()
+        val json = pasteData.toStoredJson()
         val base64 = codecsUtils.base64Encode(json.encodeToByteArray())
         val decodedJson = codecsUtils.base64Decode(base64).decodeToString()
-        val restored = PasteData.fromJson(decodedJson)
+        val restored = PasteData.fromStoredJson(decodedJson)
 
         assertNotNull(restored, "Failed to deserialize PasteData from JSON")
         assertEquals(pasteData.appInstanceId, restored.appInstanceId)
@@ -230,7 +230,7 @@ class PasteExportImportServiceTest {
             val pasteDataFile = File(exportDir, "paste.data")
             pasteDataFile.bufferedWriter().use { writer ->
                 for (pd in pasteDataList) {
-                    val json = pd.toJson()
+                    val json = pd.toStoredJson()
                     val base64 = codecsUtils.base64Encode(json.encodeToByteArray())
                     writer.write(base64)
                     writer.newLine()
@@ -265,7 +265,7 @@ class PasteExportImportServiceTest {
             restoredPasteDataFile.readLines().forEach { line ->
                 if (line.isNotBlank()) {
                     val json = codecsUtils.base64Decode(line).decodeToString()
-                    PasteData.fromJson(json)?.let { restoredList.add(it) }
+                    PasteData.fromStoredJson(json)?.let { restoredList.add(it) }
                 }
             }
 
@@ -362,7 +362,7 @@ class PasteExportImportServiceTest {
             assertEquals(1, lines.size, "Should have exactly one paste data line")
 
             val json = codecsUtils.base64Decode(lines[0]).decodeToString()
-            val restored = PasteData.fromJson(json)
+            val restored = PasteData.fromStoredJson(json)
             assertNotNull(restored)
             assertEquals(PasteType.TEXT_TYPE.type, restored.pasteType)
             assertEquals("service export test", (restored.pasteAppearItem as? PasteText)?.text)

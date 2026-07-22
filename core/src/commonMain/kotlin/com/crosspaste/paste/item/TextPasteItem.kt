@@ -3,6 +3,7 @@ package com.crosspaste.paste.item
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItem.Companion.getExtraInfoFromJson
+import com.crosspaste.paste.item.PasteItem.Companion.parseStoredIdentifiers
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -23,7 +24,7 @@ class TextPasteItem(
     PasteText {
 
     constructor(jsonObject: JsonObject) : this(
-        identifiers = jsonObject["identifiers"]!!.jsonPrimitive.content.split(","),
+        identifiers = parseStoredIdentifiers(jsonObject["identifiers"]!!.jsonPrimitive.content),
         hash = jsonObject["hash"]!!.jsonPrimitive.content,
         size = jsonObject["size"]!!.jsonPrimitive.long,
         text = jsonObject["text"]!!.jsonPrimitive.content,
@@ -44,7 +45,7 @@ class TextPasteItem(
             size > 0 &&
             text.isNotEmpty()
 
-    override fun toJson(): String =
+    override fun toStoredJson(): String =
         buildJsonObject {
             put("type", getPasteType().type)
             put("identifiers", identifiers.joinToString(","))
