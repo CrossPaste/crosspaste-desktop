@@ -4,7 +4,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.crosspaste.Database
 
-class TestDriverFactory: DriverFactory {
+class TestDriverFactory : DriverFactory {
     override val dbName: String = "crosspaste_test.db"
     override var sqlDriver: SqlDriver? = null
 

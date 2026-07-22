@@ -72,8 +72,13 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
-      - name: Build with Gradle
-        run: ./gradlew app:build
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+
+      - name: Build common modules and desktop app
+        run: ./gradlew :core:build :shared:build :app:build
 
   web-build:
     needs: changes
