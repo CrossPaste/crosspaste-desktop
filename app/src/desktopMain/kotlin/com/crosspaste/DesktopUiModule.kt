@@ -43,9 +43,11 @@ import com.crosspaste.ui.base.DesktopUISupport
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.SmartImageDisplayStrategy
 import com.crosspaste.ui.base.UISupport
+import com.crosspaste.ui.devices.DefaultPairingV3UiController
 import com.crosspaste.ui.devices.DesktopDeviceScopeFactory
 import com.crosspaste.ui.devices.DesktopSyncScopeFactory
 import com.crosspaste.ui.devices.DeviceScopeFactory
+import com.crosspaste.ui.devices.PairingV3UiController
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.settings.DesktopStoragePathManager
 import com.crosspaste.ui.settings.StoragePathManager
@@ -91,6 +93,7 @@ fun desktopUiModule(): Module =
         single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
         single<MenuHelper> { MenuHelper(get(), get(), get(), get(), get(), get()) }
         single<NavigationManager> { get<DesktopScreenProvider>() }
+        single<PairingV3UiController> { DefaultPairingV3UiController(get(), get()) }
         single<ScreenProvider> { get<DesktopScreenProvider>() }
         single<SmartImageDisplayStrategy> { SmartImageDisplayStrategy() }
         single<StoragePathManager> { DesktopStoragePathManager() }

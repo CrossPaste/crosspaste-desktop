@@ -58,6 +58,19 @@ class TrustDeviceDialogTest {
     }
 
     @Test
+    fun confirmToken_v3PinNeverFallsBackToLegacyPairing() {
+        val syncManager = mockk<SyncManager>(relaxed = true)
+        val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+        confirmToken(tokens, 6, {}, syncManager, syncRuntimeInfo, PairingCredentialType.V3_PIN)
+
+        verify(exactly = 0) {
+            syncManager.trustBySasCode(any(), any(), any())
+            syncManager.trustByBearerToken(any(), any(), any())
+        }
+    }
+
+    @Test
     fun refreshPairingCredentialTypeUntilKnown_retriesAfterEachCompletedFailure() =
         runTest {
             val syncManager = mockk<SyncManager>(relaxed = true)

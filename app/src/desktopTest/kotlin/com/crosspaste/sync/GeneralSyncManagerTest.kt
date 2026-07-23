@@ -33,6 +33,14 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class GeneralSyncManagerTest {
 
+    @Test
+    fun pairingCredentialType_requiresBothPeersForV3() {
+        assertEquals(PairingCredentialType.V3_PIN, selectPairingCredentialType(3, 3))
+        assertEquals(PairingCredentialType.SAS_CODE, selectPairingCredentialType(3, 2))
+        assertEquals(PairingCredentialType.SAS_CODE, selectPairingCredentialType(2, 3))
+        assertEquals(PairingCredentialType.QR_BEARER_TOKEN, selectPairingCredentialType(3, null))
+    }
+
     private fun createMocks(): Mocks =
         Mocks(
             deviceScopeFactory = mockk(relaxed = true),

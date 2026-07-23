@@ -5,6 +5,7 @@ import kotlin.jvm.JvmInline
 enum class PairingCredentialType {
     QR_BEARER_TOKEN,
     SAS_CODE,
+    V3_PIN,
 }
 
 sealed interface PairingCredentialRefreshResult {
@@ -20,7 +21,7 @@ sealed interface PairingCredentialRefreshResult {
 }
 
 /**
- * Two distinct 6-digit pairing credentials that must never be interchanged.
+ * Three distinct 6-digit pairing credentials that must never be interchanged.
  *
  * [QrBearerToken] is a short-lived *random* value the display side generates and shows
  * (embedded in its QR / on-screen pairing code); the receiver proves possession by sending
@@ -35,6 +36,10 @@ sealed interface PairingCredentialRefreshResult {
  * Keeping them as separate types makes "feed a scanned QR bearer token into the SAS
  * comparison" — a deterministic failure for pairingVersion>=2 peers — unrepresentable at the
  * call site, instead of relying on an internal pairingVersion `when`.
+ *
+ * [V3Pin] is a device- and session-bound PAKE password. It is never sent to a
+ * trust endpoint and is converted to a mutable character array immediately
+ * before entering the v3 protocol service.
  */
 @JvmInline
 value class QrBearerToken(
@@ -44,4 +49,9 @@ value class QrBearerToken(
 @JvmInline
 value class SasCode(
     val value: Int,
+)
+
+@JvmInline
+value class V3Pin(
+    val value: String,
 )
