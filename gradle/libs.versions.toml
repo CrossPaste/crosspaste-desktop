@@ -71,6 +71,7 @@ compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.
 conveyor-control = { module = "dev.hydraulic.conveyor:conveyor-control", version.ref = "conveyor-control" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-provider-jdk = { module = "dev.whyoleg.cryptography:cryptography-provider-jdk", version.ref = "cryptography" }
+cryptography-provider-openssl3-prebuilt = { module = "dev.whyoleg.cryptography:cryptography-provider-openssl3-prebuilt", version.ref = "cryptography" }
 cryptography-provider-webcrypto = { module = "dev.whyoleg.cryptography:cryptography-provider-webcrypto", version.ref = "cryptography" }
 filekit = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }

@@ -94,6 +94,15 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+        }
+
+        // The production nativeApp (CLI) binary does not register a cryptography provider;
+        // tests need one so commonTest crypto vectors also run on the native target.
+        val nativeAppTest by getting {
+            dependencies {
+                implementation(libs.cryptography.provider.openssl3.prebuilt)
+            }
         }
     }
 }
