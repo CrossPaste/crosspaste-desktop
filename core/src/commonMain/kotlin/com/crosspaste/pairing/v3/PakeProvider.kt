@@ -47,14 +47,38 @@ enum class PakeRole {
 }
 
 /**
- * PAKE identity binding per RFC 9382: idA/idB are the app instance ids, and the
- * session id separates concurrent sessions between the same two identities.
+ * PAKE identity binding per RFC 9382.
+ *
+ * [pinContext] is the complete canonical output of
+ * [PairingTranscriptCodec.encodePinContext]. Providers must use it exactly as the
+ * D4 input when mapping the PIN to `w`; reconstructing a reduced context locally
+ * would break cross-platform interoperability. Mutable inputs are copied on
+ * construction and access so callers cannot change an in-flight PAKE session.
  */
 class PakeContext(
-    val sessionId: ByteArray,
+    sessionId: ByteArray,
     val initiatorAppInstanceId: String,
     val acceptorAppInstanceId: String,
-)
+    pinContext: ByteArray,
+) {
+
+    private val sessionIdBytes = sessionId.copyOf()
+
+    private val canonicalPinContext = pinContext.copyOf()
+
+    val sessionId: ByteArray
+        get() = sessionIdBytes.copyOf()
+
+    val pinContext: ByteArray
+        get() = canonicalPinContext.copyOf()
+
+    init {
+        require(sessionId.size == PairingV3.SESSION_ID_SIZE) {
+            "session id must be ${PairingV3.SESSION_ID_SIZE} bytes"
+        }
+        require(pinContext.isNotEmpty()) { "canonical PIN context must not be empty" }
+    }
+}
 
 interface PakeSession {
 

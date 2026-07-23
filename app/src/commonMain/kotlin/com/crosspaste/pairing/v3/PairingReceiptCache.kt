@@ -67,8 +67,9 @@ class PairingReceiptCache(
         sessionId: String,
         commitMacHex: String,
         ack: PairingCommitAckV3,
-    ): Record =
-        mutex.withLock {
+    ): Record {
+        val ackSnapshot = ack.detachedCopy()
+        return mutex.withLock {
             evictDueLocked()
             val existing = entries[sessionId]
             when {
@@ -78,15 +79,16 @@ class PairingReceiptCache(
                             .minByOrNull { entry -> entry.value.storedAt }
                             ?.let { oldest -> entries.remove(oldest.key) }
                     }
-                    entries[sessionId] = Entry(commitMacHex, ack, nowEpochMillis())
-                    Record.Inserted(ack)
+                    entries[sessionId] = Entry(commitMacHex, ackSnapshot, nowEpochMillis())
+                    Record.Inserted(ackSnapshot.detachedCopy())
                 }
 
-                existing.commitMacHex == commitMacHex -> Record.Hit(existing.ack)
+                existing.commitMacHex == commitMacHex -> Record.Hit(existing.ack.detachedCopy())
 
                 else -> Record.Conflict
             }
         }
+    }
 
     /** Read-only resolution for retries arriving after session keys were cleared. */
     suspend fun lookup(
@@ -98,10 +100,17 @@ class PairingReceiptCache(
             val entry = entries[sessionId]
             when {
                 entry == null -> Lookup.Miss
-                entry.commitMacHex == commitMacHex -> Lookup.Hit(entry.ack)
+                entry.commitMacHex == commitMacHex -> Lookup.Hit(entry.ack.detachedCopy())
                 else -> Lookup.Conflict
             }
         }
+
+    private fun PairingCommitAckV3.detachedCopy(): PairingCommitAckV3 =
+        PairingCommitAckV3(
+            sessionId = sessionId.copyOf(),
+            transcriptHash = transcriptHash.copyOf(),
+            receiptMac = receiptMac.copyOf(),
+        )
 
     /** Must only be called while holding [mutex]. */
     private fun evictDueLocked() {

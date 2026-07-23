@@ -30,12 +30,14 @@ class PairingSessionStoreTest {
 
     private class TrackingPakeSession : PakeSession {
         var destroyed = false
+        var destroyCalls = 0
 
         override suspend fun localShare(): ByteArray = ByteArray(4)
 
         override suspend fun deriveSharedSecret(peerShare: ByteArray): ByteArray = ByteArray(32)
 
         override fun destroy() {
+            destroyCalls++
             destroyed = true
         }
     }
@@ -323,13 +325,15 @@ class PairingSessionStoreTest {
         runTest {
             val store = newStore()
             val pin = "987654".toCharArray()
-            store.create(session("b").copy(pin = pin))
+            val pakeSession = TrackingPakeSession()
+            store.create(session("b", pakeSession = pakeSession).copy(pin = pin))
 
             val result = store.fail("b")
 
             val success = assertIs<PairingSessionTransitionResult.Success>(result)
             assertNull(success.session.pin)
             assertContentEquals(CharArray(6), pin)
+            assertEquals(1, pakeSession.destroyCalls)
         }
 
     @Test
@@ -356,6 +360,7 @@ class PairingSessionStoreTest {
             assertContentEquals(ByteArray(32), keys.confirmInitiator)
             assertContentEquals(ByteArray(32), keys.receipt)
             assertTrue(pakeSession.destroyed)
+            assertEquals(1, pakeSession.destroyCalls)
         }
 
     // endregion

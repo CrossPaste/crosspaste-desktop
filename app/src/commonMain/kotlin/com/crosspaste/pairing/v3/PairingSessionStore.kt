@@ -280,7 +280,7 @@ class PairingSessionStore(
                             val result =
                                 if (updated.state.isTerminal) {
                                     current.clearSecrets()
-                                    updated.clearSecrets()
+                                    updated.clearSecrets(alreadyCleared = current)
                                 } else {
                                     updated
                                 }

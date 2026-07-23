@@ -15,26 +15,28 @@ class PairingV3FlowTest {
 
     private val sessionId = ByteArray(PairingV3.SESSION_ID_SIZE) { 0x0A }
 
+    private val pinContext =
+        PairingTranscriptCodec.encodePinContext(
+            sessionId = sessionId,
+            tokenGeneration = 1L,
+            acceptorAppInstanceId = "acceptor-app",
+            initiatorAppInstanceId = "initiator-app",
+            acceptorSignPublicKey = ByteArray(8) { 0x66 },
+            acceptorCryptPublicKey = ByteArray(8) { 0x77 },
+            initiatorSignPublicKey = ByteArray(8) { 0x44 },
+            initiatorCryptPublicKey = ByteArray(8) { 0x55 },
+        )
+
     private val pakeContext =
         PakeContext(
             sessionId = sessionId,
             initiatorAppInstanceId = "initiator-app",
             acceptorAppInstanceId = "acceptor-app",
+            pinContext = pinContext,
         )
 
     private suspend fun acceptorPin(): CharArray {
         val pinSecret = ByteArray(PairingV3.PIN_SECRET_SIZE) { 0x5A }
-        val pinContext =
-            PairingTranscriptCodec.encodePinContext(
-                sessionId = sessionId,
-                tokenGeneration = 1L,
-                acceptorAppInstanceId = "acceptor-app",
-                initiatorAppInstanceId = "initiator-app",
-                acceptorSignPublicKey = ByteArray(8) { 0x66 },
-                acceptorCryptPublicKey = ByteArray(8) { 0x77 },
-                initiatorSignPublicKey = ByteArray(8) { 0x44 },
-                initiatorCryptPublicKey = ByteArray(8) { 0x55 },
-            )
         return PairingPinGenerator.derivePin(pinSecret, pinContext)
     }
 
@@ -221,6 +223,17 @@ class PairingV3FlowTest {
                     sessionId = ByteArray(PairingV3.SESSION_ID_SIZE) { 0x0B },
                     initiatorAppInstanceId = "initiator-app",
                     acceptorAppInstanceId = "acceptor-app",
+                    pinContext =
+                        PairingTranscriptCodec.encodePinContext(
+                            sessionId = ByteArray(PairingV3.SESSION_ID_SIZE) { 0x0B },
+                            tokenGeneration = 1L,
+                            acceptorAppInstanceId = "acceptor-app",
+                            initiatorAppInstanceId = "initiator-app",
+                            acceptorSignPublicKey = ByteArray(8) { 0x66 },
+                            acceptorCryptPublicKey = ByteArray(8) { 0x77 },
+                            initiatorSignPublicKey = ByteArray(8) { 0x44 },
+                            initiatorCryptPublicKey = ByteArray(8) { 0x55 },
+                        ),
                 )
 
             val acceptorSession = provider.createSession(PakeRole.ACCEPTOR, displayedPin, pakeContext)
@@ -234,4 +247,61 @@ class PairingV3FlowTest {
 
             assertFalse(initiatorSecret.contentEquals(acceptorSecret))
         }
+
+    @Test
+    fun testDifferentCanonicalPinContextFailsSecretAgreement() =
+        runTest {
+            val provider = FakePakeProvider()
+            val displayedPin = acceptorPin()
+            val otherContext =
+                PakeContext(
+                    sessionId = sessionId,
+                    initiatorAppInstanceId = "initiator-app",
+                    acceptorAppInstanceId = "acceptor-app",
+                    pinContext =
+                        PairingTranscriptCodec.encodePinContext(
+                            sessionId = sessionId,
+                            tokenGeneration = 2L,
+                            acceptorAppInstanceId = "acceptor-app",
+                            initiatorAppInstanceId = "initiator-app",
+                            acceptorSignPublicKey = ByteArray(8) { 0x66 },
+                            acceptorCryptPublicKey = ByteArray(8) { 0x77 },
+                            initiatorSignPublicKey = ByteArray(8) { 0x44 },
+                            initiatorCryptPublicKey = ByteArray(8) { 0x55 },
+                        ),
+                )
+
+            val acceptorSession = provider.createSession(PakeRole.ACCEPTOR, displayedPin, pakeContext)
+            val initiatorSession = provider.createSession(PakeRole.INITIATOR, displayedPin.copyOf(), otherContext)
+            val acceptorShare = acceptorSession.localShare()
+            val initiatorShare = initiatorSession.localShare()
+
+            val initiatorSecret = initiatorSession.deriveSharedSecret(acceptorShare)
+            val acceptorSecret = acceptorSession.deriveSharedSecret(initiatorShare)
+
+            assertFalse(initiatorSecret.contentEquals(acceptorSecret))
+        }
+
+    @Test
+    fun testPakeContextDefensivelyCopiesCanonicalBytes() {
+        val mutableSessionId = sessionId.copyOf()
+        val mutablePinContext = pinContext.copyOf()
+        val context =
+            PakeContext(
+                sessionId = mutableSessionId,
+                initiatorAppInstanceId = "initiator-app",
+                acceptorAppInstanceId = "acceptor-app",
+                pinContext = mutablePinContext,
+            )
+
+        mutableSessionId.fill(0)
+        mutablePinContext.fill(0)
+        val exposedSessionId = context.sessionId
+        val exposedPinContext = context.pinContext
+        exposedSessionId.fill(0)
+        exposedPinContext.fill(0)
+
+        assertContentEquals(sessionId, context.sessionId)
+        assertContentEquals(pinContext, context.pinContext)
+    }
 }

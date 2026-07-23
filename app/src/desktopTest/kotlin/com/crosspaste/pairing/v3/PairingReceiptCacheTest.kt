@@ -3,6 +3,7 @@ package com.crosspaste.pairing.v3
 import com.crosspaste.dto.pairing.v3.PairingCommitAckV3
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
@@ -57,6 +58,30 @@ class PairingReceiptCacheTest {
             // The original entry is intact after the conflict attempt
             val hit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "mac-1"))
             assertEquals(original, hit.ack)
+        }
+
+    @Test
+    fun testCachedReceiptIsIsolatedFromCallerMutation() =
+        runTest {
+            val cache = newCache()
+            val original = ack("s1", marker = 2)
+            val expected = ack("s1", marker = 2)
+
+            val inserted =
+                assertIs<PairingReceiptCache.Record.Inserted>(
+                    cache.recordOrLookup("s1", "mac-1", original),
+                )
+            original.sessionId.fill(0)
+            original.transcriptHash.fill(0)
+            original.receiptMac.fill(0)
+            inserted.ack.receiptMac.fill(9)
+
+            val firstHit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "mac-1"))
+            assertEquals(expected, firstHit.ack)
+            firstHit.ack.receiptMac.fill(8)
+
+            val secondHit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "mac-1"))
+            assertContentEquals(expected.receiptMac, secondHit.ack.receiptMac)
         }
 
     @Test

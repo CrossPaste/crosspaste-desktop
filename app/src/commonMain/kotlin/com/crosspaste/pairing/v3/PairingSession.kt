@@ -61,13 +61,20 @@ data class PairingSession(
         nowEpochMillis < pinExpiresAt || nowEpochMillis < generationFrozenUntil
 
     /**
-     * Zeroes secret material in place and detaches it. Each step is isolated so
-     * one failure cannot skip the remaining fields; safe to call more than once.
+     * Zeroes secret material in place and detaches it. References shared with
+     * [alreadyCleared] are skipped so a copied session cannot destroy the same
+     * native PAKE handle twice.
      */
-    fun clearSecrets(): PairingSession {
-        runCatching { pin?.fill('\u0000') }
-        runCatching { sessionKeys?.clear() }
-        runCatching { pakeSession?.destroy() }
+    internal fun clearSecrets(alreadyCleared: PairingSession? = null): PairingSession {
+        if (pin !== alreadyCleared?.pin) {
+            runCatching { pin?.fill('\u0000') }
+        }
+        if (sessionKeys !== alreadyCleared?.sessionKeys) {
+            runCatching { sessionKeys?.clear() }
+        }
+        if (pakeSession !== alreadyCleared?.pakeSession) {
+            runCatching { pakeSession?.destroy() }
+        }
         return copy(
             pin = null,
             sessionKeys = null,

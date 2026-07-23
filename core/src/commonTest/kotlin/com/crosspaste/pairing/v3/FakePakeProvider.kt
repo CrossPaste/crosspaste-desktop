@@ -38,7 +38,7 @@ private class FakePakeSession(
         // instanceId stands in for the per-session ephemeral scalar of a real PAKE:
         // two sessions never emit the same share even for the same role and PIN
         return PairingKeySchedule.hmacSha256(
-            key = pin.encodeToByteArray() + context.sessionId,
+            key = pin.encodeToByteArray() + context.pinContext,
             data = "fake-share-${role.name}-$instanceId".encodeToByteArray(),
         )
     }
@@ -56,7 +56,7 @@ private class FakePakeSession(
                 PakeRole.ACCEPTOR -> peerShare to localShare
             }
         return PairingKeySchedule.hmacSha256(
-            key = pin.encodeToByteArray() + context.sessionId,
+            key = pin.encodeToByteArray() + context.pinContext,
             data =
                 context.initiatorAppInstanceId.encodeToByteArray() +
                     context.acceptorAppInstanceId.encodeToByteArray() +
