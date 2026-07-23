@@ -26,49 +26,19 @@ data class PairingTranscript(
     val offerHash: ByteArray,
     val negotiatedCapabilities: List<String>,
 ) {
+    /**
+     * Equality is defined as canonical-encoding equality: the length-prefixed
+     * encoding is injective, so two transcripts are equal exactly when every
+     * field matches — and a future field added to the codec is automatically
+     * covered without touching this method.
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is PairingTranscript) return false
-
-        if (protocolVersion != other.protocolVersion) return false
-        if (selectedCiphersuite != other.selectedCiphersuite) return false
-        if (!sessionId.contentEquals(other.sessionId)) return false
-        if (tokenGeneration != other.tokenGeneration) return false
-        if (initiatorAppInstanceId != other.initiatorAppInstanceId) return false
-        if (acceptorAppInstanceId != other.acceptorAppInstanceId) return false
-        if (!initiatorNonce.contentEquals(other.initiatorNonce)) return false
-        if (!acceptorNonce.contentEquals(other.acceptorNonce)) return false
-        if (!initiatorSignPublicKey.contentEquals(other.initiatorSignPublicKey)) return false
-        if (!initiatorCryptPublicKey.contentEquals(other.initiatorCryptPublicKey)) return false
-        if (!acceptorSignPublicKey.contentEquals(other.acceptorSignPublicKey)) return false
-        if (!acceptorCryptPublicKey.contentEquals(other.acceptorCryptPublicKey)) return false
-        if (!initiatorPakeShare.contentEquals(other.initiatorPakeShare)) return false
-        if (!acceptorPakeShare.contentEquals(other.acceptorPakeShare)) return false
-        if (!intentHash.contentEquals(other.intentHash)) return false
-        if (!offerHash.contentEquals(other.offerHash)) return false
-        if (negotiatedCapabilities != other.negotiatedCapabilities) return false
-
-        return true
+        return PairingTranscriptCodec
+            .encodeTranscript(this)
+            .contentEquals(PairingTranscriptCodec.encodeTranscript(other))
     }
 
-    override fun hashCode(): Int {
-        var result = protocolVersion
-        result = 31 * result + selectedCiphersuite.hashCode()
-        result = 31 * result + sessionId.contentHashCode()
-        result = 31 * result + tokenGeneration.hashCode()
-        result = 31 * result + initiatorAppInstanceId.hashCode()
-        result = 31 * result + acceptorAppInstanceId.hashCode()
-        result = 31 * result + initiatorNonce.contentHashCode()
-        result = 31 * result + acceptorNonce.contentHashCode()
-        result = 31 * result + initiatorSignPublicKey.contentHashCode()
-        result = 31 * result + initiatorCryptPublicKey.contentHashCode()
-        result = 31 * result + acceptorSignPublicKey.contentHashCode()
-        result = 31 * result + acceptorCryptPublicKey.contentHashCode()
-        result = 31 * result + initiatorPakeShare.contentHashCode()
-        result = 31 * result + acceptorPakeShare.contentHashCode()
-        result = 31 * result + intentHash.contentHashCode()
-        result = 31 * result + offerHash.contentHashCode()
-        result = 31 * result + negotiatedCapabilities.hashCode()
-        return result
-    }
+    override fun hashCode(): Int = PairingTranscriptCodec.encodeTranscript(this).contentHashCode()
 }
