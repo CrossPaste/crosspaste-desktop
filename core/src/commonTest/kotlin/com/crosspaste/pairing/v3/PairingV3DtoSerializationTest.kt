@@ -1,5 +1,6 @@
 package com.crosspaste.pairing.v3
 
+import com.crosspaste.dto.pairing.v3.PairingCancelV3
 import com.crosspaste.dto.pairing.v3.PairingCommitAckV3
 import com.crosspaste.dto.pairing.v3.PairingCommitV3
 import com.crosspaste.dto.pairing.v3.PairingErrorV3
@@ -104,6 +105,12 @@ class PairingV3DtoSerializationTest {
                 receiptMac = ByteArray(32) { 0x53 },
             )
         assertEquals(ack, json.decodeFromString<PairingCommitAckV3>(json.encodeToString(ack)))
+    }
+
+    @Test
+    fun testCancelRoundTrip() {
+        val cancel = PairingCancelV3(sessionId = ByteArray(PairingV3.SESSION_ID_SIZE) { 0x61 })
+        assertEquals(cancel, json.decodeFromString<PairingCancelV3>(json.encodeToString(cancel)))
     }
 
     @Test

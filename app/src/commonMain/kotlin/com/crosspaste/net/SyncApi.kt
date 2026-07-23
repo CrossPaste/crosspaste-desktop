@@ -1,13 +1,23 @@
 package com.crosspaste.net
 
+import com.crosspaste.pairing.v3.PairingV3
+
 object SyncApi {
 
     const val VERSION: Int = 3
 
+    /**
+     * The advertised pairing capability. Still 2: the v3 protocol surface exists
+     * (see `PairingProtocolV3Service`) but stays unadvertised until the reviewed
+     * SPAKE2 provider and the v3 UI ship (design doc §19 Phase 6 rollout flag).
+     */
     const val PAIRING_VERSION: Int = 2
 
     fun supportsSASPairing(remotePairingVersion: Int?): Boolean =
         remotePairingVersion != null && remotePairingVersion >= 2
+
+    fun supportsPairingV3(remotePairingVersion: Int?): Boolean =
+        remotePairingVersion != null && remotePairingVersion >= PairingV3.PROTOCOL_VERSION
 
     val SCHEMA =
         """
@@ -45,6 +55,26 @@ object SyncApi {
           {
             "path": "/sync/notifyRemove",
             "method": "get"
+          },
+          {
+            "path": "/sync/pairing/v3/intent",
+            "method": "post",
+            "receive": "PairingIntentV3"
+          },
+          {
+            "path": "/sync/pairing/v3/proof",
+            "method": "post",
+            "receive": "PairingProofV3"
+          },
+          {
+            "path": "/sync/pairing/v3/commit",
+            "method": "post",
+            "receive": "PairingCommitV3"
+          },
+          {
+            "path": "/sync/pairing/v3/cancel",
+            "method": "post",
+            "receive": "PairingCancelV3"
           },
           {
             "path": "/sync/paste",

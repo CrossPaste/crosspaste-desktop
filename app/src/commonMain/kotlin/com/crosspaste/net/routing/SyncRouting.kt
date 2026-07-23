@@ -47,6 +47,9 @@ fun Routing.syncRouting(
     syncInfoFactory: SyncInfoFactory,
     syncRoutingApi: SyncRoutingApi,
     trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
+    // No-downgrade rule (pairing v3 design §17.2): while a v3 pairing session is
+    // active for a peer, that peer must not be able to fall back to v2 trust.
+    hasActivePairingV3Session: (String) -> Boolean = { false },
 ) {
     val logger = KotlinLogging.logger {}
 
@@ -181,6 +184,11 @@ fun Routing.syncRouting(
 
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            if (hasActivePairingV3Session(appInstanceId)) {
+                logger.warn { "refusing v1 trust during active pairing v3 session for $appInstanceId" }
+                failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
+                return@let
+            }
             runCatching {
                 val trustRequest = call.receive(TrustRequest::class)
                 val currentTimestamp = nowEpochMilliseconds()
@@ -247,6 +255,11 @@ fun Routing.syncRouting(
 
     post("/sync/trust/v2/exchange") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            if (hasActivePairingV3Session(appInstanceId)) {
+                logger.warn { "refusing v2 exchange during active pairing v3 session for $appInstanceId" }
+                failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
+                return@let
+            }
             runCatching {
                 val request = call.receive(KeyExchangeRequest::class)
 
