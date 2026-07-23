@@ -53,6 +53,7 @@ import com.composables.icons.materialsymbols.rounded.Verified_user
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.pairing.v3.PakeRole
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.settings.SettingListSwitchItem
@@ -75,6 +76,7 @@ fun PairingCodeContentView() {
     val appTokenApi = koinInject<AppTokenApi>()
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
+    val pairingV3UiController = koinInject<PairingV3UiController>()
     val qrCodeGenerator = koinInject<QRCodeGenerator>()
 
     // Fixed bitmap resolution - QR codes scale well as they are pixel-art-like
@@ -85,6 +87,8 @@ fun PairingCodeContentView() {
     val token by appTokenApi.token.collectAsState()
 
     val refreshProgress by appTokenApi.refreshProgress.collectAsState()
+    val pairingSessions by pairingV3UiController.sessions.collectAsState()
+    val hasIncomingPairingV3Sessions = pairingSessions.any { it.role == PakeRole.ACCEPTOR }
 
     LaunchedEffect(token) {
         // maybe slow (get host), we use ioDispatcher to avoid blocking the UI
@@ -120,8 +124,18 @@ fun PairingCodeContentView() {
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = xxLarge, vertical = tiny),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement =
+                if (hasIncomingPairingV3Sessions) {
+                    Arrangement.Top
+                } else {
+                    Arrangement.Center
+                },
         ) {
+            PairingV3AcceptorSessionList(controller = pairingV3UiController)
+            if (hasIncomingPairingV3Sessions) {
+                Spacer(modifier = Modifier.height(medium))
+            }
+
             Box(
                 modifier =
                     Modifier

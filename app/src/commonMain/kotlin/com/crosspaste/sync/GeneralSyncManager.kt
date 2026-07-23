@@ -10,6 +10,7 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.filter
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
@@ -235,11 +236,10 @@ class GeneralSyncManager(
     }
 
     private fun pairingCredentialType(syncInfo: SyncInfo): PairingCredentialType =
-        if (SyncApi.supportsSASPairing(syncInfo.appInfo.pairingVersion)) {
-            PairingCredentialType.SAS_CODE
-        } else {
-            PairingCredentialType.QR_BEARER_TOKEN
-        }
+        selectPairingCredentialType(
+            localPairingVersion = SyncApi.PAIRING_VERSION,
+            remotePairingVersion = syncInfo.appInfo.pairingVersion,
+        )
 
     private fun resolveSyncs(callback: () -> Unit) {
         realTimeSyncScope.launch {
@@ -393,3 +393,18 @@ class GeneralSyncManager(
         }
     }
 }
+
+internal fun selectPairingCredentialType(
+    localPairingVersion: Int,
+    remotePairingVersion: Int?,
+): PairingCredentialType =
+    when {
+        localPairingVersion >= PairingV3.PROTOCOL_VERSION &&
+            SyncApi.supportsPairingV3(remotePairingVersion) ->
+            PairingCredentialType.V3_PIN
+
+        SyncApi.supportsSASPairing(remotePairingVersion) ->
+            PairingCredentialType.SAS_CODE
+
+        else -> PairingCredentialType.QR_BEARER_TOKEN
+    }

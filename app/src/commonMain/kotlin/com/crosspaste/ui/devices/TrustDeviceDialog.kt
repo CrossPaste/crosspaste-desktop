@@ -82,6 +82,11 @@ fun DeviceScope.TrustDeviceDialog() {
     val pairingCredentialType = pairingCredentialTypes[appInstanceId]
     val isPairingTypeKnown = pairingCredentialType != null
 
+    if (pairingCredentialType == PairingCredentialType.V3_PIN) {
+        PairingV3TrustDeviceDialog()
+        return
+    }
+
     val tokenCount = 6
     val tokens = remember(appInstanceId, pairingCredentialType) { mutableStateListOf(*Array(tokenCount) { "" }) }
     var isError by remember(appInstanceId, pairingCredentialType) { mutableStateOf(false) }
@@ -126,6 +131,7 @@ fun DeviceScope.TrustDeviceDialog() {
         when (pairingCredentialType) {
             PairingCredentialType.SAS_CODE -> handler?.exchangeKeysForPairing()
             PairingCredentialType.QR_BEARER_TOKEN -> handler?.showToken()
+            PairingCredentialType.V3_PIN -> Unit
             null -> Unit
         }
     }
@@ -415,6 +421,7 @@ fun confirmToken(
                     syncManager.trustBySasCode(appInstanceId, SasCode(token.toInt()), callback)
                 PairingCredentialType.QR_BEARER_TOKEN ->
                     syncManager.trustByBearerToken(appInstanceId, QrBearerToken(token.toInt()), callback)
+                PairingCredentialType.V3_PIN -> setError(true)
             }
         } else {
             setError(true)
