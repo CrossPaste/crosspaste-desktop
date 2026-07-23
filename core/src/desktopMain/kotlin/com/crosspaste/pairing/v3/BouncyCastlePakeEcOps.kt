@@ -2,6 +2,7 @@ package com.crosspaste.pairing.v3
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.ECPoint
+import org.bouncycastle.math.ec.FixedPointCombMultiplier
 import org.bouncycastle.util.BigIntegers
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -10,6 +11,10 @@ import java.security.SecureRandom
  * JVM/Android [PakeEcOps] backed by BouncyCastle low-level P-256 point/scalar ops
  * (ADR D7). No elliptic-curve arithmetic is written here — every operation is a
  * BouncyCastle primitive over the reviewed `secp256r1` implementation.
+ *
+ * Secret scalar multiplication uses BouncyCastle's fixed-comb multiplier. Its
+ * loop count is fixed for the curve and its precomputed-point lookup is
+ * constant-time with respect to the scalar, unlike the default WNAF multiplier.
  *
  * Secret-hygiene limitation: scalars pass through immutable [BigInteger] inside
  * BouncyCastle, which cannot be zeroed; a `w`/private-scalar copy therefore lives
@@ -39,12 +44,16 @@ class BouncyCastlePakeEcOps(
         return BigIntegers.asUnsignedByteArray(scalarSize, scalar)
     }
 
-    override fun mulBase(scalar: ByteArray): ByteArray = g.multiply(scalar.toScalar()).encodeUncompressed()
+    override fun mulBase(scalar: ByteArray): ByteArray =
+        FixedPointCombMultiplier().multiply(g, scalar.toScalar()).encodeUncompressed()
 
     override fun mulPoint(
         point: ByteArray,
         scalar: ByteArray,
-    ): ByteArray = point.toPoint().multiply(scalar.toScalar()).encodeUncompressed()
+    ): ByteArray =
+        FixedPointCombMultiplier()
+            .multiply(point.toPoint(), scalar.toScalar())
+            .encodeUncompressed()
 
     override fun addPoints(
         a: ByteArray,
@@ -58,7 +67,16 @@ class BouncyCastlePakeEcOps(
 
     override fun toUncompressed(point: ByteArray): ByteArray = point.toPoint().encodeUncompressed()
 
-    private fun ByteArray.toScalar(): BigInteger = BigInteger(1, this)
+    private fun ByteArray.toScalar(): BigInteger {
+        if (size != scalarSize) {
+            throw PakeException("SPAKE2 scalar must be $scalarSize bytes")
+        }
+        val scalar = BigInteger(1, this)
+        if (scalar.signum() <= 0 || scalar >= order) {
+            throw PakeException("SPAKE2 scalar is outside the P-256 group order")
+        }
+        return scalar
+    }
 
     private fun ByteArray.toPoint(): ECPoint {
         val decoded =

@@ -1,6 +1,8 @@
 package com.crosspaste.pairing.v3
 
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 /**
@@ -104,20 +106,35 @@ class Spake2Rfc9382VectorTest {
     }
 
     @Test
-    fun vectorWithBothIdentitiesAbsent() {
-        // This is the exact shape CrossPaste uses in production: empty PAKE
-        // identities, with identity binding carried by w (the pinContext) and the
-        // app-layer confirmation MACs.
-        val w = hex("7bf46c454b4c1b25799527d896508afd5fc62ef4ec59db1efb49113063d70cca")
-        val x = hex("8cef65df64bb2d0f83540c53632de911b5b24b3eab6cc74a97609fd659e95473")
-        val y = hex("d7a66f64074a84652d8d623a92e20c9675c61cb5b4f6a0063e4648a2fdc02d53")
+    fun vectorWithBothIdentitiesAbsentDrivesProductionProvider() =
+        runTest {
+            // This is the exact shape CrossPaste uses in production: empty PAKE
+            // identities, with identity binding carried by w (the pinContext) and the
+            // app-layer confirmation MACs.
+            val w = hex("7bf46c454b4c1b25799527d896508afd5fc62ef4ec59db1efb49113063d70cca")
+            val x = hex("8cef65df64bb2d0f83540c53632de911b5b24b3eab6cc74a97609fd659e95473")
+            val y = hex("d7a66f64074a84652d8d623a92e20c9675c61cb5b4f6a0063e4648a2fdc02d53")
+            val scalarDeriver = Spake2ScalarDeriver { _, _ -> w.copyOf() }
+            val initiatorProvider = Spake2PakeProvider(FixedScalarPakeEcOps(ec, x), scalarDeriver)
+            val acceptorProvider = Spake2PakeProvider(FixedScalarPakeEcOps(ec, y), scalarDeriver)
+            val context =
+                PakeContext(
+                    sessionId = ByteArray(PairingV3.SESSION_ID_SIZE),
+                    initiatorAppInstanceId = "initiator",
+                    acceptorAppInstanceId = "acceptor",
+                    pinContext = byteArrayOf(1),
+                )
 
-        val (pa, pb) = shares(w, x, y)
-        val k = sharedK(w, x, pb)
-        val tt = transcript(ByteArray(0), ByteArray(0), pa, pb, k, w)
-        // Matching Ke proves pA, pB, K, and the transcript are all correct.
-        assertEquals("fc6374762ba5cf11f4b2caa08b2cd1b9", ke(tt).hex())
-    }
+            val initiator =
+                initiatorProvider.createSession(PakeRole.INITIATOR, charArrayOf('0'), context)
+            val acceptor =
+                acceptorProvider.createSession(PakeRole.ACCEPTOR, charArrayOf('0'), context)
+            val initiatorKe = initiator.deriveSharedSecret(acceptor.localShare())
+            val acceptorKe = acceptor.deriveSharedSecret(initiator.localShare())
+
+            assertContentEquals(hex("fc6374762ba5cf11f4b2caa08b2cd1b9"), initiatorKe)
+            assertContentEquals(initiatorKe, acceptorKe)
+        }
 
     @Test
     fun bothPartiesDeriveTheSameSharedElement() {
@@ -130,5 +147,13 @@ class Spake2Rfc9382VectorTest {
         val ka = ec.mulPoint(ec.subtractPoints(pb, ec.mulPoint(n, w)), x)
         val kb = ec.mulPoint(ec.subtractPoints(pa, ec.mulPoint(m, w)), y)
         assertEquals(ka.hex(), kb.hex())
+    }
+
+    private class FixedScalarPakeEcOps(
+        private val delegate: PakeEcOps,
+        private val scalar: ByteArray,
+    ) : PakeEcOps by delegate {
+
+        override fun randomScalar(): ByteArray = scalar.copyOf()
     }
 }

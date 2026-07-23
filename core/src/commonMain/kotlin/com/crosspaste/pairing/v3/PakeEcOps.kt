@@ -37,9 +37,11 @@ interface PakeEcOps {
     fun mulBase(scalar: ByteArray): ByteArray
 
     /**
-     * `scalar * point`, returned uncompressed. [point] is a SEC1 encoding
-     * (compressed or uncompressed); implementations validate it lies on the curve
-     * and is not the identity, throwing [PakeException] otherwise.
+     * `scalar * point`, returned uncompressed. Protocol callers pass uncompressed
+     * peer shares; implementations may also accept compressed encodings here so
+     * the frozen compressed M/N constants can be normalized internally.
+     * Implementations validate the point lies on the curve and is not the
+     * identity, throwing [PakeException] otherwise.
      */
     fun mulPoint(
         point: ByteArray,

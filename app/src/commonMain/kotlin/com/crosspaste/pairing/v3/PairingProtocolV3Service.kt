@@ -62,6 +62,7 @@ class PairingProtocolV3Service(
     private val secureStore: SecureStore,
     private val sessionStore: PairingSessionStore,
     val acceptanceWindow: PairingAcceptanceWindow,
+    private val isPairingV3Enabled: () -> Boolean,
     private val localDisplayNameProvider: () -> String = { appInfo.userName },
     private val pinLifetime: Duration = PairingV3.DEFAULT_PIN_LIFETIME,
     private val generationGrace: Duration = PairingV3.DEFAULT_GENERATION_GRACE,
@@ -119,6 +120,9 @@ class PairingProtocolV3Service(
         callerAppInstanceId: String,
         remoteAddress: String?,
     ): PairingV3ServerResult<PairingOfferV3> {
+        if (!isPairingV3Enabled()) {
+            return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED)
+        }
         if (intent.protocolVersion != PairingV3.PROTOCOL_VERSION) {
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED)
         }
@@ -579,6 +583,9 @@ class PairingProtocolV3Service(
         targetDisplayName: String,
         toUrl: URLBuilder.() -> Unit,
     ): PairingV3StartResult {
+        if (!isPairingV3Enabled()) {
+            return PairingV3StartResult.Refused(PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED)
+        }
         if (targetAppInstanceId.isEmpty() || targetAppInstanceId == appInfo.appInstanceId) {
             return PairingV3StartResult.Refused(PairingV3ErrorCode.PAIRING_IDENTITY_INVALID)
         }
@@ -1365,8 +1372,7 @@ class PairingProtocolV3Service(
         when {
             proof.sessionId.size != PairingV3.SESSION_ID_SIZE -> PairingV3ErrorCode.PAIRING_SESSION_NOT_FOUND
             proof.tokenGeneration < 1L -> PairingV3ErrorCode.PAIRING_PIN_EXPIRED
-            proof.initiatorPakeShare.isEmpty() ||
-                proof.initiatorPakeShare.size > MAX_PAKE_SHARE_SIZE ->
+            !isCanonicalPakeShare(proof.initiatorPakeShare) ->
                 PairingV3ErrorCode.PAIRING_PROOF_INVALID
 
             proof.transcriptHash.size != HASH_SIZE -> PairingV3ErrorCode.PAIRING_PROOF_INVALID
@@ -1400,8 +1406,7 @@ class PairingProtocolV3Service(
         if (offer.sessionId.size != PairingV3.SESSION_ID_SIZE ||
             offer.acceptorNonce.size != PairingV3.NONCE_SIZE ||
             offer.tokenGeneration < 1L ||
-            offer.acceptorPakeShare.isEmpty() ||
-            offer.acceptorPakeShare.size > MAX_PAKE_SHARE_SIZE ||
+            !isCanonicalPakeShare(offer.acceptorPakeShare) ||
             !offer.requestHash.contentEquals(intentHash) ||
             offer.initiatorAppInstanceId != intent.initiatorAppInstanceId ||
             offer.acceptorAppInstanceId != intent.targetAppInstanceId
@@ -1431,6 +1436,10 @@ class PairingProtocolV3Service(
         }
         return null
     }
+
+    private fun isCanonicalPakeShare(share: ByteArray): Boolean =
+        share.size == PairingV3.PAKE_SHARE_SIZE &&
+            share[0] == PairingV3.PAKE_SHARE_UNCOMPRESSED_PREFIX
 
     /**
      * The acceptor's `pinExpiresAt` is on the acceptor's clock, which may be
@@ -1479,7 +1488,6 @@ class PairingProtocolV3Service(
         private const val MAC_SIZE = 32
         private const val MAX_KEY_SIZE = 256
         private const val MAX_SIGNATURE_SIZE = 256
-        private const val MAX_PAKE_SHARE_SIZE = 1024
         private const val MAX_DISPLAY_NAME_LENGTH = 128
         private const val MAX_APP_INSTANCE_ID_LENGTH = 64
         private const val MAX_CIPHERSUITES = 8

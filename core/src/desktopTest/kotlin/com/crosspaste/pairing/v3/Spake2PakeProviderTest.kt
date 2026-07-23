@@ -130,6 +130,57 @@ class Spake2PakeProviderTest {
         }
 
     @Test
+    fun nonCanonicalPeerShareEncodingsAreRejected() =
+        runTest {
+            val ctx = context()
+            val initiator = provider.createSession(PakeRole.INITIATOR, "620632".toCharArray(), ctx)
+            val acceptor = provider.createSession(PakeRole.ACCEPTOR, "620632".toCharArray(), ctx)
+            val uncompressed = acceptor.localShare()
+            val compressed =
+                byteArrayOf(0x02) +
+                    uncompressed.copyOfRange(1, 1 + BouncyCastlePakeEcOps().scalarSize)
+            val hybrid = uncompressed.copyOf().also { share -> share[0] = 0x06 }
+
+            assertFailsWith<PakeException> { initiator.deriveSharedSecret(compressed) }
+            assertFailsWith<PakeException> { initiator.deriveSharedSecret(hybrid) }
+        }
+
+    @Test
+    fun createSessionFailureClearsDerivedScalars() =
+        runTest {
+            val w = ByteArray(32) { 0x01 }
+            val privateScalar = ByteArray(32) { 0x02 }
+            val ecOps = FailingSharePakeEcOps(BouncyCastlePakeEcOps(), privateScalar)
+            val failingProvider =
+                Spake2PakeProvider(
+                    ecOps,
+                    Spake2ScalarDeriver { _, _ -> w },
+                )
+
+            assertFailsWith<PakeException> {
+                failingProvider.createSession(PakeRole.INITIATOR, "620632".toCharArray(), context())
+            }
+            assertTrue(w.all { byte -> byte == 0.toByte() })
+            assertTrue(privateScalar.all { byte -> byte == 0.toByte() })
+        }
+
+    @Test
+    fun sharedSecretDerivationClearsIntermediatePointBuffers() =
+        runTest {
+            val trackingOps = TrackingPakeEcOps(BouncyCastlePakeEcOps())
+            val trackingProvider = Spake2PakeProvider(trackingOps)
+            val ctx = context()
+            val initiator =
+                trackingProvider.createSession(PakeRole.INITIATOR, "620632".toCharArray(), ctx)
+            val acceptor = provider.createSession(PakeRole.ACCEPTOR, "620632".toCharArray(), ctx)
+
+            initiator.deriveSharedSecret(acceptor.localShare())
+
+            assertTrue(trackingOps.lastSubtraction!!.all { byte -> byte == 0.toByte() })
+            assertTrue(trackingOps.lastMultiplication!!.all { byte -> byte == 0.toByte() })
+        }
+
+    @Test
     fun destroyedSessionRefusesUse() =
         runTest {
             val ctx = context()
@@ -208,4 +259,41 @@ class Spake2PakeProviderTest {
                 ),
             )
         }
+
+    private class FailingSharePakeEcOps(
+        private val delegate: PakeEcOps,
+        private val privateScalar: ByteArray,
+    ) : PakeEcOps by delegate {
+
+        override fun randomScalar(): ByteArray = privateScalar
+
+        override fun mulPoint(
+            point: ByteArray,
+            scalar: ByteArray,
+        ): ByteArray = throw PakeException("injected share failure")
+    }
+
+    private class TrackingPakeEcOps(
+        private val delegate: PakeEcOps,
+    ) : PakeEcOps by delegate {
+
+        var lastSubtraction: ByteArray? = null
+        var lastMultiplication: ByteArray? = null
+
+        override fun subtractPoints(
+            a: ByteArray,
+            b: ByteArray,
+        ): ByteArray =
+            delegate.subtractPoints(a, b).also { result ->
+                lastSubtraction = result
+            }
+
+        override fun mulPoint(
+            point: ByteArray,
+            scalar: ByteArray,
+        ): ByteArray =
+            delegate.mulPoint(point, scalar).also { result ->
+                lastMultiplication = result
+            }
+    }
 }

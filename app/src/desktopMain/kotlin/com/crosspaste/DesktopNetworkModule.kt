@@ -47,6 +47,7 @@ import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingReceiptCache
 import com.crosspaste.pairing.v3.PairingSessionStore
+import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.Spake2PakeProvider
@@ -173,6 +174,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 secureStore = get(),
                 sessionStore = get(),
                 acceptanceWindow = get(),
+                isPairingV3Enabled = { SyncApi.PAIRING_VERSION >= PairingV3.PROTOCOL_VERSION },
             )
         }
         single<PairingRateLimiter> { PairingRateLimiter() }
@@ -180,11 +182,8 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<PairingSessionStore> { PairingSessionStore() }
         single<PairingVersionCoordinator> { PairingVersionCoordinator() }
         // Real SPAKE2/P-256 provider (ADR D7, RFC 9382) over the BouncyCastle EC
-        // backend. Validated against the RFC 9382 official vectors. The v3 surface
-        // still stays inert in production until rollout: capability advertisement is
-        // PAIRING_VERSION = 2 and the acceptance window defaults to closed, so no
-        // peer reaches this provider until the version is bumped after the
-        // Kotlin/Native backend and the independent security review land.
+        // backend. The service independently gates both initiating and accepting
+        // on PAIRING_VERSION, so registering the provider cannot expose v3 early.
         single<PakeProvider> { Spake2PakeProvider(BouncyCastlePakeEcOps()) }
         // endregion
 

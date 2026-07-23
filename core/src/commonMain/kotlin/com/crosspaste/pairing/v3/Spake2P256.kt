@@ -47,9 +47,20 @@ object Spake2P256 {
  * platform [PakeEcOps]; the same protocol code runs on every platform and only
  * the EC backend differs. See [PakeProvider] for the frozen role/output contract.
  */
-class Spake2PakeProvider(
+internal fun interface Spake2ScalarDeriver {
+
+    suspend fun derive(
+        pin: CharArray,
+        pinContext: ByteArray,
+    ): ByteArray
+}
+
+class Spake2PakeProvider internal constructor(
     private val ecOps: PakeEcOps,
+    private val scalarDeriver: Spake2ScalarDeriver,
 ) : PakeProvider {
+
+    constructor(ecOps: PakeEcOps) : this(ecOps, DefaultSpake2ScalarDeriver(ecOps))
 
     override val ciphersuite: String = PairingV3.CIPHERSUITE_SPAKE2_P256
 
@@ -64,62 +75,84 @@ class Spake2PakeProvider(
         pin: CharArray,
         context: PakeContext,
     ): PakeSession {
-        val w = deriveW(pin, context.pinContext)
-        val privateScalar = ecOps.randomScalar()
-        // pA = w*M + x*G (initiator) or pB = w*N + y*G (acceptor).
-        val ownConstant = if (role == PakeRole.INITIATOR) mPoint else nPoint
-        val localShare =
-            try {
-                ecOps.addPoints(ecOps.mulPoint(ownConstant, w), ecOps.mulBase(privateScalar))
-            } catch (e: Throwable) {
-                // Any backend failure must not leave secret scalars in cleared-nowhere
-                // buffers; zero both before propagating, whatever the error type.
-                w.fill(0)
-                privateScalar.fill(0)
-                throw e
-            }
-        return Spake2Session(
-            role = role,
-            ecOps = ecOps,
-            hash = { data -> sha256.hasher().hash(data) },
-            w = w,
-            privateScalar = privateScalar,
-            localShare = localShare,
-            peerConstant = if (role == PakeRole.INITIATOR) nPoint else mPoint,
-        )
+        val w = scalarDeriver.derive(pin, context.pinContext)
+        var privateScalar: ByteArray? = null
+        try {
+            privateScalar = ecOps.randomScalar()
+            // pA = w*M + x*G (initiator) or pB = w*N + y*G (acceptor).
+            val ownConstant = if (role == PakeRole.INITIATOR) mPoint else nPoint
+            var passwordElement: ByteArray? = null
+            var ephemeralElement: ByteArray? = null
+            val localShare =
+                try {
+                    passwordElement = ecOps.mulPoint(ownConstant, w)
+                    ephemeralElement = ecOps.mulBase(privateScalar)
+                    ecOps.addPoints(passwordElement, ephemeralElement)
+                } finally {
+                    passwordElement?.fill(0)
+                    ephemeralElement?.fill(0)
+                }
+            return Spake2Session(
+                role = role,
+                ecOps = ecOps,
+                hash = { data -> sha256.hasher().hash(data) },
+                w = w,
+                privateScalar = privateScalar,
+                localShare = localShare,
+                peerConstant = if (role == PakeRole.INITIATOR) nPoint else mPoint,
+            )
+        } catch (e: Throwable) {
+            w.fill(0)
+            privateScalar?.fill(0)
+            throw e
+        }
     }
+}
+
+private class DefaultSpake2ScalarDeriver(
+    private val ecOps: PakeEcOps,
+) : Spake2ScalarDeriver {
+
+    private val sha256 = CryptographyProvider.Default.get(SHA256)
 
     /**
      * ADR D4: `w = OS2IP(HKDF-SHA256(salt = SHA-256(pinContext), IKM = UTF-8(pin),
      * info = "CrossPaste-v3-SPAKE2-w", L = 48)) mod n`. No memory-hard function —
      * the PIN is a one-time 30-second secret and SPAKE2 rules out offline grinding.
      */
-    private suspend fun deriveW(
+    override suspend fun derive(
         pin: CharArray,
         pinContext: ByteArray,
     ): ByteArray {
         // Encode the PIN straight from the CharArray: the digits are ASCII, so no
         // intermediate immutable String (which could not be zeroed) is created.
         val pinBytes = ByteArray(pin.size) { index -> pin[index].code.toByte() }
-        val salt = sha256.hasher().hash(pinContext)
-        val prk = PairingKeySchedule.hkdfExtract(salt = salt, ikm = pinBytes)
-        val wide = PairingKeySchedule.hkdfExpand(prk, Spake2P256.W_INFO.encodeToByteArray(), Spake2P256.W_WIDE_LENGTH)
-        prk.fill(0)
-        pinBytes.fill(0)
-        val w =
-            try {
-                ecOps.reduceScalar(wide)
-            } finally {
-                wide.fill(0)
+        var salt: ByteArray? = null
+        var prk: ByteArray? = null
+        var wide: ByteArray? = null
+        try {
+            salt = sha256.hasher().hash(pinContext)
+            prk = PairingKeySchedule.hkdfExtract(salt = salt, ikm = pinBytes)
+            wide =
+                PairingKeySchedule.hkdfExpand(
+                    prk,
+                    Spake2P256.W_INFO.encodeToByteArray(),
+                    Spake2P256.W_WIDE_LENGTH,
+                )
+            val w = ecOps.reduceScalar(wide)
+            // w == 0 would drop the M/N binding (0*M + x*G = x*G). It requires the
+            // HKDF output to be a multiple of the group order (probability ~2^-256).
+            if (w.all { byte -> byte.toInt() == 0 }) {
+                w.fill(0)
+                throw PakeException("degenerate SPAKE2 w")
             }
-        // w == 0 would drop the M/N binding (0*M + x*G = x*G). It requires the HKDF
-        // output to be a multiple of the group order (probability ~2^-256), but the
-        // interface contract promises a hard failure, so enforce it.
-        if (w.all { byte -> byte.toInt() == 0 }) {
-            w.fill(0)
-            throw PakeException("degenerate SPAKE2 w")
+            return w
+        } finally {
+            pinBytes.fill(0)
+            salt?.fill(0)
+            prk?.fill(0)
+            wide?.fill(0)
         }
-        return w
     }
 }
 
@@ -143,36 +176,50 @@ private class Spake2Session(
 
     override suspend fun deriveSharedSecret(peerShare: ByteArray): ByteArray {
         check(!destroyed) { "session destroyed" }
-        // K = h * privateScalar * (peerShare - w * peerConstant); h = 1 for P-256.
-        // ecOps validates peerShare lies on the curve and is not the identity.
-        val stripped = ecOps.subtractPoints(peerShare, ecOps.mulPoint(peerConstant, w))
-        val k = ecOps.mulPoint(stripped, privateScalar)
+        if (peerShare.size != PairingV3.PAKE_SHARE_SIZE ||
+            peerShare[0] != PairingV3.PAKE_SHARE_UNCOMPRESSED_PREFIX
+        ) {
+            throw PakeException("SPAKE2 peer share must be a canonical uncompressed P-256 point")
+        }
 
-        // RFC 9382 §3.3 transcript with implicit (empty) identities: identity
-        // binding is carried by w (derived from the full pinContext) and by the v3
-        // transcript MACs (ADR D6). pA is always the initiator share, pB the
-        // acceptor share, regardless of which side computes.
-        val (pa, pb) =
-            when (role) {
-                PakeRole.INITIATOR -> localShare to peerShare
-                PakeRole.ACCEPTOR -> peerShare to localShare
-            }
-        val tt =
-            buildTranscript(
-                a = ByteArray(0),
-                b = ByteArray(0),
-                pa = pa,
-                pb = pb,
-                k = k,
-                w = w,
-            )
-        val digest = hash(tt)
-        k.fill(0)
-        tt.fill(0)
-        // Ke is the first half of Hash(TT) (RFC 9382 §4); Ka is discarded.
-        val ke = digest.copyOf(Spake2P256.KE_LENGTH)
-        digest.fill(0)
-        return ke
+        var peerMask: ByteArray? = null
+        var stripped: ByteArray? = null
+        var k: ByteArray? = null
+        var tt: ByteArray? = null
+        var digest: ByteArray? = null
+        try {
+            // K = h * privateScalar * (peerShare - w * peerConstant); h = 1 for P-256.
+            // ecOps validates peerShare lies on the curve and is not the identity.
+            peerMask = ecOps.mulPoint(peerConstant, w)
+            stripped = ecOps.subtractPoints(peerShare, peerMask)
+            k = ecOps.mulPoint(stripped, privateScalar)
+
+            // RFC 9382 §3.3 transcript with implicit (empty) identities. pA is
+            // always the initiator share and pB the acceptor share.
+            val (pa, pb) =
+                when (role) {
+                    PakeRole.INITIATOR -> localShare to peerShare
+                    PakeRole.ACCEPTOR -> peerShare to localShare
+                }
+            tt =
+                buildTranscript(
+                    a = ByteArray(0),
+                    b = ByteArray(0),
+                    pa = pa,
+                    pb = pb,
+                    k = k,
+                    w = w,
+                )
+            digest = hash(tt)
+            // Ke is the first half of Hash(TT) (RFC 9382 §4); Ka is discarded.
+            return digest.copyOf(Spake2P256.KE_LENGTH)
+        } finally {
+            peerMask?.fill(0)
+            stripped?.fill(0)
+            k?.fill(0)
+            tt?.fill(0)
+            digest?.fill(0)
+        }
     }
 
     override fun destroy() {

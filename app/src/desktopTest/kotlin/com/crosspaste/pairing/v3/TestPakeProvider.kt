@@ -34,10 +34,18 @@ private class TestPakeSession(
     override suspend fun localShare(): ByteArray {
         check(!destroyed) { "session destroyed" }
         // instanceId stands in for the per-session ephemeral scalar of a real PAKE
-        return PairingKeySchedule.hmacSha256(
-            key = pin.encodeToByteArray() + context.pinContext,
-            data = "fake-share-${role.name}-$instanceId".encodeToByteArray(),
-        )
+        val seed = "fake-share-${role.name}-$instanceId"
+        val x =
+            PairingKeySchedule.hmacSha256(
+                key = pin.encodeToByteArray() + context.pinContext,
+                data = "$seed-x".encodeToByteArray(),
+            )
+        val y =
+            PairingKeySchedule.hmacSha256(
+                key = pin.encodeToByteArray() + context.pinContext,
+                data = "$seed-y".encodeToByteArray(),
+            )
+        return byteArrayOf(PairingV3.PAKE_SHARE_UNCOMPRESSED_PREFIX) + x + y
     }
 
     override suspend fun deriveSharedSecret(peerShare: ByteArray): ByteArray {

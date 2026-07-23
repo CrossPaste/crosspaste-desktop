@@ -23,6 +23,7 @@ import com.crosspaste.pairing.v3.PairingReceiptCache
 import com.crosspaste.pairing.v3.PairingSessionStore
 import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
+import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.TestPakeProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.secure.GeneralSecureStore
@@ -43,6 +44,8 @@ class TestInstance(
     pairingPinLifetime: Duration = PairingV3.DEFAULT_PIN_LIFETIME,
     pairingGenerationGrace: Duration = PairingV3.DEFAULT_GENERATION_GRACE,
     pairingRateLimiter: PairingRateLimiter = PairingRateLimiter(),
+    pakeProvider: PakeProvider = TestPakeProvider(),
+    pairingV3Enabled: Boolean = true,
 ) {
     companion object {
         val platform: Platform = getPlatformUtils().platform
@@ -99,13 +102,14 @@ class TestInstance(
         PairingProtocolV3Service(
             appInfo = appInfo,
             pairingV3ClientApi = pairingV3ClientApi,
-            pakeProvider = TestPakeProvider(),
+            pakeProvider = pakeProvider,
             receiptCache = pairingReceiptCache,
             rateLimiter = pairingRateLimiter,
             secureKeyPairSerializer = secureKeyPairSerializer,
             secureStore = secureStore,
             sessionStore = pairingSessionStore,
             acceptanceWindow = pairingAcceptanceWindow,
+            isPairingV3Enabled = { pairingV3Enabled },
             pinLifetime = pairingPinLifetime,
             generationGrace = pairingGenerationGrace,
         )
