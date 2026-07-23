@@ -77,6 +77,9 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(libs.cryptography.provider.jdk)
+                // Low-level P-256 point/scalar ops for the SPAKE2 provider (ADR D7,
+                // JVM/Android backend). No hand-rolled EC arithmetic in app code.
+                implementation(libs.bouncycastle.prov)
             }
         }
 

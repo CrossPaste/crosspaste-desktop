@@ -1,6 +1,7 @@
 [versions]
 atomicfu = "0.33.0"
 awesome-brans = "2.2.1"
+bouncycastle = "1.81"
 caffeine = "3.2.4"
 clikt = "5.1.0"
 coil = "3.5.0"
@@ -52,6 +53,7 @@ zxing = "3.5.4"
 
 [libraries]
 awesome-brans = { module = "com.composables:icons-font-awesome-brands-cmp", version.ref = "awesome-brans" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
