@@ -35,12 +35,12 @@ class PairingReceiptCacheTest {
             val cache = newCache()
             val original = ack("s1", marker = 2)
 
-            assertIs<PairingReceiptCache.Record.Inserted>(cache.recordOrLookup("s1", "mac-1", original))
+            assertIs<PairingReceiptCache.Record.Inserted>(cache.recordOrLookup("s1", "peer", "mac-1", original))
 
             // Identical retry with a freshly-built (different) ack object must
             // return the ORIGINAL receipt, not the new one
             val retryAck = ack("s1", marker = 9)
-            val hit = assertIs<PairingReceiptCache.Record.Hit>(cache.recordOrLookup("s1", "mac-1", retryAck))
+            val hit = assertIs<PairingReceiptCache.Record.Hit>(cache.recordOrLookup("s1", "peer", "mac-1", retryAck))
             assertEquals(original, hit.ack)
         }
 
@@ -49,14 +49,14 @@ class PairingReceiptCacheTest {
         runTest {
             val cache = newCache()
             val original = ack("s1")
-            cache.recordOrLookup("s1", "mac-1", original)
+            cache.recordOrLookup("s1", "peer", "mac-1", original)
 
             assertIs<PairingReceiptCache.Record.Conflict>(
-                cache.recordOrLookup("s1", "mac-other", ack("s1", marker = 9)),
+                cache.recordOrLookup("s1", "peer", "mac-other", ack("s1", marker = 9)),
             )
 
             // The original entry is intact after the conflict attempt
-            val hit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "mac-1"))
+            val hit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "peer", "mac-1"))
             assertEquals(original, hit.ack)
         }
 
@@ -69,18 +69,18 @@ class PairingReceiptCacheTest {
 
             val inserted =
                 assertIs<PairingReceiptCache.Record.Inserted>(
-                    cache.recordOrLookup("s1", "mac-1", original),
+                    cache.recordOrLookup("s1", "peer", "mac-1", original),
                 )
             original.sessionId.fill(0)
             original.transcriptHash.fill(0)
             original.receiptMac.fill(0)
             inserted.ack.receiptMac.fill(9)
 
-            val firstHit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "mac-1"))
+            val firstHit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "peer", "mac-1"))
             assertEquals(expected, firstHit.ack)
             firstHit.ack.receiptMac.fill(8)
 
-            val secondHit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "mac-1"))
+            val secondHit = assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "peer", "mac-1"))
             assertContentEquals(expected.receiptMac, secondHit.ack.receiptMac)
         }
 
@@ -88,35 +88,51 @@ class PairingReceiptCacheTest {
     fun testLookupResolvesRetriesAndConflicts() =
         runTest {
             val cache = newCache()
-            cache.recordOrLookup("s1", "mac-1", ack("s1"))
+            cache.recordOrLookup("s1", "peer", "mac-1", ack("s1"))
 
-            assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "mac-1"))
-            assertIs<PairingReceiptCache.Lookup.Conflict>(cache.lookup("s1", "mac-other"))
-            assertIs<PairingReceiptCache.Lookup.Miss>(cache.lookup("s2", "mac-1"))
+            assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "peer", "mac-1"))
+            assertIs<PairingReceiptCache.Lookup.Conflict>(cache.lookup("s1", "peer", "mac-other"))
+            assertIs<PairingReceiptCache.Lookup.Miss>(cache.lookup("s2", "peer", "mac-1"))
+        }
+
+    @Test
+    fun testReceiptIsBoundToTheCommittingPeer() =
+        runTest {
+            val cache = newCache()
+            cache.recordOrLookup("s1", "peer", "mac-1", ack("s1"))
+
+            // A different caller never sees the receipt — not even its existence
+            assertIs<PairingReceiptCache.Lookup.Miss>(cache.lookup("s1", "attacker", "mac-1"))
+            assertIs<PairingReceiptCache.Record.Conflict>(
+                cache.recordOrLookup("s1", "attacker", "mac-1", ack("s1", marker = 9)),
+            )
+
+            // The rightful peer still resolves the original receipt
+            assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s1", "peer", "mac-1"))
         }
 
     @Test
     fun testTtlEviction() =
         runTest {
             val cache = newCache(ttlMillis = 1_000L)
-            cache.recordOrLookup("s1", "mac-1", ack("s1"))
+            cache.recordOrLookup("s1", "peer", "mac-1", ack("s1"))
 
             now += 1_001L
-            assertIs<PairingReceiptCache.Lookup.Miss>(cache.lookup("s1", "mac-1"))
+            assertIs<PairingReceiptCache.Lookup.Miss>(cache.lookup("s1", "peer", "mac-1"))
         }
 
     @Test
     fun testBoundedCapacityEvictsOldestOnlyForNewSessions() =
         runTest {
             val cache = newCache(maxEntries = 2)
-            cache.recordOrLookup("s1", "mac-1", ack("s1"))
+            cache.recordOrLookup("s1", "peer", "mac-1", ack("s1"))
             now += 1
-            cache.recordOrLookup("s2", "mac-2", ack("s2"))
+            cache.recordOrLookup("s2", "peer", "mac-2", ack("s2"))
             now += 1
-            cache.recordOrLookup("s3", "mac-3", ack("s3"))
+            cache.recordOrLookup("s3", "peer", "mac-3", ack("s3"))
 
-            assertIs<PairingReceiptCache.Lookup.Miss>(cache.lookup("s1", "mac-1"))
-            assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s2", "mac-2"))
-            assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s3", "mac-3"))
+            assertIs<PairingReceiptCache.Lookup.Miss>(cache.lookup("s1", "peer", "mac-1"))
+            assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s2", "peer", "mac-2"))
+            assertIs<PairingReceiptCache.Lookup.Hit>(cache.lookup("s3", "peer", "mac-3"))
         }
 }

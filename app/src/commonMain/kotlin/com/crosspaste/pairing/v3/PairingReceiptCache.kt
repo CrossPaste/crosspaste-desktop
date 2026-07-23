@@ -49,6 +49,7 @@ class PairingReceiptCache(
     }
 
     private class Entry(
+        val peerAppInstanceId: String,
         val commitMacHex: String,
         val ack: PairingCommitAckV3,
         val storedAt: Long,
@@ -61,10 +62,13 @@ class PairingReceiptCache(
     /**
      * Atomically records the first receipt for a session or resolves a retry.
      * The eviction policy only ever creates room for NEW sessions; an existing
-     * entry is never replaced by a different commit.
+     * entry is never replaced by a different commit. Every entry is bound to the
+     * committing peer's app instance id: a receipt must never resolve for anyone
+     * but the peer that earned it.
      */
     suspend fun recordOrLookup(
         sessionId: String,
+        peerAppInstanceId: String,
         commitMacHex: String,
         ack: PairingCommitAckV3,
     ): Record {
@@ -79,27 +83,34 @@ class PairingReceiptCache(
                             .minByOrNull { entry -> entry.value.storedAt }
                             ?.let { oldest -> entries.remove(oldest.key) }
                     }
-                    entries[sessionId] = Entry(commitMacHex, ackSnapshot, nowEpochMillis())
+                    entries[sessionId] = Entry(peerAppInstanceId, commitMacHex, ackSnapshot, nowEpochMillis())
                     Record.Inserted(ackSnapshot.detachedCopy())
                 }
 
-                existing.commitMacHex == commitMacHex -> Record.Hit(existing.ack.detachedCopy())
+                existing.peerAppInstanceId == peerAppInstanceId &&
+                    existing.commitMacHex == commitMacHex ->
+                    Record.Hit(existing.ack.detachedCopy())
 
                 else -> Record.Conflict
             }
         }
     }
 
-    /** Read-only resolution for retries arriving after session keys were cleared. */
+    /**
+     * Read-only resolution for retries arriving after session keys were cleared
+     * or the session card was pruned. A caller that does not match the recorded
+     * peer sees a plain miss — the receipt's existence is not disclosed.
+     */
     suspend fun lookup(
         sessionId: String,
+        callerAppInstanceId: String,
         commitMacHex: String,
     ): Lookup =
         mutex.withLock {
             evictDueLocked()
             val entry = entries[sessionId]
             when {
-                entry == null -> Lookup.Miss
+                entry == null || entry.peerAppInstanceId != callerAppInstanceId -> Lookup.Miss
                 entry.commitMacHex == commitMacHex -> Lookup.Hit(entry.ack.detachedCopy())
                 else -> Lookup.Conflict
             }

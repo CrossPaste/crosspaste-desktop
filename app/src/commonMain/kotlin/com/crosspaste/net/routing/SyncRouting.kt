@@ -330,6 +330,11 @@ fun Routing.syncRouting(
 
     post("/sync/trust/v2/confirm") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            if (hasActivePairingV3Session(appInstanceId)) {
+                logger.warn { "refusing v2 confirm during active pairing v3 session for $appInstanceId" }
+                failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
+                return@let
+            }
             runCatching {
                 val request = call.receive(TrustConfirmRequest::class)
 

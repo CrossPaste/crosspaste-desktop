@@ -79,6 +79,13 @@ class PairingProtocolV3Service(
     ) {
         /** Wakes the rotation loop early, e.g. when a failed proof killed the generation. */
         val rotationNudge = Channel<Unit>(Channel.CONFLATED)
+
+        /**
+         * Serializes generation publication (store rotate + offer replacement) against
+         * offer reads, so an intent retry can never observe an offer whose generation
+         * lags the store session.
+         */
+        val offerMutex = Mutex()
     }
 
     private class InitiatorRuntime(
@@ -221,7 +228,10 @@ class PairingProtocolV3Service(
 
                 is PairingSessionCreateResult.Duplicate -> {
                     material.destroy()
-                    val offer = acceptorRuntimes[created.existing.sessionId]?.currentOffer
+                    val offer =
+                        acceptorRuntimes[created.existing.sessionId]?.let { runtime ->
+                            runtime.offerMutex.withLock { runtime.currentOffer }
+                        }
                     return if (offer != null) {
                         PairingV3ServerResult.Ok(offer)
                     } else {
@@ -398,8 +408,9 @@ class PairingProtocolV3Service(
         val commitMacHex = toHex(commit.commitMac)
         val session = sessionStore.get(sessionId)
         if (session == null) {
-            // The session card may already be pruned; the receipt cache still resolves retries.
-            return when (val cached = receiptCache.lookup(sessionId, commitMacHex)) {
+            // The session card may already be pruned; the receipt cache still resolves
+            // retries, but only for the exact peer that earned the receipt.
+            return when (val cached = receiptCache.lookup(sessionId, callerAppInstanceId, commitMacHex)) {
                 is PairingReceiptCache.Lookup.Hit -> PairingV3ServerResult.Ok(cached.ack)
                 PairingReceiptCache.Lookup.Conflict ->
                     PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_CONSUMED)
@@ -413,7 +424,7 @@ class PairingProtocolV3Service(
         }
         return when (session.state) {
             PairingSessionState.TRUSTED ->
-                when (val cached = receiptCache.lookup(sessionId, commitMacHex)) {
+                when (val cached = receiptCache.lookup(sessionId, callerAppInstanceId, commitMacHex)) {
                     is PairingReceiptCache.Lookup.Hit -> PairingV3ServerResult.Ok(cached.ack)
                     else -> PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_CONSUMED)
                 }
@@ -470,7 +481,10 @@ class PairingProtocolV3Service(
                 return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_INVALID_STATE)
             }
         val canonicalAck =
-            when (val recorded = receiptCache.recordOrLookup(sessionId, commitMacHex, ack)) {
+            when (
+                val recorded =
+                    receiptCache.recordOrLookup(sessionId, session.peerAppInstanceId, commitMacHex, ack)
+            ) {
                 is PairingReceiptCache.Record.Inserted -> recorded.ack
                 is PairingReceiptCache.Record.Hit -> recorded.ack
                 PairingReceiptCache.Record.Conflict ->
@@ -1097,6 +1111,7 @@ class PairingProtocolV3Service(
                         continue
                     }
                     val intentHash = session.intentHash ?: break
+                    val runtime = acceptorRuntimes[sessionId] ?: break
                     val material =
                         runCatching {
                             prepareGeneration(
@@ -1109,19 +1124,27 @@ class PairingProtocolV3Service(
                                 acceptorNonce = session.localNonce,
                             )
                         }.getOrNull() ?: break
+                    // Store rotation and offer replacement publish atomically with
+                    // respect to intent-retry reads of the current offer.
                     val rotated =
-                        sessionStore.rotateGeneration(
-                            sessionId = sessionId,
-                            expectedGeneration = session.tokenGeneration,
-                            newPin = material.pin,
-                            pinExpiresAt = material.pinExpiresAt,
-                            pakeSession = material.pakeSession,
-                            localPakeShare = material.localPakeShare,
-                            offerHash = material.offerHash,
-                        )
+                        runtime.offerMutex.withLock {
+                            val result =
+                                sessionStore.rotateGeneration(
+                                    sessionId = sessionId,
+                                    expectedGeneration = session.tokenGeneration,
+                                    newPin = material.pin,
+                                    pinExpiresAt = material.pinExpiresAt,
+                                    pakeSession = material.pakeSession,
+                                    localPakeShare = material.localPakeShare,
+                                    offerHash = material.offerHash,
+                                )
+                            if (result is PairingRotateResult.Rotated) {
+                                runtime.currentOffer = material.offer
+                            }
+                            result
+                        }
                     when (rotated) {
                         is PairingRotateResult.Rotated -> {
-                            acceptorRuntimes[sessionId]?.currentOffer = material.offer
                             logger.info {
                                 "pairing v3 generation rotated session=${shortId(sessionId)} " +
                                     "generation=${rotated.session.tokenGeneration}"
@@ -1147,19 +1170,34 @@ class PairingProtocolV3Service(
     private suspend fun ensureMaintenance() {
         maintenanceMutex.withLock {
             if (maintenanceJob?.isActive == true) return
-            maintenanceJob =
-                scope.launch {
-                    while (isActive) {
-                        delay(MAINTENANCE_INTERVAL)
-                        sessionStore.expireDueSessions().forEach { expired ->
-                            cleanupRuntime(expired.sessionId)
-                        }
-                        sessionStore.pruneTerminal(TERMINAL_RETENTION.inWholeMilliseconds)
+            maintenanceJob = scope.launch { maintenanceLoop() }
+        }
+    }
+
+    private suspend fun maintenanceLoop() {
+        while (true) {
+            delay(MAINTENANCE_INTERVAL)
+            sessionStore.expireDueSessions().forEach { expired ->
+                cleanupRuntime(expired.sessionId)
+            }
+            sessionStore.pruneTerminal(TERMINAL_RETENTION.inWholeMilliseconds)
+            if (sessionStore.uiSessionsFlow.value.isEmpty()) {
+                // Stop only under the mutex, re-checking emptiness: a session created
+                // after the read above saw this job as active and did not relaunch,
+                // so exiting without the re-check would leave no maintenance running.
+                val stop =
+                    maintenanceMutex.withLock {
                         if (sessionStore.uiSessionsFlow.value.isEmpty()) {
-                            break
+                            maintenanceJob = null
+                            true
+                        } else {
+                            false
                         }
                     }
+                if (stop) {
+                    return
                 }
+            }
         }
     }
 

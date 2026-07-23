@@ -377,6 +377,37 @@ class PairingV3IntegrationTest {
             )
         }
 
+    @Test
+    fun testDowngradeGuardRejectsV2ExchangeAndConfirmDuringActiveV3Session() =
+        runBlocking {
+            val a = createInstance("guard2-a")
+            val b = createInstance("guard2-b")
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open()
+
+            // The v2 exchange completes BEFORE any v3 session exists
+            val exchange = b.syncClientApi.exchangeKeys(a.appInstanceId, urlFor(a))
+            assertIs<SuccessResult>(exchange)
+
+            startPairing(b, a)
+
+            // With a v3 session in flight, both remaining v2 legs are refused
+            val v2Exchange = b.syncClientApi.exchangeKeys(a.appInstanceId, urlFor(a))
+            assertIs<FailureResult>(v2Exchange)
+            assertEquals(
+                PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED,
+                pairingV3ErrorCodeOf(v2Exchange.exception.getErrorCode().code),
+            )
+            val v2Confirm = b.syncClientApi.trustV2Confirm(a.appInstanceId, "localhost", urlFor(a))
+            assertIs<FailureResult>(v2Confirm)
+            assertEquals(
+                PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED,
+                pairingV3ErrorCodeOf(v2Confirm.exception.getErrorCode().code),
+            )
+            assertTrue(!a.secureIO.existCryptPublicKey(b.appInstanceId))
+        }
+
     // ---- Rotation ----
 
     @Test
@@ -460,6 +491,41 @@ class PairingV3IntegrationTest {
                 commit.copy(commitMac = commit.commitMac.copyOf().also { mac -> mac[0] = mac[0].inc() })
             val conflict = b.pairingV3ClientApi.sendCommit(tamperedCommit, urlFor(a))
             assertPairingFailure(conflict, PairingV3ErrorCode.PAIRING_SESSION_CONSUMED)
+        }
+
+    @Test
+    fun testPrunedSessionCommitReplayIsBoundToTheCommittingPeer() =
+        runBlocking {
+            val a = createInstance("prune-a")
+            val b = createInstance("prune-b")
+            val attacker = createInstance("prune-attacker")
+            a.start()
+            b.start()
+            attacker.start()
+            a.pairingAcceptanceWindow.open()
+
+            val manual = ManualInitiator(b, a)
+            val offer = manual.requestOffer(urlFor(a))
+            val pin = displayedPin(a, b.appInstanceId)
+            val proof = manual.buildProof(offer, pin)
+            manual.verifyProofResponse(offer, manual.sendProof(proof, urlFor(a)))
+            val commit = manual.buildCommit()
+            manual.sendCommit(commit, urlFor(a))
+
+            // Simulate the terminal card being pruned while the receipt is still cached
+            val sessionIdHex =
+                offer.sessionId.joinToString("") { byte ->
+                    (byte.toInt() and 0xFF).toString(16).padStart(2, '0')
+                }
+            assertTrue(a.pairingSessionStore.removeTerminal(sessionIdHex))
+
+            // A captured commit replayed from a DIFFERENT app instance resolves nothing
+            val replayedByAttacker = attacker.pairingV3ClientApi.sendCommit(commit, urlFor(a))
+            assertPairingFailure(replayedByAttacker, PairingV3ErrorCode.PAIRING_SESSION_NOT_FOUND)
+
+            // The rightful peer still gets the original authenticated receipt
+            val replayedByPeer = manual.sendCommit(commit, urlFor(a))
+            assertContentEquals(commit.transcriptHash, replayedByPeer.transcriptHash)
         }
 
     @Test
