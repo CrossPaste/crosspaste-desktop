@@ -17,6 +17,7 @@ import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncInfoHeaderCodec
 import com.crosspaste.net.exception.ExceptionHandler
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
@@ -47,6 +48,7 @@ fun Routing.syncRouting(
     syncInfoFactory: SyncInfoFactory,
     syncRoutingApi: SyncRoutingApi,
     trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
+    pairingVersionCoordinator: PairingVersionCoordinator,
     // No-downgrade rule (pairing v3 design §17.2): while a v3 pairing session is
     // active for a peer, that peer must not be able to fall back to v2 trust.
     hasActivePairingV3Session: (String) -> Boolean = { false },
@@ -184,209 +186,216 @@ fun Routing.syncRouting(
 
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            if (hasActivePairingV3Session(appInstanceId)) {
-                logger.warn { "refusing v1 trust during active pairing v3 session for $appInstanceId" }
-                failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
-                return@let
-            }
-            runCatching {
-                val trustRequest = call.receive(TrustRequest::class)
-                val currentTimestamp = nowEpochMilliseconds()
-
-                val receiveSignPublicKey =
-                    secureKeyPairSerializer.decodeSignPublicKey(
-                        trustRequest.pairingRequest.signPublicKey,
-                    )
-
-                val verifyResult =
-                    CryptographyUtils.verifyPairingRequest(
-                        receiveSignPublicKey,
-                        trustRequest.pairingRequest,
-                        trustRequest.signature,
-                    )
-
-                if (!verifyResult) {
-                    logger.warn { "trustRequest verify fail for $appInstanceId" }
-                    failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
-                    return@post
+            pairingVersionCoordinator.withPeerLock(appInstanceId) {
+                if (hasActivePairingV3Session(appInstanceId)) {
+                    logger.warn { "refusing v1 trust during active pairing v3 session for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
+                    return@withPeerLock
                 }
+                runCatching {
+                    val trustRequest = call.receive(TrustRequest::class)
+                    val currentTimestamp = nowEpochMilliseconds()
 
-                val sameToken = appTokenApi.sameToken(trustRequest.pairingRequest.token)
-                if (!sameToken) {
-                    failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
-                    return@post
-                }
+                    val receiveSignPublicKey =
+                        secureKeyPairSerializer.decodeSignPublicKey(
+                            trustRequest.pairingRequest.signPublicKey,
+                        )
 
-                secureStore.saveCryptPublicKey(appInstanceId, trustRequest.pairingRequest.cryptPublicKey)
+                    val verifyResult =
+                        CryptographyUtils.verifyPairingRequest(
+                            receiveSignPublicKey,
+                            trustRequest.pairingRequest,
+                            trustRequest.signature,
+                        )
 
-                val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
-                val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
+                    if (!verifyResult) {
+                        logger.warn { "trustRequest verify fail for $appInstanceId" }
+                        failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
+                        return@withPeerLock
+                    }
 
-                val pairingResponse =
-                    PairingResponse(
-                        signPublicKey,
-                        cryptPublicKey,
-                        currentTimestamp,
+                    val sameToken = appTokenApi.sameToken(trustRequest.pairingRequest.token)
+                    if (!sameToken) {
+                        failResponse(call, StandardErrorCode.TOKEN_INVALID.toErrorCode())
+                        return@withPeerLock
+                    }
+
+                    secureStore.saveCryptPublicKey(appInstanceId, trustRequest.pairingRequest.cryptPublicKey)
+
+                    val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+                    val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
+
+                    val pairingResponse =
+                        PairingResponse(
+                            signPublicKey,
+                            cryptPublicKey,
+                            currentTimestamp,
+                        )
+
+                    TrustResponse(
+                        pairingResponse = pairingResponse,
+                        signature =
+                            CryptographyUtils.signPairingResponse(
+                                secureStore.secureKeyPair.signKeyPair.privateKey,
+                                pairingResponse,
+                            ),
                     )
-
-                TrustResponse(
-                    pairingResponse = pairingResponse,
-                    signature =
-                        CryptographyUtils.signPairingResponse(
-                            secureStore.secureKeyPair.signKeyPair.privateKey,
-                            pairingResponse,
-                        ),
-                )
-            }.onSuccess { trustResponse ->
-                val host = call.request.headers["crosspaste-host"]
-                val clientSyncInfo = call.clientSyncInfo()
-                appTokenApi.removePendingVerifier(appInstanceId)
-                trustSyncInfo(appInstanceId, host, clientSyncInfo)
-                if (appTokenApi.showToken.value) {
-                    appTokenApi.stopRefresh(hideToken = false)
+                }.onSuccess { trustResponse ->
+                    val host = call.request.headers["crosspaste-host"]
+                    val clientSyncInfo = call.clientSyncInfo()
+                    appTokenApi.removePendingVerifier(appInstanceId)
+                    trustSyncInfo(appInstanceId, host, clientSyncInfo)
+                    if (appTokenApi.showToken.value) {
+                        appTokenApi.stopRefresh(hideToken = false)
+                    }
+                    successResponse(call, trustResponse)
+                }.onFailure { e ->
+                    logger.error(e) { "Trust request failed for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
                 }
-                successResponse(call, trustResponse)
-            }.onFailure { e ->
-                logger.error(e) { "Trust request failed for $appInstanceId" }
-                failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
             }
         }
     }
 
     post("/sync/trust/v2/exchange") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            if (hasActivePairingV3Session(appInstanceId)) {
-                logger.warn { "refusing v2 exchange during active pairing v3 session for $appInstanceId" }
-                failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
-                return@let
-            }
-            runCatching {
-                val request = call.receive(KeyExchangeRequest::class)
-
-                val receiveSignPublicKey =
-                    secureKeyPairSerializer.decodeSignPublicKey(request.signPublicKey)
-
-                val verifyResult =
-                    CryptographyUtils.verifyKeyExchangeRequest(
-                        receiveSignPublicKey,
-                        request,
-                    )
-
-                if (!verifyResult) {
-                    logger.warn { "v2 exchange verify fail for $appInstanceId" }
-                    failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
-                    return@post
+            pairingVersionCoordinator.withPeerLock(appInstanceId) {
+                if (hasActivePairingV3Session(appInstanceId)) {
+                    logger.warn { "refusing v2 exchange during active pairing v3 session for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
+                    return@withPeerLock
                 }
+                runCatching {
+                    val request = call.receive(KeyExchangeRequest::class)
 
-                val localCryptPublicKey =
-                    secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
-                val localSignPublicKey =
-                    secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+                    val receiveSignPublicKey =
+                        secureKeyPairSerializer.decodeSignPublicKey(request.signPublicKey)
 
-                val sas =
-                    CryptographyUtils.computeSAS(
-                        localCryptPublicKey,
-                        request.cryptPublicKey,
+                    val verifyResult =
+                        CryptographyUtils.verifyKeyExchangeRequest(
+                            receiveSignPublicKey,
+                            request,
+                        )
+
+                    if (!verifyResult) {
+                        logger.warn { "v2 exchange verify fail for $appInstanceId" }
+                        failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
+                        return@withPeerLock
+                    }
+
+                    val localCryptPublicKey =
+                        secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
+                    val localSignPublicKey =
+                        secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
+
+                    val sas =
+                        CryptographyUtils.computeSAS(
+                            localCryptPublicKey,
+                            request.cryptPublicKey,
+                        )
+
+                    val currentTimestamp = nowEpochMilliseconds()
+
+                    pendingKeyExchangeStore.put(
+                        appInstanceId,
+                        PendingKeyExchange(
+                            signPublicKey = request.signPublicKey,
+                            cryptPublicKey = request.cryptPublicKey,
+                            sas = sas,
+                            timestamp = currentTimestamp,
+                        ),
                     )
 
-                val currentTimestamp = nowEpochMilliseconds()
+                    appTokenApi.setSASToken(sas)
+                    appTokenApi.addPendingVerifier(appInstanceId)
+                    appTokenApi.startRefresh(showToken = true)
 
-                pendingKeyExchangeStore.put(
-                    appInstanceId,
-                    PendingKeyExchange(
-                        signPublicKey = request.signPublicKey,
-                        cryptPublicKey = request.cryptPublicKey,
-                        sas = sas,
+                    val signature =
+                        CryptographyUtils.signKeyExchangeResponse(
+                            secureStore.secureKeyPair.signKeyPair.privateKey,
+                            localSignPublicKey,
+                            localCryptPublicKey,
+                            currentTimestamp,
+                        )
+
+                    KeyExchangeResponse(
+                        signPublicKey = localSignPublicKey,
+                        cryptPublicKey = localCryptPublicKey,
                         timestamp = currentTimestamp,
-                    ),
-                )
-
-                appTokenApi.setSASToken(sas)
-                appTokenApi.addPendingVerifier(appInstanceId)
-                appTokenApi.startRefresh(showToken = true)
-
-                val signature =
-                    CryptographyUtils.signKeyExchangeResponse(
-                        secureStore.secureKeyPair.signKeyPair.privateKey,
-                        localSignPublicKey,
-                        localCryptPublicKey,
-                        currentTimestamp,
+                        signature = signature,
                     )
-
-                KeyExchangeResponse(
-                    signPublicKey = localSignPublicKey,
-                    cryptPublicKey = localCryptPublicKey,
-                    timestamp = currentTimestamp,
-                    signature = signature,
-                )
-            }.onSuccess { response ->
-                successResponse(call, response)
-            }.onFailure { e ->
-                logger.error(e) { "v2 exchange failed for $appInstanceId" }
-                failResponse(call, StandardErrorCode.EXCHANGE_FAIL.toErrorCode())
+                }.onSuccess { response ->
+                    successResponse(call, response)
+                }.onFailure { e ->
+                    logger.error(e) { "v2 exchange failed for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.EXCHANGE_FAIL.toErrorCode())
+                }
             }
         }
     }
 
     post("/sync/trust/v2/confirm") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            if (hasActivePairingV3Session(appInstanceId)) {
-                logger.warn { "refusing v2 confirm during active pairing v3 session for $appInstanceId" }
-                failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
-                return@let
-            }
-            runCatching {
-                val request = call.receive(TrustConfirmRequest::class)
-
-                val pending = pendingKeyExchangeStore.get(appInstanceId)
-                if (pending == null) {
-                    logger.warn { "v2 confirm: no pending exchange for $appInstanceId" }
-                    failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
-                    return@post
+            pairingVersionCoordinator.withPeerLock(appInstanceId) {
+                if (hasActivePairingV3Session(appInstanceId)) {
+                    pendingKeyExchangeStore.remove(appInstanceId)
+                    logger.warn { "refusing v2 confirm during active pairing v3 session for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
+                    return@withPeerLock
                 }
+                runCatching {
+                    val request = call.receive(TrustConfirmRequest::class)
 
-                val receiveSignPublicKey =
-                    secureKeyPairSerializer.decodeSignPublicKey(pending.signPublicKey)
+                    val pending = pendingKeyExchangeStore.get(appInstanceId)
+                    if (pending == null) {
+                        logger.warn { "v2 confirm: no pending exchange for $appInstanceId" }
+                        failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
+                        return@withPeerLock
+                    }
 
-                val verifyResult =
-                    CryptographyUtils.verifyTrustConfirm(
-                        receiveSignPublicKey,
-                        request,
+                    val receiveSignPublicKey =
+                        secureKeyPairSerializer.decodeSignPublicKey(pending.signPublicKey)
+
+                    val verifyResult =
+                        CryptographyUtils.verifyTrustConfirm(
+                            receiveSignPublicKey,
+                            request,
+                        )
+
+                    if (!verifyResult) {
+                        logger.warn { "v2 confirm verify fail for $appInstanceId" }
+                        failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
+                        return@withPeerLock
+                    }
+
+                    secureStore.saveCryptPublicKey(appInstanceId, pending.cryptPublicKey)
+
+                    val currentTimestamp = nowEpochMilliseconds()
+                    val signature =
+                        CryptographyUtils.signTrustConfirm(
+                            secureStore.secureKeyPair.signKeyPair.privateKey,
+                            currentTimestamp,
+                        )
+
+                    pendingKeyExchangeStore.remove(appInstanceId)
+
+                    TrustConfirmResponse(
+                        timestamp = currentTimestamp,
+                        signature = signature,
                     )
-
-                if (!verifyResult) {
-                    logger.warn { "v2 confirm verify fail for $appInstanceId" }
-                    failResponse(call, StandardErrorCode.SIGN_INVALID.toErrorCode())
-                    return@post
+                }.onSuccess { response ->
+                    val host = call.request.headers["crosspaste-host"]
+                    val clientSyncInfo = call.clientSyncInfo()
+                    appTokenApi.removePendingVerifier(appInstanceId)
+                    trustSyncInfo(appInstanceId, host, clientSyncInfo)
+                    if (appTokenApi.showToken.value) {
+                        appTokenApi.stopRefresh(hideToken = false)
+                    }
+                    successResponse(call, response)
+                }.onFailure { e ->
+                    logger.error(e) { "v2 confirm failed for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
                 }
-
-                secureStore.saveCryptPublicKey(appInstanceId, pending.cryptPublicKey)
-
-                val currentTimestamp = nowEpochMilliseconds()
-                val signature =
-                    CryptographyUtils.signTrustConfirm(
-                        secureStore.secureKeyPair.signKeyPair.privateKey,
-                        currentTimestamp,
-                    )
-
-                pendingKeyExchangeStore.remove(appInstanceId)
-
-                TrustConfirmResponse(
-                    timestamp = currentTimestamp,
-                    signature = signature,
-                )
-            }.onSuccess { response ->
-                val host = call.request.headers["crosspaste-host"]
-                val clientSyncInfo = call.clientSyncInfo()
-                appTokenApi.removePendingVerifier(appInstanceId)
-                trustSyncInfo(appInstanceId, host, clientSyncInfo)
-                if (appTokenApi.showToken.value) {
-                    appTokenApi.stopRefresh(hideToken = false)
-                }
-                successResponse(call, response)
-            }.onFailure { e ->
-                logger.error(e) { "v2 confirm failed for $appInstanceId" }
-                failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
             }
         }
     }

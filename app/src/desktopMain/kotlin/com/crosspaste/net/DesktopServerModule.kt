@@ -12,6 +12,7 @@ import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
@@ -35,6 +36,7 @@ class DesktopServerModule(
     nearbyDeviceManager: NearbyDeviceManager,
     networkInterfaceService: NetworkInterfaceService,
     pairingProtocolV3Service: PairingProtocolV3Service,
+    pairingVersionCoordinator: PairingVersionCoordinator,
     pendingKeyExchangeStore: PendingKeyExchangeStore,
     pasteboardService: PasteboardService,
     pasteDao: PasteDao,
@@ -61,6 +63,7 @@ class DesktopServerModule(
         nearbyDeviceManager,
         networkInterfaceService,
         pairingProtocolV3Service,
+        pairingVersionCoordinator,
         pendingKeyExchangeStore,
         pasteboardService,
         pasteDao,

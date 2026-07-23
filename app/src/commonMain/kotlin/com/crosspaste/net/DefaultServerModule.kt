@@ -20,6 +20,7 @@ import com.crosspaste.net.routing.wsRouting
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
@@ -54,6 +55,7 @@ open class DefaultServerModule(
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
     private val pairingProtocolV3Service: PairingProtocolV3Service,
+    private val pairingVersionCoordinator: PairingVersionCoordinator,
     private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
@@ -119,10 +121,13 @@ open class DefaultServerModule(
                     syncInfoFactory,
                     syncRoutingApi,
                     ::trustSyncInfo,
-                    pairingProtocolV3Service::hasActiveAcceptorSession,
+                    pairingVersionCoordinator,
+                    pairingProtocolV3Service::hasActiveSession,
                 )
                 pairingV3Routing(
                     pairingProtocolV3Service,
+                    pairingVersionCoordinator,
+                    pendingKeyExchangeStore,
                     ::trustSyncInfo,
                 )
                 pasteRouting(

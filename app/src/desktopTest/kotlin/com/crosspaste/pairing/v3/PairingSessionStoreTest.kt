@@ -1,5 +1,6 @@
 package com.crosspaste.pairing.v3
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
@@ -595,6 +596,41 @@ class PairingSessionStoreTest {
             assertEquals(1, results.filterIsInstance<PairingSessionTransitionResult.Success>().size)
             assertEquals(1, results.filterIsInstance<PairingSessionTransitionResult.InvalidState>().size)
             assertTrue(store.get("b")?.state?.isTerminal == true)
+        }
+
+    @Test
+    fun testTrustSideEffectsAndTerminalTransitionAreSerializedAgainstReject() =
+        runTest {
+            val store = newStore()
+            store.create(session("b"))
+            assertIs<PairingBeginProofResult.Proceed>(store.beginProof("b", generation = 1L))
+            store.confirmPeer("b")
+            assertIs<PairingSessionTransitionResult.Success>(store.beginCommit("b"))
+
+            val sideEffectStarted = CompletableDeferred<Unit>()
+            val releaseSideEffect = CompletableDeferred<Unit>()
+            var sideEffectCount = 0
+            coroutineScope {
+                val trust =
+                    async {
+                        store.completeTrust("b") {
+                            sideEffectStarted.complete(Unit)
+                            releaseSideEffect.await()
+                            sideEffectCount++
+                            true
+                        }
+                    }
+                sideEffectStarted.await()
+                val reject = async { store.reject("b") }
+
+                releaseSideEffect.complete(Unit)
+
+                assertIs<PairingSessionTransitionResult.Success>(trust.await())
+                assertIs<PairingSessionTransitionResult.InvalidState>(reject.await())
+            }
+
+            assertEquals(1, sideEffectCount)
+            assertEquals(PairingSessionState.TRUSTED, store.get("b")?.state)
         }
 
     @Test

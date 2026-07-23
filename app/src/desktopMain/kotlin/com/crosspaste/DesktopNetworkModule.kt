@@ -46,6 +46,7 @@ import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingReceiptCache
 import com.crosspaste.pairing.v3.PairingSessionStore
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.UnavailablePakeProvider
 import com.crosspaste.platform.Platform
@@ -135,6 +136,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 nearbyDeviceManager = get(),
                 networkInterfaceService = get(),
                 pairingProtocolV3Service = get(),
+                pairingVersionCoordinator = get(),
                 pendingKeyExchangeStore = get(),
                 pasteboardService = get(),
                 pasteDao = get(),
@@ -175,6 +177,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<PairingRateLimiter> { PairingRateLimiter() }
         single<PairingReceiptCache> { PairingReceiptCache() }
         single<PairingSessionStore> { PairingSessionStore() }
+        single<PairingVersionCoordinator> { PairingVersionCoordinator() }
         // The reviewed SPAKE2 provider is not implemented yet (Phase 0 ADR D7);
         // the v3 surface stays inert in production: capability advertisement is
         // still v2 and the acceptance window defaults to closed.

@@ -66,6 +66,9 @@ sealed interface PairingSessionTransitionResult {
         val target: PairingSessionState,
     ) : PairingSessionTransitionResult
 
+    /** A guarded side effect refused the transition; the current state is unchanged. */
+    data object ActionFailed : PairingSessionTransitionResult
+
     data object NotFound : PairingSessionTransitionResult
 }
 
@@ -246,9 +249,9 @@ class PairingSessionStore(
     /**
      * Serialized, graph-checked state transition. Internal on purpose: protocol
      * steps go through the semantic entry points, which layer the required
-     * cryptographic pre-conditions on top of this. [action] runs under the session
-     * mutex and returns the updated session; it is only invoked when the current
-     * state is in [expected]. Terminal states are absorbing regardless of [expected].
+     * cryptographic pre-conditions on top of this. [guard] and [action] run under
+     * the session mutex; the action is only invoked when the current state is in
+     * [expected] and the guard accepts it. Terminal states are absorbing regardless of [expected].
      * An illegal target state, or a confirmation-or-later target without evidence,
      * is rejected without storing anything. On a terminal transition, secrets are
      * cleared on BOTH the previous instance and the returned instance, so an action
@@ -257,39 +260,39 @@ class PairingSessionStore(
     internal suspend fun transition(
         sessionId: String,
         expected: Set<PairingSessionState>,
+        guard: suspend (PairingSession) -> Boolean = { true },
         action: suspend (PairingSession) -> PairingSession,
     ): PairingSessionTransitionResult {
         val stored = sessions[sessionId] ?: return PairingSessionTransitionResult.NotFound
         return stored.mutex.withLock {
             val current = stored.session
+            if (current.state.isTerminal || current.state !in expected) {
+                return@withLock PairingSessionTransitionResult.InvalidState(current.state)
+            }
+            if (!guard(current)) {
+                return@withLock PairingSessionTransitionResult.ActionFailed
+            }
+            val updated = action(current)
             when {
-                current.state.isTerminal || current.state !in expected ->
-                    PairingSessionTransitionResult.InvalidState(current.state)
+                !current.state.canTransitionTo(updated.state) ->
+                    PairingSessionTransitionResult.IllegalTransition(current.state, updated.state)
+
+                updated.state in evidenceStates &&
+                    (updated.transcriptHash == null || updated.sessionKeys == null) ->
+                    PairingSessionTransitionResult.EvidenceRequired(updated.state)
 
                 else -> {
-                    val updated = action(current)
-                    when {
-                        !current.state.canTransitionTo(updated.state) ->
-                            PairingSessionTransitionResult.IllegalTransition(current.state, updated.state)
-
-                        updated.state in evidenceStates &&
-                            (updated.transcriptHash == null || updated.sessionKeys == null) ->
-                            PairingSessionTransitionResult.EvidenceRequired(updated.state)
-
-                        else -> {
-                            val result =
-                                if (updated.state.isTerminal) {
-                                    current.clearSecrets()
-                                    updated.clearSecrets(alreadyCleared = current)
-                                } else {
-                                    updated
-                                }
-                            if (commit(stored, result)) {
-                                PairingSessionTransitionResult.Success(result)
-                            } else {
-                                PairingSessionTransitionResult.NotFound
-                            }
+                    val result =
+                        if (updated.state.isTerminal) {
+                            current.clearSecrets()
+                            updated.clearSecrets(alreadyCleared = current)
+                        } else {
+                            updated
                         }
+                    if (commit(stored, result)) {
+                        PairingSessionTransitionResult.Success(result)
+                    } else {
+                        PairingSessionTransitionResult.NotFound
                     }
                 }
             }
@@ -395,11 +398,19 @@ class PairingSessionStore(
         }
 
     /**
-     * COMMITTING → TRUSTED, after the caller verified the commit MAC and persisted
-     * the peer key. The returned session already has its secrets cleared.
+     * Runs commit side effects and COMMITTING → TRUSTED under the session mutex.
+     * Reject, cancel, and expiration therefore either win before [beforeTransition]
+     * starts, or observe the final TRUSTED state after it completes.
      */
-    suspend fun completeTrust(sessionId: String): PairingSessionTransitionResult =
-        transition(sessionId, setOf(PairingSessionState.COMMITTING)) { current ->
+    suspend fun completeTrust(
+        sessionId: String,
+        beforeTransition: suspend (PairingSession) -> Boolean = { true },
+    ): PairingSessionTransitionResult =
+        transition(
+            sessionId = sessionId,
+            expected = setOf(PairingSessionState.COMMITTING),
+            guard = beforeTransition,
+        ) { current ->
             current.copy(state = PairingSessionState.TRUSTED)
         }
 

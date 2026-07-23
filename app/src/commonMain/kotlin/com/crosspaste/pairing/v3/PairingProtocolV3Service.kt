@@ -106,10 +106,10 @@ class PairingProtocolV3Service(
     /** Sanitized live session cards for the UI layer. */
     val uiSessionsFlow = sessionStore.uiSessionsFlow
 
-    /** Downgrade guard (§17.2): v2 trust must be refused while a v3 session is in flight. */
-    fun hasActiveAcceptorSession(appInstanceId: String): Boolean =
+    /** Downgrade guard (§17.2): legacy trust is refused while either v3 role is active. */
+    fun hasActiveSession(appInstanceId: String): Boolean =
         sessionStore.activeSessions().any { session ->
-            session.role == PakeRole.ACCEPTOR && session.peerAppInstanceId == appInstanceId
+            session.peerAppInstanceId == appInstanceId
         }
 
     // region Acceptor role
@@ -473,27 +473,71 @@ class PairingProtocolV3Service(
                 transcriptHash = transcriptHash,
                 receiptMac = PairingKeySchedule.receiptMac(keys, transcriptHash),
             )
-        runCatching { secureStore.saveCryptPublicKey(session.peerAppInstanceId, session.peerCryptPublicKey) }
-            .onFailure { error ->
-                // No receipt is recorded: the initiator retries the byte-identical
-                // commit and key persistence runs again.
+        var canonicalAck: PairingCommitAckV3? = null
+        val completed =
+            runCatching {
+                sessionStore.completeTrust(sessionId) {
+                    when (val cached = receiptCache.lookup(sessionId, session.peerAppInstanceId, commitMacHex)) {
+                        is PairingReceiptCache.Lookup.Hit -> {
+                            canonicalAck = cached.ack
+                            true
+                        }
+
+                        PairingReceiptCache.Lookup.Conflict -> false
+                        PairingReceiptCache.Lookup.Miss -> {
+                            secureStore.saveCryptPublicKey(session.peerAppInstanceId, session.peerCryptPublicKey)
+                            when (
+                                val recorded =
+                                    receiptCache.recordOrLookup(
+                                        sessionId,
+                                        session.peerAppInstanceId,
+                                        commitMacHex,
+                                        ack,
+                                    )
+                            ) {
+                                is PairingReceiptCache.Record.Inserted -> {
+                                    canonicalAck = recorded.ack
+                                    true
+                                }
+
+                                is PairingReceiptCache.Record.Hit -> {
+                                    canonicalAck = recorded.ack
+                                    true
+                                }
+
+                                PairingReceiptCache.Record.Conflict -> false
+                            }
+                        }
+                    }
+                }
+            }.getOrElse { error ->
                 logger.error(error) { "pairing v3 key persistence failed session=${shortId(sessionId)}" }
                 return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_INVALID_STATE)
             }
-        val canonicalAck =
-            when (
-                val recorded =
-                    receiptCache.recordOrLookup(sessionId, session.peerAppInstanceId, commitMacHex, ack)
-            ) {
-                is PairingReceiptCache.Record.Inserted -> recorded.ack
-                is PairingReceiptCache.Record.Hit -> recorded.ack
-                PairingReceiptCache.Record.Conflict ->
-                    return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_CONSUMED)
-            }
-        sessionStore.completeTrust(sessionId)
-        cleanupRuntime(sessionId)
-        logger.info { "pairing v3 session completed session=${shortId(sessionId)}" }
-        return PairingV3ServerResult.Ok(canonicalAck)
+        if (completed is PairingSessionTransitionResult.Success) {
+            cleanupRuntime(sessionId)
+            logger.info { "pairing v3 session completed session=${shortId(sessionId)}" }
+            return PairingV3ServerResult.Ok(requireNotNull(canonicalAck))
+        }
+        // Concurrent byte-identical commits wait for the first finalization and
+        // then resolve to its original receipt.
+        when (val cached = receiptCache.lookup(sessionId, session.peerAppInstanceId, commitMacHex)) {
+            is PairingReceiptCache.Lookup.Hit -> return PairingV3ServerResult.Ok(cached.ack)
+            PairingReceiptCache.Lookup.Conflict ->
+                return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_CONSUMED)
+
+            PairingReceiptCache.Lookup.Miss -> Unit
+        }
+        return when (sessionStore.get(sessionId)?.state) {
+            PairingSessionState.REJECTED -> PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_REJECTED)
+            PairingSessionState.CANCELLED -> PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_CANCELLED)
+            PairingSessionState.EXPIRED -> PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_EXPIRED)
+            PairingSessionState.FAILED,
+            PairingSessionState.TRUSTED,
+            -> PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_CONSUMED)
+
+            else -> PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_INVALID_STATE)
+        }
     }
 
     suspend fun handleCancel(
@@ -514,7 +558,7 @@ class PairingProtocolV3Service(
         return PairingV3ServerResult.Ok(Unit)
     }
 
-    /** Local reject from the acceptor UI. Always wins; the session can never be reopened. */
+    /** Local reject wins any active session that has not entered serialized trust finalization. */
     suspend fun rejectSession(sessionId: String): Boolean {
         val rejected = sessionStore.reject(sessionId) is PairingSessionTransitionResult.Success
         if (rejected) {
@@ -873,15 +917,29 @@ class PairingProtocolV3Service(
             cleanupRuntime(sessionId)
             return PairingV3PinResult.Refused(PairingV3ErrorCode.PAIRING_PROOF_INVALID)
         }
-        runCatching { secureStore.saveCryptPublicKey(session.peerAppInstanceId, session.peerCryptPublicKey) }
-            .onFailure { error ->
+        val completed =
+            runCatching {
+                sessionStore.completeTrust(sessionId) {
+                    secureStore.saveCryptPublicKey(session.peerAppInstanceId, session.peerCryptPublicKey)
+                    true
+                }
+            }.getOrElse { error ->
                 logger.error(error) { "pairing v3 key persistence failed session=${shortId(sessionId)}" }
                 return PairingV3PinResult.NetworkError(
                     lastFailure ?: UnknownError,
                     commitPending = true,
                 )
             }
-        sessionStore.completeTrust(sessionId)
+        if (completed !is PairingSessionTransitionResult.Success) {
+            return when (sessionStore.get(sessionId)?.state) {
+                PairingSessionState.REJECTED -> PairingV3PinResult.Refused(PairingV3ErrorCode.PAIRING_REJECTED)
+                PairingSessionState.CANCELLED -> PairingV3PinResult.Refused(PairingV3ErrorCode.PAIRING_CANCELLED)
+                PairingSessionState.EXPIRED ->
+                    PairingV3PinResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_EXPIRED)
+
+                else -> PairingV3PinResult.Refused(PairingV3ErrorCode.PAIRING_INVALID_STATE)
+            }
+        }
         cleanupRuntime(sessionId)
         logger.info { "pairing v3 session completed session=${shortId(sessionId)}" }
         return PairingV3PinResult.Paired(session.peerAppInstanceId)

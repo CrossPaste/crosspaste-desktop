@@ -24,8 +24,12 @@ import com.crosspaste.pairing.v3.pairingV3ErrorCodeOf
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
+import com.crosspaste.utils.getJsonUtils
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -234,6 +238,33 @@ class PairingV3IntegrationTest {
             assertEquals(PairingV3ErrorCode.PAIRING_IDENTITY_INVALID, mismatch.code)
         }
 
+    @Test
+    fun testNetworkRouteIgnoresUnknownV3Fields() =
+        runBlocking {
+            val a = createInstance("compatible-a")
+            val b = createInstance("compatible-b")
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open()
+
+            val valid = ManualInitiator(b, a).buildIntent()
+            val payload =
+                getJsonUtils().JSON.encodeToString(valid).dropLast(1) +
+                    ",\"futureOptionalField\":\"tolerated-by-design\"}"
+            val response =
+                b.pasteClient.postBinary(
+                    payload.encodeToByteArray(),
+                    contentType = ContentType.Application.Json,
+                    urlBuilder = {
+                        buildUrl(HostAndPort("localhost", a.getPort()))
+                        buildUrl("sync", "pairing", "v3", "intent")
+                    },
+                )
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(1, a.pairingSessionStore.activeSessions().size)
+        }
+
     // ---- Wrong PIN, budget, and recovery ----
 
     @Test
@@ -359,6 +390,21 @@ class PairingV3IntegrationTest {
     // ---- Downgrade guard ----
 
     @Test
+    fun testV2ExchangeAndConfirmRemainCompatibleWithoutV3Session() =
+        runBlocking {
+            val a = createInstance("legacy-a")
+            val b = createInstance("legacy-b")
+            a.start()
+            b.start()
+
+            assertIs<SuccessResult>(b.syncClientApi.exchangeKeys(a.appInstanceId, urlFor(a)))
+            assertIs<SuccessResult>(
+                b.syncClientApi.trustV2Confirm(a.appInstanceId, "localhost", urlFor(a)),
+            )
+            assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
+        }
+
+    @Test
     fun testDowngradeGuardRejectsV2TrustDuringActiveV3Session() =
         runBlocking {
             val a = createInstance("guard-a")
@@ -406,6 +452,26 @@ class PairingV3IntegrationTest {
                 pairingV3ErrorCodeOf(v2Confirm.exception.getErrorCode().code),
             )
             assertTrue(!a.secureIO.existCryptPublicKey(b.appInstanceId))
+        }
+
+    @Test
+    fun testDowngradeGuardAlsoProtectsLocalInitiatorSession() =
+        runBlocking {
+            val a = createInstance("guard3-a")
+            val b = createInstance("guard3-b")
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open()
+
+            startPairing(b, a)
+
+            val reverseV2Exchange = a.syncClientApi.exchangeKeys(b.appInstanceId, urlFor(b))
+            assertIs<FailureResult>(reverseV2Exchange)
+            assertEquals(
+                PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED,
+                pairingV3ErrorCodeOf(reverseV2Exchange.exception.getErrorCode().code),
+            )
+            assertTrue(!b.secureIO.existCryptPublicKey(a.appInstanceId))
         }
 
     // ---- Rotation ----

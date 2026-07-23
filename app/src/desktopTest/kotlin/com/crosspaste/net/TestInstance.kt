@@ -22,6 +22,7 @@ import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingReceiptCache
 import com.crosspaste.pairing.v3.PairingSessionStore
 import com.crosspaste.pairing.v3.PairingV3
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.TestPakeProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.secure.GeneralSecureStore
@@ -90,6 +91,8 @@ class TestInstance(
 
     val pairingReceiptCache = PairingReceiptCache()
 
+    val pairingVersionCoordinator = PairingVersionCoordinator()
+
     val pairingV3ClientApi = PairingV3ClientApi(pasteClient, exceptionHandler)
 
     val pairingProtocolV3Service =
@@ -134,6 +137,7 @@ class TestInstance(
             syncInfoFactory = syncInfoFactory,
             syncRoutingApi = syncRoutingApi,
             pairingProtocolV3Service = pairingProtocolV3Service,
+            pairingVersionCoordinator = pairingVersionCoordinator,
         )
 
     val pasteServer: Server =
