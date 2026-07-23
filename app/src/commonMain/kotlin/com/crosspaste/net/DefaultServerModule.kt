@@ -11,6 +11,7 @@ import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.net.routing.pairingV3Routing
 import com.crosspaste.net.routing.pasteRouting
 import com.crosspaste.net.routing.pullRouting
 import com.crosspaste.net.routing.pushRouting
@@ -18,6 +19,8 @@ import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.net.routing.wsRouting
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.PairingProtocolV3Service
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
@@ -51,6 +54,8 @@ open class DefaultServerModule(
     private val exceptionHandler: ExceptionHandler,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
+    private val pairingProtocolV3Service: PairingProtocolV3Service,
+    private val pairingVersionCoordinator: PairingVersionCoordinator,
     private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
@@ -115,6 +120,14 @@ open class DefaultServerModule(
                     syncApi,
                     syncInfoFactory,
                     syncRoutingApi,
+                    ::trustSyncInfo,
+                    pairingVersionCoordinator,
+                    pairingProtocolV3Service::hasActiveSession,
+                )
+                pairingV3Routing(
+                    pairingProtocolV3Service,
+                    pairingVersionCoordinator,
+                    pendingKeyExchangeStore,
                     ::trustSyncInfo,
                 )
                 pasteRouting(

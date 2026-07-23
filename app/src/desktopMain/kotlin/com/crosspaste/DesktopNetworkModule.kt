@@ -29,6 +29,7 @@ import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.WindowsNetworkStateMonitor
+import com.crosspaste.net.clientapi.PairingV3ClientApi
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.PushClientApi
@@ -40,6 +41,14 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.PairingAcceptanceWindow
+import com.crosspaste.pairing.v3.PairingProtocolV3Service
+import com.crosspaste.pairing.v3.PairingRateLimiter
+import com.crosspaste.pairing.v3.PairingReceiptCache
+import com.crosspaste.pairing.v3.PairingSessionStore
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
+import com.crosspaste.pairing.v3.PakeProvider
+import com.crosspaste.pairing.v3.UnavailablePakeProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.GeneralNearbyDeviceManager
@@ -95,6 +104,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
 
         // region HTTP client & API
         single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
+        single<PairingV3ClientApi> { PairingV3ClientApi(get(), get()) }
         single<PasteClient> { PasteClient(get(), get(), get()) }
         single<PasteClientApi> { PasteClientApi(get(), get()) }
         single<PullClientApi> { PullClientApi(get(), get(), get()) }
@@ -125,6 +135,8 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 exceptionHandler = get(),
                 nearbyDeviceManager = get(),
                 networkInterfaceService = get(),
+                pairingProtocolV3Service = get(),
+                pairingVersionCoordinator = get(),
                 pendingKeyExchangeStore = get(),
                 pasteboardService = get(),
                 pasteDao = get(),
@@ -145,6 +157,31 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         }
         single<SyncApi> { SyncApi }
         single<SyncRoutingApi> { get<SyncManager>() }
+        // endregion
+
+        // region Pairing v3
+        single<PairingAcceptanceWindow> { PairingAcceptanceWindow() }
+        single<PairingProtocolV3Service> {
+            PairingProtocolV3Service(
+                appInfo = get(),
+                pairingV3ClientApi = get(),
+                pakeProvider = get(),
+                receiptCache = get(),
+                rateLimiter = get(),
+                secureKeyPairSerializer = get(),
+                secureStore = get(),
+                sessionStore = get(),
+                acceptanceWindow = get(),
+            )
+        }
+        single<PairingRateLimiter> { PairingRateLimiter() }
+        single<PairingReceiptCache> { PairingReceiptCache() }
+        single<PairingSessionStore> { PairingSessionStore() }
+        single<PairingVersionCoordinator> { PairingVersionCoordinator() }
+        // The reviewed SPAKE2 provider is not implemented yet (Phase 0 ADR D7);
+        // the v3 surface stays inert in production: capability advertisement is
+        // still v2 and the acceptance window defaults to closed.
+        single<PakeProvider> { UnavailablePakeProvider }
         // endregion
 
         // region WebSocket

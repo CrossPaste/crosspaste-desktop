@@ -1,5 +1,6 @@
 package com.crosspaste.pairing.v3
 
+import com.crosspaste.dto.pairing.v3.PairingCancelV3
 import com.crosspaste.dto.pairing.v3.PairingCommitAckV3
 import com.crosspaste.dto.pairing.v3.PairingCommitV3
 import com.crosspaste.dto.pairing.v3.PairingErrorV3
@@ -8,17 +9,13 @@ import com.crosspaste.dto.pairing.v3.PairingOfferV3
 import com.crosspaste.dto.pairing.v3.PairingProofResponseV3
 import com.crosspaste.dto.pairing.v3.PairingProofV3
 import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
-import kotlinx.serialization.json.Json
+import com.crosspaste.utils.getJsonUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class PairingV3DtoSerializationTest {
 
-    private val json = Json
-
-    /** Network layer must reject unknown fields in v3 security messages. */
-    private val strictJson = Json { ignoreUnknownKeys = false }
+    private val json = getJsonUtils().JSON
 
     private val intent =
         PairingIntentV3(
@@ -107,6 +104,12 @@ class PairingV3DtoSerializationTest {
     }
 
     @Test
+    fun testCancelRoundTrip() {
+        val cancel = PairingCancelV3(sessionId = ByteArray(PairingV3.SESSION_ID_SIZE) { 0x61 })
+        assertEquals(cancel, json.decodeFromString<PairingCancelV3>(json.encodeToString(cancel)))
+    }
+
+    @Test
     fun testErrorRoundTrip() {
         PairingV3ErrorCode.entries.forEach { code ->
             val error = PairingErrorV3(code)
@@ -115,12 +118,10 @@ class PairingV3DtoSerializationTest {
     }
 
     @Test
-    fun testUnknownFieldsAreRejectedInStrictMode() {
+    fun testUnknownFieldsAreIgnoredForForwardCompatibility() {
         val jsonWithUnknownField =
             json.encodeToString(intent).dropLast(1) + ",\"injectedField\":\"value\"}"
 
-        assertFailsWith<Exception> {
-            strictJson.decodeFromString<PairingIntentV3>(jsonWithUnknownField)
-        }
+        assertEquals(intent, json.decodeFromString<PairingIntentV3>(jsonWithUnknownField))
     }
 }

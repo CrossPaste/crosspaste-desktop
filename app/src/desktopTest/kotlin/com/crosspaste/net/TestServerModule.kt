@@ -7,7 +7,10 @@ import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
 import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.net.routing.pairingV3Routing
 import com.crosspaste.net.routing.syncRouting
+import com.crosspaste.pairing.v3.PairingProtocolV3Service
+import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.MarketingNearbyDeviceManager
@@ -34,6 +37,8 @@ class TestServerModule(
     private val syncApi: SyncApi,
     private val syncInfoFactory: SyncInfoFactory,
     private val syncRoutingApi: SyncRoutingApi,
+    private val pairingProtocolV3Service: PairingProtocolV3Service? = null,
+    private val pairingVersionCoordinator: PairingVersionCoordinator = PairingVersionCoordinator(),
 ) : ServerModule {
     override fun installModules(): Application.() -> Unit =
         {
@@ -56,7 +61,18 @@ class TestServerModule(
                     syncApi,
                     syncInfoFactory,
                     syncRoutingApi,
-                ) { _, _, _ ->
+                    { _, _, _ -> },
+                    pairingVersionCoordinator,
+                    { appInstanceId ->
+                        pairingProtocolV3Service?.hasActiveSession(appInstanceId) ?: false
+                    },
+                )
+                pairingProtocolV3Service?.let { service ->
+                    pairingV3Routing(
+                        service,
+                        pairingVersionCoordinator,
+                        pendingKeyExchangeStore,
+                    ) { _, _, _ -> }
                 }
             }
         }
