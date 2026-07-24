@@ -30,6 +30,7 @@ import com.crosspaste.net.SyncApi
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.WindowsNetworkStateMonitor
 import com.crosspaste.net.clientapi.PairingV3ClientApi
+import com.crosspaste.net.clientapi.PairingV3Transport
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.PushClientApi
@@ -107,6 +108,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         // region HTTP client & API
         single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
         single<PairingV3ClientApi> { PairingV3ClientApi(get(), get()) }
+        single<PairingV3Transport> { get<PairingV3ClientApi>() }
         single<PasteClient> { PasteClient(get(), get(), get()) }
         single<PasteClientApi> { PasteClientApi(get(), get()) }
         single<PullClientApi> { PullClientApi(get(), get(), get()) }

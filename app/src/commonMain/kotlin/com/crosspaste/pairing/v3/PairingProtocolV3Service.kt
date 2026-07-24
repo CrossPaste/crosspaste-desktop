@@ -11,7 +11,7 @@ import com.crosspaste.dto.pairing.v3.PairingProofV3
 import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
-import com.crosspaste.net.clientapi.PairingV3ClientApi
+import com.crosspaste.net.clientapi.PairingV3Transport
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.UnknownError
 import com.crosspaste.secure.SecureKeyPairSerializer
@@ -54,7 +54,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 class PairingProtocolV3Service(
     private val appInfo: AppInfo,
-    private val pairingV3ClientApi: PairingV3ClientApi,
+    private val pairingV3ClientApi: PairingV3Transport,
     private val pakeProvider: PakeProvider,
     private val receiptCache: PairingReceiptCache,
     private val rateLimiter: PairingRateLimiter,

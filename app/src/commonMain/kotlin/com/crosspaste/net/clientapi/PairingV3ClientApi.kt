@@ -25,11 +25,11 @@ import io.ktor.util.reflect.*
 class PairingV3ClientApi(
     private val pasteClient: PasteClient,
     private val exceptionHandler: ExceptionHandler,
-) {
+) : PairingV3Transport {
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun sendIntent(
+    override suspend fun sendIntent(
         intent: PairingIntentV3,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult =
@@ -46,7 +46,7 @@ class PairingV3ClientApi(
             response.body<PairingOfferV3>()
         }
 
-    suspend fun sendProof(
+    override suspend fun sendProof(
         proof: PairingProofV3,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult =
@@ -63,7 +63,7 @@ class PairingV3ClientApi(
             response.body<PairingProofResponseV3>()
         }
 
-    suspend fun sendCommit(
+    override suspend fun sendCommit(
         commit: PairingCommitV3,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult =
@@ -80,7 +80,7 @@ class PairingV3ClientApi(
             response.body<PairingCommitAckV3>()
         }
 
-    suspend fun sendCancel(
+    override suspend fun sendCancel(
         cancel: PairingCancelV3,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult =
