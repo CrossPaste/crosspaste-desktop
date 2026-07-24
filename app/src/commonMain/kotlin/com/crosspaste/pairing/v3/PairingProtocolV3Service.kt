@@ -1103,58 +1103,67 @@ class PairingProtocolV3Service(
             } finally {
                 pinSecret.fill(0)
             }
-        val pakeSession =
-            pakeProvider.createSession(
-                role = PakeRole.ACCEPTOR,
-                pin = pin,
-                context =
-                    PakeContext(
-                        sessionId = sessionIdBytes,
-                        initiatorAppInstanceId = initiatorAppInstanceId,
-                        acceptorAppInstanceId = appInfo.appInstanceId,
-                        pinContext = pinContext,
-                    ),
-            )
-        val localPakeShare =
-            try {
-                pakeSession.localShare()
-            } catch (e: Exception) {
+        var pakeSession: PakeSession? = null
+        var localPakeShare: ByteArray? = null
+        var ownershipTransferred = false
+        try {
+            val createdSession =
+                pakeProvider.createSession(
+                    role = PakeRole.ACCEPTOR,
+                    pin = pin,
+                    context =
+                        PakeContext(
+                            sessionId = sessionIdBytes,
+                            initiatorAppInstanceId = initiatorAppInstanceId,
+                            acceptorAppInstanceId = appInfo.appInstanceId,
+                            pinContext = pinContext,
+                        ),
+                )
+            pakeSession = createdSession
+            val createdShare = createdSession.localShare()
+            localPakeShare = createdShare
+            val pinExpiresAt = nowEpochMillis() + pinLifetime.inWholeMilliseconds
+            val unsignedOffer =
+                PairingOfferV3(
+                    protocolVersion = PairingV3.PROTOCOL_VERSION,
+                    selectedCiphersuite = pakeProvider.ciphersuite,
+                    sessionId = sessionIdBytes,
+                    requestHash = intentHash,
+                    tokenGeneration = tokenGeneration,
+                    pinExpiresAt = pinExpiresAt,
+                    initiatorAppInstanceId = initiatorAppInstanceId,
+                    acceptorAppInstanceId = appInfo.appInstanceId,
+                    acceptorSignPublicKey = ownSignPublicKey,
+                    acceptorCryptPublicKey = ownCryptPublicKey,
+                    acceptorNonce = acceptorNonce,
+                    acceptorPakeShare = createdShare,
+                    signature = ByteArray(0),
+                )
+            val offer =
+                unsignedOffer.copy(
+                    signature =
+                        CryptographyUtils.signData(secureStore.secureKeyPair.signKeyPair.privateKey) {
+                            PairingTranscriptCodec.encodeOfferSignaturePayload(unsignedOffer)
+                        },
+                )
+            val material =
+                GenerationMaterial(
+                    pin = pin,
+                    pakeSession = createdSession,
+                    localPakeShare = createdShare,
+                    offer = offer,
+                    offerHash = PairingTranscriptCodec.offerHash(offer),
+                    pinExpiresAt = pinExpiresAt,
+                )
+            ownershipTransferred = true
+            return material
+        } finally {
+            if (!ownershipTransferred) {
                 runCatching { pin.fill('\u0000') }
-                pakeSession.destroy()
-                throw e
+                runCatching { localPakeShare?.fill(0) }
+                runCatching { pakeSession?.destroy() }
             }
-        val pinExpiresAt = nowEpochMillis() + pinLifetime.inWholeMilliseconds
-        val unsignedOffer =
-            PairingOfferV3(
-                protocolVersion = PairingV3.PROTOCOL_VERSION,
-                selectedCiphersuite = pakeProvider.ciphersuite,
-                sessionId = sessionIdBytes,
-                requestHash = intentHash,
-                tokenGeneration = tokenGeneration,
-                pinExpiresAt = pinExpiresAt,
-                initiatorAppInstanceId = initiatorAppInstanceId,
-                acceptorAppInstanceId = appInfo.appInstanceId,
-                acceptorSignPublicKey = ownSignPublicKey,
-                acceptorCryptPublicKey = ownCryptPublicKey,
-                acceptorNonce = acceptorNonce,
-                acceptorPakeShare = localPakeShare,
-                signature = ByteArray(0),
-            )
-        val offer =
-            unsignedOffer.copy(
-                signature =
-                    CryptographyUtils.signData(secureStore.secureKeyPair.signKeyPair.privateKey) {
-                        PairingTranscriptCodec.encodeOfferSignaturePayload(unsignedOffer)
-                    },
-            )
-        return GenerationMaterial(
-            pin = pin,
-            pakeSession = pakeSession,
-            localPakeShare = localPakeShare,
-            offer = offer,
-            offerHash = PairingTranscriptCodec.offerHash(offer),
-            pinExpiresAt = pinExpiresAt,
-        )
+        }
     }
 
     private fun launchRotation(sessionId: String) {

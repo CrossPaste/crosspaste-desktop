@@ -52,6 +52,7 @@ yaml = "2.6"
 zxing = "3.5.4"
 
 [libraries]
+atomicfu-lib = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 awesome-brans = { module = "com.composables:icons-font-awesome-brands-cmp", version.ref = "awesome-brans" }
 bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }

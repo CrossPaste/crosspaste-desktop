@@ -42,7 +42,6 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
-import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingRateLimiter
@@ -51,7 +50,7 @@ import com.crosspaste.pairing.v3.PairingSessionStore
 import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.PakeProvider
-import com.crosspaste.pairing.v3.Spake2PakeProvider
+import com.crosspaste.pairing.v3.UnavailablePakeProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.GeneralNearbyDeviceManager
@@ -183,10 +182,9 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<PairingReceiptCache> { PairingReceiptCache() }
         single<PairingSessionStore> { PairingSessionStore() }
         single<PairingVersionCoordinator> { PairingVersionCoordinator() }
-        // Real SPAKE2/P-256 provider (ADR D7, RFC 9382) over the BouncyCastle EC
-        // backend. The service independently gates both initiating and accepting
-        // on PAIRING_VERSION, so registering the provider cannot expose v3 early.
-        single<PakeProvider> { Spake2PakeProvider(BouncyCastlePakeEcOps()) }
+        // BouncyCastle's P-256 point formulas are not guaranteed constant-time
+        // for every input. Fail closed until a reviewed production backend lands.
+        single<PakeProvider> { UnavailablePakeProvider }
         // endregion
 
         // region WebSocket

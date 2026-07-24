@@ -19,8 +19,11 @@ import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3RefreshResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
+import com.crosspaste.pairing.v3.PakeContext
+import com.crosspaste.pairing.v3.PakeException
 import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.PakeRole
+import com.crosspaste.pairing.v3.PakeSession
 import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.pairing.v3.TestPakeProvider
 import com.crosspaste.pairing.v3.pairingV3ErrorCodeOf
@@ -207,6 +210,43 @@ class PairingV3IntegrationTest {
                     .firstOrNull { card -> card.sessionId == started.sessionId }
                     ?.state,
             )
+        }
+
+    @Test
+    fun testGenerationFailureDuringSessionCreationClearsPin() =
+        runBlocking {
+            val failingProvider = FailingGenerationPakeProvider(failDuringCreate = true)
+            val acceptor = createInstance("generation-create-failure", pakeProvider = failingProvider)
+            val initiator = createInstance("generation-create-initiator")
+            acceptor.start()
+            initiator.start()
+            acceptor.pairingAcceptanceWindow.open()
+
+            val manual = ManualInitiator(initiator, acceptor)
+            manual.buildIntent()
+            initiator.pairingV3ClientApi.sendIntent(manual.intent, urlFor(acceptor))
+
+            val observedPin = assertNotNull(failingProvider.observedPin)
+            assertTrue(observedPin.all { character -> character == '\u0000' })
+        }
+
+    @Test
+    fun testGenerationFailureDuringLocalShareClearsPinAndDestroysSession() =
+        runBlocking {
+            val failingProvider = FailingGenerationPakeProvider(failDuringCreate = false)
+            val acceptor = createInstance("generation-share-failure", pakeProvider = failingProvider)
+            val initiator = createInstance("generation-share-initiator")
+            acceptor.start()
+            initiator.start()
+            acceptor.pairingAcceptanceWindow.open()
+
+            val manual = ManualInitiator(initiator, acceptor)
+            manual.buildIntent()
+            initiator.pairingV3ClientApi.sendIntent(manual.intent, urlFor(acceptor))
+
+            val observedPin = assertNotNull(failingProvider.observedPin)
+            assertTrue(observedPin.all { character -> character == '\u0000' })
+            assertTrue(failingProvider.session.destroyed)
         }
 
     // ---- Gate and validation refusals ----
@@ -752,6 +792,41 @@ class PairingV3IntegrationTest {
     ) {
         assertIs<FailureResult>(result)
         assertEquals(expected, pairingV3ErrorCodeOf(result.exception.getErrorCode().code))
+    }
+
+    private class FailingGenerationPakeProvider(
+        private val failDuringCreate: Boolean,
+    ) : PakeProvider {
+
+        override val ciphersuite: String = "FAKE-PAKE-FOR-TESTS"
+        var observedPin: CharArray? = null
+        val session = FailingLocalShareSession()
+
+        override suspend fun createSession(
+            role: PakeRole,
+            pin: CharArray,
+            context: PakeContext,
+        ): PakeSession {
+            observedPin = pin
+            if (failDuringCreate) {
+                throw PakeException("injected createSession failure")
+            }
+            return session
+        }
+    }
+
+    private class FailingLocalShareSession : PakeSession {
+
+        var destroyed = false
+
+        override suspend fun localShare(): ByteArray = throw PakeException("injected localShare failure")
+
+        override suspend fun deriveSharedSecret(peerShare: ByteArray): ByteArray =
+            throw PakeException("unexpected deriveSharedSecret call")
+
+        override fun destroy() {
+            destroyed = true
+        }
     }
 
     /**

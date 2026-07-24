@@ -1,6 +1,11 @@
 package com.crosspaste.pairing.v3
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -185,8 +190,49 @@ class Spake2PakeProviderTest {
         runTest {
             val ctx = context()
             val session = provider.createSession(PakeRole.INITIATOR, "620632".toCharArray(), ctx)
+            val peer = provider.createSession(PakeRole.ACCEPTOR, "620632".toCharArray(), ctx)
+            val peerShare = peer.localShare()
             session.destroy()
             assertFailsWith<IllegalStateException> { session.localShare() }
+            assertFailsWith<IllegalStateException> { session.deriveSharedSecret(peerShare) }
+            session.destroy()
+            peer.destroy()
+            peerShare.fill(0)
+        }
+
+    @Test
+    fun destroyDuringDerivationDefersSecretClearingUntilDerivationFinishes() =
+        runBlocking {
+            val blockingOps = BlockingDerivePakeEcOps(BouncyCastlePakeEcOps())
+            val blockingProvider = Spake2PakeProvider(blockingOps)
+            val ctx = context()
+            val initiator = blockingProvider.createSession(PakeRole.INITIATOR, "620632".toCharArray(), ctx)
+            val acceptor = provider.createSession(PakeRole.ACCEPTOR, "620632".toCharArray(), ctx)
+            val acceptorShare = acceptor.localShare()
+            val executor = Executors.newSingleThreadExecutor()
+            try {
+                val derived =
+                    executor.submit<ByteArray> {
+                        runBlocking { initiator.deriveSharedSecret(acceptorShare) }
+                    }
+                assertTrue(blockingOps.deriveEntered.await(5, TimeUnit.SECONDS))
+
+                initiator.destroy()
+                blockingOps.allowDeriveToContinue.countDown()
+
+                val ke = derived.get(5, TimeUnit.SECONDS)
+                assertEquals(Spake2P256.KE_LENGTH, ke.size)
+                ke.fill(0)
+                assertFailsWith<IllegalStateException> { initiator.localShare() }
+                assertFailsWith<IllegalStateException> { initiator.deriveSharedSecret(acceptorShare) }
+            } finally {
+                blockingOps.allowDeriveToContinue.countDown()
+                initiator.destroy()
+                acceptor.destroy()
+                acceptorShare.fill(0)
+                executor.shutdownNow()
+            }
+            Unit
         }
 
     /**
@@ -295,5 +341,27 @@ class Spake2PakeProviderTest {
             delegate.mulPoint(point, scalar).also { result ->
                 lastMultiplication = result
             }
+    }
+
+    private class BlockingDerivePakeEcOps(
+        private val delegate: PakeEcOps,
+    ) : PakeEcOps by delegate {
+
+        val deriveEntered = CountDownLatch(1)
+        val allowDeriveToContinue = CountDownLatch(1)
+        private val multiplicationCount = AtomicInteger()
+
+        override fun mulPoint(
+            point: ByteArray,
+            scalar: ByteArray,
+        ): ByteArray {
+            if (multiplicationCount.incrementAndGet() == 2) {
+                deriveEntered.countDown()
+                check(allowDeriveToContinue.await(5, TimeUnit.SECONDS)) {
+                    "timed out waiting to continue injected PAKE derivation"
+                }
+            }
+            return delegate.mulPoint(point, scalar)
+        }
     }
 }
