@@ -8,13 +8,14 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 /**
- * JVM/Android [PakeEcOps] backed by BouncyCastle low-level P-256 point/scalar ops
- * (ADR D7). No elliptic-curve arithmetic is written here — every operation is a
- * BouncyCastle primitive over the reviewed `secp256r1` implementation.
+ * JVM/Android [PakeEcOps] backed by BouncyCastle low-level P-256 point/scalar ops.
+ * This backend is retained for vectors and cross-platform conformance tests only;
+ * it must not be registered as a production [PakeProvider].
  *
- * Secret scalar multiplication uses BouncyCastle's fixed-comb multiplier. Its
- * loop count is fixed for the curve and its precomputed-point lookup is
- * constant-time with respect to the scalar, unlike the default WNAF multiplier.
+ * [FixedPointCombMultiplier] has a fixed loop and cache-safe lookup, but the
+ * underlying P-256 point addition/doubling formulas contain input-dependent
+ * branches. It therefore cannot satisfy RFC 9382 §7's requirement that every
+ * elliptic-curve point operation take time independent of its inputs.
  *
  * Secret-hygiene limitation: scalars pass through immutable [BigInteger] inside
  * BouncyCastle, which cannot be zeroed; a `w`/private-scalar copy therefore lives

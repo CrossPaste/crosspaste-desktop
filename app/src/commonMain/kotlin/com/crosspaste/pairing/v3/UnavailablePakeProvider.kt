@@ -2,9 +2,9 @@ package com.crosspaste.pairing.v3
 
 /**
  * Explicit fallback for platforms that do not yet provide a reviewed [PakeEcOps]
- * backend. Desktop uses the real BouncyCastle provider; this remains available to
- * shared/mobile wiring until every Kotlin/Native target has its production EC
- * backend. Unsupported targets fail closed instead of substituting a fake PAKE.
+ * backend. Production wiring uses this until every target has passed the
+ * constant-time review. Unsupported targets fail closed instead of substituting
+ * a fake or test-only PAKE.
  */
 object UnavailablePakeProvider : PakeProvider {
 

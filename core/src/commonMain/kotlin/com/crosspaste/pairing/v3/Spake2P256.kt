@@ -2,6 +2,7 @@ package com.crosspaste.pairing.v3
 
 import dev.whyoleg.cryptography.CryptographyProvider
 import dev.whyoleg.cryptography.algorithms.SHA256
+import kotlinx.atomicfu.atomic
 
 /**
  * Frozen constants and the protocol composition for SPAKE2 over P-256, RFC 9382
@@ -167,18 +168,27 @@ private class Spake2Session(
     private val peerConstant: ByteArray,
 ) : PakeSession {
 
-    private var destroyed = false
+    private val lifecycle = atomic(SESSION_ACTIVE)
 
     override suspend fun localShare(): ByteArray {
-        check(!destroyed) { "session destroyed" }
+        check(lifecycle.value != SESSION_DESTROY_PENDING && lifecycle.value != SESSION_DESTROYED) {
+            "session destroyed"
+        }
         return localShare.copyOf()
     }
 
     override suspend fun deriveSharedSecret(peerShare: ByteArray): ByteArray {
-        check(!destroyed) { "session destroyed" }
+        check(lifecycle.compareAndSet(SESSION_ACTIVE, SESSION_DERIVING)) {
+            if (lifecycle.value == SESSION_DERIVING) {
+                "session already deriving"
+            } else {
+                "session destroyed"
+            }
+        }
         if (peerShare.size != PairingV3.PAKE_SHARE_SIZE ||
             peerShare[0] != PairingV3.PAKE_SHARE_UNCOMPRESSED_PREFIX
         ) {
+            finishDerivation()
             throw PakeException("SPAKE2 peer share must be a canonical uncompressed P-256 point")
         }
 
@@ -219,11 +229,55 @@ private class Spake2Session(
             k?.fill(0)
             tt?.fill(0)
             digest?.fill(0)
+            finishDerivation()
         }
     }
 
     override fun destroy() {
-        destroyed = true
+        while (true) {
+            when (lifecycle.value) {
+                SESSION_ACTIVE -> {
+                    if (lifecycle.compareAndSet(SESSION_ACTIVE, SESSION_DESTROYED)) {
+                        clearSecrets()
+                        return
+                    }
+                }
+
+                SESSION_DERIVING -> {
+                    if (lifecycle.compareAndSet(SESSION_DERIVING, SESSION_DESTROY_PENDING)) {
+                        return
+                    }
+                }
+
+                SESSION_DESTROY_PENDING,
+                SESSION_DESTROYED,
+                -> return
+            }
+        }
+    }
+
+    private fun finishDerivation() {
+        while (true) {
+            when (lifecycle.value) {
+                SESSION_DERIVING -> {
+                    if (lifecycle.compareAndSet(SESSION_DERIVING, SESSION_ACTIVE)) {
+                        return
+                    }
+                }
+
+                SESSION_DESTROY_PENDING -> {
+                    if (lifecycle.compareAndSet(SESSION_DESTROY_PENDING, SESSION_DESTROYED)) {
+                        clearSecrets()
+                        return
+                    }
+                }
+
+                else -> return
+            }
+        }
+    }
+
+    private fun clearSecrets() {
         w.fill(0)
         privateScalar.fill(0)
     }
@@ -270,5 +324,9 @@ private class Spake2Session(
 
     private companion object {
         const val LENGTH_PREFIX_SIZE = 8
+        const val SESSION_ACTIVE = 0
+        const val SESSION_DERIVING = 1
+        const val SESSION_DESTROY_PENDING = 2
+        const val SESSION_DESTROYED = 3
     }
 }

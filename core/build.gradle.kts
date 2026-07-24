@@ -18,9 +18,14 @@ group = "com.crosspaste"
 version = versionProperties.getProperty("version")
 
 plugins {
+    alias(libs.plugins.atomicfu)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ktlint)
+}
+
+atomicfu {
+    transformJvm = false
 }
 
 ktlint {
@@ -67,6 +72,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.atomicfu.lib)
             implementation(libs.cryptography.core)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)

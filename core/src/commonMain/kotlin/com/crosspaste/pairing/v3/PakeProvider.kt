@@ -21,9 +21,10 @@ package com.crosspaste.pairing.v3
  *    PairingProofResponseV3 are the RFC-required key confirmation. Providers
  *    do NOT exchange cA/cB; this interface will not grow confirmation methods.
  * 5. **Implementation** (ADR D7): a thin, fully test-vectored protocol layer
- *    over reviewed EC primitives (BouncyCastle on JVM/Android, OpenSSL 3 on
- *    Kotlin/Native) behind a narrow point-operations abstraction. Hand-rolled
- *    field or point arithmetic in application code is forbidden.
+ *    over reviewed EC primitives behind a narrow point-operations abstraction.
+ *    Hand-rolled field or point arithmetic in application code is forbidden.
+ *    BouncyCastle is retained for vectors only after the 2026-07-24 constant-time
+ *    review; production platforms fail closed until reviewed backends land.
  */
 interface PakeProvider {
 
