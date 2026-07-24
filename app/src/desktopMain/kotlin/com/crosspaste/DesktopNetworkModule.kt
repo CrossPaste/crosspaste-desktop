@@ -41,14 +41,16 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingReceiptCache
 import com.crosspaste.pairing.v3.PairingSessionStore
+import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.PakeProvider
-import com.crosspaste.pairing.v3.UnavailablePakeProvider
+import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.GeneralNearbyDeviceManager
@@ -172,16 +174,17 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 secureStore = get(),
                 sessionStore = get(),
                 acceptanceWindow = get(),
+                isPairingV3Enabled = { SyncApi.PAIRING_VERSION >= PairingV3.PROTOCOL_VERSION },
             )
         }
         single<PairingRateLimiter> { PairingRateLimiter() }
         single<PairingReceiptCache> { PairingReceiptCache() }
         single<PairingSessionStore> { PairingSessionStore() }
         single<PairingVersionCoordinator> { PairingVersionCoordinator() }
-        // The reviewed SPAKE2 provider is not implemented yet (Phase 0 ADR D7);
-        // the v3 surface stays inert in production: capability advertisement is
-        // still v2 and the acceptance window defaults to closed.
-        single<PakeProvider> { UnavailablePakeProvider }
+        // Real SPAKE2/P-256 provider (ADR D7, RFC 9382) over the BouncyCastle EC
+        // backend. The service independently gates both initiating and accepting
+        // on PAIRING_VERSION, so registering the provider cannot expose v3 early.
+        single<PakeProvider> { Spake2PakeProvider(BouncyCastlePakeEcOps()) }
         // endregion
 
         // region WebSocket

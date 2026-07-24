@@ -1,12 +1,10 @@
 package com.crosspaste.pairing.v3
 
 /**
- * Production placeholder until the real RFC 9382 SPAKE2 provider lands (ADR D7).
- *
- * Pairing v3 is intentionally inert in production: the capability advertisement
- * still announces pairing v2 and the acceptance window defaults to closed, so no
- * compliant peer reaches PAKE creation. If something does, failing loudly here is
- * strictly better than silently running a non-reviewed PAKE.
+ * Explicit fallback for platforms that do not yet provide a reviewed [PakeEcOps]
+ * backend. Desktop uses the real BouncyCastle provider; this remains available to
+ * shared/mobile wiring until every Kotlin/Native target has its production EC
+ * backend. Unsupported targets fail closed instead of substituting a fake PAKE.
  */
 object UnavailablePakeProvider : PakeProvider {
 

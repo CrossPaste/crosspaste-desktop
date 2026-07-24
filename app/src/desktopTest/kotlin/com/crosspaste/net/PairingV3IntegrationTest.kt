@@ -9,6 +9,7 @@ import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
 import com.crosspaste.pairing.v3.PairingKeySchedule
 import com.crosspaste.pairing.v3.PairingSessionState
 import com.crosspaste.pairing.v3.PairingSessionUiState
@@ -18,7 +19,9 @@ import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3RefreshResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
+import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.PakeRole
+import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.pairing.v3.TestPakeProvider
 import com.crosspaste.pairing.v3.pairingV3ErrorCodeOf
 import com.crosspaste.utils.CryptographyUtils
@@ -51,11 +54,15 @@ class PairingV3IntegrationTest {
         id: String,
         pinLifetime: kotlin.time.Duration = PairingV3.DEFAULT_PIN_LIFETIME,
         generationGrace: kotlin.time.Duration = PairingV3.DEFAULT_GENERATION_GRACE,
+        pakeProvider: PakeProvider = TestPakeProvider(),
+        pairingV3Enabled: Boolean = true,
     ): TestInstance =
         TestInstance(
             appInstanceId = id,
             pairingPinLifetime = pinLifetime,
             pairingGenerationGrace = generationGrace,
+            pakeProvider = pakeProvider,
+            pairingV3Enabled = pairingV3Enabled,
         ).also { instances.add(it) }
 
     @AfterTest
@@ -173,6 +180,35 @@ class PairingV3IntegrationTest {
             assertTrue(heartbeat is SuccessResult, "heartbeat after v3 pairing should succeed")
         }
 
+    @Test
+    fun testRealProviderCompletesNetworkHandshake() =
+        runBlocking {
+            val a = createInstance("real-a", pakeProvider = Spake2PakeProvider(BouncyCastlePakeEcOps()))
+            val b = createInstance("real-b", pakeProvider = Spake2PakeProvider(BouncyCastlePakeEcOps()))
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open()
+
+            val started = startPairing(b, a)
+            val result =
+                b.pairingProtocolV3Service.submitPin(
+                    started.sessionId,
+                    displayedPin(a, b.appInstanceId),
+                    urlFor(a),
+                )
+
+            assertIs<PairingV3PinResult.Paired>(result)
+            assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
+            assertTrue(b.secureIO.existCryptPublicKey(a.appInstanceId))
+            assertEquals(PairingSessionState.TRUSTED, acceptorCardFor(a, b.appInstanceId)?.state)
+            assertEquals(
+                PairingSessionState.TRUSTED,
+                b.pairingSessionStore.uiSessionsFlow.value
+                    .firstOrNull { card -> card.sessionId == started.sessionId }
+                    ?.state,
+            )
+        }
+
     // ---- Gate and validation refusals ----
 
     @Test
@@ -187,6 +223,23 @@ class PairingV3IntegrationTest {
                 b.pairingProtocolV3Service.startPairing(a.appInstanceId, a.appInstanceId, urlFor(a))
             assertIs<PairingV3StartResult.Refused>(result)
             assertEquals(PairingV3ErrorCode.PAIRING_DISABLED, result.code)
+        }
+
+    @Test
+    fun testRolloutGateRefusesV3EvenWhenAcceptanceWindowIsOpen() =
+        runBlocking {
+            val a = createInstance("disabled-a", pairingV3Enabled = false)
+            val b = createInstance("disabled-b")
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open()
+
+            val result =
+                b.pairingProtocolV3Service.startPairing(a.appInstanceId, a.appInstanceId, urlFor(a))
+
+            assertIs<PairingV3StartResult.Refused>(result)
+            assertEquals(PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED, result.code)
+            assertTrue(a.pairingSessionStore.activeSessions().isEmpty())
         }
 
     @Test
@@ -236,6 +289,31 @@ class PairingV3IntegrationTest {
                 a.pairingProtocolV3Service.handleIntent(valid, "other-caller", null)
             assertIs<com.crosspaste.pairing.v3.PairingV3ServerResult.Refused>(mismatch)
             assertEquals(PairingV3ErrorCode.PAIRING_IDENTITY_INVALID, mismatch.code)
+        }
+
+    @Test
+    fun testCompressedProofShareIsRejectedAtWireBoundary() =
+        runBlocking {
+            val a = createInstance("canonical-a")
+            val b = createInstance("canonical-b")
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open()
+
+            val manual = ManualInitiator(b, a)
+            val offer = manual.requestOffer(urlFor(a))
+            val proof = manual.buildProof(offer, displayedPin(a, b.appInstanceId))
+            val compressedShare =
+                byteArrayOf(0x02) +
+                    proof.initiatorPakeShare.copyOfRange(1, 33)
+
+            val result =
+                b.pairingV3ClientApi.sendProof(
+                    proof.copy(initiatorPakeShare = compressedShare),
+                    urlFor(a),
+                )
+
+            assertPairingFailure(result, PairingV3ErrorCode.PAIRING_PROOF_INVALID)
         }
 
     @Test

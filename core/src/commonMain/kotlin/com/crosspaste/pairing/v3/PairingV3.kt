@@ -46,6 +46,8 @@ object PairingV3 {
     const val PIN_SECRET_SIZE: Int = 32
     const val PIN_LENGTH: Int = 6
     const val DERIVED_KEY_SIZE: Int = 32
+    const val PAKE_SHARE_SIZE: Int = 65
+    const val PAKE_SHARE_UNCOMPRESSED_PREFIX: Byte = 0x04
 
     // Default policy values. Marked default because the final numbers are an open
     // product decision (doc §22); endpoints may tune them, the protocol allows it.
