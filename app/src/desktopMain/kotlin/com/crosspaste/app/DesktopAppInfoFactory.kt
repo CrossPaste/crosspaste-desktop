@@ -1,7 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.config.AppMetadataRepository
-import com.crosspaste.net.SyncApi
+import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -10,6 +10,7 @@ import java.util.Properties
 
 class DesktopAppInfoFactory(
     private val appMetadataRepository: AppMetadataRepository,
+    private val pairingCapabilityFlag: PairingCapabilityFlag,
 ) : AppInfoFactory {
 
     private val logger = KotlinLogging.logger {}
@@ -36,7 +37,7 @@ class DesktopAppInfoFactory(
             appVersion = getVersion(),
             appRevision = getRevision(),
             userName = getUserName(),
-            pairingVersion = SyncApi.PAIRING_VERSION,
+            pairingVersion = pairingCapabilityFlag.advertisedPairingVersion,
         )
 
     override fun getVersion(): String = getVersion(appEnvUtils.getCurrentAppEnv(), properties)

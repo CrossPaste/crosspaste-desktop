@@ -8,6 +8,7 @@ import com.crosspaste.net.clientapi.RequestTimeout
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import io.mockk.coEvery
@@ -52,6 +53,7 @@ class GeneralSyncManagerTest {
     private fun createSyncManager(
         mocks: Mocks,
         scope: CoroutineScope,
+        localPairingVersion: Int = 2,
     ): GeneralSyncManager =
         GeneralSyncManager(
             realTimeSyncScope = scope,
@@ -59,6 +61,7 @@ class GeneralSyncManagerTest {
             syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
             syncClientApi = mocks.syncClientApi,
             wsSessionManager = WsSessionManager(),
+            pairingCapabilityFlag = PairingCapabilityFlag(localPairingVersion),
         )
 
     private fun createTestSyncRuntimeInfo(
@@ -197,6 +200,22 @@ class GeneralSyncManagerTest {
             advanceUntilIdle()
 
             coVerify { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo) }
+        }
+
+    @Test
+    fun updateSyncInfo_v3PeerUsesPinWhenLocalCapabilityIsEnabled() =
+        runTest {
+            val mocks = createMocks()
+            val syncInfo = SyncTestFixtures.createSyncInfo(pairingVersion = 3)
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope, localPairingVersion = 3)
+
+            syncManager.updateSyncInfo(syncInfo)
+
+            assertEquals(
+                PairingCredentialType.V3_PIN,
+                syncManager.pairingCredentialTypes.value[syncInfo.appInfo.appInstanceId],
+            )
         }
 
     @Test

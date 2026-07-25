@@ -24,10 +24,13 @@ import com.crosspaste.headless.headlessViewModelModule
 import com.crosspaste.image.OCRModule
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.module.ocr.DesktopOCRModule
+import com.crosspaste.net.SyncApi
 import com.crosspaste.net.plugin.ClientDecryptPlugin
 import com.crosspaste.net.plugin.ClientEncryptPlugin
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
+import com.crosspaste.pairing.v3.PairingCapabilityFlag
+import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.paste.plugin.type.ColorTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopColorTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
@@ -75,6 +78,13 @@ class DesktopModule(
 
     val marketingMode = getAppEnvUtils().isDevelopment() && DevConfig.marketingMode
 
+    private val pairingCapabilityFlag =
+        createDesktopPairingCapabilityFlag(
+            appEnv = appEnv,
+            developmentV3InteropEnabled =
+                appEnv == AppEnv.DEVELOPMENT && DevConfig.pairingV3InteropEnabled,
+        )
+
     override fun appModule() =
         desktopAppModule(
             appEnv,
@@ -85,6 +95,7 @@ class DesktopModule(
             deviceUtils,
             klogger,
             platform,
+            pairingCapabilityFlag,
         )
 
     override fun extensionModule() =
@@ -187,4 +198,22 @@ class DesktopModule(
                 )
             }
         }
+}
+
+internal fun createDesktopPairingCapabilityFlag(
+    appEnv: AppEnv,
+    developmentV3InteropEnabled: Boolean,
+): PairingCapabilityFlag {
+    val pairingVersion =
+        if (appEnv == AppEnv.DEVELOPMENT && developmentV3InteropEnabled) {
+            SyncApi.MAX_IMPLEMENTED_PAIRING_VERSION
+        } else {
+            // Keep non-development builds fail-closed even if the rollout
+            // constant is changed before a reviewed provider is registered.
+            minOf(
+                SyncApi.PAIRING_VERSION,
+                PairingV3.PROTOCOL_VERSION - 1,
+            )
+        }
+    return PairingCapabilityFlag(pairingVersion)
 }

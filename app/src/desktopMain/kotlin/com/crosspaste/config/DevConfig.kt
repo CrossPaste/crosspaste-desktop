@@ -11,4 +11,7 @@ object DevConfig {
     val pasteUserPath: String? = development.getProperty("pasteUserPath")
 
     val marketingMode: Boolean = development.getProperty("marketingMode")?.toBoolean() == true
+
+    val pairingV3InteropEnabled: Boolean =
+        development.getProperty("pairingV3InteropEnabled")?.toBoolean() == true
 }
