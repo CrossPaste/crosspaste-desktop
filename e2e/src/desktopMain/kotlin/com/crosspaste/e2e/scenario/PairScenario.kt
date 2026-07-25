@@ -71,6 +71,11 @@ internal suspend fun ensureTrust(
 ): ScenarioResult? {
     val id = target.appInstanceId ?: return ScenarioResult.Fail("Target has no appInstanceId.")
     if (ctx.peer.secureIO.existCryptPublicKey(id)) return null
+    if (!ctx.allowLegacyPairing) {
+        return ScenarioResult.Fail(
+            "No trusted key for $id; legacy pairing fallback is disabled for this v3 scenario.",
+        )
+    }
     println("[ensureTrust] Not paired with $id yet — pairing first.")
     requestShowToken(ctx, target)?.let { return it }
     val token = ctx.tokenProvider()

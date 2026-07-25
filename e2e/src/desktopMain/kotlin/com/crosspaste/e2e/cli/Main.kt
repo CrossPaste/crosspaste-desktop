@@ -3,6 +3,7 @@ package com.crosspaste.e2e.cli
 import com.crosspaste.e2e.peer.HeadlessPeer
 import com.crosspaste.e2e.scenario.DiscoveryScenario
 import com.crosspaste.e2e.scenario.PairScenario
+import com.crosspaste.e2e.scenario.PairV3Scenario
 import com.crosspaste.e2e.scenario.PullIconScenario
 import com.crosspaste.e2e.scenario.PushColorScenario
 import com.crosspaste.e2e.scenario.PushHtmlScenario
@@ -15,6 +16,8 @@ import com.crosspaste.e2e.scenario.ScenarioResult
 import com.crosspaste.e2e.scenario.TargetSpec
 import com.crosspaste.e2e.scenario.TelnetScenario
 import com.crosspaste.e2e.scenario.WrongTokenScenario
+import com.crosspaste.net.SyncApi
+import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.utils.getDateUtils
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
@@ -31,7 +34,7 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
         "-s",
         help =
             "Scenario to run: discovery, pair, wrong-token, telnet, push-text, push-url, " +
-                "push-html, push-rtf, push-color, pull-icon, or all.",
+                "push-html, push-rtf, push-color, pull-icon, pair-v3, all-v3, or all.",
     ).default("discovery")
 
     private val target by option(
@@ -90,8 +93,16 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
     )
 
     override fun run() {
+        val pairingVersion =
+            if (scenario.lowercase() in V3_SCENARIOS) {
+                PairingV3.PROTOCOL_VERSION
+            } else {
+                SyncApi.PAIRING_VERSION
+            }
         val peer =
-            appInstanceId?.let { HeadlessPeer(appInstanceId = it) } ?: HeadlessPeer()
+            appInstanceId?.let {
+                HeadlessPeer(appInstanceId = it, pairingVersion = pairingVersion)
+            } ?: HeadlessPeer(pairingVersion = pairingVersion)
         try {
             val ctx =
                 ScenarioContext(
@@ -100,6 +111,8 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
                     targetAppInstanceId = targetAppId,
                     discoveryTimeoutMs = discoveryTimeout * 1000,
                     tokenProvider = ::promptToken,
+                    pinProvider = ::promptPin,
+                    allowLegacyPairing = scenario.lowercase() !in V3_SCENARIOS,
                 )
 
             val now = getDateUtils().nowEpochMilliseconds()
@@ -164,6 +177,7 @@ private fun selectScenarios(
     when (name.lowercase()) {
         "discovery" -> listOf(DiscoveryScenario())
         "pair" -> listOf(PairScenario())
+        "pair-v3" -> listOf(PairV3Scenario())
         "wrong-token" -> listOf(WrongTokenScenario())
         "telnet" -> listOf(TelnetScenario())
         "push-text" -> listOf(PushTextScenario(payloads.text))
@@ -180,6 +194,17 @@ private fun selectScenarios(
                 PairScenario(),
                 // After pair: peer is trusted, so telnet's address-push exercises the gated
                 // server merge path; its identity-header check needs no trust.
+                TelnetScenario(),
+                PushTextScenario(payloads.text),
+                PushUrlScenario(payloads.url),
+                PushHtmlScenario(payloads.html),
+                PushRtfScenario(payloads.rtf),
+                PushColorScenario(payloads.color),
+            )
+        "all-v3" ->
+            listOf(
+                DiscoveryScenario(),
+                PairV3Scenario(),
                 TelnetScenario(),
                 PushTextScenario(payloads.text),
                 PushUrlScenario(payloads.url),
@@ -218,6 +243,22 @@ private fun promptToken(): Int {
     System.out.flush()
     val line = readlnOrNull()?.trim() ?: error("No token entered.")
     return line.toIntOrNull() ?: error("Invalid token: '$line' (must be an integer).")
+}
+
+private fun promptPin(): CharArray {
+    val pin =
+        System.console()?.readPassword("Enter the six-digit PIN shown on the target device: ")
+            ?: run {
+                print("Enter the six-digit PIN shown on the target device: ")
+                System.out.flush()
+                readlnOrNull()?.trim()?.toCharArray()
+            }
+            ?: error("No PIN entered.")
+    if (pin.size != PairingV3.PIN_LENGTH || pin.any { it !in '0'..'9' }) {
+        pin.fill('\u0000')
+        error("Invalid PIN (must be exactly six decimal digits).")
+    }
+    return pin
 }
 
 private fun printSummary(
@@ -292,5 +333,6 @@ private fun xmlText(value: String): String =
         .replace(">", "&gt;")
 
 private const val DEFAULT_PORT = 13129
+private val V3_SCENARIOS = setOf("pair-v3", "all-v3")
 
 fun main(args: Array<String>) = E2eCommand().main(args)
