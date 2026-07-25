@@ -32,6 +32,8 @@ data class TargetSpec(
     val host: String,
     val port: Int,
     val appInstanceId: String?,
+    val displayName: String? = null,
+    val pairingVersion: Int? = null,
 )
 
 /**
@@ -50,6 +52,8 @@ data class ScenarioContext(
     val targetAppInstanceId: String?,
     val discoveryTimeoutMs: Long,
     val tokenProvider: suspend () -> Int,
+    val pinProvider: suspend () -> CharArray,
+    val allowLegacyPairing: Boolean = true,
     val targetCache: TargetCache = TargetCache(),
 )
 
@@ -75,6 +79,8 @@ fun resolveTarget(
         host = host,
         port = match.endpointInfo.port,
         appInstanceId = match.appInfo.appInstanceId,
+        displayName = match.appInfo.userName,
+        pairingVersion = match.appInfo.pairingVersion,
     )
 }
 

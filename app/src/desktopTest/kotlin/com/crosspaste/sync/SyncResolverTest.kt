@@ -150,6 +150,44 @@ class SyncResolverTest {
         }
 
     @Test
+    fun resolveDisconnected_existingV2TrustSurvivesPeerCapabilityUpgrade() =
+        runTest {
+            // Pairing capability selects how NEW trust is established. A peer that was
+            // paired under v2 already has a long-term crypt key, so an app upgrade must
+            // authenticate that key directly instead of forcing a v3 pairing ceremony.
+            // SyncRuntimeInfo intentionally has no pairing capability field: this pins
+            // the resolver-layer invariant that persisted trust is capability-agnostic.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    hostInfoList = listOf(HostInfo(24, "192.168.1.100")),
+                )
+            val hostInfo = HostInfo(24, "192.168.1.100")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns
+                Pair(hostInfo, TelnetResult(VersionRelation.EQUAL_TO, syncRuntimeInfo.appInstanceId))
+            coEvery { deps.secureStore.existCryptPublicKey(syncRuntimeInfo.appInstanceId) } returns true
+            coEvery { deps.syncClientApi.heartbeat(any(), syncRuntimeInfo.appInstanceId, any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            val capturedInfos = mutableListOf<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfos)) } returns
+                syncRuntimeInfo.appInstanceId
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(SyncState.CONNECTED, capturedInfos.last().connectState)
+            coVerify(exactly = 1) {
+                deps.syncClientApi.heartbeat(any(), syncRuntimeInfo.appInstanceId, any())
+            }
+            coVerify(exactly = 0) {
+                deps.secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
+            }
+        }
+
+    @Test
     fun resolveDisconnected_fastProbeIdentityMismatch_fallsThroughToCorrectHost() =
         runTest {
             // #4499 Phase A: a ghost squats on our last address (.108) advertising a
