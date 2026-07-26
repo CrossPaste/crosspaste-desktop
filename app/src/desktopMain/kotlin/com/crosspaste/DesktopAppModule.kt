@@ -59,6 +59,7 @@ import com.crosspaste.module.ModuleDownloadManager
 import com.crosspaste.module.ModuleManager
 import com.crosspaste.net.Server
 import com.crosspaste.net.SyncInfoFactory
+import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.DesktopCacheManager
 import com.crosspaste.path.AppPathProvider
@@ -92,6 +93,7 @@ fun desktopAppModule(
     deviceUtils: DeviceUtils,
     klogger: KLogger,
     platform: Platform,
+    pairingCapabilityFlag: PairingCapabilityFlag,
 ): Module =
     module {
         // region App
@@ -99,7 +101,7 @@ fun desktopAppModule(
         single<AppEnv> { appEnv }
         single<AppExitService> { DesktopAppExitService }
         single<AppInfo> { get<AppInfoFactory>().createAppInfo() }
-        single<AppInfoFactory> { DesktopAppInfoFactory(get()) }
+        single<AppInfoFactory> { DesktopAppInfoFactory(get(), get()) }
         single<AppLaunchState> { get<DesktopAppLaunchState>() }
         single<AppLock> { get<DesktopAppLaunch>() }
         single<AppRestartService> { DesktopAppRestartService(get(), get()) }
@@ -121,6 +123,7 @@ fun desktopAppModule(
         single<AppMetadataRepository> { appMetadataRepository }
         single<CommonConfigManager> { configManager as CommonConfigManager }
         single<DesktopConfigManager> { configManager }
+        single<PairingCapabilityFlag> { pairingCapabilityFlag }
         single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
         single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
         // endregion

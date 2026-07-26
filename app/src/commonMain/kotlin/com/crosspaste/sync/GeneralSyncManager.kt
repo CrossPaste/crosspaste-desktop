@@ -10,6 +10,7 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.filter
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
@@ -44,6 +45,7 @@ class GeneralSyncManager(
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val syncClientApi: SyncClientApi,
     private val wsSessionManager: WsSessionManager,
+    private val pairingCapabilityFlag: PairingCapabilityFlag,
 ) : SyncManager {
 
     private val logger = KotlinLogging.logger {}
@@ -237,7 +239,7 @@ class GeneralSyncManager(
 
     private fun pairingCredentialType(syncInfo: SyncInfo): PairingCredentialType =
         selectPairingCredentialType(
-            localPairingVersion = SyncApi.PAIRING_VERSION,
+            localPairingVersion = pairingCapabilityFlag.advertisedPairingVersion,
             remotePairingVersion = syncInfo.appInfo.pairingVersion,
         )
 

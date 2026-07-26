@@ -7,11 +7,14 @@ object SyncApi {
     const val VERSION: Int = 3
 
     /**
-     * The advertised pairing capability. Still 2: the v3 protocol surface exists
-     * (see `PairingProtocolV3Service`) but stays unadvertised until the reviewed
-     * SPAKE2 provider and the v3 UI ship (design doc §19 Phase 6 rollout flag).
+     * The production rollout version. Still 2: the v3 protocol surface exists,
+     * but production stays unadvertised until every shipping platform has a
+     * reviewed constant-time backend.
      */
     const val PAIRING_VERSION: Int = 2
+
+    /** Highest pairing protocol implemented by this source revision. */
+    const val MAX_IMPLEMENTED_PAIRING_VERSION: Int = PairingV3.PROTOCOL_VERSION
 
     fun supportsSASPairing(remotePairingVersion: Int?): Boolean =
         remotePairingVersion != null && remotePairingVersion >= 2

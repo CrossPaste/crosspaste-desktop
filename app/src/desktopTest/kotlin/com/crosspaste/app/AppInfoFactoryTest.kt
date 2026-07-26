@@ -1,10 +1,28 @@
 package com.crosspaste.app
 
+import com.crosspaste.config.AppMetadataRepository
+import com.crosspaste.pairing.v3.PairingCapabilityFlag
+import io.mockk.every
+import io.mockk.mockk
 import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AppInfoFactoryTest {
+
+    @Test
+    fun createAppInfo_usesRuntimePairingCapability() {
+        val appMetadataRepository = mockk<AppMetadataRepository>()
+        every { appMetadataRepository.appInstanceId } returns "test-instance"
+
+        val appInfo =
+            DesktopAppInfoFactory(
+                appMetadataRepository,
+                PairingCapabilityFlag(advertisedPairingVersion = 3),
+            ).createAppInfo()
+
+        assertEquals(3, appInfo.pairingVersion)
+    }
 
     @Test
     fun testAppVersion() {
