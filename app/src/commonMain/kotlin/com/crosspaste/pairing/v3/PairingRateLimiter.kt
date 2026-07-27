@@ -68,8 +68,8 @@ class PairingRateLimiter(
         }
 
     companion object {
-        const val DEFAULT_MAX_PER_KEY: Int = 5
-        const val DEFAULT_MAX_GLOBAL: Int = 20
+        const val DEFAULT_MAX_PER_KEY: Int = 10
+        const val DEFAULT_MAX_GLOBAL: Int = 100
         const val DEFAULT_WINDOW_MILLIS: Long = 60_000L
     }
 }

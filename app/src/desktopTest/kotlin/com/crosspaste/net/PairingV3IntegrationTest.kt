@@ -11,6 +11,7 @@ import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
 import com.crosspaste.pairing.v3.PairingKeySchedule
+import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingSessionState
 import com.crosspaste.pairing.v3.PairingSessionUiState
 import com.crosspaste.pairing.v3.PairingTranscript
@@ -57,6 +58,7 @@ class PairingV3IntegrationTest {
         id: String,
         pinLifetime: kotlin.time.Duration = PairingV3.DEFAULT_PIN_LIFETIME,
         generationGrace: kotlin.time.Duration = PairingV3.DEFAULT_GENERATION_GRACE,
+        pairingRateLimiter: PairingRateLimiter = PairingRateLimiter(),
         pakeProvider: PakeProvider = TestPakeProvider(),
         pairingV3Enabled: Boolean = true,
     ): TestInstance =
@@ -64,6 +66,7 @@ class PairingV3IntegrationTest {
             appInstanceId = id,
             pairingPinLifetime = pinLifetime,
             pairingGenerationGrace = generationGrace,
+            pairingRateLimiter = pairingRateLimiter,
             pakeProvider = pakeProvider,
             pairingV3Enabled = pairingV3Enabled,
         ).also { instances.add(it) }
@@ -771,11 +774,11 @@ class PairingV3IntegrationTest {
             b.start()
             a.pairingAcceptanceWindow.open()
 
-            val manual = ManualInitiator(b, a)
-            manual.buildIntent()
             var limited = false
-            repeat(10) {
-                val result = b.pairingV3ClientApi.sendIntent(manual.intent, urlFor(a))
+            repeat(11) {
+                val attempt = ManualInitiator(b, a)
+                attempt.buildIntent()
+                val result = b.pairingV3ClientApi.sendIntent(attempt.intent, urlFor(a))
                 if (result is FailureResult &&
                     pairingV3ErrorCodeOf(result.exception.getErrorCode().code) ==
                     PairingV3ErrorCode.PAIRING_RATE_LIMITED
@@ -784,6 +787,28 @@ class PairingV3IntegrationTest {
                 }
             }
             assertTrue(limited, "expected the per-key rate limit to trigger")
+        }
+
+    @Test
+    fun testDuplicateIntentRefreshDoesNotConsumeNewPairingBudget() =
+        runBlocking {
+            val limiter = PairingRateLimiter(maxPerKey = 1, maxGlobal = 1)
+            val a = createInstance("refresh-a", pairingRateLimiter = limiter)
+            val b = createInstance("refresh-b")
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open()
+
+            val manual = ManualInitiator(b, a)
+            val firstOffer = manual.requestOffer(urlFor(a))
+            val refreshedOffer = manual.requestOffer(urlFor(a))
+
+            assertContentEquals(firstOffer.sessionId, refreshedOffer.sessionId)
+
+            val newAttempt = ManualInitiator(b, a)
+            newAttempt.buildIntent()
+            val refused = b.pairingV3ClientApi.sendIntent(newAttempt.intent, urlFor(a))
+            assertPairingFailure(refused, PairingV3ErrorCode.PAIRING_RATE_LIMITED)
         }
 
     private fun assertPairingFailure(

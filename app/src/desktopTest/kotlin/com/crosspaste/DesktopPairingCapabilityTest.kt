@@ -1,6 +1,7 @@
 package com.crosspaste
 
 import com.crosspaste.app.AppEnv
+import com.crosspaste.config.developmentPairingV3InteropEnabled
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.pairing.v3.UnavailablePakeProvider
@@ -12,6 +13,13 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class DesktopPairingCapabilityTest {
+
+    @Test
+    fun developmentConfigurationDefaultsToV3AndSupportsExplicitV2Override() {
+        assertTrue(developmentPairingV3InteropEnabled(null))
+        assertFalse(developmentPairingV3InteropEnabled("false"))
+        assertFalse(developmentPairingV3InteropEnabled("invalid"))
+    }
 
     @Test
     fun developmentInteropOptInEnablesV3() {
@@ -29,7 +37,7 @@ class DesktopPairingCapabilityTest {
     }
 
     @Test
-    fun developmentDefaultsToV2() {
+    fun developmentInteropOptOutUsesV2() {
         val capability =
             createDesktopPairingCapabilityFlag(
                 appEnv = AppEnv.DEVELOPMENT,

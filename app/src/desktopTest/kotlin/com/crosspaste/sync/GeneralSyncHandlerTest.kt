@@ -9,11 +9,14 @@ import com.crosspaste.sync.SyncTestFixtures.createUnverifiedSyncRuntimeInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -580,6 +583,58 @@ class GeneralSyncHandlerTest {
             assertTrue(emitter.events.any { it is SyncEvent.Resolve })
             assertNull(address)
             childScope.cancel()
+        }
+
+    @Test
+    fun showPairingCode_waitsUntilRemoteRequestCompletes() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val handler = GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emitter.events.clear()
+
+            try {
+                val request = async { handler.showPairingCode() }
+                runCurrent()
+
+                val event = emitter.events.filterIsInstance<SyncEvent.ShowPairingCode>().single()
+                assertFalse(request.isCompleted)
+
+                event.completionSignal.complete(true)
+                runCurrent()
+
+                assertTrue(request.isCompleted)
+            } finally {
+                childScope.cancel()
+            }
+        }
+
+    @Test
+    fun showPairingCode_timesOutWhenRemoteRequestIsNeverProcessed() =
+        runTest {
+            val emitter = TestEmitter()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val handler = GeneralSyncHandler(syncRuntimeInfo, emitter.emitEvent, childScope)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emitter.events.clear()
+
+            try {
+                val request = async { runCatching { handler.showPairingCode() } }
+                runCurrent()
+
+                assertFalse(request.isCompleted)
+
+                advanceTimeBy(5_000)
+                runCurrent()
+
+                assertTrue(request.isCompleted)
+                assertTrue(request.await().isFailure)
+            } finally {
+                childScope.cancel()
+            }
         }
 
     // ========== X. callback wiring (polling vs force) ==========

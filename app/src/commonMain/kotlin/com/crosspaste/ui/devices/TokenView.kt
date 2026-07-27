@@ -54,8 +54,9 @@ fun TokenView(intOffset: IntOffset) {
     val appTokenApi = koinInject<AppTokenApi>()
     val syncManager = koinInject<SyncManager>()
     val copywriter = koinInject<GlobalCopywriter>()
-    val appSizeValue = LocalAppSizeValueState.current
     val showToken by appTokenApi.showToken.collectAsState()
+    val progress by appTokenApi.refreshProgress.collectAsState()
+    val token by appTokenApi.token.collectAsState()
 
     // Auto-close token view when all pending verifiers have completed verification
     // (either trust succeeded, went offline, or disconnected)
@@ -78,69 +79,122 @@ fun TokenView(intOffset: IntOffset) {
     }
 
     if (showToken) {
-        Popup(
-            alignment = Alignment.TopCenter,
-            offset = intOffset,
-            properties = PopupProperties(clippingEnabled = false),
+        TokenPopup(
+            intOffset = intOffset,
+            title = copywriter.getText("token"),
+            token = token.map(Char::toString),
+            progress = progress,
+            onClose = { appTokenApi.stopRefresh(hideToken = true) },
+        )
+    }
+}
+
+@Composable
+fun TokenPopup(
+    intOffset: IntOffset,
+    title: String,
+    token: List<String>,
+    progress: Float,
+    onClose: () -> Unit,
+    deviceDisplayName: String? = null,
+    statusText: String? = null,
+) {
+    Popup(
+        alignment = Alignment.TopCenter,
+        offset = intOffset,
+        properties = PopupProperties(clippingEnabled = false),
+    ) {
+        TokenPopupCard(
+            title = title,
+            token = token,
+            progress = progress,
+            onClose = onClose,
+            deviceDisplayName = deviceDisplayName,
+            statusText = statusText,
+        )
+    }
+}
+
+@Composable
+fun TokenPopupCard(
+    title: String,
+    token: List<String>,
+    progress: Float,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    deviceDisplayName: String? = null,
+    statusText: String? = null,
+) {
+    val appSizeValue = LocalAppSizeValueState.current
+
+    Surface(
+        modifier =
+            modifier
+                .width(appSizeValue.tokenViewWidth)
+                .wrapContentHeight(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = small,
+        shadowElevation = small,
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = small2X),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Surface(
+            Box(
                 modifier =
                     Modifier
-                        .width(appSizeValue.tokenViewWidth)
-                        .wrapContentHeight(),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = small,
-                shadowElevation = small,
+                        .fillMaxWidth()
+                        .padding(top = small, start = small2X, end = tiny),
+                contentAlignment = Alignment.Center,
             ) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = small2X),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.align(Alignment.CenterEnd),
                 ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(top = small, start = small2X, end = tiny),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = copywriter.getText("token"),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-
-                        // Close Button aligned to the end
-                        IconButton(
-                            onClick = { appTokenApi.stopRefresh(hideToken = true) },
-                            modifier = Modifier.align(Alignment.CenterEnd),
-                        ) {
-                            Icon(
-                                imageVector = MaterialSymbols.Rounded.Close,
-                                contentDescription = "Close",
-                                modifier = Modifier.size(medium),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    // Token Display Section
-                    OTPCodeBox()
+                    Icon(
+                        imageVector = MaterialSymbols.Rounded.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier.size(medium),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
+
+            deviceDisplayName?.let { displayName ->
+                Text(
+                    text = displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            statusText?.let { status ->
+                Text(
+                    text = status,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            OTPCodeBox(token = token, progress = progress)
         }
     }
 }
 
 @Composable
-private fun OTPCodeBox() {
-    val appTokenApi = koinInject<AppTokenApi>()
-    val progress by appTokenApi.refreshProgress.collectAsState()
-    val token by appTokenApi.token.collectAsState()
-
+private fun OTPCodeBox(
+    token: List<String>,
+    progress: Float,
+) {
     Column(
         modifier =
             Modifier
@@ -152,8 +206,8 @@ private fun OTPCodeBox() {
             horizontalArrangement = Arrangement.spacedBy(small),
             modifier = Modifier.padding(vertical = small2X),
         ) {
-            token.forEach { char ->
-                TokenDisplayBox(char = char.toString())
+            token.forEach { value ->
+                TokenDisplayBox(char = value)
             }
         }
 

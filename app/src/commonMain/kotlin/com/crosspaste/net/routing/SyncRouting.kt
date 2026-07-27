@@ -52,6 +52,7 @@ fun Routing.syncRouting(
     // No-downgrade rule (pairing v3 design §17.2): while a v3 pairing session is
     // active for a peer, that peer must not be able to fall back to v2 trust.
     hasActivePairingV3Session: (String) -> Boolean = { false },
+    openPairingV3AcceptanceWindow: () -> Unit = {},
 ) {
     val logger = KotlinLogging.logger {}
 
@@ -144,6 +145,7 @@ fun Routing.syncRouting(
             return@get
         }
         appTokenApi.showPairingCode()
+        openPairingV3AcceptanceWindow()
         logger.info { "show pairing code requested from $host" }
         successResponse(call)
     }

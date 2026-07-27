@@ -81,6 +81,7 @@ sealed interface SyncEvent {
 
     data class ShowPairingCode(
         override val syncRuntimeInfo: SyncRuntimeInfo,
+        val completionSignal: CompletableDeferred<Boolean> = CompletableDeferred(),
     ) : SyncRunTimeInfoEvent {
         override fun toString(): String = "ShowPairingCode ${syncRuntimeInfo.appInstanceId}"
     }

@@ -45,6 +45,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -1254,6 +1255,27 @@ class SyncResolverTest {
             assertEquals(false, callbackResult)
         }
 
+    @Test
+    fun resolveUnverified_cryptoKeyAddedByPairing_authenticatesAndConnects() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.secureStore.existCryptPublicKey(syncRuntimeInfo.appInstanceId) } returns true
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            val capturedInfo = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(SyncState.CONNECTED, capturedInfo.captured.connectState)
+            coVerify { deps.syncClientApi.heartbeat(any(), syncRuntimeInfo.appInstanceId, any()) }
+        }
+
     // ========== F. trustBySasCode ==========
 
     @Test
@@ -1655,6 +1677,73 @@ class SyncResolverTest {
             assertEquals(0, failureCalls)
             coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
             coVerify(exactly = 0) { deps.wsSessionManager.probe(any()) }
+        }
+
+    @Test
+    fun showPairingCode_completesAfterRemoteRequestIsProcessed() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val event = SyncEvent.ShowPairingCode(syncRuntimeInfo)
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.syncDeviceManager.showPairingCode(syncRuntimeInfo) } returns true
+
+            resolver.emitEvent(event)
+
+            coVerify(exactly = 1) { deps.syncDeviceManager.showPairingCode(syncRuntimeInfo) }
+            assertTrue(event.completionSignal.await())
+        }
+
+    @Test
+    fun showPairingCode_reportsFailureWhenRemoteWindowWasNotOpened() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val event = SyncEvent.ShowPairingCode(syncRuntimeInfo)
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.syncDeviceManager.showPairingCode(syncRuntimeInfo) } returns false
+
+            resolver.emitEvent(event)
+
+            assertFalse(event.completionSignal.await())
+        }
+
+    @Test
+    fun showPairingCode_resolverCancellationCompletesFalseWithoutCancellingCaller() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val event = SyncEvent.ShowPairingCode(syncRuntimeInfo)
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery {
+                deps.syncDeviceManager.showPairingCode(syncRuntimeInfo)
+            } throws CancellationException("resolver cancelled")
+
+            assertFailsWith<CancellationException> {
+                resolver.emitEvent(event)
+            }
+
+            assertFalse(event.completionSignal.await())
+        }
+
+    @Test
+    fun showPairingCode_reportsIncompleteWhenPeerRecordDisappears() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val event = SyncEvent.ShowPairingCode(syncRuntimeInfo)
+            coEvery {
+                deps.syncRuntimeInfoDao.getSyncRuntimeInfo(syncRuntimeInfo.appInstanceId)
+            } returns null
+
+            resolver.emitEvent(event)
+
+            coVerify(exactly = 0) { deps.syncDeviceManager.showPairingCode(any()) }
+            assertFalse(event.completionSignal.await())
         }
 
     private fun extensionPlatform(): Platform =

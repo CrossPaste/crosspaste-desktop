@@ -123,6 +123,7 @@ class DefaultPairingV3UiController(
                         PairingV3UiError.NETWORK_FAILURE,
                         PairingV3Recovery.RETRY_START,
                     )
+            target.showPairingCode()
             pairingProtocolV3Service
                 .startPairing(
                     targetAppInstanceId = peerAppInstanceId,
@@ -194,6 +195,7 @@ class DefaultPairingV3UiController(
         val runtimeInfo = handler.currentSyncRuntimeInfo
         return PairingTarget(
             displayName = runtimeInfo.getDeviceDisplayName(),
+            showPairingCode = handler::showPairingCode,
             toUrl = {
                 buildUrl(HostAndPort(host, runtimeInfo.port))
             },
@@ -202,6 +204,7 @@ class DefaultPairingV3UiController(
 
     private data class PairingTarget(
         val displayName: String,
+        val showPairingCode: suspend () -> Unit,
         val toUrl: io.ktor.http.URLBuilder.() -> Unit,
     )
 }

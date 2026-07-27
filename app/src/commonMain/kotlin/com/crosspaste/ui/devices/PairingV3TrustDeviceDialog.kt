@@ -18,6 +18,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,10 +46,14 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 private const val PAIRING_PIN_LENGTH = 6
+private val INCORRECT_PIN_FEEDBACK_DURATION = 1.seconds
 
 @Composable
 fun DeviceScope.PairingV3TrustDeviceDialog() {
@@ -133,6 +138,12 @@ private fun PairingV3DialogLifecycle(
     LaunchedEffect(session?.sessionId, session?.tokenGeneration) {
         resetInput()
         dialogState.resetFeedback()
+    }
+
+    LaunchedEffect(dialogState.inputResetGeneration) {
+        if (dialogState.inputResetGeneration > 0) {
+            resetInput()
+        }
     }
 
     DisposableEffect(appInstanceId) {
@@ -385,11 +396,12 @@ internal data class PairingV3DialogModel(
                 recovery != PairingV3Recovery.NONE
 }
 
-private class PairingV3DialogState(
+internal class PairingV3DialogState(
     private val appInstanceId: String,
     private val controller: PairingV3UiController,
     private val syncManager: SyncManager,
     private val coroutineScope: CoroutineScope,
+    private val incorrectPinFeedbackDuration: Duration = INCORRECT_PIN_FEEDBACK_DURATION,
 ) {
     var isLoading by mutableStateOf(false)
         private set
@@ -398,6 +410,9 @@ private class PairingV3DialogState(
         private set
 
     var recovery by mutableStateOf(PairingV3Recovery.NONE)
+        private set
+
+    var inputResetGeneration by mutableIntStateOf(0)
         private set
 
     fun resetFeedback() {
@@ -415,7 +430,7 @@ private class PairingV3DialogState(
         sessionId: String,
         pin: String,
     ) {
-        launchAction {
+        launchAction(autoRefreshIncorrectPinSessionId = sessionId) {
             controller.submitPin(sessionId, V3Pin(pin))
         }
     }
@@ -445,23 +460,57 @@ private class PairingV3DialogState(
         }
     }
 
-    private fun launchAction(action: suspend () -> PairingV3UiResult) {
+    private fun launchAction(
+        autoRefreshIncorrectPinSessionId: String? = null,
+        action: suspend () -> PairingV3UiResult,
+    ) {
         if (isLoading) return
         isLoading = true
         uiError = null
         coroutineScope.launch {
-            runAction(action)
+            runAction(
+                action = action,
+                autoRefreshIncorrectPinSessionId = autoRefreshIncorrectPinSessionId,
+            )
         }
     }
 
-    private suspend fun runAction(action: suspend () -> PairingV3UiResult) {
+    private suspend fun runAction(
+        action: suspend () -> PairingV3UiResult,
+        autoRefreshIncorrectPinSessionId: String?,
+    ) {
+        val result = executeAction(action)
+        if (
+            autoRefreshIncorrectPinSessionId != null &&
+            result is PairingV3UiResult.Error &&
+            result.reason == PairingV3UiError.INCORRECT_PIN &&
+            result.recovery == PairingV3Recovery.REFRESH_OFFER
+        ) {
+            autoRefreshAfterIncorrectPin(autoRefreshIncorrectPinSessionId)
+        } else {
+            applyResult(result)
+        }
+    }
+
+    private suspend fun executeAction(action: suspend () -> PairingV3UiResult): PairingV3UiResult =
         try {
-            applyResult(action())
+            action()
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
-            applyResult(PairingV3UiResult.Error(PairingV3UiError.FAILED))
+            PairingV3UiResult.Error(PairingV3UiError.FAILED)
         }
+
+    private suspend fun autoRefreshAfterIncorrectPin(sessionId: String) {
+        uiError = PairingV3UiError.INCORRECT_PIN
+        recovery = PairingV3Recovery.NONE
+
+        delay(incorrectPinFeedbackDuration)
+
+        uiError = null
+        val result = executeAction { controller.recover(sessionId) }
+        inputResetGeneration += 1
+        applyResult(result)
     }
 
     private fun applyResult(result: PairingV3UiResult) {

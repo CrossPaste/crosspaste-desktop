@@ -123,6 +123,7 @@ open class DefaultServerModule(
                     ::trustSyncInfo,
                     pairingVersionCoordinator,
                     pairingProtocolV3Service::hasActiveSession,
+                    pairingProtocolV3Service.acceptanceWindow::open,
                 )
                 pairingV3Routing(
                     pairingProtocolV3Service,

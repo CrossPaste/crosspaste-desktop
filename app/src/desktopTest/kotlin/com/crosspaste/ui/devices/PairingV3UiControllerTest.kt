@@ -2,12 +2,63 @@ package com.crosspaste.ui.devices
 
 import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.net.clientapi.UnknownError
+import com.crosspaste.pairing.v3.PairingAcceptanceWindow
+import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
+import com.crosspaste.sync.SyncHandler
+import com.crosspaste.sync.SyncManager
+import com.crosspaste.sync.SyncTestFixtures.createUnverifiedSyncRuntimeInfo
+import io.mockk.coEvery
+import io.mockk.coVerifyOrder
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PairingV3UiControllerTest {
+
+    @Test
+    fun startPairingRequestsRemotePairingScreenBeforeSendingIntent() =
+        runTest {
+            val peerAppInstanceId = "peer-app"
+            val syncRuntimeInfo =
+                createUnverifiedSyncRuntimeInfo(
+                    appInstanceId = peerAppInstanceId,
+                    hostAddress = "192.168.1.10",
+                )
+            val syncHandler = mockk<SyncHandler>()
+            val syncManager = mockk<SyncManager>()
+            val pairingProtocolV3Service = mockk<PairingProtocolV3Service>()
+
+            every { syncManager.getSyncHandler(peerAppInstanceId) } returns syncHandler
+            every { syncHandler.currentSyncRuntimeInfo } returns syncRuntimeInfo
+            coEvery { syncHandler.getConnectHostAddress() } returns "192.168.1.10"
+            coEvery { syncHandler.showPairingCode() } returns Unit
+            every { pairingProtocolV3Service.uiSessionsFlow } returns MutableStateFlow(emptyList())
+            every { pairingProtocolV3Service.acceptanceWindow } returns PairingAcceptanceWindow()
+            coEvery {
+                pairingProtocolV3Service.startPairing(
+                    targetAppInstanceId = peerAppInstanceId,
+                    targetDisplayName = any(),
+                    toUrl = any(),
+                )
+            } returns PairingV3StartResult.NetworkError(UnknownError)
+
+            DefaultPairingV3UiController(pairingProtocolV3Service, syncManager)
+                .startPairing(peerAppInstanceId)
+
+            coVerifyOrder {
+                syncHandler.showPairingCode()
+                pairingProtocolV3Service.startPairing(
+                    targetAppInstanceId = peerAppInstanceId,
+                    targetDisplayName = any(),
+                    toUrl = any(),
+                )
+            }
+        }
 
     @Test
     fun proofFailureIsPresentedAsIncorrectPinWithOfferRefresh() {

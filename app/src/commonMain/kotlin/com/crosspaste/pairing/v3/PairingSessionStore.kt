@@ -193,6 +193,26 @@ class PairingSessionStore(
     fun activeSessions(): List<PairingSession> = snapshot().filter { session -> session.isActive }
 
     /**
+     * Finds an exact, still-active signed intent retry. The protocol service uses
+     * this only after validating the intent shape, keys, and signature, so a
+     * legitimate offer refresh does not consume the budget for a new pairing.
+     */
+    internal fun findActiveAcceptorSessionForIntent(
+        peerKeyFingerprint: String,
+        requestId: String,
+        intentHash: ByteArray,
+    ): PairingSession? =
+        sessions.values
+            .map { stored -> stored.session }
+            .firstOrNull { session ->
+                session.isActive &&
+                    session.role == PakeRole.ACCEPTOR &&
+                    session.peerKeyFingerprint == peerKeyFingerprint &&
+                    session.requestId == requestId &&
+                    session.intentHash?.contentEquals(intentHash) == true
+            }
+
+    /**
      * Applies capacity and deduplication policy for incoming (acceptor-role) sessions.
      * Peer identity comparisons use the FULL signing-key fingerprint. Initiator-role
      * sessions bypass the peer policies but never an existing session id: a session

@@ -89,25 +89,25 @@ class SyncDeviceManager(
         }
     }
 
-    suspend fun showPairingCode(syncRuntimeInfo: SyncRuntimeInfo) {
-        if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
-            syncRuntimeInfo.connectHostAddress?.let { host ->
-                val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
-                val result =
-                    syncClientApi.showPairingCode {
-                        buildUrl(hostAndPort)
-                    }
-                if (result is SuccessResult) {
-                    logger.info { "showPairingCode success $host ${syncRuntimeInfo.port}" }
-                } else {
-                    syncRuntimeInfoDao.updateConnectInfo(
-                        syncRuntimeInfo.copy(
-                            connectState = SyncState.DISCONNECTED,
-                            modifyTime = nowEpochMilliseconds(),
-                        ),
-                    )
-                }
+    suspend fun showPairingCode(syncRuntimeInfo: SyncRuntimeInfo): Boolean {
+        if (syncRuntimeInfo.connectState != SyncState.UNVERIFIED) return false
+        val host = syncRuntimeInfo.connectHostAddress ?: return false
+        val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+        val result =
+            syncClientApi.showPairingCode {
+                buildUrl(hostAndPort)
             }
+        return if (result is SuccessResult) {
+            logger.info { "showPairingCode success $host ${syncRuntimeInfo.port}" }
+            true
+        } else {
+            syncRuntimeInfoDao.updateConnectInfo(
+                syncRuntimeInfo.copy(
+                    connectState = SyncState.DISCONNECTED,
+                    modifyTime = nowEpochMilliseconds(),
+                ),
+            )
+            false
         }
     }
 

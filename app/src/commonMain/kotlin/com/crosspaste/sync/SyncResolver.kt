@@ -127,7 +127,9 @@ class SyncResolver(
                     }
 
                     is SyncEvent.ShowPairingCode -> {
-                        syncDeviceManager.showPairingCode(syncRuntimeInfo)
+                        event.completionSignal.complete(
+                            syncDeviceManager.showPairingCode(syncRuntimeInfo),
+                        )
                     }
 
                     is SyncEvent.NotifyExit -> {
@@ -170,6 +172,9 @@ class SyncResolver(
         } finally {
             if (event is SyncEvent.CallbackEvent) {
                 event.callback.onComplete()
+            }
+            if (event is SyncEvent.ShowPairingCode) {
+                event.completionSignal.complete(false)
             }
         }
     }
@@ -386,6 +391,13 @@ class SyncResolver(
      */
     private suspend fun SyncRuntimeInfo.resolveUnverified(callback: ResolveCallback) {
         connectHostAddress?.let { host ->
+            // Pairing v3 persists the peer key outside the legacy resolver event path.
+            // A forced refresh then arrives while this row is still UNVERIFIED, so
+            // authenticate with the newly stored key before falling back to QR tokens.
+            if (secureStore.existCryptPublicKey(appInstanceId)) {
+                authenticate(host, connectNetworkPrefixLength, callback)
+                return
+            }
             // Check token cache first — user may have scanned QR while waiting
             if (trustByTokenCache()) {
                 logger.info { "trustByTokenCache success (from unverified) $host $port" }
