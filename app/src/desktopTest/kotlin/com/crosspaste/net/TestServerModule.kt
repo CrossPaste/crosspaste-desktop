@@ -66,6 +66,7 @@ class TestServerModule(
                     { appInstanceId ->
                         pairingProtocolV3Service?.hasActiveSession(appInstanceId) ?: false
                     },
+                    { pairingProtocolV3Service?.acceptanceWindow?.open() },
                 )
                 pairingProtocolV3Service?.let { service ->
                     pairingV3Routing(

@@ -152,6 +152,24 @@ class PairingProtocolV3Service(
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_IDENTITY_INVALID)
         }
         val fingerprint = PairingKeyFingerprint.of(intent.initiatorSignPublicKey)
+        val intentHash = PairingTranscriptCodec.intentHash(intent)
+        val duplicateSession =
+            sessionStore.findActiveAcceptorSessionForIntent(
+                peerKeyFingerprint = fingerprint,
+                requestId = toHex(intent.requestId),
+                intentHash = intentHash,
+            )
+        val duplicateOffer =
+            duplicateSession?.let { session ->
+                acceptorRuntimes[session.sessionId]?.let { runtime ->
+                    runtime.offerMutex.withLock {
+                        runtime.currentOffer
+                    }
+                }
+            }
+        if (duplicateOffer != null) {
+            return PairingV3ServerResult.Ok(duplicateOffer)
+        }
         val source =
             PairingAttemptSource(
                 peerKeyFingerprint = fingerprint,
@@ -161,7 +179,6 @@ class PairingProtocolV3Service(
         if (!rateLimiter.tryAcquire(source)) {
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_RATE_LIMITED)
         }
-        val intentHash = PairingTranscriptCodec.intentHash(intent)
         return createAcceptorSession(intent, intentHash, fingerprint)
     }
 

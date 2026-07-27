@@ -13,5 +13,13 @@ object DevConfig {
     val marketingMode: Boolean = development.getProperty("marketingMode")?.toBoolean() == true
 
     val pairingV3InteropEnabled: Boolean =
-        development.getProperty("pairingV3InteropEnabled")?.toBoolean() == true
+        developmentPairingV3InteropEnabled(
+            development.getProperty("pairingV3InteropEnabled"),
+        )
 }
+
+internal fun developmentPairingV3InteropEnabled(configuredValue: String?): Boolean =
+    when (configuredValue) {
+        null -> true
+        else -> configuredValue.toBooleanStrictOrNull() ?: false
+    }

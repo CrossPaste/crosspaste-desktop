@@ -21,6 +21,32 @@ class PairingRateLimiterTest {
     )
 
     @Test
+    fun testDefaultProductBudgetsAllowTenPerPeerAndOneHundredGlobal() =
+        runTest {
+            val perPeerLimiter = PairingRateLimiter(nowEpochMillis = { now })
+            val peer = PairingAttemptSource(peerKeyFingerprint = "fp-a")
+
+            repeat(10) {
+                assertTrue(perPeerLimiter.tryAcquire(peer))
+            }
+            assertFalse(perPeerLimiter.tryAcquire(peer))
+
+            val globalLimiter = PairingRateLimiter(nowEpochMillis = { now })
+            repeat(100) { index ->
+                assertTrue(
+                    globalLimiter.tryAcquire(
+                        PairingAttemptSource(peerKeyFingerprint = "fp-$index"),
+                    ),
+                )
+            }
+            assertFalse(
+                globalLimiter.tryAcquire(
+                    PairingAttemptSource(peerKeyFingerprint = "fp-over-global-budget"),
+                ),
+            )
+        }
+
+    @Test
     fun testPerFingerprintLimit() =
         runTest {
             val limiter = newLimiter()

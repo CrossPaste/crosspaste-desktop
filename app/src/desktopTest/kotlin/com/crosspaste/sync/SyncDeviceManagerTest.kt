@@ -18,6 +18,8 @@ import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class SyncDeviceManagerTest {
 
@@ -128,6 +130,49 @@ class SyncDeviceManagerTest {
             manager.showToken(syncRuntimeInfo)
 
             coVerify(exactly = 0) { deps.syncClientApi.showToken(any()) }
+        }
+
+    // ========== showPairingCode ==========
+
+    @Test
+    fun showPairingCode_unverifiedAndSuccess_returnsTrue() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            coEvery { deps.syncClientApi.showPairingCode(any()) } returns SuccessResult(true)
+
+            assertTrue(manager.showPairingCode(syncRuntimeInfo))
+
+            coVerify(exactly = 1) { deps.syncClientApi.showPairingCode(any()) }
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun showPairingCode_unverifiedAndFails_returnsFalseAndDisconnects() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            coEvery { deps.syncClientApi.showPairingCode(any()) } returns ConnectionRefused
+            val capturedInfo = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
+
+            assertFalse(manager.showPairingCode(syncRuntimeInfo))
+
+            assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
+        }
+
+    @Test
+    fun showPairingCode_notUnverified_returnsFalseWithoutRequest() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            assertFalse(manager.showPairingCode(syncRuntimeInfo))
+
+            coVerify(exactly = 0) { deps.syncClientApi.showPairingCode(any()) }
         }
 
     // ========== notifyExit ==========
