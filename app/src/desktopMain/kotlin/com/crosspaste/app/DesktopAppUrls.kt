@@ -18,4 +18,6 @@ object DesktopAppUrls : AppUrls {
     val versionApiUrl: String = appUrlsProperties.getProperty("version-api-url")
 
     override val issueTrackerUrl: String = appUrlsProperties.getProperty("issue-tracker-url")
+
+    override val supportEmail: String = appUrlsProperties.getProperty("support-email")
 }

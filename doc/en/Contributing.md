@@ -36,5 +36,5 @@ To ensure high-quality code, we have the following pull request guidelines:
 ## Contact Information
 If you have any questions or need further assistance, please contact us:
 
-- Email: compile.future@gmail.com
+- Email: support@crosspaste.com
 - GitHub Issues: [link to issues](https://github.com/CrossPaste/crosspaste-desktop/issues)

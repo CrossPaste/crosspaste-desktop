@@ -15,7 +15,7 @@ const LINKS = {
   tutorial: "https://crosspaste.com/tutorial",
   changelog: "https://crosspaste.com/changelog",
   feedback: "https://github.com/CrossPaste/crosspaste-desktop/issues",
-  email: "mailto:compile.future@gmail.com",
+  email: "mailto:support@crosspaste.com",
 };
 
 function openUrl(url: string) {
