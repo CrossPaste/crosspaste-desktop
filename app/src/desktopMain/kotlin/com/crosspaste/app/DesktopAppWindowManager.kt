@@ -4,6 +4,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
@@ -24,6 +25,7 @@ import java.awt.Frame
 fun getDesktopAppWindowManager(
     appInfo: AppInfo,
     appSize: DesktopAppSize,
+    lazyConfigManager: Lazy<DesktopConfigManager>,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
@@ -34,6 +36,7 @@ fun getDesktopAppWindowManager(
         MacAppWindowManager(
             appInfo,
             appSize,
+            lazyConfigManager,
             lazyShortcutKeys,
             lazyShortcutKeysListener,
             userDataPathProvider,

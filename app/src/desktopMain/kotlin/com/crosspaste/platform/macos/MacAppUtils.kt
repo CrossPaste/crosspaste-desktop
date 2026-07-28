@@ -48,8 +48,11 @@ object MacAppUtils {
         INSTANCE.applyAcrylicBackground(windowPtr, isDark)
     }
 
-    fun bringToFront(appName: String) {
-        INSTANCE.bringToFront(appName)
+    fun bringToFront(
+        appName: String,
+        showDockIcon: Boolean,
+    ) {
+        INSTANCE.bringToFront(appName, showDockIcon)
     }
 
     fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())

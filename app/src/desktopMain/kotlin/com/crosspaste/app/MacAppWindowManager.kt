@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.path.UserDataPathProvider
@@ -9,6 +10,8 @@ import com.crosspaste.utils.getSystemProperty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -16,12 +19,29 @@ import kotlin.time.Duration.Companion.milliseconds
 class MacAppWindowManager(
     private val appInfo: AppInfo,
     appSize: DesktopAppSize,
+    private val lazyConfigManager: Lazy<DesktopConfigManager>,
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
+
+    init {
+        // Re-apply the Dock icon policy immediately when the setting is toggled
+        // while the main window is open (the toggle lives in the main window)
+        ioScope.launch {
+            lazyConfigManager.value.config
+                .map { it.showDockIcon }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { showDockIcon ->
+                    if (getCurrentMainWindowInfo().show) {
+                        MacAppUtils.bringToFront(mainWindowTitle, showDockIcon)
+                    }
+                }
+        }
+    }
 
     private var prevMacAppInfo: MutableStateFlow<MacAppInfo?> = MutableStateFlow(null)
 
@@ -106,7 +126,10 @@ class MacAppWindowManager(
     }
 
     override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
-        MacAppUtils.bringToFront(mainWindowTitle)
+        MacAppUtils.bringToFront(
+            mainWindowTitle,
+            lazyConfigManager.value.config.value.showDockIcon,
+        )
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -127,11 +150,11 @@ class MacAppWindowManager(
     }
 
     override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
-        MacAppUtils.bringToFront(searchWindowTitle)
+        MacAppUtils.bringToFront(searchWindowTitle, showDockIcon = false)
     }
 
     override suspend fun focusBubbleWindow() {
-        MacAppUtils.bringToFront(bubbleWindowTitle)
+        MacAppUtils.bringToFront(bubbleWindowTitle, showDockIcon = false)
     }
 
     override suspend fun hideSearchWindowAndPaste(

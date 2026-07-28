@@ -67,7 +67,16 @@ fun desktopUiModule(): Module =
         single<AppWindowManager> { get<DesktopAppWindowManager>() }
         single<DesktopAppSize> { DesktopAppSize(get(), get()) }
         single<DesktopAppWindowManager> {
-            getDesktopAppWindowManager(get(), get(), lazy { get() }, lazy { get() }, lazy { get() }, get(), get())
+            getDesktopAppWindowManager(
+                get(),
+                get(),
+                lazy { get() },
+                lazy { get() },
+                lazy { get() },
+                lazy { get() },
+                get(),
+                get(),
+            )
         }
         single<RatingPromptManager> { DesktopRatingPromptManager() }
         single<UserAttentionService> { DesktopUserAttentionService(get<DesktopAppWindowManager>()) }

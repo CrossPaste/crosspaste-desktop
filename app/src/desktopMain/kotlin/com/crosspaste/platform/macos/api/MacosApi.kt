@@ -81,7 +81,10 @@ interface MacosApi : Library {
         isDark: Boolean,
     )
 
-    fun bringToFront(windowTitle: String)
+    fun bringToFront(
+        windowTitle: String,
+        showDockIcon: Boolean,
+    )
 
     fun simulatePasteCommand(
         array: Pointer,

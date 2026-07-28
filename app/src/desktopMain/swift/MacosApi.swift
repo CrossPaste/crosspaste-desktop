@@ -441,7 +441,7 @@ public func getRunningApplications() -> UnsafePointer<CChar>? {
 }
 
 @_cdecl("bringToFront")
-public func bringToFront(windowTitle: UnsafePointer<CChar>) {
+public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Bool) {
     let title = String(cString: windowTitle)
     DispatchQueue.main.async {
         let app = NSApplication.shared
@@ -451,8 +451,9 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) {
             if window.title == title {
                 window.makeKeyAndOrderFront(nil)
                 if title == "CrossPaste" {
-                    if app.activationPolicy() != .regular {
-                        app.setActivationPolicy(.regular)
+                    let targetPolicy: NSApplication.ActivationPolicy = showDockIcon ? .regular : .accessory
+                    if app.activationPolicy() != targetPolicy {
+                        app.setActivationPolicy(targetPolicy)
                         app.activate(ignoringOtherApps: true)
                     }
                 } else if title == "CrossPaste Search" {

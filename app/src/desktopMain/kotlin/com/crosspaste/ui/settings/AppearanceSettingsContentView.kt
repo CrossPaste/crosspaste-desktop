@@ -24,12 +24,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Dock
 import com.composables.icons.materialsymbols.rounded.Height
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppSize.Companion.MAX_SEARCH_WINDOW_HEIGHT
 import com.crosspaste.app.DesktopAppSize.Companion.MIN_SEARCH_WINDOW_HEIGHT
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
@@ -48,6 +50,7 @@ fun AppearanceSettingsContentView() {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
+    val platform = koinInject<Platform>()
     val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
@@ -137,6 +140,26 @@ fun AppearanceSettingsContentView() {
                         }
                     },
                 )
+            }
+        }
+
+        if (platform.isMacos()) {
+            item {
+                SectionHeader("dock", topPadding = medium)
+            }
+
+            item {
+                SettingSectionCard {
+                    SettingListSwitchItem(
+                        title = "show_dock_icon",
+                        subtitle = "show_dock_icon_description",
+                        icon = IconData(MaterialSymbols.Rounded.Dock, themeExt.cyanIconColor),
+                        checked = config.showDockIcon,
+                        onCheckedChange = { showDockIcon ->
+                            configManager.updateConfig("showDockIcon", showDockIcon)
+                        },
+                    )
+                }
             }
         }
     }

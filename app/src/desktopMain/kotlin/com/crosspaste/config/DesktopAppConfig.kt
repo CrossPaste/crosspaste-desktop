@@ -17,6 +17,8 @@ data class DesktopAppConfig(
     override val isDarkTheme: Boolean = false,
     // Side search window height in dp, clamped by DesktopAppSize at apply time
     val searchWindowHeight: Int = 332,
+    // macOS only: show the app icon in the Dock while the main window is open
+    val showDockIcon: Boolean = true,
     override val port: Int = 13129,
     override val enableEncryptSync: Boolean = false,
     override val enableExpirationCleanup: Boolean = true,
@@ -81,6 +83,7 @@ data class DesktopAppConfig(
             isFollowSystemTheme = if (key == "isFollowSystemTheme") toBoolean(value) else isFollowSystemTheme,
             isDarkTheme = if (key == "isDarkTheme") toBoolean(value) else isDarkTheme,
             searchWindowHeight = if (key == "searchWindowHeight") toInt(value) else searchWindowHeight,
+            showDockIcon = if (key == "showDockIcon") toBoolean(value) else showDockIcon,
             port = if (key == "port") toInt(value) else port,
             enableEncryptSync = if (key == "enableEncryptSync") toBoolean(value) else enableEncryptSync,
             enableExpirationCleanup =
