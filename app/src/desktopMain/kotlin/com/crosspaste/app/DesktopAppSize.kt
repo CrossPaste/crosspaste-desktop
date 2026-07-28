@@ -7,29 +7,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.contains
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Point
 
 class DesktopAppSize(
     private val platform: Platform,
+    private val configManager: DesktopConfigManager,
 ) : AppSize,
     NativeMouseListener,
     ActiveGraphicsDevice {
 
     companion object {
 
-        private fun createAppSizeValue(): DesktopAppSizeValue {
+        // Reasonable range around the 332dp default (roughly ±25%)
+        const val MIN_SEARCH_WINDOW_HEIGHT: Int = 250
+        const val MAX_SEARCH_WINDOW_HEIGHT: Int = 420
+
+        private fun createAppSizeValue(searchWindowHeight: Int): DesktopAppSizeValue {
             // --- Basic Constants ---
             val deviceHeight: Dp = huge
             val settingsItemHeight: Dp = 40.dp
@@ -55,7 +65,10 @@ class DesktopAppSize(
             val mainPasteSize = DpSize(width = 408.dp, height = 100.dp)
 
             // --- Side Search Calculation ---
-            val sideSearchWindowHeight: Dp = 332.dp
+            val sideSearchWindowHeight: Dp =
+                searchWindowHeight
+                    .coerceIn(MIN_SEARCH_WINDOW_HEIGHT, MAX_SEARCH_WINDOW_HEIGHT)
+                    .dp
             val sideSearchTopBarHeight: Dp = 64.dp
             val sideSearchPaddingSize: Dp = 16.dp
             val sideTitleHeight: Dp = huge
@@ -109,11 +122,36 @@ class DesktopAppSize(
         }
     }
 
-    private val initAppSizeValue = createAppSizeValue()
+    private val initAppSizeValue = createAppSizeValue(configManager.config.value.searchWindowHeight)
 
     private val _appSizeValue: MutableStateFlow<DesktopAppSizeValue> = MutableStateFlow(initAppSizeValue)
 
     override val appSizeValue: StateFlow<DesktopAppSizeValue> = _appSizeValue
+
+    init {
+        ioCoroutineDispatcher.launch {
+            configManager.config
+                .map { it.searchWindowHeight }
+                .distinctUntilChanged()
+                .collect { searchWindowHeight ->
+                    _appSizeValue.value = createAppSizeValue(searchWindowHeight)
+                }
+        }
+    }
+
+    /**
+     * Synchronously applies a transient search window height (not persisted), so the
+     * appearance settings can live-preview the window while the slider is dragged.
+     * The value is overwritten by the config flow on the next persisted change.
+     */
+    fun previewSearchWindowHeight(searchWindowHeight: Int) {
+        _appSizeValue.value = createAppSizeValue(searchWindowHeight)
+    }
+
+    /** Discards any preview value by recomputing sizes from the persisted config. */
+    fun clearSearchWindowHeightPreview() {
+        _appSizeValue.value = createAppSizeValue(configManager.config.value.searchWindowHeight)
+    }
 
     private var point: Point? = null
 

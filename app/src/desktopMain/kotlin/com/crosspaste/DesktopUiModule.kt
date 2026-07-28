@@ -65,7 +65,7 @@ fun desktopUiModule(): Module =
         single<AppSize> { get<DesktopAppSize>() }
         single<AppTokenApi> { DesktopAppTokenService(get(), get()) }
         single<AppWindowManager> { get<DesktopAppWindowManager>() }
-        single<DesktopAppSize> { DesktopAppSize(get()) }
+        single<DesktopAppSize> { DesktopAppSize(get(), get()) }
         single<DesktopAppWindowManager> {
             getDesktopAppWindowManager(get(), get(), lazy { get() }, lazy { get() }, lazy { get() }, get(), get())
         }

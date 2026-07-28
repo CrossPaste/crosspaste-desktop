@@ -1,5 +1,6 @@
 package com.crosspaste.config
 
+import com.crosspaste.utils.getJsonUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,6 +22,7 @@ class DesktopAppConfigTest {
         assertFalse(config.enableDebugMode)
         assertTrue(config.isFollowSystemTheme)
         assertFalse(config.isDarkTheme)
+        assertEquals(332, config.searchWindowHeight)
         assertEquals(13129, config.port)
         assertFalse(config.enableEncryptSync)
         assertTrue(config.enableExpirationCleanup)
@@ -63,6 +65,24 @@ class DesktopAppConfigTest {
         val config: AppConfig = createDefaultConfig()
         val updated = config.copy("port", 8080)
         assertEquals(8080, updated.port)
+    }
+
+    @Test
+    fun `copy with int key updates searchWindowHeight`() {
+        val config = createDefaultConfig()
+        val updated = config.copy("searchWindowHeight", 400)
+        assertEquals(400, updated.searchWindowHeight)
+    }
+
+    @Test
+    fun `legacy config without searchWindowHeight uses default`() {
+        val config =
+            getJsonUtils().JSON.decodeFromString(
+                DesktopAppConfig.serializer(),
+                """{"language":"zh"}""",
+            )
+
+        assertEquals(332, config.searchWindowHeight)
     }
 
     @Test

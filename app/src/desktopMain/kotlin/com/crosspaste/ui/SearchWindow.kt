@@ -15,6 +15,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.WindowsVersionHelper
@@ -96,14 +97,15 @@ fun SearchWindow(windowIcon: Painter?) {
             )
     }
 
-    LaunchedEffect(searchWindowInfo.show) {
+    LaunchedEffect(searchWindowInfo.show, searchWindowInfo.trigger) {
         if (searchWindowInfo.show) {
             ignoreFocusLoss.set(true)
-            // Reset selection and scroll to the newest item before the window paints. This runs
-            // here (not in the window content) because the content's composition is paused while
-            // the window is hidden and would not observe the reopen.
-            pasteSelectionViewModel.resetToTop()
-            appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
+            if (searchWindowInfo.trigger != WindowTrigger.PREVIEW) {
+                // Reset selection and scroll before an interactive window paints. Preview must
+                // not mutate user state, and a user action can claim an already-visible preview.
+                pasteSelectionViewModel.resetToTop()
+                appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
+            }
             delay(1000.milliseconds)
         }
         ignoreFocusLoss.set(false)
@@ -121,6 +123,9 @@ fun SearchWindow(windowIcon: Painter?) {
         undecorated = true,
         transparent = isMac || isWindowsAndSupportBlurEffect,
         resizable = false,
+        // During an appearance preview the window must not steal focus from the
+        // settings window (AWT setVisible would otherwise auto-request focus)
+        focusable = searchWindowInfo.trigger != WindowTrigger.PREVIEW,
     ) {
         if (isMac) {
             MacAcrylicEffect(

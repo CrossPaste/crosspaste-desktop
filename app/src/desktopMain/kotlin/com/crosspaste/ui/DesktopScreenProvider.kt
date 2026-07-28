@@ -44,6 +44,7 @@ import com.crosspaste.ui.extension.ocr.OCRContentView
 import com.crosspaste.ui.extension.sourcecontrol.SourceControlContentView
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
+import com.crosspaste.ui.settings.AppearanceSettingsContentView
 import com.crosspaste.ui.settings.DesktopNetworkSettingsContentView
 import com.crosspaste.ui.settings.DesktopPasteboardSettingsContentView
 import com.crosspaste.ui.settings.PasteboardSettingsContentView
@@ -181,6 +182,12 @@ class DesktopScreenProvider(
             composable<Share> { ShareScreen() }
             navigation<SettingsGraph>(startDestination = Settings) {
                 composable<Settings> { SettingsScreen() }
+                composable<AppearanceSettings>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    AppearanceSettingsScreen()
+                }
                 composable<PasteboardSettings>(
                     exitTransition = { slideOutRight() },
                     enterTransition = { slideInLeft() },
@@ -372,6 +379,13 @@ class DesktopScreenProvider(
     private fun SettingsScreen() {
         DesktopScreenLayout {
             SettingsContentView()
+        }
+    }
+
+    @Composable
+    private fun AppearanceSettingsScreen() {
+        DesktopScreenLayout {
+            AppearanceSettingsContentView()
         }
     }
 
