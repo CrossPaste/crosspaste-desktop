@@ -22,9 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Chevron_right
+import com.crosspaste.ui.LocalSmallSettingItemState
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
 @Composable
 fun SettingSectionCard(content: @Composable ColumnScope.() -> Unit) {
@@ -90,6 +93,8 @@ fun <T> SegmentedControlSettingsRow(
     twoLine: Boolean = false,
     optionLabel: (T) -> String = { it.toString() },
 ) {
+    val isSmallItem = LocalSmallSettingItemState.current
+
     val segmentedRow: @Composable () -> Unit = {
         SingleChoiceSegmentedButtonRow(
             modifier = if (twoLine) Modifier.fillMaxWidth().padding(horizontal = medium) else Modifier,
@@ -121,7 +126,7 @@ fun <T> SegmentedControlSettingsRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) {
-                    icon.IconContent()
+                    icon.IconContent(isSmallItem)
                     Spacer(Modifier.width(medium))
                 }
                 Text(
@@ -139,7 +144,7 @@ fun <T> SegmentedControlSettingsRow(
             modifier =
                 modifier
                     .fillMaxWidth()
-                    .height(huge)
+                    .height(if (isSmallItem) xxxxLarge else huge)
                     .padding(horizontal = medium),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -148,7 +153,7 @@ fun <T> SegmentedControlSettingsRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (icon != null) {
-                    icon.IconContent()
+                    icon.IconContent(isSmallItem)
                     Spacer(Modifier.width(medium))
                 }
                 Text(
@@ -161,7 +166,10 @@ fun <T> SegmentedControlSettingsRow(
             }
 
             SingleChoiceSegmentedButtonRow(
-                modifier = Modifier.weight(1f),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .then(if (isSmallItem) Modifier.height(xxLarge) else Modifier),
             ) {
                 options.forEachIndexed { index, item ->
                     SegmentedButton(

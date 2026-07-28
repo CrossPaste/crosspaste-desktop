@@ -17,6 +17,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.awt.Frame
 
@@ -64,6 +65,10 @@ enum class WindowTrigger {
     TRAY_ICON,
     INIT,
     SYSTEM,
+
+    // Non-interactive preview (e.g. appearance settings): the window is shown
+    // without taking focus and must not trigger platform focus activation
+    PREVIEW,
 }
 
 data class WindowInfo(
@@ -211,6 +216,16 @@ abstract class DesktopAppWindowManager(
         _searchWindowInfo.value = _searchWindowInfo.value.copy(show = false)
     }
 
+    fun hideSearchWindowPreview() {
+        _searchWindowInfo.update { current ->
+            if (current.show && current.trigger == WindowTrigger.PREVIEW) {
+                current.copy(show = false)
+            } else {
+                current
+            }
+        }
+    }
+
     fun switchSearchWindow(
         windowTrigger: WindowTrigger,
         saveCurrentActiveAppInfo: () -> Unit,
@@ -230,12 +245,30 @@ abstract class DesktopAppWindowManager(
     }
 
     fun showSearchWindow(windowTrigger: WindowTrigger) {
-        _searchWindowInfo.value =
-            _searchWindowInfo.value.copy(
+        val state = appSize.getSearchWindowState(false)
+        _searchWindowInfo.update { current ->
+            current.copy(
                 show = true,
-                state = appSize.getSearchWindowState(false),
+                state = state,
                 trigger = windowTrigger,
             )
+        }
+    }
+
+    fun showSearchWindowPreview() {
+        val state = appSize.getSearchWindowState(false)
+        _searchWindowInfo.update { current ->
+            current.copy(
+                show = true,
+                state = state,
+                trigger = if (current.show) current.trigger else WindowTrigger.PREVIEW,
+            )
+        }
+    }
+
+    fun refreshSearchWindowState() {
+        val state = appSize.getSearchWindowState(false)
+        _searchWindowInfo.update { current -> current.copy(state = state) }
     }
 
     abstract suspend fun focusSearchWindow(windowTrigger: WindowTrigger)

@@ -15,6 +15,8 @@ data class DesktopAppConfig(
     val enableDebugMode: Boolean = false,
     override val isFollowSystemTheme: Boolean = true,
     override val isDarkTheme: Boolean = false,
+    // Side search window height in dp, clamped by DesktopAppSize at apply time
+    val searchWindowHeight: Int = 332,
     override val port: Int = 13129,
     override val enableEncryptSync: Boolean = false,
     override val enableExpirationCleanup: Boolean = true,
@@ -78,6 +80,7 @@ data class DesktopAppConfig(
             enableDebugMode = if (key == "enableDebugMode") toBoolean(value) else enableDebugMode,
             isFollowSystemTheme = if (key == "isFollowSystemTheme") toBoolean(value) else isFollowSystemTheme,
             isDarkTheme = if (key == "isDarkTheme") toBoolean(value) else isDarkTheme,
+            searchWindowHeight = if (key == "searchWindowHeight") toInt(value) else searchWindowHeight,
             port = if (key == "port") toInt(value) else port,
             enableEncryptSync = if (key == "enableEncryptSync") toBoolean(value) else enableEncryptSync,
             enableExpirationCleanup =

@@ -4,12 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -42,6 +45,7 @@ import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.rememberUserSelectedFont
 import com.crosspaste.ui.theme.AppUIFont.menuItemTextStyle
 import com.crosspaste.ui.theme.AppUISize
+import com.crosspaste.ui.theme.AppUISize.gigantic
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -62,101 +66,111 @@ fun FontSettingItemView() {
 
     SettingListItem(
         title = "font",
-        subtitleContent = {
-            Text(currentFont.name)
-        },
         icon = IconData(MaterialSymbols.Rounded.Font_download, themeExt.amberIconColor),
         trailingContent = {
-            Box(
-                modifier = Modifier.wrapContentSize(Alignment.TopEnd),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(MaterialSymbols.Rounded.Chevron_right, null)
+                Text(
+                    text = currentFont.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = gigantic),
+                )
+                Spacer(modifier = Modifier.width(tiny3X))
+                Box(
+                    modifier = Modifier.wrapContentSize(Alignment.TopEnd),
+                ) {
+                    Icon(MaterialSymbols.Rounded.Chevron_right, null)
 
-                if (expanded) {
-                    Popup(
-                        alignment = Alignment.TopEnd,
-                        onDismissRequest = { expanded = false },
-                        properties = PopupProperties(focusable = true),
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(tiny3X),
-                            shadowElevation = 3.dp,
-                            tonalElevation = 2.dp,
-                            color = MaterialTheme.colorScheme.surface,
+                    if (expanded) {
+                        Popup(
+                            alignment = Alignment.TopEnd,
+                            onDismissRequest = { expanded = false },
+                            properties = PopupProperties(focusable = true),
                         ) {
-                            if (!isLoaded) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier =
-                                        Modifier
-                                            .width(200.dp)
-                                            .padding(medium),
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(medium),
-                                        strokeWidth = AppUISize.tiny4X,
-                                    )
-                                }
-                            } else {
-                                val listState = rememberLazyListState()
-                                val selectedIndex = fonts.indexOfFirst { it.name == currentFont.name }
-
-                                LaunchedEffect(selectedIndex) {
-                                    if (selectedIndex > 0) {
-                                        listState.scrollToItem(selectedIndex)
+                            Surface(
+                                shape = RoundedCornerShape(tiny3X),
+                                shadowElevation = 3.dp,
+                                tonalElevation = 2.dp,
+                                color = MaterialTheme.colorScheme.surface,
+                            ) {
+                                if (!isLoaded) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier =
+                                            Modifier
+                                                .width(200.dp)
+                                                .padding(medium),
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(medium),
+                                            strokeWidth = AppUISize.tiny4X,
+                                        )
                                     }
-                                }
+                                } else {
+                                    val listState = rememberLazyListState()
+                                    val selectedIndex = fonts.indexOfFirst { it.name == currentFont.name }
 
-                                LazyColumn(
-                                    state = listState,
-                                    modifier =
-                                        Modifier
-                                            .width(200.dp)
-                                            .heightIn(max = xxLarge * 8),
-                                ) {
-                                    items(
-                                        items = fonts,
-                                        key = { it.id },
-                                    ) { fontInfo ->
-                                        val isSelected = fontInfo.name == currentFont.name
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .height(xxLarge)
-                                                    .background(
+                                    LaunchedEffect(selectedIndex) {
+                                        if (selectedIndex > 0) {
+                                            listState.scrollToItem(selectedIndex)
+                                        }
+                                    }
+
+                                    LazyColumn(
+                                        state = listState,
+                                        modifier =
+                                            Modifier
+                                                .width(200.dp)
+                                                .heightIn(max = xxLarge * 8),
+                                    ) {
+                                        items(
+                                            items = fonts,
+                                            key = { it.id },
+                                        ) { fontInfo ->
+                                            val isSelected = fontInfo.name == currentFont.name
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier =
+                                                    Modifier
+                                                        .fillMaxWidth()
+                                                        .height(xxLarge)
+                                                        .background(
+                                                            if (isSelected) {
+                                                                MaterialTheme.colorScheme.secondaryContainer
+                                                            } else {
+                                                                MaterialTheme.colorScheme.surface
+                                                            },
+                                                        ).clickable {
+                                                            fontManager.setFont(fontInfo.uri)
+                                                            expanded = false
+                                                        }.padding(horizontal = small3X),
+                                            ) {
+                                                Text(
+                                                    fontInfo.name,
+                                                    style =
+                                                        menuItemTextStyle.copy(
+                                                            fontFamily = fontInfo.fontFamily,
+                                                        ),
+                                                    color =
                                                         if (isSelected) {
-                                                            MaterialTheme.colorScheme.secondaryContainer
+                                                            MaterialTheme.colorScheme.onSecondaryContainer
                                                         } else {
-                                                            MaterialTheme.colorScheme.surface
+                                                            MaterialTheme.colorScheme.onSurface
                                                         },
-                                                    ).clickable {
-                                                        fontManager.setFont(fontInfo.uri)
-                                                        expanded = false
-                                                    }.padding(horizontal = small3X),
-                                        ) {
-                                            Text(
-                                                fontInfo.name,
-                                                style =
-                                                    menuItemTextStyle.copy(
-                                                        fontFamily = fontInfo.fontFamily,
-                                                    ),
-                                                color =
-                                                    if (isSelected) {
-                                                        MaterialTheme.colorScheme.onSecondaryContainer
-                                                    } else {
-                                                        MaterialTheme.colorScheme.onSurface
-                                                    },
-                                                modifier = Modifier.weight(1f),
-                                            )
-                                            if (isSelected) {
-                                                Icon(
-                                                    imageVector = MaterialSymbols.Rounded.Check,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(small),
-                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    modifier = Modifier.weight(1f),
                                                 )
+                                                if (isSelected) {
+                                                    Icon(
+                                                        imageVector = MaterialSymbols.Rounded.Check,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(small),
+                                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    )
+                                                }
                                             }
                                         }
                                     }

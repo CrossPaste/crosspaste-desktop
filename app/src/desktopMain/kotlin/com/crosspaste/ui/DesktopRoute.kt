@@ -20,6 +20,7 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<PairingCode>() -> PairingCode.NAME
         dest.hasRoute<Share>() -> Share.NAME
         dest.hasRoute<Settings>() -> Settings.NAME
+        dest.hasRoute<AppearanceSettings>() -> AppearanceSettings.NAME
         dest.hasRoute<PasteboardSettings>() -> PasteboardSettings.NAME
         dest.hasRoute<NetworkSettings>() -> NetworkSettings.NAME
         dest.hasRoute<StorageSettings>() -> StorageSettings.NAME
@@ -44,6 +45,7 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<PairingCode>() -> PairingCode.NAME
         dest.hasRoute<Share>() -> Share.NAME
         dest.hasRoute<Settings>() -> Settings.NAME
+        dest.hasRoute<AppearanceSettings>() -> Settings.NAME
         dest.hasRoute<PasteboardSettings>() -> Settings.NAME
         dest.hasRoute<NetworkSettings>() -> Settings.NAME
         dest.hasRoute<StorageSettings>() -> Settings.NAME

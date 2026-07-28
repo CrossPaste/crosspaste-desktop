@@ -122,6 +122,12 @@ object Settings : Route {
 }
 
 @Serializable
+object AppearanceSettings : Route {
+    const val NAME: String = "appearance_settings"
+    override val name: String = NAME
+}
+
+@Serializable
 object PasteboardSettings : Route {
     const val NAME: String = "pasteboard_settings"
     override val name: String = NAME
