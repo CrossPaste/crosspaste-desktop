@@ -203,7 +203,7 @@ fun AboutContentView() {
                     subtitle = "contact_us_desc",
                     icon = IconData(MaterialSymbols.Rounded.Mail, themeExt.cyanIconColor),
                 ) {
-                    uiSupport.openEmailClient("compile.future@gmail.com")
+                    uiSupport.openEmailClient("support@crosspaste.com")
                 }
             }
         }

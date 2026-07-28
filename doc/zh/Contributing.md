@@ -36,5 +36,5 @@
 ## 联系信息
 如果您有任何问题或需要进一步的帮助，请联系我们：
 
-- 邮件：compile.future@gmail.com
+- 邮件：support@crosspaste.com
 - GitHub Issues: [问题链接](https://github.com/CrossPaste/crosspaste-desktop/issues)
