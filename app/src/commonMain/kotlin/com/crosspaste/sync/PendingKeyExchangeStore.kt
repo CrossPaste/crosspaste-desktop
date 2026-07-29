@@ -64,20 +64,24 @@ class PendingKeyExchangeStore {
     fun get(appInstanceId: String): PendingKeyExchange? =
         (lookup(appInstanceId) as? PendingKeyExchangeLookup.Live)?.exchange
 
+    /**
+     * Pure lookup — expired entries are reported but NOT evicted here. Every
+     * stored entry owns one token-refresh count and one pending verifier, and
+     * only the unified release path (`remove` + verifier + stopRefresh, see
+     * DefaultServerModule) may take an entry out, so ownership stays traceable.
+     */
     fun lookup(appInstanceId: String): PendingKeyExchangeLookup {
         val exchange = store[appInstanceId] ?: return PendingKeyExchangeLookup.None
         val now =
             com.crosspaste.utils.DateUtils
                 .nowEpochMilliseconds()
         return if (now - exchange.timestamp > TTL_MS) {
-            store.remove(appInstanceId)
             PendingKeyExchangeLookup.Expired
         } else {
             PendingKeyExchangeLookup.Live(exchange)
         }
     }
 
-    fun remove(appInstanceId: String) {
-        store.remove(appInstanceId)
-    }
+    /** Removes the peer's entry, reporting whether one existed. */
+    fun remove(appInstanceId: String): Boolean = store.remove(appInstanceId) != null
 }

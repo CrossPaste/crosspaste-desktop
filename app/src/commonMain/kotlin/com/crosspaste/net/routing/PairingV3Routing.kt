@@ -11,7 +11,6 @@ import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingV3ServerResult
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.toStandardErrorCode
-import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.successResponse
@@ -37,7 +36,7 @@ private suspend inline fun <reified T : Any> ApplicationCall.receivePairingV3OrN
 fun Routing.pairingV3Routing(
     pairingProtocolV3Service: PairingProtocolV3Service,
     pairingVersionCoordinator: PairingVersionCoordinator,
-    pendingKeyExchangeStore: PendingKeyExchangeStore,
+    releasePendingKeyExchange: (String) -> Unit,
     trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
 ) {
     post("/sync/pairing/v3/intent") {
@@ -55,7 +54,9 @@ fun Routing.pairingV3Routing(
                 val remoteAddress = runCatching { call.request.origin.remoteHost }.getOrNull()
                 when (val result = pairingProtocolV3Service.handleIntent(intent, appInstanceId, remoteAddress)) {
                     is PairingV3ServerResult.Ok -> {
-                        pendingKeyExchangeStore.remove(appInstanceId)
+                        // The v3 takeover consumes the peer's v2 pending exchange;
+                        // release its refresh count and verifier with it.
+                        releasePendingKeyExchange(appInstanceId)
                         successResponse(call, result.value)
                     }
 

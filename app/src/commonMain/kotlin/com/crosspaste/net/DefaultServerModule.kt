@@ -121,6 +121,7 @@ open class DefaultServerModule(
                     syncInfoFactory,
                     syncRoutingApi,
                     ::trustSyncInfo,
+                    ::releasePendingKeyExchange,
                     pairingVersionCoordinator,
                     pairingProtocolV3Service::hasActiveSession,
                     pairingProtocolV3Service.acceptanceWindow::open,
@@ -128,7 +129,7 @@ open class DefaultServerModule(
                 pairingV3Routing(
                     pairingProtocolV3Service,
                     pairingVersionCoordinator,
-                    pendingKeyExchangeStore,
+                    ::releasePendingKeyExchange,
                     ::trustSyncInfo,
                 )
                 pasteRouting(
@@ -161,6 +162,19 @@ open class DefaultServerModule(
                 )
             }
         }
+
+    /**
+     * The single release path for a peer's pending v2 key exchange. Every
+     * stored exchange owns exactly one token-refresh count and one pending
+     * verifier; whoever removes the entry must release both, so all routes
+     * (confirm success/expiry, client cancel, v3 takeover) funnel through here.
+     */
+    private fun releasePendingKeyExchange(appInstanceId: String) {
+        if (pendingKeyExchangeStore.remove(appInstanceId)) {
+            appTokenApi.removePendingVerifier(appInstanceId)
+            appTokenApi.stopRefresh(hideToken = false)
+        }
+    }
 
     private fun trustSyncInfo(
         appInstanceId: String,

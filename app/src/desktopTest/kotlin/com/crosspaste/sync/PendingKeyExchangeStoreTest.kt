@@ -45,8 +45,12 @@ class PendingKeyExchangeStoreTest {
 
         store.put("stale", exchange(now - 120_000L))
         assertIs<PendingKeyExchangeLookup.Expired>(store.lookup("stale"))
-        // Expired entries are evicted on lookup: a second lookup sees nothing.
+        // lookup is pure: the expired entry stays until the release path
+        // removes it, so its refresh-count ownership remains traceable.
+        assertIs<PendingKeyExchangeLookup.Expired>(store.lookup("stale"))
+        assertTrue(store.remove("stale"))
         assertIs<PendingKeyExchangeLookup.None>(store.lookup("stale"))
+        assertFalse(store.remove("stale"))
     }
 
     @Test

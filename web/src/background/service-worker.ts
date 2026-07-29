@@ -110,6 +110,9 @@ let wsManager: WsManager | null = null;
  * its identity check instead of writing keys under the wrong device.
  */
 interface ConnectingAttempt {
+  /** Generation id assigned at CONNECT/REPAIR entry; PAIR and CANCEL_CONNECT
+   * reference it so they can only act on the attempt they belong to. */
+  id: number;
   host: string;
   port: number;
   targetAppInstanceId: string;
@@ -130,9 +133,18 @@ interface ConnectingAttempt {
    * would leave one-sided trust, so CANCEL_CONNECT refuses it.
    */
   finalizing?: boolean;
+  /**
+   * A cancel arrived while finalizing. The pairing settles first; a failure
+   * path then honours the latch (cleanup, no session restart). A successful
+   * completion ignores it — both sides are consistent at that point.
+   */
+  cancelRequested?: boolean;
 }
 
 let connectingState: ConnectingAttempt | null = null;
+
+/** Monotonic generation for CONNECT/REPAIR requests, sampled at entry. */
+let connectSeq = 0;
 
 // ─── Clipboard monitoring ───────────────────────────────────────────────
 
@@ -739,14 +751,11 @@ function buildExtensionSyncInfo(appInstanceId: string): SyncInfo {
  * (v1 token / v2 SAS / v3 PIN) when this resolves. Sets `connectingState`.
  */
 async function beginPairing(
+  seq: number,
   host: string,
   port: number,
   syncInfo: SyncInfo,
-): Promise<{ pairingMode: 1 | 2 | 3 }> {
-  // Generation marker: whatever attempt is installed when we start. If it has
-  // changed by the time our preflight finishes, a newer CONNECT won the race
-  // and this one must abort instead of clobbering it.
-  const observedPrevious = connectingState;
+): Promise<{ pairingMode: 1 | 2 | 3; attemptId: number }> {
   const appInstanceId = await getAppInstanceId();
   const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
   const config = { host, port, appInstanceId, targetAppInstanceId };
@@ -765,18 +774,27 @@ async function beginPairing(
     await SyncApi.showToken(config);
   }
 
-  if (connectingState !== observedPrevious) {
-    // A newer CONNECT installed its attempt while our preflight ran. Release
-    // what we created and bow out.
-    if (v3) {
-      void releaseAttempt({ host, port, targetAppInstanceId, syncInfo, pairingMode, v3 });
-    }
+  if (seq !== connectSeq) {
+    // A newer CONNECT/REPAIR started while our preflight ran (regardless of
+    // which finishes first). Release what we created and bow out.
+    void releaseAttempt({
+      id: seq,
+      host,
+      port,
+      targetAppInstanceId,
+      syncInfo,
+      pairingMode,
+      v3,
+      v2Exchange,
+    });
     throw new Error("pairing attempt superseded");
   }
 
   // Install first (no awaits in between), then release the replaced attempt —
   // same target or not — so its desktop-side session never lingers.
+  const previous = connectingState;
   const attempt: ConnectingAttempt = {
+    id: seq,
     host,
     port,
     targetAppInstanceId,
@@ -786,17 +804,17 @@ async function beginPairing(
     v2Exchange,
   };
   connectingState = attempt;
-  if (observedPrevious) {
-    void releaseAttempt(observedPrevious);
-    if (observedPrevious.targetAppInstanceId !== targetAppInstanceId) {
-      await updateRuntime(observedPrevious.targetAppInstanceId, (s) => { s.connecting = false; });
+  if (previous) {
+    void releaseAttempt(previous);
+    if (previous.targetAppInstanceId !== targetAppInstanceId) {
+      await updateRuntime(previous.targetAppInstanceId, (s) => { s.connecting = false; });
     }
   }
   await updateRuntime(targetAppInstanceId, (s) => {
     s.connecting = true;
     s.versionDrift = false;
   });
-  return { pairingMode };
+  return { pairingMode, attemptId: seq };
 }
 
 /** Create a fresh v3 initiator session against the target (intent → offer). */
@@ -835,31 +853,39 @@ async function startV3Session(
 
 /** Best-effort release of an attempt's desktop-side session and key material. */
 async function releaseAttempt(attempt: ConnectingAttempt): Promise<void> {
+  const appInstanceId = await getAppInstanceId();
+  const config = {
+    host: attempt.host,
+    port: attempt.port,
+    appInstanceId,
+    targetAppInstanceId: attempt.targetAppInstanceId,
+  };
   const v3 = attempt.v3;
-  if (!v3) return;
-  attempt.v3 = undefined;
-  try {
-    const cancelJson = v3.buildCancel();
-    if (cancelJson) {
-      const appInstanceId = await getAppInstanceId();
-      await SyncApi.pairingV3Cancel(
-        {
-          host: attempt.host,
-          port: attempt.port,
-          appInstanceId,
-          targetAppInstanceId: attempt.targetAppInstanceId,
-        },
-        cancelJson,
-      );
+  if (v3) {
+    attempt.v3 = undefined;
+    try {
+      const cancelJson = v3.buildCancel();
+      if (cancelJson) {
+        await SyncApi.pairingV3Cancel(config, cancelJson);
+      }
+    } catch {
+      // Desktop unreachable or session already gone — the session TTL cleans up.
+    } finally {
+      v3.destroy();
     }
-  } catch {
-    // Desktop unreachable or session already gone — the session TTL cleans up.
-  } finally {
-    v3.destroy();
+  }
+  if (attempt.v2Exchange) {
+    attempt.v2Exchange = undefined;
+    // Release the desktop's pending exchange (refresh count + SAS overlay).
+    // Desktops predating the cancel route just fail; nothing else to do.
+    await SyncApi.cancelV2(config).catch(() => {});
   }
 }
 
 async function handleConnect(host: string, port: number): Promise<unknown> {
+  // Generation assigned at entry: an attempt started earlier but arriving at
+  // install later than a newer one can never win, whatever the network timing.
+  const seq = ++connectSeq;
   try {
     if (!(await hasHostPermission(host, port))) {
       return { success: false, error: "host_permission_denied" };
@@ -877,8 +903,8 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
     }
 
     const syncInfo = await SyncApi.getSyncInfo(config);
-    const { pairingMode } = await beginPairing(host, port, syncInfo);
-    return { success: true, syncInfo, pairingMode };
+    const { pairingMode, attemptId } = await beginPairing(seq, host, port, syncInfo);
+    return { success: true, syncInfo, pairingMode, attemptId };
   } catch (e) {
     // Do NOT clear connectingState here: this attempt never installed itself
     // (beginPairing installs at the very end), so the global may belong to a
@@ -1019,11 +1045,42 @@ async function restartV3Session(
   config: { host: string; port: number; appInstanceId: string; targetAppInstanceId: string },
 ): Promise<void> {
   await releaseAttempt(attempt);
+  // The user asked to cancel while we were finalizing: don't open a brand-new
+  // session (and desktop PIN card) they no longer want.
+  if (attempt.cancelRequested) return;
   attempt.v3 = await startV3Session(appInstanceId, attempt.targetAppInstanceId, config);
 }
 
 const V3_COMMIT_ATTEMPTS = 3;
 const V3_COMMIT_RETRY_DELAY_MS = 300;
+const V3_ROTATION_POLL_ATTEMPTS = 5;
+const V3_ROTATION_POLL_DELAY_MS = 200;
+
+/**
+ * Re-POST the byte-identical intent until the acceptor publishes a rotated
+ * PIN generation. The server rotates asynchronously after a proof failure, so
+ * the first refresh can race it and return the OLD generation — accepting
+ * that would make the user's freshly displayed PIN fail again. Falls back to
+ * the last offer if no rotation shows up in time.
+ */
+async function refreshOfferForNewGeneration(
+  config: { host: string; port: number; appInstanceId: string; targetAppInstanceId: string },
+  v3: PairingV3Initiator,
+): Promise<string> {
+  const previousGeneration = v3.tokenGeneration();
+  let offerJson = "";
+  for (let i = 0; i < V3_ROTATION_POLL_ATTEMPTS; i++) {
+    offerJson = await SyncApi.pairingV3Intent(config, v3.intentJson());
+    const generation = (JSON.parse(offerJson) as { tokenGeneration?: number }).tokenGeneration;
+    if (typeof generation === "number" && generation > previousGeneration) {
+      return offerJson;
+    }
+    if (i < V3_ROTATION_POLL_ATTEMPTS - 1) {
+      await new Promise((resolve) => setTimeout(resolve, V3_ROTATION_POLL_DELAY_MS));
+    }
+  }
+  return offerJson;
+}
 
 /** v3: SPAKE2 proof with the PIN shown on the desktop's device card. */
 async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> {
@@ -1052,7 +1109,7 @@ async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> 
         e.errorCode === StandardErrorCode.PAIRING_PROOF_INVALID)
     ) {
       try {
-        const offerJson = await SyncApi.pairingV3Intent(config, v3.intentJson());
+        const offerJson = await refreshOfferForNewGeneration(config, v3);
         const refusal = await v3.acceptOffer(offerJson);
         if (refusal === null || refusal === undefined) {
           throw new Error("pin_expired");
@@ -1147,12 +1204,16 @@ async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> 
   }
 }
 
-async function handlePair(token: number): Promise<unknown> {
+async function handlePair(token: number, attemptId?: number): Promise<unknown> {
   // Snapshot: every step of this attempt (including persistence) binds to the
   // state captured here, not to whatever a concurrent CONNECT may install.
   const attempt = connectingState;
   try {
     if (!attempt) throw new Error("Not connected");
+    // A PAIR from a stale dialog must not drive a newer attempt.
+    if (attemptId !== undefined && attempt.id !== attemptId) {
+      throw new Error("pairing attempt superseded");
+    }
     switch (attempt.pairingMode) {
       case 3:
         await pairV3(attempt, token);
@@ -1166,8 +1227,16 @@ async function handlePair(token: number): Promise<unknown> {
     return { success: true };
   } catch (e) {
     if (attempt) {
-      // A rotated v3 PIN keeps the attempt alive; anything else ends it.
-      if (!(e instanceof Error && e.message === "pin_expired")) {
+      // A cancel arrived while the trust round-trip was finalizing; the
+      // pairing failed, so honour it now.
+      if (attempt.cancelRequested) {
+        if (connectingState === attempt) {
+          connectingState = null;
+        }
+        await releaseAttempt(attempt);
+        await updateRuntime(attempt.targetAppInstanceId, (s) => { s.connecting = false; });
+      } else if (!(e instanceof Error && e.message === "pin_expired")) {
+        // A rotated v3 PIN keeps the attempt alive; anything else ends it.
         await updateRuntime(attempt.targetAppInstanceId, (s) => { s.connecting = false; });
       }
     }
@@ -1177,25 +1246,31 @@ async function handlePair(token: number): Promise<unknown> {
 
 /**
  * The user closed the pairing dialog (or navigated away) mid-attempt: release
- * the desktop-side v3 session / key material and clear the connecting flag.
+ * the desktop-side session / key material and clear the connecting flag.
  */
-async function handleCancelConnect(): Promise<unknown> {
+async function handleCancelConnect(attemptId?: number): Promise<unknown> {
   const attempt = connectingState;
+  // A cancel scoped to a different (older) attempt must not touch the
+  // currently installed one — e.g. another side panel's dialog closing.
+  if (!attempt || (attemptId !== undefined && attempt.id !== attemptId)) {
+    return { success: true };
+  }
   // The desktop-persisting round-trip is in flight: cancelling now could
-  // leave the desktop trusting us while we discard its keys. Let it finish;
-  // completePairing / the failure path will settle the state.
-  if (attempt?.finalizing) {
+  // leave the desktop trusting us while we discard its keys. Latch the
+  // request; the failure path honours it once the round-trip settles (a
+  // successful completion ignores it — both sides are consistent then).
+  if (attempt.finalizing) {
+    attempt.cancelRequested = true;
     return { success: false, finalizing: true };
   }
   connectingState = null;
-  if (attempt) {
-    await releaseAttempt(attempt);
-    await updateRuntime(attempt.targetAppInstanceId, (s) => { s.connecting = false; });
-  }
+  await releaseAttempt(attempt);
+  await updateRuntime(attempt.targetAppInstanceId, (s) => { s.connecting = false; });
   return { success: true };
 }
 
 async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
+  const seq = ++connectSeq;
   const device = await DeviceStore.get(targetAppInstanceId);
   if (!device) return { success: false, error: "Device not found" };
   if (!(await hasHostPermission(device.host, device.port))) {
@@ -1226,8 +1301,8 @@ async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
     if (refreshed.appInfo.appInstanceId !== targetAppInstanceId) {
       return { success: false, error: "device_identity_changed" };
     }
-    const { pairingMode } = await beginPairing(device.host, device.port, refreshed);
-    return { success: true, syncInfo: refreshed, pairingMode };
+    const { pairingMode, attemptId } = await beginPairing(seq, device.host, device.port, refreshed);
+    return { success: true, syncInfo: refreshed, pairingMode, attemptId };
   } catch (e) {
     await updateRuntime(targetAppInstanceId, (s) => { s.connecting = false; });
     return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -1309,8 +1384,8 @@ async function handleMessage(
   switch (message.type) {
     case "GET_DEVICES": return handleGetDevices();
     case "CONNECT": return handleConnect(message.host as string, message.port as number);
-    case "PAIR": return handlePair(message.token as number);
-    case "CANCEL_CONNECT": return handleCancelConnect();
+    case "PAIR": return handlePair(message.token as number, message.attemptId as number | undefined);
+    case "CANCEL_CONNECT": return handleCancelConnect(message.attemptId as number | undefined);
     case "REPAIR": return handleRePair(message.targetAppInstanceId as string);
     case "REMOVE_DEVICE": return handleRemoveDevice(message.targetAppInstanceId as string);
     case "UPDATE_NOTE": return handleUpdateNote(message.targetAppInstanceId as string, message.noteName as string);

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Plus, Info } from "lucide-react";
 import { MyDevicesSection } from "./MyDevicesSection";
 import { AddDeviceDialog } from "./AddDeviceDialog";
@@ -14,8 +14,14 @@ interface Props {
   onConnect: (
     host: string,
     port: number,
-  ) => Promise<{ success: boolean; syncInfo?: SyncInfo; error?: string; pairingMode?: number }>;
-  onPair: (token: number) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{
+    success: boolean;
+    syncInfo?: SyncInfo;
+    error?: string;
+    pairingMode?: number;
+    attemptId?: number;
+  }>;
+  onPair: (token: number, attemptId?: number) => Promise<{ success: boolean; error?: string }>;
   onRemoveDevice: (targetAppInstanceId: string) => void;
   onUpdateNote: (targetAppInstanceId: string, noteName: string) => void;
   onRePair: (targetId: string) => Promise<{
@@ -24,9 +30,10 @@ interface Props {
     error?: string;
     incompatible?: boolean;
     pairingMode?: number;
+    attemptId?: number;
   }>;
   /** Abort an in-flight pairing attempt when its dialog closes early. */
-  onCancelConnect: () => void;
+  onCancelConnect: (attemptId?: number) => void;
 }
 
 export function DevicesView({
@@ -45,16 +52,25 @@ export function DevicesView({
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [rePairSyncInfo, setRePairSyncInfo] = useState<SyncInfo | null>(null);
   const [rePairMode, setRePairMode] = useState<number | undefined>(undefined);
+  // The attempt this view owns; PAIR and CANCEL_CONNECT are scoped to it so a
+  // stale dialog (or another side panel) can never drive a newer attempt.
+  const attemptIdRef = useRef<number | undefined>(undefined);
 
   // Leaving the Devices tab unmounts the dialogs without their onClose firing;
-  // cancel any in-flight pairing attempt so the desktop-side session (v3 PIN
+  // cancel our in-flight pairing attempt so the desktop-side session (v3 PIN
   // card, downgrade guard) is released rather than lingering to its TTL. The
   // worker refuses the cancel while a trust round-trip is finalizing.
-  useEffect(() => () => onCancelConnect(), [onCancelConnect]);
+  useEffect(
+    () => () => {
+      if (attemptIdRef.current !== undefined) onCancelConnect(attemptIdRef.current);
+    },
+    [onCancelConnect],
+  );
 
   const handleConnect = useCallback(
     async (host: string, port: number) => {
       const result = await onConnect(host, port);
+      if (result.success) attemptIdRef.current = result.attemptId;
       return {
         success: result.success,
         syncInfo: result.syncInfo,
@@ -66,10 +82,20 @@ export function DevicesView({
     [onConnect, t],
   );
 
+  const handlePair = useCallback(
+    (token: number) => onPair(token, attemptIdRef.current),
+    [onPair],
+  );
+
+  const handleCancelConnect = useCallback(() => {
+    onCancelConnect(attemptIdRef.current);
+  }, [onCancelConnect]);
+
   const handleRePair = useCallback(
     async (targetAppInstanceId: string) => {
       const result = await onRePair(targetAppInstanceId);
       if (result.success && result.syncInfo) {
+        attemptIdRef.current = result.attemptId;
         setRePairSyncInfo(result.syncInfo);
         setRePairMode(result.pairingMode);
       }
@@ -161,10 +187,10 @@ export function DevicesView({
             open={showAddDialog}
             onClose={() => {
               setShowAddDialog(false);
-              onCancelConnect();
+              handleCancelConnect();
             }}
             onConnect={handleConnect}
-            onPair={onPair}
+            onPair={handlePair}
           />
         </div>
       )}
@@ -173,11 +199,11 @@ export function DevicesView({
         open={rePairSyncInfo !== null}
         onClose={() => {
           setRePairSyncInfo(null);
-          onCancelConnect();
+          handleCancelConnect();
         }}
         onConnect={handleConnect}
         onPair={async (token) => {
-          const result = await onPair(token);
+          const result = await handlePair(token);
           if (result.success) setRePairSyncInfo(null);
           return result;
         }}

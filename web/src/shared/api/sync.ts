@@ -173,6 +173,20 @@ export const SyncApi = {
   },
 
   /**
+   * Release our pending v2 exchange on the desktop (dialog closed before
+   * confirm) — POST /sync/trust/v2/cancel. Idempotent; desktops older than
+   * this route simply fail and the caller swallows it.
+   */
+  async cancelV2(config: {
+    host: string;
+    port: number;
+    appInstanceId: string;
+    targetAppInstanceId: string;
+  }): Promise<void> {
+    await apiPost<unknown>(toRequestConfig(config), "/sync/trust/v2/cancel");
+  },
+
+  /**
    * Ask the desktop to open its pairing-code screen and the v3 acceptance
    * window — GET /sync/showPairingCode. Fails with
    * REMOTE_SHOW_PAIRING_CODE_DISABLED when the desktop config forbids it.

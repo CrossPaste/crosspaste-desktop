@@ -110,6 +110,10 @@ object SyncApi {
             "path": "/sync/trust/v2/confirm",
             "method": "post",
             "receive": "TrustConfirmRequest"
+          },
+          {
+            "path": "/sync/trust/v2/cancel",
+            "method": "post"
           }
         ]
         """.trimIndent()
