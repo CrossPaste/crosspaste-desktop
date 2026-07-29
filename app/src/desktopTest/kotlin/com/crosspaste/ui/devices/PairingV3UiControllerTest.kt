@@ -4,8 +4,11 @@ import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.net.clientapi.UnknownError
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
+import com.crosspaste.pairing.v3.PairingSessionState
+import com.crosspaste.pairing.v3.PairingSessionUiState
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
+import com.crosspaste.pairing.v3.PakeRole
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncTestFixtures.createUnverifiedSyncRuntimeInfo
@@ -200,4 +203,46 @@ class PairingV3UiControllerTest {
         assertEquals(0L, secondsUntil(expiresAt = 1_000L, now = 1_000L))
         assertEquals(0L, secondsUntil(expiresAt = 999L, now = 1_000L))
     }
+
+    @Test
+    fun acceptorTokenCardsKeepConcurrentDevicePinsIndependent() {
+        val first = pairingSession("first", PakeRole.ACCEPTOR, "123456")
+        val second = pairingSession("second", PakeRole.ACCEPTOR, "654321")
+        val initiator = pairingSession("initiator", PakeRole.INITIATOR, null)
+
+        val incoming = acceptorPairingSessions(listOf(first, initiator, second))
+
+        assertEquals(listOf("first", "second"), incoming.map { it.sessionId })
+        assertEquals(listOf("123456", "654321"), incoming.map { it.pin })
+    }
+
+    @Test
+    fun trustedSessionAutoDismissesWithoutClosingOtherDeviceCards() {
+        val trusted = pairingSession("trusted", PakeRole.ACCEPTOR, null, PairingSessionState.TRUSTED)
+        val stillPairing = pairingSession("pairing", PakeRole.ACCEPTOR, "123456")
+        val rejected = pairingSession("rejected", PakeRole.ACCEPTOR, null, PairingSessionState.REJECTED)
+        val sessions = listOf(trusted, stillPairing, rejected)
+
+        assertEquals(listOf("trusted"), trustedPairingSessionIds(sessions))
+        // Rejected stays visible so the user sees the failure; only TRUSTED closes itself.
+        assertEquals(listOf("pairing", "rejected"), pairingTokenCardSessions(sessions).map { it.sessionId })
+    }
+
+    private fun pairingSession(
+        sessionId: String,
+        role: PakeRole,
+        pin: String?,
+        state: PairingSessionState = PairingSessionState.PIN_AVAILABLE,
+    ) = PairingSessionUiState(
+        sessionId = sessionId,
+        role = role,
+        peerDisplayName = sessionId,
+        peerAppInstanceId = "$sessionId-app",
+        peerKeyFingerprintDisplay = "aabbccdd",
+        pin = pin,
+        pinExpiresAt = 60_000,
+        tokenGeneration = 1,
+        state = state,
+        createdAt = 0,
+    )
 }
