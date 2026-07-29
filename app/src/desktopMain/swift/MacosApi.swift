@@ -440,8 +440,17 @@ public func getRunningApplications() -> UnsafePointer<CChar>? {
     return UnsafePointer<CChar>(strdup(result.joined(separator: "\n\n")))
 }
 
+private func applyActivationPolicy(showDockIcon: Bool) {
+    let app = NSApplication.shared
+    let targetPolicy: NSApplication.ActivationPolicy = showDockIcon ? .regular : .accessory
+    if app.activationPolicy() != targetPolicy {
+        app.setActivationPolicy(targetPolicy)
+        app.activate(ignoringOtherApps: true)
+    }
+}
+
 @_cdecl("bringToFront")
-public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Bool) {
+public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Int32) {
     let title = String(cString: windowTitle)
     DispatchQueue.main.async {
         let app = NSApplication.shared
@@ -450,23 +459,19 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Bool) 
         for window in windows {
             if window.title == title {
                 window.makeKeyAndOrderFront(nil)
-                if title == "CrossPaste" {
-                    let targetPolicy: NSApplication.ActivationPolicy = showDockIcon ? .regular : .accessory
-                    if app.activationPolicy() != targetPolicy {
-                        app.setActivationPolicy(targetPolicy)
-                        app.activate(ignoringOtherApps: true)
-                    }
-                } else if title == "CrossPaste Search" {
-                    if app.activationPolicy() != .accessory {
-                        app.setActivationPolicy(.accessory)
-                        app.activate(ignoringOtherApps: true)
-                    }
-                }
+                applyActivationPolicy(showDockIcon: showDockIcon != 0)
                 window.orderFrontRegardless()
                 window.makeKey()
                 break
             }
         }
+    }
+}
+
+@_cdecl("setDockIconVisibility")
+public func setDockIconVisibility(showDockIcon: Int32) {
+    DispatchQueue.main.async {
+        applyActivationPolicy(showDockIcon: showDockIcon != 0)
     }
 }
 

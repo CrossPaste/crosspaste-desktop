@@ -52,7 +52,11 @@ object MacAppUtils {
         appName: String,
         showDockIcon: Boolean,
     ) {
-        INSTANCE.bringToFront(appName, showDockIcon)
+        INSTANCE.bringToFront(appName, if (showDockIcon) 1 else 0)
+    }
+
+    fun setDockIconVisibility(showDockIcon: Boolean) {
+        INSTANCE.setDockIconVisibility(if (showDockIcon) 1 else 0)
     }
 
     fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())

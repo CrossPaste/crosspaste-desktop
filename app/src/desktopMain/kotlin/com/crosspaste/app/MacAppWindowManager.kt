@@ -11,7 +11,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -29,19 +28,26 @@ class MacAppWindowManager(
 
     init {
         // Re-apply the Dock icon policy immediately when the setting is toggled
-        // while the main window is open (the toggle lives in the main window)
+        // while the main window is open (the toggle lives in the main window).
+        // setDockIconVisibility only switches the activation policy — it must not
+        // touch window visibility or focus, so a toggle racing a window hide can
+        // never re-show the window.
         ioScope.launch {
             lazyConfigManager.value.config
                 .map { it.showDockIcon }
                 .distinctUntilChanged()
-                .drop(1)
                 .collect { showDockIcon ->
                     if (getCurrentMainWindowInfo().show) {
-                        MacAppUtils.bringToFront(mainWindowTitle, showDockIcon)
+                        MacAppUtils.setDockIconVisibility(showDockIcon)
                     }
                 }
         }
     }
+
+    // The Dock icon is a pure function of "main window visible && setting enabled",
+    // independent of which window is being focused
+    private fun showDockIcon(mainWindowVisible: Boolean): Boolean =
+        mainWindowVisible && lazyConfigManager.value.config.value.showDockIcon
 
     private var prevMacAppInfo: MutableStateFlow<MacAppInfo?> = MutableStateFlow(null)
 
@@ -126,10 +132,7 @@ class MacAppWindowManager(
     }
 
     override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
-        MacAppUtils.bringToFront(
-            mainWindowTitle,
-            lazyConfigManager.value.config.value.showDockIcon,
-        )
+        MacAppUtils.bringToFront(mainWindowTitle, showDockIcon(mainWindowVisible = true))
     }
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
@@ -150,11 +153,11 @@ class MacAppWindowManager(
     }
 
     override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
-        MacAppUtils.bringToFront(searchWindowTitle, showDockIcon = false)
+        MacAppUtils.bringToFront(searchWindowTitle, showDockIcon(getCurrentMainWindowInfo().show))
     }
 
     override suspend fun focusBubbleWindow() {
-        MacAppUtils.bringToFront(bubbleWindowTitle, showDockIcon = false)
+        MacAppUtils.bringToFront(bubbleWindowTitle, showDockIcon(getCurrentMainWindowInfo().show))
     }
 
     override suspend fun hideSearchWindowAndPaste(
