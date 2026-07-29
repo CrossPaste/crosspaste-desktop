@@ -11,11 +11,20 @@ import type { SyncInfo } from "@/shared/models/sync-info";
 interface Props {
   devices: DeviceInfo[];
   desktopConnected?: boolean;
-  onConnect: (host: string, port: number) => Promise<{ success: boolean; syncInfo?: SyncInfo }>;
+  onConnect: (
+    host: string,
+    port: number,
+  ) => Promise<{ success: boolean; syncInfo?: SyncInfo; error?: string; pairingMode?: number }>;
   onPair: (token: number) => Promise<{ success: boolean; error?: string }>;
   onRemoveDevice: (targetAppInstanceId: string) => void;
   onUpdateNote: (targetAppInstanceId: string, noteName: string) => void;
-  onRePair: (targetId: string) => Promise<{ success: boolean; syncInfo?: SyncInfo; error?: string; incompatible?: boolean }>;
+  onRePair: (targetId: string) => Promise<{
+    success: boolean;
+    syncInfo?: SyncInfo;
+    error?: string;
+    incompatible?: boolean;
+    pairingMode?: number;
+  }>;
 }
 
 export function DevicesView({
@@ -32,6 +41,7 @@ export function DevicesView({
   const [editingDevice, setEditingDevice] = useState<DeviceInfo | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [rePairSyncInfo, setRePairSyncInfo] = useState<SyncInfo | null>(null);
+  const [rePairMode, setRePairMode] = useState<number | undefined>(undefined);
 
   const handleConnect = useCallback(
     async (host: string, port: number) => {
@@ -39,7 +49,9 @@ export function DevicesView({
       return {
         success: result.success,
         syncInfo: result.syncInfo,
-        error: result.success ? undefined : t("connection_failed_check"),
+        pairingMode: result.pairingMode,
+        // Keep known error markers so the dialog can translate them precisely.
+        error: result.success ? undefined : result.error ?? t("connection_failed_check"),
       };
     },
     [onConnect, t],
@@ -50,6 +62,7 @@ export function DevicesView({
       const result = await onRePair(targetAppInstanceId);
       if (result.success && result.syncInfo) {
         setRePairSyncInfo(result.syncInfo);
+        setRePairMode(result.pairingMode);
       }
       return result;
     },
@@ -154,6 +167,7 @@ export function DevicesView({
           return result;
         }}
         initialSyncInfo={rePairSyncInfo ?? undefined}
+        initialPairingMode={rePairMode}
       />
 
       {editingDevice && (

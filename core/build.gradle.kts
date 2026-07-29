@@ -98,6 +98,9 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(libs.cryptography.provider.webcrypto)
+                // Low-level P-256 point/scalar ops for the SPAKE2 provider (ADR D7,
+                // JS backend). Audited library; no hand-rolled EC arithmetic.
+                implementation(npm("@noble/curves", "1.9.7"))
             }
         }
 

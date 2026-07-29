@@ -3,6 +3,11 @@ export interface AppInfo {
   appVersion: string;
   appRevision: string;
   userName: string;
+  /**
+   * Highest pairing protocol the peer supports. Absent (older peers) means
+   * v1 bearer-token pairing only. Mirrors desktop `AppInfo.pairingVersion`.
+   */
+  pairingVersion?: number;
 }
 
 export interface Platform {

@@ -4,7 +4,13 @@ import { PasteStore } from "@/shared/storage/paste-store";
 import { BlobStore } from "@/shared/storage/blob-store";
 import { SyncApi } from "@/shared/api/sync";
 import { PullApi } from "@/shared/api/pull";
-import { CrossPasteHash, CrossPasteJson } from "@/shared/core";
+import {
+  CrossPasteHash,
+  CrossPasteJson,
+  createPairingV3Initiator,
+  type PairingV3Initiator,
+} from "@/shared/core";
+import { KeyStore, toInt8Array } from "@/shared/storage/key-store";
 import type { SyncInfo } from "@/shared/models/sync-info";
 import type { PasteData } from "@/shared/models/paste-data";
 import { APP_VERSION } from "@/shared/app/version.generated";
@@ -28,7 +34,9 @@ import { SyncState } from "@/shared/sync/sync-state";
 import { SyncApiError, StandardErrorCode } from "@/shared/api/sync-error";
 import {
   PROTOCOL_VERSION,
+  MAX_PAIRING_VERSION,
   isCompatibleVersion,
+  selectPairingMode,
 } from "@/shared/sync/protocol-version";
 import {
   enqueueOversizeNotice,
@@ -99,6 +107,10 @@ let connectingState: {
   port: number;
   targetAppInstanceId: string;
   syncInfo: SyncInfo;
+  /** Trust handshake selected from the desktop's advertised pairingVersion. */
+  pairingMode: 1 | 2 | 3;
+  /** Live v3 initiator session (pairingMode 3 only). */
+  v3?: PairingV3Initiator;
 } | null = null;
 
 // ─── Clipboard monitoring ───────────────────────────────────────────────
@@ -675,6 +687,94 @@ async function hasHostPermission(host: string, port: number): Promise<boolean> {
   return chrome.permissions.contains({ origins: [`http://${host}:${port}/*`] });
 }
 
+/**
+ * The extension's own SyncInfo, self-registered on the trust/commit request
+ * (the extension can't be discovered via mDNS). Advertises our pairing
+ * capability so the desktop shows the matching credential UI for this peer.
+ */
+function buildExtensionSyncInfo(appInstanceId: string): SyncInfo {
+  const chromeVersion = navigator.userAgent.split("Chrome/")[1]?.split(" ")[0] ?? "unknown";
+  return {
+    appInfo: {
+      appInstanceId,
+      appVersion: APP_VERSION,
+      appRevision: "Unknown",
+      userName: "Chrome Extension",
+      pairingVersion: MAX_PAIRING_VERSION,
+    },
+    endpointInfo: {
+      deviceId: appInstanceId,
+      deviceName: "Chrome Extension",
+      platform: { name: "ChromeExtension", arch: "web", bitMode: 64, version: chromeVersion },
+      hostInfoList: [],
+      port: 0,
+    },
+  };
+}
+
+/**
+ * Negotiate the trust handshake from the desktop's advertised pairingVersion
+ * and run its pre-pair step, so the desktop is displaying the right credential
+ * (v1 token / v2 SAS / v3 PIN) when this resolves. Sets `connectingState`.
+ */
+async function beginPairing(
+  host: string,
+  port: number,
+  syncInfo: SyncInfo,
+): Promise<{ pairingMode: 1 | 2 | 3 }> {
+  const appInstanceId = await getAppInstanceId();
+  const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
+  const config = { host, port, appInstanceId, targetAppInstanceId };
+  const pairingMode = selectPairingMode(syncInfo.appInfo.pairingVersion);
+
+  let v3: PairingV3Initiator | undefined;
+  if (pairingMode === 3) {
+    // Best-effort: surfaces the pairing screen (and acceptance window) on the
+    // desktop. May be disabled by desktop config — the user can open it by hand.
+    await SyncApi.showPairingCode(config).catch(() => {});
+    const keys = (await KeyStore.getKeys()) ?? (await KeyStore.generateAndStore());
+    v3 = await createPairingV3Initiator(
+      appInstanceId,
+      toInt8Array(keys.signPublicKey),
+      toInt8Array(keys.signPrivateKey),
+      toInt8Array(keys.cryptPublicKey),
+      toInt8Array(keys.cryptPrivateKey),
+    );
+    const intentJson = await v3.createIntent(targetAppInstanceId, "Chrome Extension");
+    let offerJson: string;
+    try {
+      offerJson = await SyncApi.pairingV3Intent(config, intentJson);
+    } catch (e) {
+      if (e instanceof SyncApiError && e.errorCode === StandardErrorCode.PAIRING_DISABLED) {
+        throw new Error("pairing_disabled");
+      }
+      throw e;
+    }
+    const refusal = await v3.acceptOffer(offerJson);
+    if (refusal !== null && refusal !== undefined) {
+      throw new Error(`pairing v3 offer refused: ${refusal}`);
+    }
+    // The desktop is now showing this session's PIN card.
+  } else if (pairingMode === 2) {
+    // Warm-up exchange: the desktop computes and displays the SAS. The real
+    // exchange happens at pair time (keys are stable, so the SAS is identical).
+    await SyncApi.exchangeV2(config);
+  } else {
+    await SyncApi.showToken(config);
+  }
+
+  if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
+    const staleId = connectingState.targetAppInstanceId;
+    await updateRuntime(staleId, (s) => { s.connecting = false; });
+  }
+  connectingState = { host, port, targetAppInstanceId, syncInfo, pairingMode, v3 };
+  await updateRuntime(targetAppInstanceId, (s) => {
+    s.connecting = true;
+    s.versionDrift = false;
+  });
+  return { pairingMode };
+}
+
 async function handleConnect(host: string, port: number): Promise<unknown> {
   try {
     if (!(await hasHostPermission(host, port))) {
@@ -694,103 +794,169 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
     }
 
     const syncInfo = await SyncApi.getSyncInfo(config);
-    const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
-
-    await SyncApi.showToken({ ...config, targetAppInstanceId });
-
-    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
-      const staleId = connectingState.targetAppInstanceId;
-      await updateRuntime(staleId, (s) => { s.connecting = false; });
-    }
-    connectingState = { host, port, targetAppInstanceId, syncInfo };
-    await updateRuntime(targetAppInstanceId, (s) => {
-      s.connecting = true;
-      s.versionDrift = false;
-    });
-    return { success: true, syncInfo };
+    const { pairingMode } = await beginPairing(host, port, syncInfo);
+    return { success: true, syncInfo, pairingMode };
   } catch (e) {
     connectingState = null;
-    return { success: false, error: String(e) };
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/** Persist the paired device and bring the sync machinery up. */
+async function completePairing(serverKeys: {
+  signPublicKey: string;
+  cryptPublicKey: string;
+}): Promise<void> {
+  if (!connectingState) throw new Error("Not connected");
+  await DeviceStore.save({
+    targetAppInstanceId: connectingState.targetAppInstanceId,
+    syncInfo: connectingState.syncInfo,
+    host: connectingState.host,
+    port: connectingState.port,
+    trusted: true,
+    serverKeys,
+    addedAt: Date.now(),
+  });
+
+  // The trust round-trip just succeeded over HTTP, so the channel is proven alive.
+  await DeviceStore.setNeedsRePair(connectingState.targetAppInstanceId, false);
+  await updateRuntime(connectingState.targetAppInstanceId, (s) => {
+    s.connecting = false;
+    s.lastErrorCode = null;
+    s.versionDrift = false;
+    s.lastHttpSuccessAt = Date.now();
+  });
+
+  // Attempt WebSocket upgrade after pairing
+  if (!wsManager) {
+    await initializeWebSocket();
+  } else {
+    const device = await DeviceStore.get(connectingState.targetAppInstanceId);
+    if (device) await wsManager.connectDevice(device);
+  }
+
+  connectingState = null;
+
+  startSyncAlarms();
+  broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+}
+
+/** v1: bearer-token trust (pre-2.0 desktops). */
+async function pairV1(token: number): Promise<void> {
+  if (!connectingState) throw new Error("Not connected");
+  const appInstanceId = await getAppInstanceId();
+  const response = await SyncApi.trust(
+    {
+      host: connectingState.host,
+      port: connectingState.port,
+      appInstanceId,
+      targetAppInstanceId: connectingState.targetAppInstanceId,
+    },
+    token,
+    buildExtensionSyncInfo(appInstanceId),
+  );
+  await completePairing({
+    signPublicKey: response.pairingResponse.signPublicKey,
+    cryptPublicKey: response.pairingResponse.cryptPublicKey,
+  });
+}
+
+/** v2: SAS compare over the ECDH key exchange. */
+async function pairV2(token: number): Promise<void> {
+  if (!connectingState) throw new Error("Not connected");
+  const appInstanceId = await getAppInstanceId();
+  const config = {
+    host: connectingState.host,
+    port: connectingState.port,
+    appInstanceId,
+    targetAppInstanceId: connectingState.targetAppInstanceId,
+  };
+  const exchange = await SyncApi.exchangeV2(config);
+  const localSAS = await SyncApi.computeLocalSAS(exchange.cryptPublicKey);
+  if (token !== localSAS) {
+    // The desktop shows a different code than we derived: possible MITM.
+    throw new Error("sas_mismatch");
+  }
+  await SyncApi.confirmV2(config, exchange.signPublicKey, buildExtensionSyncInfo(appInstanceId));
+  await completePairing({
+    signPublicKey: exchange.signPublicKey,
+    cryptPublicKey: exchange.cryptPublicKey,
+  });
+}
+
+/** v3: SPAKE2 proof with the PIN shown on the desktop's device card. */
+async function pairV3(token: number): Promise<void> {
+  if (!connectingState?.v3) throw new Error("Not connected");
+  const v3 = connectingState.v3;
+  const appInstanceId = await getAppInstanceId();
+  const config = {
+    host: connectingState.host,
+    port: connectingState.port,
+    appInstanceId,
+    targetAppInstanceId: connectingState.targetAppInstanceId,
+  };
+  // TokenInput yields a number; the PIN is 6 digits with leading zeros preserved.
+  const pin = String(token).padStart(6, "0");
+  const proofJson = await v3.buildProof(pin);
+  let proofResponseJson: string;
+  try {
+    proofResponseJson = await SyncApi.pairingV3Proof(config, proofJson);
+  } catch (e) {
+    // One wrong PIN (PROOF_INVALID) or a timeout (PIN_EXPIRED) kills the
+    // generation server-side. Refresh the offer (byte-identical intent) so the
+    // desktop shows a fresh PIN, then ask the user to re-enter.
+    if (
+      e instanceof SyncApiError &&
+      (e.errorCode === StandardErrorCode.PAIRING_PIN_EXPIRED ||
+        e.errorCode === StandardErrorCode.PAIRING_PROOF_INVALID)
+    ) {
+      const offerJson = await SyncApi.pairingV3Intent(config, v3.intentJson());
+      const refusal = await v3.acceptOffer(offerJson);
+      throw new Error(refusal === null || refusal === undefined ? "pin_expired" : "verification_failed");
+    }
+    throw e;
+  }
+  if (!(await v3.verifyProofResponse(proofResponseJson))) {
+    throw new Error("verification_failed");
+  }
+  const commitJson = await v3.buildCommit();
+  const ackJson = await SyncApi.pairingV3Commit(
+    config,
+    commitJson,
+    buildExtensionSyncInfo(appInstanceId),
+  );
+  if (!(await v3.verifyCommitAck(ackJson))) {
+    throw new Error("verification_failed");
+  }
+  await completePairing({
+    signPublicKey: CrossPasteHash.base64Encode(v3.acceptorSignPublicKey()),
+    cryptPublicKey: CrossPasteHash.base64Encode(v3.acceptorCryptPublicKey()),
+  });
 }
 
 async function handlePair(token: number): Promise<unknown> {
   try {
     if (!connectingState) throw new Error("Not connected");
-    const appInstanceId = await getAppInstanceId();
-
-    // Build extension's SyncInfo so the server can register this client
-    // (Chrome extension can't be discovered via mDNS)
-    const chromeVersion = navigator.userAgent.split("Chrome/")[1]?.split(" ")[0] ?? "unknown";
-    const extensionSyncInfo: SyncInfo = {
-      appInfo: {
-        appInstanceId,
-        appVersion: APP_VERSION,
-        appRevision: "Unknown",
-        userName: "Chrome Extension",
-      },
-      endpointInfo: {
-        deviceId: appInstanceId,
-        deviceName: "Chrome Extension",
-        platform: { name: "ChromeExtension", arch: "web", bitMode: 64, version: chromeVersion },
-        hostInfoList: [],
-        port: 0,
-      },
-    };
-
-    const response = await SyncApi.trust(
-      {
-        host: connectingState.host,
-        port: connectingState.port,
-        appInstanceId,
-        targetAppInstanceId: connectingState.targetAppInstanceId,
-      },
-      token,
-      extensionSyncInfo,
-    );
-
-    await DeviceStore.save({
-      targetAppInstanceId: connectingState.targetAppInstanceId,
-      syncInfo: connectingState.syncInfo,
-      host: connectingState.host,
-      port: connectingState.port,
-      trusted: true,
-      serverKeys: {
-        signPublicKey: response.pairingResponse.signPublicKey,
-        cryptPublicKey: response.pairingResponse.cryptPublicKey,
-      },
-      addedAt: Date.now(),
-    });
-
-    // SyncApi.trust just succeeded over HTTP, so the channel is proven alive.
-    await DeviceStore.setNeedsRePair(connectingState.targetAppInstanceId, false);
-    await updateRuntime(connectingState.targetAppInstanceId, (s) => {
-      s.connecting = false;
-      s.lastErrorCode = null;
-      s.versionDrift = false;
-      s.lastHttpSuccessAt = Date.now();
-    });
-
-    // Attempt WebSocket upgrade after pairing
-    if (!wsManager) {
-      await initializeWebSocket();
-    } else {
-      const device = await DeviceStore.get(connectingState.targetAppInstanceId);
-      if (device) await wsManager.connectDevice(device);
+    switch (connectingState.pairingMode) {
+      case 3:
+        await pairV3(token);
+        break;
+      case 2:
+        await pairV2(token);
+        break;
+      default:
+        await pairV1(token);
     }
-
-    connectingState = null;
-
-    startSyncAlarms();
-    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
-
     return { success: true };
   } catch (e) {
     if (connectingState) {
       const id = connectingState.targetAppInstanceId;
-      await updateRuntime(id, (s) => { s.connecting = false; });
+      // A rotated v3 PIN keeps the attempt alive; anything else ends it.
+      if (!(e instanceof Error && e.message === "pin_expired")) {
+        await updateRuntime(id, (s) => { s.connecting = false; });
+      }
     }
-    return { success: false, error: String(e) };
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -816,25 +982,18 @@ async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
       };
     }
 
-    await SyncApi.showToken({ ...config, targetAppInstanceId });
-    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
-      const staleId = connectingState.targetAppInstanceId;
-      await updateRuntime(staleId, (s) => { s.connecting = false; });
-    }
-    connectingState = {
-      host: device.host,
-      port: device.port,
-      targetAppInstanceId,
-      syncInfo: device.syncInfo,
-    };
-    await updateRuntime(targetAppInstanceId, (s) => {
-      s.connecting = true;
-      s.versionDrift = false;
-    });
-    return { success: true, syncInfo: device.syncInfo };
+    // Refresh the desktop's SyncInfo when reachable — the stored copy may
+    // predate a desktop upgrade that changed its advertised pairingVersion.
+    // A different identity answering at that address must not silently
+    // re-pair as this device.
+    const refreshed = await SyncApi.getSyncInfo(config).catch(() => device.syncInfo);
+    const syncInfo =
+      refreshed.appInfo.appInstanceId === targetAppInstanceId ? refreshed : device.syncInfo;
+    const { pairingMode } = await beginPairing(device.host, device.port, syncInfo);
+    return { success: true, syncInfo, pairingMode };
   } catch (e) {
     await updateRuntime(targetAppInstanceId, (s) => { s.connecting = false; });
-    return { success: false, error: String(e) };
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 

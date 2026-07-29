@@ -6,6 +6,7 @@ import com.crosspaste.dto.pairing.v3.PairingIntentV3
 import com.crosspaste.dto.pairing.v3.PairingProofV3
 import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.SyncInfoHeaderCodec
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingV3ServerResult
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
@@ -100,7 +101,17 @@ fun Routing.pairingV3Routing(
                 is PairingV3ServerResult.Ok -> {
                     val host = runCatching { call.request.origin.remoteHost }.getOrNull()
                     logger.info { "pairing v3 commit accepted, trusting $appInstanceId" }
-                    trustSyncInfo(appInstanceId, host, null)
+                    // Non-discoverable initiators (browser extension) self-register via
+                    // the crosspaste-sync-info header, mirroring the v2 confirm route;
+                    // mDNS-discovered peers still resolve from nearby devices.
+                    val clientSyncInfo =
+                        call.request.headers[SyncInfoHeaderCodec.HEADER]?.let { encoded ->
+                            runCatching { SyncInfoHeaderCodec.decodeOrThrow(encoded) }
+                                .onFailure { e ->
+                                    logger.warn(e) { "Failed to parse ${SyncInfoHeaderCodec.HEADER} header" }
+                                }.getOrNull()
+                        }
+                    trustSyncInfo(appInstanceId, host, clientSyncInfo)
                     successResponse(call, result.value)
                 }
 

@@ -66,6 +66,7 @@ export function useConnection() {
       syncInfo?: SyncInfo;
       error?: string;
       incompatible?: boolean;
+      pairingMode?: number;
     };
     return result;
   }, []);
@@ -95,7 +96,13 @@ export function useConnection() {
       const result = (await sendMessage({
         type: "REPAIR",
         targetAppInstanceId,
-      })) as { success: boolean; syncInfo?: SyncInfo; error?: string; incompatible?: boolean };
+      })) as {
+        success: boolean;
+        syncInfo?: SyncInfo;
+        error?: string;
+        incompatible?: boolean;
+        pairingMode?: number;
+      };
       return result;
     },
     [devices],
