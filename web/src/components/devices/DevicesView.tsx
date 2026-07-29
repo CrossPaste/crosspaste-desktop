@@ -25,6 +25,8 @@ interface Props {
     incompatible?: boolean;
     pairingMode?: number;
   }>;
+  /** Abort an in-flight pairing attempt when its dialog closes early. */
+  onCancelConnect: () => void;
 }
 
 export function DevicesView({
@@ -35,6 +37,7 @@ export function DevicesView({
   onRemoveDevice,
   onUpdateNote,
   onRePair,
+  onCancelConnect,
 }: Props) {
   const t = useI18n();
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -150,7 +153,10 @@ export function DevicesView({
 
           <AddDeviceDialog
             open={showAddDialog}
-            onClose={() => setShowAddDialog(false)}
+            onClose={() => {
+              setShowAddDialog(false);
+              onCancelConnect();
+            }}
             onConnect={handleConnect}
             onPair={onPair}
           />
@@ -159,7 +165,10 @@ export function DevicesView({
 
       <AddDeviceDialog
         open={rePairSyncInfo !== null}
-        onClose={() => setRePairSyncInfo(null)}
+        onClose={() => {
+          setRePairSyncInfo(null);
+          onCancelConnect();
+        }}
         onConnect={handleConnect}
         onPair={async (token) => {
           const result = await onPair(token);

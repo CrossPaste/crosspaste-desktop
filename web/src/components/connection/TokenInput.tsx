@@ -69,6 +69,7 @@ export function TokenInput({ onComplete, disabled }: Props) {
             onKeyDown={(e) => handleKeyDown(i, e)}
             onPaste={handlePaste}
             disabled={disabled}
+            autoFocus={i === 0}
             className="w-10 h-12 text-center text-lg font-mono rounded-xl border border-m3-outline-variant bg-m3-surface text-m3-on-surface focus:outline-none focus:ring-2 focus:ring-m3-primary focus:border-transparent disabled:opacity-40"
           />
         ))}

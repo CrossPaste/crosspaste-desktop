@@ -63,6 +63,10 @@ export function AddDeviceDialog({
   const [error, setError] = useState<string | null>(null);
   const [syncInfo, setSyncInfo] = useState<SyncInfo | null>(null);
   const [pairingMode, setPairingMode] = useState<number>(1);
+  // Bumped on every failed pair so the TokenInput remounts empty and focused —
+  // otherwise editing one digit of the stale code instantly re-submits a wrong
+  // code and burns the freshly rotated PIN generation.
+  const [tokenAttempt, setTokenAttempt] = useState(0);
 
   const inputReady = isValidIp(host) && isValidPort(port);
 
@@ -78,6 +82,8 @@ export function AddDeviceDialog({
           return t("pin_expired_retry");
         case "verification_failed":
           return t("verification_failed_retry");
+        case "device_identity_changed":
+          return t("device_identity_changed");
         default:
           return raw ?? fallback;
       }
@@ -144,6 +150,7 @@ export function AddDeviceDialog({
       onClose();
     } else {
       setError(mapError(result.error, t("verification_failed_retry")));
+      setTokenAttempt((n) => n + 1);
     }
   }, [onPair, onClose, mapError, t]);
 
@@ -266,6 +273,7 @@ export function AddDeviceDialog({
 
             <div className="mb-5">
               <TokenInput
+                key={tokenAttempt}
                 onComplete={handlePair}
                 disabled={loading}
               />

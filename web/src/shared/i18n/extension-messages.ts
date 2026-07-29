@@ -33,6 +33,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "Verification code mismatch — pairing aborted for safety. Please try again.",
     pin_expired_retry:
       "The PIN expired. Enter the new PIN shown on the desktop app.",
+    device_identity_changed:
+      "The device at this address has changed identity. Remove it and add it again.",
     re_enter: "Re-enter",
     verification_failed_retry: "Verification failed, please try again",
     time: "Time",
@@ -79,6 +81,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "Bestätigungscode stimmt nicht überein — Kopplung aus Sicherheitsgründen abgebrochen. Bitte erneut versuchen.",
     pin_expired_retry:
       "Die PIN ist abgelaufen. Geben Sie die neue PIN aus der Desktop-App ein.",
+    device_identity_changed:
+      "Das Gerät unter dieser Adresse hat eine andere Identität. Entfernen Sie es und fügen Sie es erneut hinzu.",
     re_enter: "Erneut eingeben",
     verification_failed_retry:
       "Überprüfung fehlgeschlagen, bitte erneut versuchen",
@@ -126,6 +130,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "El código de verificación no coincide — emparejamiento cancelado por seguridad. Inténtelo de nuevo.",
     pin_expired_retry:
       "El PIN ha caducado. Ingrese el nuevo PIN que muestra la aplicación de escritorio.",
+    device_identity_changed:
+      "El dispositivo en esta dirección cambió de identidad. Elimínelo y agréguelo de nuevo.",
     re_enter: "Reingresar",
     verification_failed_retry:
       "Verificación fallida, por favor intente de nuevo",
@@ -173,6 +179,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "کد تأیید مطابقت ندارد — جفت‌سازی برای ایمنی لغو شد. دوباره تلاش کنید.",
     pin_expired_retry:
       "پین منقضی شده است. پین جدید نمایش‌داده‌شده در اپ دسکتاپ را وارد کنید.",
+    device_identity_changed:
+      "هویت دستگاه در این آدرس تغییر کرده است. آن را حذف کنید و دوباره اضافه کنید.",
     re_enter: "وارد کردن مجدد",
     verification_failed_retry: "تأیید ناموفق بود، لطفاً دوباره تلاش کنید",
     time: "زمان",
@@ -220,6 +228,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "Le code de vérification ne correspond pas — appairage interrompu par sécurité. Veuillez réessayer.",
     pin_expired_retry:
       "Le PIN a expiré. Saisissez le nouveau PIN affiché sur l'application de bureau.",
+    device_identity_changed:
+      "L'appareil à cette adresse a changé d'identité. Supprimez-le et ajoutez-le à nouveau.",
     re_enter: "Re-saisir",
     verification_failed_retry:
       "Vérification échouée, veuillez réessayer",
@@ -267,6 +277,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "確認コードが一致しません — 安全のためペアリングを中止しました。もう一度お試しください。",
     pin_expired_retry:
       "PINの有効期限が切れました。デスクトップアプリに表示された新しいPINを入力してください。",
+    device_identity_changed:
+      "このアドレスのデバイスの識別情報が変わりました。削除してから再度追加してください。",
     re_enter: "再入力",
     verification_failed_retry: "認証に失敗しました。もう一度お試しください",
     time: "時間",
@@ -312,6 +324,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "확인 코드가 일치하지 않습니다 — 안전을 위해 페어링을 중단했습니다. 다시 시도하세요.",
     pin_expired_retry:
       "PIN이 만료되었습니다. 데스크톱 앱에 표시된 새 PIN을 입력하세요.",
+    device_identity_changed:
+      "이 주소의 기기 신원이 변경되었습니다. 삭제 후 다시 추가하세요.",
     re_enter: "다시 입력",
     verification_failed_retry: "인증 실패, 다시 시도해주세요",
     time: "시간",
@@ -358,6 +372,8 @@ export const extensionMessages: Record<string, Record<string, string>> = {
       "O código de verificação não confere — emparelhamento cancelado por segurança. Tente novamente.",
     pin_expired_retry:
       "O PIN expirou. Insira o novo PIN exibido no app de desktop.",
+    device_identity_changed:
+      "O dispositivo neste endereço mudou de identidade. Remova-o e adicione-o novamente.",
     re_enter: "Reinserir",
     verification_failed_retry: "Falha na verificação, tente novamente",
     time: "Hora",
@@ -399,6 +415,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     pairing_disabled_hint: "配对请求未被接受，请在桌面端打开配对界面后重试。",
     sas_mismatch: "校验码不一致——为安全起见已中止配对，请重试。",
     pin_expired_retry: "PIN 已过期，请输入桌面端显示的新 PIN。",
+    device_identity_changed: "该地址上的设备身份已变化，请删除后重新添加。",
     re_enter: "重新输入",
     verification_failed_retry: "验证失败，请重新输入",
     time: "时间",
@@ -439,6 +456,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     pairing_disabled_hint: "配對請求未被接受，請在桌面端開啟配對介面後重試。",
     sas_mismatch: "校驗碼不一致——為安全起見已中止配對，請重試。",
     pin_expired_retry: "PIN 已過期，請輸入桌面端顯示的新 PIN。",
+    device_identity_changed: "該位址上的裝置身分已變更，請刪除後重新新增。",
     re_enter: "重新輸入",
     verification_failed_retry: "驗證失敗，請重新輸入",
     time: "時間",

@@ -40,26 +40,33 @@ describe("MAX_PAIRING_VERSION", () => {
 
 describe("selectPairingMode", () => {
   it("falls back to v1 when the peer advertises nothing", () => {
-    expect(selectPairingMode(undefined)).toBe(1);
+    expect(selectPairingMode(undefined, true)).toBe(1);
   });
 
   it("selects v1 for pre-SAS peers", () => {
-    expect(selectPairingMode(0)).toBe(1);
-    expect(selectPairingMode(1)).toBe(1);
+    expect(selectPairingMode(0, true)).toBe(1);
+    expect(selectPairingMode(1, true)).toBe(1);
   });
 
   it("selects v2 for SAS-capable peers", () => {
-    expect(selectPairingMode(2)).toBe(2);
+    expect(selectPairingMode(2, true)).toBe(2);
   });
 
   it("selects v3 for SPAKE2-capable peers, capped at our implementation", () => {
-    expect(selectPairingMode(3)).toBe(3);
+    expect(selectPairingMode(3, true)).toBe(3);
     // A future desktop advertising v4 still pairs with our best (v3).
-    expect(selectPairingMode(4)).toBe(3);
+    expect(selectPairingMode(4, true)).toBe(3);
+  });
+
+  it("caps at v2 while the v3 interop gate is closed (production fail-closed)", () => {
+    expect(selectPairingMode(3, false)).toBe(2);
+    expect(selectPairingMode(4, false)).toBe(2);
+    expect(selectPairingMode(2, false)).toBe(2);
+    expect(selectPairingMode(undefined, false)).toBe(1);
   });
 
   it("rejects malformed advertisements", () => {
-    expect(selectPairingMode(Number.NaN)).toBe(1);
-    expect(selectPairingMode(2.5)).toBe(1);
+    expect(selectPairingMode(Number.NaN, true)).toBe(1);
+    expect(selectPairingMode(2.5, true)).toBe(1);
   });
 });

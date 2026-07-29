@@ -108,6 +108,11 @@ export function useConnection() {
     [devices],
   );
 
+  /** Abort an in-flight pairing attempt (dialog closed before completion). */
+  const cancelConnect = useCallback(async () => {
+    await sendMessage({ type: "CANCEL_CONNECT" });
+  }, []);
+
   const removeDevice = useCallback(
     async (targetAppInstanceId: string) => {
       await sendMessage({ type: "REMOVE_DEVICE", targetAppInstanceId });
@@ -126,5 +131,5 @@ export function useConnection() {
     [],
   );
 
-  return { devices, connect, pair, rePair, removeDevice, updateNote };
+  return { devices, connect, pair, rePair, cancelConnect, removeDevice, updateNote };
 }
