@@ -167,12 +167,23 @@ open class DefaultServerModule(
         host: String?,
         preRegisteredSyncInfo: SyncInfo?,
     ) {
+        // The pre-registered SyncInfo comes from a client-supplied header; the trust
+        // decision was made for the AUTHENTICATED appInstanceId, so a header carrying
+        // a different identity must never register under it.
+        val verifiedPreRegistered =
+            preRegisteredSyncInfo?.takeIf { it.appInfo.appInstanceId == appInstanceId }
+        if (preRegisteredSyncInfo != null && verifiedPreRegistered == null) {
+            logger.warn {
+                "trustSyncInfo: dropping pre-registered SyncInfo whose appInstanceId " +
+                    "${preRegisteredSyncInfo.appInfo.appInstanceId} does not match authenticated $appInstanceId"
+            }
+        }
         val syncInfo =
             nearbyDeviceManager.nearbySyncInfos.value
                 .firstOrNull {
                     it.appInfo.appInstanceId == appInstanceId
                 }
-                ?: preRegisteredSyncInfo
+                ?: verifiedPreRegistered
         if (syncInfo != null) {
             syncRoutingApi.trustSyncInfo(syncInfo, host)
         } else {

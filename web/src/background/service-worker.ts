@@ -914,6 +914,16 @@ async function pairV3(token: number): Promise<void> {
       const refusal = await v3.acceptOffer(offerJson);
       throw new Error(refusal === null || refusal === undefined ? "pin_expired" : "verification_failed");
     }
+    // Any other failure (network flake, transient server error): the engine is
+    // stuck in PROOF_SENT and cannot rebuild a proof for this generation. A
+    // best-effort refresh returns it to a retryable state (the desktop will
+    // show a fresh PIN); the original error still surfaces to the user.
+    try {
+      const offerJson = await SyncApi.pairingV3Intent(config, v3.intentJson());
+      await v3.acceptOffer(offerJson);
+    } catch {
+      // Unreachable desktop — the connection attempt is over anyway.
+    }
     throw e;
   }
   if (!(await v3.verifyProofResponse(proofResponseJson))) {
