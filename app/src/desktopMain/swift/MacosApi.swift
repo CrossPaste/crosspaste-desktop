@@ -440,8 +440,20 @@ public func getRunningApplications() -> UnsafePointer<CChar>? {
     return UnsafePointer<CChar>(strdup(result.joined(separator: "\n\n")))
 }
 
+// Switches the activation policy only; returns whether it changed. Callers decide
+// whether to re-activate (switching to .accessory deactivates an active app).
+private func applyActivationPolicy(showDockIcon: Bool) -> Bool {
+    let app = NSApplication.shared
+    let targetPolicy: NSApplication.ActivationPolicy = showDockIcon ? .regular : .accessory
+    if app.activationPolicy() != targetPolicy {
+        app.setActivationPolicy(targetPolicy)
+        return true
+    }
+    return false
+}
+
 @_cdecl("bringToFront")
-public func bringToFront(windowTitle: UnsafePointer<CChar>) {
+public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Int32) {
     let title = String(cString: windowTitle)
     DispatchQueue.main.async {
         let app = NSApplication.shared
@@ -450,21 +462,27 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>) {
         for window in windows {
             if window.title == title {
                 window.makeKeyAndOrderFront(nil)
-                if title == "CrossPaste" {
-                    if app.activationPolicy() != .regular {
-                        app.setActivationPolicy(.regular)
-                        app.activate(ignoringOtherApps: true)
-                    }
-                } else if title == "CrossPaste Search" {
-                    if app.activationPolicy() != .accessory {
-                        app.setActivationPolicy(.accessory)
-                        app.activate(ignoringOtherApps: true)
-                    }
+                if applyActivationPolicy(showDockIcon: showDockIcon != 0) {
+                    app.activate(ignoringOtherApps: true)
                 }
                 window.orderFrontRegardless()
                 window.makeKey()
                 break
             }
+        }
+    }
+}
+
+@_cdecl("setDockIconVisibility")
+public func setDockIconVisibility(showDockIcon: Int32) {
+    DispatchQueue.main.async {
+        // Only restore the activation the policy switch itself took away (demoting to
+        // .accessory deactivates an active app, dropping the settings window focus
+        // mid-toggle). If the app is already inactive — e.g. the user closed the
+        // window and switched away before this async block ran — never steal focus.
+        let wasActive = NSApp.isActive
+        if applyActivationPolicy(showDockIcon: showDockIcon != 0) && wasActive {
+            NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
 }

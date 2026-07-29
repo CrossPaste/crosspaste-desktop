@@ -23,6 +23,7 @@ class DesktopAppConfigTest {
         assertTrue(config.isFollowSystemTheme)
         assertFalse(config.isDarkTheme)
         assertEquals(332, config.searchWindowHeight)
+        assertTrue(config.showDockIcon)
         assertEquals(13129, config.port)
         assertFalse(config.enableEncryptSync)
         assertTrue(config.enableExpirationCleanup)
@@ -72,6 +73,24 @@ class DesktopAppConfigTest {
         val config = createDefaultConfig()
         val updated = config.copy("searchWindowHeight", 400)
         assertEquals(400, updated.searchWindowHeight)
+    }
+
+    @Test
+    fun `copy with boolean key updates showDockIcon`() {
+        val config = createDefaultConfig()
+        val updated = config.copy("showDockIcon", false)
+        assertFalse(updated.showDockIcon)
+    }
+
+    @Test
+    fun `legacy config without showDockIcon uses default`() {
+        val config =
+            getJsonUtils().JSON.decodeFromString(
+                DesktopAppConfig.serializer(),
+                """{"language":"zh"}""",
+            )
+
+        assertTrue(config.showDockIcon)
     }
 
     @Test
