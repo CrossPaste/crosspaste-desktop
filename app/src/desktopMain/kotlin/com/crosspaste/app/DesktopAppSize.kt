@@ -39,6 +39,10 @@ class DesktopAppSize(
         const val MIN_SEARCH_WINDOW_HEIGHT: Int = 250
         const val MAX_SEARCH_WINDOW_HEIGHT: Int = 420
 
+        // Title bar height as a fixed proportion of the square paste card,
+        // matching the original 60dp title on a 252dp card at the 332dp default
+        private const val SIDE_TITLE_HEIGHT_RATIO: Float = 60f / 252f
+
         private fun createAppSizeValue(searchWindowHeight: Int): DesktopAppSizeValue {
             // --- Basic Constants ---
             val deviceHeight: Dp = huge
@@ -71,7 +75,6 @@ class DesktopAppSize(
                     .dp
             val sideSearchTopBarHeight: Dp = 64.dp
             val sideSearchPaddingSize: Dp = 16.dp
-            val sideTitleHeight: Dp = huge
 
             // --- Bubble Window ---
             val bubbleBodySize = DpSize(480.dp, 360.dp)
@@ -85,6 +88,8 @@ class DesktopAppSize(
                     val size = sideSearchWindowHeight - sideSearchTopBarHeight - sideSearchPaddingSize
                     DpSize(width = size, height = size)
                 }
+
+            val sideTitleHeight: Dp = sidePasteSize.height * SIDE_TITLE_HEIGHT_RATIO
 
             val sidePasteContentSize =
                 DpSize(
