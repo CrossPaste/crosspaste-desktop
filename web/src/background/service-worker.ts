@@ -124,6 +124,12 @@ interface ConnectingAttempt {
    * refresh is counted per exchange and released once per confirm.
    */
   v2Exchange?: KeyExchangeResponse;
+  /**
+   * True while the trust round-trip that makes the DESKTOP persist keys is in
+   * flight (v1 trust / v2 confirm / v3 commit). Cancelling in this window
+   * would leave one-sided trust, so CANCEL_CONNECT refuses it.
+   */
+  finalizing?: boolean;
 }
 
 let connectingState: ConnectingAttempt | null = null;
@@ -737,6 +743,10 @@ async function beginPairing(
   port: number,
   syncInfo: SyncInfo,
 ): Promise<{ pairingMode: 1 | 2 | 3 }> {
+  // Generation marker: whatever attempt is installed when we start. If it has
+  // changed by the time our preflight finishes, a newer CONNECT won the race
+  // and this one must abort instead of clobbering it.
+  const observedPrevious = connectingState;
   const appInstanceId = await getAppInstanceId();
   const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
   const config = { host, port, appInstanceId, targetAppInstanceId };
@@ -755,13 +765,33 @@ async function beginPairing(
     await SyncApi.showToken(config);
   }
 
-  // Replacing a previous attempt: release its desktop-side session first.
-  if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
-    const staleId = connectingState.targetAppInstanceId;
-    await releaseAttempt(connectingState);
-    await updateRuntime(staleId, (s) => { s.connecting = false; });
+  if (connectingState !== observedPrevious) {
+    // A newer CONNECT installed its attempt while our preflight ran. Release
+    // what we created and bow out.
+    if (v3) {
+      void releaseAttempt({ host, port, targetAppInstanceId, syncInfo, pairingMode, v3 });
+    }
+    throw new Error("pairing attempt superseded");
   }
-  connectingState = { host, port, targetAppInstanceId, syncInfo, pairingMode, v3, v2Exchange };
+
+  // Install first (no awaits in between), then release the replaced attempt —
+  // same target or not — so its desktop-side session never lingers.
+  const attempt: ConnectingAttempt = {
+    host,
+    port,
+    targetAppInstanceId,
+    syncInfo,
+    pairingMode,
+    v3,
+    v2Exchange,
+  };
+  connectingState = attempt;
+  if (observedPrevious) {
+    void releaseAttempt(observedPrevious);
+    if (observedPrevious.targetAppInstanceId !== targetAppInstanceId) {
+      await updateRuntime(observedPrevious.targetAppInstanceId, (s) => { s.connecting = false; });
+    }
+  }
   await updateRuntime(targetAppInstanceId, (s) => {
     s.connecting = true;
     s.versionDrift = false;
@@ -839,7 +869,6 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
 
     const remoteVersion = await SyncApi.telnet(config);
     if (!isCompatibleVersion(remoteVersion)) {
-      connectingState = null;
       return {
         success: false,
         error: `incompatible protocol version: remote=${remoteVersion} extension=${PROTOCOL_VERSION}`,
@@ -851,7 +880,9 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
     const { pairingMode } = await beginPairing(host, port, syncInfo);
     return { success: true, syncInfo, pairingMode };
   } catch (e) {
-    connectingState = null;
+    // Do NOT clear connectingState here: this attempt never installed itself
+    // (beginPairing installs at the very end), so the global may belong to a
+    // newer CONNECT that must not be clobbered by our late failure.
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
@@ -907,20 +938,25 @@ async function completePairing(
 /** v1: bearer-token trust (pre-2.0 desktops). */
 async function pairV1(attempt: ConnectingAttempt, token: number): Promise<void> {
   const appInstanceId = await getAppInstanceId();
-  const response = await SyncApi.trust(
-    {
-      host: attempt.host,
-      port: attempt.port,
-      appInstanceId,
-      targetAppInstanceId: attempt.targetAppInstanceId,
-    },
-    token,
-    buildExtensionSyncInfo(appInstanceId),
-  );
-  await completePairing(attempt, {
-    signPublicKey: response.pairingResponse.signPublicKey,
-    cryptPublicKey: response.pairingResponse.cryptPublicKey,
-  });
+  attempt.finalizing = true;
+  try {
+    const response = await SyncApi.trust(
+      {
+        host: attempt.host,
+        port: attempt.port,
+        appInstanceId,
+        targetAppInstanceId: attempt.targetAppInstanceId,
+      },
+      token,
+      buildExtensionSyncInfo(appInstanceId),
+    );
+    await completePairing(attempt, {
+      signPublicKey: response.pairingResponse.signPublicKey,
+      cryptPublicKey: response.pairingResponse.cryptPublicKey,
+    });
+  } finally {
+    attempt.finalizing = false;
+  }
 }
 
 /** v2: SAS compare over the ECDH key exchange. */
@@ -943,27 +979,32 @@ async function pairV2(attempt: ConnectingAttempt, token: number): Promise<void> 
     throw new Error("sas_mismatch");
   }
   const syncInfo = buildExtensionSyncInfo(appInstanceId);
+  attempt.finalizing = true;
   try {
-    await SyncApi.confirmV2(config, exchange.signPublicKey, syncInfo);
-  } catch (e) {
-    // The server-side pending exchange lives 60s; a slow user hits
-    // EXCHANGE_TIMEOUT. Re-exchange once (same stable keys → same SAS,
-    // counter +1 balanced by the confirm below) and retry.
-    if (!(e instanceof SyncApiError && e.errorCode === StandardErrorCode.EXCHANGE_TIMEOUT)) {
-      throw e;
+    try {
+      await SyncApi.confirmV2(config, exchange.signPublicKey, syncInfo);
+    } catch (e) {
+      // The server-side pending exchange lives 60s; a slow user hits
+      // EXCHANGE_TIMEOUT. Re-exchange once (same stable keys → same SAS,
+      // counter +1 balanced by the confirm below) and retry.
+      if (!(e instanceof SyncApiError && e.errorCode === StandardErrorCode.EXCHANGE_TIMEOUT)) {
+        throw e;
+      }
+      exchange = await SyncApi.exchangeV2(config);
+      attempt.v2Exchange = exchange;
+      localSAS = await SyncApi.computeLocalSAS(exchange.cryptPublicKey);
+      if (token !== localSAS) {
+        throw new Error("sas_mismatch");
+      }
+      await SyncApi.confirmV2(config, exchange.signPublicKey, syncInfo);
     }
-    exchange = await SyncApi.exchangeV2(config);
-    attempt.v2Exchange = exchange;
-    localSAS = await SyncApi.computeLocalSAS(exchange.cryptPublicKey);
-    if (token !== localSAS) {
-      throw new Error("sas_mismatch");
-    }
-    await SyncApi.confirmV2(config, exchange.signPublicKey, syncInfo);
+    await completePairing(attempt, {
+      signPublicKey: exchange.signPublicKey,
+      cryptPublicKey: exchange.cryptPublicKey,
+    });
+  } finally {
+    attempt.finalizing = false;
   }
-  await completePairing(attempt, {
-    signPublicKey: exchange.signPublicKey,
-    cryptPublicKey: exchange.cryptPublicKey,
-  });
 }
 
 /**
@@ -1035,6 +1076,13 @@ async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> 
     throw e;
   }
   if (!(await v3.verifyProofResponse(proofResponseJson))) {
+    // The engine hard-failed (possible MITM); it cannot build another proof.
+    // Replace the session so the next attempt starts clean with a fresh PIN.
+    try {
+      await restartV3Session(attempt, appInstanceId, config);
+    } catch {
+      // Desktop unreachable.
+    }
     throw new Error("verification_failed");
   }
   // The commit bytes are deterministic for this session, so bounded retries
@@ -1042,37 +1090,61 @@ async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> 
   // closes most of the "acceptor trusted us but our ACK got lost" window.
   const commitJson = await v3.buildCommit();
   const syncInfo = buildExtensionSyncInfo(appInstanceId);
-  let ackJson: string | null = null;
-  let lastCommitError: unknown = null;
-  for (let i = 0; i < V3_COMMIT_ATTEMPTS && ackJson === null; i++) {
-    try {
-      ackJson = await SyncApi.pairingV3Commit(config, commitJson, syncInfo);
-    } catch (e) {
-      if (e instanceof SyncApiError) throw e; // definitive refusal — no retry
-      lastCommitError = e;
-      if (i < V3_COMMIT_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, V3_COMMIT_RETRY_DELAY_MS));
+  attempt.finalizing = true;
+  try {
+    let ackJson: string | null = null;
+    let lastCommitError: unknown = null;
+    for (let i = 0; i < V3_COMMIT_ATTEMPTS && ackJson === null; i++) {
+      try {
+        ackJson = await SyncApi.pairingV3Commit(config, commitJson, syncInfo);
+      } catch (e) {
+        if (e instanceof SyncApiError) {
+          // Definitive refusal — the session is consumed or invalid. Replace
+          // it so the next attempt does not hit a dead engine.
+          attempt.finalizing = false;
+          try {
+            await restartV3Session(attempt, appInstanceId, config);
+          } catch {
+            // Desktop unreachable.
+          }
+          throw e;
+        }
+        lastCommitError = e;
+        if (i < V3_COMMIT_ATTEMPTS - 1) {
+          await new Promise((resolve) => setTimeout(resolve, V3_COMMIT_RETRY_DELAY_MS));
+        }
       }
     }
-  }
-  if (ackJson === null) {
-    // All commit attempts lost. The acceptor may have trusted us already; a
-    // fresh session on the next try converges both sides (it re-persists the
-    // same long-term keys).
-    try {
-      await restartV3Session(attempt, appInstanceId, config);
-    } catch {
-      // Desktop unreachable.
+    if (ackJson === null) {
+      // All commit attempts lost. The acceptor may have trusted us already; a
+      // fresh session on the next try converges both sides (it re-persists the
+      // same long-term keys).
+      attempt.finalizing = false;
+      try {
+        await restartV3Session(attempt, appInstanceId, config);
+      } catch {
+        // Desktop unreachable.
+      }
+      throw lastCommitError instanceof Error ? lastCommitError : new Error(String(lastCommitError));
     }
-    throw lastCommitError instanceof Error ? lastCommitError : new Error(String(lastCommitError));
+    if (!(await v3.verifyCommitAck(ackJson))) {
+      // Invalid receipt after an accepted commit: hard failure — replace the
+      // session so a retry is possible at all.
+      attempt.finalizing = false;
+      try {
+        await restartV3Session(attempt, appInstanceId, config);
+      } catch {
+        // Desktop unreachable.
+      }
+      throw new Error("verification_failed");
+    }
+    await completePairing(attempt, {
+      signPublicKey: CrossPasteHash.base64Encode(v3.acceptorSignPublicKey()),
+      cryptPublicKey: CrossPasteHash.base64Encode(v3.acceptorCryptPublicKey()),
+    });
+  } finally {
+    attempt.finalizing = false;
   }
-  if (!(await v3.verifyCommitAck(ackJson))) {
-    throw new Error("verification_failed");
-  }
-  await completePairing(attempt, {
-    signPublicKey: CrossPasteHash.base64Encode(v3.acceptorSignPublicKey()),
-    cryptPublicKey: CrossPasteHash.base64Encode(v3.acceptorCryptPublicKey()),
-  });
 }
 
 async function handlePair(token: number): Promise<unknown> {
@@ -1109,6 +1181,12 @@ async function handlePair(token: number): Promise<unknown> {
  */
 async function handleCancelConnect(): Promise<unknown> {
   const attempt = connectingState;
+  // The desktop-persisting round-trip is in flight: cancelling now could
+  // leave the desktop trusting us while we discard its keys. Let it finish;
+  // completePairing / the failure path will settle the state.
+  if (attempt?.finalizing) {
+    return { success: false, finalizing: true };
+  }
   connectingState = null;
   if (attempt) {
     await releaseAttempt(attempt);

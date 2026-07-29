@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Plus, Info } from "lucide-react";
 import { MyDevicesSection } from "./MyDevicesSection";
 import { AddDeviceDialog } from "./AddDeviceDialog";
@@ -45,6 +45,12 @@ export function DevicesView({
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [rePairSyncInfo, setRePairSyncInfo] = useState<SyncInfo | null>(null);
   const [rePairMode, setRePairMode] = useState<number | undefined>(undefined);
+
+  // Leaving the Devices tab unmounts the dialogs without their onClose firing;
+  // cancel any in-flight pairing attempt so the desktop-side session (v3 PIN
+  // card, downgrade guard) is released rather than lingering to its TTL. The
+  // worker refuses the cancel while a trust round-trip is finalizing.
+  useEffect(() => () => onCancelConnect(), [onCancelConnect]);
 
   const handleConnect = useCallback(
     async (host: string, port: number) => {

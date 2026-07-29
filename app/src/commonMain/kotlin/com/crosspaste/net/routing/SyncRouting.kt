@@ -22,6 +22,7 @@ import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PendingKeyExchange
+import com.crosspaste.sync.PendingKeyExchangeLookup
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
@@ -298,18 +299,27 @@ fun Routing.syncRouting(
 
                     val currentTimestamp = nowEpochMilliseconds()
 
-                    pendingKeyExchangeStore.put(
-                        appInstanceId,
-                        PendingKeyExchange(
-                            signPublicKey = request.signPublicKey,
-                            cryptPublicKey = request.cryptPublicKey,
-                            sas = sas,
-                            timestamp = currentTimestamp,
-                        ),
-                    )
+                    val replacedPending =
+                        pendingKeyExchangeStore.put(
+                            appInstanceId,
+                            PendingKeyExchange(
+                                signPublicKey = request.signPublicKey,
+                                cryptPublicKey = request.cryptPublicKey,
+                                sas = sas,
+                                timestamp = currentTimestamp,
+                            ),
+                        )
 
                     appTokenApi.setSASToken(sas)
                     appTokenApi.addPendingVerifier(appInstanceId)
+                    if (replacedPending) {
+                        // A repeat exchange from the same peer (initiator warm-up +
+                        // real exchange, or a client retry) supersedes its earlier
+                        // pending entry: release that entry's token-refresh count
+                        // first so one confirm brings the counter back to zero and
+                        // the SAS overlay auto-closes (#4684).
+                        appTokenApi.stopRefresh(hideToken = false)
+                    }
                     appTokenApi.startRefresh(showToken = true)
 
                     val signature =
@@ -348,12 +358,25 @@ fun Routing.syncRouting(
                 runCatching {
                     val request = call.receive(TrustConfirmRequest::class)
 
-                    val pending = pendingKeyExchangeStore.get(appInstanceId)
-                    if (pending == null) {
-                        logger.warn { "v2 confirm: no pending exchange for $appInstanceId" }
-                        failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
-                        return@withPeerLock
-                    }
+                    val pending =
+                        when (val lookup = pendingKeyExchangeStore.lookup(appInstanceId)) {
+                            is PendingKeyExchangeLookup.Live -> lookup.exchange
+                            PendingKeyExchangeLookup.Expired -> {
+                                // The expired exchange still holds one token-refresh
+                                // count; release it so the overlay can close once the
+                                // peer retries and confirms (#4684).
+                                appTokenApi.stopRefresh(hideToken = false)
+                                logger.warn { "v2 confirm: pending exchange expired for $appInstanceId" }
+                                failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
+                                return@withPeerLock
+                            }
+
+                            PendingKeyExchangeLookup.None -> {
+                                logger.warn { "v2 confirm: no pending exchange for $appInstanceId" }
+                                failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
+                                return@withPeerLock
+                            }
+                        }
 
                     val receiveSignPublicKey =
                         secureKeyPairSerializer.decodeSignPublicKey(pending.signPublicKey)

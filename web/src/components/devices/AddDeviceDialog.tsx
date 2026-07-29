@@ -178,7 +178,11 @@ export function AddDeviceDialog({
               {t("add_device_manually")}
             </span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-m3-surface-container">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="p-1 rounded-md hover:bg-m3-surface-container disabled:opacity-40"
+          >
             <X size={18} className="text-m3-on-surface-variant" />
           </button>
         </div>
@@ -230,7 +234,8 @@ export function AddDeviceDialog({
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors disabled:opacity-40"
               >
                 {t("cancel")}
               </button>
@@ -288,7 +293,8 @@ export function AddDeviceDialog({
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors disabled:opacity-40"
               >
                 {t("cancel")}
               </button>
