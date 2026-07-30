@@ -1311,6 +1311,10 @@ class SyncResolverTest {
             assertEquals(SyncState.CONNECTED, capturedInfo.captured.connectState)
             coVerify { deps.syncClientApi.trustV2Confirm(syncRuntimeInfo.appInstanceId, any(), any()) }
             coVerify { deps.secureStore.saveCryptPublicKey(syncRuntimeInfo.appInstanceId, remoteKey) }
+            // The confirm consumed the responder's exchange: the tracked record
+            // must be cleared so a later dialog dismissal cancels nothing.
+            verify { deps.syncDeviceManager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, response.timestamp) }
+            verify { deps.syncDeviceManager.clearPendingExchange(syncRuntimeInfo.appInstanceId) }
             verify { deps.ratingPromptManager.trackSignificantAction() }
         }
 
@@ -1341,6 +1345,10 @@ class SyncResolverTest {
             assertEquals(false, callbackResult)
             coVerify(exactly = 0) { deps.syncClientApi.trustV2Confirm(any(), any(), any()) }
             coVerify(exactly = 0) { deps.secureStore.saveCryptPublicKey(any(), any()) }
+            // The mismatched exchange still exists on the responder: keep its
+            // record so abandoning the dialog can cancel it.
+            verify { deps.syncDeviceManager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, any()) }
+            verify(exactly = 0) { deps.syncDeviceManager.clearPendingExchange(any()) }
         }
 
     @Test
@@ -1400,9 +1408,9 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
 
-            resolver.emitEvent(SyncEvent.CancelPairing(syncRuntimeInfo))
+            resolver.emitEvent(SyncEvent.CancelPairing(syncRuntimeInfo, requestedAt = 123L))
 
-            coVerify(exactly = 1) { deps.syncDeviceManager.cancelPairing(syncRuntimeInfo) }
+            coVerify(exactly = 1) { deps.syncDeviceManager.cancelPairing(syncRuntimeInfo, 123L) }
         }
 
     // ========== G. Event dispatch and callback ==========

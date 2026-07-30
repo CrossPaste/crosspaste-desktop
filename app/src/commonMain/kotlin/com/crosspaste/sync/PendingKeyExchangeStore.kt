@@ -84,4 +84,15 @@ class PendingKeyExchangeStore {
 
     /** Removes the peer's entry, reporting whether one existed. */
     fun remove(appInstanceId: String): Boolean = store.remove(appInstanceId) != null
+
+    /**
+     * Generation check for client-initiated cancellation: true when the peer's
+     * stored exchange (live OR expired — an expired entry still owns its
+     * token-refresh count) carries exactly [timestamp]. A stale cancel from a
+     * superseded exchange therefore never matches the current entry.
+     */
+    fun timestampMatches(
+        appInstanceId: String,
+        timestamp: Long,
+    ): Boolean = store[appInstanceId]?.timestamp == timestamp
 }

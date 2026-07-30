@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -99,15 +100,49 @@ abstract class AppTokenService : AppTokenApi {
                 if (hideToken) {
                     _showToken.value = false
                 }
-                if (refreshCounter > 0) {
-                    refreshCounter -= 1
+                decrementRefreshLocked()
+            }
+        }
+    }
+
+    override fun releaseVerifier(
+        appInstanceId: String,
+        hideToken: Boolean,
+    ) {
+        // Remove the verifier SYNCHRONOUSLY (same semantics as
+        // removePendingVerifier): callers such as the v2 exchange route release
+        // a superseded peer and immediately re-add it, so deferring the removal
+        // into the async block would erase the re-added verifier. The atomic
+        // getAndUpdate makes concurrent releases race safely — only the caller
+        // that actually removed the entry gets to decrement.
+        val hadVerifier =
+            appInstanceId in
+                _pendingVerifiers.getAndUpdate { currentSet ->
+                    currentSet - appInstanceId
                 }
-                if (refreshCounter == 0) {
-                    _refresh.value = false
+        scope.launch {
+            lock.withLock {
+                if (hideToken) {
                     _showToken.value = false
-                    _sasMode = false
+                }
+                // Decrement only for the verifier we actually removed — an
+                // already-released verifier must not consume a count owned by
+                // another pairing in flight.
+                if (hadVerifier) {
+                    decrementRefreshLocked()
                 }
             }
+        }
+    }
+
+    private fun decrementRefreshLocked() {
+        if (refreshCounter > 0) {
+            refreshCounter -= 1
+        }
+        if (refreshCounter == 0) {
+            _refresh.value = false
+            _showToken.value = false
+            _sasMode = false
         }
     }
 

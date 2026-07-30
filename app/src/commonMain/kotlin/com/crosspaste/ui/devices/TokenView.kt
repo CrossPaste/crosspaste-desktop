@@ -72,10 +72,10 @@ fun TokenView(intOffset: IntOffset) {
     // NOT the success path: a successful trust/confirm removes its verifier and
     // releases its refresh count server-side before the UI can observe it, so
     // `pending` is already empty and this effect never fires (#4684). Each
-    // verifier still parked here owns one refresh count (its exchange/showToken
-    // never got a matching release), so release one count per reaped verifier —
-    // a single decrement would hide the overlay but leave the refresh loop
-    // running in the background.
+    // verifier still parked here owns one refresh count, released through the
+    // atomic releaseVerifier — one count per reaped verifier, and a later server
+    // release of the same peer (retry / confirm / cancel finding the leftover
+    // store entry) becomes a no-op instead of a double decrement.
     val pending by appTokenApi.pendingVerifiers.collectAsState()
     val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
 
@@ -90,8 +90,7 @@ fun TokenView(intOffset: IntOffset) {
     LaunchedEffect(allResolved) {
         if (allResolved) {
             pending.forEach {
-                appTokenApi.removePendingVerifier(it)
-                appTokenApi.stopRefresh(hideToken = true)
+                appTokenApi.releaseVerifier(it, hideToken = true)
             }
         }
     }
@@ -103,7 +102,21 @@ fun TokenView(intOffset: IntOffset) {
                     title = copywriter.getText("token"),
                     token = token.map(Char::toString),
                     progress = progress,
-                    onClose = { appTokenApi.stopRefresh(hideToken = true) },
+                    onClose = {
+                        // Manual dismissal releases each pending verifier's count
+                        // through the atomic primitive, so a later server-side
+                        // release of the same peer cannot double-decrement. With
+                        // no verifiers (degenerate: overlay without a tracked
+                        // requester) fall back to a plain single decrement.
+                        val verifiers = appTokenApi.pendingVerifiers.value
+                        if (verifiers.isEmpty()) {
+                            appTokenApi.stopRefresh(hideToken = true)
+                        } else {
+                            verifiers.forEach {
+                                appTokenApi.releaseVerifier(it, hideToken = true)
+                            }
+                        }
+                    },
                 )
             }
             PairingV3AcceptorTokenCards(

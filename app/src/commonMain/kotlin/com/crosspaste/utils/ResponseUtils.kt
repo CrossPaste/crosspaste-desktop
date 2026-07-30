@@ -16,6 +16,10 @@ import io.ktor.utils.io.*
 const val HEADER_APP_INSTANCE_ID: String = "appInstanceId"
 const val HEADER_TARGET_APP_INSTANCE_ID: String = "targetAppInstanceId"
 
+// Generation marker for /sync/trust/v2/cancel: the responder's exchange
+// timestamp echoed back so a stale cancel cannot release a newer exchange.
+const val HEADER_EXCHANGE_TIMESTAMP: String = "crosspaste-exchange-timestamp"
+
 suspend inline fun successResponse(call: ApplicationCall) {
     call.respond(status = HttpStatusCode.OK, message = "")
 }

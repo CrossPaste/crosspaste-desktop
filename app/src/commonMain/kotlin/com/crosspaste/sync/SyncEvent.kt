@@ -75,6 +75,10 @@ sealed interface SyncEvent {
 
     data class CancelPairing(
         override val syncRuntimeInfo: SyncRuntimeInfo,
+        // Epoch millis of the user's abandon action, captured synchronously at
+        // the UI call site: an exchange recorded after this instant belongs to
+        // a newer pairing dialog and must survive this cancel.
+        val requestedAt: Long,
     ) : SyncRunTimeInfoEvent {
         override fun toString(): String = "CancelPairing ${syncRuntimeInfo.appInstanceId}"
     }

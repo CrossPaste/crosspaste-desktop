@@ -141,11 +141,12 @@ fun DeviceScope.TrustDeviceDialog() {
     // responder; if the dialog goes away without a confirm, release it so the
     // responder's SAS overlay auto-closes (#4684). Keyed like the warm-up
     // effect so each dismissal path (cancel button, outside click, device
-    // switch, window close) triggers a release; after a successful pairing the
-    // peer is no longer UNVERIFIED and cancelPairing skips the request. Best
-    // effort only: both effects go through the async event pipeline, so a
-    // dismissal racing an in-flight warm-up can release before the exchange
-    // lands — the leftover entry then self-heals on the next exchange.
+    // switch, window close) triggers a release. The cancel is generation-safe:
+    // it names the exact exchange this dialog owns (skipped after a successful
+    // confirm consumes it, or when a reopened dialog's newer exchange
+    // supersedes it — see SyncDeviceManager.cancelPairing). Best effort only:
+    // a dismissal racing an in-flight warm-up finds no recorded exchange and
+    // skips; the responder's leftover entry self-heals on the next exchange.
     DisposableEffect(appInstanceId, pairingCredentialType) {
         onDispose {
             if (pairingCredentialType == PairingCredentialType.SAS_CODE) {

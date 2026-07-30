@@ -171,8 +171,10 @@ open class DefaultServerModule(
      */
     private fun releasePendingKeyExchange(appInstanceId: String) {
         if (pendingKeyExchangeStore.remove(appInstanceId)) {
-            appTokenApi.removePendingVerifier(appInstanceId)
-            appTokenApi.stopRefresh(hideToken = false)
+            // releaseVerifier decrements only when the verifier is still
+            // pending, so a UI reap that already released this peer (device
+            // went offline) cannot be double-counted here.
+            appTokenApi.releaseVerifier(appInstanceId)
         }
     }
 

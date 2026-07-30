@@ -12,6 +12,7 @@ import com.crosspaste.net.filter
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.pairing.v3.PairingV3
+import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
@@ -325,9 +326,14 @@ class GeneralSyncManager(
     }
 
     override fun cancelPairing(appInstanceId: String) {
+        // Capture the abandon instant synchronously: the UI disposes the old
+        // dialog before a reopened one fires its warm-up exchange, so any
+        // exchange recorded after this timestamp belongs to the newer dialog
+        // and must not be cancelled.
+        val requestedAt = nowEpochMilliseconds()
         internalSyncHandlers[appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch {
-                syncHandler.cancelPairing()
+                syncHandler.cancelPairing(requestedAt)
             }
         }
     }

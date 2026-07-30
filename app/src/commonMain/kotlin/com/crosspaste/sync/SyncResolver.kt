@@ -123,7 +123,7 @@ class SyncResolver(
                     }
 
                     is SyncEvent.CancelPairing -> {
-                        syncDeviceManager.cancelPairing(syncRuntimeInfo)
+                        syncDeviceManager.cancelPairing(syncRuntimeInfo, event.requestedAt)
                     }
 
                     is SyncEvent.ShowToken -> {
@@ -724,6 +724,11 @@ class SyncResolver(
                 return
             }
 
+            // This exchange superseded the dialog's warm-up on the responder;
+            // track it so an abandon after a SAS mismatch or confirm failure
+            // cancels the exchange that actually exists over there (#4684).
+            syncDeviceManager.rememberPendingExchange(appInstanceId, response.timestamp)
+
             // Step 2: Compute local SAS and compare with user-entered token
             val localCryptPublicKey =
                 secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
@@ -750,7 +755,9 @@ class SyncResolver(
                 return
             }
 
-            // Step 4: Save remote key locally and send heartbeat
+            // Step 4: Save remote key locally and send heartbeat. The confirm
+            // consumed the responder's pending exchange — nothing left to cancel.
+            syncDeviceManager.clearPendingExchange(appInstanceId)
             secureStore.saveCryptPublicKey(appInstanceId, response.cryptPublicKey)
 
             advertiseAddressViaHeartbeat(host, port, appInstanceId)

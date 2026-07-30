@@ -27,6 +27,7 @@ import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HEADER_APP_INSTANCE_ID
+import com.crosspaste.utils.HEADER_EXCHANGE_TIMESTAMP
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.successResponse
@@ -247,11 +248,11 @@ fun Routing.syncRouting(
                 }.onSuccess { trustResponse ->
                     val host = call.request.headers["crosspaste-host"]
                     val clientSyncInfo = call.clientSyncInfo()
-                    appTokenApi.removePendingVerifier(appInstanceId)
+                    // Atomic release: decrements the refresh count only if this
+                    // verifier was still pending (a QR token-cache trust never
+                    // requested /sync/showToken, so it has nothing to release).
+                    appTokenApi.releaseVerifier(appInstanceId)
                     trustSyncInfo(appInstanceId, host, clientSyncInfo)
-                    if (appTokenApi.showToken.value) {
-                        appTokenApi.stopRefresh(hideToken = false)
-                    }
                     successResponse(call, trustResponse)
                 }.onFailure { e ->
                     logger.error(e) { "Trust request failed for $appInstanceId" }
@@ -421,14 +422,27 @@ fun Routing.syncRouting(
         }
     }
 
-    // Client-side cancellation of a pending v2 exchange (e.g. the browser
-    // extension's pairing dialog was closed). Idempotent: releasing a peer with
-    // no pending entry is a no-op. Older clients simply never call this.
+    // Client-side cancellation of a pending v2 exchange (pairing dialog was
+    // closed before confirm). Idempotent: releasing a peer with no pending
+    // entry is a no-op. When the caller echoes the exchange timestamp it
+    // received (generation marker), only that exact exchange is released — a
+    // cancel delayed past a newer exchange from the same peer must not tear
+    // down the newer one. Callers without the header (older clients, the
+    // browser extension) keep the original unconditional-release semantics.
     post("/sync/trust/v2/cancel") {
         getAppInstanceId(call)?.let { appInstanceId ->
-            releasePendingKeyExchange(appInstanceId)
-            logger.info { "v2 exchange cancelled by $appInstanceId" }
-            successResponse(call)
+            pairingVersionCoordinator.withPeerLock(appInstanceId) {
+                val requestedTimestamp = call.request.headers[HEADER_EXCHANGE_TIMESTAMP]?.toLongOrNull()
+                if (requestedTimestamp == null ||
+                    pendingKeyExchangeStore.timestampMatches(appInstanceId, requestedTimestamp)
+                ) {
+                    releasePendingKeyExchange(appInstanceId)
+                    logger.info { "v2 exchange cancelled by $appInstanceId" }
+                } else {
+                    logger.info { "v2 cancel from $appInstanceId ignored (exchange superseded)" }
+                }
+                successResponse(call)
+            }
         }
     }
 }

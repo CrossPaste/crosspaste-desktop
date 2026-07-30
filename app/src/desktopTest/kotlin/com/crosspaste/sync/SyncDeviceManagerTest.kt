@@ -3,6 +3,7 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
+import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.net.clientapi.ConnectionRefused
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
@@ -89,30 +90,99 @@ class SyncDeviceManagerTest {
     // ========== cancelPairing ==========
 
     @Test
-    fun cancelPairing_unverified_callsTrustV2Cancel() =
+    fun cancelPairing_recordedExchange_sendsGenerationMatchedCancel() =
         runTest {
             val deps = TestDeps()
             val manager = deps.createManager()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
-            coEvery { deps.syncClientApi.trustV2Cancel(any()) } returns SuccessResult(true)
+            coEvery { deps.syncClientApi.trustV2Cancel(any(), any()) } returns SuccessResult(true)
 
-            manager.cancelPairing(syncRuntimeInfo)
+            manager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, 42L)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
 
-            coVerify(exactly = 1) { deps.syncClientApi.trustV2Cancel(any()) }
+            coVerify(exactly = 1) { deps.syncClientApi.trustV2Cancel(42L, any()) }
             coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
         }
 
     @Test
-    fun cancelPairing_notUnverified_doesNothing() =
+    fun cancelPairing_noRecordedExchange_doesNothing() =
         runTest {
             val deps = TestDeps()
             val manager = deps.createManager()
-            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
-            manager.cancelPairing(syncRuntimeInfo)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
 
-            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any()) }
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any(), any()) }
+        }
+
+    @Test
+    fun cancelPairing_disconnectedPeerWithRecord_stillSends() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            // The exchange request may have landed while its response was lost:
+            // the peer drops to DISCONNECTED but the responder-side entry still
+            // exists, so ownership — not connect state — gates the cancel.
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.DISCONNECTED,
+                    connectHostAddress = "192.168.1.100",
+                )
+
+            coEvery { deps.syncClientApi.trustV2Cancel(any(), any()) } returns SuccessResult(true)
+
+            manager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, 42L)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
+
+            coVerify(exactly = 1) { deps.syncClientApi.trustV2Cancel(42L, any()) }
+        }
+
+    @Test
+    fun cancelPairing_supersededByNewerExchange_skips() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            // The exchange was recorded AFTER the abandon instant (requestedAt=0):
+            // it belongs to a reopened dialog and must survive the stale cancel.
+            manager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, 42L)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = 0L)
+
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any(), any()) }
+        }
+
+    @Test
+    fun cancelPairing_afterClearPendingExchange_doesNothing() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            // A successful confirm clears the record — nothing left to cancel.
+            manager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, 42L)
+            manager.clearPendingExchange(syncRuntimeInfo.appInstanceId)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
+
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any(), any()) }
+        }
+
+    @Test
+    fun cancelPairing_consumesRecordOnSend() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            coEvery { deps.syncClientApi.trustV2Cancel(any(), any()) } returns SuccessResult(true)
+
+            manager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, 42L)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
+
+            coVerify(exactly = 1) { deps.syncClientApi.trustV2Cancel(any(), any()) }
         }
 
     @Test
@@ -126,9 +196,10 @@ class SyncDeviceManagerTest {
                     connectHostAddress = null,
                 )
 
-            manager.cancelPairing(syncRuntimeInfo)
+            manager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, 42L)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
 
-            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any()) }
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any(), any()) }
         }
 
     @Test
@@ -138,11 +209,35 @@ class SyncDeviceManagerTest {
             val manager = deps.createManager()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
-            coEvery { deps.syncClientApi.trustV2Cancel(any()) } returns ConnectionRefused
+            coEvery { deps.syncClientApi.trustV2Cancel(any(), any()) } returns ConnectionRefused
 
-            manager.cancelPairing(syncRuntimeInfo)
+            manager.rememberPendingExchange(syncRuntimeInfo.appInstanceId, 42L)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
 
             coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun exchangeKeysForPairing_success_recordsExchangeForCancel() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            val response =
+                KeyExchangeResponse(
+                    signPublicKey = byteArrayOf(1),
+                    cryptPublicKey = byteArrayOf(2),
+                    timestamp = 42L,
+                    signature = byteArrayOf(3),
+                )
+
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns SuccessResult(response)
+            coEvery { deps.syncClientApi.trustV2Cancel(any(), any()) } returns SuccessResult(true)
+
+            manager.exchangeKeysForPairing(syncRuntimeInfo)
+            manager.cancelPairing(syncRuntimeInfo, requestedAt = Long.MAX_VALUE)
+
+            coVerify(exactly = 1) { deps.syncClientApi.trustV2Cancel(42L, any()) }
         }
 
     // ========== showToken ==========

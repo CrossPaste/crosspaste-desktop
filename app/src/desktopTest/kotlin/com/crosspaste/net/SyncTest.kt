@@ -12,6 +12,7 @@ import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
@@ -36,6 +37,8 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getPlatformUtils
 import io.ktor.server.netty.*
+import io.ktor.util.reflect.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -48,7 +51,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class SyncTest : KoinTest {
@@ -68,6 +73,8 @@ class SyncTest : KoinTest {
     private val clientSecureIO by inject<SecureIO>(named("clientSecureIO"))
 
     private val syncClientApi by inject<SyncClientApi>()
+
+    private val pasteClient by inject<PasteClient>()
 
     companion object {
 
@@ -269,26 +276,33 @@ class SyncTest : KoinTest {
         runBlocking { pasteServer.stop() }
     }
 
+    private suspend fun exchangeAndAwaitPending(): KeyExchangeResponse {
+        val exchangeResult =
+            syncClientApi.exchangeKeys(serverAppInfo.appInstanceId) {
+                buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+            }
+        assertTrue(exchangeResult is SuccessResult)
+        val response = (exchangeResult as SuccessResult).getResult<KeyExchangeResponse>()
+        assertNotNull(response)
+
+        // The exchange parks one token-refresh count and one pending verifier
+        // on the responder (both updated asynchronously).
+        withTimeout(5.seconds) {
+            appTokenApi.refresh.first { it }
+            appTokenApi.pendingVerifiers.first { clientAppInfo.appInstanceId in it }
+        }
+        return response
+    }
+
     @Test
     fun testV2ExchangeCancelReleasesPendingExchange() {
         runBlocking {
             pasteServer.start()
 
-            val exchangeResult =
-                syncClientApi.exchangeKeys(serverAppInfo.appInstanceId) {
-                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
-                }
-            assertTrue(exchangeResult is SuccessResult)
-
-            // The exchange parks one token-refresh count and one pending verifier
-            // on the responder (both updated asynchronously).
-            withTimeout(5.seconds) {
-                appTokenApi.refresh.first { it }
-                appTokenApi.pendingVerifiers.first { clientAppInfo.appInstanceId in it }
-            }
+            val response = exchangeAndAwaitPending()
 
             val cancelResult =
-                syncClientApi.trustV2Cancel {
+                syncClientApi.trustV2Cancel(response.timestamp) {
                     buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             assertTrue(cancelResult is SuccessResult)
@@ -306,6 +320,73 @@ class SyncTest : KoinTest {
                     buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             assertTrue(confirmResult is FailureResult)
+
+            pasteServer.stop()
+        }
+    }
+
+    @Test
+    fun testV2StaleCancelDoesNotReleaseNewerExchange() {
+        runBlocking {
+            pasteServer.start()
+
+            val firstResponse = exchangeAndAwaitPending()
+
+            // A second exchange supersedes the first entry; the generation
+            // marker is the responder's epoch-millisecond clock, so a short
+            // delay guarantees it differs from the stale one.
+            delay(10.milliseconds)
+            val secondResponse = exchangeAndAwaitPending()
+            assertTrue(secondResponse.timestamp != firstResponse.timestamp)
+
+            // The stale cancel names the superseded exchange: the responder
+            // must keep the current one alive.
+            val staleCancel =
+                syncClientApi.trustV2Cancel(firstResponse.timestamp) {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(staleCancel is SuccessResult)
+            delay(200.milliseconds)
+            assertTrue(appTokenApi.refresh.value)
+            assertTrue(clientAppInfo.appInstanceId in appTokenApi.pendingVerifiers.value)
+
+            // Cancelling the current generation releases it.
+            val currentCancel =
+                syncClientApi.trustV2Cancel(secondResponse.timestamp) {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(currentCancel is SuccessResult)
+            withTimeout(5.seconds) {
+                appTokenApi.refresh.first { !it }
+                appTokenApi.pendingVerifiers.first { it.isEmpty() }
+            }
+
+            pasteServer.stop()
+        }
+    }
+
+    @Test
+    fun testV2CancelWithoutGenerationHeaderKeepsLegacySemantics() {
+        runBlocking {
+            pasteServer.start()
+
+            exchangeAndAwaitPending()
+
+            // Callers without the generation header (older clients, the browser
+            // extension) keep the original unconditional-release behaviour.
+            pasteClient.post(
+                "",
+                typeInfo<String>(),
+                urlBuilder = {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                    buildUrl("sync", "trust", "v2", "cancel")
+                },
+            )
+
+            withTimeout(5.seconds) {
+                appTokenApi.refresh.first { !it }
+                appTokenApi.pendingVerifiers.first { it.isEmpty() }
+            }
 
             pasteServer.stop()
         }
