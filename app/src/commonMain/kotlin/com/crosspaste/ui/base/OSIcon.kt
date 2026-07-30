@@ -7,6 +7,9 @@ import androidx.compose.ui.graphics.painter.Painter
 expect fun android(): Painter
 
 @Composable
+expect fun harmony(): Painter
+
+@Composable
 expect fun ipad(): Painter
 
 @Composable

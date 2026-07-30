@@ -37,6 +37,7 @@ const PLATFORM_ICON: Record<string, typeof Laptop> = {
   Android: Smartphone,
   iPhone: Smartphone,
   iPad: Smartphone,
+  HarmonyOS: Smartphone,
 };
 
 const PLATFORM_ICON_COLOR: Record<string, string> = {
@@ -46,6 +47,7 @@ const PLATFORM_ICON_COLOR: Record<string, string> = {
   Android: "text-m3-success",
   iPhone: "text-m3-primary",
   iPad: "text-m3-primary",
+  HarmonyOS: "text-m3-success",
 };
 
 function DeviceStatusBadge({

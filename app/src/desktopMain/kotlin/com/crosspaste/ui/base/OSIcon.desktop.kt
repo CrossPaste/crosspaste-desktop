@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.android
 import com.crosspaste.app.generated.resources.chrome_extension
+import com.crosspaste.app.generated.resources.harmony
 import com.crosspaste.app.generated.resources.ipad
 import com.crosspaste.app.generated.resources.iphone
 import com.crosspaste.app.generated.resources.linux
@@ -14,6 +15,9 @@ import org.jetbrains.compose.resources.painterResource
 
 @Composable
 actual fun android(): Painter = painterResource(Res.drawable.android)
+
+@Composable
+actual fun harmony(): Painter = painterResource(Res.drawable.harmony)
 
 @Composable
 actual fun ipad(): Painter = painterResource(Res.drawable.ipad)

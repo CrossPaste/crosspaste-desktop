@@ -23,6 +23,8 @@ data class Platform(
 
         const val ANDROID = "Android"
 
+        const val HARMONY = "HarmonyOS"
+
         const val CHROME_EXTENSION = "ChromeExtension"
 
         const val UNKNOWN_OS = "Unknown"
@@ -43,6 +45,8 @@ data class Platform(
     fun isApple(): Boolean = isMacos() || isIphone() || isIpad()
 
     fun isAndroid(): Boolean = name == ANDROID
+
+    fun isHarmony(): Boolean = name == HARMONY
 
     fun isChromeExtension(): Boolean = name == CHROME_EXTENSION
 
