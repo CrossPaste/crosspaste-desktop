@@ -1,12 +1,16 @@
 package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.window.ApplicationScope
+import com.crosspaste.app.AppLaunchState
+import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
@@ -40,11 +44,21 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
         }
     }
 
+    val appLaunch = koinInject<DesktopAppLaunch>()
+    val appLaunchState = koinInject<AppLaunchState>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+
+    LaunchedEffect(Unit) {
+        if (appLaunchState.firstLaunch && !appLaunch.firstLaunchCompleted.value) {
+            appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
+            appLaunch.setFirstLaunchCompleted(true)
+        }
+    }
+
     MainWindow(windowIcon)
 
     SearchWindow(windowIcon)
 
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val bubbleWindowInfo by appWindowManager.bubbleWindowInfo.collectAsState()
     if (bubbleWindowInfo.show) {
         BubbleWindow(windowIcon)

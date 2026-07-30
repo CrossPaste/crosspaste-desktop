@@ -3,14 +3,11 @@ package com.crosspaste.ui.tray
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.crosspaste.app.AppLaunchState
 import com.crosspaste.app.AppName
-import com.crosspaste.app.DesktopAppLaunch
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.WindowTrigger
@@ -37,13 +34,9 @@ object MacTrayView {
     @Composable
     fun Tray() {
         val applicationExit = LocalExitApplication.current
-        val appLaunch = koinInject<DesktopAppLaunch>()
-        val appLaunchState = koinInject<AppLaunchState>()
         val appWindowManager = koinInject<DesktopAppWindowManager>()
         val configManager = koinInject<CommonConfigManager>()
         val menuHelper = koinInject<MenuHelper>()
-
-        val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
 
         var trayManager by remember { mutableStateOf<NativeTrayManager?>(null) }
 
@@ -55,11 +48,6 @@ object MacTrayView {
                     menuHelper,
                     applicationExit,
                 )
-
-            if (appLaunchState.firstLaunch && !firstLaunchCompleted) {
-                appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
-                appLaunch.setFirstLaunchCompleted(true)
-            }
         }
 
         DisposableEffect(Unit) {
