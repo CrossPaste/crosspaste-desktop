@@ -145,8 +145,11 @@ fun DeviceScope.TrustDeviceDialog() {
     // it names the exact exchange this dialog owns (skipped after a successful
     // confirm consumes it, or when a reopened dialog's newer exchange
     // supersedes it). The generation is recorded before asynchronous dispatch;
-    // if dismissal wins the race, the queued warm-up observes the consumed
-    // generation and sends no request.
+    // if dismissal wins the local race, the queued warm-up observes the
+    // consumed generation and sends no request. On the wire the release stays
+    // best effort: warm-up and cancel travel as independent requests, so a
+    // cancel arriving before its exchange is a responder-side no-op and the
+    // leftover entry self-heals on the next exchange.
     DisposableEffect(appInstanceId, pairingCredentialType) {
         onDispose {
             if (pairingCredentialType == PairingCredentialType.SAS_CODE) {

@@ -129,13 +129,16 @@ abstract class AppTokenService : AppTokenApi {
         submit {
             val isNewVerifier = appInstanceId !in _pendingVerifiers.value
             _pendingVerifiers.value += appInstanceId
-            if (showToken) {
-                _showToken.value = true
-                preShowToken()
-            }
+            // Fund the refresh count before the overlay callback: preShowToken
+            // is platform code that may throw, and a registered verifier whose
+            // count was never taken would later release someone else's.
             if (isNewVerifier) {
                 _refresh.value = true
                 refreshCounter += 1
+            }
+            if (showToken) {
+                _showToken.value = true
+                preShowToken()
             }
         }
     }
