@@ -13,6 +13,7 @@ import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
@@ -35,7 +36,9 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getPlatformUtils
 import io.ktor.server.netty.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -46,6 +49,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 class SyncTest : KoinTest {
 
@@ -263,5 +267,47 @@ class SyncTest : KoinTest {
         assertTrue(result is SuccessResult)
 
         runBlocking { pasteServer.stop() }
+    }
+
+    @Test
+    fun testV2ExchangeCancelReleasesPendingExchange() {
+        runBlocking {
+            pasteServer.start()
+
+            val exchangeResult =
+                syncClientApi.exchangeKeys(serverAppInfo.appInstanceId) {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(exchangeResult is SuccessResult)
+
+            // The exchange parks one token-refresh count and one pending verifier
+            // on the responder (both updated asynchronously).
+            withTimeout(5.seconds) {
+                appTokenApi.refresh.first { it }
+                appTokenApi.pendingVerifiers.first { clientAppInfo.appInstanceId in it }
+            }
+
+            val cancelResult =
+                syncClientApi.trustV2Cancel {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(cancelResult is SuccessResult)
+
+            // Cancel funnels through the unified release path: the verifier is
+            // removed and the refresh count drains back to zero (#4684).
+            withTimeout(5.seconds) {
+                appTokenApi.refresh.first { !it }
+                appTokenApi.pendingVerifiers.first { it.isEmpty() }
+            }
+
+            // The pending exchange was consumed, so a late confirm cannot match.
+            val confirmResult =
+                syncClientApi.trustV2Confirm(serverAppInfo.appInstanceId, "localhost") {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(confirmResult is FailureResult)
+
+            pasteServer.stop()
+        }
     }
 }

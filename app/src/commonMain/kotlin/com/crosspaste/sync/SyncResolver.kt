@@ -122,6 +122,10 @@ class SyncResolver(
                         syncDeviceManager.exchangeKeysForPairing(syncRuntimeInfo)
                     }
 
+                    is SyncEvent.CancelPairing -> {
+                        syncDeviceManager.cancelPairing(syncRuntimeInfo)
+                    }
+
                     is SyncEvent.ShowToken -> {
                         syncDeviceManager.showToken(syncRuntimeInfo)
                     }

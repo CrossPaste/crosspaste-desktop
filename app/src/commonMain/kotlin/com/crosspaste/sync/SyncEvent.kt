@@ -73,6 +73,12 @@ sealed interface SyncEvent {
         override fun toString(): String = "ExchangeKeysForPairing ${syncRuntimeInfo.appInstanceId}"
     }
 
+    data class CancelPairing(
+        override val syncRuntimeInfo: SyncRuntimeInfo,
+    ) : SyncRunTimeInfoEvent {
+        override fun toString(): String = "CancelPairing ${syncRuntimeInfo.appInstanceId}"
+    }
+
     data class ShowToken(
         override val syncRuntimeInfo: SyncRuntimeInfo,
     ) : SyncRunTimeInfoEvent {

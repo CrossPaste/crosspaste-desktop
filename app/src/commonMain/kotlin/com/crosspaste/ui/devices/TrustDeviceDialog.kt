@@ -20,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -133,6 +134,23 @@ fun DeviceScope.TrustDeviceDialog() {
             PairingCredentialType.QR_BEARER_TOKEN -> handler?.showToken()
             PairingCredentialType.V3_PIN -> Unit
             null -> Unit
+        }
+    }
+
+    // The SAS warm-up exchange above parks one token-refresh count on the
+    // responder; if the dialog goes away without a confirm, release it so the
+    // responder's SAS overlay auto-closes (#4684). Keyed like the warm-up
+    // effect so each dismissal path (cancel button, outside click, device
+    // switch, window close) triggers a release; after a successful pairing the
+    // peer is no longer UNVERIFIED and cancelPairing skips the request. Best
+    // effort only: both effects go through the async event pipeline, so a
+    // dismissal racing an in-flight warm-up can release before the exchange
+    // lands — the leftover entry then self-heals on the next exchange.
+    DisposableEffect(appInstanceId, pairingCredentialType) {
+        onDispose {
+            if (pairingCredentialType == PairingCredentialType.SAS_CODE) {
+                syncManager.cancelPairing(appInstanceId)
+            }
         }
     }
 

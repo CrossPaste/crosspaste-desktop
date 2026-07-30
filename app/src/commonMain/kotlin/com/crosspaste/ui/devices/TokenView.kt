@@ -67,8 +67,15 @@ fun TokenView(intOffset: IntOffset) {
     val pairingSessions by pairingV3UiController.sessions.collectAsState()
     val incomingPairingSessions = acceptorPairingSessions(pairingSessions)
 
-    // Auto-close token view when all pending verifiers have completed verification
-    // (either trust succeeded, went offline, or disconnected)
+    // Reap pending verifiers whose device left UNVERIFIED without completing the
+    // handshake here (went offline / disconnected / trusted out-of-band). This is
+    // NOT the success path: a successful trust/confirm removes its verifier and
+    // releases its refresh count server-side before the UI can observe it, so
+    // `pending` is already empty and this effect never fires (#4684). Each
+    // verifier still parked here owns one refresh count (its exchange/showToken
+    // never got a matching release), so release one count per reaped verifier —
+    // a single decrement would hide the overlay but leave the refresh loop
+    // running in the background.
     val pending by appTokenApi.pendingVerifiers.collectAsState()
     val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
 
@@ -82,8 +89,10 @@ fun TokenView(intOffset: IntOffset) {
 
     LaunchedEffect(allResolved) {
         if (allResolved) {
-            pending.forEach { appTokenApi.removePendingVerifier(it) }
-            appTokenApi.stopRefresh(hideToken = true)
+            pending.forEach {
+                appTokenApi.removePendingVerifier(it)
+                appTokenApi.stopRefresh(hideToken = true)
+            }
         }
     }
 

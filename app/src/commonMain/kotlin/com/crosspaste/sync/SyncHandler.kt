@@ -62,6 +62,10 @@ interface SyncHandler {
 
     suspend fun exchangeKeysForPairing()
 
+    // Release the pending v2 exchange we started on the peer when pairing is
+    // abandoned before confirm (POST /sync/trust/v2/cancel, best-effort).
+    suspend fun cancelPairing()
+
     suspend fun showToken()
 
     suspend fun showPairingCode()

@@ -1391,6 +1391,20 @@ class SyncResolverTest {
             coVerify(exactly = 0) { deps.secureStore.saveCryptPublicKey(any(), any()) }
         }
 
+    @Test
+    fun cancelPairing_dispatchesToSyncDeviceManager() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
+
+            resolver.emitEvent(SyncEvent.CancelPairing(syncRuntimeInfo))
+
+            coVerify(exactly = 1) { deps.syncDeviceManager.cancelPairing(syncRuntimeInfo) }
+        }
+
     // ========== G. Event dispatch and callback ==========
 
     @Test

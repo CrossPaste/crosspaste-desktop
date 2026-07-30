@@ -67,6 +67,29 @@ class SyncDeviceManager(
         }
     }
 
+    /**
+     * Best-effort release of the pending v2 exchange we opened on the peer
+     * (#4684): only meaningful while the peer is still UNVERIFIED — after a
+     * successful confirm the peer has already consumed the exchange, and
+     * without a host there is nothing to notify. Failures are ignored: pairing
+     * is being abandoned anyway, and the peer's entry self-heals when a later
+     * exchange from us replaces it.
+     */
+    suspend fun cancelPairing(syncRuntimeInfo: SyncRuntimeInfo) {
+        if (syncRuntimeInfo.connectState != SyncState.UNVERIFIED) return
+        val host = syncRuntimeInfo.connectHostAddress ?: return
+        val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+        val result =
+            syncClientApi.trustV2Cancel {
+                buildUrl(hostAndPort)
+            }
+        if (result is SuccessResult) {
+            logger.info { "cancelPairing released pending exchange on $host ${syncRuntimeInfo.port}" }
+        } else {
+            logger.info { "cancelPairing best-effort release failed $host ${syncRuntimeInfo.port}" }
+        }
+    }
+
     suspend fun showToken(syncRuntimeInfo: SyncRuntimeInfo) {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->

@@ -324,6 +324,14 @@ class GeneralSyncManager(
         } ?: callback(false)
     }
 
+    override fun cancelPairing(appInstanceId: String) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch {
+                syncHandler.cancelPairing()
+            }
+        }
+    }
+
     override fun updateAllowSend(
         appInstanceId: String,
         allowSend: Boolean,

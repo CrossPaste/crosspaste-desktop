@@ -86,6 +86,65 @@ class SyncDeviceManagerTest {
             assertEquals("My Device", capturedInfo.captured.noteName)
         }
 
+    // ========== cancelPairing ==========
+
+    @Test
+    fun cancelPairing_unverified_callsTrustV2Cancel() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            coEvery { deps.syncClientApi.trustV2Cancel(any()) } returns SuccessResult(true)
+
+            manager.cancelPairing(syncRuntimeInfo)
+
+            coVerify(exactly = 1) { deps.syncClientApi.trustV2Cancel(any()) }
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun cancelPairing_notUnverified_doesNothing() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+
+            manager.cancelPairing(syncRuntimeInfo)
+
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any()) }
+        }
+
+    @Test
+    fun cancelPairing_noConnectHostAddress_doesNothing() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo =
+                createSyncRuntimeInfo(
+                    connectState = SyncState.UNVERIFIED,
+                    connectHostAddress = null,
+                )
+
+            manager.cancelPairing(syncRuntimeInfo)
+
+            coVerify(exactly = 0) { deps.syncClientApi.trustV2Cancel(any()) }
+        }
+
+    @Test
+    fun cancelPairing_failure_isBestEffortWithoutStateChange() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            coEvery { deps.syncClientApi.trustV2Cancel(any()) } returns ConnectionRefused
+
+            manager.cancelPairing(syncRuntimeInfo)
+
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
     // ========== showToken ==========
 
     @Test

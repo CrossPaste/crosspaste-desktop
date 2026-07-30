@@ -226,6 +226,23 @@ class SyncClientApi(
             true
         }
 
+    // Best-effort release of our pending v2 exchange on the responder (trust
+    // dialog dismissed before confirm). The stored exchange owns one of the
+    // responder's token-refresh counts, so without this the SAS overlay lingers
+    // until closed manually (#4684). Idempotent server-side; peers older than
+    // the route just fail and the caller ignores the result.
+    suspend fun trustV2Cancel(toUrl: URLBuilder.() -> Unit): ClientApiResult =
+        request(logger, exceptionHandler, request = {
+            pasteClient.post(
+                "",
+                typeInfo<String>(),
+                urlBuilder = {
+                    toUrl()
+                    buildUrl("sync", "trust", "v2", "cancel")
+                },
+            )
+        }) { true }
+
     suspend fun showToken(toUrl: URLBuilder.() -> Unit): ClientApiResult =
         request(logger, exceptionHandler, request = {
             pasteClient.get(urlBuilder = {
