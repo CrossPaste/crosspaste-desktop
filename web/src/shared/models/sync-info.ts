@@ -11,7 +11,7 @@ export interface AppInfo {
 }
 
 export interface Platform {
-  name: string; // "Windows" | "Macos" | "Linux" | "Android" | "iPhone" | "iPad"
+  name: string; // "Windows" | "Macos" | "Linux" | "Android" | "iPhone" | "iPad" | "HarmonyOS"
   arch: string;
   bitMode: number;
   version: string;

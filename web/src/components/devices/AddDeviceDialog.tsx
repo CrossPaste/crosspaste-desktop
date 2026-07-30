@@ -45,6 +45,7 @@ const PLATFORM_ICON: Record<string, typeof Laptop> = {
   Android: Smartphone,
   iPhone: Smartphone,
   iPad: Smartphone,
+  HarmonyOS: Smartphone,
 };
 
 export function AddDeviceDialog({

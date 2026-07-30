@@ -7,6 +7,7 @@ const PLATFORM_ICONS: Record<string, string> = {
   Android: "📱",
   iPhone: "📱",
   iPad: "📱",
+  HarmonyOS: "📱",
 };
 
 const STATUS_DOT: Record<string, string> = {

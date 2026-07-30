@@ -18,6 +18,8 @@ fun PlatformIcon(platform: Platform): Painter =
         ipad()
     } else if (platform.isAndroid()) {
         android()
+    } else if (platform.isHarmony()) {
+        harmony()
     } else if (platform.isChromeExtension()) {
         chromeExtension()
     } else {
