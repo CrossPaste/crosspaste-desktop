@@ -41,6 +41,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class GeneralSyncManager(
     override val realTimeSyncScope: CoroutineScope = namedScope(ioDispatcher, "GeneralSyncManager"),
+    private val pendingExchangeLedger: PendingExchangeLedger,
     private val syncResolver: SyncResolverApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val syncClientApi: SyncClientApi,
@@ -322,6 +323,19 @@ class GeneralSyncManager(
                 syncHandler.trustBySasCode(code, callback)
             }
         } ?: callback(false)
+    }
+
+    override fun cancelPairing(appInstanceId: String) {
+        // Capture the generation of the exchange the closing dialog owns,
+        // synchronously: Compose disposes the old dialog before a reopened one
+        // fires its warm-up, so whatever the ledger holds right now is ours to
+        // cancel. No record → nothing we own → no request at all.
+        val generation = pendingExchangeLedger.current(appInstanceId) ?: return
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            realTimeSyncScope.launch {
+                syncHandler.cancelPairing(generation)
+            }
+        }
     }
 
     override fun updateAllowSend(

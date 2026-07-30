@@ -13,6 +13,7 @@ import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
@@ -35,7 +36,11 @@ import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getPlatformUtils
 import io.ktor.server.netty.*
+import io.ktor.util.reflect.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.koin.core.context.GlobalContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -46,6 +51,8 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class SyncTest : KoinTest {
 
@@ -64,6 +71,8 @@ class SyncTest : KoinTest {
     private val clientSecureIO by inject<SecureIO>(named("clientSecureIO"))
 
     private val syncClientApi by inject<SyncClientApi>()
+
+    private val pasteClient by inject<PasteClient>()
 
     companion object {
 
@@ -263,5 +272,115 @@ class SyncTest : KoinTest {
         assertTrue(result is SuccessResult)
 
         runBlocking { pasteServer.stop() }
+    }
+
+    private suspend fun exchangeAndAwaitPending(exchangeGeneration: Long) {
+        val exchangeResult =
+            syncClientApi.exchangeKeys(serverAppInfo.appInstanceId, exchangeGeneration) {
+                buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+            }
+        assertTrue(exchangeResult is SuccessResult)
+
+        // The exchange parks one token-refresh count and one pending verifier
+        // on the responder (both updated asynchronously).
+        withTimeout(5.seconds) {
+            appTokenApi.refresh.first { it }
+            appTokenApi.pendingVerifiers.first { clientAppInfo.appInstanceId in it }
+        }
+    }
+
+    @Test
+    fun testV2ExchangeCancelReleasesPendingExchange() {
+        runBlocking {
+            pasteServer.start()
+
+            exchangeAndAwaitPending(exchangeGeneration = 1000L)
+
+            val cancelResult =
+                syncClientApi.trustV2Cancel(1000L) {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(cancelResult is SuccessResult)
+
+            // Cancel funnels through the unified release path: the verifier is
+            // removed and the refresh count drains back to zero (#4684).
+            withTimeout(5.seconds) {
+                appTokenApi.refresh.first { !it }
+                appTokenApi.pendingVerifiers.first { it.isEmpty() }
+            }
+
+            // The pending exchange was consumed, so a late confirm cannot match.
+            val confirmResult =
+                syncClientApi.trustV2Confirm(serverAppInfo.appInstanceId, "localhost") {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(confirmResult is FailureResult)
+
+            pasteServer.stop()
+        }
+    }
+
+    @Test
+    fun testV2StaleCancelDoesNotReleaseNewerExchange() {
+        runBlocking {
+            pasteServer.start()
+
+            exchangeAndAwaitPending(exchangeGeneration = 1000L)
+
+            // A second exchange supersedes the first entry under a distinct
+            // client-generated generation.
+            exchangeAndAwaitPending(exchangeGeneration = 2000L)
+
+            // The stale cancel names the superseded exchange: the responder
+            // must keep the current one alive.
+            val staleCancel =
+                syncClientApi.trustV2Cancel(1000L) {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(staleCancel is SuccessResult)
+            delay(200.milliseconds)
+            assertTrue(appTokenApi.refresh.value)
+            assertTrue(clientAppInfo.appInstanceId in appTokenApi.pendingVerifiers.value)
+
+            // Cancelling the current generation releases it.
+            val currentCancel =
+                syncClientApi.trustV2Cancel(2000L) {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                }
+            assertTrue(currentCancel is SuccessResult)
+            withTimeout(5.seconds) {
+                appTokenApi.refresh.first { !it }
+                appTokenApi.pendingVerifiers.first { it.isEmpty() }
+            }
+
+            pasteServer.stop()
+        }
+    }
+
+    @Test
+    fun testV2CancelWithoutGenerationHeaderKeepsLegacySemantics() {
+        runBlocking {
+            pasteServer.start()
+
+            exchangeAndAwaitPending(exchangeGeneration = 1000L)
+
+            // Callers without the generation header (older clients, the browser
+            // extension) keep the original unconditional-release behaviour.
+            pasteClient.post(
+                "",
+                typeInfo<String>(),
+                urlBuilder = {
+                    buildUrl(HostAndPort("localhost", readWritePort.getValue()))
+                    buildUrl("sync", "trust", "v2", "cancel")
+                },
+            )
+
+            withTimeout(5.seconds) {
+                appTokenApi.refresh.first { !it }
+                appTokenApi.pendingVerifiers.first { it.isEmpty() }
+            }
+
+            pasteServer.stop()
+        }
     }
 }

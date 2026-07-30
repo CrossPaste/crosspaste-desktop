@@ -15,6 +15,7 @@ import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SyncDeviceManager(
+    private val pendingExchangeLedger: PendingExchangeLedger,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -48,8 +49,13 @@ class SyncDeviceManager(
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+                // Record the generation BEFORE sending: if the request lands
+                // but the response is lost, we still hold the marker needed to
+                // cancel the responder's orphaned entry.
+                val generation = pendingExchangeLedger.nextGeneration()
+                pendingExchangeLedger.record(syncRuntimeInfo.appInstanceId, generation)
                 val result =
-                    syncClientApi.exchangeKeys(syncRuntimeInfo.appInstanceId) {
+                    syncClientApi.exchangeKeys(syncRuntimeInfo.appInstanceId, generation) {
                         buildUrl(hostAndPort)
                     }
                 if (result is SuccessResult) {
@@ -64,6 +70,37 @@ class SyncDeviceManager(
                     )
                 }
             }
+        }
+    }
+
+    /**
+     * Best-effort release of the pending v2 exchange we opened on the peer
+     * (#4684). Gated by ownership, not connect state: [generation] was
+     * captured from the ledger at the abandon instant, and the cancel is only
+     * sent while the ledger still holds that exact generation — a reopened
+     * dialog's newer exchange replaces the record, so a stale cancel consumes
+     * nothing. Failures are ignored: pairing is being abandoned anyway, and
+     * the peer's entry self-heals when a later exchange from us replaces it.
+     */
+    suspend fun cancelPairing(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        generation: Long,
+    ) {
+        val appInstanceId = syncRuntimeInfo.appInstanceId
+        val host = syncRuntimeInfo.connectHostAddress ?: return
+        if (!pendingExchangeLedger.consume(appInstanceId, generation)) {
+            logger.info { "cancelPairing skipped for $appInstanceId (exchange superseded or consumed)" }
+            return
+        }
+        val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+        val result =
+            syncClientApi.trustV2Cancel(generation) {
+                buildUrl(hostAndPort)
+            }
+        if (result is SuccessResult) {
+            logger.info { "cancelPairing released pending exchange on $host ${syncRuntimeInfo.port}" }
+        } else {
+            logger.info { "cancelPairing best-effort release failed $host ${syncRuntimeInfo.port}" }
         }
     }
 

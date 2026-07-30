@@ -1,9 +1,15 @@
 package com.crosspaste.app
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class AppTokenServiceTest {
 
@@ -34,5 +40,82 @@ class AppTokenServiceTest {
     fun `token characters are all decimal digits`() {
         val service = createService()
         assertTrue(service.token.value.all { it in '0'..'9' })
+    }
+
+    @Test
+    fun `releaseVerifier releases exactly one count per pending verifier`() {
+        val service = createService()
+        runBlocking {
+            service.addPendingVerifier("a")
+            service.startRefresh(showToken = true)
+            service.addPendingVerifier("b")
+            service.startRefresh(showToken = true)
+            withTimeout(5.seconds) {
+                service.refresh.first { it }
+                service.pendingVerifiers.first { it == setOf("a", "b") }
+            }
+
+            service.releaseVerifier("a")
+            withTimeout(5.seconds) {
+                service.pendingVerifiers.first { "a" !in it }
+            }
+
+            // Releasing an already-released or unknown verifier must not
+            // consume the count still owned by "b".
+            service.releaseVerifier("a")
+            service.releaseVerifier("unknown")
+            delay(200.milliseconds)
+            assertTrue(service.refresh.value)
+
+            service.releaseVerifier("b")
+            withTimeout(5.seconds) {
+                service.refresh.first { !it }
+                service.pendingVerifiers.first { it.isEmpty() }
+            }
+        }
+    }
+
+    @Test
+    fun `release enqueued right after acquire cannot orphan the refresh count`() {
+        val service = createService()
+        runBlocking {
+            service.addPendingVerifier("a")
+            service.startRefresh(showToken = true)
+            // Enqueued after the increment, so the single-consumer command
+            // queue can never process it first — the interleaving that
+            // previously left an orphaned count driving the refresh loop.
+            service.releaseVerifier("a")
+            // FIFO marker: once it is visible, every prior command has run.
+            service.addPendingVerifier("marker")
+            withTimeout(5.seconds) {
+                service.pendingVerifiers.first { "marker" in it }
+            }
+            assertFalse(service.refresh.value)
+            assertEquals(setOf("marker"), service.pendingVerifiers.value)
+        }
+    }
+
+    @Test
+    fun `releaseVerifier hideToken hides overlay while other counts keep refreshing`() {
+        val service = createService()
+        runBlocking {
+            // One verifier-owned count plus one anonymous count (e.g. the local
+            // pairing-code screen keeping the token rotation alive).
+            service.addPendingVerifier("a")
+            service.startRefresh(showToken = true)
+            service.startRefresh(showToken = false)
+            withTimeout(5.seconds) {
+                service.showToken.first { it }
+                service.refresh.first { it }
+            }
+
+            service.releaseVerifier("a", hideToken = true)
+
+            withTimeout(5.seconds) {
+                service.showToken.first { !it }
+            }
+            // The anonymous count is untouched: the refresh loop keeps running.
+            assertTrue(service.refresh.value)
+        }
     }
 }

@@ -221,6 +221,10 @@ class GeneralSyncHandler(
         emitEvent(SyncEvent.ExchangeKeysForPairing(currentSyncRuntimeInfo))
     }
 
+    override suspend fun cancelPairing(generation: Long) {
+        emitEvent(SyncEvent.CancelPairing(currentSyncRuntimeInfo, generation))
+    }
+
     override suspend fun showToken() {
         emitEvent(SyncEvent.ShowToken(currentSyncRuntimeInfo))
     }

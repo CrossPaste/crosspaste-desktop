@@ -64,8 +64,7 @@ class TestServerModule(
                     { _, _, _ -> },
                     { appInstanceId ->
                         if (pendingKeyExchangeStore.remove(appInstanceId)) {
-                            appTokenApi.removePendingVerifier(appInstanceId)
-                            appTokenApi.stopRefresh(hideToken = false)
+                            appTokenApi.releaseVerifier(appInstanceId)
                         }
                     },
                     pairingVersionCoordinator,

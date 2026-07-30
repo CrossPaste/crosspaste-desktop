@@ -121,6 +121,9 @@ class MarketingSyncManager : SyncManager {
     ) {
     }
 
+    override fun cancelPairing(appInstanceId: String) {
+    }
+
     override fun refresh(
         ids: List<String>,
         callback: () -> Unit,

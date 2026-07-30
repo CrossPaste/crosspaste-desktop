@@ -20,6 +20,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.PendingExchangeLedger
 import com.crosspaste.sync.SyncDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
@@ -125,6 +126,7 @@ class WsModuleDependencyTest : KoinTest {
                         localPlatform = get(),
                         lazyPasteBonjourService = lazy { get() },
                         networkInterfaceService = get(),
+                        pendingExchangeLedger = PendingExchangeLedger(),
                         ratingPromptManager = get(),
                         secureKeyPairSerializer = get(),
                         secureStore = get(),

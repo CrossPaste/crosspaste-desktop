@@ -96,30 +96,33 @@ export const SyncApi = {
    * v2 SAS pairing, step 1 — POST /sync/trust/v2/exchange.
    * Sends our signed public keys; the desktop computes and DISPLAYS the SAS.
    * Returns the desktop's verified key-exchange response, or throws when the
-   * response signature/keys don't verify.
+   * response signature/keys don't verify. `requestTimestamp` is our signed
+   * request timestamp — the generation marker the desktop stores with the
+   * pending exchange; pass it to [cancelV2] so only THIS exchange is released.
    */
   async exchangeV2(config: {
     host: string;
     port: number;
     appInstanceId: string;
     targetAppInstanceId: string;
-  }): Promise<KeyExchangeResponse> {
+  }): Promise<KeyExchangeResponse & { requestTimestamp: number }> {
     const keys = await ensureKeys();
     const requestJson = await CrossPasteCrypto.buildKeyExchangeRequest(
       toInt8Array(keys.signPrivateKey),
       toInt8Array(keys.signPublicKey),
       toInt8Array(keys.cryptPublicKey),
     );
+    const request = JSON.parse(requestJson) as { timestamp: number };
     const response = await apiPost<KeyExchangeResponse>(
       toRequestConfig(config),
       "/sync/trust/v2/exchange",
-      JSON.parse(requestJson),
+      request,
     );
     const valid = await CrossPasteCrypto.verifyKeyExchangeResponse(JSON.stringify(response));
     if (!valid) {
       throw new Error("Key exchange response failed verification");
     }
-    return response;
+    return { ...response, requestTimestamp: request.timestamp };
   },
 
   /**
@@ -175,15 +178,26 @@ export const SyncApi = {
   /**
    * Release our pending v2 exchange on the desktop (dialog closed before
    * confirm) — POST /sync/trust/v2/cancel. Idempotent; desktops older than
-   * this route simply fail and the caller swallows it.
+   * this route simply fail and the caller swallows it. `exchangeGeneration`
+   * is [exchangeV2]'s requestTimestamp: desktops that understand the header
+   * release only that exact exchange, so a cancel delayed past a newer
+   * exchange (fast reconnect) can never tear the newer one down. Older
+   * desktops ignore the header and keep unconditional-release semantics.
    */
-  async cancelV2(config: {
-    host: string;
-    port: number;
-    appInstanceId: string;
-    targetAppInstanceId: string;
-  }): Promise<void> {
-    await apiPost<unknown>(toRequestConfig(config), "/sync/trust/v2/cancel");
+  async cancelV2(
+    config: {
+      host: string;
+      port: number;
+      appInstanceId: string;
+      targetAppInstanceId: string;
+    },
+    exchangeGeneration?: number,
+  ): Promise<void> {
+    const extraHeaders =
+      exchangeGeneration === undefined
+        ? undefined
+        : { "crosspaste-exchange-timestamp": String(exchangeGeneration) };
+    await apiPost<unknown>(toRequestConfig(config), "/sync/trust/v2/cancel", undefined, extraHeaders);
   },
 
   /**

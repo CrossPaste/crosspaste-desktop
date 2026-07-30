@@ -62,6 +62,7 @@ class SyncResolverTest {
                 every { getCurrentUseNetworkInterfaces() } returns
                     listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
             }
+        val pendingExchangeLedger: PendingExchangeLedger = PendingExchangeLedger()
         val ratingPromptManager: RatingPromptManager = mockk(relaxed = true)
         val secureKeyPairSerializer: com.crosspaste.secure.SecureKeyPairSerializer = mockk(relaxed = true)
         val secureStore: SecureStore = mockk(relaxed = true)
@@ -92,6 +93,7 @@ class SyncResolverTest {
                 localPlatform = localPlatform,
                 lazyPasteBonjourService = lazy { pasteBonjourService },
                 networkInterfaceService = networkInterfaceService,
+                pendingExchangeLedger = pendingExchangeLedger,
                 ratingPromptManager = ratingPromptManager,
                 secureKeyPairSerializer = secureKeyPairSerializer,
                 secureStore = secureStore,
@@ -1293,7 +1295,7 @@ class SyncResolverTest {
             deps.stubDbRead(syncRuntimeInfo)
             every { deps.secureStore.secureKeyPair } returns secureKeyPair
             coEvery { secureKeyPair.getCryptPublicKeyBytes(any()) } returns localKey
-            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns SuccessResult(response)
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any(), any()) } returns SuccessResult(response)
             coEvery { deps.syncClientApi.trustV2Confirm(any(), any(), any()) } returns SuccessResult(true)
             coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns SyncTestFixtures.createSyncInfo()
             coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
@@ -1311,6 +1313,9 @@ class SyncResolverTest {
             assertEquals(SyncState.CONNECTED, capturedInfo.captured.connectState)
             coVerify { deps.syncClientApi.trustV2Confirm(syncRuntimeInfo.appInstanceId, any(), any()) }
             coVerify { deps.secureStore.saveCryptPublicKey(syncRuntimeInfo.appInstanceId, remoteKey) }
+            // The confirm consumed the responder's exchange: the ledger record
+            // must be cleared so a later dialog dismissal cancels nothing.
+            assertNull(deps.pendingExchangeLedger.current(syncRuntimeInfo.appInstanceId))
             verify { deps.ratingPromptManager.trackSignificantAction() }
         }
 
@@ -1328,7 +1333,7 @@ class SyncResolverTest {
             deps.stubDbRead(syncRuntimeInfo)
             every { deps.secureStore.secureKeyPair } returns secureKeyPair
             coEvery { secureKeyPair.getCryptPublicKeyBytes(any()) } returns localKey
-            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any(), any()) } returns
                 SuccessResult(createKeyExchangeResponse(remoteKey))
 
             var callbackResult: Boolean? = null
@@ -1341,6 +1346,9 @@ class SyncResolverTest {
             assertEquals(false, callbackResult)
             coVerify(exactly = 0) { deps.syncClientApi.trustV2Confirm(any(), any(), any()) }
             coVerify(exactly = 0) { deps.secureStore.saveCryptPublicKey(any(), any()) }
+            // The mismatched exchange still exists on the responder: keep its
+            // ledger record so abandoning the dialog can cancel it.
+            assertNotNull(deps.pendingExchangeLedger.current(syncRuntimeInfo.appInstanceId))
         }
 
     @Test
@@ -1351,7 +1359,7 @@ class SyncResolverTest {
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
 
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any(), any()) } returns
                 FailureResult(PasteException(StandardErrorCode.EXCHANGE_FAIL.toErrorCode(), "exchange failed"))
 
             var callbackResult: Boolean? = null
@@ -1377,7 +1385,7 @@ class SyncResolverTest {
             deps.stubDbRead(syncRuntimeInfo)
             every { deps.secureStore.secureKeyPair } returns secureKeyPair
             coEvery { secureKeyPair.getCryptPublicKeyBytes(any()) } returns localKey
-            coEvery { deps.syncClientApi.exchangeKeys(any(), any()) } returns
+            coEvery { deps.syncClientApi.exchangeKeys(any(), any(), any()) } returns
                 SuccessResult(createKeyExchangeResponse(remoteKey))
             coEvery { deps.syncClientApi.trustV2Confirm(any(), any(), any()) } returns
                 FailureResult(PasteException(StandardErrorCode.TRUST_FAIL.toErrorCode(), "confirm failed"))
@@ -1389,6 +1397,20 @@ class SyncResolverTest {
 
             assertEquals(false, callbackResult)
             coVerify(exactly = 0) { deps.secureStore.saveCryptPublicKey(any(), any()) }
+        }
+
+    @Test
+    fun cancelPairing_dispatchesToSyncDeviceManager() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+
+            deps.stubDbRead(syncRuntimeInfo)
+
+            resolver.emitEvent(SyncEvent.CancelPairing(syncRuntimeInfo, generation = 123L))
+
+            coVerify(exactly = 1) { deps.syncDeviceManager.cancelPairing(syncRuntimeInfo, 123L) }
         }
 
     // ========== G. Event dispatch and callback ==========

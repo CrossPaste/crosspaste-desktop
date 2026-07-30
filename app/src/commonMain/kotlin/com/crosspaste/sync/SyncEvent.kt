@@ -73,6 +73,17 @@ sealed interface SyncEvent {
         override fun toString(): String = "ExchangeKeysForPairing ${syncRuntimeInfo.appInstanceId}"
     }
 
+    data class CancelPairing(
+        override val syncRuntimeInfo: SyncRuntimeInfo,
+        // Generation of the exchange the abandoned dialog owned, captured from
+        // the PendingExchangeLedger synchronously at the UI call site: a newer
+        // exchange from a reopened dialog replaces the ledger record, so this
+        // stale cancel consumes nothing.
+        val generation: Long,
+    ) : SyncRunTimeInfoEvent {
+        override fun toString(): String = "CancelPairing ${syncRuntimeInfo.appInstanceId}"
+    }
+
     data class ShowToken(
         override val syncRuntimeInfo: SyncRuntimeInfo,
     ) : SyncRunTimeInfoEvent {

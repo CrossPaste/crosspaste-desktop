@@ -58,6 +58,10 @@ interface SyncManager : SyncRoutingApi {
         callback: (Boolean) -> Unit,
     )
 
+    // Best-effort release of the pending v2 exchange on the peer when the user
+    // abandons pairing before confirm. Routes to POST /sync/trust/v2/cancel.
+    fun cancelPairing(appInstanceId: String)
+
     fun refresh(
         ids: List<String> = listOf(),
         callback: () -> Unit = {},

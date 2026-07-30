@@ -6,7 +6,12 @@ data class PendingKeyExchange(
     val signPublicKey: ByteArray,
     val cryptPublicKey: ByteArray,
     val sas: Int,
+    // Server clock at storage time — drives the TTL only.
     val timestamp: Long,
+    // The INITIATOR-generated marker carried as the signed request timestamp:
+    // a client cancel is honored only when it echoes this exact value, so a
+    // stale cancel can never release a newer exchange (#4684).
+    val generation: Long,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -15,6 +20,7 @@ data class PendingKeyExchange(
         if (!cryptPublicKey.contentEquals(other.cryptPublicKey)) return false
         if (sas != other.sas) return false
         if (timestamp != other.timestamp) return false
+        if (generation != other.generation) return false
         return true
     }
 
@@ -23,6 +29,7 @@ data class PendingKeyExchange(
         result = 31 * result + cryptPublicKey.contentHashCode()
         result = 31 * result + sas
         result = 31 * result + timestamp.hashCode()
+        result = 31 * result + generation.hashCode()
         return result
     }
 }
@@ -84,4 +91,15 @@ class PendingKeyExchangeStore {
 
     /** Removes the peer's entry, reporting whether one existed. */
     fun remove(appInstanceId: String): Boolean = store.remove(appInstanceId) != null
+
+    /**
+     * Generation check for client-initiated cancellation: true when the peer's
+     * stored exchange (live OR expired — an expired entry still owns its
+     * token-refresh count) carries exactly [generation]. A stale cancel from a
+     * superseded exchange therefore never matches the current entry.
+     */
+    fun generationMatches(
+        appInstanceId: String,
+        generation: Long,
+    ): Boolean = store[appInstanceId]?.generation == generation
 }
