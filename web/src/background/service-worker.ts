@@ -817,11 +817,18 @@ async function beginPairing(
   return { pairingMode, attemptId: seq };
 }
 
+type PairingV3Config = {
+  host: string;
+  port: number;
+  appInstanceId: string;
+  targetAppInstanceId: string;
+};
+
 /** Create a fresh v3 initiator session against the target (intent → offer). */
 async function startV3Session(
   appInstanceId: string,
   targetAppInstanceId: string,
-  config: { host: string; port: number; appInstanceId: string; targetAppInstanceId: string },
+  config: PairingV3Config,
 ): Promise<PairingV3Initiator> {
   // Best-effort: surfaces the pairing screen (and acceptance window) on the
   // desktop. May be disabled by desktop config — the user can open it by hand.
@@ -1042,7 +1049,7 @@ async function pairV2(attempt: ConnectingAttempt, token: number): Promise<void> 
 async function restartV3Session(
   attempt: ConnectingAttempt,
   appInstanceId: string,
-  config: { host: string; port: number; appInstanceId: string; targetAppInstanceId: string },
+  config: PairingV3Config,
 ): Promise<void> {
   await releaseAttempt(attempt);
   // The user asked to cancel while we were finalizing: don't open a brand-new
@@ -1056,6 +1063,26 @@ const V3_COMMIT_RETRY_DELAY_MS = 300;
 const V3_ROTATION_POLL_ATTEMPTS = 5;
 const V3_ROTATION_POLL_DELAY_MS = 200;
 
+function delayMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Replace the dead session so a later attempt starts clean, swallowing the
+ * failure when the desktop is unreachable — the attempt is over either way.
+ */
+async function restartV3SessionQuietly(
+  attempt: ConnectingAttempt,
+  appInstanceId: string,
+  config: PairingV3Config,
+): Promise<void> {
+  try {
+    await restartV3Session(attempt, appInstanceId, config);
+  } catch {
+    // Desktop unreachable.
+  }
+}
+
 /**
  * Re-POST the byte-identical intent until the acceptor publishes a rotated
  * PIN generation. The server rotates asynchronously after a proof failure, so
@@ -1064,7 +1091,7 @@ const V3_ROTATION_POLL_DELAY_MS = 200;
  * the last offer if no rotation shows up in time.
  */
 async function refreshOfferForNewGeneration(
-  config: { host: string; port: number; appInstanceId: string; targetAppInstanceId: string },
+  config: PairingV3Config,
   v3: PairingV3Initiator,
 ): Promise<string> {
   const previousGeneration = v3.tokenGeneration();
@@ -1076,10 +1103,90 @@ async function refreshOfferForNewGeneration(
       return offerJson;
     }
     if (i < V3_ROTATION_POLL_ATTEMPTS - 1) {
-      await new Promise((resolve) => setTimeout(resolve, V3_ROTATION_POLL_DELAY_MS));
+      await delayMs(V3_ROTATION_POLL_DELAY_MS);
     }
   }
   return offerJson;
+}
+
+/**
+ * Recover from a failed proof POST; always throws. One wrong PIN
+ * (PROOF_INVALID) or a timeout (PIN_EXPIRED) kills the generation
+ * server-side: refresh the offer (byte-identical intent) so the desktop shows
+ * a fresh PIN, then ask the user to re-enter via "pin_expired". Any other
+ * failure (network flake, transient server error, or a proof that WAS
+ * accepted while its response got lost) leaves a session that cannot be
+ * proven again — replace it with a fresh one so the user can retry with the
+ * new PIN, and surface the original error.
+ */
+async function recoverFromV3ProofFailure(
+  attempt: ConnectingAttempt,
+  v3: PairingV3Initiator,
+  appInstanceId: string,
+  config: PairingV3Config,
+  e: unknown,
+): Promise<never> {
+  if (
+    e instanceof SyncApiError &&
+    (e.errorCode === StandardErrorCode.PAIRING_PIN_EXPIRED ||
+      e.errorCode === StandardErrorCode.PAIRING_PROOF_INVALID)
+  ) {
+    try {
+      const offerJson = await refreshOfferForNewGeneration(config, v3);
+      const refusal = await v3.acceptOffer(offerJson);
+      if (refusal === null || refusal === undefined) {
+        throw new Error("pin_expired");
+      }
+    } catch (inner) {
+      if (inner instanceof Error && inner.message === "pin_expired") throw inner;
+      // Refresh refused (e.g. session consumed): fall through to restart.
+    }
+    await restartV3Session(attempt, appInstanceId, config);
+    throw new Error("pin_expired");
+  }
+  await restartV3SessionQuietly(attempt, appInstanceId, config);
+  throw e;
+}
+
+/**
+ * POST the commit until an ACK arrives. The commit bytes are deterministic
+ * for this session, so bounded retries on transport failure are idempotent —
+ * mirrors the desktop initiator. This closes most of the "acceptor trusted us
+ * but our ACK got lost" window. On definitive refusal or exhausted retries
+ * the session is replaced (clearing `finalizing` first so a pending cancel is
+ * honoured) and the failure is thrown.
+ */
+async function commitV3WithRetries(
+  attempt: ConnectingAttempt,
+  appInstanceId: string,
+  config: PairingV3Config,
+  commitJson: string,
+  syncInfo: SyncInfo,
+): Promise<string> {
+  let lastCommitError: unknown = null;
+  for (let i = 0; i < V3_COMMIT_ATTEMPTS; i++) {
+    try {
+      return await SyncApi.pairingV3Commit(config, commitJson, syncInfo);
+    } catch (e) {
+      if (e instanceof SyncApiError) {
+        // Definitive refusal — the session is consumed or invalid. Replace
+        // it so the next attempt does not hit a dead engine.
+        attempt.finalizing = false;
+        await restartV3SessionQuietly(attempt, appInstanceId, config);
+        throw e;
+      }
+      lastCommitError = e;
+      if (i < V3_COMMIT_ATTEMPTS - 1) {
+        await delayMs(V3_COMMIT_RETRY_DELAY_MS);
+      }
+    }
+  }
+  // All commit attempts lost. The acceptor may have trusted us already; a
+  // fresh session on the next try converges both sides (it re-persists the
+  // same long-term keys).
+  attempt.finalizing = false;
+  await restartV3SessionQuietly(attempt, appInstanceId, config);
+  throw lastCommitError instanceof Error ? lastCommitError : new Error(String(lastCommitError));
 }
 
 /** v3: SPAKE2 proof with the PIN shown on the desktop's device card. */
@@ -1087,7 +1194,7 @@ async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> 
   const v3 = attempt.v3;
   if (!v3) throw new Error("Not connected");
   const appInstanceId = await getAppInstanceId();
-  const config = {
+  const config: PairingV3Config = {
     host: attempt.host,
     port: attempt.port,
     appInstanceId,
@@ -1100,99 +1207,24 @@ async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> 
   try {
     proofResponseJson = await SyncApi.pairingV3Proof(config, proofJson);
   } catch (e) {
-    // One wrong PIN (PROOF_INVALID) or a timeout (PIN_EXPIRED) kills the
-    // generation server-side. Refresh the offer (byte-identical intent) so the
-    // desktop shows a fresh PIN, then ask the user to re-enter.
-    if (
-      e instanceof SyncApiError &&
-      (e.errorCode === StandardErrorCode.PAIRING_PIN_EXPIRED ||
-        e.errorCode === StandardErrorCode.PAIRING_PROOF_INVALID)
-    ) {
-      try {
-        const offerJson = await refreshOfferForNewGeneration(config, v3);
-        const refusal = await v3.acceptOffer(offerJson);
-        if (refusal === null || refusal === undefined) {
-          throw new Error("pin_expired");
-        }
-      } catch (inner) {
-        if (inner instanceof Error && inner.message === "pin_expired") throw inner;
-        // Refresh refused (e.g. session consumed): fall through to restart.
-      }
-      await restartV3Session(attempt, appInstanceId, config);
-      throw new Error("pin_expired");
-    }
-    // Any other failure (network flake, transient server error, or a proof
-    // that WAS accepted while its response got lost): this session cannot be
-    // proven again — replace it with a fresh one so the user can retry with
-    // the new PIN, and surface the original error.
-    try {
-      await restartV3Session(attempt, appInstanceId, config);
-    } catch {
-      // Desktop unreachable — the attempt is over either way.
-    }
-    throw e;
+    return recoverFromV3ProofFailure(attempt, v3, appInstanceId, config, e);
   }
   if (!(await v3.verifyProofResponse(proofResponseJson))) {
     // The engine hard-failed (possible MITM); it cannot build another proof.
     // Replace the session so the next attempt starts clean with a fresh PIN.
-    try {
-      await restartV3Session(attempt, appInstanceId, config);
-    } catch {
-      // Desktop unreachable.
-    }
+    await restartV3SessionQuietly(attempt, appInstanceId, config);
     throw new Error("verification_failed");
   }
-  // The commit bytes are deterministic for this session, so bounded retries
-  // on transport failure are idempotent — mirrors the desktop initiator. This
-  // closes most of the "acceptor trusted us but our ACK got lost" window.
   const commitJson = await v3.buildCommit();
   const syncInfo = buildExtensionSyncInfo(appInstanceId);
   attempt.finalizing = true;
   try {
-    let ackJson: string | null = null;
-    let lastCommitError: unknown = null;
-    for (let i = 0; i < V3_COMMIT_ATTEMPTS && ackJson === null; i++) {
-      try {
-        ackJson = await SyncApi.pairingV3Commit(config, commitJson, syncInfo);
-      } catch (e) {
-        if (e instanceof SyncApiError) {
-          // Definitive refusal — the session is consumed or invalid. Replace
-          // it so the next attempt does not hit a dead engine.
-          attempt.finalizing = false;
-          try {
-            await restartV3Session(attempt, appInstanceId, config);
-          } catch {
-            // Desktop unreachable.
-          }
-          throw e;
-        }
-        lastCommitError = e;
-        if (i < V3_COMMIT_ATTEMPTS - 1) {
-          await new Promise((resolve) => setTimeout(resolve, V3_COMMIT_RETRY_DELAY_MS));
-        }
-      }
-    }
-    if (ackJson === null) {
-      // All commit attempts lost. The acceptor may have trusted us already; a
-      // fresh session on the next try converges both sides (it re-persists the
-      // same long-term keys).
-      attempt.finalizing = false;
-      try {
-        await restartV3Session(attempt, appInstanceId, config);
-      } catch {
-        // Desktop unreachable.
-      }
-      throw lastCommitError instanceof Error ? lastCommitError : new Error(String(lastCommitError));
-    }
+    const ackJson = await commitV3WithRetries(attempt, appInstanceId, config, commitJson, syncInfo);
     if (!(await v3.verifyCommitAck(ackJson))) {
       // Invalid receipt after an accepted commit: hard failure — replace the
       // session so a retry is possible at all.
       attempt.finalizing = false;
-      try {
-        await restartV3Session(attempt, appInstanceId, config);
-      } catch {
-        // Desktop unreachable.
-      }
+      await restartV3SessionQuietly(attempt, appInstanceId, config);
       throw new Error("verification_failed");
     }
     await completePairing(attempt, {
