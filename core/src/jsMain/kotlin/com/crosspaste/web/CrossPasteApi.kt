@@ -2,11 +2,24 @@
 
 package com.crosspaste.web
 
+import com.crosspaste.dto.pairing.v3.PairingCommitAckV3
+import com.crosspaste.dto.pairing.v3.PairingOfferV3
+import com.crosspaste.dto.pairing.v3.PairingProofResponseV3
+import com.crosspaste.dto.secure.KeyExchangeRequest
+import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.dto.secure.PairingRequest
+import com.crosspaste.dto.secure.TrustConfirmRequest
+import com.crosspaste.dto.secure.TrustConfirmResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.pairing.v3.NoblePakeEcOps
+import com.crosspaste.pairing.v3.PairingV3InitiatorEngine
+import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.paste.PasteData
+import com.crosspaste.secure.ECDHKeyPairImpl
+import com.crosspaste.secure.ECDSAKeyPairImpl
+import com.crosspaste.secure.SecureKeyPair
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.getCodecsUtils
@@ -170,4 +183,256 @@ object CrossPasteCrypto {
             val pubKey = serializer.decodeSignPublicKey(derBytes)
             serializer.encodeSignPublicKey(pubKey)
         }
+
+    // region Pairing v2 (SAS / ECDH)
+
+    /**
+     * Build a signed KeyExchangeRequest JSON for `POST /sync/trust/v2/exchange`.
+     */
+    @Suppress("OPT_IN_USAGE")
+    fun buildKeyExchangeRequest(
+        signPrivateKeyDer: ByteArray,
+        signPublicKeyDer: ByteArray,
+        cryptPublicKeyDer: ByteArray,
+    ): Promise<String> =
+        GlobalScope.promise {
+            val serializer = SecureKeyPairSerializer()
+            val privateKey = serializer.decodeSignPrivateKey(signPrivateKeyDer)
+            val timestamp =
+                kotlin.time.Clock.System
+                    .now()
+                    .toEpochMilliseconds()
+            val request =
+                KeyExchangeRequest(
+                    signPublicKey = signPublicKeyDer,
+                    cryptPublicKey = cryptPublicKeyDer,
+                    timestamp = timestamp,
+                    signature =
+                        CryptographyUtils.signKeyExchangeRequest(
+                            privateKey,
+                            signPublicKeyDer,
+                            cryptPublicKeyDer,
+                            timestamp,
+                        ),
+                )
+            jsonUtils.JSON.encodeToString(request)
+        }
+
+    /**
+     * Verify a KeyExchangeResponse's self-signature (the response carries the
+     * responder's sign public key; trust comes from the SAS comparison, not
+     * from this signature alone).
+     */
+    @Suppress("OPT_IN_USAGE")
+    fun verifyKeyExchangeResponse(responseJson: String): Promise<Boolean> =
+        GlobalScope.promise {
+            runCatching {
+                val serializer = SecureKeyPairSerializer()
+                val response = jsonUtils.JSON.decodeFromString<KeyExchangeResponse>(responseJson)
+                val publicKey = serializer.decodeSignPublicKey(response.signPublicKey)
+                // The crypt key must decode as a valid P-256 ECDH key before use.
+                serializer.decodeCryptPublicKey(response.cryptPublicKey)
+                CryptographyUtils.verifyKeyExchangeResponse(publicKey, response)
+            }.getOrDefault(false)
+        }
+
+    /**
+     * Order-independent 6-digit SAS over the two DER ECDH public keys; must
+     * match the code displayed on the desktop after the exchange.
+     */
+    @Suppress("OPT_IN_USAGE")
+    fun computeSAS(
+        cryptPublicKeyA: ByteArray,
+        cryptPublicKeyB: ByteArray,
+    ): Promise<Int> =
+        GlobalScope.promise {
+            CryptographyUtils.computeSAS(cryptPublicKeyA, cryptPublicKeyB)
+        }
+
+    /** Build a signed TrustConfirmRequest JSON for `POST /sync/trust/v2/confirm`. */
+    @Suppress("OPT_IN_USAGE")
+    fun buildTrustConfirmRequest(signPrivateKeyDer: ByteArray): Promise<String> =
+        GlobalScope.promise {
+            val serializer = SecureKeyPairSerializer()
+            val privateKey = serializer.decodeSignPrivateKey(signPrivateKeyDer)
+            val timestamp =
+                kotlin.time.Clock.System
+                    .now()
+                    .toEpochMilliseconds()
+            val request =
+                TrustConfirmRequest(
+                    timestamp = timestamp,
+                    signature = CryptographyUtils.signTrustConfirm(privateKey, timestamp),
+                )
+            jsonUtils.JSON.encodeToString(request)
+        }
+
+    /** Verify a TrustConfirmResponse against the responder's sign public key. */
+    @Suppress("OPT_IN_USAGE")
+    fun verifyTrustConfirmResponse(
+        signPublicKeyDer: ByteArray,
+        responseJson: String,
+    ): Promise<Boolean> =
+        GlobalScope.promise {
+            runCatching {
+                val serializer = SecureKeyPairSerializer()
+                val publicKey = serializer.decodeSignPublicKey(signPublicKeyDer)
+                val response = jsonUtils.JSON.decodeFromString<TrustConfirmResponse>(responseJson)
+                CryptographyUtils.verifyTrustConfirmResponse(publicKey, response)
+            }.getOrDefault(false)
+        }
+
+    // endregion
 }
+
+/**
+ * Pairing v3 (SPAKE2 + PIN) initiator session — exposed to TypeScript.
+ *
+ * One instance drives one pairing attempt. All messages cross as JSON strings
+ * of the frozen v3 wire DTOs; the TypeScript side only moves them over HTTP.
+ * Construct via [createPairingV3Initiator].
+ */
+@JsExport
+class JsPairingV3Initiator internal constructor(
+    private val engine: PairingV3InitiatorEngine,
+) {
+
+    /** Intent JSON for `POST /sync/pairing/v3/intent`. Callable once. */
+    @Suppress("OPT_IN_USAGE")
+    fun createIntent(
+        targetAppInstanceId: String,
+        displayName: String,
+    ): Promise<String> =
+        GlobalScope.promise {
+            jsonUtils.JSON.encodeToString(engine.createIntent(targetAppInstanceId, displayName))
+        }
+
+    /**
+     * Byte-identical intent JSON for PIN-rotation refresh (re-POST to
+     * `/sync/pairing/v3/intent`, then feed the fresh offer to [acceptOffer]).
+     */
+    fun intentJson(): String = jsonUtils.JSON.encodeToString(engine.intent)
+
+    /**
+     * Validate the offer returned by the intent POST. Resolves to null when the
+     * offer is accepted (the desktop is now showing the PIN), or a
+     * PairingV3ErrorCode name / "MALFORMED" otherwise.
+     */
+    @Suppress("OPT_IN_USAGE")
+    fun acceptOffer(offerJson: String): Promise<String?> =
+        GlobalScope.promise {
+            val offer =
+                runCatching { jsonUtils.JSON.decodeFromString<PairingOfferV3>(offerJson) }
+                    .getOrNull() ?: return@promise "MALFORMED"
+            engine.acceptOffer(offer)?.name
+        }
+
+    /**
+     * Run SPAKE2 with the user-entered 6-digit PIN; resolves to the proof JSON
+     * for `POST /sync/pairing/v3/proof`. Rejects on malformed input.
+     */
+    @Suppress("OPT_IN_USAGE")
+    fun buildProof(pin: String): Promise<String> =
+        GlobalScope.promise {
+            val pinChars = pin.toCharArray()
+            try {
+                jsonUtils.JSON.encodeToString(engine.buildProof(pinChars))
+            } finally {
+                pinChars.fill('0')
+            }
+        }
+
+    /**
+     * Verify the acceptor's proof response. False is a hard failure (possible
+     * MITM or wrong acceptor state); the session cannot continue.
+     */
+    @Suppress("OPT_IN_USAGE")
+    fun verifyProofResponse(responseJson: String): Promise<Boolean> =
+        GlobalScope.promise {
+            val response =
+                runCatching { jsonUtils.JSON.decodeFromString<PairingProofResponseV3>(responseJson) }
+                    .getOrNull() ?: return@promise false
+            engine.verifyProofResponse(response)
+        }
+
+    /** Commit JSON for `POST /sync/pairing/v3/commit`. Deterministic; safe to retry. */
+    @Suppress("OPT_IN_USAGE")
+    fun buildCommit(): Promise<String> =
+        GlobalScope.promise {
+            jsonUtils.JSON.encodeToString(engine.buildCommit())
+        }
+
+    /**
+     * Verify the acceptor's commit receipt. True completes the pairing; persist
+     * [acceptorCryptPublicKey] and [acceptorSignPublicKey] as the peer's trusted keys.
+     */
+    @Suppress("OPT_IN_USAGE")
+    fun verifyCommitAck(ackJson: String): Promise<Boolean> =
+        GlobalScope.promise {
+            val ack =
+                runCatching { jsonUtils.JSON.decodeFromString<PairingCommitAckV3>(ackJson) }
+                    .getOrNull() ?: return@promise false
+            engine.verifyCommitAck(ack)
+        }
+
+    /** Cancel JSON for `POST /sync/pairing/v3/cancel`, or null before a session exists. */
+    fun buildCancel(): String? = engine.buildCancel()?.let { jsonUtils.JSON.encodeToString(it) }
+
+    fun acceptorCryptPublicKey(): ByteArray = engine.acceptorCryptPublicKey
+
+    fun acceptorSignPublicKey(): ByteArray = engine.acceptorSignPublicKey
+
+    /** Short acceptor key fingerprint for UI display only. */
+    @Suppress("OPT_IN_USAGE")
+    fun acceptorKeyFingerprintDisplay(): Promise<String> =
+        GlobalScope.promise {
+            engine.acceptorKeyFingerprintDisplay()
+        }
+
+    /** PIN expiry (epoch millis, ACCEPTOR's clock) — countdown display hint only. */
+    fun pinExpiresAt(): Double = engine.pinExpiresAt.toDouble()
+
+    fun tokenGeneration(): Double = engine.tokenGeneration.toDouble()
+
+    /** Clears key material; the session is unusable afterwards. */
+    fun destroy() {
+        engine.destroy()
+    }
+}
+
+/**
+ * Create a pairing v3 initiator session from the extension's stored DER keys.
+ */
+@Suppress("OPT_IN_USAGE", "NON_EXPORTABLE_TYPE")
+@JsExport
+fun createPairingV3Initiator(
+    appInstanceId: String,
+    signPublicKeyDer: ByteArray,
+    signPrivateKeyDer: ByteArray,
+    cryptPublicKeyDer: ByteArray,
+    cryptPrivateKeyDer: ByteArray,
+): Promise<JsPairingV3Initiator> =
+    GlobalScope.promise {
+        val serializer = SecureKeyPairSerializer()
+        val secureKeyPair =
+            SecureKeyPair(
+                signKeyPair =
+                    ECDSAKeyPairImpl(
+                        publicKey = serializer.decodeSignPublicKey(signPublicKeyDer),
+                        privateKey = serializer.decodeSignPrivateKey(signPrivateKeyDer),
+                    ),
+                cryptKeyPair =
+                    ECDHKeyPairImpl(
+                        publicKey = serializer.decodeCryptPublicKey(cryptPublicKeyDer),
+                        privateKey = serializer.decodeCryptPrivateKey(cryptPrivateKeyDer),
+                    ),
+            )
+        JsPairingV3Initiator(
+            PairingV3InitiatorEngine(
+                appInstanceId = appInstanceId,
+                secureKeyPair = secureKeyPair,
+                pakeProvider = Spake2PakeProvider(NoblePakeEcOps()),
+                secureKeyPairSerializer = serializer,
+            ),
+        )
+    }

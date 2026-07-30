@@ -9,7 +9,10 @@ type Phase = "input" | "token";
 interface Props {
   open: boolean;
   onClose: () => void;
-  onConnect: (host: string, port: number) => Promise<{ success: boolean; syncInfo?: SyncInfo; error?: string }>;
+  onConnect: (
+    host: string,
+    port: number,
+  ) => Promise<{ success: boolean; syncInfo?: SyncInfo; error?: string; pairingMode?: number }>;
   onPair: (token: number) => Promise<{ success: boolean; error?: string }>;
   /**
    * When set, the dialog opens directly in the token-entry phase with the
@@ -17,6 +20,8 @@ interface Props {
    * has already completed the equivalent of `onConnect` via `handleRePair`.
    */
   initialSyncInfo?: SyncInfo;
+  /** Pairing mode negotiated by the re-pair flow (1 token / 2 SAS / 3 PIN). */
+  initialPairingMode?: number;
 }
 
 function isValidIp(ip: string): boolean {
@@ -42,7 +47,14 @@ const PLATFORM_ICON: Record<string, typeof Laptop> = {
   iPad: Smartphone,
 };
 
-export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncInfo }: Props) {
+export function AddDeviceDialog({
+  open,
+  onClose,
+  onConnect,
+  onPair,
+  initialSyncInfo,
+  initialPairingMode,
+}: Props) {
   const t = useI18n();
   const [phase, setPhase] = useState<Phase>("input");
   const [host, setHost] = useState("");
@@ -50,8 +62,34 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncInfo, setSyncInfo] = useState<SyncInfo | null>(null);
+  const [pairingMode, setPairingMode] = useState<number>(1);
+  // Bumped on every failed pair so the TokenInput remounts empty and focused —
+  // otherwise editing one digit of the stale code instantly re-submits a wrong
+  // code and burns the freshly rotated PIN generation.
+  const [tokenAttempt, setTokenAttempt] = useState(0);
 
   const inputReady = isValidIp(host) && isValidPort(port);
+
+  /** Known error markers from the service worker → translated messages. */
+  const mapError = useCallback(
+    (raw: string | undefined, fallback: string): string => {
+      switch (raw) {
+        case "pairing_disabled":
+          return t("pairing_disabled_hint");
+        case "sas_mismatch":
+          return t("sas_mismatch");
+        case "pin_expired":
+          return t("pin_expired_retry");
+        case "verification_failed":
+          return t("verification_failed_retry");
+        case "device_identity_changed":
+          return t("device_identity_changed");
+        default:
+          return raw ?? fallback;
+      }
+    },
+    [t],
+  );
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -59,6 +97,7 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
       if (initialSyncInfo) {
         setPhase("token");
         setSyncInfo(initialSyncInfo);
+        setPairingMode(initialPairingMode ?? 1);
         setLoading(false);
         setError(null);
       }
@@ -71,9 +110,10 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
       setLoading(false);
       setError(null);
       setSyncInfo(null);
+      setPairingMode(1);
     }, 200);
     return () => clearTimeout(timer);
-  }, [open, initialSyncInfo]);
+  }, [open, initialSyncInfo, initialPairingMode]);
 
   const handleConnect = useCallback(async () => {
     if (loading) return;
@@ -90,15 +130,16 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
       const result = await onConnect(host, parseInt(port, 10));
       if (result.success) {
         setSyncInfo(result.syncInfo ?? null);
+        setPairingMode(result.pairingMode ?? 1);
         setPhase("token");
       } else {
-        setError(result.error ?? t("connection_failed_check"));
+        setError(mapError(result.error, t("connection_failed_check")));
       }
     } catch {
       setError(t("connection_failed_check"));
     }
     setLoading(false);
-  }, [host, port, loading, onConnect, t]);
+  }, [host, port, loading, onConnect, mapError, t]);
 
   const handlePair = useCallback(async (token: number) => {
     setLoading(true);
@@ -108,9 +149,10 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
     if (result.success) {
       onClose();
     } else {
-      setError(result.error ?? t("verification_failed_retry"));
+      setError(mapError(result.error, t("verification_failed_retry")));
+      setTokenAttempt((n) => n + 1);
     }
-  }, [onPair, onClose, t]);
+  }, [onPair, onClose, mapError, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && inputReady && !loading) {
@@ -136,7 +178,11 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
               {t("add_device_manually")}
             </span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-m3-surface-container">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="p-1 rounded-md hover:bg-m3-surface-container disabled:opacity-40"
+          >
             <X size={18} className="text-m3-on-surface-variant" />
           </button>
         </div>
@@ -188,7 +234,8 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors disabled:opacity-40"
               >
                 {t("cancel")}
               </button>
@@ -222,11 +269,16 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
 
             {/* Token Input */}
             <p className="text-sm text-m3-on-surface-variant mb-4 leading-relaxed">
-              {t("enter_pairing_code_desc")}
+              {pairingMode === 3
+                ? t("enter_pin_desc")
+                : pairingMode === 2
+                  ? t("enter_sas_code_desc")
+                  : t("enter_pairing_code_desc")}
             </p>
 
             <div className="mb-5">
               <TokenInput
+                key={tokenAttempt}
                 onComplete={handlePair}
                 disabled={loading}
               />
@@ -241,7 +293,8 @@ export function AddDeviceDialog({ open, onClose, onConnect, onPair, initialSyncI
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-m3-on-surface-variant rounded-xl hover:bg-m3-surface-container transition-colors disabled:opacity-40"
               >
                 {t("cancel")}
               </button>

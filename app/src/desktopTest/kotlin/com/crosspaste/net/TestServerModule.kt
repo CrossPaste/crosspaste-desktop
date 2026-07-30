@@ -62,6 +62,12 @@ class TestServerModule(
                     syncInfoFactory,
                     syncRoutingApi,
                     { _, _, _ -> },
+                    { appInstanceId ->
+                        if (pendingKeyExchangeStore.remove(appInstanceId)) {
+                            appTokenApi.removePendingVerifier(appInstanceId)
+                            appTokenApi.stopRefresh(hideToken = false)
+                        }
+                    },
                     pairingVersionCoordinator,
                     { appInstanceId ->
                         pairingProtocolV3Service?.hasActiveSession(appInstanceId) ?: false
@@ -72,7 +78,12 @@ class TestServerModule(
                     pairingV3Routing(
                         service,
                         pairingVersionCoordinator,
-                        pendingKeyExchangeStore,
+                        { appInstanceId ->
+                            if (pendingKeyExchangeStore.remove(appInstanceId)) {
+                                appTokenApi.removePendingVerifier(appInstanceId)
+                                appTokenApi.stopRefresh(hideToken = false)
+                            }
+                        },
                     ) { _, _, _ -> }
                 }
             }

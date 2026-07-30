@@ -4,7 +4,13 @@ import { PasteStore } from "@/shared/storage/paste-store";
 import { BlobStore } from "@/shared/storage/blob-store";
 import { SyncApi } from "@/shared/api/sync";
 import { PullApi } from "@/shared/api/pull";
-import { CrossPasteHash, CrossPasteJson } from "@/shared/core";
+import {
+  CrossPasteHash,
+  CrossPasteJson,
+  createPairingV3Initiator,
+  type PairingV3Initiator,
+} from "@/shared/core";
+import { KeyStore, toInt8Array } from "@/shared/storage/key-store";
 import type { SyncInfo } from "@/shared/models/sync-info";
 import type { PasteData } from "@/shared/models/paste-data";
 import { APP_VERSION } from "@/shared/app/version.generated";
@@ -28,8 +34,11 @@ import { SyncState } from "@/shared/sync/sync-state";
 import { SyncApiError, StandardErrorCode } from "@/shared/api/sync-error";
 import {
   PROTOCOL_VERSION,
+  ADVERTISED_PAIRING_VERSION,
   isCompatibleVersion,
+  selectPairingMode,
 } from "@/shared/sync/protocol-version";
+import type { KeyExchangeResponse } from "@/shared/models/key-exchange";
 import {
   enqueueOversizeNotice,
   type OversizeNoticeMessage,
@@ -94,12 +103,48 @@ let wsManager: WsManager | null = null;
 
 // ─── Current connection attempt ─────────────────────────────────────────
 
-let connectingState: {
+/**
+ * One pairing attempt. `handlePair` snapshots the current attempt and every
+ * step (including persistence) operates on that snapshot — a concurrent
+ * CONNECT replaces `connectingState`, and the superseded attempt then fails
+ * its identity check instead of writing keys under the wrong device.
+ */
+interface ConnectingAttempt {
+  /** Generation id assigned at CONNECT/REPAIR entry; PAIR and CANCEL_CONNECT
+   * reference it so they can only act on the attempt they belong to. */
+  id: number;
   host: string;
   port: number;
   targetAppInstanceId: string;
   syncInfo: SyncInfo;
-} | null = null;
+  /** Trust handshake selected from the desktop's advertised pairingVersion. */
+  pairingMode: 1 | 2 | 3;
+  /** Live v3 initiator session (pairingMode 3 only). */
+  v3?: PairingV3Initiator;
+  /**
+   * The warm-up key-exchange response (pairingMode 2 only). Reused at confirm
+   * time so each pairing performs exactly ONE exchange — the desktop's token
+   * refresh is counted per exchange and released once per confirm.
+   */
+  v2Exchange?: KeyExchangeResponse;
+  /**
+   * True while the trust round-trip that makes the DESKTOP persist keys is in
+   * flight (v1 trust / v2 confirm / v3 commit). Cancelling in this window
+   * would leave one-sided trust, so CANCEL_CONNECT refuses it.
+   */
+  finalizing?: boolean;
+  /**
+   * A cancel arrived while finalizing. The pairing settles first; a failure
+   * path then honours the latch (cleanup, no session restart). A successful
+   * completion ignores it — both sides are consistent at that point.
+   */
+  cancelRequested?: boolean;
+}
+
+let connectingState: ConnectingAttempt | null = null;
+
+/** Monotonic generation for CONNECT/REPAIR requests, sampled at entry. */
+let connectSeq = 0;
 
 // ─── Clipboard monitoring ───────────────────────────────────────────────
 
@@ -675,7 +720,179 @@ async function hasHostPermission(host: string, port: number): Promise<boolean> {
   return chrome.permissions.contains({ origins: [`http://${host}:${port}/*`] });
 }
 
+/**
+ * The extension's own SyncInfo, self-registered on the trust/commit request
+ * (the extension can't be discovered via mDNS). Advertises our pairing
+ * capability so the desktop shows the matching credential UI for this peer.
+ */
+function buildExtensionSyncInfo(appInstanceId: string): SyncInfo {
+  const chromeVersion = navigator.userAgent.split("Chrome/")[1]?.split(" ")[0] ?? "unknown";
+  return {
+    appInfo: {
+      appInstanceId,
+      appVersion: APP_VERSION,
+      appRevision: "Unknown",
+      userName: "Chrome Extension",
+      pairingVersion: ADVERTISED_PAIRING_VERSION,
+    },
+    endpointInfo: {
+      deviceId: appInstanceId,
+      deviceName: "Chrome Extension",
+      platform: { name: "ChromeExtension", arch: "web", bitMode: 64, version: chromeVersion },
+      hostInfoList: [],
+      port: 0,
+    },
+  };
+}
+
+/**
+ * Negotiate the trust handshake from the desktop's advertised pairingVersion
+ * and run its pre-pair step, so the desktop is displaying the right credential
+ * (v1 token / v2 SAS / v3 PIN) when this resolves. Sets `connectingState`.
+ */
+async function beginPairing(
+  seq: number,
+  host: string,
+  port: number,
+  syncInfo: SyncInfo,
+): Promise<{ pairingMode: 1 | 2 | 3; attemptId: number }> {
+  const appInstanceId = await getAppInstanceId();
+  const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
+  const config = { host, port, appInstanceId, targetAppInstanceId };
+  const pairingMode = selectPairingMode(syncInfo.appInfo.pairingVersion);
+
+  let v3: PairingV3Initiator | undefined;
+  let v2Exchange: KeyExchangeResponse | undefined;
+  if (pairingMode === 3) {
+    v3 = await startV3Session(appInstanceId, targetAppInstanceId, config);
+    // The desktop is now showing this session's PIN card.
+  } else if (pairingMode === 2) {
+    // The one exchange of this attempt: the desktop computes and displays the
+    // SAS and starts its token refresh, released again by the confirm.
+    v2Exchange = await SyncApi.exchangeV2(config);
+  } else {
+    await SyncApi.showToken(config);
+  }
+
+  if (seq !== connectSeq) {
+    // A newer CONNECT/REPAIR started while our preflight ran (regardless of
+    // which finishes first). Release what we created and bow out.
+    void releaseAttempt({
+      id: seq,
+      host,
+      port,
+      targetAppInstanceId,
+      syncInfo,
+      pairingMode,
+      v3,
+      v2Exchange,
+    });
+    throw new Error("pairing attempt superseded");
+  }
+
+  // Install first (no awaits in between), then release the replaced attempt —
+  // same target or not — so its desktop-side session never lingers.
+  const previous = connectingState;
+  const attempt: ConnectingAttempt = {
+    id: seq,
+    host,
+    port,
+    targetAppInstanceId,
+    syncInfo,
+    pairingMode,
+    v3,
+    v2Exchange,
+  };
+  connectingState = attempt;
+  if (previous) {
+    void releaseAttempt(previous);
+    if (previous.targetAppInstanceId !== targetAppInstanceId) {
+      await updateRuntime(previous.targetAppInstanceId, (s) => { s.connecting = false; });
+    }
+  }
+  await updateRuntime(targetAppInstanceId, (s) => {
+    s.connecting = true;
+    s.versionDrift = false;
+  });
+  return { pairingMode, attemptId: seq };
+}
+
+type PairingV3Config = {
+  host: string;
+  port: number;
+  appInstanceId: string;
+  targetAppInstanceId: string;
+};
+
+/** Create a fresh v3 initiator session against the target (intent → offer). */
+async function startV3Session(
+  appInstanceId: string,
+  targetAppInstanceId: string,
+  config: PairingV3Config,
+): Promise<PairingV3Initiator> {
+  // Best-effort: surfaces the pairing screen (and acceptance window) on the
+  // desktop. May be disabled by desktop config — the user can open it by hand.
+  await SyncApi.showPairingCode(config).catch(() => {});
+  const keys = (await KeyStore.getKeys()) ?? (await KeyStore.generateAndStore());
+  const v3 = await createPairingV3Initiator(
+    appInstanceId,
+    toInt8Array(keys.signPublicKey),
+    toInt8Array(keys.signPrivateKey),
+    toInt8Array(keys.cryptPublicKey),
+    toInt8Array(keys.cryptPrivateKey),
+  );
+  const intentJson = await v3.createIntent(targetAppInstanceId, "Chrome Extension");
+  let offerJson: string;
+  try {
+    offerJson = await SyncApi.pairingV3Intent(config, intentJson);
+  } catch (e) {
+    if (e instanceof SyncApiError && e.errorCode === StandardErrorCode.PAIRING_DISABLED) {
+      throw new Error("pairing_disabled");
+    }
+    throw e;
+  }
+  const refusal = await v3.acceptOffer(offerJson);
+  if (refusal !== null && refusal !== undefined) {
+    throw new Error(`pairing v3 offer refused: ${refusal}`);
+  }
+  return v3;
+}
+
+/** Best-effort release of an attempt's desktop-side session and key material. */
+async function releaseAttempt(attempt: ConnectingAttempt): Promise<void> {
+  const appInstanceId = await getAppInstanceId();
+  const config = {
+    host: attempt.host,
+    port: attempt.port,
+    appInstanceId,
+    targetAppInstanceId: attempt.targetAppInstanceId,
+  };
+  const v3 = attempt.v3;
+  if (v3) {
+    attempt.v3 = undefined;
+    try {
+      const cancelJson = v3.buildCancel();
+      if (cancelJson) {
+        await SyncApi.pairingV3Cancel(config, cancelJson);
+      }
+    } catch {
+      // Desktop unreachable or session already gone — the session TTL cleans up.
+    } finally {
+      v3.destroy();
+    }
+  }
+  if (attempt.v2Exchange) {
+    attempt.v2Exchange = undefined;
+    // Release the desktop's pending exchange (refresh count + SAS overlay).
+    // Desktops predating the cancel route just fail; nothing else to do.
+    await SyncApi.cancelV2(config).catch(() => {});
+  }
+}
+
 async function handleConnect(host: string, port: number): Promise<unknown> {
+  // Generation assigned at entry: an attempt started earlier but arriving at
+  // install later than a newer one can never win, whatever the network timing.
+  const seq = ++connectSeq;
   try {
     if (!(await hasHostPermission(host, port))) {
       return { success: false, error: "host_permission_denied" };
@@ -685,7 +902,6 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
 
     const remoteVersion = await SyncApi.telnet(config);
     if (!isCompatibleVersion(remoteVersion)) {
-      connectingState = null;
       return {
         success: false,
         error: `incompatible protocol version: remote=${remoteVersion} extension=${PROTOCOL_VERSION}`,
@@ -694,107 +910,399 @@ async function handleConnect(host: string, port: number): Promise<unknown> {
     }
 
     const syncInfo = await SyncApi.getSyncInfo(config);
-    const targetAppInstanceId = syncInfo.appInfo.appInstanceId;
-
-    await SyncApi.showToken({ ...config, targetAppInstanceId });
-
-    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
-      const staleId = connectingState.targetAppInstanceId;
-      await updateRuntime(staleId, (s) => { s.connecting = false; });
-    }
-    connectingState = { host, port, targetAppInstanceId, syncInfo };
-    await updateRuntime(targetAppInstanceId, (s) => {
-      s.connecting = true;
-      s.versionDrift = false;
-    });
-    return { success: true, syncInfo };
+    const { pairingMode, attemptId } = await beginPairing(seq, host, port, syncInfo);
+    return { success: true, syncInfo, pairingMode, attemptId };
   } catch (e) {
-    connectingState = null;
-    return { success: false, error: String(e) };
+    // Do NOT clear connectingState here: this attempt never installed itself
+    // (beginPairing installs at the very end), so the global may belong to a
+    // newer CONNECT that must not be clobbered by our late failure.
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
-async function handlePair(token: number): Promise<unknown> {
+/** Persist the paired device and bring the sync machinery up. */
+async function completePairing(
+  attempt: ConnectingAttempt,
+  serverKeys: {
+    signPublicKey: string;
+    cryptPublicKey: string;
+  },
+): Promise<void> {
+  // A concurrent CONNECT superseded this attempt while its trust round-trip
+  // was in flight: do NOT bind the returned keys to whatever the global state
+  // points at now.
+  if (connectingState !== attempt) throw new Error("pairing attempt superseded");
+  await DeviceStore.save({
+    targetAppInstanceId: attempt.targetAppInstanceId,
+    syncInfo: attempt.syncInfo,
+    host: attempt.host,
+    port: attempt.port,
+    trusted: true,
+    serverKeys,
+    addedAt: Date.now(),
+  });
+
+  // The trust round-trip just succeeded over HTTP, so the channel is proven alive.
+  await DeviceStore.setNeedsRePair(attempt.targetAppInstanceId, false);
+  await updateRuntime(attempt.targetAppInstanceId, (s) => {
+    s.connecting = false;
+    s.lastErrorCode = null;
+    s.versionDrift = false;
+    s.lastHttpSuccessAt = Date.now();
+  });
+
+  // Attempt WebSocket upgrade after pairing
+  if (!wsManager) {
+    await initializeWebSocket();
+  } else {
+    const device = await DeviceStore.get(attempt.targetAppInstanceId);
+    if (device) await wsManager.connectDevice(device);
+  }
+
+  attempt.v3?.destroy();
+  if (connectingState === attempt) {
+    connectingState = null;
+  }
+
+  startSyncAlarms();
+  broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+}
+
+/** v1: bearer-token trust (pre-2.0 desktops). */
+async function pairV1(attempt: ConnectingAttempt, token: number): Promise<void> {
+  const appInstanceId = await getAppInstanceId();
+  attempt.finalizing = true;
   try {
-    if (!connectingState) throw new Error("Not connected");
-    const appInstanceId = await getAppInstanceId();
-
-    // Build extension's SyncInfo so the server can register this client
-    // (Chrome extension can't be discovered via mDNS)
-    const chromeVersion = navigator.userAgent.split("Chrome/")[1]?.split(" ")[0] ?? "unknown";
-    const extensionSyncInfo: SyncInfo = {
-      appInfo: {
-        appInstanceId,
-        appVersion: APP_VERSION,
-        appRevision: "Unknown",
-        userName: "Chrome Extension",
-      },
-      endpointInfo: {
-        deviceId: appInstanceId,
-        deviceName: "Chrome Extension",
-        platform: { name: "ChromeExtension", arch: "web", bitMode: 64, version: chromeVersion },
-        hostInfoList: [],
-        port: 0,
-      },
-    };
-
     const response = await SyncApi.trust(
       {
-        host: connectingState.host,
-        port: connectingState.port,
+        host: attempt.host,
+        port: attempt.port,
         appInstanceId,
-        targetAppInstanceId: connectingState.targetAppInstanceId,
+        targetAppInstanceId: attempt.targetAppInstanceId,
       },
       token,
-      extensionSyncInfo,
+      buildExtensionSyncInfo(appInstanceId),
     );
-
-    await DeviceStore.save({
-      targetAppInstanceId: connectingState.targetAppInstanceId,
-      syncInfo: connectingState.syncInfo,
-      host: connectingState.host,
-      port: connectingState.port,
-      trusted: true,
-      serverKeys: {
-        signPublicKey: response.pairingResponse.signPublicKey,
-        cryptPublicKey: response.pairingResponse.cryptPublicKey,
-      },
-      addedAt: Date.now(),
+    await completePairing(attempt, {
+      signPublicKey: response.pairingResponse.signPublicKey,
+      cryptPublicKey: response.pairingResponse.cryptPublicKey,
     });
+  } finally {
+    attempt.finalizing = false;
+  }
+}
 
-    // SyncApi.trust just succeeded over HTTP, so the channel is proven alive.
-    await DeviceStore.setNeedsRePair(connectingState.targetAppInstanceId, false);
-    await updateRuntime(connectingState.targetAppInstanceId, (s) => {
-      s.connecting = false;
-      s.lastErrorCode = null;
-      s.versionDrift = false;
-      s.lastHttpSuccessAt = Date.now();
-    });
-
-    // Attempt WebSocket upgrade after pairing
-    if (!wsManager) {
-      await initializeWebSocket();
-    } else {
-      const device = await DeviceStore.get(connectingState.targetAppInstanceId);
-      if (device) await wsManager.connectDevice(device);
+/** v2: SAS compare over the ECDH key exchange. */
+async function pairV2(attempt: ConnectingAttempt, token: number): Promise<void> {
+  const appInstanceId = await getAppInstanceId();
+  const config = {
+    host: attempt.host,
+    port: attempt.port,
+    appInstanceId,
+    targetAppInstanceId: attempt.targetAppInstanceId,
+  };
+  // Reuse the connect-time exchange: one exchange per confirm keeps the
+  // desktop's token-refresh counter balanced (each exchange starts a refresh,
+  // each confirm releases exactly one).
+  let exchange = attempt.v2Exchange ?? (await SyncApi.exchangeV2(config));
+  attempt.v2Exchange = exchange;
+  let localSAS = await SyncApi.computeLocalSAS(exchange.cryptPublicKey);
+  if (token !== localSAS) {
+    // The desktop shows a different code than we derived: possible MITM.
+    throw new Error("sas_mismatch");
+  }
+  const syncInfo = buildExtensionSyncInfo(appInstanceId);
+  attempt.finalizing = true;
+  try {
+    try {
+      await SyncApi.confirmV2(config, exchange.signPublicKey, syncInfo);
+    } catch (e) {
+      // The server-side pending exchange lives 60s; a slow user hits
+      // EXCHANGE_TIMEOUT. Re-exchange once (same stable keys → same SAS,
+      // counter +1 balanced by the confirm below) and retry.
+      if (!(e instanceof SyncApiError && e.errorCode === StandardErrorCode.EXCHANGE_TIMEOUT)) {
+        throw e;
+      }
+      exchange = await SyncApi.exchangeV2(config);
+      attempt.v2Exchange = exchange;
+      localSAS = await SyncApi.computeLocalSAS(exchange.cryptPublicKey);
+      if (token !== localSAS) {
+        throw new Error("sas_mismatch");
+      }
+      await SyncApi.confirmV2(config, exchange.signPublicKey, syncInfo);
     }
+    await completePairing(attempt, {
+      signPublicKey: exchange.signPublicKey,
+      cryptPublicKey: exchange.cryptPublicKey,
+    });
+  } finally {
+    attempt.finalizing = false;
+  }
+}
 
-    connectingState = null;
+/**
+ * Discard the attempt's dead v3 session and start a fresh one (new intent →
+ * new offer → new PIN on the desktop). Used when the current session cannot
+ * continue — e.g. the proof was accepted server-side but the response was
+ * lost, leaving client and server states irreconcilable.
+ */
+async function restartV3Session(
+  attempt: ConnectingAttempt,
+  appInstanceId: string,
+  config: PairingV3Config,
+): Promise<void> {
+  await releaseAttempt(attempt);
+  // The user asked to cancel while we were finalizing: don't open a brand-new
+  // session (and desktop PIN card) they no longer want.
+  if (attempt.cancelRequested) return;
+  attempt.v3 = await startV3Session(appInstanceId, attempt.targetAppInstanceId, config);
+}
 
-    startSyncAlarms();
-    broadcastToSidePanel({ type: "DEVICES_CHANGED" });
+const V3_COMMIT_ATTEMPTS = 3;
+const V3_COMMIT_RETRY_DELAY_MS = 300;
+const V3_ROTATION_POLL_ATTEMPTS = 5;
+const V3_ROTATION_POLL_DELAY_MS = 200;
 
+function delayMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Replace the dead session so a later attempt starts clean, swallowing the
+ * failure when the desktop is unreachable — the attempt is over either way.
+ */
+async function restartV3SessionQuietly(
+  attempt: ConnectingAttempt,
+  appInstanceId: string,
+  config: PairingV3Config,
+): Promise<void> {
+  try {
+    await restartV3Session(attempt, appInstanceId, config);
+  } catch {
+    // Desktop unreachable.
+  }
+}
+
+/**
+ * Re-POST the byte-identical intent until the acceptor publishes a rotated
+ * PIN generation. The server rotates asynchronously after a proof failure, so
+ * the first refresh can race it and return the OLD generation — accepting
+ * that would make the user's freshly displayed PIN fail again. Falls back to
+ * the last offer if no rotation shows up in time.
+ */
+async function refreshOfferForNewGeneration(
+  config: PairingV3Config,
+  v3: PairingV3Initiator,
+): Promise<string> {
+  const previousGeneration = v3.tokenGeneration();
+  let offerJson = "";
+  for (let i = 0; i < V3_ROTATION_POLL_ATTEMPTS; i++) {
+    offerJson = await SyncApi.pairingV3Intent(config, v3.intentJson());
+    const generation = (JSON.parse(offerJson) as { tokenGeneration?: number }).tokenGeneration;
+    if (typeof generation === "number" && generation > previousGeneration) {
+      return offerJson;
+    }
+    if (i < V3_ROTATION_POLL_ATTEMPTS - 1) {
+      await delayMs(V3_ROTATION_POLL_DELAY_MS);
+    }
+  }
+  return offerJson;
+}
+
+/**
+ * Recover from a failed proof POST; always throws. One wrong PIN
+ * (PROOF_INVALID) or a timeout (PIN_EXPIRED) kills the generation
+ * server-side: refresh the offer (byte-identical intent) so the desktop shows
+ * a fresh PIN, then ask the user to re-enter via "pin_expired". Any other
+ * failure (network flake, transient server error, or a proof that WAS
+ * accepted while its response got lost) leaves a session that cannot be
+ * proven again — replace it with a fresh one so the user can retry with the
+ * new PIN, and surface the original error.
+ */
+async function recoverFromV3ProofFailure(
+  attempt: ConnectingAttempt,
+  v3: PairingV3Initiator,
+  appInstanceId: string,
+  config: PairingV3Config,
+  e: unknown,
+): Promise<never> {
+  if (
+    e instanceof SyncApiError &&
+    (e.errorCode === StandardErrorCode.PAIRING_PIN_EXPIRED ||
+      e.errorCode === StandardErrorCode.PAIRING_PROOF_INVALID)
+  ) {
+    try {
+      const offerJson = await refreshOfferForNewGeneration(config, v3);
+      const refusal = await v3.acceptOffer(offerJson);
+      if (refusal === null || refusal === undefined) {
+        throw new Error("pin_expired");
+      }
+    } catch (inner) {
+      if (inner instanceof Error && inner.message === "pin_expired") throw inner;
+      // Refresh refused (e.g. session consumed): fall through to restart.
+    }
+    await restartV3Session(attempt, appInstanceId, config);
+    throw new Error("pin_expired");
+  }
+  await restartV3SessionQuietly(attempt, appInstanceId, config);
+  throw e;
+}
+
+/**
+ * POST the commit until an ACK arrives. The commit bytes are deterministic
+ * for this session, so bounded retries on transport failure are idempotent —
+ * mirrors the desktop initiator. This closes most of the "acceptor trusted us
+ * but our ACK got lost" window. On definitive refusal or exhausted retries
+ * the session is replaced (clearing `finalizing` first so a pending cancel is
+ * honoured) and the failure is thrown.
+ */
+async function commitV3WithRetries(
+  attempt: ConnectingAttempt,
+  appInstanceId: string,
+  config: PairingV3Config,
+  commitJson: string,
+  syncInfo: SyncInfo,
+): Promise<string> {
+  let lastCommitError: unknown = null;
+  for (let i = 0; i < V3_COMMIT_ATTEMPTS; i++) {
+    try {
+      return await SyncApi.pairingV3Commit(config, commitJson, syncInfo);
+    } catch (e) {
+      if (e instanceof SyncApiError) {
+        // Definitive refusal — the session is consumed or invalid. Replace
+        // it so the next attempt does not hit a dead engine.
+        attempt.finalizing = false;
+        await restartV3SessionQuietly(attempt, appInstanceId, config);
+        throw e;
+      }
+      lastCommitError = e;
+      if (i < V3_COMMIT_ATTEMPTS - 1) {
+        await delayMs(V3_COMMIT_RETRY_DELAY_MS);
+      }
+    }
+  }
+  // All commit attempts lost. The acceptor may have trusted us already; a
+  // fresh session on the next try converges both sides (it re-persists the
+  // same long-term keys).
+  attempt.finalizing = false;
+  await restartV3SessionQuietly(attempt, appInstanceId, config);
+  throw lastCommitError instanceof Error ? lastCommitError : new Error(String(lastCommitError));
+}
+
+/** v3: SPAKE2 proof with the PIN shown on the desktop's device card. */
+async function pairV3(attempt: ConnectingAttempt, token: number): Promise<void> {
+  const v3 = attempt.v3;
+  if (!v3) throw new Error("Not connected");
+  const appInstanceId = await getAppInstanceId();
+  const config: PairingV3Config = {
+    host: attempt.host,
+    port: attempt.port,
+    appInstanceId,
+    targetAppInstanceId: attempt.targetAppInstanceId,
+  };
+  // TokenInput yields a number; the PIN is 6 digits with leading zeros preserved.
+  const pin = String(token).padStart(6, "0");
+  const proofJson = await v3.buildProof(pin);
+  let proofResponseJson: string;
+  try {
+    proofResponseJson = await SyncApi.pairingV3Proof(config, proofJson);
+  } catch (e) {
+    return recoverFromV3ProofFailure(attempt, v3, appInstanceId, config, e);
+  }
+  if (!(await v3.verifyProofResponse(proofResponseJson))) {
+    // The engine hard-failed (possible MITM); it cannot build another proof.
+    // Replace the session so the next attempt starts clean with a fresh PIN.
+    await restartV3SessionQuietly(attempt, appInstanceId, config);
+    throw new Error("verification_failed");
+  }
+  const commitJson = await v3.buildCommit();
+  const syncInfo = buildExtensionSyncInfo(appInstanceId);
+  attempt.finalizing = true;
+  try {
+    const ackJson = await commitV3WithRetries(attempt, appInstanceId, config, commitJson, syncInfo);
+    if (!(await v3.verifyCommitAck(ackJson))) {
+      // Invalid receipt after an accepted commit: hard failure — replace the
+      // session so a retry is possible at all.
+      attempt.finalizing = false;
+      await restartV3SessionQuietly(attempt, appInstanceId, config);
+      throw new Error("verification_failed");
+    }
+    await completePairing(attempt, {
+      signPublicKey: CrossPasteHash.base64Encode(v3.acceptorSignPublicKey()),
+      cryptPublicKey: CrossPasteHash.base64Encode(v3.acceptorCryptPublicKey()),
+    });
+  } finally {
+    attempt.finalizing = false;
+  }
+}
+
+async function handlePair(token: number, attemptId?: number): Promise<unknown> {
+  // Snapshot: every step of this attempt (including persistence) binds to the
+  // state captured here, not to whatever a concurrent CONNECT may install.
+  const attempt = connectingState;
+  try {
+    if (!attempt) throw new Error("Not connected");
+    // A PAIR from a stale dialog must not drive a newer attempt.
+    if (attemptId !== undefined && attempt.id !== attemptId) {
+      throw new Error("pairing attempt superseded");
+    }
+    switch (attempt.pairingMode) {
+      case 3:
+        await pairV3(attempt, token);
+        break;
+      case 2:
+        await pairV2(attempt, token);
+        break;
+      default:
+        await pairV1(attempt, token);
+    }
     return { success: true };
   } catch (e) {
-    if (connectingState) {
-      const id = connectingState.targetAppInstanceId;
-      await updateRuntime(id, (s) => { s.connecting = false; });
+    if (attempt) {
+      // A cancel arrived while the trust round-trip was finalizing; the
+      // pairing failed, so honour it now.
+      if (attempt.cancelRequested) {
+        if (connectingState === attempt) {
+          connectingState = null;
+        }
+        await releaseAttempt(attempt);
+        await updateRuntime(attempt.targetAppInstanceId, (s) => { s.connecting = false; });
+      } else if (!(e instanceof Error && e.message === "pin_expired")) {
+        // A rotated v3 PIN keeps the attempt alive; anything else ends it.
+        await updateRuntime(attempt.targetAppInstanceId, (s) => { s.connecting = false; });
+      }
     }
-    return { success: false, error: String(e) };
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/**
+ * The user closed the pairing dialog (or navigated away) mid-attempt: release
+ * the desktop-side session / key material and clear the connecting flag.
+ */
+async function handleCancelConnect(attemptId?: number): Promise<unknown> {
+  const attempt = connectingState;
+  // A cancel scoped to a different (older) attempt must not touch the
+  // currently installed one — e.g. another side panel's dialog closing.
+  if (!attempt || (attemptId !== undefined && attempt.id !== attemptId)) {
+    return { success: true };
+  }
+  // The desktop-persisting round-trip is in flight: cancelling now could
+  // leave the desktop trusting us while we discard its keys. Latch the
+  // request; the failure path honours it once the round-trip settles (a
+  // successful completion ignores it — both sides are consistent then).
+  if (attempt.finalizing) {
+    attempt.cancelRequested = true;
+    return { success: false, finalizing: true };
+  }
+  connectingState = null;
+  await releaseAttempt(attempt);
+  await updateRuntime(attempt.targetAppInstanceId, (s) => { s.connecting = false; });
+  return { success: true };
 }
 
 async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
+  const seq = ++connectSeq;
   const device = await DeviceStore.get(targetAppInstanceId);
   if (!device) return { success: false, error: "Device not found" };
   if (!(await hasHostPermission(device.host, device.port))) {
@@ -816,25 +1324,20 @@ async function handleRePair(targetAppInstanceId: string): Promise<unknown> {
       };
     }
 
-    await SyncApi.showToken({ ...config, targetAppInstanceId });
-    if (connectingState && connectingState.targetAppInstanceId !== targetAppInstanceId) {
-      const staleId = connectingState.targetAppInstanceId;
-      await updateRuntime(staleId, (s) => { s.connecting = false; });
+    // Refresh the desktop's SyncInfo — the stored copy may predate a desktop
+    // upgrade that changed its advertised pairingVersion. If a DIFFERENT
+    // identity answers at that address, abort: the v1/v2 servers don't verify
+    // targetAppInstanceId, so continuing would bind a stranger's keys to this
+    // device record.
+    const refreshed = await SyncApi.getSyncInfo(config);
+    if (refreshed.appInfo.appInstanceId !== targetAppInstanceId) {
+      return { success: false, error: "device_identity_changed" };
     }
-    connectingState = {
-      host: device.host,
-      port: device.port,
-      targetAppInstanceId,
-      syncInfo: device.syncInfo,
-    };
-    await updateRuntime(targetAppInstanceId, (s) => {
-      s.connecting = true;
-      s.versionDrift = false;
-    });
-    return { success: true, syncInfo: device.syncInfo };
+    const { pairingMode, attemptId } = await beginPairing(seq, device.host, device.port, refreshed);
+    return { success: true, syncInfo: refreshed, pairingMode, attemptId };
   } catch (e) {
     await updateRuntime(targetAppInstanceId, (s) => { s.connecting = false; });
-    return { success: false, error: String(e) };
+    return { success: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -913,7 +1416,8 @@ async function handleMessage(
   switch (message.type) {
     case "GET_DEVICES": return handleGetDevices();
     case "CONNECT": return handleConnect(message.host as string, message.port as number);
-    case "PAIR": return handlePair(message.token as number);
+    case "PAIR": return handlePair(message.token as number, message.attemptId as number | undefined);
+    case "CANCEL_CONNECT": return handleCancelConnect(message.attemptId as number | undefined);
     case "REPAIR": return handleRePair(message.targetAppInstanceId as string);
     case "REMOVE_DEVICE": return handleRemoveDevice(message.targetAppInstanceId as string);
     case "UPDATE_NOTE": return handleUpdateNote(message.targetAppInstanceId as string, message.noteName as string);

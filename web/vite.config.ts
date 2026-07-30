@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
       // Ensure Kotlin/JS library's deps resolve from web/node_modules
-      dedupe: ["@js-joda/core"],
+      dedupe: ["@js-joda/core", "@noble/curves"],
     },
     build: {
       outDir: "dist",
@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     optimizeDeps: {
-      include: ["@js-joda/core"],
+      include: ["@js-joda/core", "@noble/curves/p256"],
     },
   };
 });

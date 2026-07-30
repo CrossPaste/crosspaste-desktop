@@ -121,6 +121,7 @@ open class DefaultServerModule(
                     syncInfoFactory,
                     syncRoutingApi,
                     ::trustSyncInfo,
+                    ::releasePendingKeyExchange,
                     pairingVersionCoordinator,
                     pairingProtocolV3Service::hasActiveSession,
                     pairingProtocolV3Service.acceptanceWindow::open,
@@ -128,7 +129,7 @@ open class DefaultServerModule(
                 pairingV3Routing(
                     pairingProtocolV3Service,
                     pairingVersionCoordinator,
-                    pendingKeyExchangeStore,
+                    ::releasePendingKeyExchange,
                     ::trustSyncInfo,
                 )
                 pasteRouting(
@@ -162,17 +163,41 @@ open class DefaultServerModule(
             }
         }
 
+    /**
+     * The single release path for a peer's pending v2 key exchange. Every
+     * stored exchange owns exactly one token-refresh count and one pending
+     * verifier; whoever removes the entry must release both, so all routes
+     * (confirm success/expiry, client cancel, v3 takeover) funnel through here.
+     */
+    private fun releasePendingKeyExchange(appInstanceId: String) {
+        if (pendingKeyExchangeStore.remove(appInstanceId)) {
+            appTokenApi.removePendingVerifier(appInstanceId)
+            appTokenApi.stopRefresh(hideToken = false)
+        }
+    }
+
     private fun trustSyncInfo(
         appInstanceId: String,
         host: String?,
         preRegisteredSyncInfo: SyncInfo?,
     ) {
+        // The pre-registered SyncInfo comes from a client-supplied header; the trust
+        // decision was made for the AUTHENTICATED appInstanceId, so a header carrying
+        // a different identity must never register under it.
+        val verifiedPreRegistered =
+            preRegisteredSyncInfo?.takeIf { it.appInfo.appInstanceId == appInstanceId }
+        if (preRegisteredSyncInfo != null && verifiedPreRegistered == null) {
+            logger.warn {
+                "trustSyncInfo: dropping pre-registered SyncInfo whose appInstanceId " +
+                    "${preRegisteredSyncInfo.appInfo.appInstanceId} does not match authenticated $appInstanceId"
+            }
+        }
         val syncInfo =
             nearbyDeviceManager.nearbySyncInfos.value
                 .firstOrNull {
                     it.appInfo.appInstanceId == appInstanceId
                 }
-                ?: preRegisteredSyncInfo
+                ?: verifiedPreRegistered
         if (syncInfo != null) {
             syncRoutingApi.trustSyncInfo(syncInfo, host)
         } else {

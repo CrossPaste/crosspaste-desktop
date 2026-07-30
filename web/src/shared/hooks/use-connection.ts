@@ -66,13 +66,15 @@ export function useConnection() {
       syncInfo?: SyncInfo;
       error?: string;
       incompatible?: boolean;
+      pairingMode?: number;
+      attemptId?: number;
     };
     return result;
   }, []);
 
   const pair = useCallback(
-    async (token: number) => {
-      const result = (await sendMessage({ type: "PAIR", token })) as {
+    async (token: number, attemptId?: number) => {
+      const result = (await sendMessage({ type: "PAIR", token, attemptId })) as {
         success: boolean;
         error?: string;
       };
@@ -95,11 +97,23 @@ export function useConnection() {
       const result = (await sendMessage({
         type: "REPAIR",
         targetAppInstanceId,
-      })) as { success: boolean; syncInfo?: SyncInfo; error?: string; incompatible?: boolean };
+      })) as {
+        success: boolean;
+        syncInfo?: SyncInfo;
+        error?: string;
+        incompatible?: boolean;
+        pairingMode?: number;
+        attemptId?: number;
+      };
       return result;
     },
     [devices],
   );
+
+  /** Abort an in-flight pairing attempt (dialog closed before completion). */
+  const cancelConnect = useCallback(async (attemptId?: number) => {
+    await sendMessage({ type: "CANCEL_CONNECT", attemptId });
+  }, []);
 
   const removeDevice = useCallback(
     async (targetAppInstanceId: string) => {
@@ -119,5 +133,5 @@ export function useConnection() {
     [],
   );
 
-  return { devices, connect, pair, rePair, removeDevice, updateNote };
+  return { devices, connect, pair, rePair, cancelConnect, removeDevice, updateNote };
 }

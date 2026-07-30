@@ -23,6 +23,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "Enter note name",
     enter_pairing_code_desc:
       "Enter the 6-digit pairing code shown on the desktop app.",
+    enter_sas_code_desc:
+      "Enter the 6-digit verification code shown on the desktop app. It must match on both devices.",
+    enter_pin_desc:
+      "Open the pairing screen on the desktop app and enter the 6-digit PIN shown on the Chrome Extension card.",
+    pairing_disabled_hint:
+      "Pairing is not accepting requests. Open the pairing screen on the desktop app, then try again.",
+    sas_mismatch:
+      "Verification code mismatch — pairing aborted for safety. Please try again.",
+    pin_expired_retry:
+      "The PIN expired. Enter the new PIN shown on the desktop app.",
+    device_identity_changed:
+      "The device at this address has changed identity. Remove it and add it again.",
     re_enter: "Re-enter",
     verification_failed_retry: "Verification failed, please try again",
     time: "Time",
@@ -59,6 +71,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "Notizname eingeben",
     enter_pairing_code_desc:
       "Geben Sie den 6-stelligen Kopplungscode ein, der auf der Desktop-App angezeigt wird.",
+    enter_sas_code_desc:
+      "Geben Sie den 6-stelligen Bestätigungscode ein, der auf der Desktop-App angezeigt wird. Er muss auf beiden Geräten übereinstimmen.",
+    enter_pin_desc:
+      "Öffnen Sie den Kopplungsbildschirm in der Desktop-App und geben Sie die 6-stellige PIN der Chrome-Erweiterungs-Karte ein.",
+    pairing_disabled_hint:
+      "Kopplung nimmt derzeit keine Anfragen an. Öffnen Sie den Kopplungsbildschirm in der Desktop-App und versuchen Sie es erneut.",
+    sas_mismatch:
+      "Bestätigungscode stimmt nicht überein — Kopplung aus Sicherheitsgründen abgebrochen. Bitte erneut versuchen.",
+    pin_expired_retry:
+      "Die PIN ist abgelaufen. Geben Sie die neue PIN aus der Desktop-App ein.",
+    device_identity_changed:
+      "Das Gerät unter dieser Adresse hat eine andere Identität. Entfernen Sie es und fügen Sie es erneut hinzu.",
     re_enter: "Erneut eingeben",
     verification_failed_retry:
       "Überprüfung fehlgeschlagen, bitte erneut versuchen",
@@ -96,6 +120,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "Ingrese nombre de nota",
     enter_pairing_code_desc:
       "Ingrese el código de emparejamiento de 6 dígitos que se muestra en la aplicación de escritorio.",
+    enter_sas_code_desc:
+      "Ingrese el código de verificación de 6 dígitos que muestra la aplicación de escritorio. Debe coincidir en ambos dispositivos.",
+    enter_pin_desc:
+      "Abra la pantalla de emparejamiento en la aplicación de escritorio e ingrese el PIN de 6 dígitos de la tarjeta de la extensión de Chrome.",
+    pairing_disabled_hint:
+      "El emparejamiento no acepta solicitudes. Abra la pantalla de emparejamiento en la aplicación de escritorio y vuelva a intentarlo.",
+    sas_mismatch:
+      "El código de verificación no coincide — emparejamiento cancelado por seguridad. Inténtelo de nuevo.",
+    pin_expired_retry:
+      "El PIN ha caducado. Ingrese el nuevo PIN que muestra la aplicación de escritorio.",
+    device_identity_changed:
+      "El dispositivo en esta dirección cambió de identidad. Elimínelo y agréguelo de nuevo.",
     re_enter: "Reingresar",
     verification_failed_retry:
       "Verificación fallida, por favor intente de nuevo",
@@ -133,6 +169,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "نام یادداشت را وارد کنید",
     enter_pairing_code_desc:
       "کد جفت‌سازی ۶ رقمی نمایش‌داده‌شده در اپ دسکتاپ را وارد کنید.",
+    enter_sas_code_desc:
+      "کد تأیید ۶ رقمی نمایش‌داده‌شده در اپ دسکتاپ را وارد کنید. باید در هر دو دستگاه یکسان باشد.",
+    enter_pin_desc:
+      "صفحه جفت‌سازی را در اپ دسکتاپ باز کنید و پین ۶ رقمی کارت افزونه کروم را وارد کنید.",
+    pairing_disabled_hint:
+      "جفت‌سازی درخواست نمی‌پذیرد. صفحه جفت‌سازی را در اپ دسکتاپ باز کنید و دوباره تلاش کنید.",
+    sas_mismatch:
+      "کد تأیید مطابقت ندارد — جفت‌سازی برای ایمنی لغو شد. دوباره تلاش کنید.",
+    pin_expired_retry:
+      "پین منقضی شده است. پین جدید نمایش‌داده‌شده در اپ دسکتاپ را وارد کنید.",
+    device_identity_changed:
+      "هویت دستگاه در این آدرس تغییر کرده است. آن را حذف کنید و دوباره اضافه کنید.",
     re_enter: "وارد کردن مجدد",
     verification_failed_retry: "تأیید ناموفق بود، لطفاً دوباره تلاش کنید",
     time: "زمان",
@@ -170,6 +218,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "Entrez le nom de la note",
     enter_pairing_code_desc:
       "Entrez le code d'appairage à 6 chiffres affiché sur l'application de bureau.",
+    enter_sas_code_desc:
+      "Entrez le code de vérification à 6 chiffres affiché sur l'application de bureau. Il doit être identique sur les deux appareils.",
+    enter_pin_desc:
+      "Ouvrez l'écran d'appairage sur l'application de bureau et saisissez le PIN à 6 chiffres de la carte de l'extension Chrome.",
+    pairing_disabled_hint:
+      "L'appairage n'accepte pas de demandes. Ouvrez l'écran d'appairage sur l'application de bureau, puis réessayez.",
+    sas_mismatch:
+      "Le code de vérification ne correspond pas — appairage interrompu par sécurité. Veuillez réessayer.",
+    pin_expired_retry:
+      "Le PIN a expiré. Saisissez le nouveau PIN affiché sur l'application de bureau.",
+    device_identity_changed:
+      "L'appareil à cette adresse a changé d'identité. Supprimez-le et ajoutez-le à nouveau.",
     re_enter: "Re-saisir",
     verification_failed_retry:
       "Vérification échouée, veuillez réessayer",
@@ -207,6 +267,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "メモ名を入力",
     enter_pairing_code_desc:
       "デスクトップアプリに表示されている6桁のペアリングコードを入力してください。",
+    enter_sas_code_desc:
+      "デスクトップアプリに表示された6桁の確認コードを入力してください。両方のデバイスで一致している必要があります。",
+    enter_pin_desc:
+      "デスクトップアプリでペアリング画面を開き、Chrome拡張機能カードに表示された6桁のPINを入力してください。",
+    pairing_disabled_hint:
+      "ペアリングがリクエストを受け付けていません。デスクトップアプリでペアリング画面を開いてから、もう一度お試しください。",
+    sas_mismatch:
+      "確認コードが一致しません — 安全のためペアリングを中止しました。もう一度お試しください。",
+    pin_expired_retry:
+      "PINの有効期限が切れました。デスクトップアプリに表示された新しいPINを入力してください。",
+    device_identity_changed:
+      "このアドレスのデバイスの識別情報が変わりました。削除してから再度追加してください。",
     re_enter: "再入力",
     verification_failed_retry: "認証に失敗しました。もう一度お試しください",
     time: "時間",
@@ -242,6 +314,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "메모 이름 입력",
     enter_pairing_code_desc:
       "데스크톱 앱에 표시된 6자리 페어링 코드를 입력하세요.",
+    enter_sas_code_desc:
+      "데스크톱 앱에 표시된 6자리 확인 코드를 입력하세요. 두 기기에서 일치해야 합니다.",
+    enter_pin_desc:
+      "데스크톱 앱에서 페어링 화면을 열고 Chrome 확장 프로그램 카드에 표시된 6자리 PIN을 입력하세요.",
+    pairing_disabled_hint:
+      "페어링이 요청을 받지 않고 있습니다. 데스크톱 앱에서 페어링 화면을 연 후 다시 시도하세요.",
+    sas_mismatch:
+      "확인 코드가 일치하지 않습니다 — 안전을 위해 페어링을 중단했습니다. 다시 시도하세요.",
+    pin_expired_retry:
+      "PIN이 만료되었습니다. 데스크톱 앱에 표시된 새 PIN을 입력하세요.",
+    device_identity_changed:
+      "이 주소의 기기 신원이 변경되었습니다. 삭제 후 다시 추가하세요.",
     re_enter: "다시 입력",
     verification_failed_retry: "인증 실패, 다시 시도해주세요",
     time: "시간",
@@ -278,6 +362,18 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     enter_note_name: "Insira o nome da nota",
     enter_pairing_code_desc:
       "Insira o código de emparelhamento de 6 dígitos exibido no app de desktop.",
+    enter_sas_code_desc:
+      "Insira o código de verificação de 6 dígitos exibido no app de desktop. Ele deve coincidir nos dois dispositivos.",
+    enter_pin_desc:
+      "Abra a tela de emparelhamento no app de desktop e insira o PIN de 6 dígitos do cartão da extensão do Chrome.",
+    pairing_disabled_hint:
+      "O emparelhamento não está aceitando solicitações. Abra a tela de emparelhamento no app de desktop e tente novamente.",
+    sas_mismatch:
+      "O código de verificação não confere — emparelhamento cancelado por segurança. Tente novamente.",
+    pin_expired_retry:
+      "O PIN expirou. Insira o novo PIN exibido no app de desktop.",
+    device_identity_changed:
+      "O dispositivo neste endereço mudou de identidade. Remova-o e adicione-o novamente.",
     re_enter: "Reinserir",
     verification_failed_retry: "Falha na verificação, tente novamente",
     time: "Hora",
@@ -313,6 +409,13 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     add_note_for: "为 %s 添加备注名称",
     enter_note_name: "输入备注名称",
     enter_pairing_code_desc: "请输入桌面端显示的 6 位配对码。",
+    enter_sas_code_desc: "请输入桌面端显示的 6 位校验码，两端必须一致。",
+    enter_pin_desc:
+      "请在桌面端打开配对界面，输入 Chrome 扩展卡片上显示的 6 位 PIN 码。",
+    pairing_disabled_hint: "配对请求未被接受，请在桌面端打开配对界面后重试。",
+    sas_mismatch: "校验码不一致——为安全起见已中止配对，请重试。",
+    pin_expired_retry: "PIN 已过期，请输入桌面端显示的新 PIN。",
+    device_identity_changed: "该地址上的设备身份已变化，请删除后重新添加。",
     re_enter: "重新输入",
     verification_failed_retry: "验证失败，请重新输入",
     time: "时间",
@@ -347,6 +450,13 @@ export const extensionMessages: Record<string, Record<string, string>> = {
     add_note_for: "為 %s 新增備註名稱",
     enter_note_name: "輸入備註名稱",
     enter_pairing_code_desc: "請輸入桌面端顯示的 6 位配對碼。",
+    enter_sas_code_desc: "請輸入桌面端顯示的 6 位校驗碼，兩端必須一致。",
+    enter_pin_desc:
+      "請在桌面端開啟配對介面，輸入 Chrome 擴充功能卡片上顯示的 6 位 PIN 碼。",
+    pairing_disabled_hint: "配對請求未被接受，請在桌面端開啟配對介面後重試。",
+    sas_mismatch: "校驗碼不一致——為安全起見已中止配對，請重試。",
+    pin_expired_retry: "PIN 已過期，請輸入桌面端顯示的新 PIN。",
+    device_identity_changed: "該位址上的裝置身分已變更，請刪除後重新新增。",
     re_enter: "重新輸入",
     verification_failed_retry: "驗證失敗，請重新輸入",
     time: "時間",

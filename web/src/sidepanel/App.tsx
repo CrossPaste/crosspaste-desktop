@@ -47,7 +47,8 @@ function OversizeNoticeRelay() {
 }
 
 export default function App() {
-  const { devices, connect, pair, rePair, removeDevice, updateNote } = useConnection();
+  const { devices, connect, pair, rePair, cancelConnect, removeDevice, updateNote } =
+    useConnection();
   const [activeTab, setActiveTab] = usePersistedTab();
   const desktopConnected = useDesktopStatus();
 
@@ -69,6 +70,7 @@ export default function App() {
                 onRemoveDevice={removeDevice}
                 onUpdateNote={updateNote}
                 onRePair={rePair}
+                onCancelConnect={cancelConnect}
               />
             ) : activeTab === "clipboard" ? (
               <div className="h-full overflow-y-auto py-2">

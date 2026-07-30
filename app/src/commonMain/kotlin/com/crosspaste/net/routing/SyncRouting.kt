@@ -22,6 +22,7 @@ import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PendingKeyExchange
+import com.crosspaste.sync.PendingKeyExchangeLookup
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
@@ -48,6 +49,7 @@ fun Routing.syncRouting(
     syncInfoFactory: SyncInfoFactory,
     syncRoutingApi: SyncRoutingApi,
     trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
+    releasePendingKeyExchange: (String) -> Unit,
     pairingVersionCoordinator: PairingVersionCoordinator,
     // No-downgrade rule (pairing v3 design §17.2): while a v3 pairing session is
     // active for a peer, that peer must not be able to fall back to v2 trust.
@@ -298,6 +300,12 @@ fun Routing.syncRouting(
 
                     val currentTimestamp = nowEpochMilliseconds()
 
+                    // A repeat exchange from the same peer (initiator warm-up +
+                    // real exchange, or a client retry) supersedes its earlier
+                    // pending entry: release that entry's resources first so one
+                    // confirm brings the counter back to zero and the SAS overlay
+                    // auto-closes (#4684).
+                    releasePendingKeyExchange(appInstanceId)
                     pendingKeyExchangeStore.put(
                         appInstanceId,
                         PendingKeyExchange(
@@ -340,7 +348,7 @@ fun Routing.syncRouting(
         getAppInstanceId(call)?.let { appInstanceId ->
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
                 if (hasActivePairingV3Session(appInstanceId)) {
-                    pendingKeyExchangeStore.remove(appInstanceId)
+                    releasePendingKeyExchange(appInstanceId)
                     logger.warn { "refusing v2 confirm during active pairing v3 session for $appInstanceId" }
                     failResponse(call, StandardErrorCode.PAIRING_VERSION_UNSUPPORTED.toErrorCode())
                     return@withPeerLock
@@ -348,12 +356,25 @@ fun Routing.syncRouting(
                 runCatching {
                     val request = call.receive(TrustConfirmRequest::class)
 
-                    val pending = pendingKeyExchangeStore.get(appInstanceId)
-                    if (pending == null) {
-                        logger.warn { "v2 confirm: no pending exchange for $appInstanceId" }
-                        failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
-                        return@withPeerLock
-                    }
+                    val pending =
+                        when (val lookup = pendingKeyExchangeStore.lookup(appInstanceId)) {
+                            is PendingKeyExchangeLookup.Live -> lookup.exchange
+                            PendingKeyExchangeLookup.Expired -> {
+                                // The expired exchange still owns one token-refresh
+                                // count and one pending verifier; release both so the
+                                // overlay can close once the peer retries (#4684).
+                                releasePendingKeyExchange(appInstanceId)
+                                logger.warn { "v2 confirm: pending exchange expired for $appInstanceId" }
+                                failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
+                                return@withPeerLock
+                            }
+
+                            PendingKeyExchangeLookup.None -> {
+                                logger.warn { "v2 confirm: no pending exchange for $appInstanceId" }
+                                failResponse(call, StandardErrorCode.EXCHANGE_TIMEOUT.toErrorCode())
+                                return@withPeerLock
+                            }
+                        }
 
                     val receiveSignPublicKey =
                         secureKeyPairSerializer.decodeSignPublicKey(pending.signPublicKey)
@@ -379,8 +400,6 @@ fun Routing.syncRouting(
                             currentTimestamp,
                         )
 
-                    pendingKeyExchangeStore.remove(appInstanceId)
-
                     TrustConfirmResponse(
                         timestamp = currentTimestamp,
                         signature = signature,
@@ -388,17 +407,28 @@ fun Routing.syncRouting(
                 }.onSuccess { response ->
                     val host = call.request.headers["crosspaste-host"]
                     val clientSyncInfo = call.clientSyncInfo()
-                    appTokenApi.removePendingVerifier(appInstanceId)
+                    // Consumes the pending exchange and unconditionally releases
+                    // its refresh count + verifier — the stored entry, not the
+                    // overlay's visibility, owns those resources.
+                    releasePendingKeyExchange(appInstanceId)
                     trustSyncInfo(appInstanceId, host, clientSyncInfo)
-                    if (appTokenApi.showToken.value) {
-                        appTokenApi.stopRefresh(hideToken = false)
-                    }
                     successResponse(call, response)
                 }.onFailure { e ->
                     logger.error(e) { "v2 confirm failed for $appInstanceId" }
                     failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
                 }
             }
+        }
+    }
+
+    // Client-side cancellation of a pending v2 exchange (e.g. the browser
+    // extension's pairing dialog was closed). Idempotent: releasing a peer with
+    // no pending entry is a no-op. Older clients simply never call this.
+    post("/sync/trust/v2/cancel") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            releasePendingKeyExchange(appInstanceId)
+            logger.info { "v2 exchange cancelled by $appInstanceId" }
+            successResponse(call)
         }
     }
 }
