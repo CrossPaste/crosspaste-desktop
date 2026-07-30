@@ -20,6 +20,18 @@ import com.crosspaste.ui.tray.NonMacTrayView
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
+internal fun handleFirstLaunch(
+    firstLaunch: Boolean,
+    firstLaunchCompleted: Boolean,
+    showMainWindow: () -> Unit,
+    markFirstLaunchCompleted: () -> Unit,
+) {
+    if (firstLaunch && !firstLaunchCompleted) {
+        showMainWindow()
+        markFirstLaunchCompleted()
+    }
+}
+
 @Composable
 fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     val platform = koinInject<Platform>()
@@ -49,10 +61,16 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
 
     LaunchedEffect(Unit) {
-        if (appLaunchState.firstLaunch && !appLaunch.firstLaunchCompleted.value) {
-            appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
-            appLaunch.setFirstLaunchCompleted(true)
-        }
+        handleFirstLaunch(
+            firstLaunch = appLaunchState.firstLaunch,
+            firstLaunchCompleted = appLaunch.firstLaunchCompleted.value,
+            showMainWindow = {
+                appWindowManager.showMainWindow(WindowTrigger.SYSTEM)
+            },
+            markFirstLaunchCompleted = {
+                appLaunch.setFirstLaunchCompleted(true)
+            },
+        )
     }
 
     MainWindow(windowIcon)
