@@ -54,16 +54,54 @@ class GeneralSyncManagerTest {
         mocks: Mocks,
         scope: CoroutineScope,
         localPairingVersion: Int = 2,
+        pendingExchangeLedger: PendingExchangeLedger = PendingExchangeLedger(),
     ): GeneralSyncManager =
         GeneralSyncManager(
             realTimeSyncScope = scope,
-            pendingExchangeLedger = PendingExchangeLedger(),
+            pendingExchangeLedger = pendingExchangeLedger,
             syncResolver = mocks.syncResolver,
             syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
             syncClientApi = mocks.syncClientApi,
             wsSessionManager = WsSessionManager(),
             pairingCapabilityFlag = PairingCapabilityFlag(localPairingVersion),
         )
+
+    @Test
+    fun exchangeKeysForPairing_recordsGenerationBeforeAsyncDispatch() =
+        runTest {
+            val mocks = createMocks()
+            val syncRuntimeInfo =
+                createTestSyncRuntimeInfo(
+                    connectState = SyncState.UNVERIFIED,
+                )
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(listOf(syncRuntimeInfo))
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
+            val ledger = PendingExchangeLedger()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager =
+                createSyncManager(
+                    mocks = mocks,
+                    scope = childScope,
+                    pendingExchangeLedger = ledger,
+                )
+            syncManager.start()
+            advanceUntilIdle()
+
+            syncManager.exchangeKeysForPairing(syncRuntimeInfo.appInstanceId)
+
+            val generation = ledger.current(syncRuntimeInfo.appInstanceId)
+            assertNotNull(generation)
+            advanceUntilIdle()
+            coVerify(exactly = 1) {
+                mocks.syncResolver.emitEvent(
+                    match {
+                        it is SyncEvent.ExchangeKeysForPairing &&
+                            it.generation == generation
+                    },
+                )
+            }
+        }
 
     private fun createTestSyncRuntimeInfo(
         appInstanceId: String = "test-app-1",

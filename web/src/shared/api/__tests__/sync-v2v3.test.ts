@@ -130,9 +130,50 @@ describe("SyncApi.exchangeV2", () => {
     // Flip the timestamp after signing — the signature must no longer verify.
     responseBody.timestamp += 1;
 
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(jsonResponse(responseBody)));
+    const fetchMock =
+      vi.fn()
+        .mockResolvedValueOnce(jsonResponse(responseBody))
+        .mockResolvedValueOnce(jsonResponse(""));
+    vi.stubGlobal("fetch", fetchMock);
 
     await expect(SyncApi.exchangeV2(CONFIG)).rejects.toThrow(/verification/);
+
+    const exchangeRequest = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(fetchMock.mock.calls[1][0]).toContain("/sync/trust/v2/cancel");
+    expect(fetchMock.mock.calls[1][1].headers["crosspaste-exchange-timestamp"])
+      .toBe(String(exchangeRequest.timestamp));
+  });
+
+  it("cancels its exact generation when the exchange response is lost", async () => {
+    const fetchMock =
+      vi.fn()
+        .mockRejectedValueOnce(new Error("response lost"))
+        .mockResolvedValueOnce(jsonResponse(""));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(SyncApi.exchangeV2(CONFIG)).rejects.toThrow(/response lost/);
+
+    const exchangeRequest = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(fetchMock.mock.calls[1][0]).toContain("/sync/trust/v2/cancel");
+    expect(fetchMock.mock.calls[1][1].headers["crosspaste-exchange-timestamp"])
+      .toBe(String(exchangeRequest.timestamp));
+  });
+
+  it("generates distinct generations for concurrent exchange requests", async () => {
+    const keys = await KeyStore.generateAndStore();
+    const requests = await Promise.all(
+      Array.from({ length: 32 }, async () => {
+        const json = await CrossPasteCrypto.buildKeyExchangeRequest(
+          toInt8Array(keys.signPrivateKey),
+          toInt8Array(keys.signPublicKey),
+          toInt8Array(keys.cryptPublicKey),
+        );
+        return JSON.parse(json) as { timestamp: number };
+      }),
+    );
+
+    const generations = requests.map((request) => request.timestamp);
+    expect(new Set(generations).size).toBe(generations.length);
   });
 });
 

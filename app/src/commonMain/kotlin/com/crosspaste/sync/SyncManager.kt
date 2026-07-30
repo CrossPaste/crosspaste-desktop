@@ -58,6 +58,10 @@ interface SyncManager : SyncRoutingApi {
         callback: (Boolean) -> Unit,
     )
 
+    // Starts the v2 warm-up exchange for the pairing dialog. The implementation
+    // records its generation before crossing an asynchronous event boundary.
+    fun exchangeKeysForPairing(appInstanceId: String)
+
     // Best-effort release of the pending v2 exchange on the peer when the user
     // abandons pairing before confirm. Routes to POST /sync/trust/v2/cancel.
     fun cancelPairing(appInstanceId: String)

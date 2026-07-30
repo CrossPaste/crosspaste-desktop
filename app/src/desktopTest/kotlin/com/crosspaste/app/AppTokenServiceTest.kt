@@ -46,10 +46,8 @@ class AppTokenServiceTest {
     fun `releaseVerifier releases exactly one count per pending verifier`() {
         val service = createService()
         runBlocking {
-            service.addPendingVerifier("a")
-            service.startRefresh(showToken = true)
-            service.addPendingVerifier("b")
-            service.startRefresh(showToken = true)
+            service.acquireVerifier("a")
+            service.acquireVerifier("b")
             withTimeout(5.seconds) {
                 service.refresh.first { it }
                 service.pendingVerifiers.first { it == setOf("a", "b") }
@@ -79,19 +77,32 @@ class AppTokenServiceTest {
     fun `release enqueued right after acquire cannot orphan the refresh count`() {
         val service = createService()
         runBlocking {
-            service.addPendingVerifier("a")
-            service.startRefresh(showToken = true)
-            // Enqueued after the increment, so the single-consumer command
-            // queue can never process it first — the interleaving that
-            // previously left an orphaned count driving the refresh loop.
+            service.acquireVerifier("a")
             service.releaseVerifier("a")
             // FIFO marker: once it is visible, every prior command has run.
-            service.addPendingVerifier("marker")
+            service.acquireVerifier("marker")
             withTimeout(5.seconds) {
                 service.pendingVerifiers.first { "marker" in it }
             }
-            assertFalse(service.refresh.value)
             assertEquals(setOf("marker"), service.pendingVerifiers.value)
+            service.releaseVerifier("marker")
+            withTimeout(5.seconds) {
+                service.refresh.first { !it }
+            }
+        }
+    }
+
+    @Test
+    fun `repeated acquire by one verifier owns only one refresh count`() {
+        val service = createService()
+        runBlocking {
+            service.acquireVerifier("a")
+            service.acquireVerifier("a")
+            service.releaseVerifier("a")
+            withTimeout(5.seconds) {
+                service.refresh.first { !it }
+                service.pendingVerifiers.first { it.isEmpty() }
+            }
         }
     }
 
@@ -101,8 +112,7 @@ class AppTokenServiceTest {
         runBlocking {
             // One verifier-owned count plus one anonymous count (e.g. the local
             // pairing-code screen keeping the token rotation alive).
-            service.addPendingVerifier("a")
-            service.startRefresh(showToken = true)
+            service.acquireVerifier("a")
             service.startRefresh(showToken = false)
             withTimeout(5.seconds) {
                 service.showToken.first { it }

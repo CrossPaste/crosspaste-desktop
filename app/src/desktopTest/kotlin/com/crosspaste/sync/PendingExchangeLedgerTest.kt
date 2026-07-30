@@ -1,5 +1,10 @@
 package com.crosspaste.sync
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -45,11 +50,39 @@ class PendingExchangeLedgerTest {
     }
 
     @Test
-    fun `clear drops the record`() {
+    fun `successful consume drops the record`() {
         val ledger = PendingExchangeLedger()
         ledger.record("a", 1L)
-        ledger.clear("a")
+        assertTrue(ledger.consume("a", 1L))
         assertNull(ledger.current("a"))
         assertFalse(ledger.consume("a", 1L))
     }
+
+    @Test
+    fun `concurrent stale consume never removes replacement generation`() =
+        runBlocking {
+            val ledger = PendingExchangeLedger()
+            repeat(1_000) { attempt ->
+                val oldGeneration = attempt.toLong() * 2
+                val newGeneration = oldGeneration + 1
+                ledger.record("a", oldGeneration)
+                val start = CompletableDeferred<Unit>()
+                val operations =
+                    listOf(
+                        async(Dispatchers.Default) {
+                            start.await()
+                            ledger.consume("a", oldGeneration)
+                        },
+                        async(Dispatchers.Default) {
+                            start.await()
+                            ledger.record("a", newGeneration)
+                        },
+                    )
+
+                start.complete(Unit)
+                operations.awaitAll()
+
+                assertEquals(newGeneration, ledger.current("a"))
+            }
+        }
 }

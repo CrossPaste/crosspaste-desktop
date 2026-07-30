@@ -1,8 +1,8 @@
 package com.crosspaste.sync
 
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
-import io.ktor.util.collections.ConcurrentMap
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
 import kotlinx.atomicfu.updateAndGet
 
 /**
@@ -22,7 +22,7 @@ class PendingExchangeLedger {
 
     private val lastGeneration = atomic(0L)
 
-    private val generations: MutableMap<String, Long> = ConcurrentMap()
+    private val generations = atomic<Map<String, Long>>(emptyMap())
 
     /**
      * Strictly monotonic and unique within this process, while still being a
@@ -37,29 +37,30 @@ class PendingExchangeLedger {
         appInstanceId: String,
         generation: Long,
     ) {
-        generations[appInstanceId] = generation
+        generations.update { current ->
+            current + (appInstanceId to generation)
+        }
     }
 
     /** The generation of the exchange we currently own for the peer, if any. */
-    fun current(appInstanceId: String): Long? = generations[appInstanceId]
-
-    /** Drops the peer's record (a successful confirm consumed the exchange). */
-    fun clear(appInstanceId: String) {
-        generations.remove(appInstanceId)
-    }
+    fun current(appInstanceId: String): Long? = generations.value[appInstanceId]
 
     /**
      * Removes the peer's record ONLY while it still is [generation]. A stale
      * cancel whose dialog was superseded by a newer exchange consumes nothing.
-     * Mutations for one peer are serialized by the resolver's per-peer mutex,
-     * so the check-then-remove needs no extra atomicity.
+     * The compare-and-set also protects against synchronous manager-side
+     * records racing resolver-side cancel or confirm handling.
      */
     fun consume(
         appInstanceId: String,
         generation: Long,
     ): Boolean {
-        if (generations[appInstanceId] != generation) return false
-        generations.remove(appInstanceId)
-        return true
+        while (true) {
+            val current = generations.value
+            if (current[appInstanceId] != generation) return false
+            if (generations.compareAndSet(current, current - appInstanceId)) {
+                return true
+            }
+        }
     }
 }
