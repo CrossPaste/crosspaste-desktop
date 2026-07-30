@@ -57,6 +57,7 @@ class GeneralSyncManagerTest {
     ): GeneralSyncManager =
         GeneralSyncManager(
             realTimeSyncScope = scope,
+            pendingExchangeLedger = PendingExchangeLedger(),
             syncResolver = mocks.syncResolver,
             syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
             syncClientApi = mocks.syncClientApi,

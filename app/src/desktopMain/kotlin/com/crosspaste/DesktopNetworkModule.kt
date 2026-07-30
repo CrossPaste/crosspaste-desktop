@@ -61,6 +61,7 @@ import com.crosspaste.sync.GeneralSyncManager
 import com.crosspaste.sync.MarketingNearbyDeviceManager
 import com.crosspaste.sync.MarketingSyncManager
 import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.PendingExchangeLedger
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.sync.SharePushOrchestrator
@@ -240,6 +241,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 GeneralNearbyDeviceManager(get(), get(), get(), get())
             }
         }
+        single<PendingExchangeLedger> { PendingExchangeLedger() }
         single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
         single<PushSessionManager> {
             PushSessionManager(
@@ -250,6 +252,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<SharePushOrchestrator> { SharePushOrchestrator(get(), get(), get()) }
         single<SyncDeviceManager> {
             SyncDeviceManager(
+                pendingExchangeLedger = get(),
                 secureStore = get(),
                 syncClientApi = get(),
                 syncRuntimeInfoDao = get(),
@@ -261,6 +264,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 MarketingSyncManager()
             } else {
                 GeneralSyncManager(
+                    pendingExchangeLedger = get(),
                     syncResolver = get(),
                     syncRuntimeInfoDao = get(),
                     syncClientApi = get(),
@@ -275,6 +279,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 localPlatform = get(),
                 lazyPasteBonjourService = lazy { get() },
                 networkInterfaceService = get(),
+                pendingExchangeLedger = get(),
                 ratingPromptManager = get(),
                 secureKeyPairSerializer = get(),
                 secureStore = get(),

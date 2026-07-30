@@ -314,6 +314,9 @@ fun Routing.syncRouting(
                             cryptPublicKey = request.cryptPublicKey,
                             sas = sas,
                             timestamp = currentTimestamp,
+                            // The signed request timestamp is the initiator's
+                            // generation marker; a client cancel must echo it.
+                            generation = request.timestamp,
                         ),
                     )
 
@@ -432,9 +435,9 @@ fun Routing.syncRouting(
     post("/sync/trust/v2/cancel") {
         getAppInstanceId(call)?.let { appInstanceId ->
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
-                val requestedTimestamp = call.request.headers[HEADER_EXCHANGE_TIMESTAMP]?.toLongOrNull()
-                if (requestedTimestamp == null ||
-                    pendingKeyExchangeStore.timestampMatches(appInstanceId, requestedTimestamp)
+                val requestedGeneration = call.request.headers[HEADER_EXCHANGE_TIMESTAMP]?.toLongOrNull()
+                if (requestedGeneration == null ||
+                    pendingKeyExchangeStore.generationMatches(appInstanceId, requestedGeneration)
                 ) {
                     releasePendingKeyExchange(appInstanceId)
                     logger.info { "v2 exchange cancelled by $appInstanceId" }

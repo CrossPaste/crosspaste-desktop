@@ -76,6 +76,26 @@ class AppTokenServiceTest {
     }
 
     @Test
+    fun `release enqueued right after acquire cannot orphan the refresh count`() {
+        val service = createService()
+        runBlocking {
+            service.addPendingVerifier("a")
+            service.startRefresh(showToken = true)
+            // Enqueued after the increment, so the single-consumer command
+            // queue can never process it first — the interleaving that
+            // previously left an orphaned count driving the refresh loop.
+            service.releaseVerifier("a")
+            // FIFO marker: once it is visible, every prior command has run.
+            service.addPendingVerifier("marker")
+            withTimeout(5.seconds) {
+                service.pendingVerifiers.first { "marker" in it }
+            }
+            assertFalse(service.refresh.value)
+            assertEquals(setOf("marker"), service.pendingVerifiers.value)
+        }
+    }
+
+    @Test
     fun `releaseVerifier hideToken hides overlay while other counts keep refreshing`() {
         val service = createService()
         runBlocking {

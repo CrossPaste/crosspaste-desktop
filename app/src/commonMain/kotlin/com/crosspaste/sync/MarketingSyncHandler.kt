@@ -50,7 +50,7 @@ class MarketingSyncHandler(
     override suspend fun exchangeKeysForPairing() {
     }
 
-    override suspend fun cancelPairing(requestedAt: Long) {
+    override suspend fun cancelPairing(generation: Long) {
     }
 
     override suspend fun showToken() {

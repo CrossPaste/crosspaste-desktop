@@ -64,9 +64,10 @@ interface SyncHandler {
 
     // Release the pending v2 exchange we started on the peer when pairing is
     // abandoned before confirm (POST /sync/trust/v2/cancel, best-effort).
-    // [requestedAt] = epoch millis of the abandon action, captured at the UI
-    // call site so a later exchange from a reopened dialog is never cancelled.
-    suspend fun cancelPairing(requestedAt: Long)
+    // [generation] = the abandoned exchange's ledger generation, captured at
+    // the UI call site so a later exchange from a reopened dialog is never
+    // cancelled.
+    suspend fun cancelPairing(generation: Long)
 
     suspend fun showToken()
 

@@ -125,8 +125,9 @@ interface ConnectingAttempt {
    * The warm-up key-exchange response (pairingMode 2 only). Reused at confirm
    * time so each pairing performs exactly ONE exchange — the desktop's token
    * refresh is counted per exchange and released once per confirm.
+   * `requestTimestamp` is the generation marker for a targeted cancel.
    */
-  v2Exchange?: KeyExchangeResponse;
+  v2Exchange?: KeyExchangeResponse & { requestTimestamp: number };
   /**
    * True while the trust round-trip that makes the DESKTOP persist keys is in
    * flight (v1 trust / v2 confirm / v3 commit). Cancelling in this window
@@ -762,7 +763,7 @@ async function beginPairing(
   const pairingMode = selectPairingMode(syncInfo.appInfo.pairingVersion);
 
   let v3: PairingV3Initiator | undefined;
-  let v2Exchange: KeyExchangeResponse | undefined;
+  let v2Exchange: (KeyExchangeResponse & { requestTimestamp: number }) | undefined;
   if (pairingMode === 3) {
     v3 = await startV3Session(appInstanceId, targetAppInstanceId, config);
     // The desktop is now showing this session's PIN card.
@@ -881,11 +882,14 @@ async function releaseAttempt(attempt: ConnectingAttempt): Promise<void> {
       v3.destroy();
     }
   }
-  if (attempt.v2Exchange) {
+  const v2Exchange = attempt.v2Exchange;
+  if (v2Exchange) {
     attempt.v2Exchange = undefined;
-    // Release the desktop's pending exchange (refresh count + SAS overlay).
-    // Desktops predating the cancel route just fail; nothing else to do.
-    await SyncApi.cancelV2(config).catch(() => {});
+    // Release the desktop's pending exchange (refresh count + SAS overlay),
+    // naming its generation so a cancel that arrives after a newer exchange
+    // (fast reconnect) releases nothing. Desktops predating the cancel route
+    // just fail; ones predating the header ignore it.
+    await SyncApi.cancelV2(config, v2Exchange.requestTimestamp).catch(() => {});
   }
 }
 

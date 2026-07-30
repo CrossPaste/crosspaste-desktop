@@ -2,17 +2,14 @@ package com.crosspaste.app
 
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -20,7 +17,14 @@ abstract class AppTokenService : AppTokenApi {
 
     private val scope = namedScope(ioDispatcher, "AppTokenService")
 
-    private val lock = Mutex()
+    // Every state mutation (verifier set, refresh counter, overlay visibility,
+    // SAS mode) runs on ONE consumer coroutine in submission order. Callers
+    // enqueue synchronously (trySend on an UNLIMITED channel never fails), so
+    // each caller's own call sequence is executed in that order — a verifier
+    // release can never be processed before the startRefresh that funded it,
+    // which is what previously allowed an orphaned count to keep the refresh
+    // loop alive forever (#4684 / #4690 review).
+    private val commands = Channel<() -> Unit>(Channel.UNLIMITED)
 
     private val _refreshProgress = MutableStateFlow(0f)
 
@@ -30,6 +34,7 @@ abstract class AppTokenService : AppTokenApi {
 
     override val refresh: StateFlow<Boolean> = _refresh.asStateFlow()
 
+    // Confined to the command consumer coroutine.
     private var refreshCounter = 0
 
     private val _showToken = MutableStateFlow(false)
@@ -40,6 +45,8 @@ abstract class AppTokenService : AppTokenApi {
 
     override val pendingVerifiers: StateFlow<Set<String>> = _pendingVerifiers.asStateFlow()
 
+    // Written only on the command consumer coroutine; also read by the refresh
+    // loop (a stale read at worst regenerates one random token — benign).
     private var _sasMode = false
 
     private val _token = MutableStateFlow(charArrayOf('0', '0', '0', '0', '0', '0'))
@@ -47,6 +54,11 @@ abstract class AppTokenService : AppTokenApi {
     override val token: StateFlow<CharArray> = _token.asStateFlow()
 
     init {
+        scope.launch {
+            for (command in commands) {
+                command()
+            }
+        }
         scope.launch {
             refresh.collectLatest { isShowing ->
                 if (isShowing) {
@@ -69,6 +81,10 @@ abstract class AppTokenService : AppTokenApi {
 
     abstract fun preShowPairingCode()
 
+    private fun submit(command: () -> Unit) {
+        commands.trySend(command)
+    }
+
     override fun sameToken(token: Int): Boolean =
         token ==
             this.token.value
@@ -76,32 +92,30 @@ abstract class AppTokenService : AppTokenApi {
                 .toInt()
 
     override fun setSASToken(sas: Int) {
-        val padded = sas.toString().padStart(6, '0')
-        _token.value = padded.toCharArray()
-        _sasMode = true
+        submit {
+            val padded = sas.toString().padStart(6, '0')
+            _token.value = padded.toCharArray()
+            _sasMode = true
+        }
     }
 
     override fun startRefresh(showToken: Boolean) {
-        scope.launch {
-            lock.withLock {
-                if (showToken) {
-                    _showToken.value = true
-                    preShowToken()
-                }
-                _refresh.value = true
-                refreshCounter += 1
+        submit {
+            if (showToken) {
+                _showToken.value = true
+                preShowToken()
             }
+            _refresh.value = true
+            refreshCounter += 1
         }
     }
 
     override fun stopRefresh(hideToken: Boolean) {
-        scope.launch {
-            lock.withLock {
-                if (hideToken) {
-                    _showToken.value = false
-                }
-                decrementRefreshLocked()
+        submit {
+            if (hideToken) {
+                _showToken.value = false
             }
+            decrementRefresh()
         }
     }
 
@@ -109,33 +123,39 @@ abstract class AppTokenService : AppTokenApi {
         appInstanceId: String,
         hideToken: Boolean,
     ) {
-        // Remove the verifier SYNCHRONOUSLY (same semantics as
-        // removePendingVerifier): callers such as the v2 exchange route release
-        // a superseded peer and immediately re-add it, so deferring the removal
-        // into the async block would erase the re-added verifier. The atomic
-        // getAndUpdate makes concurrent releases race safely — only the caller
-        // that actually removed the entry gets to decrement.
-        val hadVerifier =
-            appInstanceId in
-                _pendingVerifiers.getAndUpdate { currentSet ->
-                    currentSet - appInstanceId
-                }
-        scope.launch {
-            lock.withLock {
-                if (hideToken) {
-                    _showToken.value = false
-                }
-                // Decrement only for the verifier we actually removed — an
-                // already-released verifier must not consume a count owned by
-                // another pairing in flight.
-                if (hadVerifier) {
-                    decrementRefreshLocked()
-                }
+        submit {
+            val hadVerifier = appInstanceId in _pendingVerifiers.value
+            _pendingVerifiers.value -= appInstanceId
+            if (hideToken) {
+                _showToken.value = false
+            }
+            // Decrement only for the verifier we actually removed — an
+            // already-released verifier must not consume a count owned by
+            // another pairing in flight.
+            if (hadVerifier) {
+                decrementRefresh()
             }
         }
     }
 
-    private fun decrementRefreshLocked() {
+    override fun addPendingVerifier(appInstanceId: String) {
+        submit {
+            _pendingVerifiers.value += appInstanceId
+        }
+    }
+
+    override fun removePendingVerifier(appInstanceId: String) {
+        submit {
+            _pendingVerifiers.value -= appInstanceId
+        }
+    }
+
+    override fun showPairingCode() {
+        preShowPairingCode()
+    }
+
+    // Runs on the command consumer coroutine only.
+    private fun decrementRefresh() {
         if (refreshCounter > 0) {
             refreshCounter -= 1
         }
@@ -144,22 +164,6 @@ abstract class AppTokenService : AppTokenApi {
             _showToken.value = false
             _sasMode = false
         }
-    }
-
-    override fun addPendingVerifier(appInstanceId: String) {
-        _pendingVerifiers.update { currentSet ->
-            currentSet + appInstanceId
-        }
-    }
-
-    override fun removePendingVerifier(appInstanceId: String) {
-        _pendingVerifiers.update { currentSet ->
-            currentSet - appInstanceId
-        }
-    }
-
-    override fun showPairingCode() {
-        preShowPairingCode()
     }
 
     private fun refreshToken() {

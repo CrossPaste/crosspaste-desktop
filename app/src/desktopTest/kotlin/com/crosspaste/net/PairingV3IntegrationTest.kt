@@ -518,7 +518,7 @@ class PairingV3IntegrationTest {
             a.start()
             b.start()
 
-            assertIs<SuccessResult>(b.syncClientApi.exchangeKeys(a.appInstanceId, urlFor(a)))
+            assertIs<SuccessResult>(b.syncClientApi.exchangeKeys(a.appInstanceId, 2000L, urlFor(a)))
             assertIs<SuccessResult>(
                 b.syncClientApi.trustV2Confirm(a.appInstanceId, "localhost", urlFor(a)),
             )
@@ -554,13 +554,13 @@ class PairingV3IntegrationTest {
             a.pairingAcceptanceWindow.open()
 
             // The v2 exchange completes BEFORE any v3 session exists
-            val exchange = b.syncClientApi.exchangeKeys(a.appInstanceId, urlFor(a))
+            val exchange = b.syncClientApi.exchangeKeys(a.appInstanceId, 3000L, urlFor(a))
             assertIs<SuccessResult>(exchange)
 
             startPairing(b, a)
 
             // With a v3 session in flight, both remaining v2 legs are refused
-            val v2Exchange = b.syncClientApi.exchangeKeys(a.appInstanceId, urlFor(a))
+            val v2Exchange = b.syncClientApi.exchangeKeys(a.appInstanceId, 4000L, urlFor(a))
             assertIs<FailureResult>(v2Exchange)
             assertEquals(
                 PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED,
@@ -586,7 +586,7 @@ class PairingV3IntegrationTest {
 
             startPairing(b, a)
 
-            val reverseV2Exchange = a.syncClientApi.exchangeKeys(b.appInstanceId, urlFor(b))
+            val reverseV2Exchange = a.syncClientApi.exchangeKeys(b.appInstanceId, 5000L, urlFor(b))
             assertIs<FailureResult>(reverseV2Exchange)
             assertEquals(
                 PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED,

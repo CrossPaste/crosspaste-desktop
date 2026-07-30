@@ -143,14 +143,19 @@ class SyncClientApi(
             }
         }
 
+    // [exchangeGeneration] is the caller-generated generation marker for this
+    // exchange (see PendingExchangeLedger): it travels as the signed request
+    // timestamp, the responder stores it with the pending entry, and a later
+    // cancel echoes it so only this exact exchange can be released.
     suspend fun exchangeKeys(
         targetAppInstanceId: String,
+        exchangeGeneration: Long,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult =
         request(logger, exceptionHandler, request = {
             val signPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
             val cryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
-            val timestamp = nowEpochMilliseconds()
+            val timestamp = exchangeGeneration
             val signature =
                 CryptographyUtils.signKeyExchangeRequest(
                     secureStore.secureKeyPair.signKeyPair.privateKey,
@@ -230,13 +235,13 @@ class SyncClientApi(
     // Best-effort release of our pending v2 exchange on the responder (trust
     // dialog dismissed before confirm). The stored exchange owns one of the
     // responder's token-refresh counts, so without this the SAS overlay lingers
-    // until closed manually (#4684). [exchangeTimestamp] is the generation
-    // marker from the exchange response: the responder only releases that exact
+    // until closed manually (#4684). [exchangeGeneration] is the same marker we
+    // sent with the exchange request: the responder only releases that exact
     // exchange, so a stale cancel cannot tear down a newer one. Idempotent
     // server-side; peers older than the route just fail and the caller ignores
     // the result.
     suspend fun trustV2Cancel(
-        exchangeTimestamp: Long,
+        exchangeGeneration: Long,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult =
         request(logger, exceptionHandler, request = {
@@ -244,7 +249,7 @@ class SyncClientApi(
                 "",
                 typeInfo<String>(),
                 headersBuilder = {
-                    append(HEADER_EXCHANGE_TIMESTAMP, exchangeTimestamp.toString())
+                    append(HEADER_EXCHANGE_TIMESTAMP, exchangeGeneration.toString())
                 },
                 urlBuilder = {
                     toUrl()

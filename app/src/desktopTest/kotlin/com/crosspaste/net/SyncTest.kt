@@ -12,7 +12,6 @@ import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.sync.HostInfo
-import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
@@ -51,7 +50,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -276,14 +274,12 @@ class SyncTest : KoinTest {
         runBlocking { pasteServer.stop() }
     }
 
-    private suspend fun exchangeAndAwaitPending(): KeyExchangeResponse {
+    private suspend fun exchangeAndAwaitPending(exchangeGeneration: Long) {
         val exchangeResult =
-            syncClientApi.exchangeKeys(serverAppInfo.appInstanceId) {
+            syncClientApi.exchangeKeys(serverAppInfo.appInstanceId, exchangeGeneration) {
                 buildUrl(HostAndPort("localhost", readWritePort.getValue()))
             }
         assertTrue(exchangeResult is SuccessResult)
-        val response = (exchangeResult as SuccessResult).getResult<KeyExchangeResponse>()
-        assertNotNull(response)
 
         // The exchange parks one token-refresh count and one pending verifier
         // on the responder (both updated asynchronously).
@@ -291,7 +287,6 @@ class SyncTest : KoinTest {
             appTokenApi.refresh.first { it }
             appTokenApi.pendingVerifiers.first { clientAppInfo.appInstanceId in it }
         }
-        return response
     }
 
     @Test
@@ -299,10 +294,10 @@ class SyncTest : KoinTest {
         runBlocking {
             pasteServer.start()
 
-            val response = exchangeAndAwaitPending()
+            exchangeAndAwaitPending(exchangeGeneration = 1000L)
 
             val cancelResult =
-                syncClientApi.trustV2Cancel(response.timestamp) {
+                syncClientApi.trustV2Cancel(1000L) {
                     buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             assertTrue(cancelResult is SuccessResult)
@@ -330,19 +325,16 @@ class SyncTest : KoinTest {
         runBlocking {
             pasteServer.start()
 
-            val firstResponse = exchangeAndAwaitPending()
+            exchangeAndAwaitPending(exchangeGeneration = 1000L)
 
-            // A second exchange supersedes the first entry; the generation
-            // marker is the responder's epoch-millisecond clock, so a short
-            // delay guarantees it differs from the stale one.
-            delay(10.milliseconds)
-            val secondResponse = exchangeAndAwaitPending()
-            assertTrue(secondResponse.timestamp != firstResponse.timestamp)
+            // A second exchange supersedes the first entry under a distinct
+            // client-generated generation.
+            exchangeAndAwaitPending(exchangeGeneration = 2000L)
 
             // The stale cancel names the superseded exchange: the responder
             // must keep the current one alive.
             val staleCancel =
-                syncClientApi.trustV2Cancel(firstResponse.timestamp) {
+                syncClientApi.trustV2Cancel(1000L) {
                     buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             assertTrue(staleCancel is SuccessResult)
@@ -352,7 +344,7 @@ class SyncTest : KoinTest {
 
             // Cancelling the current generation releases it.
             val currentCancel =
-                syncClientApi.trustV2Cancel(secondResponse.timestamp) {
+                syncClientApi.trustV2Cancel(2000L) {
                     buildUrl(HostAndPort("localhost", readWritePort.getValue()))
                 }
             assertTrue(currentCancel is SuccessResult)
@@ -370,7 +362,7 @@ class SyncTest : KoinTest {
         runBlocking {
             pasteServer.start()
 
-            exchangeAndAwaitPending()
+            exchangeAndAwaitPending(exchangeGeneration = 1000L)
 
             // Callers without the generation header (older clients, the browser
             // extension) keep the original unconditional-release behaviour.

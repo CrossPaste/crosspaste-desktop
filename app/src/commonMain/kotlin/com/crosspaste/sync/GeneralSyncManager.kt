@@ -12,7 +12,6 @@ import com.crosspaste.net.filter
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.pairing.v3.PairingV3
-import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
@@ -42,6 +41,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class GeneralSyncManager(
     override val realTimeSyncScope: CoroutineScope = namedScope(ioDispatcher, "GeneralSyncManager"),
+    private val pendingExchangeLedger: PendingExchangeLedger,
     private val syncResolver: SyncResolverApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val syncClientApi: SyncClientApi,
@@ -326,14 +326,14 @@ class GeneralSyncManager(
     }
 
     override fun cancelPairing(appInstanceId: String) {
-        // Capture the abandon instant synchronously: the UI disposes the old
-        // dialog before a reopened one fires its warm-up exchange, so any
-        // exchange recorded after this timestamp belongs to the newer dialog
-        // and must not be cancelled.
-        val requestedAt = nowEpochMilliseconds()
+        // Capture the generation of the exchange the closing dialog owns,
+        // synchronously: Compose disposes the old dialog before a reopened one
+        // fires its warm-up, so whatever the ledger holds right now is ours to
+        // cancel. No record → nothing we own → no request at all.
+        val generation = pendingExchangeLedger.current(appInstanceId) ?: return
         internalSyncHandlers[appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch {
-                syncHandler.cancelPairing(requestedAt)
+                syncHandler.cancelPairing(generation)
             }
         }
     }

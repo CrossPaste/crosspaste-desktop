@@ -3,7 +3,6 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
-import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.ws.WsEnvelope
@@ -14,9 +13,9 @@ import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.ConcurrentMap
 
 class SyncDeviceManager(
+    private val pendingExchangeLedger: PendingExchangeLedger,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -24,36 +23,6 @@ class SyncDeviceManager(
 ) {
 
     private val logger = KotlinLogging.logger {}
-
-    /**
-     * The v2 exchange we initiated on a peer that has not yet been confirmed
-     * or cancelled: the responder's exchange timestamp (its generation marker)
-     * plus when we recorded it locally. This is what makes cancelPairing both
-     * targeted (the cancel names the exact exchange it releases) and
-     * self-gating (no record → nothing we own → no request), independent of
-     * the peer's connect state (#4684 / #4690 review).
-     */
-    private val pendingExchanges: MutableMap<String, PendingExchangeRecord> = ConcurrentMap()
-
-    data class PendingExchangeRecord(
-        val exchangeTimestamp: Long,
-        val recordedAt: Long,
-    )
-
-    fun rememberPendingExchange(
-        appInstanceId: String,
-        exchangeTimestamp: Long,
-    ) {
-        pendingExchanges[appInstanceId] =
-            PendingExchangeRecord(
-                exchangeTimestamp = exchangeTimestamp,
-                recordedAt = nowEpochMilliseconds(),
-            )
-    }
-
-    fun clearPendingExchange(appInstanceId: String) {
-        pendingExchanges.remove(appInstanceId)
-    }
 
     suspend fun updateAllowSend(
         syncRuntimeInfo: SyncRuntimeInfo,
@@ -80,14 +49,16 @@ class SyncDeviceManager(
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
+                // Record the generation BEFORE sending: if the request lands
+                // but the response is lost, we still hold the marker needed to
+                // cancel the responder's orphaned entry.
+                val generation = pendingExchangeLedger.nextGeneration()
+                pendingExchangeLedger.record(syncRuntimeInfo.appInstanceId, generation)
                 val result =
-                    syncClientApi.exchangeKeys(syncRuntimeInfo.appInstanceId) {
+                    syncClientApi.exchangeKeys(syncRuntimeInfo.appInstanceId, generation) {
                         buildUrl(hostAndPort)
                     }
                 if (result is SuccessResult) {
-                    result.getResult<KeyExchangeResponse>()?.let { response ->
-                        rememberPendingExchange(syncRuntimeInfo.appInstanceId, response.timestamp)
-                    }
                     logger.info { "exchangeKeysForPairing success $host ${syncRuntimeInfo.port}" }
                 } else {
                     logger.warn { "exchangeKeysForPairing failed $host ${syncRuntimeInfo.port}" }
@@ -104,30 +75,26 @@ class SyncDeviceManager(
 
     /**
      * Best-effort release of the pending v2 exchange we opened on the peer
-     * (#4684). Gated by ownership, not connect state: we send exactly when we
-     * hold an unconsumed exchange record for the peer (a confirm clears it, a
-     * successful exchange creates it), so the request is still sent after the
-     * peer dropped to DISCONNECTED, and skipped after a successful pairing.
-     * [requestedAt] is when the user abandoned the dialog — a record written
-     * after that belongs to a newer dialog, so this stale cancel must not
-     * release it. Failures are ignored: pairing is being abandoned anyway, and
+     * (#4684). Gated by ownership, not connect state: [generation] was
+     * captured from the ledger at the abandon instant, and the cancel is only
+     * sent while the ledger still holds that exact generation — a reopened
+     * dialog's newer exchange replaces the record, so a stale cancel consumes
+     * nothing. Failures are ignored: pairing is being abandoned anyway, and
      * the peer's entry self-heals when a later exchange from us replaces it.
      */
     suspend fun cancelPairing(
         syncRuntimeInfo: SyncRuntimeInfo,
-        requestedAt: Long,
+        generation: Long,
     ) {
         val appInstanceId = syncRuntimeInfo.appInstanceId
-        val record = pendingExchanges[appInstanceId] ?: return
-        if (record.recordedAt > requestedAt) {
-            logger.info { "cancelPairing skipped for $appInstanceId (a newer exchange superseded it)" }
+        val host = syncRuntimeInfo.connectHostAddress ?: return
+        if (!pendingExchangeLedger.consume(appInstanceId, generation)) {
+            logger.info { "cancelPairing skipped for $appInstanceId (exchange superseded or consumed)" }
             return
         }
-        val host = syncRuntimeInfo.connectHostAddress ?: return
-        clearPendingExchange(appInstanceId)
         val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
         val result =
-            syncClientApi.trustV2Cancel(record.exchangeTimestamp) {
+            syncClientApi.trustV2Cancel(generation) {
                 buildUrl(hostAndPort)
             }
         if (result is SuccessResult) {

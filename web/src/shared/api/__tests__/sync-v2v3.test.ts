@@ -118,6 +118,10 @@ describe("SyncApi.exchangeV2", () => {
     expect(typeof sent.signPublicKey).toBe("string");
     expect(typeof sent.signature).toBe("string");
     expect(typeof sent.timestamp).toBe("number");
+
+    // The generation marker surfaced to the caller IS the signed request
+    // timestamp — the value a targeted cancelV2 must echo.
+    expect(result.requestTimestamp).toBe(sent.timestamp);
   });
 
   it("rejects a tampered exchange response", async () => {
@@ -129,6 +133,30 @@ describe("SyncApi.exchangeV2", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(jsonResponse(responseBody)));
 
     await expect(SyncApi.exchangeV2(CONFIG)).rejects.toThrow(/verification/);
+  });
+});
+
+describe("SyncApi.cancelV2", () => {
+  it("sends the exchange generation header when provided", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse(""));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await SyncApi.cancelV2(CONFIG, 1234567890);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("http://192.168.1.10:13129/sync/trust/v2/cancel");
+    expect(init.method).toBe("POST");
+    expect(init.headers["crosspaste-exchange-timestamp"]).toBe("1234567890");
+  });
+
+  it("omits the generation header when not provided", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse(""));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await SyncApi.cancelV2(CONFIG);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["crosspaste-exchange-timestamp"]).toBeUndefined();
   });
 });
 
