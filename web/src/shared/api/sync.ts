@@ -113,16 +113,24 @@ export const SyncApi = {
       toInt8Array(keys.cryptPublicKey),
     );
     const request = JSON.parse(requestJson) as { timestamp: number };
-    const response = await apiPost<KeyExchangeResponse>(
-      toRequestConfig(config),
-      "/sync/trust/v2/exchange",
-      request,
-    );
-    const valid = await CrossPasteCrypto.verifyKeyExchangeResponse(JSON.stringify(response));
-    if (!valid) {
-      throw new Error("Key exchange response failed verification");
+    try {
+      const response = await apiPost<KeyExchangeResponse>(
+        toRequestConfig(config),
+        "/sync/trust/v2/exchange",
+        request,
+      );
+      const valid = await CrossPasteCrypto.verifyKeyExchangeResponse(JSON.stringify(response));
+      if (!valid) {
+        throw new Error("Key exchange response failed verification");
+      }
+      return { ...response, requestTimestamp: request.timestamp };
+    } catch (error) {
+      // The request may have reached the desktop even when its response was
+      // lost or invalid. Release the exact signed generation before surfacing
+      // the original exchange failure.
+      await SyncApi.cancelV2(config, request.timestamp).catch(() => {});
+      throw error;
     }
-    return { ...response, requestTimestamp: request.timestamp };
   },
 
   /**

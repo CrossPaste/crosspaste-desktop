@@ -120,7 +120,7 @@ class SyncResolver(
                     }
 
                     is SyncEvent.ExchangeKeysForPairing -> {
-                        syncDeviceManager.exchangeKeysForPairing(syncRuntimeInfo)
+                        syncDeviceManager.exchangeKeysForPairing(syncRuntimeInfo, event.generation)
                     }
 
                     is SyncEvent.CancelPairing -> {
@@ -758,7 +758,7 @@ class SyncResolver(
 
             // Step 4: Save remote key locally and send heartbeat. The confirm
             // consumed the responder's pending exchange — nothing left to cancel.
-            pendingExchangeLedger.clear(appInstanceId)
+            pendingExchangeLedger.consume(appInstanceId, generation)
             secureStore.saveCryptPublicKey(appInstanceId, response.cryptPublicKey)
 
             advertiseAddressViaHeartbeat(host, port, appInstanceId)

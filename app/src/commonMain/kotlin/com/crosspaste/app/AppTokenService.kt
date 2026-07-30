@@ -2,6 +2,7 @@ package com.crosspaste.app
 
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,15 +16,13 @@ import kotlin.time.Duration.Companion.milliseconds
 
 abstract class AppTokenService : AppTokenApi {
 
+    private val logger = KotlinLogging.logger {}
+
     private val scope = namedScope(ioDispatcher, "AppTokenService")
 
     // Every state mutation (verifier set, refresh counter, overlay visibility,
-    // SAS mode) runs on ONE consumer coroutine in submission order. Callers
-    // enqueue synchronously (trySend on an UNLIMITED channel never fails), so
-    // each caller's own call sequence is executed in that order — a verifier
-    // release can never be processed before the startRefresh that funded it,
-    // which is what previously allowed an orphaned count to keep the refresh
-    // loop alive forever (#4684 / #4690 review).
+    // SAS mode) runs on one consumer coroutine in submission order. Verifier
+    // acquire/release commands update ownership and its counter together.
     private val commands = Channel<() -> Unit>(Channel.UNLIMITED)
 
     private val _refreshProgress = MutableStateFlow(0f)
@@ -56,7 +55,9 @@ abstract class AppTokenService : AppTokenApi {
     init {
         scope.launch {
             for (command in commands) {
-                command()
+                runCatching(command).onFailure { e ->
+                    logger.error(e) { "App token command failed" }
+                }
             }
         }
         scope.launch {
@@ -82,7 +83,9 @@ abstract class AppTokenService : AppTokenApi {
     abstract fun preShowPairingCode()
 
     private fun submit(command: () -> Unit) {
-        commands.trySend(command)
+        if (commands.trySend(command).isFailure) {
+            logger.warn { "App token command rejected" }
+        }
     }
 
     override fun sameToken(token: Int): Boolean =
@@ -119,6 +122,27 @@ abstract class AppTokenService : AppTokenApi {
         }
     }
 
+    override fun acquireVerifier(
+        appInstanceId: String,
+        showToken: Boolean,
+    ) {
+        submit {
+            val isNewVerifier = appInstanceId !in _pendingVerifiers.value
+            _pendingVerifiers.value += appInstanceId
+            // Fund the refresh count before the overlay callback: preShowToken
+            // is platform code that may throw, and a registered verifier whose
+            // count was never taken would later release someone else's.
+            if (isNewVerifier) {
+                _refresh.value = true
+                refreshCounter += 1
+            }
+            if (showToken) {
+                _showToken.value = true
+                preShowToken()
+            }
+        }
+    }
+
     override fun releaseVerifier(
         appInstanceId: String,
         hideToken: Boolean,
@@ -135,18 +159,6 @@ abstract class AppTokenService : AppTokenApi {
             if (hadVerifier) {
                 decrementRefresh()
             }
-        }
-    }
-
-    override fun addPendingVerifier(appInstanceId: String) {
-        submit {
-            _pendingVerifiers.value += appInstanceId
-        }
-    }
-
-    override fun removePendingVerifier(appInstanceId: String) {
-        submit {
-            _pendingVerifiers.value -= appInstanceId
         }
     }
 

@@ -47,7 +47,7 @@ class MarketingSyncHandler(
     ) {
     }
 
-    override suspend fun exchangeKeysForPairing() {
+    override suspend fun exchangeKeysForPairing(generation: Long) {
     }
 
     override suspend fun cancelPairing(generation: Long) {

@@ -69,6 +69,7 @@ sealed interface SyncEvent {
 
     data class ExchangeKeysForPairing(
         override val syncRuntimeInfo: SyncRuntimeInfo,
+        val generation: Long,
     ) : SyncRunTimeInfoEvent {
         override fun toString(): String = "ExchangeKeysForPairing ${syncRuntimeInfo.appInstanceId}"
     }

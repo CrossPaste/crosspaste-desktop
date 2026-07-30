@@ -25,6 +25,8 @@ import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getJsonUtils
 import dev.whyoleg.cryptography.CryptographyProvider
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.updateAndGet
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.promise
 import kotlin.js.Promise
@@ -97,6 +99,8 @@ data class JsKeyPair(
  */
 @JsExport
 object CrossPasteCrypto {
+
+    private val lastV2ExchangeGeneration = atomic(0L)
 
     /** Generate ECDSA P-256 sign keypair + ECDH P-256 crypt keypair. */
     @Suppress("OPT_IN_USAGE")
@@ -199,9 +203,14 @@ object CrossPasteCrypto {
             val serializer = SecureKeyPairSerializer()
             val privateKey = serializer.decodeSignPrivateKey(signPrivateKeyDer)
             val timestamp =
-                kotlin.time.Clock.System
-                    .now()
-                    .toEpochMilliseconds()
+                lastV2ExchangeGeneration.updateAndGet { previous ->
+                    maxOf(
+                        kotlin.time.Clock.System
+                            .now()
+                            .toEpochMilliseconds(),
+                        previous + 1,
+                    )
+                }
             val request =
                 KeyExchangeRequest(
                     signPublicKey = signPublicKeyDer,

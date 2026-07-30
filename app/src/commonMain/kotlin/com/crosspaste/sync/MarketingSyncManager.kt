@@ -121,6 +121,9 @@ class MarketingSyncManager : SyncManager {
     ) {
     }
 
+    override fun exchangeKeysForPairing(appInstanceId: String) {
+    }
+
     override fun cancelPairing(appInstanceId: String) {
     }
 

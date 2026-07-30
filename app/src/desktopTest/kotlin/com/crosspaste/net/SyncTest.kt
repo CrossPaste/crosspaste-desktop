@@ -364,8 +364,8 @@ class SyncTest : KoinTest {
 
             exchangeAndAwaitPending(exchangeGeneration = 1000L)
 
-            // Callers without the generation header (older clients, the browser
-            // extension) keep the original unconditional-release behaviour.
+            // Older extension versions without the generation header keep the
+            // original unconditional-release behaviour.
             pasteClient.post(
                 "",
                 typeInfo<String>(),

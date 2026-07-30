@@ -217,8 +217,8 @@ class GeneralSyncHandler(
         emitEvent(SyncEvent.TrustBySasCode(currentSyncRuntimeInfo, code, callback))
     }
 
-    override suspend fun exchangeKeysForPairing() {
-        emitEvent(SyncEvent.ExchangeKeysForPairing(currentSyncRuntimeInfo))
+    override suspend fun exchangeKeysForPairing(generation: Long) {
+        emitEvent(SyncEvent.ExchangeKeysForPairing(currentSyncRuntimeInfo, generation))
     }
 
     override suspend fun cancelPairing(generation: Long) {

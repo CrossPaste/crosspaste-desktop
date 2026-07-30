@@ -133,9 +133,10 @@ fun Routing.syncRouting(
         val appInstanceId = call.request.headers["appInstanceId"]
         val host = call.request.host()
         if (appInstanceId != null) {
-            appTokenApi.addPendingVerifier(appInstanceId)
+            appTokenApi.acquireVerifier(appInstanceId)
+        } else {
+            appTokenApi.startRefresh(showToken = true)
         }
-        appTokenApi.startRefresh(showToken = true)
         logger.info { "show token requested from $host" }
         successResponse(call)
     }
@@ -321,8 +322,7 @@ fun Routing.syncRouting(
                     )
 
                     appTokenApi.setSASToken(sas)
-                    appTokenApi.addPendingVerifier(appInstanceId)
-                    appTokenApi.startRefresh(showToken = true)
+                    appTokenApi.acquireVerifier(appInstanceId)
 
                     val signature =
                         CryptographyUtils.signKeyExchangeResponse(
@@ -430,8 +430,8 @@ fun Routing.syncRouting(
     // entry is a no-op. When the caller echoes the exchange timestamp it
     // received (generation marker), only that exact exchange is released — a
     // cancel delayed past a newer exchange from the same peer must not tear
-    // down the newer one. Callers without the header (older clients, the
-    // browser extension) keep the original unconditional-release semantics.
+    // down the newer one. Callers without the header (older extension versions)
+    // keep the original unconditional-release semantics.
     post("/sync/trust/v2/cancel") {
         getAppInstanceId(call)?.let { appInstanceId ->
             pairingVersionCoordinator.withPeerLock(appInstanceId) {

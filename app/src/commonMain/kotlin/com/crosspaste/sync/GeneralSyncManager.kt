@@ -325,6 +325,20 @@ class GeneralSyncManager(
         } ?: callback(false)
     }
 
+    override fun exchangeKeysForPairing(appInstanceId: String) {
+        internalSyncHandlers[appInstanceId]?.let { syncHandler ->
+            // Allocate before launching or entering the event channel. A dialog
+            // disposed while the resolver is busy can now capture this exact
+            // generation, and a cancel processed first prevents the queued
+            // exchange from being sent.
+            val generation = pendingExchangeLedger.nextGeneration()
+            pendingExchangeLedger.record(appInstanceId, generation)
+            realTimeSyncScope.launch {
+                syncHandler.exchangeKeysForPairing(generation)
+            }
+        }
+    }
+
     override fun cancelPairing(appInstanceId: String) {
         // Capture the generation of the exchange the closing dialog owns,
         // synchronously: Compose disposes the old dialog before a reopened one

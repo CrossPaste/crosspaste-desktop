@@ -45,15 +45,23 @@ class SyncDeviceManager(
         syncRuntimeInfoDao.updateNoteName(syncRuntimeInfo.copy(noteName = noteName))
     }
 
-    suspend fun exchangeKeysForPairing(syncRuntimeInfo: SyncRuntimeInfo) {
+    suspend fun exchangeKeysForPairing(
+        syncRuntimeInfo: SyncRuntimeInfo,
+        generation: Long,
+    ) {
         if (syncRuntimeInfo.connectState == SyncState.UNVERIFIED) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
+                // The dialog may have been dismissed while this event waited in
+                // the resolver queue. Its cancel consumes the ledger entry, so
+                // a late warm-up must not create a new responder-side exchange.
+                if (pendingExchangeLedger.current(syncRuntimeInfo.appInstanceId) != generation) {
+                    logger.info {
+                        "exchangeKeysForPairing skipped for ${syncRuntimeInfo.appInstanceId} " +
+                            "(exchange cancelled or superseded)"
+                    }
+                    return
+                }
                 val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
-                // Record the generation BEFORE sending: if the request lands
-                // but the response is lost, we still hold the marker needed to
-                // cancel the responder's orphaned entry.
-                val generation = pendingExchangeLedger.nextGeneration()
-                pendingExchangeLedger.record(syncRuntimeInfo.appInstanceId, generation)
                 val result =
                     syncClientApi.exchangeKeys(syncRuntimeInfo.appInstanceId, generation) {
                         buildUrl(hostAndPort)

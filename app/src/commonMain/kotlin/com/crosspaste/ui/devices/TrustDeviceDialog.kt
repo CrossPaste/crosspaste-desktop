@@ -130,7 +130,7 @@ fun DeviceScope.TrustDeviceDialog() {
     LaunchedEffect(appInstanceId, pairingCredentialType) {
         val handler = syncManager.getSyncHandlers()[appInstanceId]
         when (pairingCredentialType) {
-            PairingCredentialType.SAS_CODE -> handler?.exchangeKeysForPairing()
+            PairingCredentialType.SAS_CODE -> syncManager.exchangeKeysForPairing(appInstanceId)
             PairingCredentialType.QR_BEARER_TOKEN -> handler?.showToken()
             PairingCredentialType.V3_PIN -> Unit
             null -> Unit
@@ -144,9 +144,12 @@ fun DeviceScope.TrustDeviceDialog() {
     // switch, window close) triggers a release. The cancel is generation-safe:
     // it names the exact exchange this dialog owns (skipped after a successful
     // confirm consumes it, or when a reopened dialog's newer exchange
-    // supersedes it — see SyncDeviceManager.cancelPairing). Best effort only:
-    // a dismissal racing an in-flight warm-up finds no recorded exchange and
-    // skips; the responder's leftover entry self-heals on the next exchange.
+    // supersedes it). The generation is recorded before asynchronous dispatch;
+    // if dismissal wins the local race, the queued warm-up observes the
+    // consumed generation and sends no request. On the wire the release stays
+    // best effort: warm-up and cancel travel as independent requests, so a
+    // cancel arriving before its exchange is a responder-side no-op and the
+    // leftover entry self-heals on the next exchange.
     DisposableEffect(appInstanceId, pairingCredentialType) {
         onDispose {
             if (pairingCredentialType == PairingCredentialType.SAS_CODE) {

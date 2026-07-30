@@ -22,19 +22,23 @@ interface AppTokenApi {
 
     fun stopRefresh(hideToken: Boolean)
 
-    fun addPendingVerifier(appInstanceId: String)
-
-    fun removePendingVerifier(appInstanceId: String)
+    /**
+     * Atomically registers [appInstanceId] as a verifier owner and starts one
+     * refresh count. Repeated acquisition by the same verifier only reopens the
+     * overlay; it never increments the count twice.
+     */
+    fun acquireVerifier(
+        appInstanceId: String,
+        showToken: Boolean = true,
+    )
 
     /**
      * Atomically releases the token-refresh count owned by [appInstanceId]'s
      * pending-verifier entry: the count is decremented ONLY when the verifier
      * was still pending, so the unified server release path and the UI reap can
      * both call this without double-decrementing (a second decrement would
-     * steal a count held by another concurrently pairing device). This is the
-     * single release primitive — callers must not hand-compose
-     * [removePendingVerifier] with [stopRefresh]. [hideToken] additionally
-     * hides the token overlay (user-facing dismissal).
+     * steal a count held by another concurrently pairing device). [hideToken]
+     * additionally hides the token overlay (user-facing dismissal).
      */
     fun releaseVerifier(
         appInstanceId: String,
