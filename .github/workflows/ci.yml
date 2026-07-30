@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR) instead of
+# letting them all run to completion.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       app: ${{ steps.filter.outputs.app }}
       web: ${{ steps.filter.outputs.web }}
@@ -45,6 +52,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       BUILD_FULL_PLATFORM: YES
     steps:
@@ -56,15 +64,13 @@ jobs:
           java-version: '21'
           check-latest: true
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: >
-            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
-            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+      # Replaces the hand-rolled ~/.gradle actions/cache: entries are scoped per
+      # job (app-build and web-build no longer race to save one shared key, which
+      # let web-build's ~34 MB cache shadow app-build's full one), stale entries
+      # are still restored when a dependency bump changes the key, and writes only
+      # happen on main, so merges seed the cache that PRs consume.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Cache JetBrains Runtime JDK
         uses: actions/cache@v5
@@ -72,10 +78,32 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
+      # The Kotlin/Native toolchain dependencies (gcc sysroot, llvm, lldb, libffi)
+      # are downloaded and extracted into ~/.konan on every run otherwise.
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            konan-${{ runner.os }}-
+
       - name: Install native build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libsqlite3-dev
+
+      # The committed gradle.properties targets modest dev machines; the public
+      # ubuntu-latest runner has 4 vCPUs / 16 GB RAM. The last value of a property
+      # wins, so local dev keeps the committed settings.
+      - name: Right-size Gradle for the hosted runner
+        run: |
+          {
+            echo ""
+            echo "# CI-only overrides"
+            echo "org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8 -Dkotlin.daemon.jvm.options=-Xmx4g"
+            echo "org.gradle.parallel=true"
+          } >> gradle.properties
 
       - name: Build common modules and desktop app
         run: ./gradlew :core:build :shared:build :app:build
@@ -84,6 +112,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - name: Set up JDK 21
@@ -100,15 +129,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: web/package-lock.json
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: >
-            ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
-            '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Build web extension
         run: ./gradlew :web:build
@@ -121,6 +143,7 @@ jobs:
     needs: [app-build, web-build]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Verify CI results
         run: |
