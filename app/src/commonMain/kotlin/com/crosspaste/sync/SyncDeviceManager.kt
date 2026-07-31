@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
@@ -15,6 +16,7 @@ import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 class SyncDeviceManager(
+    private val pasteDao: PasteDao,
     private val pendingExchangeLedger: PendingExchangeLedger,
     private val secureStore: SecureStore,
     private val syncClientApi: SyncClientApi,
@@ -197,6 +199,7 @@ class SyncDeviceManager(
         wsSessionManager.closeSession(syncRuntimeInfo.appInstanceId)
         secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
         syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId)
+        pasteDao.deletePastePullCursor(syncRuntimeInfo.appInstanceId)
 
         // HTTP fallback notification (best-effort, after local cleanup)
         if (!notifiedViaWs) {

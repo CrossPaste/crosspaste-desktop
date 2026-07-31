@@ -38,6 +38,7 @@ class PasteReleaseServiceRemoteDiscardTest {
     private fun newService(
         commonConfigManager: CommonConfigManager = configManager(),
         notificationManager: NotificationManager = mockk(relaxed = true),
+        pasteDao: PasteDao = mockk(relaxed = true),
         syncRuntimeInfoDao: SyncRuntimeInfoDao = mockk(relaxed = true),
         taskSubmitter: TaskSubmitter = mockk(relaxed = true),
     ): PasteReleaseService =
@@ -46,7 +47,7 @@ class PasteReleaseServiceRemoteDiscardTest {
             currentPaste = mockk(relaxed = true),
             database = mockk<Database>(relaxed = true),
             notificationManager = notificationManager,
-            pasteDao = mockk<PasteDao>(relaxed = true),
+            pasteDao = pasteDao,
             pasteItemReader = mockk<PasteItemReader>(relaxed = true),
             pasteProcessPlugins = emptyList(),
             searchContentService = mockk(relaxed = true),
@@ -79,12 +80,14 @@ class PasteReleaseServiceRemoteDiscardTest {
     fun `oversized remote non-file paste is skipped entirely with notification`() =
         runBlocking {
             val notificationManager = mockk<NotificationManager>(relaxed = true)
+            val pasteDao = mockk<PasteDao>(relaxed = true)
             val syncRuntimeInfoDao = mockk<SyncRuntimeInfoDao>(relaxed = true)
             coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo("remote-device") } returns null
             val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
             val service =
                 newService(
                     notificationManager = notificationManager,
+                    pasteDao = pasteDao,
                     syncRuntimeInfoDao = syncRuntimeInfoDao,
                     taskSubmitter = taskSubmitter,
                 )
@@ -98,6 +101,12 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(result.isSuccess)
             assertTrue(!wrotePasteboard)
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
+            coVerify(exactly = 1) {
+                pasteDao.upsertPastePullCursorMaxCreateTime(
+                    appInstanceId = "remote-device",
+                    maxCreateTime = any(),
+                )
+            }
             verify(exactly = 1) { notificationManager.sendNotification(any(), any(), any(), any()) }
         }
 

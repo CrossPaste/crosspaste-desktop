@@ -104,4 +104,13 @@ interface PasteDao : SearchPasteData {
     ): List<PasteData>
 
     suspend fun getMaxCreateTimeByRemoteAppInstanceId(): Map<String, Long>
+
+    suspend fun getPastePullCursorMaxCreateTimes(): Map<String, Long>
+
+    suspend fun upsertPastePullCursorMaxCreateTime(
+        appInstanceId: String,
+        maxCreateTime: Long,
+    )
+
+    suspend fun deletePastePullCursor(appInstanceId: String)
 }
