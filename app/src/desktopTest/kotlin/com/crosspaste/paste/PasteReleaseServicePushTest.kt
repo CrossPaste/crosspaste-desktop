@@ -39,10 +39,12 @@ class PasteReleaseServicePushTest {
             commonConfigManager = commonConfigManager,
             currentPaste = mockk(relaxed = true),
             database = mockk<Database>(relaxed = true),
+            notificationManager = mockk(relaxed = true),
             pasteDao = pasteDao,
             pasteItemReader = mockk<PasteItemReader>(relaxed = true),
             pasteProcessPlugins = emptyList(),
             searchContentService = mockk(relaxed = true),
+            syncRuntimeInfoDao = mockk(relaxed = true),
             taskSubmitter = mockk<TaskSubmitter>(relaxed = true),
             userDataPathProvider = userDataPathProvider,
         )

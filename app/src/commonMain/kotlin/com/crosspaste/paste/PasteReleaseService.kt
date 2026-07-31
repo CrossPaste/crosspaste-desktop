@@ -3,11 +3,15 @@ package com.crosspaste.paste
 import com.crosspaste.Database
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.sync.SyncRuntimeInfoDao
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.bindItem
+import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
@@ -36,10 +40,12 @@ class PasteReleaseService(
     private val commonConfigManager: CommonConfigManager,
     private val currentPaste: CurrentPaste,
     private val database: Database,
+    private val notificationManager: NotificationManager,
     private val pasteDao: PasteDao,
     private val pasteItemReader: PasteItemReader,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
     private val searchContentService: SearchContentService,
+    private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val taskSubmitter: TaskSubmitter,
     private val userDataPathProvider: UserDataPathProvider,
 ) {
@@ -194,11 +200,51 @@ class PasteReleaseService(
         return newPasteData
     }
 
+    /**
+     * Remote pastes bypass the plugin pipeline (they are persisted as-is), so the
+     * non-file size limit is enforced here. The whole paste is skipped instead of
+     * degrading flavors: the remote PasteData's hash/pasteType/searchContent are
+     * already assembled, and dropping individual items would break the
+     * hash-content consistency that markDeleteSameHash dedup relies on. The
+     * sender keeps the full data, so nothing is lost.
+     */
+    private suspend fun discardOversizedRemoteNonFilePaste(pasteData: PasteData): Boolean {
+        val config = commonConfigManager.getCurrentConfig()
+        if (!config.enabledNonFilePasteSizeLimit) {
+            return false
+        }
+        val maxSize = fileUtils.bytesSize(config.maxNonFilePasteSize)
+        val oversized =
+            pasteData.getPasteAppearItems().any {
+                DiscardOversizedNonFilePlugin.isNonFilePasteType(it.getPasteType()) && it.size > maxSize
+            }
+        if (!oversized) {
+            return false
+        }
+        logger.info {
+            "Discard oversized remote non-file paste from ${pasteData.appInstanceId}: " +
+                "size=${pasteData.size}, limit=$maxSize"
+        }
+        val deviceName =
+            syncRuntimeInfoDao
+                .getSyncRuntimeInfo(pasteData.appInstanceId)
+                ?.getDeviceDisplayName()
+                ?: pasteData.appInstanceId
+        notificationManager.sendNotification(
+            title = { it.getText("remote_non_file_paste_discarded_too_large", deviceName) },
+            messageType = MessageType.Warning,
+        )
+        return true
+    }
+
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData) -> Unit,
     ): Result<Unit> {
         return runCatching {
+            if (discardOversizedRemoteNonFilePaste(pasteData)) {
+                return@runCatching
+            }
             val remotePasteDataId = pasteData.id
             val isFileType = pasteData.isFileType()
             val existIconFile: Boolean? =

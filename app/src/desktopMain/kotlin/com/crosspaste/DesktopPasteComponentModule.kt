@@ -32,6 +32,7 @@ import com.crosspaste.paste.getDesktopPasteboardService
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.UpdatePasteItemHelper
+import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.DistinctPlugin
 import com.crosspaste.paste.plugin.process.FileToUrlPlugin
 import com.crosspaste.paste.plugin.process.FilesToImagesPlugin
@@ -165,11 +166,13 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 commonConfigManager = get(),
                 currentPaste = get(),
                 database = get(),
+                notificationManager = get(),
                 pasteDao = get(),
                 pasteItemReader = get(),
                 pasteProcessPlugins =
                     listOf(
                         RemoveInvalidPlugin,
+                        DiscardOversizedNonFilePlugin(get(), get()),
                         DistinctPlugin(get()),
                         GenerateTextPlugin(get()),
                         GenerateUrlPlugin,
@@ -181,6 +184,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                         SortPlugin,
                     ),
                 searchContentService = get(),
+                syncRuntimeInfoDao = get(),
                 taskSubmitter = get(),
                 userDataPathProvider = get(),
             )

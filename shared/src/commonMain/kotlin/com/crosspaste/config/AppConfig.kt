@@ -25,6 +25,13 @@ interface AppConfig {
     val maxBackupFileSize: Long
     val enabledSyncFileSizeLimit: Boolean
     val maxSyncFileSize: Long
+
+    // Limit applies only to non-file paste items (text/html/rtf/url/color);
+    // file and image pastes are governed by maxSyncFileSize instead
+    val enabledNonFilePasteSizeLimit: Boolean
+
+    // MB
+    val maxNonFilePasteSize: Long
     val useDefaultStoragePath: Boolean
     val storagePath: String
     val enableSoundEffect: Boolean
