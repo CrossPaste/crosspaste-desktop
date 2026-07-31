@@ -209,11 +209,7 @@ class PasteReleaseService(
      * sender keeps the full data, so nothing is lost.
      */
     private suspend fun discardOversizedRemoteNonFilePaste(pasteData: PasteData): Boolean {
-        val config = commonConfigManager.getCurrentConfig()
-        if (!config.enabledNonFilePasteSizeLimit) {
-            return false
-        }
-        val maxSize = fileUtils.bytesSize(config.maxNonFilePasteSize)
+        val maxSize = fileUtils.bytesSize(commonConfigManager.getCurrentConfig().maxNonFilePasteSize)
         val oversized =
             pasteData.getPasteAppearItems().any {
                 DiscardOversizedNonFilePlugin.isNonFilePasteType(it.getPasteType()) && it.size > maxSize

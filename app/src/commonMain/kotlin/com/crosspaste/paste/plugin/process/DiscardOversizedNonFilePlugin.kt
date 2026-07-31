@@ -45,11 +45,7 @@ class DiscardOversizedNonFilePlugin(
         pasteItems: List<PasteItem>,
         source: String?,
     ): List<PasteItem> {
-        val config = configManager.getCurrentConfig()
-        if (!config.enabledNonFilePasteSizeLimit) {
-            return pasteItems
-        }
-        val maxSize = fileUtils.bytesSize(config.maxNonFilePasteSize)
+        val maxSize = fileUtils.bytesSize(configManager.getCurrentConfig().maxNonFilePasteSize)
         val retainedItems =
             pasteItems.filter { pasteItem ->
                 val oversized =

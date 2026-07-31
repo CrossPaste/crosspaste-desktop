@@ -27,12 +27,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Article
 import com.composables.icons.materialsymbols.rounded.Docs
 import com.composables.icons.materialsymbols.rounded.Power
 import com.composables.icons.materialsymbols.rounded.Shield
 import com.composables.icons.materialsymbols.rounded.Sync_alt
-import com.composables.icons.materialsymbols.rounded.Title
 import com.composables.icons.materialsymbols.rounded.Visibility
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
@@ -201,27 +199,6 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                             it >= 0
                         }) { currentMaxSyncFileSize ->
                             configManager.updateConfig("maxSyncFileSize", currentMaxSyncFileSize)
-                        }
-                    },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingListSwitchItem(
-                    title = "non_file_paste_size_limit",
-                    subtitle = "non_file_paste_size_limit_desc",
-                    icon = IconData(MaterialSymbols.Rounded.Title, themeExt.amberIconColor),
-                    checked = config.enabledNonFilePasteSizeLimit,
-                ) { newEnabledNonFilePasteSizeLimit ->
-                    configManager.updateConfig("enabledNonFilePasteSizeLimit", newEnabledNonFilePasteSizeLimit)
-                }
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingListItem(
-                    title = "max_non_file_paste_size",
-                    icon = IconData(MaterialSymbols.Rounded.Article, themeExt.cyanIconColor),
-                    trailingContent = {
-                        Counter(defaultValue = config.maxNonFilePasteSize, unit = "MB", rule = {
-                            it > 0
-                        }) { currentMaxNonFilePasteSize ->
-                            configManager.updateConfig("maxNonFilePasteSize", currentMaxNonFilePasteSize)
                         }
                     },
                 )

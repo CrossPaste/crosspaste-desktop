@@ -31,7 +31,6 @@ data class E2eAppConfig(
     override val maxBackupFileSize: Long = 32,
     override val enabledSyncFileSizeLimit: Boolean = true,
     override val maxSyncFileSize: Long = 512,
-    override val enabledNonFilePasteSizeLimit: Boolean = true,
     override val maxNonFilePasteSize: Long = 8,
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",

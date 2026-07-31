@@ -15,6 +15,7 @@ import com.composables.icons.materialsymbols.rounded.Content_paste
 import com.composables.icons.materialsymbols.rounded.Music_note
 import com.composables.icons.materialsymbols.rounded.Skip_next
 import com.composables.icons.materialsymbols.rounded.Stacks
+import com.composables.icons.materialsymbols.rounded.Title
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.ui.LocalThemeExtState
@@ -87,6 +88,19 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                             it >= 0
                         }) { currentMaxStorage ->
                             configManager.updateConfig("maxBackupFileSize", currentMaxStorage)
+                        }
+                    },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "max_non_file_paste_size",
+                    subtitle = "max_non_file_paste_size_desc",
+                    icon = IconData(MaterialSymbols.Rounded.Title, themeExt.cyanIconColor),
+                    trailingContent = {
+                        Counter(defaultValue = config.maxNonFilePasteSize, unit = "MB", rule = {
+                            it > 0
+                        }) { currentMaxNonFilePasteSize ->
+                            configManager.updateConfig("maxNonFilePasteSize", currentMaxNonFilePasteSize)
                         }
                     },
                 )

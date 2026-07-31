@@ -28,15 +28,15 @@ class PasteReleaseServiceRemoteDiscardTest {
 
     private val maxSizeBytes = 8L * 1024 * 1024
 
-    private fun configManager(enabled: Boolean): CommonConfigManager {
+    private fun configManager(maxNonFilePasteSize: Long = 8): CommonConfigManager {
         val configManager = mockk<CommonConfigManager>(relaxed = true)
         every { configManager.getCurrentConfig() } returns
-            TestAppConfig(enabledNonFilePasteSizeLimit = enabled, maxNonFilePasteSize = 8)
+            TestAppConfig(maxNonFilePasteSize = maxNonFilePasteSize)
         return configManager
     }
 
     private fun newService(
-        commonConfigManager: CommonConfigManager = configManager(enabled = true),
+        commonConfigManager: CommonConfigManager = configManager(),
         notificationManager: NotificationManager = mockk(relaxed = true),
         syncRuntimeInfoDao: SyncRuntimeInfoDao = mockk(relaxed = true),
         taskSubmitter: TaskSubmitter = mockk(relaxed = true),
@@ -121,13 +121,13 @@ class PasteReleaseServiceRemoteDiscardTest {
         }
 
     @Test
-    fun `disabled limit releases oversized remote paste normally`() =
+    fun `raised limit releases previously oversized remote paste normally`() =
         runBlocking {
             val notificationManager = mockk<NotificationManager>(relaxed = true)
             val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
             val service =
                 newService(
-                    commonConfigManager = configManager(enabled = false),
+                    commonConfigManager = configManager(maxNonFilePasteSize = 64),
                     notificationManager = notificationManager,
                     taskSubmitter = taskSubmitter,
                 )

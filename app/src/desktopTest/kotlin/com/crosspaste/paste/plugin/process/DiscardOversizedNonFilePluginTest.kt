@@ -26,10 +26,9 @@ class DiscardOversizedNonFilePluginTest {
 
     private val maxSizeBytes = 8L * 1024 * 1024
 
-    private fun configManager(enabled: Boolean): CommonConfigManager {
+    private fun configManager(): CommonConfigManager {
         val configManager = mockk<CommonConfigManager>(relaxed = true)
-        every { configManager.getCurrentConfig() } returns
-            TestAppConfig(enabledNonFilePasteSizeLimit = enabled, maxNonFilePasteSize = 8)
+        every { configManager.getCurrentConfig() } returns TestAppConfig(maxNonFilePasteSize = 8)
         return configManager
     }
 
@@ -44,7 +43,7 @@ class DiscardOversizedNonFilePluginTest {
     @Test
     fun `all oversized items are discarded and notification is sent`() {
         val notificationManager = mockk<NotificationManager>(relaxed = true)
-        val plugin = DiscardOversizedNonFilePlugin(configManager(enabled = true), notificationManager)
+        val plugin = DiscardOversizedNonFilePlugin(configManager(), notificationManager)
 
         val result = plugin.process(coord, listOf(oversizedTextItem()), null)
 
@@ -55,7 +54,7 @@ class DiscardOversizedNonFilePluginTest {
     @Test
     fun `partial oversized items are degraded silently`() {
         val notificationManager = mockk<NotificationManager>(relaxed = true)
-        val plugin = DiscardOversizedNonFilePlugin(configManager(enabled = true), notificationManager)
+        val plugin = DiscardOversizedNonFilePlugin(configManager(), notificationManager)
 
         val withinLimit = createTextPasteItem(text = "small")
         val result = plugin.process(coord, listOf(withinLimit, oversizedTextItem()), null)
@@ -65,9 +64,11 @@ class DiscardOversizedNonFilePluginTest {
     }
 
     @Test
-    fun `disabled limit passes items through unchanged`() {
+    fun `raised limit retains previously oversized items`() {
         val notificationManager = mockk<NotificationManager>(relaxed = true)
-        val plugin = DiscardOversizedNonFilePlugin(configManager(enabled = false), notificationManager)
+        val configManager = mockk<CommonConfigManager>(relaxed = true)
+        every { configManager.getCurrentConfig() } returns TestAppConfig(maxNonFilePasteSize = 64)
+        val plugin = DiscardOversizedNonFilePlugin(configManager, notificationManager)
 
         val items = listOf(oversizedTextItem())
         val result = plugin.process(coord, items, null)
@@ -79,7 +80,7 @@ class DiscardOversizedNonFilePluginTest {
     @Test
     fun `file and image items are exempt regardless of size`() {
         val notificationManager = mockk<NotificationManager>(relaxed = true)
-        val plugin = DiscardOversizedNonFilePlugin(configManager(enabled = true), notificationManager)
+        val plugin = DiscardOversizedNonFilePlugin(configManager(), notificationManager)
 
         val bigTree = SingleFileInfoTree(size = maxSizeBytes * 10, hash = "big")
         val filesItem =
@@ -101,7 +102,7 @@ class DiscardOversizedNonFilePluginTest {
     @Test
     fun `empty list returns empty without notification`() {
         val notificationManager = mockk<NotificationManager>(relaxed = true)
-        val plugin = DiscardOversizedNonFilePlugin(configManager(enabled = true), notificationManager)
+        val plugin = DiscardOversizedNonFilePlugin(configManager(), notificationManager)
 
         val result = plugin.process(coord, emptyList(), null)
 
@@ -112,7 +113,7 @@ class DiscardOversizedNonFilePluginTest {
     @Test
     fun `item exactly at limit is retained`() {
         val notificationManager = mockk<NotificationManager>(relaxed = true)
-        val plugin = DiscardOversizedNonFilePlugin(configManager(enabled = true), notificationManager)
+        val plugin = DiscardOversizedNonFilePlugin(configManager(), notificationManager)
 
         val atLimit =
             TextPasteItem(
