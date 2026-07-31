@@ -39,6 +39,8 @@ data class DesktopAppConfig(
     override val maxBackupFileSize: Long = 32,
     override val enabledSyncFileSizeLimit: Boolean = true,
     override val maxSyncFileSize: Long = 512,
+    // MB
+    override val maxNonFilePasteSize: Long = 8,
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = true,
@@ -141,6 +143,7 @@ data class DesktopAppConfig(
                     enabledSyncFileSizeLimit
                 },
             maxSyncFileSize = if (key == "maxSyncFileSize") toLong(value) else maxSyncFileSize,
+            maxNonFilePasteSize = if (key == "maxNonFilePasteSize") toLong(value) else maxNonFilePasteSize,
             useDefaultStoragePath = if (key == "useDefaultStoragePath") toBoolean(value) else useDefaultStoragePath,
             storagePath = if (key == "storagePath") toString(value) else storagePath,
             enableSoundEffect = if (key == "enableSoundEffect") toBoolean(value) else enableSoundEffect,

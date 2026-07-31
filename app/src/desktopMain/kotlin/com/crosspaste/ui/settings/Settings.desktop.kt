@@ -1,7 +1,7 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -32,8 +32,8 @@ actual fun SettingListItem(
     ListItem(
         modifier =
             Modifier
-                .height(
-                    if (isSmallItem) xxxxLarge else huge,
+                .heightIn(
+                    min = if (isSmallItem) xxxxLarge else huge,
                 ).then(
                     if (onClick != null) Modifier.clickable { onClick() } else Modifier,
                 ),
@@ -78,8 +78,8 @@ actual fun SettingListItem(
     ListItem(
         modifier =
             Modifier
-                .height(
-                    if (isSmallItem) xxxxLarge else huge,
+                .heightIn(
+                    min = if (isSmallItem) xxxxLarge else huge,
                 ).then(
                     if (onClick != null) Modifier.clickable { onClick() } else Modifier,
                 ),
@@ -117,8 +117,8 @@ actual fun SettingListItem(
     ListItem(
         modifier =
             Modifier
-                .height(
-                    if (isSmallItem) xxxxLarge else huge,
+                .heightIn(
+                    min = if (isSmallItem) xxxxLarge else huge,
                 ).then(
                     if (onClick != null) Modifier.clickable { onClick() } else Modifier,
                 ),
@@ -152,8 +152,8 @@ actual fun SettingListSwitchItem(
     val isSmallItem = LocalSmallSettingItemState.current
     ListItem(
         modifier =
-            Modifier.height(
-                if (isSmallItem) xxxxLarge else huge,
+            Modifier.heightIn(
+                min = if (isSmallItem) xxxxLarge else huge,
             ),
         headlineContent = { Text(copywriter.getText(title), style = MaterialTheme.typography.bodyMedium) },
         supportingContent =

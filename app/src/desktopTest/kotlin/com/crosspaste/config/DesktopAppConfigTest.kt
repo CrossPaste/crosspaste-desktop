@@ -39,6 +39,7 @@ class DesktopAppConfigTest {
         assertEquals(32L, config.maxBackupFileSize)
         assertTrue(config.enabledSyncFileSizeLimit)
         assertEquals(512L, config.maxSyncFileSize)
+        assertEquals(8L, config.maxNonFilePasteSize)
         assertTrue(config.useDefaultStoragePath)
         assertEquals("", config.storagePath)
         assertTrue(config.enableSoundEffect)
@@ -102,6 +103,24 @@ class DesktopAppConfigTest {
             )
 
         assertEquals(332, config.searchWindowHeight)
+    }
+
+    @Test
+    fun `copy updates maxNonFilePasteSize`() {
+        val config: AppConfig = createDefaultConfig()
+        val resized = config.copy("maxNonFilePasteSize", 16L)
+        assertEquals(16L, resized.maxNonFilePasteSize)
+    }
+
+    @Test
+    fun `legacy config without maxNonFilePasteSize uses default`() {
+        val config =
+            getJsonUtils().JSON.decodeFromString(
+                DesktopAppConfig.serializer(),
+                """{"language":"zh"}""",
+            )
+
+        assertEquals(8L, config.maxNonFilePasteSize)
     }
 
     @Test
