@@ -26,7 +26,15 @@ class PastePullService(
     private val mutex = Mutex()
 
     suspend fun init() {
-        val maxCreateTimeMap = pasteDao.getMaxCreateTimeByRemoteAppInstanceId()
+        val storedPasteMaxCreateTimes = pasteDao.getMaxCreateTimeByRemoteAppInstanceId()
+        val persistedPullCursorMaxCreateTimes = pasteDao.getPastePullCursorMaxCreateTimes()
+        val maxCreateTimeMap =
+            (storedPasteMaxCreateTimes.keys + persistedPullCursorMaxCreateTimes.keys).associateWith { appInstanceId ->
+                listOfNotNull(
+                    storedPasteMaxCreateTimes[appInstanceId],
+                    persistedPullCursorMaxCreateTimes[appInstanceId],
+                ).max()
+            }
         deviceMaxCreateTime.putAll(maxCreateTimeMap)
         maxCreateTimeMap.forEach { (appInstanceId, maxCreateTime) ->
             logger.debug { "Initialized sync state for $appInstanceId: maxCreateTime=$maxCreateTime" }

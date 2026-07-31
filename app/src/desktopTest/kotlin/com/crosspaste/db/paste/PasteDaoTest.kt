@@ -202,6 +202,36 @@ class PasteDaoTest {
             assertTrue(after >= before)
         }
 
+    @Test
+    fun `paste pull cursor upsert never moves backwards`() =
+        runTest {
+            pasteDao.upsertPastePullCursorMaxCreateTime("remote-device", 200L)
+            pasteDao.upsertPastePullCursorMaxCreateTime("remote-device", 100L)
+            pasteDao.upsertPastePullCursorMaxCreateTime("other-device", 300L)
+
+            assertEquals(
+                mapOf(
+                    "remote-device" to 200L,
+                    "other-device" to 300L,
+                ),
+                pasteDao.getPastePullCursorMaxCreateTimes(),
+            )
+        }
+
+    @Test
+    fun `paste pull cursor delete only removes the given device`() =
+        runTest {
+            pasteDao.upsertPastePullCursorMaxCreateTime("remote-device", 200L)
+            pasteDao.upsertPastePullCursorMaxCreateTime("other-device", 300L)
+
+            pasteDao.deletePastePullCursor("remote-device")
+
+            assertEquals(
+                mapOf("other-device" to 300L),
+                pasteDao.getPastePullCursorMaxCreateTimes(),
+            )
+        }
+
     // --- Delete ---
 
     @Test

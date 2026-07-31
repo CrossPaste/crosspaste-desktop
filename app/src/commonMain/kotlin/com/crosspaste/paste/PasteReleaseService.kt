@@ -230,6 +230,10 @@ class PasteReleaseService(
             "Discard oversized remote non-file paste from ${pasteData.appInstanceId}: " +
                 "size=${pasteData.size}, limit=$maxSize"
         }
+        pasteDao.upsertPastePullCursorMaxCreateTime(
+            appInstanceId = pasteData.appInstanceId,
+            maxCreateTime = pasteData.createTime,
+        )
         val deviceName =
             syncRuntimeInfoDao
                 .getSyncRuntimeInfo(pasteData.appInstanceId)

@@ -566,4 +566,30 @@ class SqlPasteDao(
                 .mapNotNull { row -> row.maxCreateTime?.let { row.appInstanceId to it } }
                 .toMap()
         }
+
+    override suspend fun getPastePullCursorMaxCreateTimes(): Map<String, Long> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries
+                .getPastePullCursorMaxCreateTimes()
+                .executeAsList()
+                .associate { row -> row.appInstanceId to row.maxCreateTime }
+        }
+
+    override suspend fun upsertPastePullCursorMaxCreateTime(
+        appInstanceId: String,
+        maxCreateTime: Long,
+    ) {
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.upsertPastePullCursorMaxCreateTime(
+                appInstanceId = appInstanceId,
+                maxCreateTime = maxCreateTime,
+            )
+        }
+    }
+
+    override suspend fun deletePastePullCursor(appInstanceId: String) {
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.deletePastePullCursor(appInstanceId)
+        }
+    }
 }

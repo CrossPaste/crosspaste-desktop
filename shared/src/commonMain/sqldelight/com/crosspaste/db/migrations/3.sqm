@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS PastePullCursorEntity (
+    appInstanceId TEXT PRIMARY KEY NOT NULL,
+    maxCreateTime INTEGER NOT NULL
+);

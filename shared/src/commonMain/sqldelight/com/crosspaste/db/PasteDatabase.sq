@@ -22,6 +22,11 @@ CREATE TABLE IF NOT EXISTS PasteDataEntity (
     remote INTEGER AS Boolean NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS PastePullCursorEntity (
+    appInstanceId TEXT PRIMARY KEY NOT NULL,
+    maxCreateTime INTEGER NOT NULL
+);
+
 CREATE TRIGGER IF NOT EXISTS PasteDataEntityAI AFTER INSERT ON PasteDataEntity BEGIN
     INSERT INTO PasteDataEntityFts(rowid, pasteSearchContent)
     VALUES (new.id, new.pasteSearchContent);
@@ -291,6 +296,18 @@ SELECT appInstanceId, MAX(createTime) AS maxCreateTime
 FROM PasteDataEntity
 WHERE remote = 1 AND pasteState != -1
 GROUP BY appInstanceId;
+
+getPastePullCursorMaxCreateTimes:
+SELECT appInstanceId, maxCreateTime FROM PastePullCursorEntity;
+
+upsertPastePullCursorMaxCreateTime:
+INSERT INTO PastePullCursorEntity(appInstanceId, maxCreateTime)
+VALUES (:appInstanceId, :maxCreateTime)
+ON CONFLICT(appInstanceId) DO UPDATE SET
+    maxCreateTime = MAX(PastePullCursorEntity.maxCreateTime, excluded.maxCreateTime);
+
+deletePastePullCursor:
+DELETE FROM PastePullCursorEntity WHERE appInstanceId = :appInstanceId;
 
 change:
 SELECT changes() AS changes;
