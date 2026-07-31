@@ -98,7 +98,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     icon = IconData(MaterialSymbols.Rounded.Title, themeExt.cyanIconColor),
                     trailingContent = {
                         Counter(defaultValue = config.maxNonFilePasteSize, unit = "MB", rule = {
-                            it > 0
+                            it in 1..64
                         }) { currentMaxNonFilePasteSize ->
                             configManager.updateConfig("maxNonFilePasteSize", currentMaxNonFilePasteSize)
                         }

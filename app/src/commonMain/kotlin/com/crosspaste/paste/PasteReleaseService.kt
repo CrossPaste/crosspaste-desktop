@@ -88,11 +88,20 @@ class PasteReleaseService(
             var pasteAppearItems = pasteItems
             for (pastePlugin in pasteProcessPlugins) {
                 pasteAppearItems =
-                    pastePlugin.process(
-                        pasteData.getPasteCoordinate(),
-                        pasteAppearItems,
-                        pasteData.source,
-                    )
+                    runCatching {
+                        pastePlugin.process(
+                            pasteData.getPasteCoordinate(),
+                            pasteAppearItems,
+                            pasteData.source,
+                        )
+                    }.getOrElse { e ->
+                        // A failing plugin must not leave the row stuck in loading state;
+                        // skip its transformation and continue with the current items.
+                        logger.warn(e) {
+                            "Paste process plugin ${pastePlugin::class.simpleName} failed, id=$id"
+                        }
+                        pasteAppearItems
+                    }
             }
 
             if (pasteAppearItems.isEmpty()) {

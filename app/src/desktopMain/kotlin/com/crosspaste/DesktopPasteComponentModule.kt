@@ -169,6 +169,19 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 notificationManager = get(),
                 pasteDao = get(),
                 pasteItemReader = get(),
+                // Plugin order is load-bearing (mobile assembles the same commonMain
+                // plugins and must keep these invariants):
+                // 1. RemoveInvalid must run first.
+                // 2. DiscardOversizedNonFile must precede Distinct: FirstPlugin keeps only
+                //    the first item per type and clears the rest from disk, so an oversized
+                //    first item would otherwise destroy a smaller surviving variant before
+                //    being discarded itself.
+                // 3. Generate plugins run after Distinct and chain html/rtf -> text -> url/color.
+                //    Any plugin placed after DiscardOversizedNonFile must never emit an item
+                //    larger than its already-size-checked source, or it bypasses the limit.
+                // 4. FilesToImages/FileToUrl rely on Distinct having merged multi-file items;
+                //    Remove*Image must run after every plugin that can add image items.
+                // 5. Sort must be last: the first item determines the row's type/hash/search content.
                 pasteProcessPlugins =
                     listOf(
                         RemoveInvalidPlugin,
