@@ -1,6 +1,5 @@
 package com.crosspaste.sync
 
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
@@ -9,12 +8,9 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.ConcurrentMap
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class PastePullService(
-    private val pasteDao: PasteDao,
+    private val pastePullCursorManager: PastePullCursorManager,
     private val pasteboardService: PasteboardService,
     private val pullClientApi: PullClientApi,
     private val syncManager: SyncManager,
@@ -22,43 +18,17 @@ class PastePullService(
 
     private val logger = KotlinLogging.logger {}
 
-    private val deviceMaxCreateTime: MutableMap<String, Long> = ConcurrentMap()
-    private val mutex = Mutex()
-
     suspend fun init() {
-        val storedPasteMaxCreateTimes = pasteDao.getMaxCreateTimeByRemoteAppInstanceId()
-        val persistedPullCursorMaxCreateTimes = pasteDao.getPastePullCursorMaxCreateTimes()
-        val maxCreateTimeMap =
-            (storedPasteMaxCreateTimes.keys + persistedPullCursorMaxCreateTimes.keys).associateWith { appInstanceId ->
-                listOfNotNull(
-                    storedPasteMaxCreateTimes[appInstanceId],
-                    persistedPullCursorMaxCreateTimes[appInstanceId],
-                ).max()
-            }
-        deviceMaxCreateTime.putAll(maxCreateTimeMap)
-        maxCreateTimeMap.forEach { (appInstanceId, maxCreateTime) ->
-            logger.debug { "Initialized sync state for $appInstanceId: maxCreateTime=$maxCreateTime" }
-        }
-        logger.info { "PastePullService initialized with ${deviceMaxCreateTime.size} device(s)" }
+        pastePullCursorManager.init()
     }
 
-    fun getMaxCreateTime(appInstanceId: String): Long? = deviceMaxCreateTime[appInstanceId]
+    fun getMaxCreateTime(appInstanceId: String): Long? = pastePullCursorManager.getMaxCreateTime(appInstanceId)
 
     suspend fun updateMaxCreateTime(
         appInstanceId: String,
         createTime: Long,
     ) {
-        mutex.withLock {
-            val current = deviceMaxCreateTime[appInstanceId]
-            if (current == null || createTime > current) {
-                deviceMaxCreateTime[appInstanceId] = createTime
-            }
-        }
-    }
-
-    fun removeDevice(appInstanceId: String) {
-        deviceMaxCreateTime.remove(appInstanceId)
-        logger.debug { "Removed sync state for $appInstanceId" }
+        pastePullCursorManager.updateMaxCreateTime(appInstanceId, createTime)
     }
 
     suspend fun pullAllDevices(limit: Long = 10L) {
@@ -84,9 +54,13 @@ class PastePullService(
 
         allPasteData.sortBy { it.createTime }
 
-        pasteboardService.tryWriteRemotePasteboardList(allPasteData)
-
-        logger.info { "Pulled and wrote ${allPasteData.size} paste(s) from all devices" }
+        pasteboardService
+            .tryWriteRemotePasteboardList(allPasteData)
+            .onSuccess {
+                logger.info { "Pulled and wrote ${allPasteData.size} paste(s) from all devices" }
+            }.onFailure { e ->
+                logger.warn(e) { "Stopped writing pulled pastes after a release failure" }
+            }
     }
 
     suspend fun pullBatch(

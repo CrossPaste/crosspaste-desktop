@@ -1,6 +1,5 @@
 package com.crosspaste.sync
 
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
@@ -25,7 +24,7 @@ import kotlin.test.assertTrue
 class SyncDeviceManagerTest {
 
     private class TestDeps {
-        val pasteDao: PasteDao = mockk(relaxed = true)
+        val pastePullCursorManager: PastePullCursorManager = mockk(relaxed = true)
         val pendingExchangeLedger: PendingExchangeLedger = PendingExchangeLedger()
         val secureStore: SecureStore = mockk(relaxed = true)
         val syncClientApi: SyncClientApi = mockk(relaxed = true)
@@ -35,7 +34,7 @@ class SyncDeviceManagerTest {
 
         fun createManager(): SyncDeviceManager =
             SyncDeviceManager(
-                pasteDao = pasteDao,
+                pastePullCursorManager = pastePullCursorManager,
                 pendingExchangeLedger = pendingExchangeLedger,
                 secureStore = secureStore,
                 syncClientApi = syncClientApi,
@@ -426,7 +425,7 @@ class SyncDeviceManagerTest {
 
             coVerify { deps.secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId) }
             coVerify { deps.syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) }
-            coVerify { deps.pasteDao.deletePastePullCursor(syncRuntimeInfo.appInstanceId) }
+            coVerify { deps.pastePullCursorManager.removeDevice(syncRuntimeInfo.appInstanceId) }
             coVerify { deps.syncClientApi.notifyRemove(any()) }
         }
 

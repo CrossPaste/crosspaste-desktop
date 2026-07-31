@@ -9,6 +9,7 @@ import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.SingleFileInfoTree
+import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
@@ -43,6 +44,7 @@ class PasteReleaseServicePushTest {
             pasteDao = pasteDao,
             pasteItemReader = mockk<PasteItemReader>(relaxed = true),
             pasteProcessPlugins = emptyList(),
+            pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true),
             searchContentService = mockk(relaxed = true),
             syncRuntimeInfoDao = mockk(relaxed = true),
             taskSubmitter = mockk<TaskSubmitter>(relaxed = true),
