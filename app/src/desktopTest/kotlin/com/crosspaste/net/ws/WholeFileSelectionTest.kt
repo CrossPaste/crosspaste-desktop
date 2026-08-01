@@ -7,7 +7,9 @@ import com.crosspaste.utils.getCodecsUtils
 import okio.Path.Companion.toPath
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class WholeFileSelectionTest {
 
@@ -48,8 +50,8 @@ class WholeFileSelectionTest {
         val payload = "expected".encodeToByteArray()
         val expected = SingleFileInfoTree(payload.size.toLong(), getCodecsUtils().hash(payload))
 
-        assertEquals(true, isValidWholeFilePayload(expected, payload))
-        assertEquals(false, isValidWholeFilePayload(expected, "tampered".encodeToByteArray()))
-        assertEquals(false, isValidWholeFilePayload(expected, payload + 0))
+        assertTrue(isValidWholeFilePayload(expected, payload))
+        assertFalse(isValidWholeFilePayload(expected, "tampered".encodeToByteArray()))
+        assertFalse(isValidWholeFilePayload(expected, payload + 0))
     }
 }

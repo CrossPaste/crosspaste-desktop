@@ -210,8 +210,8 @@ class FilePullService(
 
             runCatching {
                 val expectedFileInfo =
-                    pasteFiles.fileInfoTreeMap[relativePath]
-                        ?: error("Missing file metadata for $relativePath")
+                    pasteFiles.fileInfoTreeMap[requestFileName]
+                        ?: error("Missing file metadata for $requestFileName")
                 val request: WsPullFileRequest =
                     WsPullFileRequest.WholeFileRequest(
                         hash = hash,

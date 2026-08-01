@@ -16,18 +16,23 @@ describe("whole-file WebSocket wire", () => {
   it("accepts only payloads matching the advertised file size and hash", () => {
     const payload = new TextEncoder().encode("expected");
     const bytes = new Int8Array(payload.buffer, payload.byteOffset, payload.byteLength);
+    // fileInfoTreeMap is keyed by basename even when relativePathList entries
+    // are multi-segment bound paths (matches desktop paste creation).
     const metadata = {
-      "dir/file.txt": {
+      "file.txt": {
         type: "file",
         size: payload.byteLength,
         hash: CrossPasteHash.hashBytes(bytes),
       },
     };
 
-    expect(isValidWholeFilePayload(metadata, "dir/file.txt", payload)).toBe(true);
+    expect(isValidWholeFilePayload(metadata, "app-instance/2026-08-01/7/file.txt", payload)).toBe(
+      true,
+    );
+    expect(isValidWholeFilePayload(metadata, "file.txt", payload)).toBe(true);
     expect(
-      isValidWholeFilePayload(metadata, "dir/file.txt", new TextEncoder().encode("tampered")),
+      isValidWholeFilePayload(metadata, "file.txt", new TextEncoder().encode("tampered")),
     ).toBe(false);
-    expect(isValidWholeFilePayload(metadata, "other/file.txt", payload)).toBe(false);
+    expect(isValidWholeFilePayload(metadata, "dir/other.txt", payload)).toBe(false);
   });
 });

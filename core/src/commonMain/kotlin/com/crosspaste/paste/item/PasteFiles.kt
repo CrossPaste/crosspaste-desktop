@@ -8,6 +8,11 @@ interface PasteFiles {
 
     val basePath: String?
 
+    /**
+     * Keyed by file basename, NOT by [relativePathList] entries: those may be
+     * multi-segment bound paths like "appInstanceId/date/id/name.png" while the
+     * map key stays "name.png". Derive keys via `relativePath.toPath().name`.
+     */
     val fileInfoTreeMap: Map<String, FileInfoTree>
 
     val relativePathList: List<String>

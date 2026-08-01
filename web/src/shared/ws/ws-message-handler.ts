@@ -32,17 +32,22 @@ interface SingleFileMetadata {
   hash: string;
 }
 
+/** Basename of a relative path; desktop paths may be multi-segment like "appInstanceId/date/id/name.png". */
+function baseFileName(relativePath: string): string {
+  const parts = relativePath.split(/[\\/]/);
+  return parts[parts.length - 1] || relativePath;
+}
+
 export function createWholeFileRequest(
   id: number,
   hash: string,
   relativePath: string,
 ): WsWholeFileRequest {
-  const parts = relativePath.split(/[\\/]/);
   return {
     mode: "whole",
     id,
     hash,
-    fileName: parts[parts.length - 1] || relativePath,
+    fileName: baseFileName(relativePath),
     relativePath,
   };
 }
@@ -52,7 +57,10 @@ export function isValidWholeFilePayload(
   relativePath: string,
   payload: Uint8Array,
 ): boolean {
-  const metadata = fileInfoTreeMap[relativePath] as Partial<SingleFileMetadata> | undefined;
+  // fileInfoTreeMap is keyed by basename (see Kotlin PasteFiles.fileInfoTreeMap).
+  const metadata = fileInfoTreeMap[baseFileName(relativePath)] as
+    | Partial<SingleFileMetadata>
+    | undefined;
   if (
     metadata?.type !== "file" ||
     metadata.size !== payload.byteLength ||
