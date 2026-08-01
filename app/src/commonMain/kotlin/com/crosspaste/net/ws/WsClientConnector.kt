@@ -1,6 +1,7 @@
 package com.crosspaste.net.ws
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
@@ -9,10 +10,12 @@ import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 class WsClientConnector(
     private val appInfo: AppInfo,
     private val client: HttpClient,
+    private val secureStore: SecureStore,
     private val wsSessionManager: WsSessionManager,
     private val wsMessageHandler: WsMessageHandler,
 ) {
@@ -31,46 +34,78 @@ class WsClientConnector(
         targetAppInstanceId: String,
     ): Boolean =
         runCatching {
-            val path = "/ws/sync?appInstanceId=${appInfo.appInstanceId}&targetAppInstanceId=$targetAppInstanceId"
+            val path =
+                "/ws/sync?appInstanceId=${appInfo.appInstanceId}" +
+                    "&targetAppInstanceId=$targetAppInstanceId" +
+                    "&authVersion=${WsAuthenticationCodec.VERSION}"
 
             client.webSocket(host = host, port = port, path = path) {
-                logger.info { "WebSocket client connected to $targetAppInstanceId at $host:$port" }
-                val wsSession = WsSession(this, targetAppInstanceId)
+                val rawSession = WsSession(this, targetAppInstanceId)
+                val receivedChallenge =
+                    withTimeoutOrNull(AUTHENTICATION_TIMEOUT_MS) { receiveWsEnvelope(incoming) }
+                        ?: error("WebSocket authentication challenge timed out")
+                require(receivedChallenge.envelope.type == WsMessageType.AUTH_CHALLENGE) {
+                    "Expected WebSocket authentication challenge"
+                }
+                val challenge =
+                    json.decodeFromString<WsAuthChallenge>(receivedChallenge.envelope.payload.decodeToString())
+                val processor = secureStore.getMessageProcessor(targetAppInstanceId)
+                val proof =
+                    WsAuthProof(
+                        processor.authenticationCode(
+                            WsAuthenticationCodec.handshakePayload(
+                                role = WsAuthenticationCodec.CLIENT_PROOF,
+                                sourceAppInstanceId = appInfo.appInstanceId,
+                                targetAppInstanceId = targetAppInstanceId,
+                                challenge = challenge,
+                            ),
+                        ),
+                    )
+                rawSession.sendEnvelope(
+                    WsEnvelope(
+                        type = WsMessageType.AUTH_PROOF,
+                        payload = json.encodeToString(proof).encodeToByteArray(),
+                    ),
+                )
+                val receivedAck =
+                    withTimeoutOrNull(AUTHENTICATION_TIMEOUT_MS) { receiveWsEnvelope(incoming) }
+                        ?: error("WebSocket authentication acknowledgement timed out")
+                require(receivedAck.envelope.type == WsMessageType.AUTH_ACK) {
+                    "Expected WebSocket authentication acknowledgement"
+                }
+                val ack = json.decodeFromString<WsAuthProof>(receivedAck.envelope.payload.decodeToString())
+                require(
+                    processor.verifyAuthentication(
+                        WsAuthenticationCodec.handshakePayload(
+                            role = WsAuthenticationCodec.SERVER_PROOF,
+                            sourceAppInstanceId = targetAppInstanceId,
+                            targetAppInstanceId = appInfo.appInstanceId,
+                            challenge = challenge,
+                        ),
+                        ack.authenticationCode,
+                    ),
+                ) { "WebSocket server authentication failed" }
+
+                val authenticationContext =
+                    WsAuthenticationContext(
+                        sessionId = challenge.sessionId,
+                        localAppInstanceId = appInfo.appInstanceId,
+                        remoteAppInstanceId = targetAppInstanceId,
+                        processor = processor,
+                    )
+                logger.info { "Authenticated WebSocket connected to $targetAppInstanceId at $host:$port" }
+                val wsSession = WsSession(this, targetAppInstanceId, authenticationContext)
                 wsSessionManager.registerSession(targetAppInstanceId, wsSession)
 
                 try {
-                    for (frame in incoming) {
-                        when (frame) {
-                            is Frame.Text -> {
-                                runCatching {
-                                    val header = json.decodeFromString<WsEnvelopeHeader>(frame.readText())
-                                    val payload =
-                                        if (header.hasPayload) {
-                                            (incoming.receive() as Frame.Binary).readBytes()
-                                        } else {
-                                            byteArrayOf()
-                                        }
-                                    val envelope =
-                                        WsEnvelope(
-                                            type = header.type,
-                                            payload = payload,
-                                            encrypted = header.encrypted,
-                                            requestId = header.requestId,
-                                        )
-                                    wsMessageHandler.handleMessage(targetAppInstanceId, envelope)
-                                }.onFailure { e ->
-                                    logger.error(e) { "Failed to handle WS message from $targetAppInstanceId" }
-                                }
-                            }
-
-                            is Frame.Close -> {
-                                logger.info { "WebSocket close frame from $targetAppInstanceId" }
-                            }
-
-                            else -> {
-                                logger.debug { "Ignoring non-text WS frame from $targetAppInstanceId" }
-                            }
+                    while (true) {
+                        val received = receiveWsEnvelope(incoming) ?: break
+                        if (!authenticationContext.verify(received.header, received.envelope.payload)) {
+                            logger.warn { "Rejected unauthenticated WS message from $targetAppInstanceId" }
+                            close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Invalid message authentication"))
+                            break
                         }
+                        wsMessageHandler.handleMessage(targetAppInstanceId, received.envelope)
                     }
                 } finally {
                     logger.info { "WebSocket client disconnected from $targetAppInstanceId" }
@@ -94,5 +129,9 @@ class WsClientConnector(
         connectScope.launch {
             connect(host, port, targetAppInstanceId)
         }
+    }
+
+    companion object {
+        private const val AUTHENTICATION_TIMEOUT_MS = 5_000L
     }
 }

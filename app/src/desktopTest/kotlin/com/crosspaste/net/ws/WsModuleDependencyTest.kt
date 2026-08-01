@@ -116,6 +116,7 @@ class WsModuleDependencyTest : KoinTest {
                     WsClientConnector(
                         appInfo = get(),
                         client = wsHttpClient,
+                        secureStore = get(),
                         wsSessionManager = get(),
                         wsMessageHandler = get(),
                     )

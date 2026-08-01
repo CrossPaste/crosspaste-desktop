@@ -22,6 +22,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class WsSession(
     private val session: WebSocketSession,
     val remoteAppInstanceId: String,
+    private val authenticationContext: WsAuthenticationContext? = null,
 ) {
     private val json = getJsonUtils().JSON
     private val sendMutex = Mutex()
@@ -31,7 +32,8 @@ class WsSession(
 
     suspend fun sendEnvelope(envelope: WsEnvelope) {
         sendMutex.withLock {
-            session.send(Frame.Text(json.encodeToString(envelope.toHeader())))
+            val header = authenticationContext?.createHeader(envelope) ?: envelope.toHeader()
+            session.send(Frame.Text(json.encodeToString(header)))
             if (envelope.payload.isNotEmpty()) {
                 session.send(Frame.Binary(true, envelope.payload))
             }

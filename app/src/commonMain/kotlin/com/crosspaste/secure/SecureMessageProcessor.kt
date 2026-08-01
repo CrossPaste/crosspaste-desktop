@@ -18,6 +18,7 @@ class SecureMessageProcessor(
     private val provider = CryptographyProvider.Default
 
     private val cipher: IvCipher
+    private val peerAuthenticator: PeerAuthenticator
 
     init {
         val aes = provider.get(AES.CBC)
@@ -30,6 +31,7 @@ class SecureMessageProcessor(
                 .keyDecoder()
                 .decodeFromByteArrayBlocking(AES.Key.Format.RAW, bytes)
         cipher = key.cipher()
+        peerAuthenticator = PeerAuthenticator(privateKey, publicKey)
     }
 
     fun encrypt(data: ByteArray): ByteArray {
@@ -49,4 +51,11 @@ class SecureMessageProcessor(
             throw PasteException(StandardErrorCode.DECRYPT_FAIL.toErrorCode(), e)
         }
     }
+
+    suspend fun authenticationCode(data: ByteArray): ByteArray = peerAuthenticator.authenticationCode(data)
+
+    suspend fun verifyAuthentication(
+        data: ByteArray,
+        expectedCode: ByteArray,
+    ): Boolean = peerAuthenticator.verify(data, expectedCode)
 }
