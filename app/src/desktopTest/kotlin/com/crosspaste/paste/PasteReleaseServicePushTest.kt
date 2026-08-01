@@ -8,6 +8,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskSubmitter
@@ -186,5 +187,42 @@ class PasteReleaseServicePushTest {
         assertTrue(expectedFile.parentFile.isDirectory, "parent directory must exist")
         assertTrue(expectedFile.isFile, "file slot must be pre-allocated")
         assertEquals(fileSize, expectedFile.length(), "pre-allocated slot must have the expected length")
+    }
+
+    @Test
+    fun releaseRemotePasteDataForPush_rejectsUnsafeTreeBeforeCreatingPaste(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val pasteDao = mockk<PasteDao>(relaxed = true)
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                userDataPathProvider = realPathProvider(File(tempDir, "storage")),
+            )
+        val filesItem =
+            createFilesPasteItem(
+                relativePathList = listOf("folder"),
+                fileInfoTreeMap =
+                    mapOf(
+                        "folder" to
+                            DirFileInfoTree(
+                                tree = mapOf("../../escape.txt" to SingleFileInfoTree(1, "hash")),
+                                size = 1,
+                                hash = "dir-hash",
+                            ),
+                    ),
+            )
+        val pasteData =
+            PasteData(
+                appInstanceId = "test-mobile",
+                pasteAppearItem = filesItem,
+                pasteCollection = PasteCollection(emptyList()),
+                pasteType = PasteType.FILE_TYPE.type,
+                size = 1,
+                hash = "hash",
+            )
+
+        assertNull(service.releaseRemotePasteDataForPush(pasteData))
+        coVerify(exactly = 0) { pasteDao.createPasteData(any(), any()) }
     }
 }

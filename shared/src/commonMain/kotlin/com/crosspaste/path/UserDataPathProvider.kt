@@ -86,7 +86,7 @@ class UserDataPathProvider(
         val basePath =
             pasteFiles.basePath?.toPath() ?: run {
                 resolve(appFileType = pasteFiles.getAppFileType())
-                    .resolve(appInstanceId)
+                    .resolveStorageComponent(appInstanceId)
                     .resolve(dateString)
                     .resolve(pasteId.toString())
             }
@@ -117,6 +117,28 @@ class UserDataPathProvider(
         return renameMap
     }
 
+    fun validateReceivePaths(
+        appInstanceId: String,
+        pasteFiles: PasteFiles,
+    ) {
+        validateStorageComponent(appInstanceId)
+
+        val pending = ArrayDeque<FileInfoTree>()
+        pasteFiles.fileInfoTreeMap.forEach { (name, fileInfoTree) ->
+            validateStorageComponent(name)
+            pending.addLast(fileInfoTree)
+        }
+        while (pending.isNotEmpty()) {
+            val fileInfoTree = pending.removeFirst()
+            if (fileInfoTree is DirFileInfoTree) {
+                fileInfoTree.iterator().forEach { (name, child) ->
+                    validateStorageComponent(name)
+                    pending.addLast(child)
+                }
+            }
+        }
+    }
+
     private fun resolveFileInfoTree(
         basePath: Path,
         name: String,
@@ -125,7 +147,7 @@ class UserDataPathProvider(
         filesIndexBuilder: FilesIndexBuilder?,
     ) {
         if (fileInfoTree.isFile()) {
-            val filePath = basePath.resolve(name)
+            val filePath = basePath.resolveStorageComponent(name)
             if (isPull) {
                 if (fileUtils.createEmptyPasteFile(filePath, fileInfoTree.size).isFailure) {
                     throw PasteException(
@@ -136,7 +158,7 @@ class UserDataPathProvider(
             }
             filesIndexBuilder?.addFile(filePath, fileInfoTree.size)
         } else {
-            val dirPath = basePath.resolve(name)
+            val dirPath = basePath.resolveStorageComponent(name)
             if (isPull) {
                 autoCreateDir(dirPath)
             }
@@ -178,6 +200,30 @@ class UserDataPathProvider(
             !value.contains('/') &&
             !value.contains('\\') &&
             !value.contains("..")
+
+    private fun Path.resolveStorageComponent(component: String): Path {
+        validateStorageComponent(component)
+        val normalizedBase = normalized()
+        val resolved = normalizedBase.resolve(component, normalize = true)
+        require(resolved.parent == normalizedBase) { "Storage path escaped its parent" }
+        return resolved
+    }
+
+    private fun validateStorageComponent(component: String) {
+        require(
+            component.isNotEmpty() &&
+                component != "." &&
+                component != ".." &&
+                component.none { char ->
+                    char == '/' ||
+                        char == '\\' ||
+                        char == ':' ||
+                        char.code == 0 ||
+                        char.code in 1..31 ||
+                        char.code == 127
+                },
+        ) { "Unsafe storage path component" }
+    }
 
     fun getUserDataPath(): Path =
         if (configManager.getCurrentConfig().useDefaultStoragePath) {

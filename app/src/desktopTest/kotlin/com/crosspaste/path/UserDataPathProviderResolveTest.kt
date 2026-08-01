@@ -4,6 +4,7 @@ import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
+import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.utils.getJsonUtils
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -166,5 +169,47 @@ class UserDataPathProviderResolveTest {
             )
 
         assertTrue(renameMap.isEmpty())
+    }
+
+    @Test
+    fun `receive paths reject unsafe app instance ids`() {
+        val item = createFilesItem("safe.txt")
+
+        listOf("../peer", "/absolute", "C:\\escape", "peer/child", "peer\u0000id").forEach { appInstanceId ->
+            assertFailsWith<IllegalArgumentException> {
+                userDataPathProvider.validateReceivePaths(appInstanceId, item)
+            }
+        }
+    }
+
+    @Test
+    fun `nested traversal is rejected without creating an escaped file`() {
+        val escapedFile = File(nioTempFolder, "escaped.txt")
+        val item =
+            createFilesPasteItem(
+                relativePathList = listOf("folder"),
+                fileInfoTreeMap =
+                    mapOf(
+                        "folder" to
+                            DirFileInfoTree(
+                                tree = mapOf("../../../../../escaped.txt" to SingleFileInfoTree(64, "hash")),
+                                size = 64,
+                                hash = "dir-hash",
+                            ),
+                    ),
+            )
+
+        assertFailsWith<IllegalArgumentException> {
+            userDataPathProvider.resolve(
+                "app1",
+                "2025-01-01",
+                6L,
+                item,
+                true,
+                FilesIndexBuilder(1024),
+            )
+        }
+
+        assertFalse(escapedFile.exists())
     }
 }
