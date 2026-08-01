@@ -28,19 +28,16 @@ class AppMetadataRepository(
             try {
                 persist.read(AppMetadata::class)
             } catch (e: SerializationException) {
-                quarantineCorrupt(e)
-            } catch (e: IllegalArgumentException) {
-                quarantineCorrupt(e)
+                // Corrupt content, not an I/O failure. SerializationException covers all
+                // kotlinx parse failures; anything broader would misclassify unrelated
+                // errors as corruption and rotate the identity.
+                val backupPath = persist.quarantine()
+                logger.error(e) {
+                    "App metadata is corrupt; backed it up to $backupPath and generating a new " +
+                        "appInstanceId. Previously paired devices will see this device as a new peer."
+                }
+                null
             }
         return existing ?: AppMetadata(deviceUtils.createAppInstanceId()).also { persist.save(it) }
-    }
-
-    private fun quarantineCorrupt(cause: Throwable): AppMetadata? {
-        val backupPath = persist.quarantine()
-        logger.error(cause) {
-            "App metadata is corrupt; backed it up to $backupPath and generating a new appInstanceId. " +
-                "Previously paired devices will see this device as a new peer."
-        }
-        return null
     }
 }

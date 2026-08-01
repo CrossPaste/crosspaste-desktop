@@ -1,10 +1,12 @@
 package com.crosspaste.presist
 
 import kotlinx.serialization.Serializable
+import okio.IOException
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -78,5 +80,37 @@ class OneFilePersistTest {
         val persist = OneFilePersist(tempDir().resolve("payload.json"))
 
         assertNull(persist.quarantine())
+    }
+
+    @Test
+    fun `quarantine replaces an existing corrupt backup`() {
+        val dir = tempDir()
+        val persist = OneFilePersist(dir.resolve("payload.json"))
+        Files.writeString(dir.resolve("payload.json.corrupt").toNioPath(), "old backup")
+        persist.saveBytes("new corrupt".encodeToByteArray())
+
+        val backup = persist.quarantine()
+
+        assertEquals("new corrupt", Files.readString(backup!!.toNioPath()))
+    }
+
+    @Test
+    fun `failed write cleans up its temp file and propagates the error`() {
+        val dir = tempDir()
+        // A non-empty directory at the target path: the temp write succeeds but the
+        // atomic move fails, which must clean the temp file and rethrow.
+        val target = dir.resolve("payload.json")
+        Files.createDirectory(target.toNioPath())
+        Files.writeString(target.resolve("occupant").toNioPath(), "keep")
+        val persist = OneFilePersist(target)
+
+        assertFailsWith<IOException> { persist.save(Payload("hello")) }
+
+        val leftovers =
+            Files.list(dir.toNioPath()).use { stream ->
+                stream.map { it.fileName.toString() }.toList()
+            }
+        assertEquals(listOf("payload.json"), leftovers)
+        assertEquals("keep", Files.readString(target.resolve("occupant").toNioPath()))
     }
 }

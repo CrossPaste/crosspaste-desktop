@@ -64,6 +64,24 @@ class AppMetadataRepositoryTest {
     }
 
     @Test
+    fun `quarantine failure propagates instead of rotating the identity`() {
+        val dir = tempDir()
+        val persist = OneFilePersist(dir.resolve(".metadata"))
+        persist.saveBytes("{ not valid json".encodeToByteArray())
+        // A non-empty directory at the backup path makes quarantine's atomic move fail.
+        val backupPath = dir.resolve(".metadata.corrupt")
+        Files.createDirectory(backupPath.toNioPath())
+        Files.writeString(backupPath.resolve("occupant").toNioPath(), "keep")
+        val repository = AppMetadataRepository(persist, deviceUtils)
+
+        assertFailsWith<IOException> { repository.appInstanceId }
+
+        // No identity was generated and the corrupt file is still in place.
+        verify(exactly = 0) { deviceUtils.createAppInstanceId() }
+        assertEquals("{ not valid json", Files.readString(dir.resolve(".metadata").toNioPath()))
+    }
+
+    @Test
     fun `read IO error fails instead of rotating the identity`() {
         val dir = tempDir()
         // A directory at the metadata path makes the read fail with an I/O error

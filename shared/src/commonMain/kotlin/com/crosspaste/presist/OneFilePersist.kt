@@ -8,6 +8,7 @@ import kotlinx.serialization.serializer
 import okio.BufferedSink
 import okio.Path
 import okio.Path.Companion.toPath
+import kotlin.random.Random
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
@@ -83,8 +84,10 @@ class OneFilePersist(
         }
         // Write to a same-directory temp file, then atomically move it into place: a
         // crash or full disk mid-write must never leave a truncated file at [path]
-        // (R2-02-006).
-        val tempPath = "$path.tmp".toPath()
+        // (R2-02-006). The temp name carries a random suffix so concurrent writers of
+        // the same path never share a temp file — racing writes degrade to a harmless
+        // last-move-wins instead of moving each other's half-written content.
+        val tempPath = "$path.${Random.nextLong().toULong().toString(16)}.tmp".toPath()
         try {
             fileSystem.write(tempPath, mustCreate = false, writeOperation)
             fileSystem.atomicMove(tempPath, path)
