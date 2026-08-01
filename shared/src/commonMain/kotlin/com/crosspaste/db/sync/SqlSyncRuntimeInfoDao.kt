@@ -29,6 +29,10 @@ class SqlSyncRuntimeInfoDao(
      * on subscription and every subsequent change — concurrent collectors never
      * compete for notifications (R2-02-005). [distinctUntilChanged] suppresses
      * re-emissions from table notifications that did not change the result set.
+     *
+     * This is a latest-wins *state* flow, not an event stream: rapid successive
+     * writes may be conflated into a single emission of the newest snapshot, so
+     * consumers must not rely on observing every intermediate state.
      */
     override fun getAllSyncRuntimeInfosFlow(): Flow<List<SyncRuntimeInfo>> =
         syncRuntimeInfoDatabaseQueries
