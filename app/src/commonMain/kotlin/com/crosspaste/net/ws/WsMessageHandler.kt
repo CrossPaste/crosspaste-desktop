@@ -223,24 +223,22 @@ class WsMessageHandler(
                 return
             }
 
-        // Find the file across all PasteFiles items in this paste
-        val allFileItems = pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>()
-        var targetPath: okio.Path? = null
-
-        for (pasteFiles in allFileItems) {
-            val filePaths = pasteFiles.getFilePaths(userDataPathProvider)
-            for (filePath in filePaths) {
-                if (filePath.name == request.fileName) {
-                    targetPath = filePath
-                    break
+        val candidates =
+            pasteData
+                .getPasteAppearItems()
+                .filterIsInstance<PasteFiles>()
+                .flatMap { pasteFiles ->
+                    pasteFiles.relativePathList
+                        .zip(pasteFiles.getFilePaths(userDataPathProvider))
+                        .map { (relativePath, filePath) -> WholeFileCandidate(relativePath, filePath) }
                 }
-            }
-            if (targetPath != null) break
-        }
+        val targetPath = selectWholeFilePath(candidates, request)
 
         if (targetPath == null) {
-            logger.error { "FILE_PULL_REQUEST whole-file: file '${request.fileName}' not found in paste ${request.id}" }
-            sendErrorResponse(appInstanceId, requestId, "File not found: ${request.fileName}")
+            logger.error {
+                "FILE_PULL_REQUEST whole-file: file '${request.fileName}' not found or ambiguous in paste ${request.id}"
+            }
+            sendErrorResponse(appInstanceId, requestId, "File not found or ambiguous: ${request.fileName}")
             return
         }
 
@@ -317,4 +315,20 @@ class WsMessageHandler(
             )
         wsSessionManager.send(appInstanceId, errorEnvelope)
     }
+}
+
+internal data class WholeFileCandidate(
+    val relativePath: String,
+    val filePath: okio.Path,
+)
+
+internal fun selectWholeFilePath(
+    candidates: List<WholeFileCandidate>,
+    request: WsPullFileRequest.WholeFileRequest,
+): okio.Path? {
+    val matches =
+        request.relativePath?.let { requestedPath ->
+            candidates.filter { it.relativePath == requestedPath }
+        } ?: candidates.filter { it.filePath.name == request.fileName }
+    return matches.singleOrNull()?.filePath
 }

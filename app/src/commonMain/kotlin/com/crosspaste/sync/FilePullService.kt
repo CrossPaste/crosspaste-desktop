@@ -17,11 +17,13 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
+import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
@@ -207,6 +209,9 @@ class FilePullService(
             val targetPath = targetPaths[index]
 
             runCatching {
+                val expectedFileInfo =
+                    pasteFiles.fileInfoTreeMap[requestFileName]
+                        ?: error("Missing file metadata for $requestFileName")
                 val request: WsPullFileRequest =
                     WsPullFileRequest.WholeFileRequest(
                         hash = hash,
@@ -229,6 +234,9 @@ class FilePullService(
                 if (response.type == WsMessageType.ERROR) {
                     val errorMsg = response.payload.decodeToString()
                     throw IllegalStateException("File pull error: $errorMsg")
+                }
+                check(isValidWholeFilePayload(expectedFileInfo, response.payload)) {
+                    "Whole-file response failed size/hash validation"
                 }
 
                 // Write the received bytes directly to the target file path
@@ -357,3 +365,11 @@ class FilePullService(
         }
     }
 }
+
+internal fun isValidWholeFilePayload(
+    expected: FileInfoTree,
+    payload: ByteArray,
+): Boolean =
+    expected.isFile() &&
+        expected.size == payload.size.toLong() &&
+        expected.hash == getCodecsUtils().hash(payload)

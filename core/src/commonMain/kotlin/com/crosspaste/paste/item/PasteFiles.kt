@@ -8,6 +8,22 @@ interface PasteFiles {
 
     val basePath: String?
 
+    /**
+     * Describes the file payload copied in one clipboard operation.
+     *
+     * A paste can contain multiple top-level entries, and each entry can be either
+     * a file or a directory. For internally stored pastes, `appInstanceId/date/id/`
+     * is the paste root; its direct children are the entries copied together.
+     * [relativePathList] stores paths to those children, for example
+     * `appInstanceId/date/id/report.pdf` and `appInstanceId/date/id/photos`.
+     *
+     * This map has one entry for each direct child of that paste root and is keyed
+     * only by the child's name: `"report.pdf"` maps to a `SingleFileInfoTree`, while
+     * `"photos"` maps to a `DirFileInfoTree` containing its descendants. Therefore,
+     * derive the key from the final component of the corresponding relative path
+     * (`relativePath.toPath().name`), not from the full relative path or from names
+     * nested inside a directory tree.
+     */
     val fileInfoTreeMap: Map<String, FileInfoTree>
 
     val relativePathList: List<String>

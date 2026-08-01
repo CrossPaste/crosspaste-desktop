@@ -30,5 +30,6 @@ sealed class WsPullFileRequest {
         val id: Long = 0,
         val hash: String = "",
         val fileName: String,
+        val relativePath: String? = null,
     ) : WsPullFileRequest()
 }
