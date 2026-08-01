@@ -4,6 +4,9 @@ import com.crosspaste.pairing.v3.CanonicalWriter
 import com.crosspaste.secure.SecureMessageProcessor
 import com.crosspaste.serializer.Base64ByteArraySerializer
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration.Companion.seconds
+
+internal val WS_AUTHENTICATION_TIMEOUT = 5.seconds
 
 @Serializable
 data class WsAuthChallenge(

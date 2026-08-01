@@ -42,7 +42,7 @@ class WsClientConnector(
             client.webSocket(host = host, port = port, path = path) {
                 val rawSession = WsSession(this, targetAppInstanceId)
                 val receivedChallenge =
-                    withTimeoutOrNull(AUTHENTICATION_TIMEOUT_MS) { receiveWsEnvelope(incoming) }
+                    withTimeoutOrNull(WS_AUTHENTICATION_TIMEOUT) { receiveWsEnvelope(incoming) }
                         ?: error("WebSocket authentication challenge timed out")
                 require(receivedChallenge.envelope.type == WsMessageType.AUTH_CHALLENGE) {
                     "Expected WebSocket authentication challenge"
@@ -68,7 +68,7 @@ class WsClientConnector(
                     ),
                 )
                 val receivedAck =
-                    withTimeoutOrNull(AUTHENTICATION_TIMEOUT_MS) { receiveWsEnvelope(incoming) }
+                    withTimeoutOrNull(WS_AUTHENTICATION_TIMEOUT) { receiveWsEnvelope(incoming) }
                         ?: error("WebSocket authentication acknowledgement timed out")
                 require(receivedAck.envelope.type == WsMessageType.AUTH_ACK) {
                     "Expected WebSocket authentication acknowledgement"
@@ -129,9 +129,5 @@ class WsClientConnector(
         connectScope.launch {
             connect(host, port, targetAppInstanceId)
         }
-    }
-
-    companion object {
-        private const val AUTHENTICATION_TIMEOUT_MS = 5_000L
     }
 }

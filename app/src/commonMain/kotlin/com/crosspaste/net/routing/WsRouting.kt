@@ -1,6 +1,7 @@
 package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.net.ws.WS_AUTHENTICATION_TIMEOUT
 import com.crosspaste.net.ws.WsAuthChallenge
 import com.crosspaste.net.ws.WsAuthProof
 import com.crosspaste.net.ws.WsAuthenticationCodec
@@ -20,6 +21,7 @@ import io.ktor.server.plugins.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 
 fun Routing.wsRouting(
@@ -56,8 +58,8 @@ fun Routing.wsRouting(
             if (authenticationRequested) {
                 authenticateWebSocketPeer(appInfo, appInstanceId, secureStore) ?: return@webSocket
             } else {
-                val remoteHost = runCatching { call.request.origin.remoteHost }.getOrNull()
-                if (!isLoopbackHost(remoteHost)) {
+                val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
+                if (!isLoopbackAddress(remoteAddress)) {
                     close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Authenticated WebSocket required"))
                     return@webSocket
                 }
@@ -84,7 +86,11 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
     secureStore: SecureStore,
 ): WsAuthenticationContext? {
     val json = getJsonUtils().JSON
-    val processor = secureStore.getMessageProcessor(appInstanceId)
+    val processor = runCatching { secureStore.getMessageProcessor(appInstanceId) }.getOrNull()
+    if (processor == null) {
+        close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "WebSocket authentication unavailable"))
+        return null
+    }
     val rawSession = WsSession(this, appInstanceId)
     val challenge =
         WsAuthChallenge(
@@ -99,7 +105,7 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
     )
     val proof =
         runCatching {
-            withTimeoutOrNull(AUTHENTICATION_TIMEOUT_MS) { receiveWsEnvelope(incoming) }
+            withTimeoutOrNull(WS_AUTHENTICATION_TIMEOUT) { receiveWsEnvelope(incoming) }
                 ?.takeIf { it.envelope.type == WsMessageType.AUTH_PROOF }
                 ?.let { json.decodeFromString<WsAuthProof>(it.envelope.payload.decodeToString()) }
         }.getOrNull()
@@ -144,7 +150,19 @@ private suspend fun DefaultWebSocketServerSession.receiveWebSocketMessages(
 ) {
     val logger = KotlinLogging.logger {}
     while (true) {
-        val received = receiveWsEnvelope(incoming) ?: break
+        val receivedResult = runCatching { receiveWsEnvelope(incoming) }
+        val receiveFailure = receivedResult.exceptionOrNull()
+        if (receiveFailure != null) {
+            if (receiveFailure is CancellationException) throw receiveFailure
+            if (authenticationContext != null) {
+                logger.warn { "Rejected malformed authenticated WS message from $appInstanceId" }
+                close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Malformed authenticated message"))
+                break
+            }
+            logger.error(receiveFailure) { "Failed to handle legacy WS message from $appInstanceId" }
+            continue
+        }
+        val received = receivedResult.getOrNull() ?: break
         if (authenticationContext != null &&
             !authenticationContext.verify(received.header, received.envelope.payload)
         ) {
@@ -156,6 +174,5 @@ private suspend fun DefaultWebSocketServerSession.receiveWebSocketMessages(
     }
 }
 
-internal fun isLoopbackHost(host: String?): Boolean = host == "127.0.0.1" || host == "::1" || host == "0:0:0:0:0:0:0:1"
-
-private const val AUTHENTICATION_TIMEOUT_MS = 5_000L
+internal fun isLoopbackAddress(address: String?): Boolean =
+    address == "127.0.0.1" || address == "::1" || address == "0:0:0:0:0:0:0:1"

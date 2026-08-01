@@ -6,6 +6,7 @@ import dev.whyoleg.cryptography.algorithms.HMAC
 import dev.whyoleg.cryptography.algorithms.SHA256
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.concurrent.Volatile
 
 /** HMAC authentication derived independently from the long-term ECDH secret. */
 class PeerAuthenticator(
@@ -14,6 +15,8 @@ class PeerAuthenticator(
 ) {
     private val hmac = CryptographyProvider.Default.get(HMAC)
     private val keyMutex = Mutex()
+
+    @Volatile
     private var authenticationKey: ByteArray? = null
 
     suspend fun authenticationCode(data: ByteArray): ByteArray =

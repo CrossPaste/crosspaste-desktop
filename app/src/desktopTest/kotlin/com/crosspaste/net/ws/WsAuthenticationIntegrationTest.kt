@@ -10,20 +10,29 @@ import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.routing.wsRouting
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
+import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.CryptographyUtils
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.routing.routing
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.Frame
+import io.ktor.websocket.send
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class WsAuthenticationIntegrationTest {
 
@@ -70,11 +79,11 @@ class WsAuthenticationIntegrationTest {
             try {
                 server.start()
                 connector.connectAsync("127.0.0.1", server.port(), serverInfo.appInstanceId)
-                withTimeout(5_000) {
+                withTimeout(5.seconds) {
                     while (!clientSessions.isConnected(serverInfo.appInstanceId) ||
                         !serverSessions.isConnected(clientInfo.appInstanceId)
                     ) {
-                        delay(10)
+                        delay(10.milliseconds)
                     }
                 }
 
@@ -98,6 +107,93 @@ class WsAuthenticationIntegrationTest {
             }
         }
 
+    @Test
+    fun `loopback legacy client tolerates a malformed message`() =
+        runBlocking {
+            val serializer = SecureKeyPairSerializer()
+            val serverKeys = CryptographyUtils.generateSecureKeyPair()
+            val clientKeys = CryptographyUtils.generateSecureKeyPair()
+            val serverStore = GeneralSecureStore(serverKeys, serializer, MemorySecureIO())
+            val serverInfo = appInfo("legacy-server")
+            val clientInfo = appInfo("legacy-client")
+            serverStore.saveCryptPublicKey(
+                clientInfo.appInstanceId,
+                serializer.encodeCryptPublicKey(clientKeys.cryptKeyPair.publicKey),
+            )
+            val serverSessions = WsSessionManager()
+            val serverHandler = mockk<WsMessageHandler>(relaxed = true)
+            val server =
+                DesktopPasteServer(
+                    TestReadWritePort(),
+                    DesktopExceptionHandler(),
+                    DesktopServerFactory(),
+                    AuthenticatedWsServerModule(serverInfo, serverStore, serverSessions, serverHandler),
+                )
+            val httpClient = HttpClient(CIO) { install(WebSockets) }
+
+            try {
+                server.start()
+                val path =
+                    "/ws/sync?appInstanceId=${clientInfo.appInstanceId}" +
+                        "&targetAppInstanceId=${serverInfo.appInstanceId}"
+                httpClient.webSocket(host = "127.0.0.1", port = server.port(), path = path) {
+                    send(Frame.Text("not-json"))
+                    WsSession(this, serverInfo.appInstanceId).sendEnvelope(
+                        WsEnvelope(type = "legacy-test", payload = "payload".encodeToByteArray()),
+                    )
+                    coVerify(timeout = 5_000) {
+                        serverHandler.handleMessage(
+                            clientInfo.appInstanceId,
+                            match { it.type == "legacy-test" && it.payload.decodeToString() == "payload" },
+                        )
+                    }
+                    assertTrue(serverSessions.isConnected(clientInfo.appInstanceId))
+                }
+            } finally {
+                serverSessions.closeAll()
+                httpClient.close()
+                server.stop()
+            }
+        }
+
+    @Test
+    fun `authentication closes cleanly when the paired key disappears`() =
+        runBlocking {
+            val serverInfo = appInfo("missing-key-server")
+            val clientInfo = appInfo("missing-key-client")
+            val serverStore = mockk<SecureStore>()
+            coEvery { serverStore.existCryptPublicKey(clientInfo.appInstanceId) } returns true
+            coEvery { serverStore.getMessageProcessor(clientInfo.appInstanceId) } throws IllegalStateException("gone")
+            val server =
+                DesktopPasteServer(
+                    TestReadWritePort(),
+                    DesktopExceptionHandler(),
+                    DesktopServerFactory(),
+                    AuthenticatedWsServerModule(
+                        serverInfo,
+                        serverStore,
+                        WsSessionManager(),
+                        mockk(relaxed = true),
+                    ),
+                )
+            val httpClient = HttpClient(CIO) { install(WebSockets) }
+
+            try {
+                server.start()
+                val path =
+                    "/ws/sync?appInstanceId=${clientInfo.appInstanceId}" +
+                        "&targetAppInstanceId=${serverInfo.appInstanceId}" +
+                        "&authVersion=${WsAuthenticationCodec.VERSION}"
+                httpClient.webSocket(host = "127.0.0.1", port = server.port(), path = path) {
+                    val reason = withTimeout(5.seconds) { closeReason.await() }
+                    assertEquals(CloseReason.Codes.VIOLATED_POLICY.code, reason?.code)
+                }
+            } finally {
+                httpClient.close()
+                server.stop()
+            }
+        }
+
     private fun appInfo(id: String): AppInfo =
         AppInfo(
             appInstanceId = id,
@@ -109,7 +205,7 @@ class WsAuthenticationIntegrationTest {
 
 private class AuthenticatedWsServerModule(
     private val appInfo: AppInfo,
-    private val secureStore: GeneralSecureStore,
+    private val secureStore: SecureStore,
     private val sessionManager: WsSessionManager,
     private val messageHandler: WsMessageHandler,
 ) : ServerModule {

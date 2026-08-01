@@ -1,6 +1,6 @@
 package com.crosspaste.net.ws
 
-import com.crosspaste.net.routing.isLoopbackHost
+import com.crosspaste.net.routing.isLoopbackAddress
 import com.crosspaste.secure.SecureMessageProcessor
 import com.crosspaste.utils.CryptographyUtils
 import kotlinx.coroutines.test.runTest
@@ -35,9 +35,10 @@ class WsAuthenticationTest {
 
     @Test
     fun `legacy websocket is limited to loopback`() {
-        assertTrue(isLoopbackHost("127.0.0.1"))
-        assertTrue(isLoopbackHost("::1"))
-        assertFalse(isLoopbackHost("192.168.1.10"))
-        assertFalse(isLoopbackHost(null))
+        assertTrue(isLoopbackAddress("127.0.0.1"))
+        assertTrue(isLoopbackAddress("::1"))
+        assertFalse(isLoopbackAddress("localhost"))
+        assertFalse(isLoopbackAddress("192.168.1.10"))
+        assertFalse(isLoopbackAddress(null))
     }
 }
