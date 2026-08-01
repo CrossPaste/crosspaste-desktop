@@ -6,6 +6,7 @@ import { BlobStore } from "@/shared/storage/blob-store";
 import { PasteStore } from "@/shared/storage/paste-store";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
 import { writeRemotePasteToClipboard } from "@/shared/clipboard/clipboard-sync-writer";
+import { CrossPasteHash } from "@/shared/core";
 import { shouldWriteRemotePaste } from "./paste-push-policy";
 
 /** Payload of a FILE_PULL_REQUEST message (matches Kotlin WsPullFileRequest sealed class). */
@@ -15,7 +16,7 @@ interface WsChunkRequest {
   chunkIndex: number;
 }
 
-interface WsWholeFileRequest {
+export interface WsWholeFileRequest {
   mode: "whole";
   id?: number;
   hash?: string;
@@ -24,6 +25,44 @@ interface WsWholeFileRequest {
 }
 
 type WsPullFileRequest = WsChunkRequest | WsWholeFileRequest;
+
+interface SingleFileMetadata {
+  type: "file";
+  size: number;
+  hash: string;
+}
+
+export function createWholeFileRequest(
+  id: number,
+  hash: string,
+  relativePath: string,
+): WsWholeFileRequest {
+  const parts = relativePath.split(/[\\/]/);
+  return {
+    mode: "whole",
+    id,
+    hash,
+    fileName: parts[parts.length - 1] || relativePath,
+    relativePath,
+  };
+}
+
+export function isValidWholeFilePayload(
+  fileInfoTreeMap: Record<string, unknown>,
+  relativePath: string,
+  payload: Uint8Array,
+): boolean {
+  const metadata = fileInfoTreeMap[relativePath] as Partial<SingleFileMetadata> | undefined;
+  if (
+    metadata?.type !== "file" ||
+    metadata.size !== payload.byteLength ||
+    typeof metadata.hash !== "string"
+  ) {
+    return false;
+  }
+  const bytes = new Int8Array(payload.buffer, payload.byteOffset, payload.byteLength);
+  return CrossPasteHash.hashBytes(bytes) === metadata.hash;
+}
 
 /** Payload of a PASTE_REJECTED_OVERSIZE message (matches Kotlin OversizePasteNotice). */
 export interface OversizePasteNotice {
@@ -241,14 +280,7 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
         }
 
         try {
-          const bareFileName = fileName.includes("/") ? fileName.split("/").pop() || fileName : fileName;
-          const request: WsWholeFileRequest = {
-            mode: "whole",
-            id: pasteData.id,
-            hash,
-            fileName: bareFileName,
-            relativePath: fileName,
-          };
+          const request = createWholeFileRequest(pasteData.id, hash, fileName);
 
           const requestEnvelope: WsEnvelope = {
             type: WsMessageType.FILE_PULL_REQUEST,
@@ -264,13 +296,16 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
             continue;
           }
 
-          if (response.payload.length > 0) {
-            await BlobStore.put(hash, fileName, response.payload.slice().buffer as ArrayBuffer);
-            pulledAny = true;
-            console.log(
-              `[WsHandler] Pulled file ${fileName} (${response.payload.length} bytes) from ${appInstanceId}`,
-            );
+          if (!isValidWholeFilePayload(item.fileInfoTreeMap, fileName, response.payload)) {
+            console.warn(`[WsHandler] Rejected invalid file payload for ${fileName}`);
+            continue;
           }
+
+          await BlobStore.put(hash, fileName, response.payload.slice().buffer as ArrayBuffer);
+          pulledAny = true;
+          console.log(
+            `[WsHandler] Pulled file ${fileName} (${response.payload.length} bytes) from ${appInstanceId}`,
+          );
         } catch (e) {
           console.error(`[WsHandler] Failed to pull file ${fileName} from ${appInstanceId}:`, e);
         }

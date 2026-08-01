@@ -1,6 +1,9 @@
 package com.crosspaste.net.ws
 
 import com.crosspaste.dto.pull.WsPullFileRequest
+import com.crosspaste.presist.SingleFileInfoTree
+import com.crosspaste.sync.isValidWholeFilePayload
+import com.crosspaste.utils.getCodecsUtils
 import okio.Path.Companion.toPath
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,5 +41,15 @@ class WholeFileSelectionTest {
         val request = WsPullFileRequest.WholeFileRequest(fileName = "unique.txt")
 
         assertEquals("/paste/unique.txt".toPath(), selectWholeFilePath(candidates, request))
+    }
+
+    @Test
+    fun `whole-file payload requires matching size and hash`() {
+        val payload = "expected".encodeToByteArray()
+        val expected = SingleFileInfoTree(payload.size.toLong(), getCodecsUtils().hash(payload))
+
+        assertEquals(true, isValidWholeFilePayload(expected, payload))
+        assertEquals(false, isValidWholeFilePayload(expected, "tampered".encodeToByteArray()))
+        assertEquals(false, isValidWholeFilePayload(expected, payload + 0))
     }
 }
