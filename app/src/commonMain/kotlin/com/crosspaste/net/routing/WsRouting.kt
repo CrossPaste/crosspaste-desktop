@@ -29,7 +29,6 @@ fun Routing.wsRouting(
     wsMessageHandler: WsMessageHandler,
 ) {
     val logger = KotlinLogging.logger {}
-    val json = getJsonUtils().JSON
 
     webSocket("/ws/sync") {
         val appInstanceId = call.request.queryParameters["appInstanceId"]
@@ -51,64 +50,11 @@ fun Routing.wsRouting(
             return@webSocket
         }
 
-        val rawSession = WsSession(this, appInstanceId)
+        val authenticationRequested =
+            call.request.queryParameters["authVersion"] == WsAuthenticationCodec.VERSION.toString()
         val authenticationContext =
-            if (call.request.queryParameters["authVersion"] == WsAuthenticationCodec.VERSION.toString()) {
-                val processor = secureStore.getMessageProcessor(appInstanceId)
-                val challenge =
-                    WsAuthChallenge(
-                        sessionId = getCodecsUtils().base64Encode(CryptographyRandom.nextBytes(16)),
-                        nonce = CryptographyRandom.nextBytes(32),
-                    )
-                rawSession.sendEnvelope(
-                    WsEnvelope(
-                        type = WsMessageType.AUTH_CHALLENGE,
-                        payload = json.encodeToString(challenge).encodeToByteArray(),
-                    ),
-                )
-                val receivedProof = withTimeoutOrNull(AUTHENTICATION_TIMEOUT_MS) { receiveWsEnvelope(incoming) }
-                val proof =
-                    receivedProof
-                        ?.takeIf { it.envelope.type == WsMessageType.AUTH_PROOF }
-                        ?.let { json.decodeFromString<WsAuthProof>(it.envelope.payload.decodeToString()) }
-                val validProof =
-                    proof != null &&
-                        processor.verifyAuthentication(
-                            WsAuthenticationCodec.handshakePayload(
-                                role = WsAuthenticationCodec.CLIENT_PROOF,
-                                sourceAppInstanceId = appInstanceId,
-                                targetAppInstanceId = appInfo.appInstanceId,
-                                challenge = challenge,
-                            ),
-                            proof.authenticationCode,
-                        )
-                if (!validProof) {
-                    close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "WebSocket authentication failed"))
-                    return@webSocket
-                }
-                val ack =
-                    WsAuthProof(
-                        processor.authenticationCode(
-                            WsAuthenticationCodec.handshakePayload(
-                                role = WsAuthenticationCodec.SERVER_PROOF,
-                                sourceAppInstanceId = appInfo.appInstanceId,
-                                targetAppInstanceId = appInstanceId,
-                                challenge = challenge,
-                            ),
-                        ),
-                    )
-                rawSession.sendEnvelope(
-                    WsEnvelope(
-                        type = WsMessageType.AUTH_ACK,
-                        payload = json.encodeToString(ack).encodeToByteArray(),
-                    ),
-                )
-                WsAuthenticationContext(
-                    sessionId = challenge.sessionId,
-                    localAppInstanceId = appInfo.appInstanceId,
-                    remoteAppInstanceId = appInstanceId,
-                    processor = processor,
-                )
+            if (authenticationRequested) {
+                authenticateWebSocketPeer(appInfo, appInstanceId, secureStore) ?: return@webSocket
             } else {
                 val remoteHost = runCatching { call.request.origin.remoteHost }.getOrNull()
                 if (!isLoopbackHost(remoteHost)) {
@@ -124,21 +70,89 @@ fun Routing.wsRouting(
         wsSessionManager.registerSession(appInstanceId, wsSession)
 
         try {
-            while (true) {
-                val received = receiveWsEnvelope(incoming) ?: break
-                if (authenticationContext != null &&
-                    !authenticationContext.verify(received.header, received.envelope.payload)
-                ) {
-                    logger.warn { "Rejected unauthenticated WS message from $appInstanceId" }
-                    close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Invalid message authentication"))
-                    break
-                }
-                wsMessageHandler.handleMessage(appInstanceId, received.envelope)
-            }
+            receiveWebSocketMessages(appInstanceId, authenticationContext, wsMessageHandler)
         } finally {
             logger.info { "WebSocket disconnected: $appInstanceId" }
             wsSessionManager.notifySessionClosed(appInstanceId, wsSession)
         }
+    }
+}
+
+private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
+    appInfo: AppInfo,
+    appInstanceId: String,
+    secureStore: SecureStore,
+): WsAuthenticationContext? {
+    val json = getJsonUtils().JSON
+    val processor = secureStore.getMessageProcessor(appInstanceId)
+    val rawSession = WsSession(this, appInstanceId)
+    val challenge =
+        WsAuthChallenge(
+            sessionId = getCodecsUtils().base64Encode(CryptographyRandom.nextBytes(16)),
+            nonce = CryptographyRandom.nextBytes(32),
+        )
+    rawSession.sendEnvelope(
+        WsEnvelope(
+            type = WsMessageType.AUTH_CHALLENGE,
+            payload = json.encodeToString(challenge).encodeToByteArray(),
+        ),
+    )
+    val proof =
+        runCatching {
+            withTimeoutOrNull(AUTHENTICATION_TIMEOUT_MS) { receiveWsEnvelope(incoming) }
+                ?.takeIf { it.envelope.type == WsMessageType.AUTH_PROOF }
+                ?.let { json.decodeFromString<WsAuthProof>(it.envelope.payload.decodeToString()) }
+        }.getOrNull()
+    val proofPayload =
+        WsAuthenticationCodec.handshakePayload(
+            role = WsAuthenticationCodec.CLIENT_PROOF,
+            sourceAppInstanceId = appInstanceId,
+            targetAppInstanceId = appInfo.appInstanceId,
+            challenge = challenge,
+        )
+    if (proof == null || !processor.verifyAuthentication(proofPayload, proof.authenticationCode)) {
+        close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "WebSocket authentication failed"))
+        return null
+    }
+
+    val ackPayload =
+        WsAuthenticationCodec.handshakePayload(
+            role = WsAuthenticationCodec.SERVER_PROOF,
+            sourceAppInstanceId = appInfo.appInstanceId,
+            targetAppInstanceId = appInstanceId,
+            challenge = challenge,
+        )
+    val ack = WsAuthProof(processor.authenticationCode(ackPayload))
+    rawSession.sendEnvelope(
+        WsEnvelope(
+            type = WsMessageType.AUTH_ACK,
+            payload = json.encodeToString(ack).encodeToByteArray(),
+        ),
+    )
+    return WsAuthenticationContext(
+        sessionId = challenge.sessionId,
+        localAppInstanceId = appInfo.appInstanceId,
+        remoteAppInstanceId = appInstanceId,
+        processor = processor,
+    )
+}
+
+private suspend fun DefaultWebSocketServerSession.receiveWebSocketMessages(
+    appInstanceId: String,
+    authenticationContext: WsAuthenticationContext?,
+    wsMessageHandler: WsMessageHandler,
+) {
+    val logger = KotlinLogging.logger {}
+    while (true) {
+        val received = receiveWsEnvelope(incoming) ?: break
+        if (authenticationContext != null &&
+            !authenticationContext.verify(received.header, received.envelope.payload)
+        ) {
+            logger.warn { "Rejected unauthenticated WS message from $appInstanceId" }
+            close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Invalid message authentication"))
+            break
+        }
+        wsMessageHandler.handleMessage(appInstanceId, received.envelope)
     }
 }
 
