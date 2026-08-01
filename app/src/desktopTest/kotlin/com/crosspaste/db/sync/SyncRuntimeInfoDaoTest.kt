@@ -1,6 +1,7 @@
 package com.crosspaste.db.sync
 
 import app.cash.turbine.test
+import app.cash.turbine.turbineScope
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
@@ -156,6 +157,53 @@ class SyncRuntimeInfoDaoTest {
                 expectNoEvents()
 
                 // Cancel the test
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `two concurrent collectors both receive every change`() =
+        runTest {
+            // Broadcast semantics (R2-02-005): notifications must not be split between
+            // collectors — each collector observes every insert, update, and delete.
+            turbineScope {
+                val first = syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().testIn(backgroundScope)
+                val second = syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().testIn(backgroundScope)
+
+                assertTrue(first.awaitItem().isEmpty())
+                assertTrue(second.awaitItem().isEmpty())
+
+                syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
+                assertEquals(1, first.awaitItem().size)
+                assertEquals(1, second.awaitItem().size)
+
+                syncRuntimeInfoDao.updateConnectInfo(updatedSyncRuntimeInfo)
+                assertEquals(updatedSyncRuntimeInfo.connectState, first.awaitItem()[0].connectState)
+                assertEquals(updatedSyncRuntimeInfo.connectState, second.awaitItem()[0].connectState)
+
+                syncRuntimeInfoDao.deleteSyncRuntimeInfo(testSyncRuntimeInfo.appInstanceId)
+                assertTrue(first.awaitItem().isEmpty())
+                assertTrue(second.awaitItem().isEmpty())
+            }
+        }
+
+    @Test
+    fun `late subscriber receives full current snapshot`() =
+        runTest {
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
+
+            syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().test {
+                assertEquals(1, awaitItem().size)
+
+                // A collector subscribing after all changes were consumed by an earlier
+                // collector must still get the full current snapshot, not an empty view.
+                syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().test {
+                    val snapshot = awaitItem()
+                    assertEquals(1, snapshot.size)
+                    assertEquals(testSyncRuntimeInfo.appInstanceId, snapshot[0].appInstanceId)
+                    cancelAndIgnoreRemainingEvents()
+                }
+
                 cancelAndIgnoreRemainingEvents()
             }
         }
