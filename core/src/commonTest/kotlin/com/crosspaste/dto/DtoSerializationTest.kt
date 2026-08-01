@@ -89,17 +89,33 @@ class DtoSerializationTest {
     @Test
     fun `WsPullFileRequest roundtrip preserves subtype`() {
         val whole: WsPullFileRequest =
-            WsPullFileRequest.WholeFileRequest(hash = "h", fileName = "f.png")
+            WsPullFileRequest.WholeFileRequest(
+                hash = "h",
+                fileName = "f.png",
+                relativePath = "dir/f.png",
+            )
         val decodedWhole = json.decodeFromString<WsPullFileRequest>(json.encodeToString(whole))
         assertTrue(decodedWhole is WsPullFileRequest.WholeFileRequest)
         assertEquals("h", decodedWhole.hash)
         assertEquals("f.png", decodedWhole.fileName)
+        assertEquals("dir/f.png", decodedWhole.relativePath)
 
         val chunk: WsPullFileRequest = WsPullFileRequest.ChunkRequest(id = 5L, chunkIndex = 2)
         val decodedChunk = json.decodeFromString<WsPullFileRequest>(json.encodeToString(chunk))
         assertTrue(decodedChunk is WsPullFileRequest.ChunkRequest)
         assertEquals(5L, decodedChunk.id)
         assertEquals(2, decodedChunk.chunkIndex)
+    }
+
+    @Test
+    fun `WsPullFileRequest legacy whole-file payload defaults relativePath to null`() {
+        val legacyWire =
+            """{"mode":"whole","id":1,"hash":"h","fileName":"f.png"}"""
+
+        val decoded = json.decodeFromString<WsPullFileRequest>(legacyWire)
+
+        assertTrue(decoded is WsPullFileRequest.WholeFileRequest)
+        assertEquals(null, decoded.relativePath)
     }
 
     // --- EndpointInfo ---

@@ -20,6 +20,7 @@ interface WsWholeFileRequest {
   id?: number;
   hash?: string;
   fileName: string;
+  relativePath?: string;
 }
 
 type WsPullFileRequest = WsChunkRequest | WsWholeFileRequest;
@@ -246,6 +247,7 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
             id: pasteData.id,
             hash,
             fileName: bareFileName,
+            relativePath: fileName,
           };
 
           const requestEnvelope: WsEnvelope = {
