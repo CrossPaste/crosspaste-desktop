@@ -4,6 +4,7 @@ import com.crosspaste.presist.FilesChunk
 import io.ktor.utils.io.*
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import okio.EOFException
 import okio.FileSystem
 import okio.Path
 import java.io.RandomAccessFile
@@ -62,7 +63,10 @@ object DesktopFileUtils : FileUtils {
                         val toRead = minOf(buffer.size, remaining.toInt())
                         val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
                         if (readSize == -1) {
-                            break
+                            throw EOFException(
+                                "Unexpected EOF while writing ${fileChunk.path.name}: " +
+                                    "${size - remaining} of $size bytes",
+                            )
                         }
                         randomAccessFile.write(buffer, 0, readSize)
                         remaining -= readSize
@@ -91,7 +95,10 @@ object DesktopFileUtils : FileUtils {
                     val toRead = minOf(buffer.size, remaining.toInt())
                     val readSize = randomAccessFile.read(buffer, 0, toRead)
                     if (readSize == -1) {
-                        break
+                        throw EOFException(
+                            "Unexpected EOF while reading ${fileChunk.path.name}: " +
+                                "${size - remaining} of $size bytes",
+                        )
                     }
                     byteWriteChannel.writeFully(buffer, 0, readSize)
                     remaining -= readSize

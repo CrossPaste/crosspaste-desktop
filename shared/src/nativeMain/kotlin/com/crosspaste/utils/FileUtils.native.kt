@@ -5,6 +5,7 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
+import okio.EOFException
 import okio.FileSystem
 import okio.Path
 import okio.buffer
@@ -67,7 +68,10 @@ object NativeFileUtils : FileUtils {
                         val toRead = minOf(buffer.size, remaining.toInt())
                         val readSize = byteReadChannel.readAvailable(buffer, 0, toRead)
                         if (readSize == -1) {
-                            break
+                            throw EOFException(
+                                "Unexpected EOF while writing ${fileChunk.path.name}: " +
+                                    "${size - remaining} of $size bytes",
+                            )
                         }
                         fileHandle.write(offset, buffer, 0, readSize)
                         offset += readSize
@@ -113,7 +117,10 @@ object NativeFileUtils : FileUtils {
                     val toRead = minOf(buffer.size, remaining.toInt())
                     val readSize = fileHandle.read(offset, buffer, 0, toRead)
                     if (readSize == -1) {
-                        break
+                        throw EOFException(
+                            "Unexpected EOF while reading ${fileChunk.path.name}: " +
+                                "${size - remaining} of $size bytes",
+                        )
                     }
                     byteWriteChannel.writeFully(buffer, 0, readSize)
                     offset += readSize
