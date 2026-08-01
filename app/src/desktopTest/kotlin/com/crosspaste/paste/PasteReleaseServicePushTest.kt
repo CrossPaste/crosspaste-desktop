@@ -35,6 +35,7 @@ class PasteReleaseServicePushTest {
     private fun newService(
         pasteDao: PasteDao = mockk(relaxed = true),
         commonConfigManager: CommonConfigManager = defaultConfigManager(),
+        taskSubmitter: TaskSubmitter = mockk(relaxed = true),
         userDataPathProvider: UserDataPathProvider = mockk(relaxed = true),
     ): PasteReleaseService =
         PasteReleaseService(
@@ -48,7 +49,7 @@ class PasteReleaseServicePushTest {
             pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true),
             searchContentService = mockk(relaxed = true),
             syncRuntimeInfoDao = mockk(relaxed = true),
-            taskSubmitter = mockk<TaskSubmitter>(relaxed = true),
+            taskSubmitter = taskSubmitter,
             userDataPathProvider = userDataPathProvider,
         )
 
@@ -82,15 +83,9 @@ class PasteReleaseServicePushTest {
     }
 
     @Test
-    fun releaseRemotePasteDataForPush_markDeletesWhenFilesIndexEmpty() =
+    fun releaseRemotePasteDataForPush_rejectsEmptyMetadataBeforeCreatingRow() =
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)
-            coEvery { pasteDao.createPasteData(any(), any()) } returns 99L
-            coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
-
-            // userDataPathProvider.resolve is called by buildFilesIndexForReceive with the FilesPasteItem
-            // but relaxed=true makes it a no-op — builder stays empty → FilesIndex has 0 chunks
-            // → triggers the empty-filesIndex cleanup branch in releaseRemotePasteDataForPush.
             val service = newService(pasteDao = pasteDao)
 
             val emptyFilesItem =
@@ -111,8 +106,38 @@ class PasteReleaseServicePushTest {
 
             val result = service.releaseRemotePasteDataForPush(pasteData)
 
-            assertNull(result, "empty filesIndex should yield null result")
-            coVerify(exactly = 1) { pasteDao.markDeletePasteData(99L) }
+            assertNull(result, "invalid file metadata should yield null result")
+            coVerify(exactly = 0) { pasteDao.createPasteData(any(), any()) }
+            coVerify(exactly = 0) { pasteDao.markDeletePasteData(any()) }
+        }
+
+    @Test
+    fun releaseRemotePasteData_rejectsInvalidMetadataBeforeSubmittingTask() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
+            val service = newService(pasteDao = pasteDao, taskSubmitter = taskSubmitter)
+            val emptyFilesItem =
+                createFilesPasteItem(
+                    relativePathList = emptyList(),
+                    fileInfoTreeMap = emptyMap(),
+                )
+            val pasteData =
+                PasteData(
+                    appInstanceId = "test-mobile",
+                    pasteAppearItem = emptyFilesItem,
+                    pasteCollection = PasteCollection(emptyList()),
+                    pasteType = PasteType.FILE_TYPE.type,
+                    source = null,
+                    size = 0L,
+                    hash = "",
+                )
+
+            val result = service.releaseRemotePasteData(pasteData) {}
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) { pasteDao.createPasteData(any(), any()) }
+            coVerify(exactly = 0) { taskSubmitter.submit(any()) }
         }
 
     /**

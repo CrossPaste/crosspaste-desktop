@@ -5,6 +5,7 @@ import com.crosspaste.dto.push.PushCompleteResponse
 import com.crosspaste.dto.push.PushHeaders
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.FileTransferResourceLimits
 import com.crosspaste.sync.PushSession
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.utils.FileUtils
@@ -228,7 +229,11 @@ private suspend fun handleIconPush(
 
     val writeFailed =
         runCatching {
-            fileUtils.writeFile(iconPath, call.receiveChannel())
+            fileUtils.writeFile(
+                path = iconPath,
+                byteReadChannel = call.receiveChannel(),
+                maxBytes = FileTransferResourceLimits.MAX_ICON_SIZE,
+            )
         }.isFailure
     if (writeFailed) {
         logger.error { "push icon: write failed source=$source from=$fromAppInstanceId" }

@@ -11,6 +11,7 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.FileTransferResourceLimits
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.buildFilesIndex
 import com.crosspaste.utils.FileUtils
@@ -96,9 +97,24 @@ class FilePushService(
                 return prepareResult
             }
             val prepare = prepareResult.getResult<PushPrepareResponse>()
+            validatePrepareResponse(prepare)?.let { message ->
+                logger.warn { "push prepare returned invalid parameters for target=$targetAppInstanceId: $message" }
+                return createFailureResult(StandardErrorCode.PUSH_PREPARE_FAIL, message)
+            }
 
             // 2. build local index with the server-provided chunkSize
-            val filesIndex = filesIndexFactory(pasteData, userDataPathProvider, prepare.chunkSize)
+            val filesIndex =
+                try {
+                    filesIndexFactory(pasteData, userDataPathProvider, prepare.chunkSize)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.warn(e) { "push filesIndex rejected for target=$targetAppInstanceId" }
+                    return createFailureResult(
+                        StandardErrorCode.PUSH_PREPARE_FAIL,
+                        "Unable to build a bounded file index: ${e.message}",
+                    )
+                }
             val localChunkCount = filesIndex.getChunkCount()
             if (localChunkCount != prepare.chunkCount) {
                 logger.error {
@@ -148,6 +164,13 @@ class FilePushService(
                     return completeResult
                 }
                 val complete = completeResult.getResult<PushCompleteResponse>()
+                validateMissingChunks(complete.missingChunks, prepare.chunkCount)?.let { message ->
+                    logger.warn {
+                        "push complete returned invalid missing chunks for target=$targetAppInstanceId " +
+                            "pasteId=${prepare.pasteId}: $message"
+                    }
+                    return createFailureResult(StandardErrorCode.PUSH_COMPLETE_FAIL, message)
+                }
                 if (complete.isComplete) {
                     maybePushIcon(prepare, pasteData, targetAppInstanceId, toUrl)
                     return SuccessResult()
@@ -239,6 +262,29 @@ class FilePushService(
             }
     }
 
+    private fun validatePrepareResponse(prepare: PushPrepareResponse): String? =
+        when {
+            prepare.chunkCount !in 1..FileTransferResourceLimits.MAX_CHUNK_COUNT ->
+                "chunkCount must be between 1 and ${FileTransferResourceLimits.MAX_CHUNK_COUNT}"
+            prepare.chunkSize !in 1..FileTransferResourceLimits.MAX_CHUNK_SIZE ->
+                "chunkSize must be between 1 and ${FileTransferResourceLimits.MAX_CHUNK_SIZE}"
+            prepare.sessionToken.isEmpty() -> "sessionToken must not be empty"
+            prepare.sessionToken.length > FileTransferResourceLimits.MAX_SESSION_TOKEN_LENGTH ->
+                "sessionToken exceeds ${FileTransferResourceLimits.MAX_SESSION_TOKEN_LENGTH} characters"
+            else -> null
+        }
+
+    private fun validateMissingChunks(
+        missingChunks: List<Int>,
+        chunkCount: Int,
+    ): String? =
+        when {
+            missingChunks.size > chunkCount -> "missingChunks contains more entries than chunkCount"
+            missingChunks.any { it !in 0 until chunkCount } -> "missingChunks contains an out-of-range index"
+            missingChunks.toSet().size != missingChunks.size -> "missingChunks contains duplicate indices"
+            else -> null
+        }
+
     /**
      * Fire-and-forget icon push when the peer signalled `needIcon=true`. The
      * receiver's pull-icon task is the durable fallback (per M1+M2 design), so
@@ -257,6 +303,10 @@ class FilePushService(
             val iconPath = userDataPathProvider.resolveIconPath(pasteData.appInstanceId, source)
             if (!fileUtils.existFile(iconPath)) {
                 logger.debug { "push icon skipped: no local icon for source=$source" }
+                return
+            }
+            if (fileUtils.getFileSize(iconPath) > FileTransferResourceLimits.MAX_ICON_SIZE) {
+                logger.info { "push icon skipped: source=$source exceeds the icon size limit" }
                 return
             }
             val bytes =

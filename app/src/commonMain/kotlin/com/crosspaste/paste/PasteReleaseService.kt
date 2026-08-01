@@ -16,6 +16,7 @@ import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.buildFilesIndexForReceive
+import com.crosspaste.presist.validateFileTransferMetadata
 import com.crosspaste.sync.FilePullService
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskBuilder
@@ -260,6 +261,9 @@ class PasteReleaseService(
             }
             val remotePasteDataId = pasteData.id
             val isFileType = pasteData.isFileType()
+            if (isFileType) {
+                validateFileTransferMetadata(pasteData)
+            }
             val existIconFile: Boolean? =
                 pasteData.source?.let {
                     fileUtils.existFile(userDataPathProvider.resolveIconPath(pasteData.appInstanceId, it))
@@ -350,6 +354,7 @@ class PasteReleaseService(
                 return@withContext null
             }
             runCatching {
+                validateFileTransferMetadata(pasteData)
                 val existIconFile: Boolean? =
                     pasteData.source?.let {
                         fileUtils.existFile(userDataPathProvider.resolveIconPath(pasteData.appInstanceId, it))
