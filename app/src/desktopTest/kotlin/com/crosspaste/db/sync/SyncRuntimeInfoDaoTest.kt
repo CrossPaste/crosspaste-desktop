@@ -178,9 +178,9 @@ class SyncRuntimeInfoDaoTest {
     @Test
     fun `insertOrUpdateSyncInfo re-advertising same address set does not write`() =
         runTest {
-            // "restamp doesn't churn": re-advertising the same address set (even with a
-            // different incoming lastSeen) must not produce a DB write, because
-            // hostInfoListEqual compares by address only. Verified via modifyTime stability.
+            // "restamp doesn't churn": re-advertising the same (address, prefix) set (even
+            // with a different incoming lastSeen) must not produce a DB write, because
+            // hostInfoListEqual ignores lastSeen. Verified via modifyTime stability.
             syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo) // hostInfoList = [.100]
             val before = syncRuntimeInfoDao.getSyncRuntimeInfo("test-instance-1")
             assertNotNull(before)
@@ -198,6 +198,29 @@ class SyncRuntimeInfoDaoTest {
             val after = syncRuntimeInfoDao.getSyncRuntimeInfo("test-instance-1")
             assertNotNull(after)
             assertEquals(before.modifyTime, after.modifyTime)
+        }
+
+    @Test
+    fun `insertOrUpdateSyncInfo same address with changed prefix must write`() =
+        runTest {
+            // The prefix feeds address selection and same-subnet checks; after a network
+            // change the same IP can come back under a different prefix, and that new
+            // prefix must reach the database (R2-02-007).
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo) // (32, 192.168.1.100)
+
+            val rePrefixed =
+                testSyncInfo.copy(
+                    endpointInfo =
+                        testSyncInfo.endpointInfo.copy(
+                            hostInfoList = listOf(HostInfo(24, "192.168.1.100")),
+                        ),
+                )
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(rePrefixed)
+
+            val after = syncRuntimeInfoDao.getSyncRuntimeInfo("test-instance-1")
+            assertNotNull(after)
+            val stored = after.hostInfoList.single { it.hostAddress == "192.168.1.100" }
+            assertEquals(24.toShort(), stored.networkPrefixLength)
         }
 
     @Test
