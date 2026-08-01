@@ -15,7 +15,11 @@ fun migrateAppInstanceIdIfNeeded(
     metadataPersist: OneFilePersist,
     legacyConfigPersist: OneFilePersist,
 ) {
-    if (runCatching { metadataPersist.read(AppMetadata::class) }.getOrNull() != null) return
+    // Presence check, not a read: if a metadata file exists at all — even unreadable —
+    // never overwrite it here. AppMetadataRepository owns the corrupt/IO-error handling
+    // (quarantine or fail startup, R2-02-006); silently replacing the file on a read
+    // error would rotate the device identity.
+    if (metadataPersist.exists()) return
     val legacyId =
         runCatching {
             legacyConfigPersist
