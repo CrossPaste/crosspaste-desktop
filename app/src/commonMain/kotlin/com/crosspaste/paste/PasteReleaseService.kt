@@ -24,9 +24,12 @@ import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
 data class PushPrepareResult(
@@ -55,6 +58,8 @@ class PasteReleaseService(
 
     companion object {
         private val fileUtils = getFileUtils()
+        private const val DISCARD_PUSH_PREPARED_ATTEMPTS = 3
+        private val DISCARD_PUSH_PREPARED_RETRY_DELAY = 50.milliseconds
     }
 
     private val logger = KotlinLogging.logger {}
@@ -427,13 +432,22 @@ class PasteReleaseService(
 
     /**
      * Rolls back a successful [releaseRemotePasteDataForPush] whose prepared
-     * paste never got attached to a push session (capacity rejection lost the
-     * race). Mirrors the session-expiry path in
+     * paste could not be attached to a push session. Mirrors the session-expiry path in
      * [com.crosspaste.sync.PushSessionManager.sweepExpired]: marking the
      * LOADING row deleted lets the regular delete pipeline reclaim the
      * preallocated file slots.
      */
-    suspend fun discardPushPrepared(pasteId: Long) {
-        pasteDao.markDeletePasteData(pasteId)
-    }
+    suspend fun discardPushPrepared(pasteId: Long): Result<Unit> =
+        withContext(NonCancellable) {
+            var lastFailure: Throwable? = null
+            repeat(DISCARD_PUSH_PREPARED_ATTEMPTS) { attempt ->
+                val result = pasteDao.markDeletePasteData(pasteId)
+                if (result.isSuccess) return@withContext result
+                lastFailure = result.exceptionOrNull()
+                if (attempt < DISCARD_PUSH_PREPARED_ATTEMPTS - 1) {
+                    delay(DISCARD_PUSH_PREPARED_RETRY_DELAY)
+                }
+            }
+            Result.failure(lastFailure ?: IllegalStateException("Failed to discard prepared paste $pasteId"))
+        }
 }

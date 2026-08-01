@@ -148,50 +148,57 @@ private suspend fun handlePushPrepare(
         return
     }
 
-    // Cheap precheck before the release step below creates a LOADING row and
-    // preallocates file slots on disk. Advisory only — create() re-checks
-    // atomically and the rejection branch rolls the preparation back.
-    if (!pushSessionManager.hasCapacity()) {
+    // Reserve before the release step creates a LOADING row and preallocates
+    // file slots. This bounds both in-flight preparation and active sessions.
+    val reservation = pushSessionManager.tryReserve()
+    if (reservation == null) {
         logger.warn { "push sync: rejected from $appInstanceId (capacity)" }
         failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
         return
     }
 
-    val prepared = pasteReleaseService.releaseRemotePasteDataForPush(pasteData)
-    if (prepared == null) {
-        failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
-        return
-    }
+    try {
+        val prepared = pasteReleaseService.releaseRemotePasteDataForPush(pasteData)
+        if (prepared == null) {
+            failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
+            return
+        }
 
-    val session =
-        pushSessionManager.create(
-            pasteId = prepared.pasteId,
-            fromAppInstanceId = appInstanceId,
-            filesIndex = prepared.filesIndex,
+        val session =
+            pushSessionManager.create(
+                reservation = reservation,
+                pasteId = prepared.pasteId,
+                fromAppInstanceId = appInstanceId,
+                filesIndex = prepared.filesIndex,
+            )
+        if (session == null) {
+            logger.warn { "push sync: rejected pasteId=${prepared.pasteId} (session creation)" }
+            pasteReleaseService.discardPushPrepared(prepared.pasteId).onFailure { error ->
+                logger.error(error) { "push sync: rollback failed for pasteId=${prepared.pasteId}" }
+            }
+            failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
+            return
+        }
+
+        pastePullService.updateMaxCreateTime(appInstanceId, pasteData.createTime)
+        appControl.completeReceiveOperation()
+        logger.debug {
+            "sync handler ($appInstanceId) push prepare ok: pasteId=${prepared.pasteId} " +
+                "chunkCount=${prepared.chunkCount}"
+        }
+        successResponse(
+            call,
+            PushPrepareResponse(
+                pasteId = prepared.pasteId,
+                chunkCount = prepared.chunkCount,
+                chunkSize = prepared.chunkSize,
+                sessionToken = session.token,
+                needIcon = prepared.needIcon,
+            ),
         )
-    if (session == null) {
-        logger.warn { "push sync: rejected pasteId=${prepared.pasteId} (capacity)" }
-        pasteReleaseService.discardPushPrepared(prepared.pasteId)
-        failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
-        return
+    } finally {
+        reservation.release()
     }
-
-    pastePullService.updateMaxCreateTime(appInstanceId, pasteData.createTime)
-    appControl.completeReceiveOperation()
-    logger.debug {
-        "sync handler ($appInstanceId) push prepare ok: pasteId=${prepared.pasteId} " +
-            "chunkCount=${prepared.chunkCount}"
-    }
-    successResponse(
-        call,
-        PushPrepareResponse(
-            pasteId = prepared.pasteId,
-            chunkCount = prepared.chunkCount,
-            chunkSize = prepared.chunkSize,
-            sessionToken = session.token,
-            needIcon = prepared.needIcon,
-        ),
-    )
 }
 
 private suspend fun handlePullSync(

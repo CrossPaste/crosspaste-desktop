@@ -22,6 +22,22 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+internal class PushSessionReservation(
+    private val owner: PushSessionManager,
+    private val releaseSlot: () -> Unit,
+) {
+    private val held = atomic(true)
+
+    internal fun transferTo(manager: PushSessionManager): Boolean =
+        owner === manager && held.compareAndSet(expect = true, update = false)
+
+    fun release() {
+        if (held.compareAndSet(expect = true, update = false)) {
+            releaseSlot()
+        }
+    }
+}
+
 /**
  * Concurrency model: writes (markReceived) go through [lock] so the
  * "check-then-set" on `received[i]` and the count increment stay paired.
@@ -120,14 +136,6 @@ class PushSessionManager(
 
     fun activeCount(): Int = sessions.size
 
-    /**
-     * Advisory precheck for callers that must do expensive preparation
-     * (LOADING row + file slot preallocation) before [create]. A `true`
-     * result can still lose the race to a concurrent prepare — callers must
-     * handle a null from [create] by rolling their preparation back.
-     */
-    fun hasCapacity(): Boolean = activeSlots.value < maxActive
-
     private fun tryReserveSlot(): Boolean {
         while (true) {
             val current = activeSlots.value
@@ -140,31 +148,70 @@ class PushSessionManager(
         activeSlots.decrementAndGet()
     }
 
+    /**
+     * Reserves capacity before callers create a LOADING row or preallocate files.
+     * The caller must release the reservation in `finally`; a successful [create]
+     * transfers ownership to the session, making the release a no-op.
+     */
+    internal fun tryReserve(): PushSessionReservation? =
+        if (tryReserveSlot()) {
+            PushSessionReservation(this, ::releaseSlot)
+        } else {
+            null
+        }
+
     @OptIn(ExperimentalUuidApi::class)
     fun create(
         pasteId: Long,
         fromAppInstanceId: String,
         filesIndex: FilesIndex,
     ): PushSession? {
-        if (filesIndex.getChunkCount() <= 0) {
-            logger.warn { "PushSession create rejected: empty filesIndex for pasteId=$pasteId" }
-            return null
-        }
-        if (!tryReserveSlot()) {
+        val reservation = tryReserve()
+        if (reservation == null) {
             logger.warn { "PushSession create rejected: maxActive=$maxActive reached" }
             return null
         }
-        val session =
-            PushSession(
-                pasteId = pasteId,
-                fromAppInstanceId = fromAppInstanceId,
-                token = Uuid.random().toString(),
-                filesIndex = filesIndex,
-                createdAt = nowEpochMilliseconds(),
-            )
-        sessions[pasteId] = session
-        return session
+        return create(reservation, pasteId, fromAppInstanceId, filesIndex)
     }
+
+    @OptIn(ExperimentalUuidApi::class)
+    internal fun create(
+        reservation: PushSessionReservation,
+        pasteId: Long,
+        fromAppInstanceId: String,
+        filesIndex: FilesIndex,
+    ): PushSession? =
+        try {
+            if (filesIndex.getChunkCount() <= 0) {
+                logger.warn { "PushSession create rejected: empty filesIndex for pasteId=$pasteId" }
+                return null
+            }
+            val session =
+                PushSession(
+                    pasteId = pasteId,
+                    fromAppInstanceId = fromAppInstanceId,
+                    token = Uuid.random().toString(),
+                    filesIndex = filesIndex,
+                    createdAt = nowEpochMilliseconds(),
+                )
+            var inserted = false
+            sessions.computeIfAbsent(pasteId) {
+                inserted = true
+                session
+            }
+            if (!inserted) {
+                logger.warn { "PushSession create rejected: duplicate pasteId=$pasteId" }
+                return null
+            }
+            if (!reservation.transferTo(this)) {
+                sessions.remove(pasteId, session)
+                logger.warn { "PushSession create rejected: invalid reservation for pasteId=$pasteId" }
+                return null
+            }
+            session
+        } finally {
+            reservation.release()
+        }
 
     fun get(
         pasteId: Long,

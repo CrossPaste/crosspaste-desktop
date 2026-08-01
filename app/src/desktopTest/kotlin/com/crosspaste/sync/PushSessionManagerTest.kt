@@ -90,49 +90,76 @@ class PushSessionManagerTest {
     }
 
     @Test
-    fun hasCapacity_tracksSlotReservationAndRelease() =
+    fun reservation_tracksSlotReservationAndRelease() =
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)
             coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
             val (mgr) = newManager(maxActive = 1, sessionTtl = 10.milliseconds, pasteDao = pasteDao)
-            assertTrue(mgr.hasCapacity())
+
+            val preparation = assertNotNull(mgr.tryReserve())
+            assertNull(mgr.tryReserve())
+            preparation.release()
+            assertNotNull(mgr.tryReserve()).release()
 
             mgr.create(1L, "mobile", fakeFilesIndex(1))!!
-            assertFalse(mgr.hasCapacity())
+            assertNull(mgr.tryReserve())
             assertNull(mgr.create(2L, "mobile", fakeFilesIndex(1)))
 
             // Finalize frees the slot.
             assertTrue(mgr.tryFinalize(1L))
-            assertTrue(mgr.hasCapacity())
+            assertNotNull(mgr.tryReserve()).release()
 
             // Sweep-expiry of an incomplete session frees the slot too.
             mgr.create(3L, "mobile", fakeFilesIndex(2))!!
-            assertFalse(mgr.hasCapacity())
+            assertNull(mgr.tryReserve())
             delay(50.milliseconds)
             mgr.sweepExpired()
-            assertTrue(mgr.hasCapacity())
             assertNotNull(mgr.create(4L, "mobile", fakeFilesIndex(1)))
             mgr.close()
         }
 
     @Test
-    fun create_neverExceedsMaxActiveUnderConcurrency() =
+    fun reservation_neverExceedsMaxActiveBeforePreparation() =
         runBlocking {
             val maxActive = 4
             val (mgr) = newManager(maxActive = maxActive)
-            val created =
-                (1L..64L)
-                    .map { id ->
+            val reservations =
+                (0 until 64)
+                    .map {
                         async(Dispatchers.Default) {
-                            mgr.create(id, "mobile", fakeFilesIndex(1))
+                            mgr.tryReserve()
                         }
                     }.awaitAll()
                     .filterNotNull()
-            assertEquals(maxActive, created.size)
+            assertEquals(maxActive, reservations.size)
+            assertEquals(0, mgr.activeCount(), "capacity must be held before preparation creates sessions")
+            assertNull(mgr.tryReserve())
+
+            reservations.forEachIndexed { index, reservation ->
+                assertNotNull(
+                    mgr.create(
+                        reservation = reservation,
+                        pasteId = index.toLong(),
+                        fromAppInstanceId = "mobile",
+                        filesIndex = fakeFilesIndex(1),
+                    ),
+                )
+            }
             assertEquals(maxActive, mgr.activeCount())
-            assertFalse(mgr.hasCapacity())
             mgr.close()
         }
+
+    @Test
+    fun create_rejectsDuplicatePasteIdWithoutLeakingCapacity() {
+        val (mgr) = newManager(maxActive = 2)
+        val original = assertNotNull(mgr.create(1L, "mobile", fakeFilesIndex(1)))
+
+        assertNull(mgr.create(1L, "mobile", fakeFilesIndex(1)))
+        assertSame(original, mgr.peek(1L))
+        assertNotNull(mgr.create(2L, "mobile", fakeFilesIndex(1)))
+        assertEquals(2, mgr.activeCount())
+        mgr.close()
+    }
 
     @Test
     fun get_requiresMatchingTokenAndAppInstance() {
