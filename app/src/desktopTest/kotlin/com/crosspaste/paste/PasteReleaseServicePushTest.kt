@@ -112,7 +112,7 @@ class PasteReleaseServicePushTest {
         }
 
     @Test
-    fun releaseRemotePasteData_rejectsInvalidMetadataBeforeSubmittingTask() =
+    fun releaseRemotePasteData_discardsInvalidMetadataWithoutFailingBatch() =
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)
             val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
@@ -135,7 +135,7 @@ class PasteReleaseServicePushTest {
 
             val result = service.releaseRemotePasteData(pasteData) {}
 
-            assertTrue(result.isFailure)
+            assertTrue(result.isSuccess, "invalid paste is discarded, not failed")
             coVerify(exactly = 0) { pasteDao.createPasteData(any(), any()) }
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
         }

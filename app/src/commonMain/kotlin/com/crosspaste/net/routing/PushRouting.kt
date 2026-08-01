@@ -21,6 +21,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import okio.Path.Companion.toPath
 
 private val logger: KLogger = KotlinLogging.logger("PushRouting")
 private val fileUtils: FileUtils = getFileUtils()
@@ -227,15 +228,21 @@ private suspend fun handleIconPush(
             return
         }
 
+    // Write to a sibling temp file and atomically move so an oversized or
+    // aborted upload can never leave a truncated icon at iconPath (a truncated
+    // icon would suppress the pull-icon repair path because the file exists).
+    val tempIconPath = "$iconPath.part".toPath()
     val writeFailed =
         runCatching {
             fileUtils.writeFile(
-                path = iconPath,
+                path = tempIconPath,
                 byteReadChannel = call.receiveChannel(),
                 maxBytes = FileTransferResourceLimits.MAX_ICON_SIZE,
             )
+            fileUtils.moveFile(tempIconPath, iconPath).getOrThrow()
         }.isFailure
     if (writeFailed) {
+        fileUtils.deleteFile(tempIconPath)
         logger.error { "push icon: write failed source=$source from=$fromAppInstanceId" }
         failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
         return
