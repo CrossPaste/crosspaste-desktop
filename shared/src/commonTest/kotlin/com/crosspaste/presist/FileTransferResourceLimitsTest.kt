@@ -111,6 +111,54 @@ class FileTransferResourceLimitsTest {
         }
     }
 
+    @Test
+    fun `metadata rejects relativePathList that does not correspond to fileInfoTreeMap`() {
+        val single = filesItem(mapOf("a.bin" to SingleFileInfoTree(10, "a")))
+
+        // Same size, disjoint names.
+        assertFailsWith<IllegalArgumentException> {
+            validateFileTransferMetadata(
+                listOf(single.copy(relativePathList = listOf("b.bin"))),
+                FileTransferValidationLimits(),
+            )
+        }
+
+        // Partial overlap: one resolvable name, one miss.
+        val pair =
+            filesItem(
+                mapOf(
+                    "a.bin" to SingleFileInfoTree(10, "a"),
+                    "b.bin" to SingleFileInfoTree(20, "b"),
+                ),
+            )
+        assertFailsWith<IllegalArgumentException> {
+            validateFileTransferMetadata(
+                listOf(pair.copy(relativePathList = listOf("a.bin", "c.bin"))),
+                FileTransferValidationLimits(),
+            )
+        }
+
+        // Duplicate names resolve to the same map entry and on-disk slot.
+        assertFailsWith<IllegalArgumentException> {
+            validateFileTransferMetadata(
+                listOf(pair.copy(relativePathList = listOf("a.bin", "a.bin"))),
+                FileTransferValidationLimits(),
+            )
+        }
+    }
+
+    @Test
+    fun `metadata accepts multi-segment relative paths keyed by file name`() {
+        val item =
+            filesItem(mapOf("a.bin" to SingleFileInfoTree(10, "a")))
+                .copy(relativePathList = listOf("2026/08/01/42/a.bin"))
+
+        val stats = validateFileTransferMetadata(listOf(item), FileTransferValidationLimits())
+
+        assertEquals(1, stats.fileCount)
+        assertEquals(10, stats.totalSize)
+    }
+
     private fun filesItem(fileInfoTreeMap: Map<String, FileInfoTree>): TestPasteFiles =
         TestPasteFiles(
             count = fileInfoTreeMap.values.sumOf { it.getCount() },

@@ -2,6 +2,7 @@ package com.crosspaste.presist
 
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
+import okio.Path.Companion.toPath
 
 object FileTransferResourceLimits {
     // Deliberately conservative: the receive side prepares file slots eagerly
@@ -107,8 +108,19 @@ internal fun validateFileTransferMetadata(
     }
 
     pasteFilesItems.forEach { pasteFiles ->
-        require(pasteFiles.relativePathList.size == pasteFiles.fileInfoTreeMap.size) {
-            "relativePathList size does not match fileInfoTreeMap"
+        // Consumers resolve each relative path's file name against
+        // fileInfoTreeMap and silently skip misses
+        // (UserDataPathProvider.resolve), so a size check alone lets a
+        // mismatched pair through: the receive side would then build an empty
+        // or partial FilesIndex and leave a LOADING paste that never
+        // completes. Require exact name ↔ key correspondence instead, using
+        // the same name derivation the consumers use.
+        val fileNames = pasteFiles.relativePathList.map { it.toPath().name }
+        require(fileNames.size == fileNames.toSet().size) {
+            "relativePathList contains duplicate file names"
+        }
+        require(fileNames.toSet() == pasteFiles.fileInfoTreeMap.keys) {
+            "relativePathList does not match fileInfoTreeMap keys"
         }
         require(pasteFiles.size >= 0) { "PasteFiles size must be non-negative" }
         require(pasteFiles.count >= 0) { "PasteFiles count must be non-negative" }
