@@ -1,5 +1,6 @@
 package com.crosspaste.net.ws
 
+import com.crosspaste.serializer.Base64ByteArraySerializer
 import kotlinx.serialization.Serializable
 
 /**
@@ -12,6 +13,10 @@ data class WsEnvelopeHeader(
     val encrypted: Boolean = false,
     val hasPayload: Boolean = false,
     val requestId: String? = null,
+    val authSessionId: String? = null,
+    val authSequence: Long? = null,
+    @Serializable(with = Base64ByteArraySerializer::class)
+    val authenticationCode: ByteArray? = null,
 )
 
 /**
@@ -61,4 +66,7 @@ object WsMessageType {
     const val FILE_PULL_RESPONSE = "file_pull_response"
     const val PASTE_REJECTED_OVERSIZE = "paste_rejected_oversize"
     const val ERROR = "error"
+    const val AUTH_CHALLENGE = "auth_challenge"
+    const val AUTH_PROOF = "auth_proof"
+    const val AUTH_ACK = "auth_ack"
 }
