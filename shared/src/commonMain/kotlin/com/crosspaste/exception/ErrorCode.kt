@@ -26,7 +26,12 @@ class ErrorCode(
         return code == other.code && name == other.name && type === other.type
     }
 
-    override fun hashCode(): Int = arrayOf<Any>(code, name, type).hashCode()
+    override fun hashCode(): Int {
+        var result = code
+        result = 31 * result + name.hashCode()
+        result = 31 * result + type.hashCode()
+        return result
+    }
 }
 
 enum class ErrorType {
