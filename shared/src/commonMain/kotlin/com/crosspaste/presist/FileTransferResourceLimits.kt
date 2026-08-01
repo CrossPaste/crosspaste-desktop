@@ -4,16 +4,19 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 
 object FileTransferResourceLimits {
-    // Anti-abuse ceilings, not user-facing quotas: the operative limit is the
-    // configurable maxSyncFileSize, which users may raise or disable entirely,
-    // so these must stay far above realistic legitimate transfers. Current
-    // peers use 1 MiB chunks, so 64 GiB total = 65,536 chunks.
+    // Deliberately conservative: the receive side prepares file slots eagerly
+    // (native createEmptyPasteFile physically writes zero bytes) and the push
+    // side materializes one task per chunk, so these ceilings bound the write
+    // amplification a single authenticated request can cause. Raising them
+    // requires sparse preallocation, free-disk-space checks, and lazy chunk
+    // scheduling first. Rejections surface to the user via the discard
+    // notification, and the user-facing quota remains maxSyncFileSize.
     const val MAX_CHUNK_SIZE: Long = 16L * 1024 * 1024
-    const val MAX_CHUNK_COUNT: Int = 65_536
+    const val MAX_CHUNK_COUNT: Int = 16_384
     const val MAX_TREE_DEPTH: Int = 64
-    const val MAX_TREE_NODES: Int = 100_000
-    const val MAX_SINGLE_FILE_SIZE: Long = 64L * 1024 * 1024 * 1024
-    const val MAX_TOTAL_SIZE: Long = 64L * 1024 * 1024 * 1024
+    const val MAX_TREE_NODES: Int = 10_000
+    const val MAX_SINGLE_FILE_SIZE: Long = 8L * 1024 * 1024 * 1024
+    const val MAX_TOTAL_SIZE: Long = 8L * 1024 * 1024 * 1024
     const val MAX_ICON_SIZE: Long = 4L * 1024 * 1024
     const val MAX_SESSION_TOKEN_LENGTH: Int = 512
 }

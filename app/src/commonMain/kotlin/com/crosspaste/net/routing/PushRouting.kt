@@ -21,6 +21,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import okio.Path
 import okio.Path.Companion.toPath
 
 private val logger: KLogger = KotlinLogging.logger("PushRouting")
@@ -228,21 +229,8 @@ private suspend fun handleIconPush(
             return
         }
 
-    // Write to a sibling temp file and atomically move so an oversized or
-    // aborted upload can never leave a truncated icon at iconPath (a truncated
-    // icon would suppress the pull-icon repair path because the file exists).
-    val tempIconPath = "$iconPath.part".toPath()
-    val writeFailed =
-        runCatching {
-            fileUtils.writeFile(
-                path = tempIconPath,
-                byteReadChannel = call.receiveChannel(),
-                maxBytes = FileTransferResourceLimits.MAX_ICON_SIZE,
-            )
-            fileUtils.moveFile(tempIconPath, iconPath).getOrThrow()
-        }.isFailure
+    val writeFailed = !writeIconAtomically(iconPath, call.receiveChannel())
     if (writeFailed) {
-        fileUtils.deleteFile(tempIconPath)
         logger.error { "push icon: write failed source=$source from=$fromAppInstanceId" }
         failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
         return
@@ -250,4 +238,31 @@ private suspend fun handleIconPush(
 
     logger.info { "push icon: stored source=$source from=$fromAppInstanceId" }
     successResponse(call)
+}
+
+/**
+ * Writes an icon body to a uniquely named sibling temp file and atomically
+ * moves it into place. The unique name keeps concurrent uploads for the same
+ * source from sharing a temp file, and the move ensures an oversized or
+ * aborted upload never leaves a truncated icon at [iconPath] (a truncated
+ * icon would suppress the pull-icon repair path because the file exists).
+ */
+internal suspend fun writeIconAtomically(
+    iconPath: Path,
+    byteReadChannel: ByteReadChannel,
+): Boolean {
+    val tempIconPath = "$iconPath.${fileUtils.createRandomFileName("part")}".toPath()
+    val moved =
+        runCatching {
+            fileUtils.writeFile(
+                path = tempIconPath,
+                byteReadChannel = byteReadChannel,
+                maxBytes = FileTransferResourceLimits.MAX_ICON_SIZE,
+            )
+            fileUtils.moveFile(tempIconPath, iconPath).getOrThrow()
+        }.isSuccess
+    if (!moved) {
+        fileUtils.deleteFile(tempIconPath)
+    }
+    return moved
 }

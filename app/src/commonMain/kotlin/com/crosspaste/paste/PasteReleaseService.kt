@@ -292,9 +292,10 @@ class PasteReleaseService(
             val remotePasteDataId = pasteData.id
             val isFileType = pasteData.isFileType()
             if (isFileType) {
-                val invalidCause = runCatching { validateFileTransferMetadata(pasteData) }.exceptionOrNull()
-                if (invalidCause != null) {
-                    discardInvalidRemoteFilePaste(pasteData, invalidCause)
+                try {
+                    validateFileTransferMetadata(pasteData)
+                } catch (e: IllegalArgumentException) {
+                    discardInvalidRemoteFilePaste(pasteData, e)
                     return@runCatching
                 }
             }
