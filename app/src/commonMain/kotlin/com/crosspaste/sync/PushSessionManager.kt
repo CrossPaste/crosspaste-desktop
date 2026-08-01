@@ -8,6 +8,7 @@ import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.ConcurrentMap
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -20,6 +21,22 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+
+internal class PushSessionReservation(
+    private val owner: PushSessionManager,
+    private val releaseSlot: () -> Unit,
+) {
+    private val held = atomic(true)
+
+    internal fun transferTo(manager: PushSessionManager): Boolean =
+        owner === manager && held.compareAndSet(expect = true, update = false)
+
+    fun release() {
+        if (held.compareAndSet(expect = true, update = false)) {
+            releaseSlot()
+        }
+    }
+}
 
 /**
  * Concurrency model: writes (markReceived) go through [lock] so the
@@ -102,6 +119,12 @@ class PushSessionManager(
 
     private val sessions = ConcurrentMap<Long, PushSession>()
 
+    // Capacity is governed by this counter, not `sessions.size`: a CAS
+    // reservation makes the check-then-insert in [create] atomic, so
+    // concurrent prepares cannot overshoot [maxActive]. Every path that
+    // removes a session from the map must release its slot.
+    private val activeSlots = atomic(0)
+
     init {
         scope.launch {
             while (isActive) {
@@ -113,31 +136,82 @@ class PushSessionManager(
 
     fun activeCount(): Int = sessions.size
 
+    private fun tryReserveSlot(): Boolean {
+        while (true) {
+            val current = activeSlots.value
+            if (current >= maxActive) return false
+            if (activeSlots.compareAndSet(current, current + 1)) return true
+        }
+    }
+
+    private fun releaseSlot() {
+        activeSlots.decrementAndGet()
+    }
+
+    /**
+     * Reserves capacity before callers create a LOADING row or preallocate files.
+     * The caller must release the reservation in `finally`; a successful [create]
+     * transfers ownership to the session, making the release a no-op.
+     */
+    internal fun tryReserve(): PushSessionReservation? =
+        if (tryReserveSlot()) {
+            PushSessionReservation(this, ::releaseSlot)
+        } else {
+            null
+        }
+
     @OptIn(ExperimentalUuidApi::class)
     fun create(
         pasteId: Long,
         fromAppInstanceId: String,
         filesIndex: FilesIndex,
     ): PushSession? {
-        if (filesIndex.getChunkCount() <= 0) {
-            logger.warn { "PushSession create rejected: empty filesIndex for pasteId=$pasteId" }
-            return null
-        }
-        if (sessions.size >= maxActive) {
+        val reservation = tryReserve()
+        if (reservation == null) {
             logger.warn { "PushSession create rejected: maxActive=$maxActive reached" }
             return null
         }
-        val session =
-            PushSession(
-                pasteId = pasteId,
-                fromAppInstanceId = fromAppInstanceId,
-                token = Uuid.random().toString(),
-                filesIndex = filesIndex,
-                createdAt = nowEpochMilliseconds(),
-            )
-        sessions[pasteId] = session
-        return session
+        return create(reservation, pasteId, fromAppInstanceId, filesIndex)
     }
+
+    @OptIn(ExperimentalUuidApi::class)
+    internal fun create(
+        reservation: PushSessionReservation,
+        pasteId: Long,
+        fromAppInstanceId: String,
+        filesIndex: FilesIndex,
+    ): PushSession? =
+        try {
+            if (filesIndex.getChunkCount() <= 0) {
+                logger.warn { "PushSession create rejected: empty filesIndex for pasteId=$pasteId" }
+                return null
+            }
+            val session =
+                PushSession(
+                    pasteId = pasteId,
+                    fromAppInstanceId = fromAppInstanceId,
+                    token = Uuid.random().toString(),
+                    filesIndex = filesIndex,
+                    createdAt = nowEpochMilliseconds(),
+                )
+            var inserted = false
+            sessions.computeIfAbsent(pasteId) {
+                inserted = true
+                session
+            }
+            if (!inserted) {
+                logger.warn { "PushSession create rejected: duplicate pasteId=$pasteId" }
+                return null
+            }
+            if (!reservation.transferTo(this)) {
+                sessions.remove(pasteId, session)
+                logger.warn { "PushSession create rejected: invalid reservation for pasteId=$pasteId" }
+                return null
+            }
+            session
+        } finally {
+            reservation.release()
+        }
 
     fun get(
         pasteId: Long,
@@ -158,6 +232,7 @@ class PushSessionManager(
      */
     fun tryFinalize(pasteId: Long): Boolean {
         if (sessions.remove(pasteId) == null) return false
+        releaseSlot()
         scope.launch {
             runCatching {
                 pasteboardService.tryWriteRemotePasteboardWithFile(pasteId)
@@ -201,6 +276,7 @@ class PushSessionManager(
                 }
             } else {
                 val removed = sessions.remove(id) ?: continue
+                releaseSlot()
                 runCatching {
                     pasteDao.markDeletePasteData(id)
                 }.onFailure { e ->
@@ -217,5 +293,6 @@ class PushSessionManager(
     fun close() {
         scope.cancel()
         sessions.clear()
+        activeSlots.value = 0
     }
 }

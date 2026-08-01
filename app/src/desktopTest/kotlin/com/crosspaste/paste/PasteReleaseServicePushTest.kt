@@ -215,6 +215,48 @@ class PasteReleaseServicePushTest {
     }
 
     @Test
+    fun discardPushPrepared_marksPreparedPasteDeleted() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            coEvery { pasteDao.markDeletePasteData(42L) } returns Result.success(Unit)
+            val service = newService(pasteDao = pasteDao)
+
+            val result = service.discardPushPrepared(42L)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) { pasteDao.markDeletePasteData(42L) }
+        }
+
+    @Test
+    fun discardPushPrepared_retriesFailureAndReturnsSuccess() =
+        runBlocking {
+            val failure = Result.failure<Unit>(IllegalStateException("busy"))
+            val pasteDao = mockk<PasteDao>()
+            coEvery { pasteDao.markDeletePasteData(42L) } returnsMany
+                listOf(failure, failure, Result.success(Unit))
+            val service = newService(pasteDao = pasteDao)
+
+            val result = service.discardPushPrepared(42L)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 3) { pasteDao.markDeletePasteData(42L) }
+        }
+
+    @Test
+    fun discardPushPrepared_reportsFailureAfterRetries() =
+        runBlocking {
+            val failure = Result.failure<Unit>(IllegalStateException("unavailable"))
+            val pasteDao = mockk<PasteDao>()
+            coEvery { pasteDao.markDeletePasteData(42L) } returns failure
+            val service = newService(pasteDao = pasteDao)
+
+            val result = service.discardPushPrepared(42L)
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 3) { pasteDao.markDeletePasteData(42L) }
+        }
+
+    @Test
     fun releaseRemotePasteDataForPush_rejectsUnsafeTreeBeforeCreatingPaste(
         @TempDir tempDir: File,
     ) = runBlocking {
