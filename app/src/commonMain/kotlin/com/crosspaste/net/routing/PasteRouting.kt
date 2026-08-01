@@ -102,7 +102,12 @@ private suspend fun receiveRemotePasteData(
     appInstanceId: String,
 ): PasteData? =
     runCatching {
-        call.receive<PasteData>().copy(remote = true)
+        call.receive<PasteData>().let { pasteData ->
+            if (pasteData.appInstanceId != appInstanceId) {
+                logger.warn { "Ignoring mismatched PasteData identity from authenticated peer $appInstanceId" }
+            }
+            pasteData.bindAuthenticatedRemoteIdentity(appInstanceId)
+        }
     }.onFailure { e ->
         logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }
         val code =
@@ -113,6 +118,12 @@ private suspend fun receiveRemotePasteData(
             }
         failResponse(call, code.toErrorCode())
     }.getOrNull()
+
+internal fun PasteData.bindAuthenticatedRemoteIdentity(appInstanceId: String): PasteData =
+    copy(
+        appInstanceId = appInstanceId,
+        remote = true,
+    )
 
 /**
  * Permission gating policy: the caller ([handleSyncPaste]) already ran
