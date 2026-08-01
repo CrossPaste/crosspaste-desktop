@@ -53,6 +53,7 @@ import com.crosspaste.paste.plugin.type.UrlTypePlugin
 import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.FilePullService
+import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.sync.PastePullService
 import com.crosspaste.task.CleanPasteTaskExecutor
 import com.crosspaste.task.CleanTaskTaskExecutor
@@ -169,6 +170,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 notificationManager = get(),
                 pasteDao = get(),
                 pasteItemReader = get(),
+                pastePullCursorManager = get(),
                 // Plugin order is load-bearing (mobile assembles the same commonMain
                 // plugins and must keep these invariants):
                 // 1. RemoveInvalid must run first.
@@ -211,6 +213,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
 
         // region Sync pull
         single<FilePullService> { FilePullService(get(), get(), get(), get(), get(), get()) }
+        single<PastePullCursorManager> { PastePullCursorManager(get(), get()) }
         single<PastePullService> { PastePullService(get(), get(), get(), get()) }
         // endregion
 

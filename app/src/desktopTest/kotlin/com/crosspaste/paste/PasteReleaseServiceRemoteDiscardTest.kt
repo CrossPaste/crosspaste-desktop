@@ -10,6 +10,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
@@ -39,6 +40,7 @@ class PasteReleaseServiceRemoteDiscardTest {
         commonConfigManager: CommonConfigManager = configManager(),
         notificationManager: NotificationManager = mockk(relaxed = true),
         pasteDao: PasteDao = mockk(relaxed = true),
+        pastePullCursorManager: PastePullCursorManager = mockk(relaxed = true),
         syncRuntimeInfoDao: SyncRuntimeInfoDao = mockk(relaxed = true),
         taskSubmitter: TaskSubmitter = mockk(relaxed = true),
     ): PasteReleaseService =
@@ -50,6 +52,7 @@ class PasteReleaseServiceRemoteDiscardTest {
             pasteDao = pasteDao,
             pasteItemReader = mockk<PasteItemReader>(relaxed = true),
             pasteProcessPlugins = emptyList(),
+            pastePullCursorManager = pastePullCursorManager,
             searchContentService = mockk(relaxed = true),
             syncRuntimeInfoDao = syncRuntimeInfoDao,
             taskSubmitter = taskSubmitter,
@@ -81,6 +84,7 @@ class PasteReleaseServiceRemoteDiscardTest {
         runBlocking {
             val notificationManager = mockk<NotificationManager>(relaxed = true)
             val pasteDao = mockk<PasteDao>(relaxed = true)
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
             val syncRuntimeInfoDao = mockk<SyncRuntimeInfoDao>(relaxed = true)
             coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo("remote-device") } returns null
             val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
@@ -88,6 +92,7 @@ class PasteReleaseServiceRemoteDiscardTest {
                 newService(
                     notificationManager = notificationManager,
                     pasteDao = pasteDao,
+                    pastePullCursorManager = pastePullCursorManager,
                     syncRuntimeInfoDao = syncRuntimeInfoDao,
                     taskSubmitter = taskSubmitter,
                 )
@@ -102,9 +107,9 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(!wrotePasteboard)
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
             coVerify(exactly = 1) {
-                pasteDao.upsertPastePullCursorMaxCreateTime(
+                pastePullCursorManager.persistDiscardedMaxCreateTime(
                     appInstanceId = "remote-device",
-                    maxCreateTime = any(),
+                    createTime = any(),
                 )
             }
             verify(exactly = 1) { notificationManager.sendNotification(any(), any(), any(), any()) }
@@ -146,5 +151,28 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(result.isSuccess)
             coVerify(exactly = 1) { taskSubmitter.submit(any()) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `batch stops before a later discard when an earlier paste fails`() =
+        runBlocking {
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
+            coEvery { taskSubmitter.submit(any()) } throws IllegalStateException("database write failed")
+            val service =
+                newService(
+                    pastePullCursorManager = pastePullCursorManager,
+                    taskSubmitter = taskSubmitter,
+                )
+            val normalPaste = remotePasteData(createTextPasteItem(text = "small")).copy(createTime = 100L)
+            val laterDiscard = remotePasteData(oversizedTextItem()).copy(createTime = 200L)
+
+            val result =
+                service.releaseRemotePasteDataList(listOf(normalPaste, laterDiscard)) {
+                    service.releaseRemotePasteData(it) { _ -> }
+                }
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) { pastePullCursorManager.persistDiscardedMaxCreateTime(any(), any()) }
         }
 }

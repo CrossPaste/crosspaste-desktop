@@ -1,6 +1,5 @@
 package com.crosspaste.sync
 
-import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.paste.PasteboardService
 import io.mockk.coEvery
@@ -12,50 +11,36 @@ import kotlin.test.assertEquals
 
 class PastePullServiceTest {
 
-    private fun newService(pasteDao: PasteDao): PastePullService =
+    private fun newService(pastePullCursorManager: PastePullCursorManager): PastePullService =
         PastePullService(
-            pasteDao = pasteDao,
+            pastePullCursorManager = pastePullCursorManager,
             pasteboardService = mockk<PasteboardService>(relaxed = true),
             pullClientApi = mockk<PullClientApi>(relaxed = true),
             syncManager = mockk<SyncManager>(relaxed = true),
         )
 
     @Test
-    fun `init restores newest cursor from stored pastes and durable pull cursor`() =
+    fun `init delegates to cursor manager`() =
         runTest {
-            val pasteDao = mockk<PasteDao>()
-            coEvery { pasteDao.getMaxCreateTimeByRemoteAppInstanceId() } returns
-                mapOf(
-                    "stored-only" to 100L,
-                    "both" to 200L,
-                )
-            coEvery { pasteDao.getPastePullCursorMaxCreateTimes() } returns
-                mapOf(
-                    "cursor-only" to 300L,
-                    "both" to 250L,
-                )
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
 
-            val service = newService(pasteDao)
+            val service = newService(cursorManager)
             service.init()
 
-            assertEquals(100L, service.getMaxCreateTime("stored-only"))
-            assertEquals(300L, service.getMaxCreateTime("cursor-only"))
-            assertEquals(250L, service.getMaxCreateTime("both"))
+            coVerify(exactly = 1) { cursorManager.init() }
         }
 
     @Test
     fun `in-memory cursor update does not mark an unpersisted paste as durable`() =
         runTest {
-            val pasteDao = mockk<PasteDao>()
-            coEvery { pasteDao.getMaxCreateTimeByRemoteAppInstanceId() } returns emptyMap()
-            coEvery { pasteDao.getPastePullCursorMaxCreateTimes() } returns
-                mapOf("remote-device" to 200L)
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            coEvery { cursorManager.getMaxCreateTime("remote-device") } returns 300L
 
-            val service = newService(pasteDao)
-            service.init()
+            val service = newService(cursorManager)
             service.updateMaxCreateTime("remote-device", 300L)
 
             assertEquals(300L, service.getMaxCreateTime("remote-device"))
-            coVerify(exactly = 0) { pasteDao.upsertPastePullCursorMaxCreateTime(any(), any()) }
+            coVerify(exactly = 1) { cursorManager.updateMaxCreateTime("remote-device", 300L) }
+            coVerify(exactly = 0) { cursorManager.persistDiscardedMaxCreateTime(any(), any()) }
         }
 }

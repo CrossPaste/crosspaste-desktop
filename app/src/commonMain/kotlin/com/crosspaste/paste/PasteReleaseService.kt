@@ -17,6 +17,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.buildFilesIndexForReceive
 import com.crosspaste.sync.FilePullService
+import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getFileUtils
@@ -44,6 +45,7 @@ class PasteReleaseService(
     private val pasteDao: PasteDao,
     private val pasteItemReader: PasteItemReader,
     private val pasteProcessPlugins: List<PasteProcessPlugin>,
+    private val pastePullCursorManager: PastePullCursorManager,
     private val searchContentService: SearchContentService,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val taskSubmitter: TaskSubmitter,
@@ -230,9 +232,9 @@ class PasteReleaseService(
             "Discard oversized remote non-file paste from ${pasteData.appInstanceId}: " +
                 "size=${pasteData.size}, limit=$maxSize"
         }
-        pasteDao.upsertPastePullCursorMaxCreateTime(
+        pastePullCursorManager.persistDiscardedMaxCreateTime(
             appInstanceId = pasteData.appInstanceId,
-            maxCreateTime = pasteData.createTime,
+            createTime = pasteData.createTime,
         )
         val deviceName =
             syncRuntimeInfoDao
@@ -289,6 +291,20 @@ class PasteReleaseService(
         }.onFailure { e ->
             logger.error(e) { "Release remote paste data failed" }
         }
+    }
+
+    suspend fun releaseRemotePasteDataList(
+        pasteDataList: List<PasteData>,
+        releaseLast: suspend (PasteData) -> Result<Unit?>,
+    ): Result<Unit?> {
+        if (pasteDataList.isEmpty()) return Result.success(null)
+
+        for (index in 0 until pasteDataList.lastIndex) {
+            releaseRemotePasteData(pasteDataList[index]) { _ -> }
+                .onFailure { return Result.failure(it) }
+        }
+
+        return releaseLast(pasteDataList.last())
     }
 
     suspend fun releaseRemotePasteDataWithFile(

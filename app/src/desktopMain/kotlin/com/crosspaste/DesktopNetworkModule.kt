@@ -252,7 +252,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         single<SharePushOrchestrator> { SharePushOrchestrator(get(), get(), get()) }
         single<SyncDeviceManager> {
             SyncDeviceManager(
-                pasteDao = get(),
+                pastePullCursorManager = get(),
                 pendingExchangeLedger = get(),
                 secureStore = get(),
                 syncClientApi = get(),
