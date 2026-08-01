@@ -5,6 +5,7 @@ import com.crosspaste.dto.push.PushCompleteResponse
 import com.crosspaste.dto.push.PushHeaders
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.FileTransferResourceLimits
 import com.crosspaste.sync.PushSession
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.utils.FileUtils
@@ -20,6 +21,8 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import okio.Path
+import okio.Path.Companion.toPath
 
 private val logger: KLogger = KotlinLogging.logger("PushRouting")
 private val fileUtils: FileUtils = getFileUtils()
@@ -226,10 +229,7 @@ private suspend fun handleIconPush(
             return
         }
 
-    val writeFailed =
-        runCatching {
-            fileUtils.writeFile(iconPath, call.receiveChannel())
-        }.isFailure
+    val writeFailed = !writeIconAtomically(iconPath, call.receiveChannel())
     if (writeFailed) {
         logger.error { "push icon: write failed source=$source from=$fromAppInstanceId" }
         failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
@@ -238,4 +238,31 @@ private suspend fun handleIconPush(
 
     logger.info { "push icon: stored source=$source from=$fromAppInstanceId" }
     successResponse(call)
+}
+
+/**
+ * Writes an icon body to a uniquely named sibling temp file and atomically
+ * moves it into place. The unique name keeps concurrent uploads for the same
+ * source from sharing a temp file, and the move ensures an oversized or
+ * aborted upload never leaves a truncated icon at [iconPath] (a truncated
+ * icon would suppress the pull-icon repair path because the file exists).
+ */
+internal suspend fun writeIconAtomically(
+    iconPath: Path,
+    byteReadChannel: ByteReadChannel,
+): Boolean {
+    val tempIconPath = "$iconPath.${fileUtils.createRandomFileName("part")}".toPath()
+    val moved =
+        runCatching {
+            fileUtils.writeFile(
+                path = tempIconPath,
+                byteReadChannel = byteReadChannel,
+                maxBytes = FileTransferResourceLimits.MAX_ICON_SIZE,
+            )
+            fileUtils.moveFile(tempIconPath, iconPath).getOrThrow()
+        }.isSuccess
+    if (!moved) {
+        fileUtils.deleteFile(tempIconPath)
+    }
+    return moved
 }

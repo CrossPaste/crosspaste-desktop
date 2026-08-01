@@ -310,6 +310,32 @@ interface FileUtils {
         byteReadChannel: ByteReadChannel,
     )
 
+    suspend fun writeFile(
+        path: Path,
+        byteReadChannel: ByteReadChannel,
+        maxBytes: Long,
+    ) {
+        require(maxBytes in 0 until Long.MAX_VALUE) { "maxBytes must be non-negative and finite" }
+        writeFile(path) { sink ->
+            val buffer = ByteArray(fileBufferSize)
+            var written = 0L
+            while (true) {
+                val remaining = maxBytes - written
+                val readSize =
+                    if (remaining < buffer.size) {
+                        (remaining + 1).toInt()
+                    } else {
+                        buffer.size
+                    }
+                val read = byteReadChannel.readAvailable(buffer, 0, readSize)
+                if (read == -1) break
+                written += read
+                require(written <= maxBytes) { "input exceeds $maxBytes bytes" }
+                sink.write(buffer, 0, read)
+            }
+        }
+    }
+
     suspend fun writeFilesChunk(
         filesChunk: FilesChunk,
         byteReadChannel: ByteReadChannel,

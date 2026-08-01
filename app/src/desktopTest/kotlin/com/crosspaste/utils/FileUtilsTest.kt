@@ -1,5 +1,7 @@
 package com.crosspaste.utils
 
+import io.ktor.utils.io.ByteReadChannel
+import kotlinx.coroutines.runBlocking
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import org.junit.jupiter.api.AfterAll
@@ -9,6 +11,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -111,6 +114,21 @@ class FileUtilsTest {
         assertTrue(fileUtils.existFile(destFile))
         assertEquals("Move me", destFile.toFile().readText())
     }
+
+    @Test
+    fun writeFileRejectsBodyAboveLimit() =
+        runBlocking {
+            val file = tempDir / "limited-write.bin"
+
+            assertFailsWith<IllegalArgumentException> {
+                fileUtils.writeFile(file, ByteReadChannel(byteArrayOf(1, 2, 3, 4)), maxBytes = 3)
+            }
+            assertTrue(file.toFile().length() <= 3L)
+
+            val exactFile = tempDir / "limited-write-exact.bin"
+            fileUtils.writeFile(exactFile, ByteReadChannel(byteArrayOf(1, 2, 3)), maxBytes = 3)
+            assertEquals(byteArrayOf(1, 2, 3).toList(), exactFile.toFile().readBytes().toList())
+        }
 
     @Test
     fun testFormatBytes() {

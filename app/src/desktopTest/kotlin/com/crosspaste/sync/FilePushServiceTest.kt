@@ -14,6 +14,7 @@ import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.FileTransferResourceLimits
 import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.utils.HostAndPort
@@ -98,13 +99,14 @@ class FilePushServiceTest {
 
     private fun preparePushResult(
         chunkCount: Int,
+        chunkSize: Long = 1024L,
         needIcon: Boolean = false,
     ): SuccessResult =
         SuccessResult(
             PushPrepareResponse(
                 pasteId = 42L,
                 chunkCount = chunkCount,
-                chunkSize = 1024L,
+                chunkSize = chunkSize,
                 sessionToken = "session-tok",
                 needIcon = needIcon,
             ),
@@ -167,6 +169,61 @@ class FilePushServiceTest {
         }
 
     @Test
+    fun pushFiles_invalidPrepareParameters_returnsFailureWithoutAllocatingTasks() =
+        runBlocking {
+            val api = mockk<PushClientApi>()
+            coEvery { api.preparePush(any(), any(), any()) } returns
+                preparePushResult(chunkCount = FileTransferResourceLimits.MAX_CHUNK_COUNT + 1)
+
+            val svc = service(api)
+            val result = svc.pushFiles(samplePasteData(), "remote-1", toUrl())
+
+            assertTrue(result is FailureResult, "got $result")
+            assertEquals(StandardErrorCode.PUSH_PREPARE_FAIL.toErrorCode(), result.exception.getErrorCode())
+            coVerify(exactly = 0) { api.pushChunk(any(), any(), any(), any(), any(), any()) }
+            coVerify(exactly = 0) { api.completePush(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun pushFiles_zeroChunkSize_returnsFailureBeforeBuildingIndex() =
+        runBlocking {
+            val api = mockk<PushClientApi>()
+            coEvery { api.preparePush(any(), any(), any()) } returns
+                preparePushResult(chunkCount = 1, chunkSize = 0)
+
+            val svc = service(api, index = fakeIndex(1))
+            val result = svc.pushFiles(samplePasteData(), "remote-1", toUrl())
+
+            assertTrue(result is FailureResult, "got $result")
+            assertEquals(StandardErrorCode.PUSH_PREPARE_FAIL.toErrorCode(), result.exception.getErrorCode())
+            coVerify(exactly = 0) { api.pushChunk(any(), any(), any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun pushFiles_indexResourceLimit_returnsFailureInsteadOfThrowing() =
+        runBlocking {
+            val api = mockk<PushClientApi>()
+            coEvery { api.preparePush(any(), any(), any()) } returns
+                preparePushResult(chunkCount = 1, chunkSize = 1)
+            val svc =
+                FilePushService(
+                    pasteSyncProcessManager = inlineProcessManager(),
+                    pushClientApi = api,
+                    userDataPathProvider = mockk(relaxed = true),
+                    filesIndexFactory = { _, _, _ ->
+                        throw IllegalArgumentException("too many chunks")
+                    },
+                    chunkReader = { byteArrayOf() },
+                )
+
+            val result = svc.pushFiles(samplePasteData(), "remote-1", toUrl())
+
+            assertTrue(result is FailureResult, "got $result")
+            assertEquals(StandardErrorCode.PUSH_PREPARE_FAIL.toErrorCode(), result.exception.getErrorCode())
+            coVerify(exactly = 0) { api.pushChunk(any(), any(), any(), any(), any(), any()) }
+        }
+
+    @Test
     fun pushFiles_missingThenComplete_succeedsWithRetry() =
         runBlocking {
             val api = mockk<PushClientApi>()
@@ -212,6 +269,24 @@ class FilePushServiceTest {
             coVerify(exactly = FilePushService.MAX_COMPLETE_ROUNDS) {
                 api.completePush(any(), any(), any(), any())
             }
+        }
+
+    @Test
+    fun pushFiles_duplicateMissingChunk_returnsFailureWithoutRetry() =
+        runBlocking {
+            val api = mockk<PushClientApi>()
+            coEvery { api.preparePush(any(), any(), any()) } returns preparePushResult(chunkCount = 3)
+            coEvery { api.pushChunk(any(), any(), any(), any(), any(), any()) } returns SuccessResult()
+            coEvery { api.completePush(any(), any(), any(), any()) } returns
+                SuccessResult(PushCompleteResponse(listOf(1, 1)))
+
+            val svc = service(api)
+            val result = svc.pushFiles(samplePasteData(), "remote-1", toUrl())
+
+            assertTrue(result is FailureResult, "got $result")
+            assertEquals(StandardErrorCode.PUSH_COMPLETE_FAIL.toErrorCode(), result.exception.getErrorCode())
+            coVerify(exactly = 3) { api.pushChunk(any(), any(), any(), any(), any(), any()) }
+            coVerify(exactly = 1) { api.completePush(any(), any(), any(), any()) }
         }
 
     @Test

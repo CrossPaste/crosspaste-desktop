@@ -16,6 +16,7 @@ import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.presist.buildFilesIndexForReceive
+import com.crosspaste.presist.validateFileTransferMetadata
 import com.crosspaste.sync.FilePullService
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskBuilder
@@ -250,6 +251,36 @@ class PasteReleaseService(
         return true
     }
 
+    /**
+     * Discard (not fail) a remote file paste whose metadata violates the
+     * transfer resource limits. The pull cursor has already advanced past the
+     * batch this paste arrived in, so propagating a failure would abort
+     * [releaseRemotePasteDataList] and silently drop unrelated pastes pulled in
+     * the same round — including pastes from other devices.
+     */
+    private suspend fun discardInvalidRemoteFilePaste(
+        pasteData: PasteData,
+        cause: Throwable,
+    ) {
+        logger.warn(cause) {
+            "Discard invalid remote file paste from ${pasteData.appInstanceId}: " +
+                "createTime=${pasteData.createTime}"
+        }
+        pastePullCursorManager.persistDiscardedMaxCreateTime(
+            appInstanceId = pasteData.appInstanceId,
+            createTime = pasteData.createTime,
+        )
+        val deviceName =
+            syncRuntimeInfoDao
+                .getSyncRuntimeInfo(pasteData.appInstanceId)
+                ?.getDeviceDisplayName()
+                ?: pasteData.appInstanceId
+        notificationManager.sendNotification(
+            title = { it.getText("remote_file_paste_discarded_invalid", deviceName) },
+            messageType = MessageType.Warning,
+        )
+    }
+
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData) -> Unit,
@@ -260,6 +291,14 @@ class PasteReleaseService(
             }
             val remotePasteDataId = pasteData.id
             val isFileType = pasteData.isFileType()
+            if (isFileType) {
+                try {
+                    validateFileTransferMetadata(pasteData)
+                } catch (e: IllegalArgumentException) {
+                    discardInvalidRemoteFilePaste(pasteData, e)
+                    return@runCatching
+                }
+            }
             val existIconFile: Boolean? =
                 pasteData.source?.let {
                     fileUtils.existFile(userDataPathProvider.resolveIconPath(pasteData.appInstanceId, it))
@@ -350,6 +389,7 @@ class PasteReleaseService(
                 return@withContext null
             }
             runCatching {
+                validateFileTransferMetadata(pasteData)
                 val existIconFile: Boolean? =
                     pasteData.source?.let {
                         fileUtils.existFile(userDataPathProvider.resolveIconPath(pasteData.appInstanceId, it))

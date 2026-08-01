@@ -6,6 +6,7 @@ import com.crosspaste.config.TestAppConfig
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.TextPasteItem
@@ -151,6 +152,52 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(result.isSuccess)
             coVerify(exactly = 1) { taskSubmitter.submit(any()) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `invalid remote file paste is discarded and the batch continues`() =
+        runBlocking {
+            val notificationManager = mockk<NotificationManager>(relaxed = true)
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
+            val service =
+                newService(
+                    notificationManager = notificationManager,
+                    pastePullCursorManager = pastePullCursorManager,
+                    taskSubmitter = taskSubmitter,
+                )
+            val invalidFilePaste =
+                PasteData(
+                    appInstanceId = "remote-device",
+                    pasteAppearItem =
+                        createFilesPasteItem(
+                            relativePathList = emptyList(),
+                            fileInfoTreeMap = emptyMap(),
+                        ),
+                    pasteCollection = PasteCollection(emptyList()),
+                    pasteType = PasteType.FILE_TYPE.type,
+                    source = null,
+                    size = 0L,
+                    hash = "",
+                    remote = true,
+                ).copy(createTime = 100L)
+            val laterTextPaste =
+                remotePasteData(createTextPasteItem(text = "after")).copy(createTime = 200L)
+
+            val result =
+                service.releaseRemotePasteDataList(listOf(invalidFilePaste, laterTextPaste)) {
+                    service.releaseRemotePasteData(it) { _ -> }
+                }
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                pastePullCursorManager.persistDiscardedMaxCreateTime(
+                    appInstanceId = "remote-device",
+                    createTime = 100L,
+                )
+            }
+            verify(exactly = 1) { notificationManager.sendNotification(any(), any(), any(), any()) }
+            coVerify(exactly = 1) { taskSubmitter.submit(any()) }
         }
 
     @Test
