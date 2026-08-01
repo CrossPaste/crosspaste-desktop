@@ -424,4 +424,16 @@ class PasteReleaseService(
                 logger.error(e) { "releaseRemotePasteDataForPush failed" }
             }.getOrNull()
         }
+
+    /**
+     * Rolls back a successful [releaseRemotePasteDataForPush] whose prepared
+     * paste never got attached to a push session (capacity rejection lost the
+     * race). Mirrors the session-expiry path in
+     * [com.crosspaste.sync.PushSessionManager.sweepExpired]: marking the
+     * LOADING row deleted lets the regular delete pipeline reclaim the
+     * preallocated file slots.
+     */
+    suspend fun discardPushPrepared(pasteId: Long) {
+        pasteDao.markDeletePasteData(pasteId)
+    }
 }

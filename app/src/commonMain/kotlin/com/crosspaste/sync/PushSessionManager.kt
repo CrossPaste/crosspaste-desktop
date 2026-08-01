@@ -8,6 +8,7 @@ import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.ConcurrentMap
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -102,6 +103,12 @@ class PushSessionManager(
 
     private val sessions = ConcurrentMap<Long, PushSession>()
 
+    // Capacity is governed by this counter, not `sessions.size`: a CAS
+    // reservation makes the check-then-insert in [create] atomic, so
+    // concurrent prepares cannot overshoot [maxActive]. Every path that
+    // removes a session from the map must release its slot.
+    private val activeSlots = atomic(0)
+
     init {
         scope.launch {
             while (isActive) {
@@ -113,6 +120,26 @@ class PushSessionManager(
 
     fun activeCount(): Int = sessions.size
 
+    /**
+     * Advisory precheck for callers that must do expensive preparation
+     * (LOADING row + file slot preallocation) before [create]. A `true`
+     * result can still lose the race to a concurrent prepare — callers must
+     * handle a null from [create] by rolling their preparation back.
+     */
+    fun hasCapacity(): Boolean = activeSlots.value < maxActive
+
+    private fun tryReserveSlot(): Boolean {
+        while (true) {
+            val current = activeSlots.value
+            if (current >= maxActive) return false
+            if (activeSlots.compareAndSet(current, current + 1)) return true
+        }
+    }
+
+    private fun releaseSlot() {
+        activeSlots.decrementAndGet()
+    }
+
     @OptIn(ExperimentalUuidApi::class)
     fun create(
         pasteId: Long,
@@ -123,7 +150,7 @@ class PushSessionManager(
             logger.warn { "PushSession create rejected: empty filesIndex for pasteId=$pasteId" }
             return null
         }
-        if (sessions.size >= maxActive) {
+        if (!tryReserveSlot()) {
             logger.warn { "PushSession create rejected: maxActive=$maxActive reached" }
             return null
         }
@@ -158,6 +185,7 @@ class PushSessionManager(
      */
     fun tryFinalize(pasteId: Long): Boolean {
         if (sessions.remove(pasteId) == null) return false
+        releaseSlot()
         scope.launch {
             runCatching {
                 pasteboardService.tryWriteRemotePasteboardWithFile(pasteId)
@@ -201,6 +229,7 @@ class PushSessionManager(
                 }
             } else {
                 val removed = sessions.remove(id) ?: continue
+                releaseSlot()
                 runCatching {
                     pasteDao.markDeletePasteData(id)
                 }.onFailure { e ->
@@ -217,5 +246,6 @@ class PushSessionManager(
     fun close() {
         scope.cancel()
         sessions.clear()
+        activeSlots.value = 0
     }
 }

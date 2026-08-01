@@ -148,6 +148,15 @@ private suspend fun handlePushPrepare(
         return
     }
 
+    // Cheap precheck before the release step below creates a LOADING row and
+    // preallocates file slots on disk. Advisory only — create() re-checks
+    // atomically and the rejection branch rolls the preparation back.
+    if (!pushSessionManager.hasCapacity()) {
+        logger.warn { "push sync: rejected from $appInstanceId (capacity)" }
+        failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
+        return
+    }
+
     val prepared = pasteReleaseService.releaseRemotePasteDataForPush(pasteData)
     if (prepared == null) {
         failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
@@ -162,6 +171,7 @@ private suspend fun handlePushPrepare(
         )
     if (session == null) {
         logger.warn { "push sync: rejected pasteId=${prepared.pasteId} (capacity)" }
+        pasteReleaseService.discardPushPrepared(prepared.pasteId)
         failResponse(call, StandardErrorCode.PUSH_SESSION_REJECTED.toErrorCode())
         return
     }

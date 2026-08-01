@@ -9,7 +9,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -85,6 +88,51 @@ class PushSessionManagerTest {
         assertEquals(2, mgr.activeCount())
         mgr.close()
     }
+
+    @Test
+    fun hasCapacity_tracksSlotReservationAndRelease() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
+            val (mgr) = newManager(maxActive = 1, sessionTtl = 10.milliseconds, pasteDao = pasteDao)
+            assertTrue(mgr.hasCapacity())
+
+            mgr.create(1L, "mobile", fakeFilesIndex(1))!!
+            assertFalse(mgr.hasCapacity())
+            assertNull(mgr.create(2L, "mobile", fakeFilesIndex(1)))
+
+            // Finalize frees the slot.
+            assertTrue(mgr.tryFinalize(1L))
+            assertTrue(mgr.hasCapacity())
+
+            // Sweep-expiry of an incomplete session frees the slot too.
+            mgr.create(3L, "mobile", fakeFilesIndex(2))!!
+            assertFalse(mgr.hasCapacity())
+            delay(50.milliseconds)
+            mgr.sweepExpired()
+            assertTrue(mgr.hasCapacity())
+            assertNotNull(mgr.create(4L, "mobile", fakeFilesIndex(1)))
+            mgr.close()
+        }
+
+    @Test
+    fun create_neverExceedsMaxActiveUnderConcurrency() =
+        runBlocking {
+            val maxActive = 4
+            val (mgr) = newManager(maxActive = maxActive)
+            val created =
+                (1L..64L)
+                    .map { id ->
+                        async(Dispatchers.Default) {
+                            mgr.create(id, "mobile", fakeFilesIndex(1))
+                        }
+                    }.awaitAll()
+                    .filterNotNull()
+            assertEquals(maxActive, created.size)
+            assertEquals(maxActive, mgr.activeCount())
+            assertFalse(mgr.hasCapacity())
+            mgr.close()
+        }
 
     @Test
     fun get_requiresMatchingTokenAndAppInstance() {

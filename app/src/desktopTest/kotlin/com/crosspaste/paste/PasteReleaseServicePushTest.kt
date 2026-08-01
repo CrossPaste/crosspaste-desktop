@@ -215,6 +215,17 @@ class PasteReleaseServicePushTest {
     }
 
     @Test
+    fun discardPushPrepared_marksPreparedPasteDeleted() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            val service = newService(pasteDao = pasteDao)
+
+            service.discardPushPrepared(42L)
+
+            coVerify(exactly = 1) { pasteDao.markDeletePasteData(42L) }
+        }
+
+    @Test
     fun releaseRemotePasteDataForPush_rejectsUnsafeTreeBeforeCreatingPaste(
         @TempDir tempDir: File,
     ) = runBlocking {
