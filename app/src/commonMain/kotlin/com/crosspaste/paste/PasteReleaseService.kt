@@ -177,6 +177,8 @@ class PasteReleaseService(
     private suspend fun bindFilePasteForReceive(pasteData: PasteData): PasteData? {
         val pasteFiles = pasteData.getPasteItem(PasteFiles::class) ?: return null
 
+        userDataPathProvider.validateReceivePaths(pasteData.appInstanceId, pasteFiles)
+
         val id = pasteDao.createPasteData(pasteData, PasteState.LOADING)
 
         val fileSize = pasteFiles.size
