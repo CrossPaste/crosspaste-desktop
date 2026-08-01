@@ -1,6 +1,9 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.dto.sync.AuthenticatedControlRequest
+import com.crosspaste.dto.sync.ControlChallenge
+import com.crosspaste.dto.sync.ControlOperation
 import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.FailureResult
@@ -8,6 +11,9 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
+import io.ktor.client.call.body
+import io.ktor.http.HttpStatusCode
+import io.ktor.util.reflect.typeInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -342,7 +348,7 @@ class SyncIntegrationTest {
             // Add B's handler to A's routing so removal can be verified
             a.syncRoutingApi.innerSyncHandlers[b.appInfo.appInstanceId] = mockk(relaxed = true)
 
-            b.syncClientApi.notifyRemove(urlFor(a))
+            b.syncClientApi.notifyRemove(a.appInfo.appInstanceId, urlFor(a))
 
             // A's handlers should no longer contain B
             assertFalse(a.syncRoutingApi.innerSyncHandlers.containsKey(b.appInfo.appInstanceId))
@@ -367,13 +373,123 @@ class SyncIntegrationTest {
                 }
             a.syncRoutingApi.innerSyncHandlers[b.appInfo.appInstanceId] = mockHandler
 
-            b.syncClientApi.notifyExit(urlFor(a))
+            b.syncClientApi.notifyExit(a.appInfo.appInstanceId, urlFor(a))
 
             // Give the coroutine scope time to execute markExit
             kotlinx.coroutines.delay(200.milliseconds)
 
             // markExit should have been called on B's handler in A
             coVerify { mockHandler.markExit() }
+        }
+
+    @Test
+    fun legacyNotifyRemoveHasNoSideEffect() =
+        runBlocking {
+            val a = createInstance("device-a")
+            val b = createInstance("device-b")
+            a.start()
+            b.start()
+
+            trustBToA(a, b)
+            a.syncRoutingApi.innerSyncHandlers[b.appInfo.appInstanceId] = mockk(relaxed = true)
+
+            val response =
+                b.pasteClient.get(urlBuilder = {
+                    urlFor(a)(this)
+                    buildUrl("sync", "notifyRemove")
+                })
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertTrue(a.syncRoutingApi.innerSyncHandlers.containsKey(b.appInfo.appInstanceId))
+        }
+
+    @Test
+    fun plaintextSyncInfoHeartbeatHasNoSideEffect() =
+        runBlocking {
+            val a = createInstance("device-a")
+            val b = createInstance("device-b")
+            a.start()
+            b.start()
+
+            trustBToA(a, b)
+            val syncInfo =
+                SyncInfo(
+                    appInfo = b.appInfo,
+                    endpointInfo =
+                        EndpointInfo(
+                            deviceId = "test-device-id",
+                            deviceName = "test-device",
+                            platform = TestInstance.platform,
+                            hostInfoList = emptyList(),
+                            port = b.getPort(),
+                        ),
+                )
+
+            val response =
+                b.pasteClient.post(
+                    syncInfo,
+                    typeInfo<SyncInfo>(),
+                    headersBuilder = {
+                        append("targetAppInstanceId", a.appInfo.appInstanceId)
+                    },
+                    urlBuilder = {
+                        urlFor(a)(this)
+                        buildUrl("sync", "heartbeat", "syncInfo")
+                    },
+                )
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(null, a.syncRoutingApi.syncInfo)
+        }
+
+    @Test
+    fun authenticatedControlChallengeCannotBeReplayed() =
+        runBlocking {
+            val a = createInstance("device-a")
+            val b = createInstance("device-b")
+            a.start()
+            b.start()
+
+            trustBToA(a, b)
+            val target = a.appInfo.appInstanceId
+            val challengeResponse =
+                b.pasteClient.get(
+                    headersBuilder = { append("targetAppInstanceId", target) },
+                    urlBuilder = {
+                        urlFor(a)(this)
+                        buildUrl("sync", "control", "challenge")
+                    },
+                )
+            val challenge = challengeResponse.body<ControlChallenge>()
+            val request =
+                AuthenticatedControlRequest(
+                    challengeId = challenge.id,
+                    challengeNonce = challenge.nonce,
+                    targetAppInstanceId = target,
+                    operation = ControlOperation.NOTIFY_REMOVE,
+                )
+
+            suspend fun sendRequest() =
+                b.pasteClient.post(
+                    request,
+                    typeInfo<AuthenticatedControlRequest>(),
+                    headersBuilder = {
+                        append("targetAppInstanceId", target)
+                        append("secure", "1")
+                    },
+                    urlBuilder = {
+                        urlFor(a)(this)
+                        buildUrl("sync", "control", "notifyRemove")
+                    },
+                )
+
+            a.syncRoutingApi.innerSyncHandlers[b.appInfo.appInstanceId] = mockk(relaxed = true)
+            assertEquals(HttpStatusCode.OK, sendRequest().status)
+            assertFalse(a.syncRoutingApi.innerSyncHandlers.containsKey(b.appInfo.appInstanceId))
+
+            a.syncRoutingApi.innerSyncHandlers[b.appInfo.appInstanceId] = mockk(relaxed = true)
+            assertTrue(sendRequest().status.value >= 400)
+            assertTrue(a.syncRoutingApi.innerSyncHandlers.containsKey(b.appInfo.appInstanceId))
         }
 
     // ---- Test 12: Show token ----

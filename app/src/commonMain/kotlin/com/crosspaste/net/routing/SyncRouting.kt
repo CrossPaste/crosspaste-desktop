@@ -10,6 +10,8 @@ import com.crosspaste.dto.secure.TrustConfirmRequest
 import com.crosspaste.dto.secure.TrustConfirmResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
+import com.crosspaste.dto.sync.AuthenticatedControlRequest
+import com.crosspaste.dto.sync.ControlOperation
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceService
@@ -56,6 +58,7 @@ fun Routing.syncRouting(
     // active for a peer, that peer must not be able to fall back to v2 trust.
     hasActivePairingV3Session: (String) -> Boolean = { false },
     openPairingV3AcceptanceWindow: () -> Unit = {},
+    controlChallengeStore: ControlChallengeStore = ControlChallengeStore(),
 ) {
     val logger = KotlinLogging.logger {}
 
@@ -97,8 +100,20 @@ fun Routing.syncRouting(
             if (!validateHeartbeat(appInstanceId, call)) {
                 return@let
             }
+            if (call.request.headers["secure"] != "1") {
+                logger.warn { "Ignoring unauthenticated SyncInfo heartbeat from $appInstanceId" }
+                successResponse(call, syncApi.VERSION)
+                return@let
+            }
             runCatching {
-                val syncInfo = call.receive(SyncInfo::class)
+                val receivedSyncInfo = call.receive(SyncInfo::class)
+                if (receivedSyncInfo.appInfo.appInstanceId != appInstanceId) {
+                    logger.warn { "Binding mismatched SyncInfo identity to authenticated peer $appInstanceId" }
+                }
+                val syncInfo =
+                    receivedSyncInfo.copy(
+                        appInfo = receivedSyncInfo.appInfo.copy(appInstanceId = appInstanceId),
+                    )
                 val host = call.request.host()
                 syncRoutingApi.trustSyncInfo(syncInfo, host)
                 logger.info { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
@@ -116,17 +131,67 @@ fun Routing.syncRouting(
     }
 
     get("/sync/notifyExit") {
-        getAppInstanceId(call)?.let { appInstanceId ->
-            syncRoutingApi.markExit(appInstanceId)
+        getAppInstanceId(call)?.let {
+            logger.warn { "Ignoring unauthenticated legacy notifyExit" }
             successResponse(call)
         }
     }
 
     get("/sync/notifyRemove") {
-        getAppInstanceId(call)?.let { appInstanceId ->
-            syncRoutingApi.removeSyncHandler(appInstanceId)
+        getAppInstanceId(call)?.let {
+            logger.warn { "Ignoring unauthenticated legacy notifyRemove" }
             successResponse(call)
         }
+    }
+
+    get("/sync/control/challenge") {
+        getAppInstanceId(call)?.let { appInstanceId ->
+            if (!validateHeartbeat(appInstanceId, call)) {
+                return@let
+            }
+            successResponse(call, controlChallengeStore.issue(appInstanceId))
+        }
+    }
+
+    suspend fun handleAuthenticatedControl(
+        call: ApplicationCall,
+        expectedOperation: ControlOperation,
+        action: (String) -> Unit,
+    ) {
+        val appInstanceId = getAppInstanceId(call) ?: return
+        if (call.request.headers["secure"] != "1") {
+            failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
+            return
+        }
+        if (!validateHeartbeat(appInstanceId, call)) return
+        runCatching {
+            val request = call.receive<AuthenticatedControlRequest>()
+            val valid =
+                request.targetAppInstanceId == appInfo.appInstanceId &&
+                    request.operation == expectedOperation &&
+                    controlChallengeStore.consume(
+                        appInstanceId,
+                        request.challengeId,
+                        request.challengeNonce,
+                    )
+            if (!valid) {
+                failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
+                return
+            }
+            action(appInstanceId)
+            successResponse(call)
+        }.onFailure { e ->
+            logger.warn(e) { "Authenticated control request failed for $appInstanceId" }
+            failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
+        }
+    }
+
+    post("/sync/control/notifyExit") {
+        handleAuthenticatedControl(call, ControlOperation.NOTIFY_EXIT, syncRoutingApi::markExit)
+    }
+
+    post("/sync/control/notifyRemove") {
+        handleAuthenticatedControl(call, ControlOperation.NOTIFY_REMOVE, syncRoutingApi::removeSyncHandler)
     }
 
     get("/sync/showToken") {

@@ -380,7 +380,7 @@ class SyncDeviceManagerTest {
 
             manager.notifyExit(syncRuntimeInfo)
 
-            coVerify { deps.syncClientApi.notifyExit(any()) }
+            coVerify { deps.syncClientApi.notifyExit(syncRuntimeInfo.appInstanceId, any()) }
         }
 
     @Test
@@ -392,7 +392,7 @@ class SyncDeviceManagerTest {
 
             manager.notifyExit(syncRuntimeInfo)
 
-            coVerify(exactly = 0) { deps.syncClientApi.notifyExit(any()) }
+            coVerify(exactly = 0) { deps.syncClientApi.notifyExit(any(), any()) }
         }
 
     // ========== markExit ==========
@@ -426,7 +426,7 @@ class SyncDeviceManagerTest {
             coVerify { deps.secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId) }
             coVerify { deps.syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) }
             coVerify { deps.pastePullCursorManager.removeDevice(syncRuntimeInfo.appInstanceId) }
-            coVerify { deps.syncClientApi.notifyRemove(any()) }
+            coVerify { deps.syncClientApi.notifyRemove(syncRuntimeInfo.appInstanceId, any()) }
         }
 
     @Test
@@ -444,6 +444,6 @@ class SyncDeviceManagerTest {
 
             coVerify { deps.secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId) }
             coVerify { deps.syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) }
-            coVerify(exactly = 0) { deps.syncClientApi.notifyRemove(any()) }
+            coVerify(exactly = 0) { deps.syncClientApi.notifyRemove(any(), any()) }
         }
 }

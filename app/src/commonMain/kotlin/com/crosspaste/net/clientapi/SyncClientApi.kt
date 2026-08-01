@@ -7,7 +7,11 @@ import com.crosspaste.dto.secure.TrustConfirmRequest
 import com.crosspaste.dto.secure.TrustConfirmResponse
 import com.crosspaste.dto.secure.TrustRequest
 import com.crosspaste.dto.secure.TrustResponse
+import com.crosspaste.dto.sync.AuthenticatedControlRequest
+import com.crosspaste.dto.sync.ControlChallenge
+import com.crosspaste.dto.sync.ControlOperation
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.exception.ExceptionHandler
@@ -274,21 +278,71 @@ class SyncClientApi(
             })
         }) { true }
 
-    suspend fun notifyExit(toUrl: URLBuilder.() -> Unit) {
-        request(logger, exceptionHandler, request = {
-            pasteClient.get(urlBuilder = {
-                toUrl()
-                buildUrl("sync", "notifyExit")
-            })
-        }) { true }
+    suspend fun notifyExit(
+        targetAppInstanceId: String,
+        toUrl: URLBuilder.() -> Unit,
+    ) {
+        notifyControl(targetAppInstanceId, ControlOperation.NOTIFY_EXIT, "notifyExit", toUrl)
     }
 
-    suspend fun notifyRemove(toUrl: URLBuilder.() -> Unit) {
-        request(logger, exceptionHandler, request = {
-            pasteClient.get(urlBuilder = {
-                toUrl()
-                buildUrl("sync", "notifyRemove")
-            })
-        }) { true }
+    suspend fun notifyRemove(
+        targetAppInstanceId: String,
+        toUrl: URLBuilder.() -> Unit,
+    ) {
+        notifyControl(targetAppInstanceId, ControlOperation.NOTIFY_REMOVE, "notifyRemove", toUrl)
+    }
+
+    private suspend fun notifyControl(
+        targetAppInstanceId: String,
+        operation: ControlOperation,
+        legacyPath: String,
+        toUrl: URLBuilder.() -> Unit,
+    ) {
+        val challengeResult =
+            request(logger, exceptionHandler, request = {
+                pasteClient.get(
+                    headersBuilder = {
+                        append("targetAppInstanceId", targetAppInstanceId)
+                    },
+                    urlBuilder = {
+                        toUrl()
+                        buildUrl("sync", "control", "challenge")
+                    },
+                )
+            }) { response ->
+                response.body<ControlChallenge>()
+            }
+        if (challengeResult is SuccessResult) {
+            val challenge = challengeResult.getResult<ControlChallenge>()
+            request(logger, exceptionHandler, request = {
+                pasteClient.post(
+                    AuthenticatedControlRequest(
+                        challengeId = challenge.id,
+                        challengeNonce = challenge.nonce,
+                        targetAppInstanceId = targetAppInstanceId,
+                        operation = operation,
+                    ),
+                    typeInfo<AuthenticatedControlRequest>(),
+                    headersBuilder = {
+                        append("targetAppInstanceId", targetAppInstanceId)
+                        append("secure", "1")
+                    },
+                    urlBuilder = {
+                        toUrl()
+                        buildUrl("sync", "control", legacyPath)
+                    },
+                )
+            }) { true }
+        } else if (
+            challengeResult is FailureResult &&
+            challengeResult.exception.match(StandardErrorCode.NOT_FOUND_API)
+        ) {
+            request(logger, exceptionHandler, request = {
+                pasteClient.get(urlBuilder = {
+                    toUrl()
+                    buildUrl("sync", legacyPath)
+                })
+            }) { true }
+        }
     }
 }

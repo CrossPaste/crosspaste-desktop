@@ -166,7 +166,7 @@ class SyncDeviceManager(
             }
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
-                syncClientApi.notifyExit {
+                syncClientApi.notifyExit(syncRuntimeInfo.appInstanceId) {
                     buildUrl(hostAndPort)
                 }
             }
@@ -194,20 +194,19 @@ class SyncDeviceManager(
             logger.info { "notifyRemove via WebSocket ${syncRuntimeInfo.appInstanceId}" }
         }
 
-        // Delete local state immediately so UI updates without waiting for remote notification
-        wsSessionManager.closeSession(syncRuntimeInfo.appInstanceId)
-        secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
-        syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId)
-        pastePullCursorManager.removeDevice(syncRuntimeInfo.appInstanceId)
-
-        // HTTP fallback notification (best-effort, after local cleanup)
+        // HTTP authentication needs the shared key, so notify before deleting local trust state.
         if (!notifiedViaWs) {
             syncRuntimeInfo.connectHostAddress?.let { host ->
                 val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
-                syncClientApi.notifyRemove {
+                syncClientApi.notifyRemove(syncRuntimeInfo.appInstanceId) {
                     buildUrl(hostAndPort)
                 }
             }
         }
+
+        wsSessionManager.closeSession(syncRuntimeInfo.appInstanceId)
+        secureStore.deleteCryptPublicKey(syncRuntimeInfo.appInstanceId)
+        syncRuntimeInfoDao.deleteSyncRuntimeInfo(syncRuntimeInfo.appInstanceId)
+        pastePullCursorManager.removeDevice(syncRuntimeInfo.appInstanceId)
     }
 }
