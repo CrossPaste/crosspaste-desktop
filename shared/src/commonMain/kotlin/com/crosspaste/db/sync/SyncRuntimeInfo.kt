@@ -88,6 +88,16 @@ data class SyncRuntimeInfo(
                 port = syncInfo.endpointInfo.port,
             )
 
+        /**
+         * Structural equality of host lists, ignoring order and [HostInfo.lastSeen].
+         *
+         * The prefix participates because it feeds address selection and same-subnet
+         * checks — a same-address prefix change must count as a change and reach the
+         * database. [HostInfo.lastSeen] is deliberately excluded: it is a local
+         * recency stamp refreshed on every merge, so including it would turn every
+         * re-advertisement into a spurious "change"; it only persists as a side
+         * effect of writes triggered by real changes.
+         */
         fun hostInfoListEqual(
             hostInfoList: List<HostInfo>,
             otherHostInfoList: List<HostInfo>,
@@ -95,16 +105,13 @@ data class SyncRuntimeInfo(
             if (hostInfoList.size != otherHostInfoList.size) {
                 return false
             }
-            val sortHostInfoList = hostInfoList.sortedWith { o1, o2 -> o1.hostAddress.compareTo(o2.hostAddress) }
-            val otherSortHostInfoList =
-                otherHostInfoList.sortedWith {
-                    o1,
-                    o2,
-                    ->
-                    o1.hostAddress.compareTo(o2.hostAddress)
-                }
-            for (i in 0 until hostInfoList.size) {
-                if (sortHostInfoList[i].hostAddress != otherSortHostInfoList[i].hostAddress) {
+            val comparator = compareBy<HostInfo>({ it.hostAddress }, { it.networkPrefixLength })
+            val sortHostInfoList = hostInfoList.sortedWith(comparator)
+            val otherSortHostInfoList = otherHostInfoList.sortedWith(comparator)
+            for (i in sortHostInfoList.indices) {
+                if (sortHostInfoList[i].hostAddress != otherSortHostInfoList[i].hostAddress ||
+                    sortHostInfoList[i].networkPrefixLength != otherSortHostInfoList[i].networkPrefixLength
+                ) {
                     return false
                 }
             }
