@@ -4,6 +4,7 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.dto.pull.WsPullFileRequest
 import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.net.routing.bindAuthenticatedRemoteIdentity
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
@@ -121,7 +122,13 @@ class WsMessageHandler(
             val pasteData =
                 json
                     .decodeFromString<PasteData>(payloadBytes.decodeToString())
-                    .copy(remote = true)
+                    .also { pasteData ->
+                        if (pasteData.appInstanceId != appInstanceId) {
+                            logger.warn {
+                                "Ignoring mismatched PasteData identity from authenticated WS peer $appInstanceId"
+                            }
+                        }
+                    }.bindAuthenticatedRemoteIdentity(appInstanceId)
 
             scope.launch {
                 pasteboardService.tryWriteRemotePasteboard(pasteData)
