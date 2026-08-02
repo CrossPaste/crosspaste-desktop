@@ -21,6 +21,7 @@ import com.crosspaste.secure.ECDHKeyPairImpl
 import com.crosspaste.secure.ECDSAKeyPairImpl
 import com.crosspaste.secure.SecureKeyPair
 import com.crosspaste.secure.SecureKeyPairSerializer
+import com.crosspaste.secure.SecureMessageCipher
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getJsonUtils
@@ -293,6 +294,51 @@ object CrossPasteCrypto {
 
     // endregion
 }
+
+/**
+ * Symmetric message cipher bound to one peer — exposed to TypeScript.
+ *
+ * Byte-compatible with desktop's `SecureMessageProcessor`: used to decrypt
+ * WS envelopes flagged `encrypted` (e.g. PASTE_PUSH when the desktop has
+ * "Encrypted Sync" enabled). Construct via [createSecureMessageProcessor].
+ */
+@JsExport
+class JsSecureMessageProcessor internal constructor(
+    private val cipher: SecureMessageCipher,
+) {
+
+    @Suppress("OPT_IN_USAGE")
+    fun encrypt(data: ByteArray): Promise<ByteArray> =
+        GlobalScope.promise {
+            cipher.encrypt(data)
+        }
+
+    @Suppress("OPT_IN_USAGE")
+    fun decrypt(data: ByteArray): Promise<ByteArray> =
+        GlobalScope.promise {
+            cipher.decrypt(data)
+        }
+}
+
+/**
+ * Create a message cipher from our DER ECDH private key and the peer's DER
+ * ECDH public key (`serverKeys.cryptPublicKey` persisted at pairing time).
+ */
+@Suppress("OPT_IN_USAGE", "NON_EXPORTABLE_TYPE")
+@JsExport
+fun createSecureMessageProcessor(
+    cryptPrivateKeyDer: ByteArray,
+    peerCryptPublicKeyDer: ByteArray,
+): Promise<JsSecureMessageProcessor> =
+    GlobalScope.promise {
+        val serializer = SecureKeyPairSerializer()
+        JsSecureMessageProcessor(
+            SecureMessageCipher(
+                privateKey = serializer.decodeCryptPrivateKey(cryptPrivateKeyDer),
+                publicKey = serializer.decodeCryptPublicKey(peerCryptPublicKeyDer),
+            ),
+        )
+    }
 
 /**
  * Pairing v3 (SPAKE2 + PIN) initiator session — exposed to TypeScript.

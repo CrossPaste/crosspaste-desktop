@@ -108,6 +108,11 @@ export interface WsMessageHandlerDeps {
     sourceAppInstanceId: string,
     notice: OversizePasteNotice,
   ) => Promise<void>;
+  /**
+   * Decrypt an envelope payload flagged `encrypted` (desktop "Encrypted Sync"
+   * setting). Throws when the device has no trusted key material.
+   */
+  decryptFromDevice: (appInstanceId: string, payload: Uint8Array) => Promise<Uint8Array>;
 }
 
 /**
@@ -117,6 +122,19 @@ export interface WsMessageHandlerDeps {
 export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
   return {
     async handleMessage(appInstanceId: string, envelope: WsEnvelope): Promise<void> {
+      if (envelope.encrypted) {
+        try {
+          const payload = await deps.decryptFromDevice(appInstanceId, envelope.payload);
+          envelope = { ...envelope, payload, encrypted: false };
+        } catch (e) {
+          console.error(
+            `[WsHandler] Failed to decrypt ${envelope.type} from ${appInstanceId}:`,
+            e,
+          );
+          return;
+        }
+      }
+
       switch (envelope.type) {
         case WsMessageType.HEARTBEAT:
           await deps.sendToDevice(

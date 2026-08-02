@@ -8,7 +8,9 @@ import {
   CrossPasteHash as KtHash,
   CrossPasteCrypto as KtCrypto,
   createPairingV3Initiator as ktCreatePairingV3Initiator,
+  createSecureMessageProcessor as ktCreateSecureMessageProcessor,
   JsPairingV3Initiator,
+  JsSecureMessageProcessor,
 } from "@crosspaste/core";
 
 /** JSON parsing utilities */
@@ -26,3 +28,11 @@ export const CrossPasteCrypto = KtCrypto.getInstance();
  */
 export const createPairingV3Initiator = ktCreatePairingV3Initiator;
 export type PairingV3Initiator = JsPairingV3Initiator;
+
+/**
+ * Per-peer symmetric message cipher (ECDH shared secret + AES-CBC), byte
+ * compatible with desktop's SecureMessageProcessor. Used to decrypt WS
+ * envelopes flagged `encrypted`.
+ */
+export const createSecureMessageProcessor = ktCreateSecureMessageProcessor;
+export type SecureMessageProcessor = JsSecureMessageProcessor;

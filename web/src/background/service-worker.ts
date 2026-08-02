@@ -21,6 +21,7 @@ import {
   type OversizePasteNotice,
 } from "@/shared/ws/ws-message-handler";
 import { buildTranslatorFromStorage } from "@/shared/i18n/i18n-core";
+import { createWsPayloadDecryptor } from "@/shared/ws/ws-payload-crypto";
 import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
@@ -559,10 +560,14 @@ async function initializeWebSocket(): Promise<void> {
   const appInstanceId = await getAppInstanceId();
   wsManager = new WsManager(appInstanceId);
 
+  const wsPayloadDecryptor = createWsPayloadDecryptor();
+
   const wsMessageHandler = createWsMessageHandler({
     sendToDevice: async (targetId, envelope) => {
       await wsManager?.send(targetId, envelope);
     },
+    decryptFromDevice: (targetId, payload) =>
+      wsPayloadDecryptor.decryptFromDevice(targetId, payload),
     sendRequest: async (targetId, envelope) => {
       if (!wsManager) throw new Error("WsManager not initialized");
       return wsManager.sendRequest(targetId, envelope);
