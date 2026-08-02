@@ -209,4 +209,31 @@ class WsSessionManagerTest {
             coVerify(exactly = 1) { inner.send(any<Frame.Text>()) }
             coVerify(exactly = 1) { inner.send(any<Frame.Binary>()) }
         }
+
+    @Test
+    fun sendWithPayloadLimits_chunkCapableSessionRejectsAboveChunkedLimit() =
+        runTest {
+            val mgr = WsSessionManager()
+            val activeJob = Job()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns activeJob
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(inner, "remote", peerSupportsChunkedPayload = true),
+            )
+            val envelope = WsEnvelope(type = "test", payload = ByteArray(129))
+
+            val result =
+                mgr.sendWithPayloadLimits(
+                    appInstanceId = "A",
+                    envelope = envelope,
+                    singleFramePayloadLimit = 64,
+                    chunkedPayloadLimit = 128,
+                )
+
+            assertEquals(WsPayloadSendResult.PayloadTooLarge(129, 128), result)
+            coVerify(exactly = 0) { inner.send(any<Frame>()) }
+        }
 }
