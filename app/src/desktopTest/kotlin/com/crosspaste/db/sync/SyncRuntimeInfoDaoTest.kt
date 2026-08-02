@@ -333,6 +333,71 @@ class SyncRuntimeInfoDaoTest {
             assertTrue(after.hostInfoList.any { it.hostAddress == "192.168.1.200" })
         }
 
+    /**
+     * Writes a device row whose hostInfo column is not valid JSON, bypassing the
+     * DAO (which always writes valid JSON) — simulates on-disk corruption or a
+     * downgrade to a schema the current decoder cannot parse.
+     */
+    private fun insertCorruptedHostInfoRow(appInstanceId: String) {
+        database.syncRuntimeInfoDatabaseQueries.createSyncRuntimeInfo(
+            appInstanceId,
+            "1.0.0",
+            "testUser",
+            "device-corrupt",
+            "CorruptDevice",
+            testPlatform.name,
+            testPlatform.arch,
+            testPlatform.bitMode.toLong(),
+            testPlatform.version,
+            "[{ corrupted json",
+            8080L,
+            null,
+            null,
+            SyncState.DISCONNECTED.toLong(),
+            1L,
+            1L,
+        )
+    }
+
+    @Test
+    fun `corrupted hostInfo row degrades to empty host list instead of killing the flow`() =
+        runTest {
+            // R2-02-009: one undecodable row must not abort the whole device-list
+            // query — every other device must still be delivered to collectors.
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
+            insertCorruptedHostInfoRow("corrupt-instance")
+
+            syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().test {
+                val list = awaitItem()
+                assertEquals(2, list.size)
+
+                val healthy = list.single { it.appInstanceId == "test-instance-1" }
+                assertEquals(listOf("192.168.1.100"), healthy.hostInfoList.map { it.hostAddress })
+
+                val corrupted = list.single { it.appInstanceId == "corrupt-instance" }
+                assertTrue(corrupted.hostInfoList.isEmpty())
+
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `corrupted hostInfo row recovers when a valid sync info is written`() =
+        runTest {
+            insertCorruptedHostInfoRow("test-instance-1")
+
+            // Single-row reads degrade the same way as the list query…
+            val degraded = syncRuntimeInfoDao.getSyncRuntimeInfo("test-instance-1")
+            assertNotNull(degraded)
+            assertTrue(degraded.hostInfoList.isEmpty())
+
+            // …and the next discovery/sync write restores valid addresses.
+            syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
+            val recovered = syncRuntimeInfoDao.getSyncRuntimeInfo("test-instance-1")
+            assertNotNull(recovered)
+            assertEquals(listOf("192.168.1.100"), recovered.hostInfoList.map { it.hostAddress })
+        }
+
     @Test
     fun `insertOrUpdateSyncInfo evicts old ghost addresses as new ones arrive`() =
         runTest {

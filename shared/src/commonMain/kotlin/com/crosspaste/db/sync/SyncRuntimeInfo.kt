@@ -4,7 +4,9 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
+import kotlin.concurrent.Volatile
 
 @Serializable
 data class SyncRuntimeInfo(
@@ -28,7 +30,43 @@ data class SyncRuntimeInfo(
 
     companion object {
 
+        private val logger = KotlinLogging.logger {}
+
         private val jsonUtils = getJsonUtils()
+
+        // The mapper re-runs for every collector on every table change, so a
+        // persistently corrupted row would repeat the same warning forever;
+        // warn once per appInstanceId per process instead. Copy-on-write
+        // behind @Volatile keeps shared/commonMain dependency-free — the
+        // dedup is best-effort and a racing read may at worst warn twice.
+        @Volatile
+        private var warnedCorruptedHostInfo: Set<String> = emptySet()
+
+        /**
+         * Row-level tolerance for corrupted hostInfo JSON: one undecodable row
+         * must not abort the whole device-list query (and with it every
+         * collector of `getAllSyncRuntimeInfosFlow`). The row degrades to an
+         * empty host list — the device record and its trust survive, and the
+         * next discovery/sync write restores valid addresses. The log is
+         * deliberately limited to the exception type and a truncated
+         * appInstanceId; the raw JSON (device addresses) is never logged.
+         */
+        private fun decodeHostInfoList(
+            appInstanceId: String,
+            hostInfo: String,
+        ): List<HostInfo> =
+            try {
+                jsonUtils.JSON.decodeFromString(hostInfo)
+            } catch (e: IllegalArgumentException) {
+                if (appInstanceId !in warnedCorruptedHostInfo) {
+                    warnedCorruptedHostInfo = warnedCorruptedHostInfo + appInstanceId
+                    logger.warn {
+                        "Corrupted hostInfo JSON (${e::class.simpleName}) for " +
+                            "appInstanceId=${appInstanceId.take(8)}..., degrading to empty host list"
+                    }
+                }
+                emptyList()
+            }
 
         fun mapper(
             appInstanceId: String,
@@ -64,7 +102,7 @@ data class SyncRuntimeInfo(
                         bitMode = platformBitMode.toInt(),
                         version = platformVersion,
                     ),
-                hostInfoList = jsonUtils.JSON.decodeFromString(hostInfo),
+                hostInfoList = decodeHostInfoList(appInstanceId, hostInfo),
                 port = port.toInt(),
                 noteName = noteName,
                 connectNetworkPrefixLength = connectNetworkPrefixLength?.toShort(),
