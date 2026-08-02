@@ -96,6 +96,7 @@ export class WsManager {
 
   /**
    * Connect to all trusted devices that don't have an active WebSocket.
+   * Devices flagged needsRePair are skipped, mirroring the HTTP sync gates.
    */
   async connectAllDevices(): Promise<void> {
     const devices = await DeviceStore.getAll();
@@ -107,7 +108,14 @@ export class WsManager {
       }
     }
     const promises = devices
-      .filter((d) => d.trusted && !this.isConnected(d.targetAppInstanceId))
+      .filter(
+        (d) =>
+          d.trusted &&
+          // A needsRePair device has no key material left (handleDecryptFail
+          // wiped it); reconnecting would just loop decrypt-fail -> disconnect.
+          d.needsRePair !== true &&
+          !this.isConnected(d.targetAppInstanceId),
+      )
       .map((d) => this.connectDevice(d).catch(() => false));
     await Promise.allSettled(promises);
   }
