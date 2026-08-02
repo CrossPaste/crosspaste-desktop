@@ -197,10 +197,11 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 HttpClient(CIO) {
                     install(WebSockets) {
                         pingIntervalMillis = 30_000
-                        // Message-level cap, not the 1 MiB frame limit: legacy peers
-                        // may still push a whole paste as one oversized frame, which
-                        // must keep being deliverable, but the buffer a paired peer
-                        // can force into memory has to stay bounded.
+                        // Receive-side compatibility cap, not an expansion of the
+                        // native pairing v2 send contract: legacy peers may still
+                        // push a whole paste as one oversized frame, which must keep
+                        // being deliverable, but the buffer a paired peer can force
+                        // into memory has to stay bounded.
                         maxFrameSize = WS_MAX_PAYLOAD_SIZE
                     }
                 }

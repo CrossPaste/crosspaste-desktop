@@ -4,11 +4,14 @@ import com.crosspaste.serializer.Base64ByteArraySerializer
 import kotlinx.serialization.Serializable
 
 /**
- * Upper bound for a single WebSocket frame. Unchanged from the legacy protocol
- * so that peers that predate chunked payload transfer keep interoperating:
- * a frame over the receiver's limit does not just drop that message — Ktor
- * tears down the whole connection (1009 TOO_BIG) while the sender's local
- * write still succeeds.
+ * Upper bound for a single WebSocket frame. Native pairing v2 intentionally
+ * keeps its 1 MiB WebSocket payload contract even when a particular client
+ * implementation can receive a larger frame; native file bytes use the HTTPS
+ * pull/push path and are not constrained by this WebSocket limit. Pairing v3
+ * raises the logical-message limit through negotiated chunking rather than a
+ * larger frame. A frame over the receiver's limit does not just drop that
+ * message — Ktor tears down the whole connection (1009 TOO_BIG) while the
+ * sender's local write still succeeds.
  */
 const val WS_MAX_FRAME_SIZE: Long = 1024L * 1024
 

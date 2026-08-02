@@ -21,6 +21,7 @@ import com.crosspaste.net.ws.WS_MAX_FRAME_SIZE
 import com.crosspaste.net.ws.WS_MAX_PAYLOAD_SIZE
 import com.crosspaste.net.ws.WsEnvelope
 import com.crosspaste.net.ws.WsMessageType
+import com.crosspaste.net.ws.WsPayloadSendResult
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
@@ -273,39 +274,42 @@ class SyncPasteTaskExecutor(
                 } else {
                     jsonBytes
                 }
-            // A payload the receiver cannot accept is never delivered — an oversized
-            // frame makes the receiver tear down the whole connection (1009 TOO_BIG)
-            // while the local write still succeeds — so fail definitively instead of
-            // reporting success. Peers that advertised chunked-payload support take
-            // the message-level cap; legacy native peers are bound by their 1 MiB
-            // receive frame limit. Extension targets are browser clients on loopback
-            // with no receive frame cap, so only the message-level cap applies.
-            val payloadLimit =
-                if (isExtensionTarget || wsSessionManager.supportsChunkedPayload(targetAppInstanceId)) {
-                    wsChunkedPayloadLimit
-                } else {
-                    wsSingleFramePayloadLimit
-                }
-            if (payload.size > payloadLimit) {
-                logger.warn {
-                    "WS paste push to $targetAppInstanceId rejected: " +
-                        "payload ${payload.size} bytes exceeds limit $payloadLimit"
-                }
-                return createFailureResult(
-                    StandardErrorCode.SYNC_PASTE_ERROR,
-                    "Paste payload ${payload.size} bytes exceeds WebSocket limit for $targetAppInstanceId",
-                )
-            }
             val envelope =
                 WsEnvelope(
                     type = WsMessageType.PASTE_PUSH,
                     payload = payload,
                     encrypted = encrypt,
                 )
-            if (wsSessionManager.send(targetAppInstanceId, envelope)) {
-                SuccessResult()
-            } else {
-                null // WebSocket send failed, fall back to HTTP
+            // Native pairing v2 deliberately keeps the 1 MiB WebSocket payload
+            // contract; file bytes use HTTPS. Pairing v3 opts into the larger
+            // logical-message cap through chunking. Extension clients remain
+            // single-frame but use the browser-compatible message cap. The
+            // manager selects the limit and sends through one session snapshot,
+            // so a reconnect cannot change capability between those operations.
+            val singleFramePayloadLimit =
+                if (isExtensionTarget) wsChunkedPayloadLimit else wsSingleFramePayloadLimit
+            when (
+                val sendResult =
+                    wsSessionManager.sendWithPayloadLimits(
+                        appInstanceId = targetAppInstanceId,
+                        envelope = envelope,
+                        singleFramePayloadLimit = singleFramePayloadLimit,
+                        chunkedPayloadLimit = wsChunkedPayloadLimit,
+                    )
+            ) {
+                WsPayloadSendResult.Sent -> SuccessResult()
+                WsPayloadSendResult.Failed -> null // WebSocket send failed, fall back to HTTP
+                is WsPayloadSendResult.PayloadTooLarge -> {
+                    logger.warn {
+                        "WS paste push to $targetAppInstanceId rejected: " +
+                            "payload ${sendResult.payloadSize} bytes exceeds limit ${sendResult.payloadLimit}"
+                    }
+                    createFailureResult(
+                        StandardErrorCode.SYNC_PASTE_ERROR,
+                        "Paste payload ${sendResult.payloadSize} bytes exceeds " +
+                            "WebSocket limit for $targetAppInstanceId",
+                    )
+                }
             }
         }.onFailure { e ->
             logger.warn(e) { "WebSocket paste send failed for $targetAppInstanceId, falling back to HTTP" }

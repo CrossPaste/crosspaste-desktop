@@ -8,6 +8,18 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.cancellation.CancellationException
 
+sealed interface WsPayloadSendResult {
+
+    data object Sent : WsPayloadSendResult
+
+    data object Failed : WsPayloadSendResult
+
+    data class PayloadTooLarge(
+        val payloadSize: Int,
+        val payloadLimit: Long,
+    ) : WsPayloadSendResult
+}
+
 /**
  * Unified wrapper around Ktor WebSocket sessions (server or client).
  * Provides a simple send/close/isActive API for WsSessionManager.
@@ -37,27 +49,51 @@ class WsSession(
 
     suspend fun sendEnvelope(envelope: WsEnvelope) {
         sendMutex.withLock {
-            val payload = envelope.payload
-            val chunkCount =
-                if (peerSupportsChunkedPayload && payload.size > WS_PAYLOAD_CHUNK_SIZE) {
-                    (payload.size + WS_PAYLOAD_CHUNK_SIZE - 1) / WS_PAYLOAD_CHUNK_SIZE
+            sendEnvelopeLocked(envelope)
+        }
+    }
+
+    /** Selects the negotiated limit and sends while holding this session's send lock. */
+    suspend fun sendEnvelopeWithPayloadLimits(
+        envelope: WsEnvelope,
+        singleFramePayloadLimit: Long,
+        chunkedPayloadLimit: Long,
+    ): WsPayloadSendResult =
+        sendMutex.withLock {
+            val payloadLimit =
+                if (peerSupportsChunkedPayload) {
+                    chunkedPayloadLimit
                 } else {
-                    1
+                    singleFramePayloadLimit
                 }
-            val baseHeader = authenticationContext?.createHeader(envelope) ?: envelope.toHeader()
-            val header =
-                if (chunkCount > 1) baseHeader.copy(payloadChunkCount = chunkCount) else baseHeader
-            session.send(Frame.Text(json.encodeToString(header)))
-            if (payload.isEmpty()) return@withLock
-            if (chunkCount == 1) {
-                session.send(Frame.Binary(true, payload))
+            if (envelope.payload.size > payloadLimit) {
+                return@withLock WsPayloadSendResult.PayloadTooLarge(envelope.payload.size, payloadLimit)
+            }
+            sendEnvelopeLocked(envelope)
+            WsPayloadSendResult.Sent
+        }
+
+    private suspend fun sendEnvelopeLocked(envelope: WsEnvelope) {
+        val payload = envelope.payload
+        val chunkCount =
+            if (peerSupportsChunkedPayload && payload.size > WS_PAYLOAD_CHUNK_SIZE) {
+                (payload.size + WS_PAYLOAD_CHUNK_SIZE - 1) / WS_PAYLOAD_CHUNK_SIZE
             } else {
-                var offset = 0
-                while (offset < payload.size) {
-                    val end = minOf(offset + WS_PAYLOAD_CHUNK_SIZE, payload.size)
-                    session.send(Frame.Binary(true, payload.copyOfRange(offset, end)))
-                    offset = end
-                }
+                1
+            }
+        val baseHeader = authenticationContext?.createHeader(envelope) ?: envelope.toHeader()
+        val header =
+            if (chunkCount > 1) baseHeader.copy(payloadChunkCount = chunkCount) else baseHeader
+        session.send(Frame.Text(json.encodeToString(header)))
+        if (payload.isEmpty()) return
+        if (chunkCount == 1) {
+            session.send(Frame.Binary(true, payload))
+        } else {
+            var offset = 0
+            while (offset < payload.size) {
+                val end = minOf(offset + WS_PAYLOAD_CHUNK_SIZE, payload.size)
+                session.send(Frame.Binary(true, payload.copyOfRange(offset, end)))
+                offset = end
             }
         }
     }

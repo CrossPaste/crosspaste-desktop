@@ -16,6 +16,7 @@ import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.ws.WS_MAX_FRAME_SIZE
 import com.crosspaste.net.ws.WS_MAX_PAYLOAD_SIZE
+import com.crosspaste.net.ws.WsPayloadSendResult
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
@@ -429,12 +430,21 @@ class SyncPasteTaskExecutorTest {
 
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
-            coEvery { deps.wsSessionManager.send(any(), any()) } returns true
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits(any(), any(), any(), any())
+            } returns WsPayloadSendResult.Sent
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
-            coVerify(exactly = 1) { deps.wsSessionManager.send("remote-1", any()) }
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits(
+                    "remote-1",
+                    any(),
+                    WS_MAX_FRAME_SIZE,
+                    WS_MAX_PAYLOAD_SIZE,
+                )
+            }
         }
 
     @Test
@@ -447,14 +457,18 @@ class SyncPasteTaskExecutorTest {
 
             val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
 
-            every { deps.wsSessionManager.supportsChunkedPayload("remote-1") } returns false
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            } returns WsPayloadSendResult.PayloadTooLarge(1024, 64)
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is FailurePasteTaskResult)
-            coVerify(exactly = 0) { deps.wsSessionManager.send(any(), any()) }
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            }
         }
 
     @Test
@@ -467,15 +481,18 @@ class SyncPasteTaskExecutorTest {
 
             val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
 
-            every { deps.wsSessionManager.supportsChunkedPayload("remote-1") } returns true
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
-            coEvery { deps.wsSessionManager.send(any(), any()) } returns true
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            } returns WsPayloadSendResult.Sent
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
-            coVerify(exactly = 1) { deps.wsSessionManager.send("remote-1", any()) }
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            }
         }
 
     @Test
@@ -489,14 +506,18 @@ class SyncPasteTaskExecutorTest {
 
             val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
 
-            every { deps.wsSessionManager.supportsChunkedPayload("remote-1") } returns true
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, 256)
+            } returns WsPayloadSendResult.PayloadTooLarge(1024, 256)
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is FailurePasteTaskResult)
-            coVerify(exactly = 0) { deps.wsSessionManager.send(any(), any()) }
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, 256)
+            }
         }
 
     @Test
@@ -514,15 +535,28 @@ class SyncPasteTaskExecutorTest {
                 )
             every { handler.currentSyncRuntimeInfo } returns extensionInfo
 
-            every { deps.wsSessionManager.supportsChunkedPayload("remote-1") } returns false
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
-            coEvery { deps.wsSessionManager.send(any(), any()) } returns true
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits(
+                    "remote-1",
+                    any(),
+                    WS_MAX_PAYLOAD_SIZE,
+                    WS_MAX_PAYLOAD_SIZE,
+                )
+            } returns WsPayloadSendResult.Sent
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
-            coVerify(exactly = 1) { deps.wsSessionManager.send("remote-1", any()) }
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits(
+                    "remote-1",
+                    any(),
+                    WS_MAX_PAYLOAD_SIZE,
+                    WS_MAX_PAYLOAD_SIZE,
+                )
+            }
         }
 
     @Test
@@ -542,10 +576,15 @@ class SyncPasteTaskExecutorTest {
             coEvery { deps.secureStore.getMessageProcessor("remote-1") } returns processor
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 1024, WS_MAX_PAYLOAD_SIZE)
+            } returns WsPayloadSendResult.PayloadTooLarge(2048, 1024)
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is FailurePasteTaskResult)
-            coVerify(exactly = 0) { deps.wsSessionManager.send(any(), any()) }
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 1024, WS_MAX_PAYLOAD_SIZE)
+            }
         }
 }

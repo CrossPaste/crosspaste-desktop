@@ -4,6 +4,7 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -155,5 +156,57 @@ class WsSessionManagerTest {
             assertTrue(mgr.probe("A"))
             assertEquals(emptyList(), fired)
             assertTrue(mgr.isConnected("A"))
+        }
+
+    @Test
+    fun sendWithPayloadLimits_legacySessionRejectsAboveSingleFrameLimit() =
+        runTest {
+            val mgr = WsSessionManager()
+            val activeJob = Job()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns activeJob
+                }
+            mgr.registerSession("A", WsSession(inner, "remote"))
+            val envelope = WsEnvelope(type = "test", payload = ByteArray(65))
+
+            val result =
+                mgr.sendWithPayloadLimits(
+                    appInstanceId = "A",
+                    envelope = envelope,
+                    singleFramePayloadLimit = 64,
+                    chunkedPayloadLimit = 128,
+                )
+
+            assertEquals(WsPayloadSendResult.PayloadTooLarge(65, 64), result)
+            coVerify(exactly = 0) { inner.send(any<Frame>()) }
+        }
+
+    @Test
+    fun sendWithPayloadLimits_chunkCapableSessionUsesChunkedLimitAndSends() =
+        runTest {
+            val mgr = WsSessionManager()
+            val activeJob = Job()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns activeJob
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(inner, "remote", peerSupportsChunkedPayload = true),
+            )
+            val envelope = WsEnvelope(type = "test", payload = ByteArray(65))
+
+            val result =
+                mgr.sendWithPayloadLimits(
+                    appInstanceId = "A",
+                    envelope = envelope,
+                    singleFramePayloadLimit = 64,
+                    chunkedPayloadLimit = 128,
+                )
+
+            assertEquals(WsPayloadSendResult.Sent, result)
+            coVerify(exactly = 1) { inner.send(any<Frame.Text>()) }
+            coVerify(exactly = 1) { inner.send(any<Frame.Binary>()) }
         }
 }
