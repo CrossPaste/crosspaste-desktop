@@ -21,6 +21,7 @@ import {
   type OversizePasteNotice,
 } from "@/shared/ws/ws-message-handler";
 import { buildTranslatorFromStorage } from "@/shared/i18n/i18n-core";
+import { createWsPayloadDecryptor } from "@/shared/ws/ws-payload-crypto";
 import { WsMessageType, simpleEnvelope } from "@/shared/ws/ws-types";
 import type { WsEnvelope } from "@/shared/ws/ws-types";
 import { ingestPaste } from "@/shared/paste/paste-ingestion";
@@ -451,8 +452,8 @@ async function syncAllDevices(): Promise<void> {
 }
 
 /**
- * Desktop reports DECRYPT_FAIL when our stored cryptPublicKey no longer
- * matches its own (e.g. desktop DB wipe, crypto rotation, or a reinstall).
+ * A failed encrypted response or WS payload means our stored cryptPublicKey no
+ * longer matches the desktop (e.g. desktop DB wipe, crypto rotation, or a reinstall).
  * Recover by wiping the key and flipping the device to UNVERIFIED so the
  * UI prompts the user to re-pair.
  */
@@ -559,10 +560,15 @@ async function initializeWebSocket(): Promise<void> {
   const appInstanceId = await getAppInstanceId();
   wsManager = new WsManager(appInstanceId);
 
+  const wsPayloadDecryptor = createWsPayloadDecryptor();
+
   const wsMessageHandler = createWsMessageHandler({
     sendToDevice: async (targetId, envelope) => {
       await wsManager?.send(targetId, envelope);
     },
+    decryptFromDevice: (targetId, payload) =>
+      wsPayloadDecryptor.decryptFromDevice(targetId, payload),
+    onDecryptFailure: handleDecryptFail,
     sendRequest: async (targetId, envelope) => {
       if (!wsManager) throw new Error("WsManager not initialized");
       return wsManager.sendRequest(targetId, envelope);
