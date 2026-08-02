@@ -51,6 +51,7 @@ function makeDeps(overrides: Partial<WsMessageHandlerDeps> = {}): WsMessageHandl
     onRemoteRemoveDevice: vi.fn(async () => {}),
     showOversizePasteNotice: vi.fn(async () => {}),
     decryptFromDevice: vi.fn(async (_id, payload) => payload),
+    onDecryptFailure: vi.fn(async () => {}),
     ...overrides,
   };
 }
@@ -82,6 +83,7 @@ describe("encrypted WS envelope handling", () => {
     expect(ingestPaste).toHaveBeenCalledTimes(1);
     expect(vi.mocked(ingestPaste).mock.calls[0][0]).toMatchObject({ id: 1, hash: "abc" });
     expect(deps.updateDeviceStatus).toHaveBeenCalledWith("device-1", "synced");
+    expect(deps.onDecryptFailure).not.toHaveBeenCalled();
   });
 
   it("passes plaintext paste_push through without calling the decryptor", async () => {
@@ -97,9 +99,10 @@ describe("encrypted WS envelope handling", () => {
 
     expect(deps.decryptFromDevice).not.toHaveBeenCalled();
     expect(ingestPaste).toHaveBeenCalledTimes(1);
+    expect(deps.onDecryptFailure).not.toHaveBeenCalled();
   });
 
-  it("drops the message when decryption fails", async () => {
+  it("marks the peer for re-pairing and drops the message when decryption fails", async () => {
     const deps = makeDeps({
       decryptFromDevice: vi.fn(async () => {
         throw new Error("no key material");
@@ -116,5 +119,7 @@ describe("encrypted WS envelope handling", () => {
 
     expect(ingestPaste).not.toHaveBeenCalled();
     expect(deps.updateDeviceStatus).not.toHaveBeenCalled();
+    expect(deps.onDecryptFailure).toHaveBeenCalledOnce();
+    expect(deps.onDecryptFailure).toHaveBeenCalledWith("device-1");
   });
 });

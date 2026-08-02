@@ -113,6 +113,8 @@ export interface WsMessageHandlerDeps {
    * setting). Throws when the device has no trusted key material.
    */
   decryptFromDevice: (appInstanceId: string, payload: Uint8Array) => Promise<Uint8Array>;
+  /** Mark the peer for re-pairing when its encrypted payload cannot be decrypted. */
+  onDecryptFailure: (appInstanceId: string) => Promise<void>;
 }
 
 /**
@@ -131,6 +133,7 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
             `[WsHandler] Failed to decrypt ${envelope.type} from ${appInstanceId}:`,
             e,
           );
+          await deps.onDecryptFailure(appInstanceId);
           return;
         }
       }

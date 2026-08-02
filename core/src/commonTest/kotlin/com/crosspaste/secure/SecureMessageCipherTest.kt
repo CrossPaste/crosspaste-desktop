@@ -6,7 +6,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertFails
+import kotlin.test.assertTrue
 
 class SecureMessageCipherTest {
 
@@ -28,7 +28,7 @@ class SecureMessageCipherTest {
         }
 
     @Test
-    fun `decrypt fails for a non-peer key pair`() =
+    fun `non-peer key pair cannot recover plaintext`() =
         runTest {
             val first = CryptographyUtils.generateSecureKeyPair()
             val second = CryptographyUtils.generateSecureKeyPair()
@@ -38,9 +38,16 @@ class SecureMessageCipherTest {
             val strangerCipher =
                 SecureMessageCipher(third.cryptKeyPair.privateKey, first.cryptKeyPair.publicKey)
 
-            val ciphertext = senderCipher.encrypt("secret".encodeToByteArray())
+            val plaintext = "secret".encodeToByteArray()
+            val ciphertext = senderCipher.encrypt(plaintext)
 
-            assertFails { strangerCipher.decrypt(ciphertext) }
+            // AES-CBC with a wrong key usually rejects invalid padding, but it can
+            // occasionally produce valid padding and return unrelated plaintext.
+            val result = runCatching { strangerCipher.decrypt(ciphertext) }
+            assertTrue(
+                result.isFailure || !result.getOrThrow().contentEquals(plaintext),
+                "A non-peer key pair must not recover the original plaintext",
+            )
         }
 
     /**

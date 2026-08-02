@@ -452,8 +452,8 @@ async function syncAllDevices(): Promise<void> {
 }
 
 /**
- * Desktop reports DECRYPT_FAIL when our stored cryptPublicKey no longer
- * matches its own (e.g. desktop DB wipe, crypto rotation, or a reinstall).
+ * A failed encrypted response or WS payload means our stored cryptPublicKey no
+ * longer matches the desktop (e.g. desktop DB wipe, crypto rotation, or a reinstall).
  * Recover by wiping the key and flipping the device to UNVERIFIED so the
  * UI prompts the user to re-pair.
  */
@@ -568,6 +568,7 @@ async function initializeWebSocket(): Promise<void> {
     },
     decryptFromDevice: (targetId, payload) =>
       wsPayloadDecryptor.decryptFromDevice(targetId, payload),
+    onDecryptFailure: handleDecryptFail,
     sendRequest: async (targetId, envelope) => {
       if (!wsManager) throw new Error("WsManager not initialized");
       return wsManager.sendRequest(targetId, envelope);
