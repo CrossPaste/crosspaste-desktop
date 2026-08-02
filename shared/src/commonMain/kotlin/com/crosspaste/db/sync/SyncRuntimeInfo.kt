@@ -6,6 +6,7 @@ import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
+import kotlin.concurrent.Volatile
 
 @Serializable
 data class SyncRuntimeInfo(
@@ -33,6 +34,14 @@ data class SyncRuntimeInfo(
 
         private val jsonUtils = getJsonUtils()
 
+        // The mapper re-runs for every collector on every table change, so a
+        // persistently corrupted row would repeat the same warning forever;
+        // warn once per appInstanceId per process instead. Copy-on-write
+        // behind @Volatile keeps shared/commonMain dependency-free — the
+        // dedup is best-effort and a racing read may at worst warn twice.
+        @Volatile
+        private var warnedCorruptedHostInfo: Set<String> = emptySet()
+
         /**
          * Row-level tolerance for corrupted hostInfo JSON: one undecodable row
          * must not abort the whole device-list query (and with it every
@@ -49,9 +58,12 @@ data class SyncRuntimeInfo(
             try {
                 jsonUtils.JSON.decodeFromString(hostInfo)
             } catch (e: IllegalArgumentException) {
-                logger.warn {
-                    "Corrupted hostInfo JSON (${e::class.simpleName}) for " +
-                        "appInstanceId=${appInstanceId.take(8)}…, degrading to empty host list"
+                if (appInstanceId !in warnedCorruptedHostInfo) {
+                    warnedCorruptedHostInfo = warnedCorruptedHostInfo + appInstanceId
+                    logger.warn {
+                        "Corrupted hostInfo JSON (${e::class.simpleName}) for " +
+                            "appInstanceId=${appInstanceId.take(8)}..., degrading to empty host list"
+                    }
                 }
                 emptyList()
             }
