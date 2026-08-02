@@ -1,6 +1,7 @@
 package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.net.SyncApi
 import com.crosspaste.net.ws.WS_AUTHENTICATION_TIMEOUT
 import com.crosspaste.net.ws.WsAuthChallenge
 import com.crosspaste.net.ws.WsAuthProof
@@ -9,6 +10,7 @@ import com.crosspaste.net.ws.WsAuthenticationContext
 import com.crosspaste.net.ws.WsEnvelope
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsMessageType
+import com.crosspaste.net.ws.WsServerAuthentication
 import com.crosspaste.net.ws.WsSession
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.net.ws.receiveWsEnvelope
@@ -54,7 +56,7 @@ fun Routing.wsRouting(
 
         val authenticationRequested =
             call.request.queryParameters["authVersion"] == WsAuthenticationCodec.VERSION.toString()
-        val authenticationContext =
+        val serverAuthentication =
             if (authenticationRequested) {
                 authenticateWebSocketPeer(appInfo, appInstanceId, secureStore) ?: return@webSocket
             } else {
@@ -66,9 +68,17 @@ fun Routing.wsRouting(
                 logger.warn { "Allowing legacy unauthenticated WebSocket from loopback for $appInstanceId" }
                 null
             }
+        val authenticationContext = serverAuthentication?.context
 
         logger.info { "WebSocket connected: $appInstanceId → ${appInfo.appInstanceId}" }
-        val wsSession = WsSession(this, appInstanceId, authenticationContext)
+        val wsSession =
+            WsSession(
+                this,
+                appInstanceId,
+                authenticationContext,
+                peerSupportsChunkedPayload =
+                    SyncApi.supportsPairingV3(serverAuthentication?.remotePairingVersion),
+            )
         wsSessionManager.registerSession(appInstanceId, wsSession)
 
         try {
@@ -84,7 +94,7 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
     appInfo: AppInfo,
     appInstanceId: String,
     secureStore: SecureStore,
-): WsAuthenticationContext? {
+): WsServerAuthentication? {
     val json = getJsonUtils().JSON
     val processor = runCatching { secureStore.getMessageProcessor(appInstanceId) }.getOrNull()
     if (processor == null) {
@@ -96,6 +106,7 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
         WsAuthChallenge(
             sessionId = getCodecsUtils().base64Encode(CryptographyRandom.nextBytes(16)),
             nonce = CryptographyRandom.nextBytes(32),
+            pairingVersion = appInfo.pairingVersion,
         )
     rawSession.sendEnvelope(
         WsEnvelope(
@@ -135,11 +146,15 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
             payload = json.encodeToString(ack).encodeToByteArray(),
         ),
     )
-    return WsAuthenticationContext(
-        sessionId = challenge.sessionId,
-        localAppInstanceId = appInfo.appInstanceId,
-        remoteAppInstanceId = appInstanceId,
-        processor = processor,
+    return WsServerAuthentication(
+        context =
+            WsAuthenticationContext(
+                sessionId = challenge.sessionId,
+                localAppInstanceId = appInfo.appInstanceId,
+                remoteAppInstanceId = appInstanceId,
+                processor = processor,
+            ),
+        remotePairingVersion = proof.pairingVersion,
     )
 }
 

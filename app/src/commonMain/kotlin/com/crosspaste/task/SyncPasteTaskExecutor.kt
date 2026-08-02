@@ -17,6 +17,8 @@ import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.net.filter
+import com.crosspaste.net.ws.WS_MAX_FRAME_SIZE
+import com.crosspaste.net.ws.WS_MAX_PAYLOAD_SIZE
 import com.crosspaste.net.ws.WsEnvelope
 import com.crosspaste.net.ws.WsMessageType
 import com.crosspaste.net.ws.WsSessionManager
@@ -46,6 +48,8 @@ class SyncPasteTaskExecutor(
     private val secureStore: SecureStore,
     private val syncManager: SyncManager,
     private val wsSessionManager: WsSessionManager,
+    private val wsSingleFramePayloadLimit: Long = WS_MAX_FRAME_SIZE,
+    private val wsChunkedPayloadLimit: Long = WS_MAX_PAYLOAD_SIZE,
 ) : SingleTypeTaskExecutor {
 
     private val logger = KotlinLogging.logger {}
@@ -228,7 +232,7 @@ class SyncPasteTaskExecutor(
 
         // 1. Extension targets always use WebSocket
         if (syncRuntimeInfo.platform.isExtension()) {
-            return trySendViaWebSocket(targetAppInstanceId, pasteData)
+            return trySendViaWebSocket(targetAppInstanceId, pasteData, isExtensionTarget = true)
                 ?: createFailureResult(
                     StandardErrorCode.SYNC_PASTE_ERROR,
                     "WebSocket send failed for extension $handlerKey",
@@ -248,7 +252,7 @@ class SyncPasteTaskExecutor(
         }
 
         // 3. No host address — fall back to WebSocket
-        return trySendViaWebSocket(targetAppInstanceId, pasteData)
+        return trySendViaWebSocket(targetAppInstanceId, pasteData, isExtensionTarget = false)
             ?: createFailureResult(
                 StandardErrorCode.CANT_GET_SYNC_ADDRESS,
                 "Failed to get connect host address by $handlerKey and WebSocket unavailable",
@@ -258,6 +262,7 @@ class SyncPasteTaskExecutor(
     private suspend fun trySendViaWebSocket(
         targetAppInstanceId: String,
         pasteData: PasteData,
+        isExtensionTarget: Boolean,
     ): ClientApiResult? =
         runCatching {
             val jsonBytes = getJsonUtils().JSON.encodeToString(pasteData).encodeToByteArray()
@@ -268,6 +273,29 @@ class SyncPasteTaskExecutor(
                 } else {
                     jsonBytes
                 }
+            // A payload the receiver cannot accept is never delivered — an oversized
+            // frame makes the receiver tear down the whole connection (1009 TOO_BIG)
+            // while the local write still succeeds — so fail definitively instead of
+            // reporting success. Peers that advertised chunked-payload support take
+            // the message-level cap; legacy native peers are bound by their 1 MiB
+            // receive frame limit. Extension targets are browser clients on loopback
+            // with no receive frame cap, so only the message-level cap applies.
+            val payloadLimit =
+                if (isExtensionTarget || wsSessionManager.supportsChunkedPayload(targetAppInstanceId)) {
+                    wsChunkedPayloadLimit
+                } else {
+                    wsSingleFramePayloadLimit
+                }
+            if (payload.size > payloadLimit) {
+                logger.warn {
+                    "WS paste push to $targetAppInstanceId rejected: " +
+                        "payload ${payload.size} bytes exceeds limit $payloadLimit"
+                }
+                return createFailureResult(
+                    StandardErrorCode.SYNC_PASTE_ERROR,
+                    "Paste payload ${payload.size} bytes exceeds WebSocket limit for $targetAppInstanceId",
+                )
+            }
             val envelope =
                 WsEnvelope(
                     type = WsMessageType.PASTE_PUSH,

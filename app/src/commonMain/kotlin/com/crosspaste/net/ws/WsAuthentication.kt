@@ -8,17 +8,34 @@ import kotlin.time.Duration.Companion.seconds
 
 internal val WS_AUTHENTICATION_TIMEOUT = 5.seconds
 
+/**
+ * [pairingVersion] on the challenge (server → client) and proof (client →
+ * server) is each side's advertised pairing version (AppInfo.pairingVersion);
+ * a peer advertising >= 3 accepts chunked envelope payloads. The field is
+ * deliberately NOT part of the handshake MAC ([WsAuthenticationCodec] canonical
+ * fields are frozen for legacy compatibility): a tampered or stripped value can
+ * only downgrade to single-frame or break the connection, never alter accepted
+ * data — every envelope payload carries its own authentication code.
+ */
 @Serializable
 data class WsAuthChallenge(
     val sessionId: String,
     @Serializable(with = Base64ByteArraySerializer::class)
     val nonce: ByteArray,
+    val pairingVersion: Int? = null,
 )
 
 @Serializable
 data class WsAuthProof(
     @Serializable(with = Base64ByteArraySerializer::class)
     val authenticationCode: ByteArray,
+    val pairingVersion: Int? = null,
+)
+
+/** Result of the server-side WebSocket handshake: the MAC context plus what the peer advertised. */
+data class WsServerAuthentication(
+    val context: WsAuthenticationContext,
+    val remotePairingVersion: Int?,
 )
 
 class WsAuthenticationContext(

@@ -19,9 +19,7 @@ suspend fun receiveWsEnvelope(incoming: ReceiveChannel<Frame>): ReceivedWsEnvelo
                 val header = json.decodeFromString<WsEnvelopeHeader>(frame.readText())
                 val payload =
                     if (header.hasPayload) {
-                        val payloadFrame = incoming.receiveCatching().getOrNull()
-                        require(payloadFrame is Frame.Binary) { "Expected binary WebSocket payload" }
-                        payloadFrame.readBytes()
+                        receiveChunkedPayload(incoming, header.payloadChunkCount)
                     } else {
                         byteArrayOf()
                     }
@@ -41,4 +39,33 @@ suspend fun receiveWsEnvelope(incoming: ReceiveChannel<Frame>): ReceivedWsEnvelo
             else -> Unit
         }
     }
+}
+
+private suspend fun receiveChunkedPayload(
+    incoming: ReceiveChannel<Frame>,
+    chunkCount: Int,
+): ByteArray {
+    require(chunkCount in 1..WS_MAX_PAYLOAD_CHUNK_COUNT) {
+        "Invalid WebSocket payload chunk count: $chunkCount"
+    }
+    val chunks = ArrayList<ByteArray>(chunkCount)
+    var totalSize = 0L
+    repeat(chunkCount) {
+        val payloadFrame = incoming.receiveCatching().getOrNull()
+        require(payloadFrame is Frame.Binary) { "Expected binary WebSocket payload" }
+        val bytes = payloadFrame.readBytes()
+        totalSize += bytes.size
+        require(totalSize <= WS_MAX_PAYLOAD_SIZE) {
+            "WebSocket payload exceeds $WS_MAX_PAYLOAD_SIZE bytes"
+        }
+        chunks.add(bytes)
+    }
+    if (chunks.size == 1) return chunks[0]
+    val payload = ByteArray(totalSize.toInt())
+    var offset = 0
+    for (chunk in chunks) {
+        chunk.copyInto(payload, offset)
+        offset += chunk.size
+    }
+    return payload
 }

@@ -194,12 +194,157 @@ class WsAuthenticationIntegrationTest {
             }
         }
 
-    private fun appInfo(id: String): AppInfo =
+    @Test
+    fun `pairing v3 peers negotiate chunked payload and round-trip a large envelope`() =
+        runBlocking {
+            val serializer = SecureKeyPairSerializer()
+            val serverKeys = CryptographyUtils.generateSecureKeyPair()
+            val clientKeys = CryptographyUtils.generateSecureKeyPair()
+            val serverStore = GeneralSecureStore(serverKeys, serializer, MemorySecureIO())
+            val clientStore = GeneralSecureStore(clientKeys, serializer, MemorySecureIO())
+            val serverInfo = appInfo("chunk-server", pairingVersion = 3)
+            val clientInfo = appInfo("chunk-client", pairingVersion = 3)
+            serverStore.saveCryptPublicKey(
+                clientInfo.appInstanceId,
+                serializer.encodeCryptPublicKey(clientKeys.cryptKeyPair.publicKey),
+            )
+            clientStore.saveCryptPublicKey(
+                serverInfo.appInstanceId,
+                serializer.encodeCryptPublicKey(serverKeys.cryptKeyPair.publicKey),
+            )
+
+            val serverSessions = WsSessionManager()
+            val clientSessions = WsSessionManager()
+            val serverHandler = mockk<WsMessageHandler>(relaxed = true)
+            val clientHandler = mockk<WsMessageHandler>(relaxed = true)
+            val server =
+                DesktopPasteServer(
+                    TestReadWritePort(),
+                    DesktopExceptionHandler(),
+                    DesktopServerFactory(),
+                    AuthenticatedWsServerModule(serverInfo, serverStore, serverSessions, serverHandler),
+                )
+            val httpClient = HttpClient(CIO) { install(WebSockets) }
+            val connector =
+                WsClientConnector(
+                    appInfo = clientInfo,
+                    client = httpClient,
+                    secureStore = clientStore,
+                    wsSessionManager = clientSessions,
+                    wsMessageHandler = clientHandler,
+                )
+
+            try {
+                server.start()
+                connector.connectAsync("127.0.0.1", server.port(), serverInfo.appInstanceId)
+                withTimeout(5.seconds) {
+                    while (!clientSessions.isConnected(serverInfo.appInstanceId) ||
+                        !serverSessions.isConnected(clientInfo.appInstanceId)
+                    ) {
+                        delay(10.milliseconds)
+                    }
+                }
+
+                assertTrue(clientSessions.supportsChunkedPayload(serverInfo.appInstanceId))
+                assertTrue(serverSessions.supportsChunkedPayload(clientInfo.appInstanceId))
+
+                // Larger than the server's 1 MiB receive frame limit — only
+                // deliverable when actually split into chunked frames
+                val payload = ByteArray(WS_PAYLOAD_CHUNK_SIZE * 2 + 12345) { (it % 251).toByte() }
+                assertTrue(
+                    clientSessions.send(
+                        serverInfo.appInstanceId,
+                        WsEnvelope(type = "chunk-test", payload = payload),
+                    ),
+                )
+                coVerify(timeout = 10_000) {
+                    serverHandler.handleMessage(
+                        clientInfo.appInstanceId,
+                        match { it.type == "chunk-test" && it.payload.contentEquals(payload) },
+                    )
+                }
+            } finally {
+                clientSessions.closeAll()
+                serverSessions.closeAll()
+                httpClient.close()
+                server.stop()
+            }
+        }
+
+    @Test
+    fun `peers without pairing v3 stay single-frame`() =
+        runBlocking {
+            val serializer = SecureKeyPairSerializer()
+            val serverKeys = CryptographyUtils.generateSecureKeyPair()
+            val clientKeys = CryptographyUtils.generateSecureKeyPair()
+            val serverStore = GeneralSecureStore(serverKeys, serializer, MemorySecureIO())
+            val clientStore = GeneralSecureStore(clientKeys, serializer, MemorySecureIO())
+            val serverInfo = appInfo("legacy-frame-server")
+            val clientInfo = appInfo("legacy-frame-client")
+            serverStore.saveCryptPublicKey(
+                clientInfo.appInstanceId,
+                serializer.encodeCryptPublicKey(clientKeys.cryptKeyPair.publicKey),
+            )
+            clientStore.saveCryptPublicKey(
+                serverInfo.appInstanceId,
+                serializer.encodeCryptPublicKey(serverKeys.cryptKeyPair.publicKey),
+            )
+
+            val serverSessions = WsSessionManager()
+            val clientSessions = WsSessionManager()
+            val server =
+                DesktopPasteServer(
+                    TestReadWritePort(),
+                    DesktopExceptionHandler(),
+                    DesktopServerFactory(),
+                    AuthenticatedWsServerModule(
+                        serverInfo,
+                        serverStore,
+                        serverSessions,
+                        mockk(relaxed = true),
+                    ),
+                )
+            val httpClient = HttpClient(CIO) { install(WebSockets) }
+            val connector =
+                WsClientConnector(
+                    appInfo = clientInfo,
+                    client = httpClient,
+                    secureStore = clientStore,
+                    wsSessionManager = clientSessions,
+                    wsMessageHandler = mockk(relaxed = true),
+                )
+
+            try {
+                server.start()
+                connector.connectAsync("127.0.0.1", server.port(), serverInfo.appInstanceId)
+                withTimeout(5.seconds) {
+                    while (!clientSessions.isConnected(serverInfo.appInstanceId) ||
+                        !serverSessions.isConnected(clientInfo.appInstanceId)
+                    ) {
+                        delay(10.milliseconds)
+                    }
+                }
+
+                assertTrue(!clientSessions.supportsChunkedPayload(serverInfo.appInstanceId))
+                assertTrue(!serverSessions.supportsChunkedPayload(clientInfo.appInstanceId))
+            } finally {
+                clientSessions.closeAll()
+                serverSessions.closeAll()
+                httpClient.close()
+                server.stop()
+            }
+        }
+
+    private fun appInfo(
+        id: String,
+        pairingVersion: Int? = null,
+    ): AppInfo =
         AppInfo(
             appInstanceId = id,
             appVersion = "test",
             appRevision = "test",
             userName = id,
+            pairingVersion = pairingVersion,
         )
 }
 
@@ -211,7 +356,9 @@ private class AuthenticatedWsServerModule(
 ) : ServerModule {
     override fun installModules(): Application.() -> Unit =
         {
-            install(io.ktor.server.websocket.WebSockets)
+            install(io.ktor.server.websocket.WebSockets) {
+                maxFrameSize = WS_MAX_FRAME_SIZE
+            }
             routing {
                 wsRouting(appInfo, secureStore, sessionManager, messageHandler)
             }

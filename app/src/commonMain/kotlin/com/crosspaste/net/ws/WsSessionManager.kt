@@ -49,6 +49,9 @@ class WsSessionManager {
 
     fun isConnected(appInstanceId: String): Boolean = sessions[appInstanceId]?.isActive == true
 
+    fun supportsChunkedPayload(appInstanceId: String): Boolean =
+        sessions[appInstanceId]?.peerSupportsChunkedPayload == true
+
     suspend fun probe(appInstanceId: String): Boolean {
         val session = sessions[appInstanceId] ?: return false
         if (!session.isActive) {
