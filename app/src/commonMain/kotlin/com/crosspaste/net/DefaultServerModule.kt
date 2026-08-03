@@ -17,6 +17,7 @@ import com.crosspaste.net.routing.pullRouting
 import com.crosspaste.net.routing.pushRouting
 import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.net.routing.wsRouting
+import com.crosspaste.net.ws.WS_MAX_FRAME_SIZE
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
@@ -91,7 +92,7 @@ open class DefaultServerModule(
             install(io.ktor.server.websocket.WebSockets) {
                 pingPeriodMillis = 30_000
                 timeoutMillis = 15_000
-                maxFrameSize = 1024 * 1024
+                maxFrameSize = WS_MAX_FRAME_SIZE
             }
             install(serverEncryptPluginFactory.createPlugin())
             install(serverDecryptionPluginFactory.createPlugin())

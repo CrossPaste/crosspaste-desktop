@@ -14,12 +14,21 @@ import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.PasteClientApi
 import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.net.ws.WS_MAX_FRAME_SIZE
+import com.crosspaste.net.ws.WS_MAX_PAYLOAD_SIZE
+import com.crosspaste.net.ws.WsPayloadSendResult
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.platform.Platform
+import com.crosspaste.secure.SecureMessageProcessor
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.sync.SyncTestFixtures
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
@@ -54,8 +63,9 @@ class SyncPasteTaskExecutorTest {
                 every { isConnected(any()) } returns false
             }
 
+        val config = mockk<AppConfig>(relaxed = true)
+
         init {
-            val config = mockk<AppConfig>(relaxed = true)
             every { config.enableSyncText } returns true
             every { config.enableSyncUrl } returns true
             every { config.enableSyncHtml } returns true
@@ -68,7 +78,10 @@ class SyncPasteTaskExecutorTest {
             coEvery { appControl.isSendEnabled() } returns true
         }
 
-        fun createExecutor(): SyncPasteTaskExecutor =
+        fun createExecutor(
+            wsSingleFramePayloadLimit: Long = WS_MAX_FRAME_SIZE,
+            wsChunkedPayloadLimit: Long = WS_MAX_PAYLOAD_SIZE,
+        ): SyncPasteTaskExecutor =
             SyncPasteTaskExecutor(
                 appControl = appControl,
                 appInfo = appInfo,
@@ -78,6 +91,8 @@ class SyncPasteTaskExecutorTest {
                 secureStore = secureStore,
                 syncManager = syncManager,
                 wsSessionManager = wsSessionManager,
+                wsSingleFramePayloadLimit = wsSingleFramePayloadLimit,
+                wsChunkedPayloadLimit = wsChunkedPayloadLimit,
             )
     }
 
@@ -100,6 +115,21 @@ class SyncPasteTaskExecutorTest {
         val pasteData = mockk<PasteData>(relaxed = true)
         every { pasteData.getType() } returns pasteType
         return pasteData
+    }
+
+    private fun createRealTextPasteData(text: String): PasteData {
+        val textItem = createTextPasteItem(identifiers = listOf("text"), text = text)
+        return PasteData(
+            appInstanceId = "local-app-1",
+            pasteAppearItem = textItem,
+            pasteCollection = PasteCollection(listOf()),
+            pasteType = PasteType.TEXT_TYPE.type,
+            source = null,
+            size = textItem.size,
+            hash = textItem.hash,
+            pasteState = PasteState.LOADED,
+            createTime = 0L,
+        )
     }
 
     private fun createMockSyncHandler(
@@ -384,5 +414,177 @@ class SyncPasteTaskExecutorTest {
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
+        }
+
+    // ========== E. WebSocket fallback ==========
+
+    @Test
+    fun doExecuteTask_wsPayloadWithinLimit_sendsViaWebSocket() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task = createPasteTask()
+            val pasteData = createRealTextPasteData("hello ws")
+
+            val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits(any(), any(), any(), any())
+            } returns WsPayloadSendResult.Sent
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is SuccessPasteTaskResult)
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits(
+                    "remote-1",
+                    any(),
+                    WS_MAX_FRAME_SIZE,
+                    WS_MAX_PAYLOAD_SIZE,
+                )
+            }
+        }
+
+    @Test
+    fun doExecuteTask_legacyPeerPayloadExceedsSingleFrameLimit_failsWithoutSending() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor(wsSingleFramePayloadLimit = 64)
+            val task = createPasteTask()
+            val pasteData = createRealTextPasteData("x".repeat(1024))
+
+            val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            } returns WsPayloadSendResult.PayloadTooLarge(1024, 64)
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is FailurePasteTaskResult)
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            }
+        }
+
+    @Test
+    fun doExecuteTask_chunkCapablePeer_sendsPayloadAboveSingleFrameLimit() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor(wsSingleFramePayloadLimit = 64)
+            val task = createPasteTask()
+            val pasteData = createRealTextPasteData("x".repeat(1024))
+
+            val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            } returns WsPayloadSendResult.Sent
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is SuccessPasteTaskResult)
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, WS_MAX_PAYLOAD_SIZE)
+            }
+        }
+
+    @Test
+    fun doExecuteTask_chunkCapablePeerPayloadExceedsMessageLimit_failsWithoutSending() =
+        runTest {
+            val deps = TestDeps()
+            val executor =
+                deps.createExecutor(wsSingleFramePayloadLimit = 64, wsChunkedPayloadLimit = 256)
+            val task = createPasteTask()
+            val pasteData = createRealTextPasteData("x".repeat(1024))
+
+            val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, 256)
+            } returns WsPayloadSendResult.PayloadTooLarge(1024, 256)
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is FailurePasteTaskResult)
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 64, 256)
+            }
+        }
+
+    @Test
+    fun doExecuteTask_extensionTarget_toleratesPayloadAboveSingleFrameLimit() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor(wsSingleFramePayloadLimit = 64)
+            val task = createPasteTask()
+            val pasteData = createRealTextPasteData("x".repeat(1024))
+
+            val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
+            val extensionInfo =
+                handler.currentSyncRuntimeInfo.copy(
+                    platform = SyncTestFixtures.TEST_PLATFORM.copy(name = Platform.CHROME_EXTENSION),
+                )
+            every { handler.currentSyncRuntimeInfo } returns extensionInfo
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits(
+                    "remote-1",
+                    any(),
+                    WS_MAX_PAYLOAD_SIZE,
+                    WS_MAX_PAYLOAD_SIZE,
+                )
+            } returns WsPayloadSendResult.Sent
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is SuccessPasteTaskResult)
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits(
+                    "remote-1",
+                    any(),
+                    WS_MAX_PAYLOAD_SIZE,
+                    WS_MAX_PAYLOAD_SIZE,
+                )
+            }
+        }
+
+    @Test
+    fun doExecuteTask_encryptedPayloadExceedsSingleFrameLimit_failsWithoutSending() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor(wsSingleFramePayloadLimit = 1024)
+            val task = createPasteTask()
+            // Plaintext JSON stays under the limit; only the encrypted payload exceeds it
+            val pasteData = createRealTextPasteData("short text")
+
+            val handler = createMockSyncHandler("remote-1", connectHostAddress = null)
+            val processor = mockk<SecureMessageProcessor>()
+            every { processor.encrypt(any()) } returns ByteArray(2048)
+
+            every { deps.config.enableEncryptSync } returns true
+            coEvery { deps.secureStore.getMessageProcessor("remote-1") } returns processor
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
+            coEvery {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 1024, WS_MAX_PAYLOAD_SIZE)
+            } returns WsPayloadSendResult.PayloadTooLarge(2048, 1024)
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is FailurePasteTaskResult)
+            coVerify(exactly = 1) {
+                deps.wsSessionManager.sendWithPayloadLimits("remote-1", any(), 1024, WS_MAX_PAYLOAD_SIZE)
+            }
         }
 }

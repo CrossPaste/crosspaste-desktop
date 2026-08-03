@@ -4,8 +4,51 @@ import com.crosspaste.serializer.Base64ByteArraySerializer
 import kotlinx.serialization.Serializable
 
 /**
+ * Upper bound for a single WebSocket frame. Native pairing v2 intentionally
+ * keeps its 1 MiB WebSocket payload contract even when a particular client
+ * implementation can receive a larger frame; native file bytes use the HTTPS
+ * pull/push path, and the WebSocket file-pull fallback stays within this
+ * limit by serving 1 MiB chunks. Pairing v3 raises the logical-message limit
+ * through negotiated chunking rather than a larger frame. A frame over the
+ * receiver's limit does not just drop that message — Ktor tears down the
+ * whole connection (1009 TOO_BIG) while the sender's local write still
+ * succeeds.
+ */
+const val WS_MAX_FRAME_SIZE: Long = 1024L * 1024
+
+/**
+ * Size of each Binary frame when a payload is sent chunked. Matches
+ * [WS_MAX_FRAME_SIZE] exactly — Ktor's receive check is strictly
+ * greater-than, the same boundary FilePullService's 1 MiB chunks already
+ * rely on. Keeping frames small also lets ping/pong interleave between
+ * chunks, so heartbeats are not starved during a large transfer on a slow
+ * link.
+ */
+const val WS_PAYLOAD_CHUNK_SIZE: Int = 1024 * 1024
+
+/**
+ * Upper bound for a complete (reassembled) payload. Sized as 2x the largest
+ * configurable non-file paste (maxNonFilePasteSize, capped at 64 MiB in
+ * settings) to cover typical JSON string escaping plus encryption overhead;
+ * pathological escaping (control-character-heavy content inflates up to 6x)
+ * can still exceed it, in which case the sender guard fails the push cleanly.
+ */
+const val WS_MAX_PAYLOAD_SIZE: Long = 128L * 1024 * 1024
+
+/** Maximum accepted [WsEnvelopeHeader.payloadChunkCount], derived from the two limits above. */
+const val WS_MAX_PAYLOAD_CHUNK_COUNT: Int = (WS_MAX_PAYLOAD_SIZE / WS_PAYLOAD_CHUNK_SIZE).toInt()
+
+/**
  * Wire header sent as a Text frame (JSON).
- * When [hasPayload] is true, the next frame MUST be a Binary frame containing the payload bytes.
+ * When [hasPayload] is true, the next [payloadChunkCount] frames MUST be Binary
+ * frames whose concatenation is the payload bytes.
+ *
+ * [payloadChunkCount] > 1 may only be sent to a peer that advertised pairing
+ * version >= 3 during the WebSocket authentication handshake; legacy peers
+ * ignore the field (ignoreUnknownKeys) and always receive a single Binary
+ * frame. The count is not covered by the per-message authentication code, but
+ * tampering with it only desynchronizes reassembly, which the payload MAC then
+ * rejects — it cannot alter accepted data.
  */
 @Serializable
 data class WsEnvelopeHeader(
@@ -17,6 +60,7 @@ data class WsEnvelopeHeader(
     val authSequence: Long? = null,
     @Serializable(with = Base64ByteArraySerializer::class)
     val authenticationCode: ByteArray? = null,
+    val payloadChunkCount: Int = 1,
 )
 
 /**

@@ -49,6 +49,9 @@ class WsSessionManager {
 
     fun isConnected(appInstanceId: String): Boolean = sessions[appInstanceId]?.isActive == true
 
+    fun supportsChunkedPayload(appInstanceId: String): Boolean =
+        sessions[appInstanceId]?.peerSupportsChunkedPayload == true
+
     suspend fun probe(appInstanceId: String): Boolean {
         val session = sessions[appInstanceId] ?: return false
         if (!session.isActive) {
@@ -90,5 +93,29 @@ class WsSessionManager {
             logger.warn(e) { "WebSocket send failed for $appInstanceId" }
             notifySessionClosed(appInstanceId, session)
         }.getOrDefault(false)
+    }
+
+    /**
+     * Validates and sends against the same session snapshot. Keeping these
+     * operations together prevents a reconnect from replacing a chunk-capable
+     * session with a legacy session between capability inspection and send.
+     */
+    suspend fun sendWithPayloadLimits(
+        appInstanceId: String,
+        envelope: WsEnvelope,
+        singleFramePayloadLimit: Long,
+        chunkedPayloadLimit: Long,
+    ): WsPayloadSendResult {
+        val session = sessions[appInstanceId] ?: return WsPayloadSendResult.Failed
+        return runCatching {
+            session.sendEnvelopeWithPayloadLimits(
+                envelope = envelope,
+                singleFramePayloadLimit = singleFramePayloadLimit,
+                chunkedPayloadLimit = chunkedPayloadLimit,
+            )
+        }.onFailure { e ->
+            logger.warn(e) { "WebSocket send failed for $appInstanceId" }
+            notifySessionClosed(appInstanceId, session)
+        }.getOrDefault(WsPayloadSendResult.Failed)
     }
 }

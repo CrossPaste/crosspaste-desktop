@@ -1,6 +1,7 @@
 package com.crosspaste.net.ws
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.net.SyncApi
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
@@ -60,6 +61,7 @@ class WsClientConnector(
                                 challenge = challenge,
                             ),
                         ),
+                        pairingVersion = appInfo.pairingVersion,
                     )
                 rawSession.sendEnvelope(
                     WsEnvelope(
@@ -94,7 +96,13 @@ class WsClientConnector(
                         processor = processor,
                     )
                 logger.info { "Authenticated WebSocket connected to $targetAppInstanceId at $host:$port" }
-                val wsSession = WsSession(this, targetAppInstanceId, authenticationContext)
+                val wsSession =
+                    WsSession(
+                        this,
+                        targetAppInstanceId,
+                        authenticationContext,
+                        peerSupportsChunkedPayload = SyncApi.supportsPairingV3(challenge.pairingVersion),
+                    )
                 wsSessionManager.registerSession(targetAppInstanceId, wsSession)
 
                 try {

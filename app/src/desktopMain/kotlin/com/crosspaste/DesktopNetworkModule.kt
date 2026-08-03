@@ -39,6 +39,7 @@ import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.routing.SyncRoutingApi
+import com.crosspaste.net.ws.WS_MAX_PAYLOAD_SIZE
 import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
@@ -196,6 +197,12 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 HttpClient(CIO) {
                     install(WebSockets) {
                         pingIntervalMillis = 30_000
+                        // Receive-side compatibility cap, not an expansion of the
+                        // native pairing v2 send contract: legacy peers may still
+                        // push a whole paste as one oversized frame, which must keep
+                        // being deliverable, but the buffer a paired peer can force
+                        // into memory has to stay bounded.
+                        maxFrameSize = WS_MAX_PAYLOAD_SIZE
                     }
                 }
             WsClientConnector(
