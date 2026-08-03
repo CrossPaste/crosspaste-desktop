@@ -53,7 +53,11 @@ class GeneralPasteSearchViewModel(
                         // became invalid after the query returned (e.g., concurrent deletion
                         // or corrupted content), which is rare.
                         checkLoadAll(pasteDataList.size)
-                        pasteDataList.filter { it.isValid() }
+                        // distinctBy: corrupted cursor reads (Android CursorWindow) can emit
+                        // duplicate rows, which would crash lazy layouts keyed by id downstream
+                        pasteDataList
+                            .filter { it.isValid() }
+                            .distinctBy { it.id }
                     }
             }.stateIn(
                 scope = viewModelScope,
