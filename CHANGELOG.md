@@ -2,6 +2,123 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.7] - 2026-08-03
+# Highlights 🌟
+
+- 🛡️ **Hardened device sync**
+  A full round of security and robustness hardening on the sync path:
+  sync connections and control requests strictly verify peer identity,
+  file transfers validate path legitimacy and cap resource usage, and
+  malformed data can no longer disrupt normal syncing (#4705–#4716).
+
+- 🔗 **More reliable connections**
+  A corrupted device record no longer prevents the device list from
+  loading; metadata read failures no longer reset the device identity;
+  device state changes propagate reliably across the UI; and HarmonyOS
+  devices are recognized with their own icon (#4695 #4720 #4722 #4724
+  #4728).
+
+- 🚀 **The main window now opens on first launch**
+  Fixed an issue on some platforms where the first launch only showed a
+  tray icon and no window at all, making it look like the app "wouldn't
+  open". The main window now opens automatically on first launch on
+  every desktop platform (#4696 #4697).
+
+- 🗄️ **Customizable size limit for large clipboard entries**
+  A new setting customizes the maximum size for text, HTML, rich text,
+  and link content written into the history (8MB by default). Entries
+  over the limit are not recorded, so meaninglessly huge text can't
+  bloat the database or slow down the UI; sync skips them too, without
+  breaking pull continuity. Files and images are not affected
+  (#4699 #4701 #4703 #4704).
+
+- 🎨 **New Appearance settings page**
+  Settings now has an Appearance page with a customizable side search
+  window height and live preview. Card title bars in the side window
+  scale proportionally with card size (#4664 #4674 #4676).
+
+- 🍎 **macOS: hide the Dock icon**
+  A new macOS-only setting hides CrossPaste from the Dock, keeping only
+  the menu bar icon (#4659 #4677 #4678).
+
+- 🧩 **Chrome extension improvements**
+  The extension now decrypts encrypted paste pushes from the desktop
+  app, and supports the newer SAS/PIN-based pairing flows (#4683 #4729
+  #4730).
+
+# Bug Fixes 🐛
+
+- :bug: Decrypt encrypted WS paste push in Chrome extension (#4730)
+- :bug: Tolerate corrupted hostInfo JSON per row in device-list mapping (#4728)
+- :bug: Never rotate device identity on metadata read failure (#4724)
+- :bug: Give SyncRuntimeInfo flow broadcast semantics (#4722)
+- :bug: Include network prefix in host info equality (#4720)
+- :bug: Make ErrorCode hashCode consistent with equals (#4718)
+- :bug: Validate file transfer path metadata correspondence (#4716)
+- :bug: Roll back push prepare on session capacity rejection (#4714)
+- :bug: Authenticate sync control requests (#4712)
+- :bug: Disambiguate WebSocket whole-file pulls (#4711)
+- :bug: Authenticate WebSocket sessions (#4710)
+- :bug: Bind WebSocket paste identity (#4709)
+- :bug: Bound remote file transfer resources (#4708)
+- :bug: Fail truncated file chunks (#4707)
+- :bug: Bind remote paste to authenticated identity (#4706)
+- :bug: Reject unsafe remote file paths (#4705)
+- :bug: Prevent paste pull cursor gaps (#4704)
+- :bug: Persist paste pull cursor for discarded oversized remote pastes (#4703)
+- :bug: Auto-show main window on first launch for all desktop platforms (#4697)
+- :bug: Allocate v2 exchange generations before async dispatch and make verifier acquisition atomic (#4693)
+- :bug: Release the responder's pending v2 exchange when the initiator abandons pairing (#4690)
+- :bug: Fix SPAKE2 session lifecycle races and fail closed pending constant-time EC review (#4663)
+
+# New Features ✨
+
+- :sparkles: Discard oversized non-file paste items to prevent huge database rows (#4699)
+- :sparkles: Add HarmonyOS platform support with system icon (#4695)
+- :sparkles: Add pairing v2 (SAS) and v3 (SPAKE2 PIN) support to the browser extension (#4683)
+- :sparkles: Render pairing v3 acceptor sessions as per-device token cards with auto-close on trust (#4681)
+- :sparkles: Add macOS setting to hide the Dock icon (#4677)
+- :sparkles: Add appearance settings page with customizable search window height (#4674)
+- :sparkles: Add development-only pairing v3 interop flag (#4667)
+- :sparkles: Add pairing v3 scenarios (pair-v3, all-v3) to e2e harness (#4665)
+- :sparkles: Pairing v3: real SPAKE2/P-256 PakeProvider with RFC 9382 vectors (#4658)
+- :sparkles: Pairing v3 Phase 4: desktop UI (#4656)
+- :sparkles: Pairing v3 Phase 3: network protocol service, routing, and client API (#4654)
+- :sparkles: Pairing v3 foundation: per-device sessions, PIN + SPAKE2 building blocks (#4652)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Scale side paste title bar proportionally with card size (#4676)
+- :hammer: Harden pairing v3 interop handshake and trust dialog UX (#4669)
+- :hammer: Extract PairingV3Transport seam for in-process pairing v3 tests (#4661)
+- :hammer: Split stored paste JSON codec from sync format and fix hashing and size accounting (#4648)
+- :hammer: Separate QR bearer token from SAS code at the type level (#4644)
+- :hammer: Harden paste process plugin pipeline and cap max non-file paste size input (#4701)
+
+# Build & CI 👷
+
+- :construction_worker: Speed up CI with per-job Gradle caches, konan cache, and superseded-run cancellation (#4689)
+- :white_check_mark: Move platform-agnostic tests to core commonTest and cover core/shared in CI (#4646)
+
+# Documentation 📝
+
+- :memo: Replace contact email with support@crosspaste.com (#4671)
+- :memo: Add Video link to README navigation
+- :memo: Bump README download badge to v2.1.6
+
+# Dependencies ⬆️
+
+- :heavy_minus_sign: Drop unused Compose plugin and runtime from shared (#4726)
+- :arrow_up: Bump logback-classic from 1.5.38 to 1.6.1 (#4687)
+- :arrow_up: Bump io.modelcontextprotocol:kotlin-sdk-server (#4686)
+- :arrow_up: Bump kotter from 1.3.0 to 1.4.0 (#4685)
+- :arrow_up: Bump metadata-extractor from 2.20.0 to 2.21.0 (#4650)
+- :arrow_up: Bump okio from 3.17.0 to 3.18.0 (#4649)
+- :arrow_up: Bump compose-shimmer (#4642)
+- :arrow_up: Bump richeditor-compose
+- :arrow_up: Bump kotlin from 2.4.0 to 2.4.10
+- :arrow_up: Bump imageio from 3.13.1 to 3.14.0
+
 # [2.1.6] - 2026-07-07
 # Highlights 🌟
 

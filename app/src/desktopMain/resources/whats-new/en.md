@@ -1,3 +1,26 @@
+# [2.1.7] - 2026-08-03
+
+## 🛡️ Hardened device sync
+Device-to-device sync got a round of security and robustness hardening: sync connections and control requests now strictly verify the peer's identity, file transfers validate path legitimacy and cap resource usage, and malformed or maliciously crafted data can no longer disrupt normal syncing.
+
+## 🔗 More reliable connections
+Fixed several issues affecting connection stability: a single corrupted device record no longer prevents the whole device list from loading; failing to read device metadata no longer resets this device's identity (which could make paired devices suddenly appear as strangers); and device state changes now propagate reliably across the UI. The device list also correctly recognizes HarmonyOS devices now.
+
+## 🚀 The main window now opens on first launch
+Fixed an issue on some platforms where the first launch only showed a tray icon and no window at all, making it look like the app "wouldn't open". The main window now opens automatically on first launch on every desktop platform.
+
+## 🗄️ Customizable size limit for large clipboard entries
+A new setting lets you customize the maximum size for text, HTML, rich text, and link content written into your history (8MB by default). Entries over the limit are no longer recorded, so meaninglessly huge text can't bloat the database or slow down the UI. Device sync skips these oversized entries too. Files and images are not affected.
+
+## 🎨 New Appearance settings page
+Settings now has an Appearance page where you can customize the height of the side search window, with a live preview as you drag the slider. Card title bars in the side window now also scale proportionally with card size for a more consistent look.
+
+## 🍎 macOS: hide the Dock icon
+A new setting lets you hide CrossPaste from the Dock and keep only the menu bar icon — for those who like a clean Dock.
+
+## 🧩 Chrome extension improvements
+Fixed an issue where the extension could not receive content pushed from the desktop app when encrypted sync was enabled. The extension also supports a newer, more secure pairing flow with the desktop app: both screens show the same numbers, and you just confirm they match.
+
 # [2.1.6] - 2026-07-14
 
 ## 🔁 Fixed a clipboard loop between the Chrome extension and desktop
