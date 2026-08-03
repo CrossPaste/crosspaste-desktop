@@ -1,3 +1,26 @@
+# [2.1.7] - 2026-08-03
+
+## 🚀 The main window now opens on first launch
+Fixed an issue on some platforms where the first launch only showed a tray icon and no window at all, making it look like the app "wouldn't open". The main window now opens automatically on first launch on every desktop platform.
+
+## 🗄️ Huge clipboard entries no longer slow down your history
+When you copy very large text, images, or similar content (over 8MB by default), CrossPaste no longer writes it into your history, preventing database bloat and UI slowdowns. Device sync skips these oversized entries too. Files are not affected.
+
+## 🎨 New Appearance settings page
+Settings now has an Appearance page where you can customize the height of the side search window, with a live preview as you drag the slider. Card title bars in the side window now also scale proportionally with card size for a more consistent look.
+
+## 🍎 macOS: hide the Dock icon
+A new setting lets you hide CrossPaste from the Dock and keep only the menu bar icon — for those who like a clean Dock.
+
+## 🧩 Chrome extension improvements
+Fixed an issue where the extension could not receive content pushed from the desktop app when encrypted sync was enabled. The extension also supports a newer, more secure pairing flow with the desktop app: both screens show the same numbers, and you just confirm they match.
+
+## 🛡️ Hardened device sync
+Device-to-device sync got a round of security and robustness hardening: sync connections and control requests now strictly verify the peer's identity, file transfers validate path legitimacy and cap resource usage, and malformed or maliciously crafted data can no longer disrupt normal syncing.
+
+## 🔗 More reliable connections
+Fixed several issues affecting connection stability: a single corrupted device record no longer prevents the whole device list from loading; failing to read device metadata no longer resets this device's identity (which could make paired devices suddenly appear as strangers); and device state changes now propagate reliably across the UI. The device list also correctly recognizes HarmonyOS devices now.
+
 # [2.1.6] - 2026-07-14
 
 ## 🔁 Fixed a clipboard loop between the Chrome extension and desktop
