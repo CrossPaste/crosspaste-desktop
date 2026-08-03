@@ -48,6 +48,7 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Dedupe search results by id in the shared search ViewModel (#4733)
 - :bug: Decrypt encrypted WS paste push in Chrome extension (#4730)
 - :bug: Tolerate corrupted hostInfo JSON per row in device-list mapping (#4728)
 - :bug: Never rotate device identity on metadata read failure (#4724)
@@ -73,6 +74,7 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
+- :sparkles: Add chunked WebSocket payload transfer negotiated via the pairing v3 handshake (dormant until v3 rollout) (#4732)
 - :sparkles: Discard oversized non-file paste items to prevent huge database rows (#4699)
 - :sparkles: Add HarmonyOS platform support with system icon (#4695)
 - :sparkles: Add pairing v2 (SAS) and v3 (SPAKE2 PIN) support to the browser extension (#4683)
