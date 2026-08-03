@@ -5,17 +5,32 @@ All notable changes to this project will be documented in this file.
 # [2.1.7] - 2026-08-03
 # Highlights 🌟
 
+- 🛡️ **Hardened device sync**
+  A full round of security and robustness hardening on the sync path:
+  sync connections and control requests strictly verify peer identity,
+  file transfers validate path legitimacy and cap resource usage, and
+  malformed data can no longer disrupt normal syncing (#4705–#4716).
+
+- 🔗 **More reliable connections**
+  A corrupted device record no longer prevents the device list from
+  loading; metadata read failures no longer reset the device identity;
+  device state changes propagate reliably across the UI; and HarmonyOS
+  devices are recognized with their own icon (#4695 #4720 #4722 #4724
+  #4728).
+
 - 🚀 **The main window now opens on first launch**
   Fixed an issue on some platforms where the first launch only showed a
   tray icon and no window at all, making it look like the app "wouldn't
   open". The main window now opens automatically on first launch on
   every desktop platform (#4696 #4697).
 
-- 🗄️ **Huge clipboard entries no longer slow down your history**
-  Very large non-file clipboard content (over 8MB by default) is no
-  longer written into the history, preventing database bloat and UI
-  slowdowns. Device sync skips these oversized entries too, without
-  breaking pull continuity (#4699 #4701 #4703 #4704).
+- 🗄️ **Customizable size limit for large clipboard entries**
+  A new setting customizes the maximum size for text, HTML, rich text,
+  and link content written into the history (8MB by default). Entries
+  over the limit are not recorded, so meaninglessly huge text can't
+  bloat the database or slow down the UI; sync skips them too, without
+  breaking pull continuity. Files and images are not affected
+  (#4699 #4701 #4703 #4704).
 
 - 🎨 **New Appearance settings page**
   Settings now has an Appearance page with a customizable side search
@@ -30,19 +45,6 @@ All notable changes to this project will be documented in this file.
   The extension now decrypts encrypted paste pushes from the desktop
   app, and supports the newer SAS/PIN-based pairing flows (#4683 #4729
   #4730).
-
-- 🛡️ **Hardened device sync**
-  A full round of security and robustness hardening on the sync path:
-  sync connections and control requests strictly verify peer identity,
-  file transfers validate path legitimacy and cap resource usage, and
-  malformed data can no longer disrupt normal syncing (#4705–#4716).
-
-- 🔗 **More reliable connections**
-  A corrupted device record no longer prevents the device list from
-  loading; metadata read failures no longer reset the device identity;
-  device state changes propagate reliably across the UI; and HarmonyOS
-  devices are recognized with their own icon (#4695 #4720 #4722 #4724
-  #4728).
 
 # Bug Fixes 🐛
 
