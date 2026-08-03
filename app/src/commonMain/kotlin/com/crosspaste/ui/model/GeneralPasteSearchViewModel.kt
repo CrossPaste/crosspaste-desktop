@@ -53,7 +53,17 @@ class GeneralPasteSearchViewModel(
                         // became invalid after the query returned (e.g., concurrent deletion
                         // or corrupted content), which is rare.
                         checkLoadAll(pasteDataList.size)
-                        pasteDataList.filter { it.isValid() }
+                        // distinctBy: id is the table's primary key, so healthy SQL can't
+                        // duplicate it — but the Android cursor-reading layer below SQL has
+                        // demonstrably emitted corrupted rows (mobile 2.1.5), and a duplicate
+                        // id crashes lazy layouts keyed by id downstream.
+                        // checkLoadAll must stay on the pre-dedup size: it answers "did the
+                        // query hit its LIMIT"; the deduped size would read as "exhausted"
+                        // whenever a duplicate shrinks a full page, permanently stopping
+                        // pagination and hiding the tail of the history.
+                        pasteDataList
+                            .filter { it.isValid() }
+                            .distinctBy { it.id }
                     }
             }.stateIn(
                 scope = viewModelScope,
