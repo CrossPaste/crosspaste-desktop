@@ -118,6 +118,8 @@ NOTES_ZH="$(release_notes "$WHATS_NEW_DIR/zh.md")"
 [[ -n "$NOTES_EN" ]] || { echo "Could not extract release notes from whats-new/en.md." >&2; exit 1; }
 echo "--- en-us release notes (${#NOTES_EN} chars) ---"
 echo "$NOTES_EN"
+echo "--- zh-cn release notes ---"
+echo "$NOTES_ZH"
 echo "-----------------------------------------------"
 
 if [[ -f "$METADATA_BASE" ]]; then
@@ -128,6 +130,10 @@ if [[ -f "$METADATA_BASE" ]]; then
     | if .listings["zh-cn"] and ($zh != "") then .listings["zh-cn"].baseListing.releaseNotes = $zh else . end
   ' "$METADATA_BASE" > "$WORK_DIR/metadata.json"
   METADATA_JSON="$(cat "$WORK_DIR/metadata.json")"
+  if [[ -n "$NOTES_ZH" ]] && ! jq -e '.listings["zh-cn"]' "$METADATA_BASE" >/dev/null; then
+    echo "WARNING: no zh-cn listing in $METADATA_BASE — Chinese release notes will NOT be published." >&2
+    echo "         Add Chinese (Simplified) as a listing language in Partner Center, then refresh the baseline." >&2
+  fi
 else
   echo "WARNING: $METADATA_BASE not found — skipping release-notes metadata update."
   echo "         (Run the get-base-metadata workflow once the app is live and check the JSON in as msstore/metadata.json.)"
