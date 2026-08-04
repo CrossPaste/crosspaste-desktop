@@ -1,0 +1,60 @@
+name: "Publish to Microsoft Store"
+
+# Uploads a released MSIX (from the OSS release bucket) plus the release notes
+# from whats-new/{en,zh}.md to the Microsoft Store, and commits the submission
+# for certification. Manual-only: Store publishing has its own certification
+# pipeline and cadence, so it is deliberately not chained to the GitHub
+# Release. The app must already be live in the Store — the first submission
+# (listing, screenshots, age rating, markets) is manual in Partner Center.
+# One-time credential setup: see doc/en/MicrosoftStore.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Full released version whose MSIX to submit (e.g. 2.1.7.2452)"
+        required: true
+      mode:
+        description: "publish: submit package + release notes; get-base-metadata: print the current submission JSON (baseline for msstore/metadata.json)"
+        type: choice
+        default: publish
+        options:
+          - publish
+          - get-base-metadata
+
+permissions: {}
+
+# Partner Center allows one pending submission at a time; never interleave.
+concurrency:
+  group: msstore-publish
+  cancel-in-progress: false
+
+jobs:
+  msstore:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Microsoft Store Developer CLI
+        uses: microsoft/microsoft-store-apppublisher@v1.1
+
+      - name: Configure Store credentials
+        shell: pwsh
+        run: |
+          msstore reconfigure `
+            --tenantId ${{ secrets.AZURE_AD_TENANT_ID }} `
+            --sellerId ${{ secrets.SELLER_ID }} `
+            --clientId ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }} `
+            --clientSecret ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+
+      - name: Get base submission metadata
+        if: inputs.mode == 'get-base-metadata'
+        shell: pwsh
+        run: msstore submission get ${{ vars.MSSTORE_PRODUCT_ID }}
+
+      - name: Publish package and release notes
+        if: inputs.mode == 'publish'
+        shell: bash
+        env:
+          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
+        run: bash scripts/publish-msstore.sh "${{ inputs.version }}"
