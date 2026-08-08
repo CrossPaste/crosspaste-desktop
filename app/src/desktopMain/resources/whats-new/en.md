@@ -1,4 +1,4 @@
-# [2.1.7] - 2026-08-03
+# [2.1.7] - 2026-08-08
 
 ## 🛡️ Hardened device sync
 Device-to-device sync got a round of security and robustness hardening: sync connections and control requests now strictly verify the peer's identity, file transfers validate path legitimacy and cap resource usage, and malformed or maliciously crafted data can no longer disrupt normal syncing.
@@ -17,6 +17,9 @@ Settings now has an Appearance page where you can customize the height of the si
 
 ## 🍎 macOS: hide the Dock icon
 A new setting lets you hide CrossPaste from the Dock and keep only the menu bar icon — for those who like a clean Dock.
+
+## 🔒 URL preview fetching can now be turned off
+A new setting lets you disable fetching a copied link's title and icon. Turn it off if you don't want CrossPaste to make any network request for copied URLs — for privacy, or to avoid accidentally triggering one-time links. It stays on by default, matching the previous behavior.
 
 ## 🧩 Chrome extension improvements
 Fixed an issue where the extension could not receive content pushed from the desktop app when encrypted sync was enabled. The extension also supports a newer, more secure pairing flow with the desktop app: both screens show the same numbers, and you just confirm they match.

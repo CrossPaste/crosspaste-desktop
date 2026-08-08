@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.1.7] - 2026-08-03
+# [2.1.7] - 2026-08-08
 # Highlights 🌟
 
 - 🛡️ **Hardened device sync**
@@ -41,6 +41,12 @@ All notable changes to this project will be documented in this file.
   A new macOS-only setting hides CrossPaste from the Dock, keeping only
   the menu bar icon (#4659 #4677 #4678).
 
+- 🔒 **URL preview fetching can now be turned off**
+  A new setting disables fetching a copied link's title and icon, so
+  CrossPaste makes no network request for copied URLs — for privacy,
+  or to avoid accidentally triggering one-time links. On by default,
+  matching the previous behavior (#4742 #4744).
+
 - 🧩 **Chrome extension improvements**
   The extension now decrypts encrypted paste pushes from the desktop
   app, and supports the newer SAS/PIN-based pairing flows (#4683 #4729
@@ -74,6 +80,7 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
+- :sparkles: Add option to disable URL preview fetching (#4744)
 - :sparkles: Add chunked WebSocket payload transfer negotiated via the pairing v3 handshake (dormant until v3 rollout) (#4732)
 - :sparkles: Discard oversized non-file paste items to prevent huge database rows (#4699)
 - :sparkles: Add HarmonyOS platform support with system icon (#4695)
@@ -110,6 +117,9 @@ All notable changes to this project will be documented in this file.
 
 # Dependencies ⬆️
 
+- :arrow_up: Bump org.bouncycastle:bcprov-jdk18on from 1.84 to 1.85 (#4741)
+- :arrow_up: Bump com.squareup.okio:okio from 3.18.0 to 3.18.1 (#4740)
+- :arrow_up: Bump ktor from 3.5.1 to 3.5.2 (#4739)
 - :heavy_minus_sign: Drop unused Compose plugin and runtime from shared (#4726)
 - :arrow_up: Bump logback-classic from 1.5.38 to 1.6.1 (#4687)
 - :arrow_up: Bump io.modelcontextprotocol:kotlin-sdk-server (#4686)
