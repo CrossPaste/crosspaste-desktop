@@ -44,6 +44,7 @@ data class CliReadOnlyAppConfig(
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = true,
+    override val enableUrlPreview: Boolean = true,
     override val pastePrimaryTypeOnly: Boolean = true,
     override val useNetworkInterfaces: String = "[]",
     override val enableSyncText: Boolean = true,

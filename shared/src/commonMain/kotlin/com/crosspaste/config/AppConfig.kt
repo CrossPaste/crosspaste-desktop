@@ -32,6 +32,10 @@ interface AppConfig {
     val useDefaultStoragePath: Boolean
     val storagePath: String
     val enableSoundEffect: Boolean
+
+    // Fetch favicon and Open Graph metadata (title/preview image) for copied
+    // URLs; disabling avoids any background network request to the copied link
+    val enableUrlPreview: Boolean
     val pastePrimaryTypeOnly: Boolean
     val useNetworkInterfaces: String
 

@@ -1,5 +1,6 @@
 package com.crosspaste.rendering
 
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.net.ClientResponse
@@ -18,6 +19,7 @@ import io.ktor.utils.io.toByteArray
 import okio.Path
 
 class OpenGraphService<Image>(
+    private val configManager: CommonConfigManager,
     private val generateImageService: GenerateImageService,
     private val imageHandler: ImageHandler<Image>,
     private val resourcesClient: ResourcesClient,
@@ -30,6 +32,9 @@ class OpenGraphService<Image>(
     private val fileUtils = getFileUtils()
 
     override suspend fun render(pasteData: PasteData) {
+        if (!configManager.getCurrentConfig().enableUrlPreview) {
+            return
+        }
         pasteData.getPasteItem(UrlPasteItem::class)?.let { urlPasteItem ->
             val openGraphImage =
                 urlPasteItem.getRenderingFilePath(

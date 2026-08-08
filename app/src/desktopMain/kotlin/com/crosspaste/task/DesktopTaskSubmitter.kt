@@ -120,7 +120,7 @@ class DesktopTaskBuilder(
         id: Long,
         pasteType: PasteType,
     ): TaskBuilder {
-        if (pasteType.isUrl()) {
+        if (pasteType.isUrl() && configManager.getCurrentConfig().enableUrlPreview) {
             taskIds.add(taskDao.createTaskBlock(id, TaskType.OPEN_GRAPH_TASK))
         }
         return this

@@ -43,6 +43,7 @@ class DesktopAppConfigTest {
         assertTrue(config.useDefaultStoragePath)
         assertEquals("", config.storagePath)
         assertTrue(config.enableSoundEffect)
+        assertTrue(config.enableUrlPreview)
         assertFalse(config.legacySoftwareCompatibility)
         assertTrue(config.pastePrimaryTypeOnly)
     }
@@ -121,6 +122,24 @@ class DesktopAppConfigTest {
             )
 
         assertEquals(8L, config.maxNonFilePasteSize)
+    }
+
+    @Test
+    fun `copy with boolean key updates enableUrlPreview`() {
+        val config: AppConfig = createDefaultConfig()
+        val updated = config.copy("enableUrlPreview", false)
+        assertFalse(updated.enableUrlPreview)
+    }
+
+    @Test
+    fun `legacy config without enableUrlPreview uses default`() {
+        val config =
+            getJsonUtils().JSON.decodeFromString(
+                DesktopAppConfig.serializer(),
+                """{"language":"zh"}""",
+            )
+
+        assertTrue(config.enableUrlPreview)
     }
 
     @Test

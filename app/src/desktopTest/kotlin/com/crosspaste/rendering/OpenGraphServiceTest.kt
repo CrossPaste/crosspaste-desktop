@@ -1,9 +1,36 @@
 package com.crosspaste.rendering
 
+import com.crosspaste.config.TestAppConfig
+import com.crosspaste.config.TestConfigManager
+import com.crosspaste.net.ResourcesClient
+import com.crosspaste.paste.PasteData
+import io.mockk.Called
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class OpenGraphServiceTest {
+
+    @Test
+    fun `render skips network fetch when url preview is disabled`() =
+        runTest {
+            val resourcesClient = mockk<ResourcesClient>()
+            val service =
+                OpenGraphService<Any>(
+                    configManager = TestConfigManager(TestAppConfig(enableUrlPreview = false)),
+                    generateImageService = mockk(),
+                    imageHandler = mockk(),
+                    resourcesClient = resourcesClient,
+                    updatePasteItemHelper = mockk(),
+                    userDataPathProvider = mockk(),
+                )
+
+            service.render(mockk<PasteData>())
+
+            verify { resourcesClient wasNot Called }
+        }
 
     @Test
     fun `JSON_LD_IMAGE_PATTERN matches image in JSON-LD`() {

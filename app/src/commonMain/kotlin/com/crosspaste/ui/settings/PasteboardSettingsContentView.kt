@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Archive
 import com.composables.icons.materialsymbols.rounded.Content_paste
+import com.composables.icons.materialsymbols.rounded.Link
 import com.composables.icons.materialsymbols.rounded.Music_note
 import com.composables.icons.materialsymbols.rounded.Skip_next
 import com.composables.icons.materialsymbols.rounded.Stacks
@@ -77,6 +78,18 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                     configManager.updateConfig(
                         "enableSoundEffect",
                         enableSoundEffect,
+                    )
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "url_preview",
+                    subtitle = "url_preview_desc",
+                    icon = IconData(MaterialSymbols.Rounded.Link, themeExt.indigoIconColor),
+                    checked = config.enableUrlPreview,
+                ) { enableUrlPreview ->
+                    configManager.updateConfig(
+                        "enableUrlPreview",
+                        enableUrlPreview,
                     )
                 }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))

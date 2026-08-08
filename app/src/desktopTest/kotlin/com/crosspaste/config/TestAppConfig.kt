@@ -27,6 +27,7 @@ data class TestAppConfig(
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = false,
+    override val enableUrlPreview: Boolean = true,
     override val pastePrimaryTypeOnly: Boolean = true,
     override val useNetworkInterfaces: String = "[]",
     override val enableSyncText: Boolean = true,
