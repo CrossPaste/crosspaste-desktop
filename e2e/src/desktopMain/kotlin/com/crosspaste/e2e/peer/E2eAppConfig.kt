@@ -35,6 +35,7 @@ data class E2eAppConfig(
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = false,
+    override val enableUrlPreview: Boolean = false,
     override val pastePrimaryTypeOnly: Boolean = true,
     override val useNetworkInterfaces: String = "[]",
     override val enableSyncText: Boolean = true,

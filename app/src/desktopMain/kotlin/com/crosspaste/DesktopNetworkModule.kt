@@ -110,7 +110,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
         // endregion
 
         // region HTTP client & API
-        single<FaviconLoader> { DesktopFaviconLoader(get(), get()) }
+        single<FaviconLoader> { DesktopFaviconLoader(get(), get(), get()) }
         single<PairingV3ClientApi> { PairingV3ClientApi(get(), get()) }
         single<PairingV3Transport> { get<PairingV3ClientApi>() }
         single<PasteClient> { PasteClient(get(), get(), get()) }

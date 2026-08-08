@@ -1,6 +1,7 @@
 package com.crosspaste.image
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.ConcurrentLoader
 import com.crosspaste.utils.StripedMutex
@@ -10,6 +11,7 @@ import io.ktor.http.*
 import okio.Path
 
 abstract class AbstractFaviconLoader(
+    private val configManager: CommonConfigManager,
     private val userDataPathProvider: UserDataPathProvider,
 ) : ConcurrentLoader<String, Path>,
     FaviconLoader {
@@ -49,6 +51,11 @@ abstract class AbstractFaviconLoader(
         value: String,
         result: Path,
     ) {
+        // Downloading a favicon reveals the copied link's host to the network;
+        // when URL preview is disabled, skip the download (cached icons still load)
+        if (!configManager.getCurrentConfig().enableUrlPreview) {
+            return
+        }
         saveIco(getDefaultIcoUrl(key), result)
             ?: saveIco(getGoogleIconUrl(key), result)
     }

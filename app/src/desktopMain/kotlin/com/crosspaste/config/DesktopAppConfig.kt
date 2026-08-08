@@ -44,6 +44,7 @@ data class DesktopAppConfig(
     override val useDefaultStoragePath: Boolean = true,
     override val storagePath: String = "",
     override val enableSoundEffect: Boolean = true,
+    override val enableUrlPreview: Boolean = true,
     val legacySoftwareCompatibility: Boolean = false,
     override val pastePrimaryTypeOnly: Boolean = true,
     override val useNetworkInterfaces: String = "[]",
@@ -147,6 +148,7 @@ data class DesktopAppConfig(
             useDefaultStoragePath = if (key == "useDefaultStoragePath") toBoolean(value) else useDefaultStoragePath,
             storagePath = if (key == "storagePath") toString(value) else storagePath,
             enableSoundEffect = if (key == "enableSoundEffect") toBoolean(value) else enableSoundEffect,
+            enableUrlPreview = if (key == "enableUrlPreview") toBoolean(value) else enableUrlPreview,
             legacySoftwareCompatibility =
                 if (key == "legacySoftwareCompatibility") {
                     toBoolean(value)
