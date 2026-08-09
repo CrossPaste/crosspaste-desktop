@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.1.7] - 2026-08-08
+# [2.1.7] - 2026-08-09
 # Highlights 🌟
 
 - 🛡️ **Hardened device sync**
@@ -14,9 +14,11 @@ All notable changes to this project will be documented in this file.
 - 🔗 **More reliable connections**
   A corrupted device record no longer prevents the device list from
   loading; metadata read failures no longer reset the device identity;
-  device state changes propagate reliably across the UI; and HarmonyOS
+  device state changes propagate reliably across the UI; devices now
+  show as connected the moment an incoming connection is established,
+  instead of waiting for the next liveness poll; and HarmonyOS
   devices are recognized with their own icon (#4695 #4720 #4722 #4724
-  #4728).
+  #4728 #4747).
 
 - 🚀 **The main window now opens on first launch**
   Fixed an issue on some platforms where the first launch only showed a
@@ -49,11 +51,15 @@ All notable changes to this project will be documented in this file.
 
 - 🧩 **Chrome extension improvements**
   The extension now decrypts encrypted paste pushes from the desktop
-  app, and supports the newer SAS/PIN-based pairing flows (#4683 #4729
-  #4730).
+  app, supports the newer SAS/PIN-based pairing flows, and performs
+  the authenticated WebSocket handshake so it can keep syncing with
+  peers that require authenticated connections (#4683 #4729 #4730
+  #4749).
 
 # Bug Fixes 🐛
 
+- :bug: Implement authenticated WebSocket handshake in the Chrome extension (#4749)
+- :bug: Resolve device state immediately when an inbound WebSocket session opens (#4747)
 - :bug: Dedupe search results by id in the shared search ViewModel (#4733)
 - :bug: Decrypt encrypted WS paste push in Chrome extension (#4730)
 - :bug: Tolerate corrupted hostInfo JSON per row in device-list mapping (#4728)
@@ -106,6 +112,7 @@ All notable changes to this project will be documented in this file.
 
 # Build & CI 👷
 
+- :construction_worker: Add Microsoft Store publish automation (#4738)
 - :construction_worker: Speed up CI with per-job Gradle caches, konan cache, and superseded-run cancellation (#4689)
 - :white_check_mark: Move platform-agnostic tests to core commonTest and cover core/shared in CI (#4646)
 

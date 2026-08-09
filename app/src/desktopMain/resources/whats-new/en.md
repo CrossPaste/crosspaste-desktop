@@ -1,10 +1,10 @@
-# [2.1.7] - 2026-08-08
+# [2.1.7] - 2026-08-09
 
 ## 🛡️ Hardened device sync
 Device-to-device sync got a round of security and robustness hardening: sync connections and control requests now strictly verify the peer's identity, file transfers validate path legitimacy and cap resource usage, and malformed or maliciously crafted data can no longer disrupt normal syncing.
 
 ## 🔗 More reliable connections
-Fixed several issues affecting connection stability: a single corrupted device record no longer prevents the whole device list from loading; failing to read device metadata no longer resets this device's identity (which could make paired devices suddenly appear as strangers); and device state changes now propagate reliably across the UI. The device list also correctly recognizes HarmonyOS devices now.
+Fixed several issues affecting connection stability: a single corrupted device record no longer prevents the whole device list from loading; failing to read device metadata no longer resets this device's identity (which could make paired devices suddenly appear as strangers); and device state changes now propagate reliably across the UI. When another device connects to you, it now shows as connected right away instead of after the next periodic check. The device list also correctly recognizes HarmonyOS devices now.
 
 ## 🚀 The main window now opens on first launch
 Fixed an issue on some platforms where the first launch only showed a tray icon and no window at all, making it look like the app "wouldn't open". The main window now opens automatically on first launch on every desktop platform.
@@ -22,7 +22,7 @@ A new setting lets you hide CrossPaste from the Dock and keep only the menu bar 
 A new setting lets you disable fetching a copied link's title and icon. Turn it off if you don't want CrossPaste to make any network request for copied URLs — for privacy, or to avoid accidentally triggering one-time links. It stays on by default, matching the previous behavior.
 
 ## 🧩 Chrome extension improvements
-Fixed an issue where the extension could not receive content pushed from the desktop app when encrypted sync was enabled. The extension also supports a newer, more secure pairing flow with the desktop app: both screens show the same numbers, and you just confirm they match.
+Fixed an issue where the extension could not receive content pushed from the desktop app when encrypted sync was enabled, and another where the extension could not stay connected to devices that require authenticated connections. The extension also supports a newer, more secure pairing flow with the desktop app: both screens show the same numbers, and you just confirm they match.
 
 # [2.1.6] - 2026-07-14
 
