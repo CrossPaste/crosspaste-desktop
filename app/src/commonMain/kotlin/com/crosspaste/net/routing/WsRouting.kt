@@ -62,6 +62,14 @@ fun Routing.wsRouting(
             } else {
                 val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
                 if (!isLoopbackAddress(remoteAddress)) {
+                    // Deliberately loud: a peer landing here dials without authVersion
+                    // (e.g. an outdated extension) and would otherwise disappear without
+                    // a trace — the peer's own onopen already fired, so it believes it
+                    // is connected while we never register the session.
+                    logger.warn {
+                        "WS connection rejected: $appInstanceId from $remoteAddress " +
+                            "requires authenticated WebSocket (authVersion missing)"
+                    }
                     close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Authenticated WebSocket required"))
                     return@webSocket
                 }

@@ -14,6 +14,9 @@ export const WsMessageType = {
   FILE_PULL_RESPONSE: "file_pull_response",
   PASTE_REJECTED_OVERSIZE: "paste_rejected_oversize",
   ERROR: "error",
+  AUTH_CHALLENGE: "auth_challenge",
+  AUTH_PROOF: "auth_proof",
+  AUTH_ACK: "auth_ack",
 } as const;
 
 export type WsMessageTypeValue = (typeof WsMessageType)[keyof typeof WsMessageType];
@@ -24,6 +27,16 @@ export interface WsEnvelopeHeader {
   encrypted: boolean;
   hasPayload: boolean;
   requestId?: string | null;
+  authSessionId?: string | null;
+  authSequence?: number | null;
+  /** base64 (Kotlin Base64ByteArraySerializer) */
+  authenticationCode?: string | null;
+  /**
+   * Number of Binary frames whose concatenation forms the payload. Absent or
+   * 1 on legacy senders; > 1 only after this side advertised pairing
+   * version >= 3 in its AUTH_PROOF.
+   */
+  payloadChunkCount?: number;
 }
 
 /** In-memory envelope combining header + raw payload bytes. */
