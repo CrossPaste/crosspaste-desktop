@@ -22,7 +22,8 @@ on:
           - publish
           - get-submission
 
-permissions: {}
+permissions:
+  contents: read
 
 # Partner Center allows one pending submission at a time; never interleave.
 concurrency:
@@ -38,6 +39,10 @@ jobs:
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     environment: msstore-publish
     runs-on: windows-latest
+    # `msstore submission poll` returns once commit processing finishes and
+    # certification starts (a few minutes) — it does not wait for the days-long
+    # certification itself, so a tight timeout is safe.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
 

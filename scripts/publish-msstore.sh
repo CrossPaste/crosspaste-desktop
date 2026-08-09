@@ -64,8 +64,8 @@ PRODUCT_ID="${WINDOWS_STORE_ID:-}"
 DRY_RUN=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --msix) MSIX="$2"; shift 2 ;;
-    --product-id) PRODUCT_ID="$2"; shift 2 ;;
+    --msix) [[ $# -ge 2 ]] || { echo "Missing value for --msix." >&2; exit 2; }; MSIX="$2"; shift 2 ;;
+    --product-id) [[ $# -ge 2 ]] || { echo "Missing value for --product-id." >&2; exit 2; }; PRODUCT_ID="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -93,7 +93,7 @@ if [[ -z "$MSIX" ]]; then
   echo "Downloading $MSIX_NAME from $OSS_BASE/$VERSION/ ..."
   curl -fsS -o "$WORK_DIR/$MSIX_NAME" "$OSS_BASE/$VERSION/$MSIX_NAME"
   curl -fsS -o "$WORK_DIR/checksum.txt" "$OSS_BASE/$VERSION/checksum.txt"
-  EXPECTED="$(awk -v f="$MSIX_NAME" '$2 == f {print $1}' "$WORK_DIR/checksum.txt")"
+  EXPECTED="$(awk -v f="$MSIX_NAME" '{sub(/^\*/, "", $2)} $2 == f {print $1}' "$WORK_DIR/checksum.txt")"
   [[ -n "$EXPECTED" ]] || { echo "$MSIX_NAME not found in checksum.txt." >&2; exit 1; }
   ACTUAL="$($SHA256 "$WORK_DIR/$MSIX_NAME" | awk '{print $1}')"
   [[ "$ACTUAL" == "$EXPECTED" ]] || { echo "SHA256 mismatch for $MSIX_NAME: expected $EXPECTED, got $ACTUAL." >&2; exit 1; }
@@ -149,7 +149,8 @@ msstore publish --inputFile "$MSIX" --appId "$PRODUCT_ID" --noCommit
 echo "Fetching the pending submission ..."
 # stdout carries human status lines before the pretty-printed JSON object;
 # keep everything from the first line starting with '{'.
-SUBMISSION_JSON="$(msstore submission get "$PRODUCT_ID" | tr -d '\r' | sed -e 's/\x1b\[[0-9;]*m//g' | awk '/^\{/{found=1} found')"
+# $'...' yields a literal ESC byte so the ANSI strip also works with BSD sed.
+SUBMISSION_JSON="$(msstore submission get "$PRODUCT_ID" | tr -d '\r' | sed -e $'s/\x1b\\[[0-9;]*m//g' | awk '/^\{/{found=1} found')"
 jq -e . >/dev/null <<<"$SUBMISSION_JSON" || { echo "Could not parse submission JSON from 'msstore submission get'." >&2; exit 1; }
 
 # `submission get` falls back to the LAST PUBLISHED submission when no pending
@@ -165,7 +166,9 @@ jq -e '.Listings["en-us"].BaseListing' >/dev/null <<<"$SUBMISSION_JSON" || {
   echo "Submission has no en-us listing (or the JSON shape changed); refusing to guess." >&2
   exit 1
 }
-PATCHED_JSON="$(jq --arg en "$NOTES_EN" --arg zh "$NOTES_ZH" '
+# -c keeps the argv line short: the full submission is passed to msstore-cli
+# as a single argument and Windows caps a command line at ~32k characters.
+PATCHED_JSON="$(jq -c --arg en "$NOTES_EN" --arg zh "$NOTES_ZH" '
   .Listings["en-us"].BaseListing.ReleaseNotes = $en
   | if .Listings["zh-cn"] and ($zh != "") then .Listings["zh-cn"].BaseListing.ReleaseNotes = $zh else . end
 ' <<<"$SUBMISSION_JSON")"
