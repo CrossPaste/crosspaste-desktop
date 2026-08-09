@@ -1,0 +1,75 @@
+name: "Publish to Microsoft Store"
+
+# Uploads a released MSIX (from the OSS release bucket) plus the release notes
+# from whats-new/{en,zh}.md to the Microsoft Store, and commits the submission
+# for certification. Manual-only: Store publishing has its own certification
+# pipeline and cadence, so it is deliberately not chained to the GitHub
+# Release. The app must already be live in the Store — the first submission
+# (listing, screenshots, age rating, markets) is manual in Partner Center.
+# One-time credential setup: see doc/en/MicrosoftStore.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Full released version whose MSIX to submit (e.g. 2.1.7.2452)"
+        required: true
+      mode:
+        description: "publish: submit package + release notes; get-submission: print the current submission JSON (debugging)"
+        type: choice
+        default: publish
+        options:
+          - publish
+          - get-submission
+
+permissions:
+  contents: read
+
+# Partner Center allows one pending submission at a time; never interleave.
+concurrency:
+  group: msstore-publish
+  cancel-in-progress: false
+
+jobs:
+  msstore:
+    # Store credentials must only ever run scripts from the default branch.
+    # The msstore-publish environment enforces this server-side (deployment
+    # branches restricted to main); this condition is an extra guard against
+    # accidentally dispatching from a stale ref.
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    environment: msstore-publish
+    runs-on: windows-latest
+    # `msstore submission poll` returns once commit processing finishes and
+    # certification starts (a few minutes) — it does not wait for the days-long
+    # certification itself, so a tight timeout is safe.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Microsoft Store Developer CLI
+        uses: microsoft/microsoft-store-apppublisher@v1.1
+
+      - name: Configure Store credentials
+        shell: pwsh
+        run: |
+          msstore reconfigure `
+            --tenantId ${{ secrets.WINDOWS_TENANT_ID }} `
+            --sellerId ${{ secrets.WINDOWS_SELLER_ID }} `
+            --clientId ${{ secrets.WINDOWS_CLIENT_ID }} `
+            --clientSecret ${{ secrets.WINDOWS_CLIENT_SECRET }}
+
+      - name: Get current submission
+        if: inputs.mode == 'get-submission'
+        shell: pwsh
+        run: msstore submission get ${{ secrets.WINDOWS_STORE_ID }}
+
+      - name: Publish package and release notes
+        if: inputs.mode == 'publish'
+        shell: bash
+        env:
+          WINDOWS_STORE_ID: ${{ secrets.WINDOWS_STORE_ID }}
+          # Untrusted input: only ever passed through the environment (never
+          # interpolated into the script text) and strictly validated as
+          # N.N.N.N by publish-msstore.sh.
+          VERSION: ${{ inputs.version }}
+        run: bash scripts/publish-msstore.sh "$VERSION"
