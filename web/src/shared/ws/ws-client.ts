@@ -21,6 +21,9 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 /** Mirrors desktop WS_AUTHENTICATION_TIMEOUT (5s). */
 const AUTHENTICATION_TIMEOUT_MS = 5_000;
 
+/** Bound messages received before the server proof finishes verification. */
+const MAX_HANDSHAKE_BUFFERED_MESSAGES = 4;
+
 /** Mirrors desktop WS_MAX_PAYLOAD_SIZE / WS_MAX_PAYLOAD_CHUNK_COUNT. */
 const MAX_PAYLOAD_SIZE = 128 * 1024 * 1024;
 const MAX_PAYLOAD_CHUNK_COUNT = 128;
@@ -54,6 +57,17 @@ interface IncomingMessage {
   payload: Uint8Array;
 }
 
+interface HandshakeWaiter {
+  resolve: (message: IncomingMessage) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+interface ActiveConnect {
+  generation: number;
+  settle: (connected: boolean) => void;
+}
+
 /**
  * Single-device WebSocket client.
  * Manages one WebSocket connection to one desktop device.
@@ -76,11 +90,15 @@ export class WsClient {
 
   // Authentication
   private authContext: WsAuthContext | null = null;
-  private handshakeWaiter: ((message: IncomingMessage) => void) | null = null;
+  private handshakeWaiter: HandshakeWaiter | null = null;
   // Messages that arrive while the handshake logic is between awaits (e.g.
   // the server's AUTH_CHALLENGE lands while createAuthProcessor is still
-  // deriving keys). Bounded; drained by nextHandshakeMessage.
+  // deriving keys). Bounded; handshake frames are drained by
+  // nextHandshakeMessage and post-ACK frames by runHandshake.
   private handshakeBuffer: IncomingMessage[] = [];
+  // Invalidates async work from a socket that closed or was superseded.
+  private connectionGeneration = 0;
+  private activeConnect: ActiveConnect | null = null;
   // Serializes incoming verification so receive sequence numbers are checked
   // in arrival order even though verification is async.
   private incomingChain: Promise<void> = Promise.resolve();
@@ -131,15 +149,20 @@ export class WsClient {
     }
 
     this.state = "connecting";
+    const connectionGeneration = ++this.connectionGeneration;
 
     return new Promise<boolean>((resolve) => {
       let settled = false;
       const settle = (value: boolean) => {
         if (!settled) {
           settled = true;
+          if (this.activeConnect?.generation === connectionGeneration) {
+            this.activeConnect = null;
+          }
           resolve(value);
         }
       };
+      this.activeConnect = { generation: connectionGeneration, settle };
 
       const url =
         `ws://${this.config.host}:${this.config.port}/ws/sync` +
@@ -149,35 +172,62 @@ export class WsClient {
 
       const ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
+      this.ws = ws;
+      const isCurrentConnection = () =>
+        this.connectionGeneration === connectionGeneration && this.ws === ws;
 
       ws.onopen = () => {
-        this.ws = ws;
+        if (!isCurrentConnection()) return;
         this.pendingHeader = null;
-        this.runHandshake()
+        this.runHandshake(ws, connectionGeneration)
           .then(() => {
+            if (
+              !isCurrentConnection() ||
+              this.state !== "connecting" ||
+              ws.readyState !== WebSocket.OPEN
+            ) {
+              settle(false);
+              return;
+            }
             this.state = "connected";
             this.startHeartbeat();
             this.onConnect?.();
             settle(true);
           })
           .catch((e) => {
+            if (!isCurrentConnection()) {
+              settle(false);
+              return;
+            }
             console.warn(`[WsClient] Authentication handshake failed: ${e}`);
-            this.cleanup();
-            ws.close(1000, "Authentication failed");
+            this.cleanup("Authentication failed");
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.close(1000, "Authentication failed");
+            }
             settle(false);
           });
       };
 
       ws.onerror = () => {
-        if (this.state === "connecting") {
-          this.state = "closed";
+        if (isCurrentConnection() && this.state === "connecting") {
+          this.cleanup("WebSocket connection error");
+          if (
+            ws.readyState === WebSocket.CONNECTING ||
+            ws.readyState === WebSocket.OPEN
+          ) {
+            ws.close(1000, "Connection error");
+          }
           settle(false);
         }
       };
 
       ws.onclose = (event) => {
+        if (!isCurrentConnection()) {
+          settle(false);
+          return;
+        }
         const wasConnected = this.state === "connected";
-        this.cleanup();
+        this.cleanup(event.reason || "Connection closed");
         if (wasConnected) {
           this.onDisconnect?.(event.reason || "Connection closed");
         } else {
@@ -186,6 +236,7 @@ export class WsClient {
       };
 
       ws.onmessage = (event) => {
+        if (!isCurrentConnection()) return;
         this.handleFrame(event.data);
       };
     });
@@ -196,10 +247,12 @@ export class WsClient {
    * receive AUTH_CHALLENGE, answer with our HMAC proof, verify the server's
    * proof in AUTH_ACK, then arm the per-envelope MAC context.
    */
-  private async runHandshake(): Promise<void> {
+  private async runHandshake(ws: WebSocket, connectionGeneration: number): Promise<void> {
     const processor = await this.config.createAuthProcessor();
+    this.ensureCurrentHandshake(ws, connectionGeneration);
 
     const challengeMessage = await this.nextHandshakeMessage();
+    this.ensureCurrentHandshake(ws, connectionGeneration);
     if (challengeMessage.header.type !== WsMessageType.AUTH_CHALLENGE) {
       throw new Error(`Expected auth challenge, got ${challengeMessage.header.type}`);
     }
@@ -216,6 +269,7 @@ export class WsClient {
       ),
       pairingVersion: this.config.pairingVersion,
     };
+    this.ensureCurrentHandshake(ws, connectionGeneration);
     await this.sendRawEnvelope({
       type: WsMessageType.AUTH_PROOF,
       payload: new TextEncoder().encode(JSON.stringify(proof)),
@@ -223,6 +277,7 @@ export class WsClient {
     });
 
     const ackMessage = await this.nextHandshakeMessage();
+    this.ensureCurrentHandshake(ws, connectionGeneration);
     if (ackMessage.header.type !== WsMessageType.AUTH_ACK) {
       throw new Error(`Expected auth ack, got ${ackMessage.header.type}`);
     }
@@ -234,16 +289,40 @@ export class WsClient {
       challenge,
       ack,
     );
+    this.ensureCurrentHandshake(ws, connectionGeneration);
     if (!serverVerified) {
       throw new Error("Server authentication proof invalid");
     }
 
-    this.authContext = new WsAuthContext(
+    const authContext = new WsAuthContext(
       challenge.sessionId,
       this.config.appInstanceId,
       this.config.targetAppInstanceId,
       processor,
     );
+    this.authContext = authContext;
+
+    // AUTH_ACK is the server's final handshake frame. The server publishes the
+    // session immediately afterwards, so authenticated application envelopes
+    // can arrive while verifyServerProof is still awaiting WebCrypto. Move any
+    // such frames into the authenticated receive chain without losing order.
+    const bufferedMessages = this.handshakeBuffer.splice(0);
+    for (const message of bufferedMessages) {
+      this.handleIncoming(message);
+    }
+    await this.incomingChain;
+    this.ensureCurrentHandshake(ws, connectionGeneration);
+  }
+
+  private ensureCurrentHandshake(ws: WebSocket, connectionGeneration: number): void {
+    if (
+      this.connectionGeneration !== connectionGeneration ||
+      this.ws !== ws ||
+      this.state !== "connecting" ||
+      ws.readyState !== WebSocket.OPEN
+    ) {
+      throw new Error("WebSocket connection changed during authentication");
+    }
   }
 
   private nextHandshakeMessage(): Promise<IncomingMessage> {
@@ -256,11 +335,7 @@ export class WsClient {
         this.handshakeWaiter = null;
         reject(new Error("Authentication handshake timed out"));
       }, AUTHENTICATION_TIMEOUT_MS);
-      this.handshakeWaiter = (message) => {
-        clearTimeout(timer);
-        this.handshakeWaiter = null;
-        resolve(message);
-      };
+      this.handshakeWaiter = { resolve, reject, timer };
     });
   }
 
@@ -315,7 +390,10 @@ export class WsClient {
     const ws = this.ws;
     this.cleanup();
     // Send close frame after cleanup to prevent onclose from firing again
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (
+      ws &&
+      (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)
+    ) {
       ws.close(1000, "Normal closure");
     }
   }
@@ -388,8 +466,16 @@ export class WsClient {
       // messages are authenticated by their proof payloads, not header MACs)
       // or buffer briefly until the handshake logic asks for the next one.
       if (this.handshakeWaiter) {
-        this.handshakeWaiter(message);
-      } else if (this.state === "connecting" && this.handshakeBuffer.length < 4) {
+        const waiter = this.handshakeWaiter;
+        this.handshakeWaiter = null;
+        clearTimeout(waiter.timer);
+        waiter.resolve(message);
+      } else if (this.state === "connecting") {
+        if (this.handshakeBuffer.length >= MAX_HANDSHAKE_BUFFERED_MESSAGES) {
+          console.warn("[WsClient] Authentication message buffer overflow");
+          this.ws?.close(1008, "Authentication message buffer overflow");
+          return;
+        }
         this.handshakeBuffer.push(message);
       }
       return;
@@ -523,7 +609,11 @@ export class WsClient {
 
   // ─── Cleanup ────────────────────────────────────────────────────────
 
-  private cleanup(): void {
+  private cleanup(reason: string = "Connection closed"): void {
+    const activeConnect = this.activeConnect;
+    this.activeConnect = null;
+    activeConnect?.settle(false);
+    this.connectionGeneration++;
     this.stopHeartbeat();
     if (this.ws) {
       this.ws.onopen = null;
@@ -537,7 +627,12 @@ export class WsClient {
     this.pendingChunks = [];
     this.pendingChunksSize = 0;
     this.authContext = null;
-    this.handshakeWaiter = null;
+    if (this.handshakeWaiter) {
+      const waiter = this.handshakeWaiter;
+      this.handshakeWaiter = null;
+      clearTimeout(waiter.timer);
+      waiter.reject(new Error(reason));
+    }
     this.handshakeBuffer = [];
     this.incomingChain = Promise.resolve();
     // Reject any pending sends

@@ -32,6 +32,47 @@ function fakeProcessor(): WsAuthProcessor {
   };
 }
 
+function gatedVerificationProcessor(): {
+  processor: WsAuthProcessor;
+  release: () => void;
+  firstVerificationStarted: Promise<void>;
+  firstVerificationCompleted: Promise<void>;
+} {
+  const delegate = fakeProcessor();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let markStarted!: () => void;
+  const firstVerificationStarted = new Promise<void>((resolve) => {
+    markStarted = resolve;
+  });
+  let markCompleted!: () => void;
+  const firstVerificationCompleted = new Promise<void>((resolve) => {
+    markCompleted = resolve;
+  });
+  let gateNextVerification = true;
+  return {
+    processor: {
+      authenticationCode: (data) => delegate.authenticationCode(data),
+      verifyAuthentication: async (data, expected) => {
+        if (gateNextVerification) {
+          gateNextVerification = false;
+          markStarted();
+          await gate;
+          const valid = await delegate.verifyAuthentication(data, expected);
+          markCompleted();
+          return valid;
+        }
+        return delegate.verifyAuthentication(data, expected);
+      },
+    },
+    release,
+    firstVerificationStarted,
+    firstVerificationCompleted,
+  };
+}
+
 class MockWebSocket {
   static readonly CONNECTING = 0;
   static readonly OPEN = 1;
@@ -151,6 +192,35 @@ async function completeHandshake(
   );
 }
 
+/** Sends a valid challenge and ack without verifying the client's proof. */
+async function sendChallengeAndAck(
+  ws: MockWebSocket,
+  processor: WsAuthProcessor,
+): Promise<void> {
+  ws.serverOpen();
+  ws.serverSend(
+    { type: WsMessageType.AUTH_CHALLENGE, encrypted: false, hasPayload: true },
+    new TextEncoder().encode(JSON.stringify(CHALLENGE)),
+  );
+  await waitForSent(ws, 2);
+
+  const ackCode = await processor.authenticationCode(
+    new Int8Array(
+      handshakePayload("server-proof", "desktop-id", "ext-id", CHALLENGE).buffer,
+    ),
+  );
+  const ack: WsAuthProofMessage = {
+    authenticationCode: bytesToBase64(
+      new Uint8Array(ackCode.buffer, ackCode.byteOffset, ackCode.byteLength),
+    ),
+    pairingVersion: 3,
+  };
+  ws.serverSend(
+    { type: WsMessageType.AUTH_ACK, encrypted: false, hasPayload: true },
+    new TextEncoder().encode(JSON.stringify(ack)),
+  );
+}
+
 describe("WsClient authentication", () => {
   beforeEach(() => {
     MockWebSocket.instances = [];
@@ -173,6 +243,38 @@ describe("WsClient authentication", () => {
     await completeHandshake(ws, processor);
 
     await expect(connectPromise).resolves.toBe(true);
+    expect(client.isActive).toBe(true);
+  });
+
+  it("cancels a pending connection when closed before the socket opens", async () => {
+    const client = makeClient(fakeProcessor());
+
+    const connectPromise = client.connect();
+    const ws = MockWebSocket.instances[0];
+    client.close();
+
+    await expect(connectPromise).resolves.toBe(false);
+    expect(client.currentState).toBe("closed");
+    expect(ws.closedWith).toEqual({ code: 1000, reason: "Normal closure" });
+  });
+
+  it("cancels a pending connection after a socket error", async () => {
+    const processor = fakeProcessor();
+    const client = makeClient(processor);
+
+    const connectPromise = client.connect();
+    const ws = MockWebSocket.instances[0];
+    ws.onerror?.();
+
+    await expect(connectPromise).resolves.toBe(false);
+    expect(client.currentState).toBe("closed");
+    expect(ws.closedWith).toEqual({ code: 1000, reason: "Connection error" });
+
+    const retryPromise = client.connect();
+    const retryWs = MockWebSocket.instances[1];
+    await completeHandshake(retryWs, processor);
+
+    await expect(retryPromise).resolves.toBe(true);
     expect(client.isActive).toBe(true);
   });
 
@@ -199,6 +301,60 @@ describe("WsClient authentication", () => {
 
     await expect(connectPromise).resolves.toBe(false);
     expect(client.isActive).toBe(false);
+  });
+
+  it("drains authenticated messages received while the server proof is being verified", async () => {
+    const { processor, release, firstVerificationStarted } = gatedVerificationProcessor();
+    const client = makeClient(processor);
+    const received: WsEnvelope[] = [];
+    client.onMessage = (envelope) => received.push(envelope);
+
+    const connectPromise = client.connect();
+    const ws = MockWebSocket.instances[0];
+    await sendChallengeAndAck(ws, processor);
+    await firstVerificationStarted;
+
+    const desktopContext = new WsAuthContext("session-1", "desktop-id", "ext-id", processor);
+    const envelope: WsEnvelope = {
+      type: WsMessageType.SYNC_INFO,
+      payload: new TextEncoder().encode("first authenticated message"),
+      encrypted: false,
+    };
+    ws.serverSend(
+      { ...(await desktopContext.createHeader(envelope)), hasPayload: true },
+      envelope.payload,
+    );
+
+    release();
+
+    await expect(connectPromise).resolves.toBe(true);
+    expect(received).toEqual([envelope]);
+  });
+
+  it("does not publish connected after the socket closes during server proof verification", async () => {
+    const {
+      processor,
+      release,
+      firstVerificationStarted,
+      firstVerificationCompleted,
+    } = gatedVerificationProcessor();
+    const client = makeClient(processor);
+    const onConnect = vi.fn();
+    client.onConnect = onConnect;
+
+    const connectPromise = client.connect();
+    const ws = MockWebSocket.instances[0];
+    await sendChallengeAndAck(ws, processor);
+    await firstVerificationStarted;
+
+    ws.close(1006, "Connection lost");
+    release();
+    await firstVerificationCompleted;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await expect(connectPromise).resolves.toBe(false);
+    expect(client.currentState).toBe("closed");
+    expect(onConnect).not.toHaveBeenCalled();
   });
 
   it("resolves false when the server closes during the handshake (policy rejection)", async () => {
