@@ -26,6 +26,8 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.long
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.net.Inet4Address
+import java.net.InetAddress
 import kotlin.coroutines.cancellation.CancellationException
 
 class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
@@ -92,6 +94,16 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
         help = "Optional path to write a JUnit XML report.",
     )
 
+    private val advertiseAddress by option(
+        "--advertise-address",
+        help =
+            "Force mDNS advertising on this IPv4 address (optionally IP/prefixLength, default /24) " +
+                "instead of auto-enumerated interfaces. Use when the peer's real interface toward the " +
+                "target is filtered out as virtual — e.g. a Parallels host-only vnic when the target is " +
+                "a VM reached over host-only networking. The address must be on the target's subnet so " +
+                "the target can subnet-match and register a SyncHandler (required for push scenarios).",
+    )
+
     override fun run() {
         val pairingVersion =
             if (scenario.lowercase() in V3_SCENARIOS) {
@@ -99,10 +111,18 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
             } else {
                 SyncApi.PAIRING_VERSION
             }
+        val advertiseAddresses = advertiseAddress?.let { listOf(parseAdvertiseAddress(it)) }
         val peer =
             appInstanceId?.let {
-                HeadlessPeer(appInstanceId = it, pairingVersion = pairingVersion)
-            } ?: HeadlessPeer(pairingVersion = pairingVersion)
+                HeadlessPeer(
+                    appInstanceId = it,
+                    pairingVersion = pairingVersion,
+                    advertiseAddresses = advertiseAddresses,
+                )
+            } ?: HeadlessPeer(
+                pairingVersion = pairingVersion,
+                advertiseAddresses = advertiseAddresses,
+            )
         try {
             val ctx =
                 ScenarioContext(
@@ -224,6 +244,25 @@ private fun parseTarget(spec: String): TargetSpec {
             spec to DEFAULT_PORT
         }
     return TargetSpec(host = host, port = port, appInstanceId = null)
+}
+
+/**
+ * Parse an `--advertise-address` value: a bare IPv4 (`10.37.129.2`, prefix defaults to /24)
+ * or IPv4 with an explicit prefix length (`10.37.129.2/24`).
+ */
+private fun parseAdvertiseAddress(spec: String): Pair<Inet4Address, Short> {
+    val (ipPart, prefixPart) =
+        if (spec.contains("/")) {
+            val (ip, p) = spec.split("/", limit = 2)
+            ip to p.toShort()
+        } else {
+            spec to 24.toShort()
+        }
+    val addr =
+        InetAddress.getByName(ipPart) as? Inet4Address
+            ?: error("--advertise-address must be an IPv4 address: $spec")
+    require(prefixPart in 0..32) { "--advertise-address prefix length must be 0..32: $spec" }
+    return addr to prefixPart
 }
 
 private fun parseColor(raw: String): Int {

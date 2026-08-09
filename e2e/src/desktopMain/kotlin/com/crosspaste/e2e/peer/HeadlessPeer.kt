@@ -39,6 +39,9 @@ class HeadlessPeer(
     appVersion: String = "0.0.0-e2e",
     appRevision: String = "Unknown",
     pairingVersion: Int = SyncApi.PAIRING_VERSION,
+    // When set, mDNS-advertise on exactly these (address, prefixLength) pairs instead of the
+    // auto-enumerated LAN interfaces (see BonjourAdvertiser.overrideAddresses).
+    advertiseAddresses: List<Pair<java.net.Inet4Address, Short>>? = null,
 ) {
     // Force JsonUtils to fully initialize before anything else touches PasteItem
     // serializer registration. See MEMORY.md "PasteItem / JsonUtils Circular Class
@@ -116,7 +119,8 @@ class HeadlessPeer(
 
     val pullClientApi: PullClientApi = PullClientApi(pasteClient, configManager, exceptionHandler)
 
-    val bonjourAdvertiser: BonjourAdvertiser = BonjourAdvertiser(appInfo).also { it.start() }
+    val bonjourAdvertiser: BonjourAdvertiser =
+        BonjourAdvertiser(appInfo, overrideAddresses = advertiseAddresses).also { it.start() }
 
     fun close() {
         pairingV3Scope?.cancel()
