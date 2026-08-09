@@ -87,6 +87,32 @@ class WsSessionManagerTest {
         }
 
     @Test
+    fun registerSession_invokesOnSessionOpened() =
+        runTest {
+            val mgr = WsSessionManager()
+            val fired = mutableListOf<String>()
+            mgr.setOnSessionOpened { fired.add(it) }
+
+            mgr.registerSession("A", fakeSession())
+
+            assertEquals(listOf("A"), fired)
+        }
+
+    @Test
+    fun registerSession_replacingSession_invokesOnSessionOpenedAgain() =
+        runTest {
+            val mgr = WsSessionManager()
+            val fired = mutableListOf<String>()
+            mgr.setOnSessionOpened { fired.add(it) }
+
+            mgr.registerSession("A", fakeSession())
+            mgr.registerSession("A", fakeSession())
+
+            assertEquals(listOf("A", "A"), fired)
+            assertTrue(mgr.isConnected("A"))
+        }
+
+    @Test
     fun unregisterSession_doesNotInvokeCallback() =
         runTest {
             val mgr = WsSessionManager()

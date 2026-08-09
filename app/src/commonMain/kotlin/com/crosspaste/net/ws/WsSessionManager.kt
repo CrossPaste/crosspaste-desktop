@@ -11,8 +11,14 @@ class WsSessionManager {
 
     private var onSessionClosed: ((String) -> Unit)? = null
 
+    private var onSessionOpened: ((String) -> Unit)? = null
+
     fun setOnSessionClosed(callback: (String) -> Unit) {
         onSessionClosed = callback
+    }
+
+    fun setOnSessionOpened(callback: (String) -> Unit) {
+        onSessionOpened = callback
     }
 
     suspend fun registerSession(
@@ -27,6 +33,7 @@ class WsSessionManager {
         } else {
             logger.info { "Registered WebSocket session for $appInstanceId" }
         }
+        onSessionOpened?.invoke(appInstanceId)
     }
 
     fun unregisterSession(appInstanceId: String) {

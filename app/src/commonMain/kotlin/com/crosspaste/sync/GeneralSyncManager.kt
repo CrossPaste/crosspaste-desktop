@@ -100,6 +100,19 @@ class GeneralSyncManager(
             }
         }
 
+        // Inbound WebSocket registration is a reachability edge the polling loop would
+        // otherwise only notice on its next cycle (up to ~60s away with backoff). This
+        // matters most for client-only peers (browser extensions): they initiate the
+        // connection toward us, so without this hook the device sits visibly offline
+        // until the poll flips it to CONNECTED.
+        wsSessionManager.setOnSessionOpened { appInstanceId ->
+            internalSyncHandlers[appInstanceId]?.let { handler ->
+                realTimeSyncScope.launch {
+                    handler.fastReconnect()
+                }
+            }
+        }
+
         realTimeSyncScope.launch {
             for (event in eventChannel) {
                 launch {
@@ -142,8 +155,22 @@ class GeneralSyncManager(
                     }
 
                     newSet.forEach { appInstanceId ->
-                        internalSyncHandlers[appInstanceId] =
+                        val handler =
                             createSyncHandler(list.first { it.appInstanceId == appInstanceId })
+                        internalSyncHandlers[appInstanceId] = handler
+                        // Closes the race with the onSessionOpened hook: a WS session
+                        // registered before this map write found no handler and was
+                        // dropped (typical for a fresh pairing — the peer opens its
+                        // socket while trustSyncInfo's DB write is still in flight).
+                        // Re-checking after the write guarantees one of the two sides
+                        // always fires. In a narrow interleaving BOTH may fire; that
+                        // yields one redundant ForceResolve, which is idempotent and
+                        // serialized per device — deliberately not deduplicated.
+                        if (wsSessionManager.isConnected(appInstanceId)) {
+                            launch {
+                                handler.fastReconnect()
+                            }
+                        }
                     }
 
                     list

@@ -7,10 +7,12 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.RequestTimeout
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.ws.WsSession
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.devices.DeviceScopeFactory
+import io.ktor.websocket.WebSocketSession
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -98,6 +100,102 @@ class GeneralSyncManagerTest {
                     match {
                         it is SyncEvent.ExchangeKeysForPairing &&
                             it.generation == generation
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun wsSessionOpened_triggersImmediateForceResolve() =
+        runTest {
+            val mocks = createMocks()
+            val syncRuntimeInfo =
+                createTestSyncRuntimeInfo(
+                    connectState = SyncState.DISCONNECTED,
+                )
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(listOf(syncRuntimeInfo))
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
+            val wsSessionManager = WsSessionManager()
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager =
+                GeneralSyncManager(
+                    realTimeSyncScope = childScope,
+                    pendingExchangeLedger = PendingExchangeLedger(),
+                    syncResolver = mocks.syncResolver,
+                    syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
+                    syncClientApi = mocks.syncClientApi,
+                    wsSessionManager = wsSessionManager,
+                    pairingCapabilityFlag = PairingCapabilityFlag(2),
+                )
+            syncManager.start()
+            advanceUntilIdle()
+
+            val wsSession =
+                WsSession(
+                    mockk<WebSocketSession>(relaxed = true) {
+                        every { coroutineContext } returns Job()
+                    },
+                    syncRuntimeInfo.appInstanceId,
+                )
+            wsSessionManager.registerSession(syncRuntimeInfo.appInstanceId, wsSession)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                mocks.syncResolver.emitEvent(
+                    match {
+                        it is SyncEvent.ForceResolve &&
+                            it.syncRuntimeInfo.appInstanceId == syncRuntimeInfo.appInstanceId
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun wsSessionRegisteredBeforeHandlerCreation_stillTriggersForceResolve() =
+        runTest {
+            val mocks = createMocks()
+            val syncRuntimeInfo =
+                createTestSyncRuntimeInfo(
+                    connectState = SyncState.DISCONNECTED,
+                )
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(listOf(syncRuntimeInfo))
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
+            val wsSessionManager = WsSessionManager()
+            // Register the session BEFORE start(): the onSessionOpened hook is not
+            // wired yet, so the open event is dropped — exactly the interleaving
+            // where the peer's socket lands while its handler does not exist yet.
+            val wsSession =
+                WsSession(
+                    mockk<WebSocketSession>(relaxed = true) {
+                        every { coroutineContext } returns Job()
+                    },
+                    syncRuntimeInfo.appInstanceId,
+                )
+            wsSessionManager.registerSession(syncRuntimeInfo.appInstanceId, wsSession)
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager =
+                GeneralSyncManager(
+                    realTimeSyncScope = childScope,
+                    pendingExchangeLedger = PendingExchangeLedger(),
+                    syncResolver = mocks.syncResolver,
+                    syncRuntimeInfoDao = mocks.syncRuntimeInfoDao,
+                    syncClientApi = mocks.syncClientApi,
+                    wsSessionManager = wsSessionManager,
+                    pairingCapabilityFlag = PairingCapabilityFlag(2),
+                )
+            syncManager.start()
+            advanceUntilIdle()
+
+            // The post-write isConnected re-check must fire even though the
+            // opened callback never saw a handler.
+            coVerify(exactly = 1) {
+                mocks.syncResolver.emitEvent(
+                    match {
+                        it is SyncEvent.ForceResolve &&
+                            it.syncRuntimeInfo.appInstanceId == syncRuntimeInfo.appInstanceId
                     },
                 )
             }
