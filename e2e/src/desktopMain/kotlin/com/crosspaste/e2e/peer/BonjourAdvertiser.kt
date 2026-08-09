@@ -5,6 +5,7 @@ import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.e2e.net.NetworkUtils
 import com.crosspaste.utils.TxtRecordUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.net.Inet4Address
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
 
@@ -21,6 +22,11 @@ import javax.jmdns.ServiceInfo
 class BonjourAdvertiser(
     private val appInfo: AppInfo,
     private val advertisedPort: Int = ADVERTISED_PORT,
+    // When set, advertise on exactly these (address, prefixLength) pairs instead of the
+    // auto-enumerated LAN interfaces. Needed to advertise an address the target can
+    // subnet-match when the peer's real interface is filtered out by enumerateLanInet4()
+    // (e.g. a Parallels host-only vnic when testing a VM target over host-only networking).
+    private val overrideAddresses: List<Pair<Inet4Address, Short>>? = null,
 ) {
 
     companion object {
@@ -35,7 +41,7 @@ class BonjourAdvertiser(
     private val instances: MutableList<JmDNS> = mutableListOf()
 
     fun start() {
-        val addresses = NetworkUtils.enumerateLanInet4()
+        val addresses = overrideAddresses ?: NetworkUtils.enumerateLanInet4()
         if (addresses.isEmpty()) {
             logger.warn { "No usable LAN IPv4 addresses; mDNS advertising skipped." }
             return
