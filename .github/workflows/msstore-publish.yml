@@ -42,19 +42,19 @@ jobs:
         shell: pwsh
         run: |
           msstore reconfigure `
-            --tenantId ${{ secrets.AZURE_AD_TENANT_ID }} `
-            --sellerId ${{ secrets.SELLER_ID }} `
-            --clientId ${{ secrets.AZURE_AD_APPLICATION_CLIENT_ID }} `
-            --clientSecret ${{ secrets.AZURE_AD_APPLICATION_SECRET }}
+            --tenantId ${{ secrets.WINDOWS_TENANT_ID }} `
+            --sellerId ${{ secrets.WINDOWS_SELLER_ID }} `
+            --clientId ${{ secrets.WINDOWS_CLIENT_ID }} `
+            --clientSecret ${{ secrets.WINDOWS_CLIENT_SECRET }}
 
       - name: Get base submission metadata
         if: inputs.mode == 'get-base-metadata'
         shell: pwsh
-        run: msstore submission get ${{ vars.MSSTORE_PRODUCT_ID }}
+        run: msstore submission get ${{ secrets.WINDOWS_STORE_ID }}
 
       - name: Publish package and release notes
         if: inputs.mode == 'publish'
         shell: bash
         env:
-          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
+          WINDOWS_STORE_ID: ${{ secrets.WINDOWS_STORE_ID }}
         run: bash scripts/publish-msstore.sh "${{ inputs.version }}"

@@ -26,7 +26,8 @@
 #   scripts/publish-msstore.sh <full-version> [--msix <path>] [--product-id <id>] [--dry-run]
 #     <full-version>   e.g. 2.1.7.2452 (the git tag / OSS prefix)
 #     --msix <path>    use a local MSIX instead of downloading from OSS
-#     --product-id     Store product ID; defaults to $MSSTORE_PRODUCT_ID
+#     --product-id     Store product ID; defaults to $WINDOWS_STORE_ID (same
+#                      secret the Conveyor release build uses)
 #     --dry-run        stop before any msstore call that mutates the submission
 
 set -euo pipefail
@@ -49,7 +50,7 @@ VERSION="${1:-}"
 shift
 
 MSIX=""
-PRODUCT_ID="${MSSTORE_PRODUCT_ID:-}"
+PRODUCT_ID="${WINDOWS_STORE_ID:-}"
 DRY_RUN=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -60,7 +61,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$PRODUCT_ID" ]] || { echo "Missing Store product ID: set MSSTORE_PRODUCT_ID or pass --product-id." >&2; exit 2; }
+[[ -n "$PRODUCT_ID" ]] || { echo "Missing Store product ID: set WINDOWS_STORE_ID or pass --product-id." >&2; exit 2; }
 [[ "$DRY_RUN" == 1 ]] || command -v msstore >/dev/null || { echo "msstore-cli not found on PATH." >&2; exit 2; }
 command -v jq >/dev/null || { echo "jq not found on PATH." >&2; exit 2; }
 

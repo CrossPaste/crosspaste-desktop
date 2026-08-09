@@ -32,16 +32,20 @@ The Store submission API cannot create the first listing. Do this once:
    complete the app's first submission: listing texts, screenshots, age
    rating, markets, pricing, and upload the MSIX manually. Wait until the app
    is published and live.
-2. **Service principal.** Associate a Microsoft Entra tenant with the Partner
-   Center account, register an application in Entra ID, and add it under
-   Partner Center → Account settings → User management → Microsoft Entra
-   applications with the **Manager** role.
-3. **GitHub secrets/variables.** In the repo settings add secrets
-   `AZURE_AD_TENANT_ID`, `SELLER_ID`, `AZURE_AD_APPLICATION_CLIENT_ID`,
-   `AZURE_AD_APPLICATION_SECRET` (names follow the
-   [official docs](https://learn.microsoft.com/windows/apps/publish/msstore-dev-cli/github-actions)),
-   and a repository **variable** `MSSTORE_PRODUCT_ID` with the Store product
-   ID (Partner Center → the app → Product identity, the `9N…` ID).
+2. **Service principal.** The workflow reuses the Entra ID application the
+   Conveyor release build already authenticates with (repo secrets
+   `WINDOWS_TENANT_ID`, `WINDOWS_CLIENT_ID`, `WINDOWS_CLIENT_SECRET`, consumed
+   by `build.conveyor.conf`). If setting up from scratch: associate a
+   Microsoft Entra tenant with the Partner Center account, register an
+   application in Entra ID, and add it under Partner Center → Account
+   settings → User management → Microsoft Entra applications with the
+   **Manager** role.
+3. **GitHub secrets.** Besides the existing `WINDOWS_TENANT_ID`,
+   `WINDOWS_CLIENT_ID`, `WINDOWS_CLIENT_SECRET`, and `WINDOWS_STORE_ID` (the
+   `9N…` Store product ID, Partner Center → the app → Product identity), add
+   one new secret `WINDOWS_SELLER_ID` — the Partner Center Seller ID
+   (Partner Center → Account settings → Organization profile → Legal info),
+   required by `msstore reconfigure`.
 4. **Metadata baseline.** Run the `Publish to Microsoft Store` workflow once
    with mode `get-base-metadata`, copy the submission JSON from the log into
    `msstore/metadata.json`, and commit it. Release-notes patching is skipped
@@ -55,7 +59,7 @@ by `build-release.yml` at tag time):
 - **CI:** Actions → "Publish to Microsoft Store" → Run workflow with
   `version = <full version>` (e.g. `2.1.7.2452`), mode `publish`.
 - **Locally:** `msstore reconfigure ...` once on the machine, then
-  `MSSTORE_PRODUCT_ID=9N... scripts/publish-msstore.sh 2.1.7.2452`.
+  `WINDOWS_STORE_ID=9N... scripts/publish-msstore.sh 2.1.7.2452`.
   Use `--dry-run` to preview the extracted release notes without touching the
   pending submission.
 
