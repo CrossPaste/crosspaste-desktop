@@ -1,7 +1,11 @@
 import { WsClient } from "./ws-client";
+import type { WsAuthProcessor } from "./ws-auth";
 import type { WsEnvelope, WsConnectionStatus } from "./ws-types";
 import type { StoredDevice } from "@/shared/storage/device-store";
 import { DeviceStore } from "@/shared/storage/device-store";
+import { KeyStore, toInt8Array } from "@/shared/storage/key-store";
+import { CrossPasteHash, createSecureMessageProcessor } from "@/shared/core";
+import { ADVERTISED_PAIRING_VERSION } from "@/shared/sync/protocol-version";
 
 const BACKOFF_BASE_MS = 1_000;
 const BACKOFF_MAX_MS = 30_000;
@@ -17,6 +21,33 @@ interface DeviceConnection {
   consecutiveFailures: number;
 }
 
+/** Injectable key access so tests can run without chrome.storage / K/JS core. */
+export interface WsManagerDeps {
+  /** Build the per-peer MAC processor used by the WS authentication handshake. */
+  createAuthProcessor: (targetAppInstanceId: string) => Promise<WsAuthProcessor>;
+  /** The pairing version advertised in AUTH_PROOF. */
+  pairingVersion: number;
+}
+
+const defaultDeps: WsManagerDeps = {
+  createAuthProcessor: async (targetAppInstanceId) => {
+    const keys = await KeyStore.getKeys();
+    if (!keys) {
+      throw new Error("Extension key pair not initialized");
+    }
+    const device = await DeviceStore.get(targetAppInstanceId);
+    const peerKeyB64 = device?.serverKeys?.cryptPublicKey;
+    if (!peerKeyB64) {
+      throw new Error(`No trusted crypt public key for device ${targetAppInstanceId}`);
+    }
+    return createSecureMessageProcessor(
+      toInt8Array(keys.cryptPrivateKey),
+      CrossPasteHash.base64Decode(peerKeyB64),
+    );
+  },
+  pairingVersion: ADVERTISED_PAIRING_VERSION,
+};
+
 /**
  * Multi-device WebSocket connection manager.
  * Manages connections to all paired desktop devices with reconnection and fallback.
@@ -24,12 +55,14 @@ interface DeviceConnection {
 export class WsManager {
   private sessions = new Map<string, DeviceConnection>();
   private appInstanceId: string;
+  private deps: WsManagerDeps;
 
   onMessage: ((targetAppInstanceId: string, envelope: WsEnvelope) => void) | null = null;
   onStatusChange: ((targetAppInstanceId: string, status: WsConnectionStatus) => void) | null = null;
 
-  constructor(appInstanceId: string) {
+  constructor(appInstanceId: string, deps: WsManagerDeps = defaultDeps) {
     this.appInstanceId = appInstanceId;
+    this.deps = deps;
   }
 
   /**
@@ -50,6 +83,8 @@ export class WsManager {
       port: device.port,
       appInstanceId: this.appInstanceId,
       targetAppInstanceId: device.targetAppInstanceId,
+      createAuthProcessor: () => this.deps.createAuthProcessor(device.targetAppInstanceId),
+      pairingVersion: this.deps.pairingVersion,
     });
 
     const conn: DeviceConnection = {

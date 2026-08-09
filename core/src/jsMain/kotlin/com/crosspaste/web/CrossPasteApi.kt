@@ -19,6 +19,7 @@ import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.paste.PasteData
 import com.crosspaste.secure.ECDHKeyPairImpl
 import com.crosspaste.secure.ECDSAKeyPairImpl
+import com.crosspaste.secure.PeerAuthenticator
 import com.crosspaste.secure.SecureKeyPair
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureMessageCipher
@@ -296,15 +297,19 @@ object CrossPasteCrypto {
 }
 
 /**
- * Symmetric message cipher bound to one peer — exposed to TypeScript.
+ * Symmetric message cipher + peer authenticator bound to one peer — exposed
+ * to TypeScript.
  *
- * Byte-compatible with desktop's `SecureMessageProcessor`: used to decrypt
- * WS envelopes flagged `encrypted` (e.g. PASTE_PUSH when the desktop has
- * "Encrypted Sync" enabled). Construct via [createSecureMessageProcessor].
+ * Byte-compatible with desktop's `SecureMessageProcessor`: [encrypt]/[decrypt]
+ * handle WS envelopes flagged `encrypted` (e.g. PASTE_PUSH when the desktop
+ * has "Encrypted Sync" enabled); [authenticationCode]/[verifyAuthentication]
+ * produce and check the HMAC codes used by the authenticated WebSocket
+ * handshake and per-envelope MACs. Construct via [createSecureMessageProcessor].
  */
 @JsExport
 class JsSecureMessageProcessor internal constructor(
     private val cipher: SecureMessageCipher,
+    private val peerAuthenticator: PeerAuthenticator,
 ) {
 
     @Suppress("OPT_IN_USAGE")
@@ -317,6 +322,21 @@ class JsSecureMessageProcessor internal constructor(
     fun decrypt(data: ByteArray): Promise<ByteArray> =
         GlobalScope.promise {
             cipher.decrypt(data)
+        }
+
+    @Suppress("OPT_IN_USAGE")
+    fun authenticationCode(data: ByteArray): Promise<ByteArray> =
+        GlobalScope.promise {
+            peerAuthenticator.authenticationCode(data)
+        }
+
+    @Suppress("OPT_IN_USAGE")
+    fun verifyAuthentication(
+        data: ByteArray,
+        expectedCode: ByteArray,
+    ): Promise<Boolean> =
+        GlobalScope.promise {
+            peerAuthenticator.verify(data, expectedCode)
         }
 }
 
@@ -332,10 +352,16 @@ fun createSecureMessageProcessor(
 ): Promise<JsSecureMessageProcessor> =
     GlobalScope.promise {
         val serializer = SecureKeyPairSerializer()
+        val privateKey = serializer.decodeCryptPrivateKey(cryptPrivateKeyDer)
+        val publicKey = serializer.decodeCryptPublicKey(peerCryptPublicKeyDer)
         JsSecureMessageProcessor(
             SecureMessageCipher(
-                privateKey = serializer.decodeCryptPrivateKey(cryptPrivateKeyDer),
-                publicKey = serializer.decodeCryptPublicKey(peerCryptPublicKeyDer),
+                privateKey = privateKey,
+                publicKey = publicKey,
+            ),
+            PeerAuthenticator(
+                privateKey = privateKey,
+                publicKey = publicKey,
             ),
         )
     }
