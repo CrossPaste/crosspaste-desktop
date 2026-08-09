@@ -15,12 +15,12 @@ on:
         description: "Full released version whose MSIX to submit (e.g. 2.1.7.2452)"
         required: true
       mode:
-        description: "publish: submit package + release notes; get-base-metadata: print the current submission JSON (baseline for msstore/metadata.json)"
+        description: "publish: submit package + release notes; get-submission: print the current submission JSON (debugging)"
         type: choice
         default: publish
         options:
           - publish
-          - get-base-metadata
+          - get-submission
 
 permissions: {}
 
@@ -31,6 +31,12 @@ concurrency:
 
 jobs:
   msstore:
+    # Store credentials must only ever run scripts from the default branch.
+    # The msstore-publish environment enforces this server-side (deployment
+    # branches restricted to main); this condition is an extra guard against
+    # accidentally dispatching from a stale ref.
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    environment: msstore-publish
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
@@ -47,8 +53,8 @@ jobs:
             --clientId ${{ secrets.WINDOWS_CLIENT_ID }} `
             --clientSecret ${{ secrets.WINDOWS_CLIENT_SECRET }}
 
-      - name: Get base submission metadata
-        if: inputs.mode == 'get-base-metadata'
+      - name: Get current submission
+        if: inputs.mode == 'get-submission'
         shell: pwsh
         run: msstore submission get ${{ secrets.WINDOWS_STORE_ID }}
 
@@ -57,4 +63,8 @@ jobs:
         shell: bash
         env:
           WINDOWS_STORE_ID: ${{ secrets.WINDOWS_STORE_ID }}
-        run: bash scripts/publish-msstore.sh "${{ inputs.version }}"
+          # Untrusted input: only ever passed through the environment (never
+          # interpolated into the script text) and strictly validated as
+          # N.N.N.N by publish-msstore.sh.
+          VERSION: ${{ inputs.version }}
+        run: bash scripts/publish-msstore.sh "$VERSION"
