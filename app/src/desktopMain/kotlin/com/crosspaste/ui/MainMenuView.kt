@@ -4,15 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -135,100 +139,108 @@ fun MainMenuView() {
     val rootRouteName = backStackEntry?.let { getRootRouteName(it.destination) }
     val exitApplication = LocalExitApplication.current
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(bottom = medium),
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
+    // The menu is designed for the full 700dp window, but the window height is
+    // clamped to the usable screen area on small/heavily scaled displays (#4759).
+    // heightIn(min = viewport) keeps SpaceBetween pinning the bottom group when
+    // everything fits, while verticalScroll takes over once it no longer does.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = tiny),
-            verticalArrangement = Arrangement.spacedBy(tiny4X),
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight)
+                    .padding(bottom = medium),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            primaryMenuList.forEach { item ->
-                MainMenuItemView(
-                    title = item.title,
-                    icon = item.icon,
-                    selected = rootRouteName == item.route.name,
-                    onClick = { navigateManage.navigateAndClearStack(item.route) },
-                )
-            }
-        }
-
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = tiny, end = tiny),
-            verticalArrangement = Arrangement.spacedBy(tiny4X),
-        ) {
-            if (showNetworkWarning) {
-                MainMenuItemView(
-                    title = "network_warning",
-                    icon = MaterialSymbols.Rounded.Warning,
-                    selected = false,
-                    onClick = { networkProfileService.showWarning() },
-                    tintColor = LocalThemeExtState.current.warning.color,
-                )
-            }
-
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = tiny3X),
-                thickness = tiny5X,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-
-            Spacer(modifier = Modifier.height(tiny3X))
-
-            if (firstLaunchCompleted && config.showTutorial) {
-                Box(modifier = Modifier.padding(horizontal = tiny, vertical = tiny3X)) {
-                    TutorialButton()
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = tiny),
+                verticalArrangement = Arrangement.spacedBy(tiny4X),
+            ) {
+                primaryMenuList.forEach { item ->
+                    MainMenuItemView(
+                        title = item.title,
+                        icon = item.icon,
+                        selected = rootRouteName == item.route.name,
+                        onClick = { navigateManage.navigateAndClearStack(item.route) },
+                    )
                 }
             }
 
-            secondaryMenuList.forEach { item ->
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = tiny, end = tiny),
+                verticalArrangement = Arrangement.spacedBy(tiny4X),
+            ) {
+                if (showNetworkWarning) {
+                    MainMenuItemView(
+                        title = "network_warning",
+                        icon = MaterialSymbols.Rounded.Warning,
+                        selected = false,
+                        onClick = { networkProfileService.showWarning() },
+                        tintColor = LocalThemeExtState.current.warning.color,
+                    )
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = tiny3X),
+                    thickness = tiny5X,
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+
+                Spacer(modifier = Modifier.height(tiny3X))
+
+                if (firstLaunchCompleted && config.showTutorial) {
+                    Box(modifier = Modifier.padding(horizontal = tiny, vertical = tiny3X)) {
+                        TutorialButton()
+                    }
+                }
+
+                secondaryMenuList.forEach { item ->
+                    MainMenuItemView(
+                        title = item.title,
+                        icon = item.icon,
+                        selected = rootRouteName == item.route.name,
+                        onClick = { navigateManage.navigateAndClearStack(item.route) },
+                        compact = true,
+                    )
+                }
+
                 MainMenuItemView(
-                    title = item.title,
-                    icon = item.icon,
-                    selected = rootRouteName == item.route.name,
-                    onClick = { navigateManage.navigateAndClearStack(item.route) },
+                    title = "change_log",
+                    icon = MaterialSymbols.Rounded.Auto_awesome,
+                    selected = rootRouteName == ChangeLog.NAME,
+                    onClick = { navigateManage.navigateAndClearStack(ChangeLog) },
+                    compact = true,
+                    showBadge = showChangelogBadge,
+                )
+
+                MainMenuItemView(
+                    title = "check_for_updates",
+                    icon = MaterialSymbols.Rounded.Refresh,
+                    selected = false,
+                    // Single entry point for every channel (same as the tray's check):
+                    // portable-zip re-arms the update dialog (or reports "no new version"),
+                    // others delegate to Store / Conveyor / browser. Avoids a "fake check"
+                    // that only navigated without any feedback.
+                    onClick = { appUpdateService.tryTriggerUpdate() },
                     compact = true,
                 )
+
+                MainMenuItemView(
+                    title = "quit",
+                    icon = MaterialSymbols.Rounded.Exit_to_app,
+                    selected = false,
+                    onClick = { exitApplication(ExitMode.EXIT) },
+                    compact = true,
+                    tintColor = MaterialTheme.colorScheme.error,
+                )
             }
-
-            MainMenuItemView(
-                title = "change_log",
-                icon = MaterialSymbols.Rounded.Auto_awesome,
-                selected = rootRouteName == ChangeLog.NAME,
-                onClick = { navigateManage.navigateAndClearStack(ChangeLog) },
-                compact = true,
-                showBadge = showChangelogBadge,
-            )
-
-            MainMenuItemView(
-                title = "check_for_updates",
-                icon = MaterialSymbols.Rounded.Refresh,
-                selected = false,
-                // Single entry point for every channel (same as the tray's check):
-                // portable-zip re-arms the update dialog (or reports "no new version"),
-                // others delegate to Store / Conveyor / browser. Avoids a "fake check"
-                // that only navigated without any feedback.
-                onClick = { appUpdateService.tryTriggerUpdate() },
-                compact = true,
-            )
-
-            MainMenuItemView(
-                title = "quit",
-                icon = MaterialSymbols.Rounded.Exit_to_app,
-                selected = false,
-                onClick = { exitApplication(ExitMode.EXIT) },
-                compact = true,
-                tintColor = MaterialTheme.colorScheme.error,
-            )
         }
     }
 }
