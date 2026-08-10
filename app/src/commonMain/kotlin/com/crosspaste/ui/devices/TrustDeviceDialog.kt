@@ -402,9 +402,17 @@ fun TokenInputBox(
         }
     }
 
+    // Focus the first box as soon as it is actually focusable, so the cursor
+    // blinks there on open and the user can type without clicking first. Keyed on
+    // the FocusRequester (recreated once the pairing credential type resolves) and
+    // on isLoading (boxes are disabled until the type is known): a plain
+    // LaunchedEffect(Unit) fired once against the disabled box and never retried on
+    // the enabled one, so focus was silently lost.
     if (index == 0) {
-        LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
+        LaunchedEffect(focusRequester, isLoading) {
+            if (!isLoading) {
+                focusRequester.requestFocus()
+            }
         }
     }
 }
