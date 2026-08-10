@@ -62,7 +62,11 @@ fun TokenView(intOffset: IntOffset) {
     val copywriter = koinInject<GlobalCopywriter>()
     val pairingV3UiController = koinInject<PairingV3UiController>()
     val showToken by appTokenApi.showToken.collectAsState()
-    val progress by appTokenApi.refreshProgress.collectAsState()
+    // refreshProgress runs 0f -> 1f as the current token ages toward the next
+    // refresh. TokenPopupCard expects the fraction *remaining* (it drains the bar
+    // as v3 pairing cards do), so invert it at the call site to keep both styles
+    // counting down the same direction.
+    val refreshProgress by appTokenApi.refreshProgress.collectAsState()
     val token by appTokenApi.token.collectAsState()
     val pairingSessions by pairingV3UiController.sessions.collectAsState()
     val incomingPairingSessions = acceptorPairingSessions(pairingSessions)
@@ -101,7 +105,7 @@ fun TokenView(intOffset: IntOffset) {
                 TokenPopupCard(
                     title = copywriter.getText("token"),
                     token = token.map(Char::toString),
-                    progress = progress,
+                    progress = 1f - refreshProgress,
                     onClose = {
                         // Manual dismissal releases each pending verifier's count
                         // through the atomic primitive, so a later server-side
