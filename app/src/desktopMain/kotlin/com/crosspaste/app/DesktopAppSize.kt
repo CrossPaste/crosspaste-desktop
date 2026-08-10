@@ -41,14 +41,12 @@ class DesktopAppSize(
         const val MIN_SEARCH_WINDOW_HEIGHT: Int = 250
         const val MAX_SEARCH_WINDOW_HEIGHT: Int = 420
 
-        // Gap kept between a clamped dimension and the usable screen edge, so a
-        // dimension that had to be clamped never renders edge-to-edge even when the
-        // platform reports no screen insets (common under XWayland, where
-        // panel/taskbar insets are unavailable). Dimensions that already fit keep
-        // the design size and may sit closer to the edge.
+        // Gap kept between a clamped height and the usable screen edge, so the
+        // window never renders edge-to-edge even when the platform reports no screen
+        // insets (common under XWayland, where panel/taskbar insets are unavailable).
         private val SCREEN_CLAMP_MARGIN = xxLarge
 
-        // Usable areas below this are treated as implausible platform reports
+        // Usable heights below this are treated as implausible platform reports
         // (headless quirks, transient display configs) rather than real screens,
         // in which case clamping is skipped entirely.
         private val MIN_PLAUSIBLE_USABLE_SIZE = 200.dp
@@ -57,21 +55,26 @@ class DesktopAppSize(
          * The design size assumes it always fits on screen, which breaks on small or
          * heavily scaled displays (e.g. XWayland misreporting a 2.5x scale, #4759):
          * a 700dp-tall window can exceed the physical screen and gets pinned to full
-         * height. Clamping against the usable screen area keeps the declared window
-         * size valid regardless of what scale factor the runtime detected.
+         * height. Clamping the height against the usable screen area keeps the
+         * declared window size valid regardless of what scale factor the runtime
+         * detected. The width is deliberately left at the design value: the
+         * two-column 600dp layout does not reflow, and height overflow is the
+         * failure mode observed in practice.
          */
         fun clampMainWindowSize(
             designSize: DpSize,
             usableScreenSize: DpSize,
         ): DpSize {
-            if (usableScreenSize.width < MIN_PLAUSIBLE_USABLE_SIZE ||
-                usableScreenSize.height < MIN_PLAUSIBLE_USABLE_SIZE
-            ) {
+            if (usableScreenSize.height < MIN_PLAUSIBLE_USABLE_SIZE) {
                 return designSize
             }
             return DpSize(
-                width = minOf(designSize.width, usableScreenSize.width - SCREEN_CLAMP_MARGIN),
-                height = minOf(designSize.height, usableScreenSize.height - SCREEN_CLAMP_MARGIN),
+                width = designSize.width,
+                height =
+                    minOf(
+                        designSize.height,
+                        usableScreenSize.height - SCREEN_CLAMP_MARGIN,
+                    ),
             )
         }
 
