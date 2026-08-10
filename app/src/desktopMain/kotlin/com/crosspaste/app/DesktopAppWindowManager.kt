@@ -183,6 +183,10 @@ abstract class DesktopAppWindowManager(
     }
 
     fun showMainWindow(windowTrigger: WindowTrigger) {
+        // Re-clamp on every show: resolution, scale, taskbar size or the active
+        // display may have changed since the last one. Only the size is updated,
+        // so a position the user dragged the window to is preserved.
+        _mainWindowInfo.value.state.size = appSize.getClampedMainWindowSize()
         _mainWindowInfo.value =
             _mainWindowInfo.value.copy(
                 show = true,

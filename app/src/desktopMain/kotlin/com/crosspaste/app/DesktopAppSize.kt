@@ -41,9 +41,11 @@ class DesktopAppSize(
         const val MIN_SEARCH_WINDOW_HEIGHT: Int = 250
         const val MAX_SEARCH_WINDOW_HEIGHT: Int = 420
 
-        // Gap kept between a clamped main window and the usable screen edge, so the
-        // window never renders edge-to-edge even when the platform reports no screen
-        // insets (common under XWayland, where panel/taskbar insets are unavailable).
+        // Gap kept between a clamped dimension and the usable screen edge, so a
+        // dimension that had to be clamped never renders edge-to-edge even when the
+        // platform reports no screen insets (common under XWayland, where
+        // panel/taskbar insets are unavailable). Dimensions that already fit keep
+        // the design size and may sit closer to the edge.
         private val SCREEN_CLAMP_MARGIN = xxLarge
 
         // Usable areas below this are treated as implausible platform reports
@@ -217,7 +219,7 @@ class DesktopAppSize(
             position = WindowPosition(Alignment.Center),
         )
 
-    private fun getClampedMainWindowSize(): DpSize {
+    fun getClampedMainWindowSize(): DpSize {
         val designSize = _appSizeValue.value.mainWindowSize
         return getUsableScreenSize()
             ?.let { clampMainWindowSize(designSize, it) }
