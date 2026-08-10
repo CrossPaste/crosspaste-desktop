@@ -217,14 +217,16 @@ class PairingV3UiControllerTest {
     }
 
     @Test
-    fun trustedSessionAutoDismissesWithoutClosingOtherDeviceCards() {
+    fun trustedAndCancelledSessionsAutoDismissWithoutClosingOtherDeviceCards() {
         val trusted = pairingSession("trusted", PakeRole.ACCEPTOR, null, PairingSessionState.TRUSTED)
+        val cancelled = pairingSession("cancelled", PakeRole.ACCEPTOR, null, PairingSessionState.CANCELLED)
         val stillPairing = pairingSession("pairing", PakeRole.ACCEPTOR, "123456")
         val rejected = pairingSession("rejected", PakeRole.ACCEPTOR, null, PairingSessionState.REJECTED)
-        val sessions = listOf(trusted, stillPairing, rejected)
+        val sessions = listOf(trusted, cancelled, stillPairing, rejected)
 
-        assertEquals(listOf("trusted"), trustedPairingSessionIds(sessions))
-        // Rejected stays visible so the user sees the failure; only TRUSTED closes itself.
+        // TRUSTED (connected) and CANCELLED (peer abandoned) close themselves.
+        assertEquals(listOf("trusted", "cancelled"), selfDismissingSessionIds(sessions))
+        // Rejected stays visible so the user sees the failure.
         assertEquals(listOf("pairing", "rejected"), pairingTokenCardSessions(sessions).map { it.sessionId })
     }
 
