@@ -51,11 +51,14 @@ fun PairingV3AcceptorTokenCards(
     val copywriter = koinInject<GlobalCopywriter>()
     val coroutineScope = rememberCoroutineScope()
 
-    // v3 pairs per device: once a session reaches TRUSTED that device is connected,
-    // so its card closes itself; cards of other devices still pairing are untouched.
-    val trustedSessionIds = trustedPairingSessionIds(sessions)
-    LaunchedEffect(trustedSessionIds) {
-        trustedSessionIds.forEach { sessionId ->
+    // v3 pairs per device. A session that reaches a self-dismissing state closes
+    // its own card: TRUSTED (the device connected) and CANCELLED (the peer
+    // abandoned the handshake) are both non-actionable, so lingering on screen is
+    // just noise. REJECTED/EXPIRED/FAILED stay so the user sees why it failed.
+    // Cards of other devices still pairing are untouched.
+    val selfDismissingIds = selfDismissingSessionIds(sessions)
+    LaunchedEffect(selfDismissingIds) {
+        selfDismissingIds.forEach { sessionId ->
             controller.dismiss(sessionId)
         }
     }
@@ -130,12 +133,20 @@ private fun PairingV3SessionTokenCard(
 internal fun acceptorPairingSessions(sessions: List<PairingSessionUiState>): List<PairingSessionUiState> =
     sessions.filter { it.role == PakeRole.ACCEPTOR }
 
-/** Sessions that still need a visible token card; TRUSTED ones auto-dismiss instead. */
-internal fun pairingTokenCardSessions(sessions: List<PairingSessionUiState>): List<PairingSessionUiState> =
-    sessions.filterNot { it.state == PairingSessionState.TRUSTED }
+/**
+ * TRUSTED (connected) and CANCELLED (peer abandoned the handshake) close their own
+ * card — both are non-actionable, so there is nothing for the user to read or act
+ * on. REJECTED/EXPIRED/FAILED are surfaced so the user learns why pairing failed.
+ */
+private fun PairingSessionState.isSelfDismissing(): Boolean =
+    this == PairingSessionState.TRUSTED || this == PairingSessionState.CANCELLED
 
-internal fun trustedPairingSessionIds(sessions: List<PairingSessionUiState>): List<String> =
-    sessions.filter { it.state == PairingSessionState.TRUSTED }.map { it.sessionId }
+/** Sessions that still need a visible token card; self-dismissing states auto-close instead. */
+internal fun pairingTokenCardSessions(sessions: List<PairingSessionUiState>): List<PairingSessionUiState> =
+    sessions.filterNot { it.state.isSelfDismissing() }
+
+internal fun selfDismissingSessionIds(sessions: List<PairingSessionUiState>): List<String> =
+    sessions.filter { it.state.isSelfDismissing() }.map { it.sessionId }
 
 @Composable
 internal fun rememberPairingSecondsRemaining(
