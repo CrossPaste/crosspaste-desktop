@@ -1,8 +1,6 @@
 package com.crosspaste.app
 
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
@@ -106,12 +104,7 @@ abstract class DesktopAppWindowManager(
         MutableStateFlow(
             WindowInfo(
                 show = false,
-                state =
-                    WindowState(
-                        isMinimized = false,
-                        size = appSize.appSizeValue.value.mainWindowSize,
-                        position = WindowPosition(Alignment.Center),
-                    ),
+                state = appSize.getMainWindowState(),
                 trigger = WindowTrigger.INIT,
             ),
         )
@@ -190,6 +183,10 @@ abstract class DesktopAppWindowManager(
     }
 
     fun showMainWindow(windowTrigger: WindowTrigger) {
+        // Re-clamp on every show: resolution, scale, taskbar size or the active
+        // display may have changed since the last one. Only the size is updated,
+        // so a position the user dragged the window to is preserved.
+        _mainWindowInfo.value.state.size = appSize.getClampedMainWindowSize()
         _mainWindowInfo.value =
             _mainWindowInfo.value.copy(
                 show = true,

@@ -13,6 +13,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.contains
 import com.github.kwhat.jnativehook.mouse.NativeMouseEvent
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Point
+import java.awt.Toolkit
 
 class DesktopAppSize(
     private val platform: Platform,
@@ -38,6 +40,43 @@ class DesktopAppSize(
         // Reasonable range around the 332dp default (roughly ±25%)
         const val MIN_SEARCH_WINDOW_HEIGHT: Int = 250
         const val MAX_SEARCH_WINDOW_HEIGHT: Int = 420
+
+        // Gap kept between a clamped height and the usable screen edge, so the
+        // window never renders edge-to-edge even when the platform reports no screen
+        // insets (common under XWayland, where panel/taskbar insets are unavailable).
+        private val SCREEN_CLAMP_MARGIN = xxLarge
+
+        // Usable heights below this are treated as implausible platform reports
+        // (headless quirks, transient display configs) rather than real screens,
+        // in which case clamping is skipped entirely.
+        private val MIN_PLAUSIBLE_USABLE_SIZE = 200.dp
+
+        /**
+         * The design size assumes it always fits on screen, which breaks on small or
+         * heavily scaled displays (e.g. XWayland misreporting a 2.5x scale, #4759):
+         * a 700dp-tall window can exceed the physical screen and gets pinned to full
+         * height. Clamping the height against the usable screen area keeps the
+         * declared window size valid regardless of what scale factor the runtime
+         * detected. The width is deliberately left at the design value: the
+         * two-column 600dp layout does not reflow, and height overflow is the
+         * failure mode observed in practice.
+         */
+        fun clampMainWindowSize(
+            designSize: DpSize,
+            usableScreenSize: DpSize,
+        ): DpSize {
+            if (usableScreenSize.height < MIN_PLAUSIBLE_USABLE_SIZE) {
+                return designSize
+            }
+            return DpSize(
+                width = designSize.width,
+                height =
+                    minOf(
+                        designSize.height,
+                        usableScreenSize.height - SCREEN_CLAMP_MARGIN,
+                    ),
+            )
+        }
 
         // Title bar height as a fixed proportion of the square paste card,
         // matching the original 60dp title on a 252dp card at the 332dp default
@@ -179,9 +218,33 @@ class DesktopAppSize(
     override fun getMainWindowState(): WindowState =
         WindowState(
             isMinimized = false,
-            size = _appSizeValue.value.mainWindowSize,
+            size = getClampedMainWindowSize(),
             position = WindowPosition(Alignment.Center),
         )
+
+    fun getClampedMainWindowSize(): DpSize {
+        val designSize = _appSizeValue.value.mainWindowSize
+        return getUsableScreenSize()
+            ?.let { clampMainWindowSize(designSize, it) }
+            ?: designSize
+    }
+
+    // The main window is centered via WindowPosition(Alignment.Center), which
+    // resolves against the default screen, so the clamp uses the same screen.
+    private fun getUsableScreenSize(): DpSize? =
+        runCatching {
+            val configuration =
+                GraphicsEnvironment
+                    .getLocalGraphicsEnvironment()
+                    .defaultScreenDevice
+                    .defaultConfiguration
+            val bounds = configuration.bounds
+            val insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+            DpSize(
+                width = (bounds.width - insets.left - insets.right).dp,
+                height = (bounds.height - insets.top - insets.bottom).dp,
+            )
+        }.getOrNull()
 
     override fun getSearchWindowState(init: Boolean): WindowState {
         val graphicsDevice = getGraphicsDevice()
