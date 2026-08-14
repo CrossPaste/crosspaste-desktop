@@ -1,6 +1,8 @@
 package com.crosspaste.cli.platform
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import okio.FileSystem
+import okio.Path
 import platform.posix.system
 import kotlin.experimental.ExperimentalNativeApi
 
@@ -8,6 +10,13 @@ interface AppLauncher {
 
     fun launch(): Boolean
 }
+
+/**
+ * The shell commands below background the start script, so a missing script
+ * would still "succeed" and leave the caller waiting out the full readiness
+ * timeout — check it up front instead.
+ */
+private fun startScriptExists(script: Path): Boolean = FileSystem.SYSTEM.exists(script)
 
 @OptIn(ExperimentalNativeApi::class)
 fun createAppLauncher(appPathProvider: CliAppPathProvider): AppLauncher {
@@ -27,6 +36,7 @@ class MacosAppLauncher(
 
     override fun launch(): Boolean {
         val script = appPathProvider.startScriptPath
+        if (!startScriptExists(script)) return false
         val exitCode = system("nohup bash \"$script\" > /dev/null 2>&1 &")
         return exitCode == 0
     }
@@ -39,6 +49,7 @@ class LinuxAppLauncher(
 
     override fun launch(): Boolean {
         val script = appPathProvider.startScriptPath
+        if (!startScriptExists(script)) return false
         val exitCode = system("nohup bash \"$script\" > /dev/null 2>&1 &")
         return exitCode == 0
     }
@@ -51,6 +62,7 @@ class WindowsAppLauncher(
 
     override fun launch(): Boolean {
         val script = appPathProvider.startScriptPath
+        if (!startScriptExists(script)) return false
         val exePath = appPathProvider.resolveAppExePath()
         val exitCode = system("\"$script\" \"$exePath\"")
         return exitCode == 0

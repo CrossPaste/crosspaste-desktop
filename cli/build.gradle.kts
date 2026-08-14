@@ -117,9 +117,18 @@ kotlin {
         }
     }
 
+    // Platform-split sources keyed on the selected target (not the host,
+    // which would break -Pcli.target cross-compilation)
+    val isMingwTarget = cliTarget == "mingwX64" || (cliTarget == null && isMingwX64)
+
     sourceSets {
         val cliNativeMain by getting {
             kotlin.srcDir(generateCliVersion)
+            if (isMingwTarget) {
+                kotlin.srcDir("src/mingwNativeMain/kotlin")
+            } else {
+                kotlin.srcDir("src/posixNativeMain/kotlin")
+            }
             dependencies {
                 implementation(libs.clikt)
                 implementation(libs.kotlinx.coroutines.core)
