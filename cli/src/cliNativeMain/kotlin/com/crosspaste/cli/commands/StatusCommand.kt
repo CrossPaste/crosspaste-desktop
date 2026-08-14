@@ -60,26 +60,39 @@ class StatusCommand : CliktCommand(name = "status") {
     override fun run() {
         runBlocking {
             val configReader = CliConfigReader(createNativePlatformPathProvider())
-            when (AppReadinessChecker(configReader).probe()) {
-                AppLiveness.RUNNING -> printRunning(configReader)
+            val readinessChecker = AppReadinessChecker(configReader)
+            when (readinessChecker.probe()) {
+                AppLiveness.RUNNING -> printRunning(configReader, readinessChecker)
                 AppLiveness.STARTING -> printNotReady("Starting", "starting")
                 AppLiveness.NOT_RUNNING -> printNotReady("Not running", "not_running")
             }
         }
     }
 
-    private suspend fun printRunning(configReader: CliConfigReader) {
+    private suspend fun printRunning(
+        configReader: CliConfigReader,
+        readinessChecker: AppReadinessChecker,
+    ) {
         var client: CliClient? = null
         try {
             client = CliClient(configReader)
+            warnOnApiVersionMismatch(client)
             val status = client.getBody("/cli/status", StatusResponse.serializer())
             printStatus(status)
         } catch (_: AppNotRunningException) {
             // The app went away between the probe and the status request
             printNotReady("Not running", "not_running")
         } catch (e: Exception) {
-            echo("Error: ${e.message}", err = true)
-            throw ProgramResult(1)
+            // An EOF/reset from an app that died mid-request is still "not
+            // running"; only keep exit 1 when the app demonstrably serves
+            when (readinessChecker.probe()) {
+                AppLiveness.RUNNING -> {
+                    echo("Error: ${e.message}", err = true)
+                    throw ProgramResult(1)
+                }
+                AppLiveness.STARTING -> printNotReady("Starting", "starting")
+                AppLiveness.NOT_RUNNING -> printNotReady("Not running", "not_running")
+            }
         } finally {
             client?.close()
         }

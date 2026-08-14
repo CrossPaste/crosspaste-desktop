@@ -138,5 +138,14 @@ kotlin {
                 implementation(libs.okio)
             }
         }
+        val cliNativeTest by getting {
+            if (!isMingwTarget) {
+                kotlin.srcDir("src/posixNativeTest/kotlin")
+            }
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
     }
 }

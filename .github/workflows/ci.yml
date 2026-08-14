@@ -113,7 +113,7 @@ jobs:
       # Pure Kotlin since the CLI went all-HTTP; only needs the Kotlin/Native
       # toolchain already set up above.
       - name: Build CLI native binary
-        run: ./gradlew :cli:ktlintCheck :cli:linkDebugExecutableCliNative
+        run: ./gradlew :cli:ktlintCheck :cli:cliNativeTest :cli:linkDebugExecutableCliNative
 
   web-build:
     needs: changes

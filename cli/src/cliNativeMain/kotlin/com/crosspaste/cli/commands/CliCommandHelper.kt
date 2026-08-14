@@ -45,12 +45,13 @@ fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
         val readinessChecker = AppReadinessChecker(configReader)
         ensureAppRunning(readinessChecker)
         var retriedAfterRestart = false
+        var versionWarningShown = false
         while (true) {
             var client: CliClient? = null
             try {
                 client = CliClient(configReader)
-                if (!retriedAfterRestart) {
-                    warnOnApiVersionMismatch(client)
+                if (!versionWarningShown) {
+                    versionWarningShown = warnOnApiVersionMismatch(client)
                 }
                 block(client)
                 return@runBlocking
@@ -164,14 +165,15 @@ private fun CliktCommand.promptStartConfirmation(): Boolean {
     }
 }
 
-private fun CliktCommand.warnOnApiVersionMismatch(client: CliClient) {
-    if (client.hasApiVersionMismatch()) {
-        echo(
-            "Warning: CLI API version $CLI_API_VERSION does not match the running " +
-                "app's version ${client.endpoint.apiVersion}; consider updating both.",
-            err = true,
-        )
-    }
+/** Returns true when a warning was emitted, so callers can avoid repeats. */
+internal fun CliktCommand.warnOnApiVersionMismatch(client: CliClient): Boolean {
+    if (!client.hasApiVersionMismatch()) return false
+    echo(
+        "Warning: CLI API version $CLI_API_VERSION does not match the running " +
+            "app's version ${client.endpoint.apiVersion}; consider updating both.",
+        err = true,
+    )
+    return true
 }
 
 @OptIn(ExperimentalForeignApi::class)
