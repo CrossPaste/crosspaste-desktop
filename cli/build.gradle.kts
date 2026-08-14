@@ -114,12 +114,27 @@ kotlin {
                     linkerOpts("--allow-multiple-definition")
                 }
             }
+            // The test binary needs the same Clikt duplicate-symbol workaround;
+            // GNU ld only hits it when konan compiler caches are enabled (host
+            // builds), which is why cross-links from macOS don't reproduce it
+            if (!isMacosTarget) {
+                getTest("debug").linkerOpts("--allow-multiple-definition")
+            }
         }
     }
+
+    // Platform-split sources keyed on the selected target (not the host,
+    // which would break -Pcli.target cross-compilation)
+    val isMingwTarget = cliTarget == "mingwX64" || (cliTarget == null && isMingwX64)
 
     sourceSets {
         val cliNativeMain by getting {
             kotlin.srcDir(generateCliVersion)
+            if (isMingwTarget) {
+                kotlin.srcDir("src/mingwNativeMain/kotlin")
+            } else {
+                kotlin.srcDir("src/posixNativeMain/kotlin")
+            }
             dependencies {
                 implementation(libs.clikt)
                 implementation(libs.kotlinx.coroutines.core)
@@ -127,6 +142,15 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.cio)
                 implementation(libs.okio)
+            }
+        }
+        val cliNativeTest by getting {
+            if (!isMingwTarget) {
+                kotlin.srcDir("src/posixNativeTest/kotlin")
+            }
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }

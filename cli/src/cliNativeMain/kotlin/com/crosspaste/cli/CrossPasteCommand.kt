@@ -17,6 +17,7 @@ import com.github.ajalt.clikt.core.obj
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.switch
 
 class CrossPasteCommand : CliktCommand(name = "crosspaste") {
 
@@ -24,8 +25,18 @@ class CrossPasteCommand : CliktCommand(name = "crosspaste") {
 
     val json by option("--json", help = "Output in JSON format for machine consumption").flag()
 
+    val autoStart by option(
+        help =
+            "When CrossPaste is not running: --start launches it without asking, --no-start " +
+                "never launches it. Default is to ask on an interactive terminal and to fail " +
+                "with exit code 3 otherwise.",
+    ).switch(
+        "--start" to true,
+        "--no-start" to false,
+    )
+
     override fun run() {
-        currentContext.obj = CliContext(json = json)
+        currentContext.obj = CliContext(json = json, autoStart = autoStart)
     }
 
     init {
@@ -47,4 +58,6 @@ class CrossPasteCommand : CliktCommand(name = "crosspaste") {
 
 data class CliContext(
     val json: Boolean = false,
+    /** Tri-state launch consent: true = always start, false = never, null = ask. */
+    val autoStart: Boolean? = null,
 )
