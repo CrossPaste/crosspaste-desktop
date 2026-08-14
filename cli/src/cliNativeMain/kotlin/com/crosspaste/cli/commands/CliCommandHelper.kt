@@ -12,8 +12,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.mp.KoinPlatform
 
-const val CLI_VERSION = "1.2.7"
-
 val cliJson =
     Json {
         ignoreUnknownKeys = true
