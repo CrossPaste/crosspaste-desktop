@@ -215,10 +215,19 @@ private suspend fun handleTagCreate(
     call.respond(CliTagDto(id = id, name = request.name, color = color))
 }
 
-// Storage location changes need the app's migration flow (move data, restart);
-// setting the raw keys here would desynchronize the running app from its own
-// data directory and break endpoint-file discovery for the CLI itself.
-private val cliBlockedConfigKeys = setOf("storagePath", "useDefaultStoragePath")
+// These settings require workflows beyond persisting one config field. Storage
+// changes migrate data and restart the app; port, pasteboard, and MCP changes
+// must start, stop, or restart their running services. A generic config write
+// would report success while leaving the process in a contradictory state.
+private val cliBlockedConfigKeys =
+    setOf(
+        "storagePath",
+        "useDefaultStoragePath",
+        "port",
+        "enablePasteboardListening",
+        "enableMcpServer",
+        "mcpServerPort",
+    )
 
 private suspend fun handleConfigSet(
     call: ApplicationCall,
@@ -230,7 +239,7 @@ private suspend fun handleConfigSet(
             HttpStatusCode.BadRequest,
             CliMessageDto(
                 "Config key '${request.key}' cannot be changed via the CLI; " +
-                    "use the storage settings in the app instead.",
+                    "use the corresponding settings in the app instead.",
             ),
         )
         return
