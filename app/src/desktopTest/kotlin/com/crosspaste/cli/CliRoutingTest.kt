@@ -382,11 +382,11 @@ class CliRoutingTest {
             val response =
                 client.put("/cli/config") {
                     contentType(ContentType.Application.Json)
-                    setBody("""{"key":"port","value":"2147483648"}""")
+                    setBody("""{"key":"searchWindowHeight","value":"2147483648"}""")
                 }
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
-            assertEquals(13129, fixture.currentConfig.port)
+            assertEquals(332, fixture.currentConfig.searchWindowHeight)
             verify(exactly = 0) { fixture.configManager.updateConfig(any<String>(), any()) }
         }
     }
