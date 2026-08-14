@@ -18,11 +18,13 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.ioDispatcher
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -126,8 +128,10 @@ fun Routing.cliRouting(
 
         get("/tags") {
             val tags =
-                pasteTagDao.getAllTagsBlock().map { tag ->
-                    CliTagDto(id = tag.id, name = tag.name, color = tag.color)
+                withContext(ioDispatcher) {
+                    pasteTagDao.getAllTagsBlock().map { tag ->
+                        CliTagDto(id = tag.id, name = tag.name, color = tag.color)
+                    }
                 }
             call.respond(tags)
         }
@@ -149,7 +153,7 @@ fun Routing.cliRouting(
                 call.respond(HttpStatusCode.BadRequest, CliMessageDto("Invalid tag id."))
                 return@delete
             }
-            pasteTagDao.deletePasteTagBlock(id)
+            withContext(ioDispatcher) { pasteTagDao.deletePasteTagBlock(id) }
             call.respond(CliMessageDto("Tag #$id deleted."))
         }
 
@@ -259,8 +263,7 @@ private suspend fun handleList(
     val tagName = call.request.queryParameters["tag"]
     val tagId =
         tagName?.let { name ->
-            pasteTagDao
-                .getAllTagsBlock()
+            withContext(ioDispatcher) { pasteTagDao.getAllTagsBlock() }
                 .firstOrNull { it.name.equals(name, ignoreCase = true) }
                 ?.id
                 ?: run {
@@ -286,7 +289,7 @@ private suspend fun handleList(
 
 private const val DEFAULT_LIST_LIMIT = 20
 
-private fun PasteData.toSummaryDto(
+private suspend fun PasteData.toSummaryDto(
     pasteTagDao: PasteTagDao,
     pasteDataHelper: PasteDataHelper,
 ): CliPasteSummaryDto =
@@ -295,13 +298,13 @@ private fun PasteData.toSummaryDto(
         typeName = getTypeName(),
         source = source,
         size = size,
-        tagged = pasteTagDao.getPasteTagsBlock(id).isNotEmpty(),
+        tagged = withContext(ioDispatcher) { pasteTagDao.getPasteTagsBlock(id).isNotEmpty() },
         createTime = createTime,
         preview = pasteDataHelper.getSummary(this, "Loading...", ""),
         remote = remote,
     )
 
-private fun PasteData.toDetailDto(
+private suspend fun PasteData.toDetailDto(
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
 ): CliPasteDetailDto =
@@ -310,7 +313,7 @@ private fun PasteData.toDetailDto(
         typeName = getTypeName(),
         source = source,
         size = size,
-        tagged = pasteTagDao.getPasteTagsBlock(id).isNotEmpty(),
+        tagged = withContext(ioDispatcher) { pasteTagDao.getPasteTagsBlock(id).isNotEmpty() },
         createTime = createTime,
         remote = remote,
         hash = hash,

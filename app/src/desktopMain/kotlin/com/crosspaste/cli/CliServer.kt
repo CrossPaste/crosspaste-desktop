@@ -23,6 +23,8 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.nio.file.Files
@@ -79,58 +81,77 @@ class CliServer(
 
     private val logger = KotlinLogging.logger {}
 
+    // start() is launched fire-and-forget at app startup; the mutex plus the
+    // stopRequested flag keep a concurrent shutdown from racing it (stop would
+    // otherwise run first and the late start would leave a stale socket and
+    // endpoint file behind)
+    private val lifecycleMutex = Mutex()
+
+    private var stopRequested = false
+
     private var server: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>? = null
 
     private var socketPath: Path? = null
 
     suspend fun start() {
         withContext(ioDispatcher) {
-            runCatching {
-                val socket = resolveSocketPath()
-                Files.deleteIfExists(socket)
-                server =
-                    embeddedServer(
-                        CIO,
-                        configure = {
-                            unixConnector(socket.toString())
-                        },
-                    ) {
-                        cliServerModule()
-                    }.start(wait = false)
-                socketPath = socket
-                awaitSocketFile(socket)
-                restrictSocketToOwner(socket)
-                cliEndpointFile.write(
-                    CliEndpoint(
-                        pid = ProcessHandle.current().pid(),
-                        socketPath = socket.toString(),
-                        apiVersion = CLI_API_VERSION,
-                        appInstanceId = appInfo.appInstanceId,
-                    ),
-                )
-                logger.info { "CLI server started on unix socket $socket" }
-            }.onFailure { e ->
-                logger.error(e) { "Failed to start CLI server" }
-                runCatching { server?.stop() }
-                server = null
-                socketPath = null
+            lifecycleMutex.withLock {
+                if (stopRequested) {
+                    logger.info { "CLI server start skipped: stop already requested" }
+                    return@withLock
+                }
+                runCatching {
+                    val socket = resolveSocketPath()
+                    Files.deleteIfExists(socket)
+                    socketPath = socket
+                    server =
+                        embeddedServer(
+                            CIO,
+                            configure = {
+                                unixConnector(socket.toString())
+                            },
+                        ) {
+                            cliServerModule()
+                        }.start(wait = false)
+                    awaitSocketFile(socket)
+                    restrictSocketToOwner(socket)
+                    cliEndpointFile.write(
+                        CliEndpoint(
+                            pid = ProcessHandle.current().pid(),
+                            socketPath = socket.toString(),
+                            apiVersion = CLI_API_VERSION,
+                            appInstanceId = appInfo.appInstanceId,
+                        ),
+                    )
+                    logger.info { "CLI server started on unix socket $socket" }
+                }.onFailure { e ->
+                    logger.error(e) { "Failed to start CLI server" }
+                    cleanup()
+                }
             }
         }
     }
 
     suspend fun stop() {
         withContext(ioDispatcher) {
-            runCatching {
-                cliEndpointFile.delete()
-                server?.stop()
-                server = null
-                socketPath?.let { Files.deleteIfExists(it) }
-                socketPath = null
-                logger.info { "CLI server stopped" }
-            }.onFailure { e ->
-                logger.error(e) { "Failed to stop CLI server" }
+            lifecycleMutex.withLock {
+                stopRequested = true
+                runCatching {
+                    cleanup()
+                    logger.info { "CLI server stopped" }
+                }.onFailure { e ->
+                    logger.error(e) { "Failed to stop CLI server" }
+                }
             }
         }
+    }
+
+    private fun cleanup() {
+        cliEndpointFile.delete()
+        runCatching { server?.stop() }
+        server = null
+        socketPath?.let { runCatching { Files.deleteIfExists(it) } }
+        socketPath = null
     }
 
     private fun Application.cliServerModule() {
@@ -173,22 +194,24 @@ class CliServer(
         val socketDir = socketBaseDir.resolve("crosspaste-$sanitizedUserName")
 
         Files.createDirectories(socketDir)
-        val posix =
-            runCatching {
-                Files.setPosixFilePermissions(
-                    socketDir,
-                    setOf(
-                        PosixFilePermission.OWNER_READ,
-                        PosixFilePermission.OWNER_WRITE,
-                        PosixFilePermission.OWNER_EXECUTE,
-                    ),
-                )
-            }.isSuccess
-        if (posix) {
+        if (supportsPosixPermissions(socketDir)) {
+            // Fail closed: on shared /tmp another local user could have
+            // pre-created this directory to plant a fake socket. The ownership
+            // check must NOT depend on chmod succeeding — a foreign-owned
+            // directory makes chmod fail with EPERM, which must surface as a
+            // refusal, never as a silently skipped check.
             val owner = Files.getOwner(socketDir).name
             check(owner == userName) {
                 "CLI socket directory $socketDir is owned by '$owner', not '$userName'; refusing to start"
             }
+            Files.setPosixFilePermissions(
+                socketDir,
+                setOf(
+                    PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.OWNER_EXECUTE,
+                ),
+            )
         }
 
         val socket = socketDir.resolve(socketFileName)
@@ -197,6 +220,9 @@ class CliServer(
         }
         return socket
     }
+
+    private fun supportsPosixPermissions(path: Path): Boolean =
+        path.fileSystem.supportedFileAttributeViews().contains("posix")
 
     private suspend fun awaitSocketFile(socket: Path) {
         repeat(SOCKET_READY_MAX_POLLS) {

@@ -26,6 +26,7 @@ import java.nio.channels.SocketChannel
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.PosixFilePermissions
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.test.Test
@@ -122,6 +123,47 @@ class CliServerTest {
             }
 
             assertFalse(endpointFile.getPath().exists(), "endpoint file must be removed on stop")
+        }
+
+        socketBaseDir.toFile().deleteRecursively()
+    }
+
+    @Test
+    fun `start tightens permissions on a pre-created socket directory it owns`() {
+        val posix =
+            java.nio.file.FileSystems
+                .getDefault()
+                .supportedFileAttributeViews()
+                .contains("posix")
+        if (!posix) {
+            return // Windows: directory ACLs apply instead of POSIX bits
+        }
+
+        val userDataDir = Files.createTempDirectory("cli-server-data")
+        val socketBaseDir =
+            Path
+                .of(System.getProperty("java.io.tmpdir"), "cs-${(100000..999999).random()}")
+                .also { Files.createDirectories(it) }
+        // Same directory naming as CliServer.resolveSocketPath
+        val sanitizedUserName =
+            System.getProperty("user.name").replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val socketDir = socketBaseDir.resolve("crosspaste-$sanitizedUserName")
+        Files.createDirectories(socketDir)
+        Files.setPosixFilePermissions(socketDir, PosixFilePermissions.fromString("rwxrwxrwx"))
+
+        val (server, endpointFile) = createServer(userDataDir, socketBaseDir)
+        runBlocking {
+            server.start()
+            try {
+                assertTrue(endpointFile.getPath().exists(), "start must succeed for a self-owned directory")
+                assertEquals(
+                    PosixFilePermissions.fromString("rwx------"),
+                    Files.getPosixFilePermissions(socketDir),
+                    "a world-writable self-owned socket directory must be tightened to 0700",
+                )
+            } finally {
+                server.stop()
+            }
         }
 
         socketBaseDir.toFile().deleteRecursively()

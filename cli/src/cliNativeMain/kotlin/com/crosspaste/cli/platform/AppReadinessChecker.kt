@@ -32,23 +32,27 @@ class AppReadinessChecker(
         }
 
     suspend fun waitForAppReady(): Boolean {
-        repeat(MAX_POLLS) {
-            if (isReady()) {
-                return true
-            }
-            delay(POLL_INTERVAL)
-        }
-        return false
-    }
-
-    private suspend fun isReady(): Boolean {
-        val socketPath = readSocketPath() ?: return false
         val client =
             HttpClient(CIO) {
                 engine {
                     requestTimeout = 2000
                 }
             }
+        try {
+            repeat(MAX_POLLS) {
+                if (isReady(client)) {
+                    return true
+                }
+                delay(POLL_INTERVAL)
+            }
+            return false
+        } finally {
+            client.close()
+        }
+    }
+
+    private suspend fun isReady(client: HttpClient): Boolean {
+        val socketPath = readSocketPath() ?: return false
         return try {
             val response =
                 client.get("http://localhost/cli/status") {
@@ -57,8 +61,6 @@ class AppReadinessChecker(
             response.status == HttpStatusCode.OK
         } catch (_: Exception) {
             false
-        } finally {
-            client.close()
         }
     }
 
