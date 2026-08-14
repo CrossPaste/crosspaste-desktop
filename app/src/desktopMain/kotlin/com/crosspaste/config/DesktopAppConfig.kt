@@ -109,6 +109,7 @@ data class DesktopAppConfig(
                 },
             maxStorage = if (key == "maxStorage") toLong(value) else maxStorage,
             cleanupPercentage = if (key == "cleanupPercentage") toInt(value) else cleanupPercentage,
+            enableDiscovery = if (key == "enableDiscovery") toBoolean(value) else enableDiscovery,
             blacklist = if (key == "blacklist") toString(value) else blacklist,
             enableSkipPreLaunchPasteboardContent =
                 if (key == "enableSkipPreLaunchPasteboardContent") {

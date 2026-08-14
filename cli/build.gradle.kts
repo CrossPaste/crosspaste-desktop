@@ -107,16 +107,6 @@ kotlin {
             executable {
                 entryPoint = "com.crosspaste.cli.main"
                 baseName = "crosspaste-cli"
-                // Link system sqlite3 library required by SQLDelight native driver
-                linkerOpts("-lsqlite3")
-                // On Linux, ld.lld needs explicit library search paths
-                if (!isMacosTarget && !isMingwX64) {
-                    linkerOpts("-L/usr/lib", "-L/usr/lib/x86_64-linux-gnu", "-L/usr/lib/aarch64-linux-gnu")
-                    // The system libsqlite3.so references glibc symbols newer than the
-                    // Kotlin/Native sysroot libc; they resolve against the real glibc
-                    // at run time, so let the link-time check pass (same as :shared)
-                    linkerOpts("--allow-shlib-undefined")
-                }
                 // Workaround for Clikt duplicate symbol bug in Kotlin/Native
                 // See: https://github.com/ajalt/clikt/issues/598
                 // Apple ld does not support --allow-multiple-definition (GNU ld only)
@@ -130,21 +120,12 @@ kotlin {
     sourceSets {
         val cliNativeMain by getting {
             kotlin.srcDir(generateCliVersion)
-            if (isMingwX64) {
-                kotlin.srcDir("src/mingwNativeMain/kotlin")
-            } else {
-                kotlin.srcDir("src/posixNativeMain/kotlin")
-            }
             dependencies {
-                implementation(project(":shared"))
                 implementation(libs.clikt)
-                implementation(libs.koin.core)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.cio)
-                implementation(libs.ktor.client.content.negotiation)
-                implementation(libs.ktor.serialization.kotlinx.json)
                 implementation(libs.okio)
             }
         }

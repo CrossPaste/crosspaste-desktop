@@ -1,7 +1,6 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.db.paste.PasteDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -32,21 +31,10 @@ class PasteCommand : CliktCommand(name = "paste") {
     private val id by argument(help = "Paste ID to show (omit for most recent)").long().optional()
 
     override fun run() =
-        runWithDao {
-            val pasteDao = getDao<PasteDao>()
-            val pasteData =
-                if (id != null) {
-                    pasteDao.getNoDeletePasteData(id!!)
-                } else {
-                    pasteDao.getLatestLoadedPasteData()
-                }
+        runCli { client ->
+            val path = id?.let { "/cli/paste/$it" } ?: "/cli/paste/latest"
+            val detail = client.getBody(path, PasteDetailResponse.serializer())
 
-            if (pasteData == null) {
-                echo("Paste not found.", err = true)
-                return@runWithDao
-            }
-
-            val detail = pasteData.toDetailResponse()
             if (ctx.json) {
                 echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
             } else {

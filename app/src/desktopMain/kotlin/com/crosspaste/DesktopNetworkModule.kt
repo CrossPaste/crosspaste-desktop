@@ -1,6 +1,8 @@
 package com.crosspaste
 
 import com.crosspaste.app.AppEnv
+import com.crosspaste.cli.CliEndpointFile
+import com.crosspaste.cli.CliServer
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.FaviconLoader
@@ -80,6 +82,25 @@ import org.koin.dsl.module
 
 fun desktopNetworkModule(marketingMode: Boolean): Module =
     module {
+        // region CLI
+        single<CliEndpointFile> { CliEndpointFile(get()) }
+        single<CliServer> {
+            CliServer(
+                appInfo = get(),
+                configManager = get(),
+                cliEndpointFile = get(),
+                pasteboardService = get(),
+                pasteDao = get(),
+                pasteDataHelper = get(),
+                pasteItemReader = get(),
+                pasteReleaseService = get(),
+                pasteTagDao = get(),
+                searchContentService = get(),
+                syncRuntimeInfoDao = get(),
+            )
+        }
+        // endregion
+
         // region MCP
         single<McpResourceProvider> { McpResourceProvider(get(), get()) }
         single<McpServer> {

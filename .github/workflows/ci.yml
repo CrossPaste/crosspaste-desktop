@@ -110,7 +110,8 @@ jobs:
         run: ./gradlew :core:build :shared:build :app:build
 
       # Compile gate for the CLI native binary (host target = linuxX64).
-      # Uses the libsqlite3-dev and Kotlin/Native toolchain already set up above.
+      # Pure Kotlin since the CLI went all-HTTP; only needs the Kotlin/Native
+      # toolchain already set up above.
       - name: Build CLI native binary
         run: ./gradlew :cli:ktlintCheck :cli:linkDebugExecutableCliNative
 

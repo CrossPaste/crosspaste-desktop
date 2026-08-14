@@ -1,7 +1,6 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -29,24 +28,12 @@ class DevicesCommand : CliktCommand(name = "devices") {
     private val ctx by requireObject<CliContext>()
 
     override fun run() =
-        runWithDao {
-            val syncDao = getDao<SyncRuntimeInfoDao>()
-            val infos = syncDao.getAllSyncRuntimeInfos()
+        runCli { client ->
             val devices =
-                infos.map { info ->
-                    DeviceSummary(
-                        appInstanceId = info.appInstanceId,
-                        deviceName = info.deviceName,
-                        noteName = info.noteName,
-                        platform = info.platform.name,
-                        appVersion = info.appVersion,
-                        connectState = info.connectState,
-                        connectHostAddress = info.connectHostAddress,
-                        port = info.port,
-                        allowSend = info.allowSend,
-                        allowReceive = info.allowReceive,
-                    )
-                }
+                client.getBody(
+                    "/cli/devices",
+                    ListSerializer(DeviceSummary.serializer()),
+                )
 
             if (ctx.json) {
                 echo(
