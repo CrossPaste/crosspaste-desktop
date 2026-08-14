@@ -47,41 +47,16 @@ fun Routing.cliRouting(
 ) {
     route("/cli") {
         get("/status") {
-            val config = configManager.getCurrentConfig()
-            call.respond(
-                CliStatusDto(
-                    appVersion = appInfo.appVersion,
-                    appInstanceId = appInfo.appInstanceId,
-                    apiVersion = CLI_API_VERSION,
-                    port = config.port,
-                    pasteboardListening = config.enablePasteboardListening,
-                    deviceCount = syncRuntimeInfoDao.getAllSyncRuntimeInfos().size,
-                    pasteCount = pasteDao.getActiveCount(),
-                ),
-            )
+            handleStatus(call, appInfo, configManager, pasteDao, syncRuntimeInfoDao)
         }
 
         get("/paste/latest") {
-            val pasteData = pasteDao.getLatestLoadedPasteData()
-            if (pasteData == null) {
-                call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste not found."))
-            } else {
-                call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader))
-            }
+            respondPasteDetail(call, pasteDao.getLatestLoadedPasteData(), pasteTagDao, pasteItemReader)
         }
 
         get("/paste/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, CliMessageDto("Invalid paste id."))
-                return@get
-            }
-            val pasteData = pasteDao.getNoDeletePasteData(id)
-            if (pasteData == null) {
-                call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste not found."))
-            } else {
-                call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader))
-            }
+            val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@get
+            respondPasteDetail(call, pasteDao.getNoDeletePasteData(id), pasteTagDao, pasteItemReader)
         }
 
         get("/history") {
@@ -108,51 +83,19 @@ fun Routing.cliRouting(
         }
 
         get("/devices") {
-            val devices =
-                syncRuntimeInfoDao.getAllSyncRuntimeInfos().map { info ->
-                    CliDeviceDto(
-                        appInstanceId = info.appInstanceId,
-                        deviceName = info.deviceName,
-                        noteName = info.noteName,
-                        platform = info.platform.name,
-                        appVersion = info.appVersion,
-                        connectState = info.connectState,
-                        connectHostAddress = info.connectHostAddress,
-                        port = info.port,
-                        allowSend = info.allowSend,
-                        allowReceive = info.allowReceive,
-                    )
-                }
-            call.respond(devices)
+            handleDevices(call, syncRuntimeInfoDao)
         }
 
         get("/tags") {
-            val tags =
-                withContext(ioDispatcher) {
-                    pasteTagDao.getAllTagsBlock().map { tag ->
-                        CliTagDto(id = tag.id, name = tag.name, color = tag.color)
-                    }
-                }
-            call.respond(tags)
+            handleTagList(call, pasteTagDao)
         }
 
         post("/tags") {
-            val request = call.receive<CliTagCreateRequest>()
-            if (request.name.isBlank()) {
-                call.respond(HttpStatusCode.BadRequest, CliMessageDto("Tag name must not be blank."))
-                return@post
-            }
-            val color = PasteTag.getColor(pasteTagDao.getMaxSortOrder() + 1)
-            val id = pasteTagDao.createPasteTag(request.name, color)
-            call.respond(CliTagDto(id = id, name = request.name, color = color))
+            handleTagCreate(call, pasteTagDao)
         }
 
         delete("/tags/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, CliMessageDto("Invalid tag id."))
-                return@delete
-            }
+            val id = call.requireLongParameter("id", "Invalid tag id.") ?: return@delete
             withContext(ioDispatcher) { pasteTagDao.deletePasteTagBlock(id) }
             call.respond(CliMessageDto("Tag #$id deleted."))
         }
@@ -162,80 +105,194 @@ fun Routing.cliRouting(
         }
 
         put("/config") {
-            val request = call.receive<CliConfigSetRequest>()
-            val currentJson =
-                configJson
-                    .encodeToJsonElement(
-                        DesktopAppConfig.serializer(),
-                        configManager.getCurrentConfig(),
-                    ).jsonObject
-            val existing = currentJson[request.key]
-            if (existing !is JsonPrimitive) {
-                call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown config key: '${request.key}'."))
-                return@put
-            }
-            val parsed = parseConfigValue(existing, request.value)
-            if (parsed == null) {
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    CliMessageDto("Invalid value '${request.value}' for config key '${request.key}'."),
-                )
-                return@put
-            }
-            configManager.updateConfig(request.key, parsed)
-            call.respond(CliMessageDto("Config '${request.key}' set to '${request.value}'."))
+            handleConfigSet(call, configManager)
         }
 
         post("/copy") {
-            val request = call.receive<CliCopyRequest>()
-            if (request.text.isEmpty()) {
-                call.respond(HttpStatusCode.BadRequest, CliMessageDto("Text must not be empty."))
-                return@post
-            }
-            val pasteItem =
-                createTextPasteItem(
-                    identifiers = listOf(DesktopTextTypePlugin.TEXT),
-                    text = request.text,
-                )
-            val pasteData =
-                PasteData(
-                    appInstanceId = appInfo.appInstanceId,
-                    pasteAppearItem = pasteItem,
-                    pasteCollection = PasteCollection(listOf()),
-                    pasteType = PasteType.TEXT_TYPE.type,
-                    source = "CLI",
-                    size = pasteItem.size,
-                    hash = pasteItem.hash,
-                    pasteState = PasteState.LOADED,
-                    createTime = DateUtils.nowEpochMilliseconds(),
-                )
-            val id = pasteDao.createPasteData(pasteData)
-            pasteboardService.tryWritePasteboard(
-                id = id,
-                pasteItem = pasteItem,
-                localOnly = true,
-            )
-            call.respond(CliCopyResponse(id))
+            handleCopy(call, appInfo, pasteDao, pasteboardService)
         }
 
         delete("/paste/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull()
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, CliMessageDto("Invalid paste id."))
-                return@delete
-            }
-            pasteDao
-                .markDeletePasteData(id)
-                .onSuccess {
-                    call.respond(CliMessageDto("Paste #$id deleted."))
-                }.onFailure { e ->
-                    call.respond(
-                        HttpStatusCode.NotFound,
-                        CliMessageDto(e.message ?: "Failed to delete paste #$id."),
-                    )
-                }
+            val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@delete
+            handlePasteDelete(call, id, pasteDao)
         }
     }
+}
+
+private suspend fun ApplicationCall.requireLongParameter(
+    name: String,
+    errorMessage: String,
+): Long? {
+    val value = parameters[name]?.toLongOrNull()
+    if (value == null) {
+        respond(HttpStatusCode.BadRequest, CliMessageDto(errorMessage))
+    }
+    return value
+}
+
+private suspend fun handleStatus(
+    call: ApplicationCall,
+    appInfo: AppInfo,
+    configManager: DesktopConfigManager,
+    pasteDao: PasteDao,
+    syncRuntimeInfoDao: SyncRuntimeInfoDao,
+) {
+    val config = configManager.getCurrentConfig()
+    call.respond(
+        CliStatusDto(
+            appVersion = appInfo.appVersion,
+            appInstanceId = appInfo.appInstanceId,
+            apiVersion = CLI_API_VERSION,
+            port = config.port,
+            pasteboardListening = config.enablePasteboardListening,
+            deviceCount = syncRuntimeInfoDao.getAllSyncRuntimeInfos().size,
+            pasteCount = pasteDao.getActiveCount(),
+        ),
+    )
+}
+
+private suspend fun respondPasteDetail(
+    call: ApplicationCall,
+    pasteData: PasteData?,
+    pasteTagDao: PasteTagDao,
+    pasteItemReader: PasteItemReader,
+) {
+    if (pasteData == null) {
+        call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste not found."))
+    } else {
+        call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader))
+    }
+}
+
+private suspend fun handleDevices(
+    call: ApplicationCall,
+    syncRuntimeInfoDao: SyncRuntimeInfoDao,
+) {
+    val devices =
+        syncRuntimeInfoDao.getAllSyncRuntimeInfos().map { info ->
+            CliDeviceDto(
+                appInstanceId = info.appInstanceId,
+                deviceName = info.deviceName,
+                noteName = info.noteName,
+                platform = info.platform.name,
+                appVersion = info.appVersion,
+                connectState = info.connectState,
+                connectHostAddress = info.connectHostAddress,
+                port = info.port,
+                allowSend = info.allowSend,
+                allowReceive = info.allowReceive,
+            )
+        }
+    call.respond(devices)
+}
+
+private suspend fun handleTagList(
+    call: ApplicationCall,
+    pasteTagDao: PasteTagDao,
+) {
+    val tags =
+        withContext(ioDispatcher) {
+            pasteTagDao.getAllTagsBlock().map { tag ->
+                CliTagDto(id = tag.id, name = tag.name, color = tag.color)
+            }
+        }
+    call.respond(tags)
+}
+
+private suspend fun handleTagCreate(
+    call: ApplicationCall,
+    pasteTagDao: PasteTagDao,
+) {
+    val request = call.receive<CliTagCreateRequest>()
+    if (request.name.isBlank()) {
+        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Tag name must not be blank."))
+        return
+    }
+    val color = PasteTag.getColor(pasteTagDao.getMaxSortOrder() + 1)
+    val id = pasteTagDao.createPasteTag(request.name, color)
+    call.respond(CliTagDto(id = id, name = request.name, color = color))
+}
+
+private suspend fun handleConfigSet(
+    call: ApplicationCall,
+    configManager: DesktopConfigManager,
+) {
+    val request = call.receive<CliConfigSetRequest>()
+    val currentJson =
+        configJson
+            .encodeToJsonElement(
+                DesktopAppConfig.serializer(),
+                configManager.getCurrentConfig(),
+            ).jsonObject
+    val existing = currentJson[request.key]
+    if (existing !is JsonPrimitive) {
+        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown config key: '${request.key}'."))
+        return
+    }
+    val parsed = parseConfigValue(existing, request.value)
+    if (parsed == null) {
+        call.respond(
+            HttpStatusCode.BadRequest,
+            CliMessageDto("Invalid value '${request.value}' for config key '${request.key}'."),
+        )
+        return
+    }
+    configManager.updateConfig(request.key, parsed)
+    call.respond(CliMessageDto("Config '${request.key}' set to '${request.value}'."))
+}
+
+private suspend fun handleCopy(
+    call: ApplicationCall,
+    appInfo: AppInfo,
+    pasteDao: PasteDao,
+    pasteboardService: PasteboardService,
+) {
+    val request = call.receive<CliCopyRequest>()
+    if (request.text.isEmpty()) {
+        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Text must not be empty."))
+        return
+    }
+    val pasteItem =
+        createTextPasteItem(
+            identifiers = listOf(DesktopTextTypePlugin.TEXT),
+            text = request.text,
+        )
+    val pasteData =
+        PasteData(
+            appInstanceId = appInfo.appInstanceId,
+            pasteAppearItem = pasteItem,
+            pasteCollection = PasteCollection(listOf()),
+            pasteType = PasteType.TEXT_TYPE.type,
+            source = "CLI",
+            size = pasteItem.size,
+            hash = pasteItem.hash,
+            pasteState = PasteState.LOADED,
+            createTime = DateUtils.nowEpochMilliseconds(),
+        )
+    val id = pasteDao.createPasteData(pasteData)
+    pasteboardService.tryWritePasteboard(
+        id = id,
+        pasteItem = pasteItem,
+        localOnly = true,
+    )
+    call.respond(CliCopyResponse(id))
+}
+
+private suspend fun handlePasteDelete(
+    call: ApplicationCall,
+    id: Long,
+    pasteDao: PasteDao,
+) {
+    pasteDao
+        .markDeletePasteData(id)
+        .onSuccess {
+            call.respond(CliMessageDto("Paste #$id deleted."))
+        }.onFailure { e ->
+            call.respond(
+                HttpStatusCode.NotFound,
+                CliMessageDto(e.message ?: "Failed to delete paste #$id."),
+            )
+        }
 }
 
 private suspend fun handleList(
