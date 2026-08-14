@@ -1,9 +1,6 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteTagDao
-import com.crosspaste.paste.SearchContentService
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -27,32 +24,11 @@ class SearchCommand : CliktCommand(name = "search") {
     private val tag by option("--tag", "-g", help = "Filter by tag name")
 
     override fun run() =
-        runWithDao {
-            val pasteDao = getDao<PasteDao>()
-            val pasteTagDao = getDao<PasteTagDao>()
-            val searchContentService = getDao<SearchContentService>()
-            val searchTerms = searchContentService.createSearchTerms(query)
-            val pasteTypeList = listOfNotNull(resolveTypeFilter(type))
-
-            val tagId: Long? =
-                tag?.let { name ->
-                    pasteTagDao
-                        .getAllTagsBlock()
-                        .firstOrNull { it.name.equals(name, ignoreCase = true) }
-                        ?.id
-                }
-
-            val results =
-                pasteDao.searchPasteData(
-                    searchTerms = searchTerms,
-                    pasteTypeList = pasteTypeList,
-                    tag = tagId,
-                    limit = limit,
-                )
+        runCli { client ->
             val list =
-                PasteListResponse(
-                    items = results.map { it.toSummaryDto() },
-                    total = results.size.toLong(),
+                client.getBody(
+                    "/cli/search${buildListQuery(limit, type, tag, query = query)}",
+                    PasteListResponse.serializer(),
                 )
 
             if (ctx.json) {

@@ -1,14 +1,13 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.paste.PasteTagDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
+import io.ktor.http.*
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -29,6 +28,22 @@ data class PasteListResponse(
     val total: Long,
 )
 
+fun buildListQuery(
+    limit: Int,
+    type: String?,
+    tag: String?,
+    query: String? = null,
+): String {
+    val params =
+        buildList {
+            query?.let { add("q=${it.encodeURLParameter()}") }
+            add("limit=$limit")
+            type?.let { add("type=${it.encodeURLParameter()}") }
+            tag?.let { add("tag=${it.encodeURLParameter()}") }
+        }
+    return params.joinToString("&", prefix = "?")
+}
+
 class HistoryCommand : CliktCommand(name = "history") {
 
     override fun help(context: Context): String = "List recent paste history"
@@ -42,31 +57,11 @@ class HistoryCommand : CliktCommand(name = "history") {
     private val tag by option("--tag", "-g", help = "Filter by tag name")
 
     override fun run() =
-        runWithDao {
-            val pasteDao = getDao<PasteDao>()
-            val pasteTagDao = getDao<PasteTagDao>()
-            val pasteTypeList = listOfNotNull(resolveTypeFilter(type))
-
-            val tagId: Long? =
-                tag?.let { name ->
-                    pasteTagDao
-                        .getAllTagsBlock()
-                        .firstOrNull { it.name.equals(name, ignoreCase = true) }
-                        ?.id
-                }
-
-            val results =
-                pasteDao.searchPasteData(
-                    searchTerms = listOf(),
-                    pasteTypeList = pasteTypeList,
-                    tag = tagId,
-                    limit = limit,
-                )
-            val total = pasteDao.getActiveCount()
+        runCli { client ->
             val list =
-                PasteListResponse(
-                    items = results.map { it.toSummaryDto() },
-                    total = total,
+                client.getBody(
+                    "/cli/history${buildListQuery(limit, type, tag)}",
+                    PasteListResponse.serializer(),
                 )
 
             if (ctx.json) {

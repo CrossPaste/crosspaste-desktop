@@ -1,16 +1,15 @@
 package com.crosspaste.cli.commands
 
-import com.crosspaste.db.paste.PasteTagDao
-import com.crosspaste.paste.PasteData
-import com.crosspaste.paste.PasteDataHelper
-import com.crosspaste.paste.PasteType
-import com.crosspaste.paste.item.PasteItemReader
+import com.crosspaste.cli.api.AppNotRunningException
+import com.crosspaste.cli.api.CLI_API_VERSION
+import com.crosspaste.cli.api.CliClient
+import com.crosspaste.cli.platform.CliConfigReader
+import com.crosspaste.cli.platform.createNativePlatformPathProvider
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.ProgramResult
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import org.koin.mp.KoinPlatform
 
 val cliJson =
     Json {
@@ -18,56 +17,37 @@ val cliJson =
         prettyPrint = true
     }
 
-fun CliktCommand.runWithDao(block: suspend () -> Unit) {
+/**
+ * Runs [block] with a connected [CliClient]. Every command goes through this:
+ * it discovers the app's socket, surfaces "app not running" uniformly, and
+ * warns (without failing) when the CLI and app disagree on the API version.
+ */
+fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
     runBlocking {
+        var client: CliClient? = null
         try {
-            block()
+            client = CliClient(CliConfigReader(createNativePlatformPathProvider()))
+            if (client.hasApiVersionMismatch()) {
+                echo(
+                    "Warning: CLI API version $CLI_API_VERSION does not match the running " +
+                        "app's version ${client.endpoint.apiVersion}; consider updating both.",
+                    err = true,
+                )
+            }
+            block(client)
         } catch (e: ProgramResult) {
             throw e
+        } catch (e: AppNotRunningException) {
+            echo("Error: ${e.message}", err = true)
+            throw ProgramResult(1)
         } catch (e: Exception) {
             echo("Error: ${e.message}", err = true)
             throw ProgramResult(1)
+        } finally {
+            client?.close()
         }
     }
 }
-
-inline fun <reified T> CliktCommand.getDao(): T = KoinPlatform.getKoin().get()
-
-fun PasteData.toSummaryDto(): PasteSummaryDto {
-    val pasteTagDao = KoinPlatform.getKoin().get<PasteTagDao>()
-    val pasteDataHelper = KoinPlatform.getKoin().get<PasteDataHelper>()
-    return PasteSummaryDto(
-        id = id,
-        typeName = getTypeName(),
-        source = source,
-        size = size,
-        tagged = pasteTagDao.getPasteTagsBlock(id).isNotEmpty(),
-        createTime = createTime,
-        preview = pasteDataHelper.getSummary(this, "Loading...", ""),
-        remote = remote,
-    )
-}
-
-fun PasteData.toDetailResponse(): PasteDetailResponse {
-    val pasteTagDao = KoinPlatform.getKoin().get<PasteTagDao>()
-    val pasteItemReader = KoinPlatform.getKoin().get<PasteItemReader>()
-    return PasteDetailResponse(
-        id = id,
-        typeName = getTypeName(),
-        source = source,
-        size = size,
-        tagged = pasteTagDao.getPasteTagsBlock(id).isNotEmpty(),
-        createTime = createTime,
-        remote = remote,
-        hash = hash,
-        content = pasteAppearItem?.let { pasteItemReader.getSummary(it) },
-    )
-}
-
-fun resolveTypeFilter(type: String?): Int? =
-    type?.let { name ->
-        PasteType.TYPES.firstOrNull { it.name.equals(name, ignoreCase = true) }?.type
-    }
 
 @OptIn(ExperimentalForeignApi::class)
 fun formatRelativeTime(epochMillis: Long): String {

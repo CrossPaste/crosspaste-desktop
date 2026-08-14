@@ -1,18 +1,17 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.config.AppConfig
-import com.crosspaste.config.CommonConfigManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable
-data class ConfigEntryDto(
+data class ConfigSetRequest(
     val key: String,
     val value: String,
 )
@@ -31,29 +30,25 @@ class ConfigCommand : CliktCommand(name = "config") {
 
     override fun run() {
         if (currentContext.invokedSubcommand != null) return
-        runWithDao {
-            val configManager = getDao<CommonConfigManager>()
-            val entries = configManager.getCurrentConfig().toEntries()
+        runCli { client ->
+            val config = client.getBody("/cli/config", JsonObject.serializer())
 
             if (ctx.json) {
-                echo(
-                    cliJson.encodeToString(
-                        ListSerializer(ConfigEntryDto.serializer()),
-                        entries,
-                    ),
-                )
+                echo(cliJson.encodeToString(JsonObject.serializer(), config))
             } else {
-                printConfig(entries)
+                printConfig(config)
             }
         }
     }
 
-    private fun printConfig(entries: List<ConfigEntryDto>) {
+    private fun printConfig(config: JsonObject) {
         echo("Configuration:")
         echo("")
+        val entries = config.entries.sortedBy { it.key }
         val maxKeyLen = entries.maxOfOrNull { it.key.length } ?: 0
-        for (entry in entries) {
-            echo("  ${entry.key.padEnd(maxKeyLen)}  ${entry.value}")
+        for ((key, value) in entries) {
+            val rendered = if (value is JsonPrimitive) value.content else value.toString()
+            echo("  ${key.padEnd(maxKeyLen)}  $rendered")
         }
     }
 }
@@ -67,49 +62,13 @@ class ConfigSetCommand : CliktCommand(name = "set") {
     private val value by argument(help = "New value")
 
     override fun run() =
-        runWithDao {
-            val configManager = getDao<CommonConfigManager>()
-            val parsed = parseConfigValue(value)
-            configManager.updateConfig(key, parsed)
-            echo("Config '$key' set to '$value'.")
+        runCli { client ->
+            val body =
+                cliJson.encodeToString(
+                    ConfigSetRequest.serializer(),
+                    ConfigSetRequest(key, value),
+                )
+            val response = client.putBody("/cli/config", body, MessageResponse.serializer())
+            echo(response.message)
         }
 }
-
-@Suppress("MagicNumber")
-fun AppConfig.toEntries(): List<ConfigEntryDto> =
-    listOf(
-        ConfigEntryDto("port", port.toString()),
-        ConfigEntryDto("language", language),
-        ConfigEntryDto("enablePasteboardListening", enablePasteboardListening.toString()),
-        ConfigEntryDto("enableEncryptSync", enableEncryptSync.toString()),
-        ConfigEntryDto("enableExpirationCleanup", enableExpirationCleanup.toString()),
-        ConfigEntryDto("imageCleanTimeIndex", imageCleanTimeIndex.toString()),
-        ConfigEntryDto("fileCleanTimeIndex", fileCleanTimeIndex.toString()),
-        ConfigEntryDto("enableThresholdCleanup", enableThresholdCleanup.toString()),
-        ConfigEntryDto("maxStorage", maxStorage.toString()),
-        ConfigEntryDto("cleanupPercentage", cleanupPercentage.toString()),
-        ConfigEntryDto("enableDiscovery", enableDiscovery.toString()),
-        ConfigEntryDto("enableSkipPreLaunchPasteboardContent", enableSkipPreLaunchPasteboardContent.toString()),
-        ConfigEntryDto("enableSoundEffect", enableSoundEffect.toString()),
-        ConfigEntryDto("pastePrimaryTypeOnly", pastePrimaryTypeOnly.toString()),
-        ConfigEntryDto("enabledSyncFileSizeLimit", enabledSyncFileSizeLimit.toString()),
-        ConfigEntryDto("maxSyncFileSize", maxSyncFileSize.toString()),
-        ConfigEntryDto("maxBackupFileSize", maxBackupFileSize.toString()),
-        ConfigEntryDto("useDefaultStoragePath", useDefaultStoragePath.toString()),
-        ConfigEntryDto("storagePath", storagePath),
-        ConfigEntryDto("enableSyncText", enableSyncText.toString()),
-        ConfigEntryDto("enableSyncUrl", enableSyncUrl.toString()),
-        ConfigEntryDto("enableSyncHtml", enableSyncHtml.toString()),
-        ConfigEntryDto("enableSyncRtf", enableSyncRtf.toString()),
-        ConfigEntryDto("enableSyncImage", enableSyncImage.toString()),
-        ConfigEntryDto("enableSyncFile", enableSyncFile.toString()),
-        ConfigEntryDto("enableSyncColor", enableSyncColor.toString()),
-    )
-
-private fun parseConfigValue(value: String): Any =
-    when {
-        value.equals("true", ignoreCase = true) -> true
-        value.equals("false", ignoreCase = true) -> false
-        value.toLongOrNull() != null -> value.toLong()
-        else -> value
-    }

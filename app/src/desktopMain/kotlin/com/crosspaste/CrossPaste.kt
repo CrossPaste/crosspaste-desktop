@@ -25,6 +25,7 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.app.NativeMessagingHostService
 import com.crosspaste.bootstrap.DesktopBootstrap
 import com.crosspaste.clean.CleanScheduler
+import com.crosspaste.cli.CliServer
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
@@ -171,6 +172,7 @@ class CrossPaste {
                     koin.get<SyncManager>().start()
                     koin.get<PastePullService>().init()
                     koin.get<Server>().start()
+                    ioCoroutineDispatcher.launch { koin.get<CliServer>().start() }
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
                     }
@@ -248,6 +250,7 @@ class CrossPaste {
                             add(async { stopService<PasteboardService>("PasteboardService") { it.stop() } })
                             add(async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } })
                             add(async { stopService<Server>("PasteServer") { it.stop() } })
+                            add(async { stopService<CliServer>("CliServer") { it.stop() } })
                             add(async { stopService<McpServer>("McpServer") { it.stop() } })
                             add(async { stopService<SyncManager>("SyncManager") { it.stop() } })
                             add(async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } })

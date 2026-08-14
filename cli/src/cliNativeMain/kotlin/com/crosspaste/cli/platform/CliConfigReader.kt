@@ -6,9 +6,13 @@ import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
 
+/**
+ * Minimal projection of the app's appConfig.json: the CLI only needs the
+ * storage location to find the cli-endpoint.json discovery file. This must
+ * mirror the app's UserDataPathProvider.getUserDataPath() resolution.
+ */
 @Serializable
 data class CliAppConfig(
-    val port: Int = 13129,
     val useDefaultStoragePath: Boolean = true,
     val storagePath: String = "",
 )
@@ -16,6 +20,10 @@ data class CliAppConfig(
 class CliConfigReader(
     private val platformPathProvider: NativePlatformPathProvider,
 ) {
+
+    companion object {
+        const val CLI_ENDPOINT_FILE_NAME = "cli-endpoint.json"
+    }
 
     private val json =
         Json {
@@ -42,7 +50,5 @@ class CliConfigReader(
         }
     }
 
-    fun resolveTokenPath(): Path = resolveUserDataPath().resolve("cli-token")
-
-    fun resolvePort(): Int = readConfig().port
+    fun resolveEndpointFilePath(): Path = resolveUserDataPath().resolve(CLI_ENDPOINT_FILE_NAME)
 }

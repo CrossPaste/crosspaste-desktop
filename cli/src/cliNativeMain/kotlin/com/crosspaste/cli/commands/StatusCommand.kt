@@ -1,10 +1,6 @@
 package com.crosspaste.cli.commands
 
-import com.crosspaste.app.AppInfo
 import com.crosspaste.cli.CliContext
-import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
@@ -14,6 +10,7 @@ import kotlinx.serialization.Serializable
 data class StatusResponse(
     val appVersion: String,
     val appInstanceId: String,
+    val apiVersion: Int = 0,
     val port: Int,
     val pasteboardListening: Boolean,
     val deviceCount: Int,
@@ -27,25 +24,8 @@ class StatusCommand : CliktCommand(name = "status") {
     private val ctx by requireObject<CliContext>()
 
     override fun run() =
-        runWithDao {
-            val appInfo = getDao<AppInfo>()
-            val configManager = getDao<CommonConfigManager>()
-            val pasteDao = getDao<PasteDao>()
-            val syncDao = getDao<SyncRuntimeInfoDao>()
-
-            val config = configManager.getCurrentConfig()
-            val pasteCount = pasteDao.getActiveCount()
-            val deviceCount = syncDao.getAllSyncRuntimeInfos().size
-
-            val status =
-                StatusResponse(
-                    appVersion = appInfo.appVersion,
-                    appInstanceId = appInfo.appInstanceId,
-                    port = config.port,
-                    pasteboardListening = config.enablePasteboardListening,
-                    deviceCount = deviceCount,
-                    pasteCount = pasteCount,
-                )
+        runCli { client ->
+            val status = client.getBody("/cli/status", StatusResponse.serializer())
 
             if (ctx.json) {
                 echo(cliJson.encodeToString(StatusResponse.serializer(), status))

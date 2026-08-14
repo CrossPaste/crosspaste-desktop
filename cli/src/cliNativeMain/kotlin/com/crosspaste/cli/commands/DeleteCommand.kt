@@ -1,10 +1,15 @@
 package com.crosspaste.cli.commands
 
-import com.crosspaste.db.paste.PasteDao
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.long
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class MessageResponse(
+    val message: String,
+)
 
 class DeleteCommand : CliktCommand(name = "delete") {
 
@@ -13,11 +18,8 @@ class DeleteCommand : CliktCommand(name = "delete") {
     private val id by argument(help = "Paste ID to delete").long()
 
     override fun run() =
-        runWithDao {
-            val pasteDao = getDao<PasteDao>()
-            pasteDao
-                .markDeletePasteData(id)
-                .onSuccess { echo("Paste #$id deleted.") }
-                .onFailure { echo("Failed to delete paste #$id: ${it.message}", err = true) }
+        runCli { client ->
+            val response = client.deleteBody("/cli/paste/$id", MessageResponse.serializer())
+            echo(response.message)
         }
 }

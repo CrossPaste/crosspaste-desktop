@@ -132,6 +132,7 @@ kotlin {
             implementation(libs.jna)
             implementation(libs.jna.platform)
             implementation(libs.jnativehook)
+            implementation(libs.ktor.server.cio)
             implementation(libs.ktor.server.netty)
             implementation(libs.logback.classic)
             implementation(libs.mcp.server)
@@ -150,6 +151,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.io.mockk)
             implementation(libs.ktor.client.mock)
+            implementation(libs.ktor.server.test.host)
             implementation(libs.turbine)
         }
 
