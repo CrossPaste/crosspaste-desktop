@@ -114,6 +114,12 @@ kotlin {
                     linkerOpts("--allow-multiple-definition")
                 }
             }
+            // The test binary needs the same Clikt duplicate-symbol workaround;
+            // GNU ld only hits it when konan compiler caches are enabled (host
+            // builds), which is why cross-links from macOS don't reproduce it
+            if (!isMacosTarget) {
+                getTest("debug").linkerOpts("--allow-multiple-definition")
+            }
         }
     }
 
