@@ -257,13 +257,22 @@ private suspend fun handleConfigSet(
         )
         return
     }
+    val expected = expectedPrimitive(parsed)
+    val candidate = configManager.getCurrentConfig().copy(request.key, parsed)
+    val candidateValue = configFieldOf(candidate, request.key) as? JsonPrimitive
+    if (!candidateValue.matches(expected)) {
+        call.respond(
+            HttpStatusCode.BadRequest,
+            CliMessageDto("Invalid value '${request.value}' for config key '${request.key}'."),
+        )
+        return
+    }
     configManager.updateConfig(request.key, parsed)
     // updateConfig gives no result and rolls back silently when persisting
     // fails (and DesktopAppConfig.copy ignores keys it does not map), so trust
     // only the observed value
-    val expected = expectedPrimitive(parsed)
     val actual = configFieldOf(configManager, request.key) as? JsonPrimitive
-    if (actual == null || actual.content != expected.content || actual.isString != expected.isString) {
+    if (!actual.matches(expected)) {
         call.respond(
             HttpStatusCode.InternalServerError,
             CliMessageDto("Config '${request.key}' was not applied."),
@@ -276,12 +285,20 @@ private suspend fun handleConfigSet(
 private fun configFieldOf(
     configManager: DesktopConfigManager,
     key: String,
+): kotlinx.serialization.json.JsonElement? = configFieldOf(configManager.getCurrentConfig(), key)
+
+private fun configFieldOf(
+    config: DesktopAppConfig,
+    key: String,
 ): kotlinx.serialization.json.JsonElement? =
     configJson
         .encodeToJsonElement(
             DesktopAppConfig.serializer(),
-            configManager.getCurrentConfig(),
+            config,
         ).jsonObject[key]
+
+private fun JsonPrimitive?.matches(expected: JsonPrimitive): Boolean =
+    this != null && content == expected.content && isString == expected.isString
 
 private fun expectedPrimitive(parsed: Any): JsonPrimitive =
     when (parsed) {
