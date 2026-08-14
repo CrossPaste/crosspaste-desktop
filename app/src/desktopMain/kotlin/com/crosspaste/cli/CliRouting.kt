@@ -9,6 +9,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteType
@@ -41,6 +42,7 @@ fun Routing.cliRouting(
     pasteDao: PasteDao,
     pasteDataHelper: PasteDataHelper,
     pasteItemReader: PasteItemReader,
+    pasteReleaseService: PasteReleaseService,
     pasteTagDao: PasteTagDao,
     searchContentService: SearchContentService,
     syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -109,7 +111,7 @@ fun Routing.cliRouting(
         }
 
         post("/copy") {
-            handleCopy(call, appInfo, pasteDao, pasteboardService)
+            handleCopy(call, appInfo, pasteDao, pasteReleaseService, pasteboardService)
         }
 
         delete("/paste/{id}") {
@@ -213,18 +215,27 @@ private suspend fun handleTagCreate(
     call.respond(CliTagDto(id = id, name = request.name, color = color))
 }
 
+// Storage location changes need the app's migration flow (move data, restart);
+// setting the raw keys here would desynchronize the running app from its own
+// data directory and break endpoint-file discovery for the CLI itself.
+private val cliBlockedConfigKeys = setOf("storagePath", "useDefaultStoragePath")
+
 private suspend fun handleConfigSet(
     call: ApplicationCall,
     configManager: DesktopConfigManager,
 ) {
     val request = call.receive<CliConfigSetRequest>()
-    val currentJson =
-        configJson
-            .encodeToJsonElement(
-                DesktopAppConfig.serializer(),
-                configManager.getCurrentConfig(),
-            ).jsonObject
-    val existing = currentJson[request.key]
+    if (request.key in cliBlockedConfigKeys) {
+        call.respond(
+            HttpStatusCode.BadRequest,
+            CliMessageDto(
+                "Config key '${request.key}' cannot be changed via the CLI; " +
+                    "use the storage settings in the app instead.",
+            ),
+        )
+        return
+    }
+    val existing = configFieldOf(configManager, request.key)
     if (existing !is JsonPrimitive) {
         call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown config key: '${request.key}'."))
         return
@@ -238,13 +249,43 @@ private suspend fun handleConfigSet(
         return
     }
     configManager.updateConfig(request.key, parsed)
+    // updateConfig gives no result and rolls back silently when persisting
+    // fails (and DesktopAppConfig.copy ignores keys it does not map), so trust
+    // only the observed value
+    val expected = expectedPrimitive(parsed)
+    val actual = configFieldOf(configManager, request.key) as? JsonPrimitive
+    if (actual == null || actual.content != expected.content || actual.isString != expected.isString) {
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            CliMessageDto("Config '${request.key}' was not applied."),
+        )
+        return
+    }
     call.respond(CliMessageDto("Config '${request.key}' set to '${request.value}'."))
 }
+
+private fun configFieldOf(
+    configManager: DesktopConfigManager,
+    key: String,
+): kotlinx.serialization.json.JsonElement? =
+    configJson
+        .encodeToJsonElement(
+            DesktopAppConfig.serializer(),
+            configManager.getCurrentConfig(),
+        ).jsonObject[key]
+
+private fun expectedPrimitive(parsed: Any): JsonPrimitive =
+    when (parsed) {
+        is Boolean -> JsonPrimitive(parsed)
+        is Long -> JsonPrimitive(parsed)
+        else -> JsonPrimitive(parsed.toString())
+    }
 
 private suspend fun handleCopy(
     call: ApplicationCall,
     appInfo: AppInfo,
     pasteDao: PasteDao,
+    pasteReleaseService: PasteReleaseService,
     pasteboardService: PasteboardService,
 ) {
     val request = call.receive<CliCopyRequest>()
@@ -257,24 +298,39 @@ private suspend fun handleCopy(
             identifiers = listOf(DesktopTextTypePlugin.TEXT),
             text = request.text,
         )
+    // Same lifecycle as a pasteboard capture: LOADING row, then the standard
+    // local release (process plugins, dedup, sync and rendering tasks) — a
+    // direct LOADED insert would silently skip all of that
     val pasteData =
         PasteData(
             appInstanceId = appInfo.appInstanceId,
-            pasteAppearItem = pasteItem,
-            pasteCollection = PasteCollection(listOf()),
-            pasteType = PasteType.TEXT_TYPE.type,
+            pasteCollection = PasteCollection(listOf(pasteItem)),
+            pasteType = PasteType.INVALID_TYPE.type,
             source = "CLI",
-            size = pasteItem.size,
-            hash = pasteItem.hash,
-            pasteState = PasteState.LOADED,
+            size = 0L,
+            hash = "",
+            pasteState = PasteState.LOADING,
             createTime = DateUtils.nowEpochMilliseconds(),
         )
     val id = pasteDao.createPasteData(pasteData)
-    pasteboardService.tryWritePasteboard(
+    pasteReleaseService.releaseLocalPasteData(
         id = id,
-        pasteItem = pasteItem,
-        localOnly = true,
+        pasteItems = listOf(pasteItem),
+        targetAppInstanceIds = null,
     )
+    val written =
+        pasteboardService.tryWritePasteboard(
+            id = id,
+            pasteItem = pasteItem,
+            localOnly = true,
+        )
+    if (written.isFailure) {
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            CliMessageDto("Stored paste #$id in history but failed to write the system clipboard."),
+        )
+        return
+    }
     call.respond(CliCopyResponse(id))
 }
 

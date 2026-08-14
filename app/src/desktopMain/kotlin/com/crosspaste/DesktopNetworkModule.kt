@@ -93,6 +93,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 pasteDao = get(),
                 pasteDataHelper = get(),
                 pasteItemReader = get(),
+                pasteReleaseService = get(),
                 pasteTagDao = get(),
                 searchContentService = get(),
                 syncRuntimeInfoDao = get(),

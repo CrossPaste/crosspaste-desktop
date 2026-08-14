@@ -7,6 +7,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.paste.PasteDataHelper
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItemReader
@@ -54,6 +55,7 @@ class CliServer(
     private val pasteDao: PasteDao,
     private val pasteDataHelper: PasteDataHelper,
     private val pasteItemReader: PasteItemReader,
+    private val pasteReleaseService: PasteReleaseService,
     private val pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -156,7 +158,14 @@ class CliServer(
 
     private fun Application.cliServerModule() {
         install(ContentNegotiation) {
-            json(Json { encodeDefaults = true })
+            // ignoreUnknownKeys keeps the add-only DTO contract workable: a
+            // newer CLI may send fields this app version does not know yet
+            json(
+                Json {
+                    encodeDefaults = true
+                    ignoreUnknownKeys = true
+                },
+            )
         }
         install(StatusPages) {
             exception<Throwable> { call, cause ->
@@ -174,6 +183,7 @@ class CliServer(
                 pasteDao = pasteDao,
                 pasteDataHelper = pasteDataHelper,
                 pasteItemReader = pasteItemReader,
+                pasteReleaseService = pasteReleaseService,
                 pasteTagDao = pasteTagDao,
                 searchContentService = searchContentService,
                 syncRuntimeInfoDao = syncRuntimeInfoDao,

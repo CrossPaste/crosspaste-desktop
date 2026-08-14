@@ -10,6 +10,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteType
@@ -63,14 +64,23 @@ class CliRoutingTest {
         val configManager = mockk<DesktopConfigManager>()
         val pasteboardService = mockk<PasteboardService>()
         val pasteDao = mockk<PasteDao>()
+        val pasteReleaseService = mockk<PasteReleaseService>()
         val pasteTagDao = mockk<PasteTagDao>()
         val searchContentService = mockk<SearchContentService>()
         val syncRuntimeInfoDao = mockk<SyncRuntimeInfoDao>()
         val pasteDataHelper = PasteDataHelper(DefaultPasteItemReader())
 
+        var currentConfig = DesktopAppConfig(language = "en")
+
         init {
-            every { configManager.getCurrentConfig() } returns DesktopAppConfig(language = "en")
-            every { configManager.updateConfig(any<String>(), any()) } just Runs
+            // Mirror the real manager: getCurrentConfig reflects updateConfig,
+            // so the route's write-then-verify step observes applied values
+            every { configManager.getCurrentConfig() } answers { currentConfig }
+            every { configManager.updateConfig(any<String>(), any()) } answers {
+                // Named arguments select the key/value copy override, not the
+                // generated data-class copy(language, font, ...)
+                currentConfig = currentConfig.copy(key = firstArg<String>(), value = secondArg<Any>())
+            }
             coEvery { syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf()
             coEvery { pasteDao.getActiveCount() } returns 0L
             every { pasteTagDao.getAllTagsBlock() } returns listOf()
@@ -100,6 +110,7 @@ class CliRoutingTest {
                 pasteDao = fixture.pasteDao,
                 pasteDataHelper = fixture.pasteDataHelper,
                 pasteItemReader = DefaultPasteItemReader(),
+                pasteReleaseService = fixture.pasteReleaseService,
                 pasteTagDao = fixture.pasteTagDao,
                 searchContentService = fixture.searchContentService,
                 syncRuntimeInfoDao = fixture.syncRuntimeInfoDao,
@@ -320,6 +331,10 @@ class CliRoutingTest {
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"enableSoundEffect","value":"maybe"}"""))
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"port","value":"abc"}"""))
 
+            // Storage location keys need the app's migration flow, never the CLI
+            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"storagePath","value":"/tmp/x"}"""))
+            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"useDefaultStoragePath","value":"false"}"""))
+
             assertEquals(HttpStatusCode.OK, putConfig("""{"key":"enableSoundEffect","value":"false"}"""))
             verify { fixture.configManager.updateConfig("enableSoundEffect", false) }
 
@@ -328,14 +343,42 @@ class CliRoutingTest {
 
             assertEquals(HttpStatusCode.OK, putConfig("""{"key":"language","value":"zh"}"""))
             verify { fixture.configManager.updateConfig("language", "zh") }
+
+            // Regression: DesktopAppConfig.copy used to silently drop this key
+            assertEquals(HttpStatusCode.OK, putConfig("""{"key":"enableDiscovery","value":"false"}"""))
+            assertEquals(false, fixture.currentConfig.enableDiscovery)
         }
     }
 
     @Test
-    fun `copy stores the paste and writes the pasteboard`() {
+    fun `config put reports when the update was not applied`() {
+        val fixture = Fixture()
+        // Simulate a silently ignored update (unmapped key or rolled-back save)
+        every { fixture.configManager.updateConfig(any<String>(), any()) } just Runs
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/config") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"key":"enableSoundEffect","value":"false"}""")
+                }
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+        }
+    }
+
+    @Test
+    fun `copy goes through the standard local release lifecycle`() {
         val fixture = Fixture()
         val pasteDataSlot = slot<PasteData>()
         coEvery { fixture.pasteDao.createPasteData(capture(pasteDataSlot)) } returns 77L
+        val releasedItemsSlot = slot<List<PasteItem>>()
+        coEvery {
+            fixture.pasteReleaseService.releaseLocalPasteData(
+                id = 77L,
+                pasteItems = capture(releasedItemsSlot),
+                targetAppInstanceIds = null,
+            )
+        } returns Unit
         coEvery {
             fixture.pasteboardService.tryWritePasteboard(
                 id = any(),
@@ -353,8 +396,11 @@ class CliRoutingTest {
                 }
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals(77L, json.decodeFromString<CliCopyResponse>(response.bodyAsText()).id)
+            // The row is created LOADING and finished by releaseLocalPasteData,
+            // which owns plugins, dedup and the sync/rendering tasks
             assertEquals("CLI", pasteDataSlot.captured.source)
-            assertEquals(PasteType.TEXT_TYPE.type, pasteDataSlot.captured.pasteType)
+            assertEquals(PasteState.LOADING, pasteDataSlot.captured.pasteState)
+            assertEquals(1, releasedItemsSlot.captured.size)
             coVerify {
                 fixture.pasteboardService.tryWritePasteboard(
                     id = 77L,
@@ -370,6 +416,32 @@ class CliRoutingTest {
                     setBody("""{"text":""}""")
                 }
             assertEquals(HttpStatusCode.BadRequest, emptyResponse.status)
+        }
+    }
+
+    @Test
+    fun `copy reports a failed pasteboard write`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.createPasteData(any()) } returns 77L
+        coEvery {
+            fixture.pasteReleaseService.releaseLocalPasteData(any(), any(), any())
+        } returns Unit
+        coEvery {
+            fixture.pasteboardService.tryWritePasteboard(
+                id = any(),
+                pasteItem = any<PasteItem>(),
+                localOnly = any(),
+                updateCreateTime = any(),
+            )
+        } returns Result.failure(IllegalStateException("clipboard busy"))
+
+        withCliRouting(fixture) {
+            val response =
+                client.post("/cli/copy") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"text":"hello"}""")
+                }
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
         }
     }
 

@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermission
+import java.nio.file.attribute.PosixFilePermissions
 import kotlin.io.path.writeText
 
 /**
@@ -39,20 +40,26 @@ class CliEndpointFile(
             .toNioPath()
 
     /**
-     * Atomic write (temp + rename) so the CLI never observes a partial file;
-     * the temp file is restricted to the owner before it gains any content.
+     * Atomic write (temp + rename) so the CLI never observes a partial file.
+     * The randomly named temp file is created with owner-only permissions
+     * BEFORE any content is written (createTempFile applies the mode at
+     * open time), so there is no window where other users could read it.
      */
     fun write(endpoint: CliEndpoint) {
         val path = getPath()
-        val tempPath = path.resolveSibling("$CLI_ENDPOINT_FILE_NAME.tmp")
-        tempPath.writeText(json.encodeToString(endpoint))
-        restrictToOwner(tempPath)
-        Files.move(
-            tempPath,
-            path,
-            StandardCopyOption.REPLACE_EXISTING,
-            StandardCopyOption.ATOMIC_MOVE,
-        )
+        val tempPath = createOwnerOnlyTempFile(path.parent)
+        try {
+            tempPath.writeText(json.encodeToString(endpoint))
+            Files.move(
+                tempPath,
+                path,
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE,
+            )
+        } catch (e: Exception) {
+            runCatching { Files.deleteIfExists(tempPath) }
+            throw e
+        }
     }
 
     fun delete() {
@@ -63,14 +70,21 @@ class CliEndpointFile(
         }
     }
 
-    private fun restrictToOwner(path: Path) {
-        runCatching {
-            Files.setPosixFilePermissions(
-                path,
-                setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
+    private fun createOwnerOnlyTempFile(dir: Path): Path {
+        val posix =
+            dir.fileSystem.supportedFileAttributeViews().contains("posix")
+        return if (posix) {
+            Files.createTempFile(
+                dir,
+                CLI_ENDPOINT_FILE_NAME,
+                ".tmp",
+                PosixFilePermissions.asFileAttribute(
+                    setOf(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
+                ),
             )
-        }.onFailure {
+        } else {
             // Windows: no POSIX permissions; the user profile directory ACL applies
+            Files.createTempFile(dir, CLI_ENDPOINT_FILE_NAME, ".tmp")
         }
     }
 }
