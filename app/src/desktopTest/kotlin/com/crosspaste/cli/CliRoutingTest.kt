@@ -375,6 +375,23 @@ class CliRoutingTest {
     }
 
     @Test
+    fun `config put rejects int overflow before updating config`() {
+        val fixture = Fixture()
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/config") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"key":"searchWindowHeight","value":"2147483648"}""")
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            assertEquals(332, fixture.currentConfig.searchWindowHeight)
+            verify(exactly = 0) { fixture.configManager.updateConfig(any<String>(), any()) }
+        }
+    }
+
+    @Test
     fun `copy goes through the standard local release lifecycle`() {
         val fixture = Fixture()
         val pasteDataSlot = slot<PasteData>()
