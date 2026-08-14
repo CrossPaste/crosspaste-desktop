@@ -112,6 +112,10 @@ kotlin {
                 // On Linux, ld.lld needs explicit library search paths
                 if (!isMacosTarget && !isMingwX64) {
                     linkerOpts("-L/usr/lib", "-L/usr/lib/x86_64-linux-gnu", "-L/usr/lib/aarch64-linux-gnu")
+                    // The system libsqlite3.so references glibc symbols newer than the
+                    // Kotlin/Native sysroot libc; they resolve against the real glibc
+                    // at run time, so let the link-time check pass (same as :shared)
+                    linkerOpts("--allow-shlib-undefined")
                 }
                 // Workaround for Clikt duplicate symbol bug in Kotlin/Native
                 // See: https://github.com/ajalt/clikt/issues/598
