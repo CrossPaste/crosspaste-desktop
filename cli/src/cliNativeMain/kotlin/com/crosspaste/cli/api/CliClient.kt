@@ -48,7 +48,6 @@ class CliClient(
 
     private fun readToken(): String {
         val tokenPath = configReader.resolveTokenPath()
-        println("tokenPath = $tokenPath")
         return try {
             FileSystem.SYSTEM.read(tokenPath) { readUtf8() }.trim()
         } catch (_: Exception) {
