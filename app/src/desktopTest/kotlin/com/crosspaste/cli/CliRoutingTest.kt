@@ -329,17 +329,25 @@ class CliRoutingTest {
 
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"nope","value":"1"}"""))
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"enableSoundEffect","value":"maybe"}"""))
-            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"port","value":"abc"}"""))
+            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"searchWindowHeight","value":"abc"}"""))
 
-            // Storage location keys need the app's migration flow, never the CLI
+            // Settings with migration or service-lifecycle side effects must use
+            // their dedicated workflows in the app.
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"storagePath","value":"/tmp/x"}"""))
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"useDefaultStoragePath","value":"false"}"""))
+            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"port","value":"13130"}"""))
+            assertEquals(
+                HttpStatusCode.BadRequest,
+                putConfig("""{"key":"enablePasteboardListening","value":"false"}"""),
+            )
+            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"enableMcpServer","value":"true"}"""))
+            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"mcpServerPort","value":"13131"}"""))
 
             assertEquals(HttpStatusCode.OK, putConfig("""{"key":"enableSoundEffect","value":"false"}"""))
             verify { fixture.configManager.updateConfig("enableSoundEffect", false) }
 
-            assertEquals(HttpStatusCode.OK, putConfig("""{"key":"port","value":"13130"}"""))
-            verify { fixture.configManager.updateConfig("port", 13130L) }
+            assertEquals(HttpStatusCode.OK, putConfig("""{"key":"searchWindowHeight","value":"400"}"""))
+            verify { fixture.configManager.updateConfig("searchWindowHeight", 400L) }
 
             assertEquals(HttpStatusCode.OK, putConfig("""{"key":"language","value":"zh"}"""))
             verify { fixture.configManager.updateConfig("language", "zh") }
