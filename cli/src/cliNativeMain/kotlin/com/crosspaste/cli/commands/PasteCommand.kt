@@ -4,7 +4,6 @@ import com.crosspaste.cli.CliContext
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
-import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
@@ -58,10 +57,10 @@ class PasteCommand : CliktCommand(name = "paste") {
 
     override fun run() {
         if (raw && summary) {
-            throw UsageError("--raw and --summary are mutually exclusive")
+            throw usageError("--raw and --summary are mutually exclusive")
         }
         if (noNewline && !raw && !summary) {
-            throw UsageError("--no-newline requires --raw or --summary")
+            throw usageError("--no-newline requires --raw or --summary")
         }
         runCli { client ->
             val path = id?.let { "/cli/paste/$it" } ?: "/cli/paste/latest"

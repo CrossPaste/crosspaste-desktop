@@ -72,6 +72,9 @@ class CliExitCodeTest {
         isolatedHome()
         val result = CrossPasteCommand().test("paste --no-newline")
         assertContains(result.stderr, "--no-newline requires --raw or --summary")
+        // The runtime UsageError carries the subcommand's context, so the
+        // usage line shown is paste's, not the root command help
+        assertContains(result.stderr, "Usage: crosspaste paste")
     }
 
     @Test
@@ -79,5 +82,6 @@ class CliExitCodeTest {
         isolatedHome()
         val result = CrossPasteCommand().test("paste --raw --summary")
         assertContains(result.stderr, "--raw and --summary are mutually exclusive")
+        assertContains(result.stderr, "Usage: crosspaste paste")
     }
 }

@@ -57,6 +57,8 @@ class ConfigSetCommand : CliktCommand(name = "set") {
 
     override fun help(context: Context): String = "Set a configuration value"
 
+    private val ctx by requireObject<CliContext>()
+
     private val key by argument(help = "Configuration key")
 
     private val value by argument(help = "New value")
@@ -69,6 +71,6 @@ class ConfigSetCommand : CliktCommand(name = "set") {
                     ConfigSetRequest(key, value),
                 )
             val response = client.putBody("/cli/config", body, MessageResponse.serializer())
-            echo(response.message)
+            echoMessage(ctx, response)
         }
 }

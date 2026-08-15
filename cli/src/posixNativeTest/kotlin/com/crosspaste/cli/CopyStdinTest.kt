@@ -41,6 +41,8 @@ class CopyStdinTest {
         // The Clikt test harness reports UsageError's raw status code (1);
         // the real binary remaps usage errors to exit code 2 in main()
         assertContains(result.stderr, "provide text as an argument")
+        // The error carries this command's context: its own usage, not root help
+        assertContains(result.stderr, "Usage: copy")
         assertFalse(stdinRead, "must not block reading an interactive stdin")
     }
 

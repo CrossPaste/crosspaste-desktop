@@ -1,11 +1,12 @@
 package com.crosspaste.cli.commands
 
+import com.crosspaste.cli.CliContext
 import com.crosspaste.cli.platform.StdinException
 import com.crosspaste.cli.platform.readAllStdin
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
-import com.github.ajalt.clikt.core.UsageError
+import com.github.ajalt.clikt.core.findObject
 import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
@@ -28,6 +29,9 @@ class CopyCommand(
 
     override fun help(context: Context): String = "Copy text to the clipboard via CrossPaste (reads stdin when piped)"
 
+    // findObject instead of requireObject: tests run this command standalone
+    private val ctx: CliContext? by findObject()
+
     private val text by argument(help = "Text to copy (omit to read piped stdin, e.g. `git log | crosspaste copy`)")
         .optional()
 
@@ -36,13 +40,17 @@ class CopyCommand(
         runCli { client ->
             val body = cliJson.encodeToString(CopyRequest.serializer(), CopyRequest(content))
             val response = client.postBody("/cli/copy", body, CopyResponse.serializer())
-            echo("Copied to clipboard (id=${response.id}).")
+            if (ctx?.json == true) {
+                echo(cliJson.encodeToString(CopyResponse.serializer(), response))
+            } else {
+                echo("Copied to clipboard (id=${response.id}).")
+            }
         }
     }
 
     private fun readPipedStdin(): String {
         if (terminal.terminalInfo.inputInteractive) {
-            throw UsageError("provide text as an argument, or pipe it via stdin", "text")
+            throw usageError("provide text as an argument, or pipe it via stdin")
         }
         val content =
             try {
@@ -52,7 +60,7 @@ class CopyCommand(
                 throw ProgramResult(1)
             }
         if (content.isEmpty()) {
-            throw UsageError("stdin was empty; nothing to copy", "text")
+            throw usageError("stdin was empty; nothing to copy")
         }
         return content
     }

@@ -14,6 +14,7 @@ import com.crosspaste.cli.platform.createNativePlatformPathProvider
 import com.crosspaste.cli.platform.isGuiEnvironment
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.ProgramResult
+import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.findObject
 import com.github.ajalt.clikt.core.terminal
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -25,6 +26,13 @@ const val EXIT_CODE_APP_NOT_RUNNING = 3
 
 /** Invalid arguments or options (Clikt usage errors are remapped to this in main). */
 const val EXIT_CODE_USAGE = 2
+
+/**
+ * A UsageError thrown from run() carries no parse context, so Clikt would
+ * render the ROOT command's help with it; attach this command's own context
+ * so the error shows the subcommand's usage instead.
+ */
+fun CliktCommand.usageError(message: String): UsageError = UsageError(message).also { it.context = currentContext }
 
 val cliJson =
     Json {
