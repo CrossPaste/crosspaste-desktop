@@ -3,9 +3,12 @@ package com.crosspaste.cli.commands
 import com.crosspaste.cli.CliContext
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.long
 import kotlinx.serialization.Serializable
 
@@ -19,7 +22,10 @@ data class PasteDetailResponse(
     val createTime: Long,
     val remote: Boolean,
     val hash: String,
+    /** Human-readable summary (HTML/RTF converted to plain text). */
     val content: String?,
+    /** Content exactly as stored (HTML/RTF keep their source markup). */
+    val rawContent: String? = null,
 )
 
 class PasteCommand : CliktCommand(name = "paste") {
@@ -30,17 +36,84 @@ class PasteCommand : CliktCommand(name = "paste") {
 
     private val id by argument(help = "Paste ID to show (omit for most recent)").long().optional()
 
-    override fun run() =
+    private val raw by option(
+        "--raw",
+        "-r",
+        help =
+            "Print only the paste content, exactly as stored — HTML/RTF print their source " +
+                "markup (for piping, e.g. `crosspaste paste -r | pbcopy`)",
+    ).flag()
+
+    private val summary by option(
+        "--summary",
+        "-s",
+        help = "Print only the plain-text summary of the paste content (HTML/RTF converted to text)",
+    ).flag()
+
+    private val noNewline by option(
+        "--no-newline",
+        help = "With --raw or --summary: do not append a trailing newline",
+    ).flag()
+
+    override fun run() {
+        if (raw && summary) {
+            throw usageError("--raw and --summary are mutually exclusive")
+        }
+        if (noNewline && !raw && !summary) {
+            throw usageError("--no-newline requires --raw or --summary")
+        }
         runCli { client ->
-            val path = id?.let { "/cli/paste/$it" } ?: "/cli/paste/latest"
+            val basePath = id?.let { "/cli/paste/$it" } ?: "/cli/paste/latest"
+            // Raw markup is opt-in server-side: for plain text raw == summary,
+            // and always shipping both would double large payloads
+            val path = if (raw) "$basePath?includeRaw=true" else basePath
             val detail = client.getBody(path, PasteDetailResponse.serializer())
 
-            if (ctx.json) {
-                echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
-            } else {
-                printDetail(detail)
+            when {
+                raw -> printRawContent(detail)
+                summary -> printContentOnly(detail, detail.content)
+                ctx.json -> echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
+                else -> printDetail(detail)
             }
         }
+    }
+
+    /**
+     * A missing rawContent while the summary exists means the app predates
+     * the includeRaw capability (it ignored ?includeRaw=true) — that deserves
+     * an actionable message, not "has no content".
+     */
+    private fun printRawContent(detail: PasteDetailResponse) {
+        if (detail.rawContent == null && detail.content != null) {
+            echo(
+                "Error: the running CrossPaste app does not support --raw yet; " +
+                    "update (or restart) the app, or use --summary instead.",
+                err = true,
+            )
+            throw ProgramResult(1)
+        }
+        printContentOnly(detail, detail.rawContent)
+    }
+
+    /**
+     * Bypasses the Mordant terminal on purpose: it re-renders strings (and
+     * strips ANSI codes on non-TTY output), while content-only modes must
+     * reproduce the stored content byte for byte.
+     */
+    private fun printContentOnly(
+        detail: PasteDetailResponse,
+        content: String?,
+    ) {
+        if (content == null) {
+            echo("Error: paste #${detail.id} (${detail.typeName}) has no content.", err = true)
+            throw ProgramResult(1)
+        }
+        if (noNewline) {
+            print(content)
+        } else {
+            println(content)
+        }
+    }
 
     private fun printDetail(detail: PasteDetailResponse) {
         val fav = if (detail.tagged) " [tagged]" else ""

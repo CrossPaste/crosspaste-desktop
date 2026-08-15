@@ -4,6 +4,7 @@ import com.crosspaste.cli.CliContext
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.requireObject
+import com.github.ajalt.mordant.rendering.TextColors
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 
@@ -55,7 +56,7 @@ class DevicesCommand : CliktCommand(name = "devices") {
         echo("${devices.size} device(s):")
         echo("")
         for (device in devices) {
-            val state = connectStateName(device.connectState)
+            val state = styleConnectState(connectStateName(device.connectState))
             val name = device.noteName ?: device.deviceName
             val addr = device.connectHostAddress?.let { "$it:${device.port}" } ?: "-"
             val send = if (device.allowSend) "send" else ""
@@ -71,6 +72,13 @@ class DevicesCommand : CliktCommand(name = "devices") {
         }
     }
 }
+
+private fun styleConnectState(name: String): String =
+    when (name) {
+        "Connected" -> TextColors.green(name)
+        "Connecting" -> TextColors.yellow(name)
+        else -> TextColors.red(name)
+    }
 
 private fun connectStateName(state: Int): String =
     when (state) {

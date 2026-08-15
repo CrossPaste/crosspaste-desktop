@@ -19,6 +19,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -111,7 +112,7 @@ fun Routing.cliRouting(
         }
 
         post("/copy") {
-            handleCopy(call, appInfo, pasteDao, pasteReleaseService, pasteboardService)
+            handleCopy(call, appInfo, configManager, pasteDao, pasteReleaseService, pasteboardService)
         }
 
         delete("/paste/{id}") {
@@ -159,10 +160,14 @@ private suspend fun respondPasteDetail(
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
 ) {
+    // Raw markup is opt-in (?includeRaw=true): for plain text raw == summary,
+    // so sending both unconditionally would ship large pastes twice per
+    // request (the CLI buffers the whole body before decoding)
+    val includeRaw = call.request.queryParameters["includeRaw"] == "true"
     if (pasteData == null) {
         call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste not found."))
     } else {
-        call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader))
+        call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader, includeRaw))
     }
 }
 
@@ -311,6 +316,7 @@ private fun expectedPrimitive(parsed: Any): JsonPrimitive =
 private suspend fun handleCopy(
     call: ApplicationCall,
     appInfo: AppInfo,
+    configManager: DesktopConfigManager,
     pasteDao: PasteDao,
     pasteReleaseService: PasteReleaseService,
     pasteboardService: PasteboardService,
@@ -325,6 +331,21 @@ private suspend fun handleCopy(
             identifiers = listOf(DesktopTextTypePlugin.TEXT),
             text = request.text,
         )
+    // Enforce the non-file size limit up front: past this point,
+    // DiscardOversizedNonFilePlugin would empty the item list during release,
+    // the row would be mark-deleted, and the success response below would
+    // report an id that no longer exists (and never syncs)
+    val maxNonFilePasteSizeMb = configManager.getCurrentConfig().maxNonFilePasteSize
+    if (pasteItem.size > getFileUtils().bytesSize(maxNonFilePasteSizeMb)) {
+        call.respond(
+            HttpStatusCode.PayloadTooLarge,
+            CliMessageDto(
+                "Text (${pasteItem.size} bytes) exceeds the configured non-file paste " +
+                    "limit of $maxNonFilePasteSizeMb MB (maxNonFilePasteSize).",
+            ),
+        )
+        return
+    }
     // Same lifecycle as a pasteboard capture: LOADING row, then the standard
     // local release (process plugins, dedup, sync and rendering tasks) — a
     // direct LOADED insert would silently skip all of that
@@ -447,6 +468,7 @@ private suspend fun PasteData.toSummaryDto(
 private suspend fun PasteData.toDetailDto(
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
+    includeRaw: Boolean,
 ): CliPasteDetailDto =
     CliPasteDetailDto(
         id = id,
@@ -458,6 +480,7 @@ private suspend fun PasteData.toDetailDto(
         remote = remote,
         hash = hash,
         content = pasteAppearItem?.let { pasteItemReader.getSummary(it) },
+        rawContent = if (includeRaw) pasteAppearItem?.let { pasteItemReader.getRaw(it) } else null,
     )
 
 private fun parseConfigValue(

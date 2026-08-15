@@ -34,6 +34,20 @@ interface PasteItemReader {
     fun getSummary(pasteItem: PasteItem): String
 
     /**
+     * Get the content exactly as stored, without any parsing.
+     * For HTML/RTF items, returns the source markup; every other type has no
+     * richer representation than its summary, so it falls back to [getSummary].
+     * Reading the stored fields needs no platform parsing, hence the default
+     * implementation.
+     */
+    fun getRaw(pasteItem: PasteItem): String =
+        when (pasteItem) {
+            is HtmlPasteItem -> pasteItem.html
+            is RtfPasteItem -> pasteItem.rtf
+            else -> getSummary(pasteItem)
+        }
+
+    /**
      * Get truncated HTML suitable for rich-text preview rendering.
      * Returns null for non-HTML/RTF types.
      */

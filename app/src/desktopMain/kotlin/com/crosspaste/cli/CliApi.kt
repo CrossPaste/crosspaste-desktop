@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * Version of the local /cli HTTP API served over the Unix domain socket.
- * Bump when the wire contract changes in a way the CLI must know about.
+ * Bump when the wire contract changes in a way the CLI must know about
+ * (no bump needed while the CLI has never shipped in a release).
  */
 const val CLI_API_VERSION = 1
 
@@ -57,7 +58,10 @@ data class CliPasteDetailDto(
     val createTime: Long,
     val remote: Boolean,
     val hash: String,
+    /** Human-readable summary (HTML/RTF converted to plain text). */
     val content: String?,
+    /** Content exactly as stored (HTML/RTF keep their source markup). */
+    val rawContent: String?,
 )
 
 @Serializable

@@ -16,6 +16,7 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteItem
@@ -42,6 +43,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -163,11 +165,50 @@ class CliRoutingTest {
             val detail = json.decodeFromString<CliPasteDetailDto>(response.bodyAsText())
             assertEquals(42L, detail.id)
             assertEquals("hello", detail.content)
+            // Raw is opt-in: without ?includeRaw=true it must not be shipped
+            // (for plain text it would duplicate the whole content)
+            assertEquals(null, detail.rawContent)
         }
 
         coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns null
         withCliRouting(fixture) {
             assertEquals(HttpStatusCode.NotFound, client.get("/cli/paste/latest").status)
+        }
+    }
+
+    @Test
+    fun `html paste detail carries the parsed summary and the raw markup`() {
+        val fixture = Fixture()
+        val html = "<html><body><b>bold text</b></body></html>"
+        val item = createHtmlPasteItem(html = html)
+        val pasteData =
+            PasteData(
+                id = 43L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.HTML_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns pasteData
+        withCliRouting(fixture) {
+            val withRaw =
+                json.decodeFromString<CliPasteDetailDto>(
+                    client.get("/cli/paste/latest?includeRaw=true").bodyAsText(),
+                )
+            assertEquals("bold text", withRaw.content)
+            assertEquals(html, withRaw.rawContent)
+
+            val withoutRaw =
+                json.decodeFromString<CliPasteDetailDto>(
+                    client.get("/cli/paste/latest").bodyAsText(),
+                )
+            assertEquals("bold text", withoutRaw.content)
+            assertEquals(null, withoutRaw.rawContent)
         }
     }
 
@@ -475,6 +516,34 @@ class CliRoutingTest {
                     setBody("""{"text":"hello"}""")
                 }
             assertEquals(HttpStatusCode.InternalServerError, response.status)
+        }
+    }
+
+    @Test
+    fun `copy rejects text over the non-file paste size limit before creating a row`() {
+        val fixture = Fixture()
+        // Zero limit makes any non-empty text oversized without a huge body.
+        // Past this check, DiscardOversizedNonFilePlugin would empty the item
+        // list during release and the reported id would be a deleted row
+        fixture.currentConfig = fixture.currentConfig.copy(key = "maxNonFilePasteSize", value = 0L)
+
+        withCliRouting(fixture) {
+            val response =
+                client.post("/cli/copy") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"text":"hello from cli"}""")
+                }
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertContains(response.bodyAsText(), "maxNonFilePasteSize")
+            coVerify(exactly = 0) { fixture.pasteDao.createPasteData(any()) }
+            coVerify(exactly = 0) {
+                fixture.pasteboardService.tryWritePasteboard(
+                    id = any(),
+                    pasteItem = any<PasteItem>(),
+                    localOnly = any(),
+                    updateCreateTime = any(),
+                )
+            }
         }
     }
 

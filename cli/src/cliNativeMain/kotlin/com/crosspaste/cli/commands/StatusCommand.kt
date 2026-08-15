@@ -11,6 +11,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.requireObject
+import com.github.ajalt.mordant.rendering.TextColors
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -117,7 +118,7 @@ class StatusCommand : CliktCommand(name = "status") {
         }
         val listening = if (status.pasteboardListening) "Active" else "Inactive"
         echo("CrossPaste v${status.appVersion}")
-        echo("  Status:      Running")
+        echo("  Status:      ${TextColors.green("Running")}")
         echo("  Port:        ${status.port}")
         echo("  Pasteboard:  $listening")
         echo("  Devices:     ${status.deviceCount}")
@@ -133,8 +134,9 @@ class StatusCommand : CliktCommand(name = "status") {
             val output = StatusOutput(running = false, state = state)
             echo(statusJson.encodeToString(StatusOutput.serializer(), output))
         } else {
+            val styled = if (state == "starting") TextColors.yellow(label) else TextColors.red(label)
             echo("CrossPaste")
-            echo("  Status:      $label")
+            echo("  Status:      $styled")
         }
         throw ProgramResult(EXIT_CODE_APP_NOT_RUNNING)
     }

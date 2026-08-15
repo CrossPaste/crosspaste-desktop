@@ -73,13 +73,19 @@ class TagCreateCommand : CliktCommand(name = "create") {
 
     override fun help(context: Context): String = "Create a new tag"
 
+    private val ctx by requireObject<CliContext>()
+
     private val name by argument(help = "Tag name")
 
     override fun run() =
         runCli { client ->
             val body = cliJson.encodeToString(TagCreateRequest.serializer(), TagCreateRequest(name))
             val tag = client.postBody("/cli/tags", body, TagSummary.serializer())
-            echo("Tag '${tag.name}' created (id=${tag.id}).")
+            if (ctx.json) {
+                echo(cliJson.encodeToString(TagSummary.serializer(), tag))
+            } else {
+                echo("Tag '${tag.name}' created (id=${tag.id}).")
+            }
         }
 }
 
@@ -87,11 +93,13 @@ class TagDeleteCommand : CliktCommand(name = "delete") {
 
     override fun help(context: Context): String = "Delete a tag"
 
+    private val ctx by requireObject<CliContext>()
+
     private val id by argument(help = "Tag ID to delete").long()
 
     override fun run() =
         runCli { client ->
             val response = client.deleteBody("/cli/tags/$id", MessageResponse.serializer())
-            echo(response.message)
+            echoMessage(ctx, response)
         }
 }

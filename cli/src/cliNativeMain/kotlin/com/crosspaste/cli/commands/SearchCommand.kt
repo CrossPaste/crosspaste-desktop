@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.mordant.rendering.TextColors
 
 class SearchCommand : CliktCommand(name = "search") {
 
@@ -23,6 +24,8 @@ class SearchCommand : CliktCommand(name = "search") {
 
     private val tag by option("--tag", "-g", help = "Filter by tag name")
 
+    private val format by listFormatOption()
+
     override fun run() =
         runCli { client ->
             val list =
@@ -31,10 +34,10 @@ class SearchCommand : CliktCommand(name = "search") {
                     PasteListResponse.serializer(),
                 )
 
-            if (ctx.json) {
-                echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
-            } else {
-                printResults(list)
+            when (resolveListFormat(format, ctx.json)) {
+                ListFormat.JSON -> echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
+                ListFormat.ID -> list.items.forEach { echo(it.id) }
+                ListFormat.TABLE -> printResults(list)
             }
         }
 
@@ -46,12 +49,12 @@ class SearchCommand : CliktCommand(name = "search") {
         echo("${list.items.size} result(s):")
         echo("")
         for (item in list.items) {
-            val fav = if (item.tagged) "*" else " "
+            val fav = if (item.tagged) TextColors.yellow("*") else " "
             val preview = item.preview.replace("\n", " ").take(60)
             echo(
                 "$fav ${item.id.toString().padStart(8)} " +
-                    "${item.typeName.padEnd(6)} " +
-                    "${formatRelativeTime(item.createTime).padEnd(8)} " +
+                    "${TextColors.cyan(item.typeName.padEnd(6))} " +
+                    "${TextColors.gray(formatRelativeTime(item.createTime).padEnd(8))} " +
                     preview,
             )
         }

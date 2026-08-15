@@ -34,6 +34,9 @@ class CrossPasteCommand : CliktCommand(name = cliCommandName) {
 
     override fun help(context: Context): String = "CrossPaste CLI - interact with your local CrossPaste application"
 
+    override fun helpEpilog(context: Context): String =
+        "Exit codes: 0 success, 1 error, 2 usage error, 3 CrossPaste not running."
+
     val json by option("--json", help = "Output in JSON format for machine consumption").flag()
 
     val autoStart by option(

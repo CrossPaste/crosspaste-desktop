@@ -58,4 +58,30 @@ class CliExitCodeTest {
         assertContains(result.output, "\"running\": false")
         assertContains(result.output, "\"state\": \"not_running\"")
     }
+
+    @Test
+    fun rootHelpDocumentsTheExitCodeContract() {
+        isolatedHome()
+        val result = CrossPasteCommand().test("--help")
+        assertEquals(0, result.statusCode)
+        assertContains(result.output, "Exit codes: 0 success, 1 error, 2 usage error, 3 CrossPaste not running")
+    }
+
+    @Test
+    fun noNewlineWithoutAContentOnlyModeIsAUsageError() {
+        isolatedHome()
+        val result = CrossPasteCommand().test("paste --no-newline")
+        assertContains(result.stderr, "--no-newline requires --raw or --summary")
+        // The runtime UsageError carries the subcommand's context, so the
+        // usage line shown is paste's, not the root command help
+        assertContains(result.stderr, "Usage: crosspaste paste")
+    }
+
+    @Test
+    fun rawAndSummaryAreMutuallyExclusive() {
+        isolatedHome()
+        val result = CrossPasteCommand().test("paste --raw --summary")
+        assertContains(result.stderr, "--raw and --summary are mutually exclusive")
+        assertContains(result.stderr, "Usage: crosspaste paste")
+    }
 }
