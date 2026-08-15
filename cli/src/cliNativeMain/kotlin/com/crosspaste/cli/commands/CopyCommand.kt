@@ -1,8 +1,10 @@
 package com.crosspaste.cli.commands
 
+import com.crosspaste.cli.platform.StdinTooLargeException
 import com.crosspaste.cli.platform.readAllStdin
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -42,7 +44,13 @@ class CopyCommand(
         if (terminal.terminalInfo.inputInteractive) {
             throw UsageError("provide text as an argument, or pipe it via stdin", "text")
         }
-        val content = stdinReader()
+        val content =
+            try {
+                stdinReader()
+            } catch (e: StdinTooLargeException) {
+                echo("Error: ${e.message}", err = true)
+                throw ProgramResult(1)
+            }
         if (content.isEmpty()) {
             throw UsageError("stdin was empty; nothing to copy", "text")
         }

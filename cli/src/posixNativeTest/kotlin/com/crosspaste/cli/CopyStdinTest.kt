@@ -1,6 +1,7 @@
 package com.crosspaste.cli
 
 import com.crosspaste.cli.commands.CopyCommand
+import com.crosspaste.cli.platform.StdinTooLargeException
 import com.github.ajalt.clikt.testing.test
 import kotlinx.cinterop.ExperimentalForeignApi
 import okio.FileSystem
@@ -62,6 +63,16 @@ class CopyStdinTest {
         isolatedHome()
         val result = CopyCommand(stdinReader = { "" }).test("", inputInteractive = false)
         assertContains(result.stderr, "stdin was empty")
+    }
+
+    @Test
+    fun oversizedStdinFailsWithAClearError() {
+        isolatedHome()
+        val result =
+            CopyCommand(stdinReader = { throw StdinTooLargeException() })
+                .test("", inputInteractive = false)
+        assertEquals(1, result.statusCode)
+        assertContains(result.stderr, "MiB limit")
     }
 
     @Test

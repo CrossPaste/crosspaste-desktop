@@ -82,13 +82,13 @@ crosspaste search "TODO" --format json | jq '.items[].preview'
 | 0 | 成功 |
 | 1 | 错误（请求失败、粘贴不存在等） |
 | 2 | 参数错误（未知选项、缺少参数等） |
-| 3 | CrossPaste 未运行 |
+| 3 | CrossPaste 未运行（或仍在启动中） |
 
 例如用 `crosspaste status`（永不自动拉起应用）做健康检查：
 
 ```sh
 if ! crosspaste status > /dev/null; then
-  echo "CrossPaste 未运行"
+  echo "CrossPaste 尚未就绪"
 fi
 ```
 

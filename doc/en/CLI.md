@@ -82,13 +82,13 @@ Scripts can rely on:
 | 0 | Success |
 | 1 | Error (request failed, paste not found, ...) |
 | 2 | Usage error (unknown option, missing argument, ...) |
-| 3 | CrossPaste is not running |
+| 3 | CrossPaste is not running (or still starting) |
 
 For example, `crosspaste status` (which never auto-starts the app) makes a convenient health check:
 
 ```sh
 if ! crosspaste status > /dev/null; then
-  echo "CrossPaste is not running"
+  echo "CrossPaste is not ready"
 fi
 ```
 
