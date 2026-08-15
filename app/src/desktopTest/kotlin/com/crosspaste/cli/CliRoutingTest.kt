@@ -42,6 +42,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -475,6 +476,34 @@ class CliRoutingTest {
                     setBody("""{"text":"hello"}""")
                 }
             assertEquals(HttpStatusCode.InternalServerError, response.status)
+        }
+    }
+
+    @Test
+    fun `copy rejects text over the non-file paste size limit before creating a row`() {
+        val fixture = Fixture()
+        // Zero limit makes any non-empty text oversized without a huge body.
+        // Past this check, DiscardOversizedNonFilePlugin would empty the item
+        // list during release and the reported id would be a deleted row
+        fixture.currentConfig = fixture.currentConfig.copy(key = "maxNonFilePasteSize", value = 0L)
+
+        withCliRouting(fixture) {
+            val response =
+                client.post("/cli/copy") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"text":"hello from cli"}""")
+                }
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertContains(response.bodyAsText(), "maxNonFilePasteSize")
+            coVerify(exactly = 0) { fixture.pasteDao.createPasteData(any()) }
+            coVerify(exactly = 0) {
+                fixture.pasteboardService.tryWritePasteboard(
+                    id = any(),
+                    pasteItem = any<PasteItem>(),
+                    localOnly = any(),
+                    updateCreateTime = any(),
+                )
+            }
         }
     }
 
