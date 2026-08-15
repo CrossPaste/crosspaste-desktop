@@ -30,6 +30,7 @@ import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.NativeMessagingHostService
 import com.crosspaste.app.UpdateMetadataFetcher
 import com.crosspaste.app.WindowsZipUpdater
+import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopConfigManager
@@ -109,6 +110,7 @@ fun desktopAppModule(
         single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get(), get(), get()) }
         single<AppUrls> { DesktopAppUrls }
         single<ChangelogService> { ChangelogService(get()) }
+        single<CliSymlinkService> { CliSymlinkService(get(), get()) }
         single<CrossPasteWebService> { CrossPasteWebService(get(), get()) }
         single<DesktopAppLaunch> { DesktopAppLaunch(get(), get()) }
         single<DesktopAppLaunchState> { get<DesktopAppLaunch>().launchSync() }

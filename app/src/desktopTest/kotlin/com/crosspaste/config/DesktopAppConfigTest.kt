@@ -24,6 +24,7 @@ class DesktopAppConfigTest {
         assertFalse(config.isDarkTheme)
         assertEquals(332, config.searchWindowHeight)
         assertTrue(config.showDockIcon)
+        assertTrue(config.showInstallCliPrompt)
         assertEquals(13129, config.port)
         assertFalse(config.enableEncryptSync)
         assertTrue(config.enableExpirationCleanup)
@@ -82,6 +83,24 @@ class DesktopAppConfigTest {
         val config = createDefaultConfig()
         val updated = config.copy("showDockIcon", false)
         assertFalse(updated.showDockIcon)
+    }
+
+    @Test
+    fun `copy with boolean key updates showInstallCliPrompt`() {
+        val config = createDefaultConfig()
+        val updated = config.copy("showInstallCliPrompt", false)
+        assertFalse(updated.showInstallCliPrompt)
+    }
+
+    @Test
+    fun `legacy config without showInstallCliPrompt uses default`() {
+        val config =
+            getJsonUtils().JSON.decodeFromString(
+                DesktopAppConfig.serializer(),
+                """{"language":"zh"}""",
+            )
+
+        assertTrue(config.showInstallCliPrompt)
     }
 
     @Test

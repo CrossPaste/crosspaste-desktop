@@ -54,6 +54,9 @@ data class DesktopAppConfig(
     val proxyHost: String = "127.0.0.1",
     val proxyPort: String = "7890",
     val showGrantAccessibility: Boolean = true,
+    // One-time macOS prompt offering to install the /usr/local/bin/crosspaste
+    // CLI symlink; cleared after the user installs or dismisses it once.
+    val showInstallCliPrompt: Boolean = true,
     val enableClipboardRelay: Boolean = false,
     // Sync content type controls
     override val enableSyncText: Boolean = true,
@@ -165,6 +168,7 @@ data class DesktopAppConfig(
             proxyHost = if (key == "proxyHost") toString(value) else proxyHost,
             proxyPort = if (key == "proxyPort") toString(value) else proxyPort,
             showGrantAccessibility = if (key == "showGrantAccessibility") toBoolean(value) else showGrantAccessibility,
+            showInstallCliPrompt = if (key == "showInstallCliPrompt") toBoolean(value) else showInstallCliPrompt,
             enableSyncText = if (key == "enableSyncText") toBoolean(value) else enableSyncText,
             enableSyncUrl = if (key == "enableSyncUrl") toBoolean(value) else enableSyncUrl,
             enableSyncHtml = if (key == "enableSyncHtml") toBoolean(value) else enableSyncHtml,

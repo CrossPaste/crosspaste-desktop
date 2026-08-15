@@ -29,6 +29,7 @@ import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvide
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,8 @@ import com.composables.icons.materialsymbols.roundedfilled.Push_pin
 import com.crosspaste.app.DesktopAppLaunchState
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.cli.CliSymlinkService
+import com.crosspaste.cli.CliSymlinkState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
@@ -53,6 +56,7 @@ import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.MainWindowContext
 import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.settings.GrantAccessibilityDialog
+import com.crosspaste.ui.settings.InstallCliDialog
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -207,9 +211,25 @@ fun MainWindow(windowIcon: Painter?) {
 
             MainWindowContext(mainWindowInfo) {
                 CrossPasteMainWindowContent()
-                if (config.showGrantAccessibility && !appLaunchState.accessibilityPermissions) {
+                val accessibilityDialogShowing =
+                    config.showGrantAccessibility && !appLaunchState.accessibilityPermissions
+                if (accessibilityDialogShowing) {
                     GrantAccessibilityDialog {
                         configManager.updateConfig("showGrantAccessibility", false)
+                    }
+                } else if (isMacos && config.showInstallCliPrompt) {
+                    // One-time offer to install the `crosspaste` terminal
+                    // command (D6 PATH integration). Deferred while the
+                    // accessibility dialog is up so prompts never stack.
+                    val cliSymlinkService = koinInject<CliSymlinkService>()
+                    LaunchedEffect(Unit) {
+                        cliSymlinkService.refresh()
+                    }
+                    val cliSymlinkState by cliSymlinkService.state.collectAsState()
+                    if (cliSymlinkState == CliSymlinkState.NOT_INSTALLED) {
+                        InstallCliDialog {
+                            configManager.updateConfig("showInstallCliPrompt", false)
+                        }
                     }
                 }
             }
