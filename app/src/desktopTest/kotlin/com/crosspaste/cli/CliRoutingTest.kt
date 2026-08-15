@@ -16,6 +16,7 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteItem
@@ -164,11 +165,40 @@ class CliRoutingTest {
             val detail = json.decodeFromString<CliPasteDetailDto>(response.bodyAsText())
             assertEquals(42L, detail.id)
             assertEquals("hello", detail.content)
+            assertEquals("hello", detail.rawContent)
         }
 
         coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns null
         withCliRouting(fixture) {
             assertEquals(HttpStatusCode.NotFound, client.get("/cli/paste/latest").status)
+        }
+    }
+
+    @Test
+    fun `html paste detail carries the parsed summary and the raw markup`() {
+        val fixture = Fixture()
+        val html = "<html><body><b>bold text</b></body></html>"
+        val item = createHtmlPasteItem(html = html)
+        val pasteData =
+            PasteData(
+                id = 43L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.HTML_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns pasteData
+        withCliRouting(fixture) {
+            val response = client.get("/cli/paste/latest")
+            assertEquals(HttpStatusCode.OK, response.status)
+            val detail = json.decodeFromString<CliPasteDetailDto>(response.bodyAsText())
+            assertEquals("bold text", detail.content)
+            assertEquals(html, detail.rawContent)
         }
     }
 

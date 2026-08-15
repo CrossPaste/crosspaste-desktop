@@ -23,7 +23,10 @@ data class PasteDetailResponse(
     val createTime: Long,
     val remote: Boolean,
     val hash: String,
+    /** Human-readable summary (HTML/RTF converted to plain text). */
     val content: String?,
+    /** Content exactly as stored (HTML/RTF keep their source markup). */
+    val rawContent: String? = null,
 )
 
 class PasteCommand : CliktCommand(name = "paste") {
@@ -37,41 +40,53 @@ class PasteCommand : CliktCommand(name = "paste") {
     private val raw by option(
         "--raw",
         "-r",
-        help = "Print only the paste content, exactly as stored (for piping, e.g. `crosspaste paste -r | pbcopy`)",
+        help =
+            "Print only the paste content, exactly as stored — HTML/RTF print their source " +
+                "markup (for piping, e.g. `crosspaste paste -r | pbcopy`)",
+    ).flag()
+
+    private val summary by option(
+        "--summary",
+        "-s",
+        help = "Print only the plain-text summary of the paste content (HTML/RTF converted to text)",
     ).flag()
 
     private val noNewline by option(
         "--no-newline",
-        help = "With --raw: do not append a trailing newline",
+        help = "With --raw or --summary: do not append a trailing newline",
     ).flag()
 
     override fun run() {
-        if (noNewline && !raw) {
-            throw UsageError("--no-newline requires --raw")
+        if (raw && summary) {
+            throw UsageError("--raw and --summary are mutually exclusive")
+        }
+        if (noNewline && !raw && !summary) {
+            throw UsageError("--no-newline requires --raw or --summary")
         }
         runCli { client ->
             val path = id?.let { "/cli/paste/$it" } ?: "/cli/paste/latest"
             val detail = client.getBody(path, PasteDetailResponse.serializer())
 
-            if (raw) {
-                printRaw(detail)
-            } else if (ctx.json) {
-                echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
-            } else {
-                printDetail(detail)
+            when {
+                raw -> printContentOnly(detail, detail.rawContent)
+                summary -> printContentOnly(detail, detail.content)
+                ctx.json -> echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
+                else -> printDetail(detail)
             }
         }
     }
 
     /**
      * Bypasses the Mordant terminal on purpose: it re-renders strings (and
-     * strips ANSI codes on non-TTY output), while raw mode must reproduce the
-     * stored content byte for byte.
+     * strips ANSI codes on non-TTY output), while content-only modes must
+     * reproduce the stored content byte for byte.
      */
-    private fun printRaw(detail: PasteDetailResponse) {
-        val content = detail.content
+    private fun printContentOnly(
+        detail: PasteDetailResponse,
+        content: String?,
+    ) {
         if (content == null) {
-            echo("Error: paste #${detail.id} (${detail.typeName}) has no text content.", err = true)
+            echo("Error: paste #${detail.id} (${detail.typeName}) has no content.", err = true)
             throw ProgramResult(1)
         }
         if (noNewline) {

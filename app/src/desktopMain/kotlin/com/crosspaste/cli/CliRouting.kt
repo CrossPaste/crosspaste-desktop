@@ -475,6 +475,7 @@ private suspend fun PasteData.toDetailDto(
         remote = remote,
         hash = hash,
         content = pasteAppearItem?.let { pasteItemReader.getSummary(it) },
+        rawContent = pasteAppearItem?.let { pasteItemReader.getRaw(it) },
     )
 
 private fun parseConfigValue(

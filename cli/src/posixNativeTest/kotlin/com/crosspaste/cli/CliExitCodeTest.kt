@@ -68,9 +68,16 @@ class CliExitCodeTest {
     }
 
     @Test
-    fun noNewlineWithoutRawIsAUsageError() {
+    fun noNewlineWithoutAContentOnlyModeIsAUsageError() {
         isolatedHome()
         val result = CrossPasteCommand().test("paste --no-newline")
-        assertContains(result.stderr, "--no-newline requires --raw")
+        assertContains(result.stderr, "--no-newline requires --raw or --summary")
+    }
+
+    @Test
+    fun rawAndSummaryAreMutuallyExclusive() {
+        isolatedHome()
+        val result = CrossPasteCommand().test("paste --raw --summary")
+        assertContains(result.stderr, "--raw and --summary are mutually exclusive")
     }
 }

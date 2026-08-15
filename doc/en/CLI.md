@@ -56,11 +56,12 @@ git log -1 --format=%H | crosspaste copy
 cat notes.md | crosspaste copy
 ```
 
-Print raw paste content (no decoration), for piping onward:
+Print only the paste content (no decoration), for piping onward. `--raw` reproduces the content exactly as stored — HTML/RTF pastes print their source markup; `--summary` prints the plain-text rendering instead:
 
 ```sh
 crosspaste paste --raw | pbcopy
-crosspaste paste --raw --no-newline > snippet.txt
+crosspaste paste --raw --no-newline > snippet.html
+crosspaste paste --summary            # HTML/RTF converted to plain text
 ```
 
 List and bulk-process history:

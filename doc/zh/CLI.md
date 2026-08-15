@@ -56,11 +56,12 @@ git log -1 --format=%H | crosspaste copy
 cat notes.md | crosspaste copy
 ```
 
-输出原始粘贴内容（无任何装饰），供后续管道使用：
+仅输出粘贴内容本体（无任何装饰），供后续管道使用。`--raw` 按存储原样输出——HTML/RTF 输出源码；`--summary` 则输出纯文本摘要：
 
 ```sh
 crosspaste paste --raw | pbcopy
-crosspaste paste --raw --no-newline > snippet.txt
+crosspaste paste --raw --no-newline > snippet.html
+crosspaste paste --summary            # HTML/RTF 转为纯文本
 ```
 
 列表与批量处理：

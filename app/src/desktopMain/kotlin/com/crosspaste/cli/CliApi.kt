@@ -57,7 +57,10 @@ data class CliPasteDetailDto(
     val createTime: Long,
     val remote: Boolean,
     val hash: String,
+    /** Human-readable summary (HTML/RTF converted to plain text). */
     val content: String?,
+    /** Content exactly as stored (HTML/RTF keep their source markup). */
+    val rawContent: String?,
 )
 
 @Serializable

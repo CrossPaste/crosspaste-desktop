@@ -91,10 +91,22 @@ class CliDtoContractTest {
                     remote = false,
                     hash = "abc",
                     content = "hello",
+                    rawContent = "<b>hello</b>",
                 ),
             )
         assertEquals(
-            setOf("id", "typeName", "source", "size", "tagged", "createTime", "remote", "hash", "content"),
+            setOf(
+                "id",
+                "typeName",
+                "source",
+                "size",
+                "tagged",
+                "createTime",
+                "remote",
+                "hash",
+                "content",
+                "rawContent",
+            ),
             fieldsOf(encoded),
         )
     }
