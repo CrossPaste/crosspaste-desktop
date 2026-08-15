@@ -285,4 +285,39 @@ class CliSymlinkServiceTest {
         assertEquals(CliInstallResult.FAILURE, createService().attemptDirectInstall())
         assertEquals(9, Files.readAllBytes(linkPath)[0].toInt())
     }
+
+    @Test
+    fun `parse resolved command ignores profile noise`() {
+        assertEquals(
+            "/usr/local/bin/crosspaste",
+            parseResolvedCommand(
+                "Welcome to my shell!\nprofile-banner\n$RESOLVED_MARKER/usr/local/bin/crosspaste\n",
+            ),
+        )
+        assertEquals(null, parseResolvedCommand("profile-banner\n/tmp/some/path\n"))
+        assertEquals(null, parseResolvedCommand(""))
+        assertEquals(null, parseResolvedCommand(RESOLVED_MARKER))
+    }
+
+    @Test
+    fun `shell probe survives a banner larger than the pipe capacity`() =
+        runTest {
+            // 200KB of profile noise before the marker: without concurrent
+            // stdout consumption the shell would block on a full pipe and
+            // the probe would time out
+            val probe =
+                "i=0; while [ ${'$'}i -lt 5000 ]; do echo banner-line-of-noise-banner-line-of-noise; " +
+                    "i=${'$'}((i+1)); done; printf '$RESOLVED_MARKER%s\\n' /tmp/fake-crosspaste"
+            val resolved = createService().resolveCommandIn("/bin/sh", probe)
+            assertEquals("/tmp/fake-crosspaste", resolved)
+        }
+
+    @Test
+    fun `shell probe reports null when the command is not found`() =
+        runTest {
+            val probe =
+                "p=${'$'}(command -v definitely-not-a-real-command-xyz) && " +
+                    "printf '$RESOLVED_MARKER%s\\n' \"${'$'}p\""
+            assertEquals(null, createService().resolveCommandIn("/bin/sh", probe))
+        }
 }

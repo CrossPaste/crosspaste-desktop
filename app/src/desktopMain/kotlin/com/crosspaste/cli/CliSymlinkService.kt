@@ -5,6 +5,8 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
@@ -81,6 +83,10 @@ class CliSymlinkService(
         const val COMMAND_NAME = "crosspaste"
 
         private val PROBED_SHELLS = listOf("/bin/zsh", "/bin/bash")
+
+        /** The marker is only printed when `command -v` succeeded, so parsing needs no exit-code check. */
+        private val PROBE_COMMAND =
+            "p=\$(command -v $COMMAND_NAME) && printf '$RESOLVED_MARKER%s\\n' \"\$p\""
     }
 
     private val logger = KotlinLogging.logger {}
@@ -203,29 +209,36 @@ class CliSymlinkService(
             }
         }
 
-    private fun resolveCommandIn(shell: String): String? =
+    /**
+     * -l: login shell, so the user's profile PATH applies — which also means
+     * the profile may print banners or arbitrary amounts of text. The result
+     * is therefore tagged with a unique marker and stdout is consumed
+     * concurrently: a chatty profile can exceed pipe capacity, and a blocked
+     * shell would otherwise sit until the timeout and read as "unavailable".
+     */
+    internal suspend fun resolveCommandIn(
+        shell: String,
+        probeCommand: String = PROBE_COMMAND,
+    ): String? =
         runCatching {
-            // -l: login shell, so the user's profile PATH applies. Output is
-            // at most one short path, far below pipe capacity, so waiting
-            // before reading cannot deadlock — and lets a hung shell profile
-            // be killed instead of blocking a read forever.
             val process =
-                ProcessBuilder(shell, "-lc", "command -v $COMMAND_NAME")
+                ProcessBuilder(shell, "-lc", probeCommand)
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start()
-            if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                process.destroyForcibly()
-                return@runCatching null
-            }
-            val output =
-                process.inputStream
-                    .bufferedReader()
-                    .readText()
-                    .trim()
-            if (process.exitValue() == 0 && output.isNotEmpty()) {
-                output.lineSequence().first()
-            } else {
-                null
+            coroutineScope {
+                val output =
+                    async(ioDispatcher) {
+                        runCatching {
+                            process.inputStream.bufferedReader().readText()
+                        }.getOrDefault("")
+                    }
+                val finished = process.waitFor(5, TimeUnit.SECONDS)
+                if (!finished) {
+                    process.destroyForcibly()
+                }
+                // Killing the process closes its stdout, so this cannot hang
+                val text = output.await()
+                if (finished) parseResolvedCommand(text) else null
             }
         }.getOrElse { e ->
             logger.warn(e) { "Failed to probe $shell for $COMMAND_NAME" }
@@ -277,6 +290,18 @@ class CliSymlinkService(
             CliInstallResult.FAILURE
         }
 }
+
+/** Tags the shell-availability probe's answer so profile banners can never be mistaken for it. */
+internal const val RESOLVED_MARKER = "__CROSSPASTE_RESOLVED__"
+
+/** Extracts the marker-tagged path from a login shell's output, ignoring any profile noise around it. */
+internal fun parseResolvedCommand(output: String): String? =
+    output
+        .lineSequence()
+        .firstOrNull { it.startsWith(RESOLVED_MARKER) }
+        ?.removePrefix(RESOLVED_MARKER)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
 
 /**
  * The escalated install command, executed by /bin/sh as root. It re-verifies
