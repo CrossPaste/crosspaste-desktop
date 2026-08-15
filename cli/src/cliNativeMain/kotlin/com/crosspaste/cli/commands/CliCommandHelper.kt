@@ -4,6 +4,7 @@ import com.crosspaste.cli.CliContext
 import com.crosspaste.cli.api.AppNotRunningException
 import com.crosspaste.cli.api.CLI_API_VERSION
 import com.crosspaste.cli.api.CliClient
+import com.crosspaste.cli.cliCommandName
 import com.crosspaste.cli.platform.AppLiveness
 import com.crosspaste.cli.platform.AppReadinessChecker
 import com.crosspaste.cli.platform.CliAppPathProvider
@@ -140,7 +141,7 @@ private fun CliktCommand.consentToStart(): Boolean =
             } else {
                 echo(
                     "Error: CrossPaste is not running. " +
-                        "Use 'crosspaste --start <command>' to launch it automatically.",
+                        "Use '$cliCommandName --start <command>' to launch it automatically.",
                     err = true,
                 )
                 false

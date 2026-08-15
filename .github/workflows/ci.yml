@@ -111,9 +111,13 @@ jobs:
 
       # Compile gate for the CLI native binary (host target = linuxX64).
       # Pure Kotlin since the CLI went all-HTTP; only needs the Kotlin/Native
-      # toolchain already set up above.
+      # toolchain already set up above. The release links for linuxArm64 and
+      # mingwX64 guard the cross-compilation path build-release.yml depends on
+      # (its ubuntu job cross-compiles both before Conveyor packaging).
       - name: Build CLI native binary
-        run: ./gradlew :cli:ktlintCheck :cli:cliNativeTest :cli:linkDebugExecutableCliNative
+        run: >
+          ./gradlew :cli:ktlintCheck :cli:cliNativeTest :cli:linkDebugExecutableLinuxX64
+          :cli:linkReleaseExecutableLinuxArm64 :cli:linkReleaseExecutableMingwX64
 
   web-build:
     needs: changes

@@ -85,6 +85,27 @@ jobs:
             ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*',
             '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
 
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      # Apple targets can only be compiled on a macOS host; the remaining CLI
+      # targets are cross-compiled in build-ubuntu. The full version is taken
+      # from the git tag because validateAndUpdateVersion.js only rewrites the
+      # version file later, in build-ubuntu (an artifact is used instead of a
+      # cache because the binaries change on every release).
+      - name: Build CLI binaries (macOS targets)
+        run: ./gradlew :cli:assembleDistMacosArm64 :cli:assembleDistMacosX64 "-PcliVersion=${GITHUB_REF_NAME}"
+
+      - name: Upload macOS CLI binaries
+        uses: actions/upload-artifact@v7
+        with:
+          name: cli-dist-macos
+          path: cli/dist/
+          if-no-files-found: error
+
   build-ubuntu:
     needs: [check-dylib-cache, build-macos]
     runs-on: ubuntu-latest
@@ -192,6 +213,30 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew app:build
+
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      - name: Download macOS CLI binaries
+        uses: actions/download-artifact@v8
+        with:
+          name: cli-dist-macos
+          path: cli/dist/
+
+      # GitHub artifacts drop the executable bit; restore it or the packaged
+      # mac CLI would ship unexecutable.
+      - name: Restore CLI executable permissions
+        run: chmod +x cli/dist/*/crosspaste-cli
+
+      # Same version source as the build-macos CLI step, so every platform's
+      # CLI reports the identical full version by construction.
+      - name: Build CLI binaries (Linux and Windows targets)
+        run: >
+          ./gradlew :cli:assembleDistLinuxX64 :cli:assembleDistLinuxArm64
+          :cli:assembleDistMingwX64 "-PcliVersion=${GITHUB_REF_NAME}"
 
       - name: Check Dylib Files
         run: |

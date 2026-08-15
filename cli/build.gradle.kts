@@ -1,5 +1,9 @@
 @file:Suppress("DEPRECATION", "DEPRECATION_ERROR")
 
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
+import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.HostManager
 import java.io.FileReader
 import java.util.Properties
 
@@ -64,94 +68,138 @@ val generateCliVersion by tasks.registering {
 }
 
 kotlin {
-    val hostOs = System.getProperty("os.name")
-    val isArm64 = System.getProperty("os.arch") == "aarch64"
-    val isMingwX64 = hostOs.startsWith("Windows")
+    // All five release targets are declared statically so a single Gradle
+    // invocation can build every target the host toolchain supports (Apple
+    // targets need a macOS host; everything else cross-compiles from any
+    // host). Targets unsupported on the current host are disabled by the
+    // Kotlin plugin with a warning and simply skipped.
+    val cliTargets =
+        listOf(
+            macosArm64(),
+            macosX64(),
+            linuxX64(),
+            linuxArm64(),
+            mingwX64(),
+        )
 
-    val cliTarget = project.findProperty("cli.target") as? String
-    val isMacosTarget =
-        when (cliTarget) {
-            "macosArm64", "macosX64" -> true
-            null -> hostOs == "Mac OS X"
-            else -> false
-        }
+    cliTargets.forEach { target ->
+        val isMacosTarget = target.konanTarget.family == Family.OSX
+        val isMingwTarget = target.konanTarget.family == Family.MINGW
 
-    val nativeTarget =
-        if (cliTarget != null) {
-            when (cliTarget) {
-                "macosArm64" -> macosArm64("cliNative")
-                "macosX64" -> macosX64("cliNative")
-                "linuxArm64" -> linuxArm64("cliNative")
-                "linuxX64" -> linuxX64("cliNative")
-                "mingwX64" -> mingwX64("cliNative")
-                else -> throw GradleException("Unsupported CLI target: $cliTarget")
-            }
-        } else {
-            when {
-                hostOs == "Mac OS X" && isArm64 -> macosArm64("cliNative")
-                hostOs == "Mac OS X" && !isArm64 -> macosX64("cliNative")
-                hostOs == "Linux" && isArm64 -> linuxArm64("cliNative")
-                hostOs == "Linux" && !isArm64 -> linuxX64("cliNative")
-                isMingwX64 -> mingwX64("cliNative")
-                else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-            }
-        }
-
-    nativeTarget.apply {
-        compilations.getByName("main") {
+        target.compilations.getByName("main") {
             cinterops {
                 val execpath by creating
             }
         }
-        binaries {
+        // Workaround for Clikt duplicate symbol bug in Kotlin/Native
+        // See: https://github.com/ajalt/clikt/issues/598
+        // Apple ld does not support --allow-multiple-definition (GNU ld only).
+        // Konan invokes the linker directly for Linux targets (bare flag) but
+        // goes through the clang++ driver for mingw, which needs -Wl, to
+        // forward the flag.
+        val allowMultipleDefinition =
+            when {
+                isMacosTarget -> null
+                isMingwTarget -> "-Wl,--allow-multiple-definition"
+                else -> "--allow-multiple-definition"
+            }
+
+        target.binaries {
             executable {
                 entryPoint = "com.crosspaste.cli.main"
                 baseName = "crosspaste-cli"
-                // Workaround for Clikt duplicate symbol bug in Kotlin/Native
-                // See: https://github.com/ajalt/clikt/issues/598
-                // Apple ld does not support --allow-multiple-definition (GNU ld only)
-                if (!isMacosTarget) {
-                    linkerOpts("--allow-multiple-definition")
-                }
+                allowMultipleDefinition?.let { linkerOpts(it) }
             }
             // The test binary needs the same Clikt duplicate-symbol workaround;
             // GNU ld only hits it when konan compiler caches are enabled (host
             // builds), which is why cross-links from macOS don't reproduce it
-            if (!isMacosTarget) {
-                getTest("debug").linkerOpts("--allow-multiple-definition")
-            }
+            allowMultipleDefinition?.let { getTest("debug").linkerOpts(it) }
         }
-    }
 
-    // Platform-split sources keyed on the selected target (not the host,
-    // which would break -Pcli.target cross-compilation)
-    val isMingwTarget = cliTarget == "mingwX64" || (cliTarget == null && isMingwX64)
-
-    sourceSets {
-        val cliNativeMain by getting {
+        // The CLI sources predate the five-target split and are written as
+        // leaf sources (free use of target-specific APIs, no expect/actual),
+        // so each target compiles the same source-directory union directly
+        // instead of going through shared intermediate source sets.
+        sourceSets.getByName("${target.name}Main") {
+            kotlin.srcDir("src/cliNativeMain/kotlin")
             kotlin.srcDir(generateCliVersion)
             if (isMingwTarget) {
                 kotlin.srcDir("src/mingwNativeMain/kotlin")
             } else {
                 kotlin.srcDir("src/posixNativeMain/kotlin")
             }
-            dependencies {
-                implementation(libs.clikt)
-                implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.kotlinx.serialization.json)
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.cio)
-                implementation(libs.okio)
-            }
         }
-        val cliNativeTest by getting {
+        sourceSets.getByName("${target.name}Test") {
+            kotlin.srcDir("src/cliNativeTest/kotlin")
             if (!isMingwTarget) {
                 kotlin.srcDir("src/posixNativeTest/kotlin")
             }
-            dependencies {
-                implementation(libs.kotlin.test)
-                implementation(libs.kotlinx.coroutines.test)
+        }
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.clikt)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.okio)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+        }
+    }
+}
+
+// Runs the CLI test suite for the host's own target — a stable task name for
+// CI and local use that doesn't depend on which machine invokes it.
+val hostTestTaskName =
+    kotlin.targets
+        .withType<KotlinNativeTarget>()
+        .firstOrNull { it.konanTarget == HostManager.host }
+        ?.let { "${it.name}Test" }
+
+tasks.register("cliNativeTest") {
+    group = "verification"
+    description = "Runs CLI tests for the host target."
+    hostTestTaskName?.let { dependsOn(it) }
+}
+
+// Collects release executables under cli/dist/<target>/crosspaste-cli(.exe),
+// the layout the packaging pipeline (Conveyor + release workflow) consumes.
+kotlin.targets.withType<KotlinNativeTarget>().forEach { target ->
+    val capitalizedName = target.name.replaceFirstChar { it.uppercase() }
+    val executable = target.binaries.getExecutable(NativeBuildType.RELEASE)
+    tasks.register<Copy>("assembleDist$capitalizedName") {
+        group = "distribution"
+        description = "Copies the ${target.name} release executable to cli/dist/${target.name}/."
+        dependsOn(executable.linkTaskProvider)
+        from(executable.outputFile)
+        into(layout.projectDirectory.dir("dist/${target.name}"))
+        // Kotlin/Native emits crosspaste-cli.kexe on POSIX targets;
+        // ship it under the bare command name (mingw keeps .exe)
+        rename { name -> name.removeSuffix(".kexe") }
+    }
+}
+
+tasks.register("assembleDist") {
+    group = "distribution"
+    description = "Builds CLI release executables for every target the host can compile."
+    // Explicit host → buildable-target map: Apple targets need a macOS host,
+    // Linux hosts cross-compile everything else, Windows hosts build only
+    // their own target. (HostManager.isEnabled is not used here: it reports
+    // mingwX64 as disabled on macOS even though cross-linking it works.)
+    kotlin.targets.withType<KotlinNativeTarget>().forEach { target ->
+        val buildable =
+            when {
+                HostManager.hostIsMac -> true
+                HostManager.hostIsLinux -> target.konanTarget.family != Family.OSX
+                else -> target.konanTarget.family == Family.MINGW
             }
+        if (buildable) {
+            dependsOn("assembleDist${target.name.replaceFirstChar { it.uppercase() }}")
         }
     }
 }

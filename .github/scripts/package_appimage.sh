@@ -40,6 +40,12 @@ build_appimage() {
     # (e.g. crosspaste-1.2.4/) and extract contents directly into BUILD_DIR
     tar -xzf "$TAR_FILE" -C "$BUILD_DIR" --strip-components=1
 
+    # The CLI arrives with the tarball itself (it is an app input landing in
+    # lib/app/bin/ — decision D6); just verify it is really there so a
+    # packaging regression fails the build instead of silently shipping an
+    # AppImage without the CLI.
+    test -x "$BUILD_DIR/lib/app/bin/crosspaste-cli"
+
     # Configure AppImage metadata (AppRun, Desktop file, Icon) inside a subshell
     # so the working directory stays at the workspace root for appimagetool.
     (

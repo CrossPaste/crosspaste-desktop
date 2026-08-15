@@ -38,3 +38,6 @@ output*/
 web/dist/
 scheduled_tasks.lock
 skills-lock.json
+
+# CLI release binaries staged for packaging (P3)
+/cli/dist/
