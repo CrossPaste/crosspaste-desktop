@@ -23,30 +23,49 @@ class DesktopPasteServer(
 
     override suspend fun start() =
         withContext(ioDispatcher) {
-            runCatching {
-                server = createServer(port = readWritePort.getValue())
-                server?.start(wait = false)
-            }.onFailure { e ->
-                if (exceptionHandler.isPortAlreadyInUse(e)) {
-                    logger.warn { "Port ${readWritePort.getValue()} is already in use, retrying on random port" }
-                    runCatching {
-                        server = createServer(port = 0)
-                        server?.start(wait = false)
-                    }.onFailure { retryError ->
-                        logger.error(retryError) { "Failed to start server on random port" }
+            val configuredPort = readWritePort.getValue()
+            try {
+                try {
+                    startServer(configuredPort)
+                } catch (e: Throwable) {
+                    cleanupFailedServer()
+                    if (!exceptionHandler.isPortAlreadyInUse(e)) {
+                        logger.error(e) { "Failed to start server" }
+                        throw e
                     }
-                } else {
-                    logger.error(e) { "Failed to start server" }
+
+                    logger.warn { "Port $configuredPort is already in use, retrying on random port" }
+                    startServer(0)
                 }
+
+                port =
+                    checkNotNull(server)
+                        .application.engine
+                        .resolvedConnectors()
+                        .firstOrNull()
+                        ?.port
+                        ?: error("Started server has no resolved connector")
+                if (port != configuredPort) {
+                    readWritePort.setValue(port)
+                }
+                logger.info { "Server started at port $port" }
+            } catch (e: Throwable) {
+                cleanupFailedServer()
+                logger.error(e) { "Server startup failed" }
+                throw e
             }
-            server?.application?.engine?.resolvedConnectors()?.first()?.port?.let {
-                port = it
-            }
-            if (port != readWritePort.getValue()) {
-                readWritePort.setValue(port)
-            }
-            logger.info { "Server started at port $port" }
         }
+
+    private fun startServer(port: Int) {
+        server = createServer(port = port)
+        checkNotNull(server).start(wait = false)
+    }
+
+    private suspend fun cleanupFailedServer() {
+        runCatching { server?.stop() }
+            .onFailure { e -> logger.warn(e) { "Failed to clean up partially started server" } }
+        server = null
+    }
 
     override suspend fun stop() {
         server?.stop()

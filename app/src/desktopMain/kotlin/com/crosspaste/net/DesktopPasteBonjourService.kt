@@ -13,13 +13,18 @@ import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
@@ -43,6 +48,7 @@ class DesktopPasteBonjourService(
         private const val DEVICE_RESOLVE_INTERVAL = 2000L // Throttle for specific device resolution
         private const val MIN_SEARCH_DURATION = 2000L // Minimum duration for searching
         private const val CLOSE_TIMEOUT = 10000L // Maximum time to wait for close
+        private const val LIFECYCLE_CLOSE_TIMEOUT = 4000L // Must stay below the app's 5s shutdown budget
 
         private val dateUtils = getDateUtils()
     }
@@ -227,9 +233,9 @@ class DesktopPasteBonjourService(
     /**
      * Suspending teardown of all registered jmDNS instances. Used on the network-change
      * hot path ([processNetworkChange]) so a rebuild never blocks the consumer coroutine.
-     * jmDNS unregister/close are themselves blocking calls — they run on [scope]'s IO
-     * dispatcher inside [withTimeout] so a single misbehaving interface can't stall the
-     * rebuild past [CLOSE_TIMEOUT].
+     * jmDNS unregister/close are themselves blocking calls. [withTimeout] bounds
+     * cooperative work, but cannot interrupt a native/blocking jmDNS call; lifecycle
+     * shutdown therefore also has a hard wait bound in [close].
      */
     private suspend fun closeServices() {
         runCatching {
@@ -253,13 +259,31 @@ class DesktopPasteBonjourService(
     }
 
     /**
-     * Lifecycle teardown (interface contract). Bridges the suspend [closeServices] to the
-     * synchronous shutdown path via [runBlocking]. This is a one-shot app-exit call, not
-     * the per-network-change hot path, so the brief block here is acceptable.
+     * Lifecycle teardown (interface contract). The cleanup job is deliberately detached
+     * from the synchronous caller: jmDNS scans and close calls may ignore coroutine
+     * cancellation, so application shutdown waits at most [LIFECYCLE_CLOSE_TIMEOUT] and
+     * then proceeds while the daemon-backed IO cleanup is allowed to finish.
      */
     override fun close() {
+        val cleanupScope = CoroutineScope(ioDispatcher + SupervisorJob())
+        val cleanupJob =
+            cleanupScope.launch {
+                scope.coroutineContext.job.cancelAndJoin()
+                closeServices()
+            }
+        cleanupJob.invokeOnCompletion { cleanupScope.cancel() }
+
         runBlocking {
-            closeServices()
+            val completed =
+                withTimeoutOrNull(LIFECYCLE_CLOSE_TIMEOUT) {
+                    cleanupJob.join()
+                    true
+                } ?: false
+            if (!completed) {
+                logger.warn {
+                    "Bonjour lifecycle cleanup exceeded ${LIFECYCLE_CLOSE_TIMEOUT}ms; continuing shutdown"
+                }
+            }
         }
     }
 }

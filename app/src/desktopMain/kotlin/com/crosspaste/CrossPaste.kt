@@ -74,6 +74,7 @@ import org.koin.compose.koinInject
 import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
@@ -133,6 +134,29 @@ class CrossPaste {
         lateinit var koinApplication: KoinApplication
             private set
 
+        private enum class ManagedService {
+            APP_UPDATE,
+            CLEAN_SCHEDULER,
+            CLI_SERVER,
+            DRIVER_FACTORY,
+            GLOBAL_LISTENER,
+            MCP_SERVER,
+            PASTE_CLIENT,
+            PASTE_SERVER,
+            PASTEBOARD,
+            PASTE_BONJOUR,
+            RENDERING,
+            RESOURCES_CLIENT,
+            SYNC_MANAGER,
+            TASK_EXECUTOR,
+            USER_DATA_PATH,
+            WINDOW_MANAGER,
+        }
+
+        /** Services are registered when startup first resolves them. Shutdown must
+         * never use Koin to create a service that was not part of this lifecycle. */
+        private val managedServices = ConcurrentHashMap<ManagedService, Any>()
+
         private fun initModule() {
             module =
                 DesktopModule(
@@ -171,34 +195,60 @@ class CrossPaste {
                         // chain even while services are still starting.
                         registerHeadlessShutdownHook()
                     }
+                    getManagedService<UserDataPathProvider>(ManagedService.USER_DATA_PATH)
+                    getManagedService<DriverFactory>(ManagedService.DRIVER_FACTORY)
+                    getManagedService<ResourcesClient>(ManagedService.RESOURCES_CLIENT)
                     val configManager = koin.get<DesktopConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()
                     configManager.notificationManager = notificationManager
+                    // Register runtime-toggleable services even when initially
+                    // disabled. Settings can start these Koin singletons later,
+                    // and shutdown must still perform their ordered cleanup.
+                    val pasteboardService =
+                        getManagedService<PasteboardService>(ManagedService.PASTEBOARD)
                     if (configManager.getCurrentConfig().enablePasteboardListening) {
-                        koin.get<PasteboardService>().start()
+                        pasteboardService.start()
                     }
                     koin.get<QRCodeGenerator>()
-                    koin.get<SyncManager>().start()
+                    getManagedService<SyncManager>(ManagedService.SYNC_MANAGER).start()
                     koin.get<PastePullService>().init()
-                    koin.get<Server>().start()
+                    val pasteServer = getManagedService<Server>(ManagedService.PASTE_SERVER)
+                    if (headless) {
+                        // A daemon without its sync endpoint is not operational.
+                        pasteServer.start()
+                    } else {
+                        // Preserve the desktop app's degraded mode: local pasteboard
+                        // management remains usable when the sync endpoint cannot bind.
+                        runCatching { pasteServer.start() }
+                            .onFailure { e -> logger.warn(e) { "Sync server unavailable for this session" } }
+                    }
                     if (headless) {
                         // The UDS CLI API is the daemon's only control plane, so a
                         // CliServer startup failure is a daemon startup failure
                         // (fail-closed, propagates to the headless exit-1 path).
-                        koin.get<CliServer>().start()
+                        getManagedService<CliServer>(ManagedService.CLI_SERVER).start()
                     } else {
                         // The GUI tolerates a degraded CLI and keeps running.
                         ioCoroutineDispatcher.launch {
-                            runCatching { koin.get<CliServer>().start() }
-                                .onFailure { logger.warn { "CLI unavailable for this session" } }
+                            runCatching {
+                                getManagedService<CliServer>(ManagedService.CLI_SERVER).start()
+                            }.onFailure { logger.warn { "CLI unavailable for this session" } }
                         }
                     }
+                    val mcpServer = getManagedService<McpServer>(ManagedService.MCP_SERVER)
                     if (configManager.getCurrentConfig().enableMcpServer) {
-                        ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
+                        ioCoroutineDispatcher.launch {
+                            mcpServer.start()
+                        }
                     }
-                    koin.get<PasteClient>()
-                    koin.get<PasteBonjourService>()
-                    koin.get<CleanScheduler>().start()
+                    getManagedService<PasteClient>(ManagedService.PASTE_CLIENT)
+                    getManagedService<PasteBonjourService>(ManagedService.PASTE_BONJOUR)
+                    val cleanScheduler =
+                        getManagedService<CleanScheduler>(ManagedService.CLEAN_SCHEDULER)
+                    // CleanScheduler resolves TaskExecutor as a dependency. Record the
+                    // existing singleton so its worker scope is closed on shutdown.
+                    getManagedService<TaskExecutor>(ManagedService.TASK_EXECUTOR)
+                    cleanScheduler.start()
                     koin.get<DesktopPidFileService>().start()
 
                     if (!headless) {
@@ -210,13 +260,17 @@ class CrossPaste {
                         // in-app update UI (its DesktopAppUpdateService implementation
                         // requires the GUI-only DesktopAppWindowManager binding; server
                         // updates are an OS package-manager concern).
-                        koin.get<AppUpdateService>().start()
+                        // Register the window manager before AppUpdateService resolves it
+                        // as a dependency, so partial GUI startup can still stop it.
+                        val appWindowManager =
+                            getManagedService<DesktopAppWindowManager>(ManagedService.WINDOW_MANAGER)
+                        getManagedService<AppUpdateService>(ManagedService.APP_UPDATE).start()
                         koin.get<AppStartUpService>().followConfig()
                         koin.get<NativeMessagingHostService>().register()
                         koin.get<GuidePasteDataService>().initData()
                         ioCoroutineDispatcher.launch { koin.get<CliSymlinkService>().refresh() }
 
-                        koin.get<DesktopAppWindowManager>().startWindowService()
+                        appWindowManager.startWindowService()
                         FileKit.init(appId = AppName)
                     }
 
@@ -224,7 +278,10 @@ class CrossPaste {
                         val jobs =
                             listOf(
                                 async(ioDispatcher) {
-                                    koin.get<RenderingService<String>>(named("urlRendering")).start()
+                                    getManagedService<RenderingService<String>>(
+                                        service = ManagedService.RENDERING,
+                                        qualifier = named("urlRendering"),
+                                    ).start()
                                 },
                             )
 
@@ -296,40 +353,125 @@ class CrossPaste {
                 supervisorScope {
                     val jobs =
                         buildList {
-                            add(async { stopService<TaskExecutor>("TaskExecutor") { it.shutdown() } })
                             add(
                                 async {
-                                    stopService<RenderingService<String>>(
-                                        qualifier = named("urlRendering"),
+                                    stopManagedService<TaskExecutor>(
+                                        ManagedService.TASK_EXECUTOR,
+                                        "TaskExecutor",
+                                    ) { it.shutdown() }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<RenderingService<String>>(
+                                        service = ManagedService.RENDERING,
                                         serviceName = "RenderingService",
                                     ) { it.stop() }
                                 },
                             )
-                            add(async { stopService<PasteboardService>("PasteboardService") { it.stop() } })
-                            add(async { stopService<PasteBonjourService>("PasteBonjourService") { it.close() } })
-                            add(async { stopService<Server>("PasteServer") { it.stop() } })
-                            add(async { stopService<CliServer>("CliServer") { it.stop() } })
-                            add(async { stopService<McpServer>("McpServer") { it.stop() } })
-                            add(async { stopService<SyncManager>("SyncManager") { it.stop() } })
-                            add(async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } })
+                            add(
+                                async {
+                                    stopManagedService<PasteboardService>(
+                                        ManagedService.PASTEBOARD,
+                                        "PasteboardService",
+                                    ) { it.stop() }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<PasteBonjourService>(
+                                        ManagedService.PASTE_BONJOUR,
+                                        "PasteBonjourService",
+                                    ) { it.close() }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<Server>(ManagedService.PASTE_SERVER, "PasteServer") {
+                                        it.stop()
+                                    }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<CliServer>(ManagedService.CLI_SERVER, "CliServer") {
+                                        it.stop()
+                                    }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<McpServer>(ManagedService.MCP_SERVER, "McpServer") {
+                                        it.stop()
+                                    }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<SyncManager>(ManagedService.SYNC_MANAGER, "SyncManager") {
+                                        it.stop()
+                                    }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<CleanScheduler>(
+                                        ManagedService.CLEAN_SCHEDULER,
+                                        "CleanPasteScheduler",
+                                    ) { it.stop() }
+                                },
+                            )
                             if (!headless) {
-                                add(async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } })
                                 add(
                                     async {
-                                        stopService<DesktopAppWindowManager>("DesktopAppWindowManager") {
+                                        stopManagedService<AppUpdateService>(
+                                            ManagedService.APP_UPDATE,
+                                            "AppUpdateService",
+                                        ) { it.stop() }
+                                    },
+                                )
+                                add(
+                                    async {
+                                        stopManagedService<DesktopAppWindowManager>(
+                                            ManagedService.WINDOW_MANAGER,
+                                            "DesktopAppWindowManager",
+                                        ) {
                                             it.stopWindowService()
                                         }
                                     },
                                 )
-                                add(async { stopService<GlobalListener>("GlobalListener") { it.stop() } })
+                                add(
+                                    async {
+                                        stopManagedService<GlobalListener>(
+                                            ManagedService.GLOBAL_LISTENER,
+                                            "GlobalListener",
+                                        ) { it.stop() }
+                                    },
+                                )
                             }
                             add(
                                 async {
-                                    stopService<UserDataPathProvider>("UserDataPathProvider") { it.cleanTemp() }
+                                    stopManagedService<UserDataPathProvider>(
+                                        ManagedService.USER_DATA_PATH,
+                                        "UserDataPathProvider",
+                                    ) { it.cleanTemp() }
                                 },
                             )
-                            add(async { stopService<PasteClient>("PasteClient") { it.close() } })
-                            add(async { stopService<ResourcesClient>("ResourcesClient") { it.close() } })
+                            add(
+                                async {
+                                    stopManagedService<PasteClient>(ManagedService.PASTE_CLIENT, "PasteClient") {
+                                        it.close()
+                                    }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<ResourcesClient>(
+                                        ManagedService.RESOURCES_CLIENT,
+                                        "ResourcesClient",
+                                    ) { it.close() }
+                                },
+                            )
                         }
 
                     jobs.awaitAll()
@@ -337,18 +479,33 @@ class CrossPaste {
             }
 
             runCatching {
-                stopService<DriverFactory>("DriverFactory") { it.closeDriver() }
+                stopManagedService<DriverFactory>(ManagedService.DRIVER_FACTORY, "DriverFactory") {
+                    it.closeDriver()
+                }
             }
         }
 
-        private inline fun <reified T : Any> stopService(
-            serviceName: String,
+        private inline fun <reified T : Any> getManagedService(
+            service: ManagedService,
             qualifier: Qualifier? = null,
+        ): T =
+            koinApplication.koin.get<T>(qualifier = qualifier).also { instance ->
+                managedServices[service] = instance
+            }
+
+        private fun <T : Any> manageService(
+            service: ManagedService,
+            instance: T,
+        ): T = instance.also { managedServices[service] = it }
+
+        private inline fun <reified T : Any> stopManagedService(
+            service: ManagedService,
+            serviceName: String,
             stopAction: (T) -> Unit,
         ) {
+            val instance = managedServices.remove(service) as? T ?: return
             runCatching {
-                val service = koinApplication.koin.get<T>(qualifier = qualifier)
-                stopAction(service)
+                stopAction(instance)
             }.onSuccess {
                 logger.info { "$serviceName stop completed" }
             }.onFailure { e ->
@@ -423,7 +580,8 @@ class CrossPaste {
                 application {
                     val appWindowManager = koinInject<DesktopAppWindowManager>()
                     val appSize = koinInject<DesktopAppSize>()
-                    val globalListener = koinInject<GlobalListener>()
+                    val globalListener =
+                        manageService(ManagedService.GLOBAL_LISTENER, koinInject<GlobalListener>())
 
                     val appSizeValue by appSize.appSizeValue.collectAsState()
 
