@@ -174,22 +174,26 @@ class CrossPaste {
                     koin.get<PastePullService>().init()
                     koin.get<Server>().start()
                     ioCoroutineDispatcher.launch { koin.get<CliServer>().start() }
-                    // Probe the CLI symlink state once at startup; it drives
-                    // the install prompt and the extension-page entry
-                    ioCoroutineDispatcher.launch { koin.get<CliSymlinkService>().refresh() }
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
                     }
                     koin.get<PasteClient>()
                     koin.get<PasteBonjourService>()
                     koin.get<CleanScheduler>().start()
-                    koin.get<AppStartUpService>().followConfig()
                     koin.get<DesktopPidFileService>().start()
-                    koin.get<NativeMessagingHostService>().register()
                     koin.get<AppUpdateService>().start()
-                    koin.get<GuidePasteDataService>().initData()
 
                     if (!headless) {
+                        // These only serve an interactive desktop session: OS login-item
+                        // autostart would relaunch the GUI app on login, native-messaging
+                        // manifests target local browsers, guide pastes are onboarding
+                        // content, and the CLI symlink probe drives the install prompt
+                        // and the extension-page entry.
+                        koin.get<AppStartUpService>().followConfig()
+                        koin.get<NativeMessagingHostService>().register()
+                        koin.get<GuidePasteDataService>().initData()
+                        ioCoroutineDispatcher.launch { koin.get<CliSymlinkService>().refresh() }
+
                         koin.get<DesktopAppWindowManager>().startWindowService()
                         FileKit.init(appId = AppName)
                     }
@@ -205,13 +209,39 @@ class CrossPaste {
                         jobs.awaitAll()
                     }
                 } else {
+                    // The GUI second instance keeps its historic silent exit(0); a
+                    // headless daemon must fail loudly with a non-zero code so that
+                    // service managers (systemd) and scripts can detect the conflict.
+                    if (headless) {
+                        val runningPid = readRunningPid()?.let { " (pid $it)" }.orEmpty()
+                        System.err.println(
+                            "Error: another CrossPaste instance is already running$runningPid. " +
+                                "Only one CrossPaste process (desktop app or headless daemon) can run per user.",
+                        )
+                        exitProcess(1)
+                    }
                     exitProcess(0)
                 }
             }.onFailure { e ->
                 logger.error(e) { "cant start crosspaste" }
+                if (headless) {
+                    System.err.println("Error: CrossPaste failed to start in headless mode: ${e.message}")
+                    exitProcess(1)
+                }
                 exitProcess(0)
             }
         }
+
+        private fun readRunningPid(): String? =
+            runCatching {
+                koinApplication.koin
+                    .get<DesktopPidFileService>()
+                    .pidFilePath
+                    .toFile()
+                    .readText()
+                    .trim()
+                    .takeIf { it.isNotEmpty() }
+            }.getOrNull()
 
         private suspend fun exitCrossPasteApplication(
             exitMode: ExitMode,
@@ -307,8 +337,22 @@ class CrossPaste {
             Runtime.getRuntime().addShutdownHook(
                 Thread {
                     logger.info { "Shutdown signal received" }
-                    runBlocking { shutdownAllServices() }
                     val koin = koinApplication.koin
+                    // Mirror exitCrossPasteApplication(): run the exit hooks around
+                    // shutdownAllServices() so that cleanup registered via
+                    // AppExitService (e.g. the pid-file removal) also happens on the
+                    // daemon path. Each hook is guarded so one failure cannot skip
+                    // the remaining cleanup or the lock release.
+                    val appExitService = koin.get<AppExitService>()
+                    appExitService.beforeExitList.forEach { hook ->
+                        runCatching { hook.invoke() }
+                            .onFailure { e -> logger.error(e) { "beforeExit hook failed" } }
+                    }
+                    runBlocking { shutdownAllServices() }
+                    appExitService.beforeReleaseLockList.forEach { hook ->
+                        runCatching { hook.invoke() }
+                            .onFailure { e -> logger.error(e) { "beforeReleaseLock hook failed" } }
+                    }
                     koin.get<AppLock>().releaseLock()
                     latch.countDown()
                 },
@@ -327,11 +371,12 @@ class CrossPaste {
             runBlocking { startApplication() }
             logger.info { "CrossPaste started" }
 
-            logger.info { "SkikoProperties.renderApi=${SkikoProperties.renderApi}" }
-
             if (headless) {
                 runHeadless()
             } else {
+                // Reading SkikoProperties loads skiko; keep it off the headless path.
+                logger.info { "SkikoProperties.renderApi=${SkikoProperties.renderApi}" }
+
                 application {
                     val appWindowManager = koinInject<DesktopAppWindowManager>()
                     val appSize = koinInject<DesktopAppSize>()
