@@ -308,9 +308,10 @@ internal fun parseResolvedCommand(output: String): String? =
  * the link path at execution time: only a symlink is ever removed, and any
  * other occupant makes it bail out with exit 40 before touching anything —
  * the state check done before requesting credentials can race against other
- * processes. Plain `ln -s` (not -sf) because macOS ln has no -h/-n: `-sf`
- * through a surviving link-to-directory would create the new link INSIDE that
- * directory and still exit 0.
+ * processes. Plain `ln -s` (not -sf): `-sf` through a surviving
+ * link-to-directory would create the new link INSIDE that directory and
+ * still exit 0. BSD ln's -h/-n would prevent that, but removing the link
+ * first and creating it plainly needs no non-POSIX flags at all.
  *
  * %CLI% / %DIR% / %LINK% are replaced with AppleScript `quoted form of` argv
  * references at runtime (and with shell-quoted literal paths in tests).
