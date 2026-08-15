@@ -58,4 +58,19 @@ class CliExitCodeTest {
         assertContains(result.output, "\"running\": false")
         assertContains(result.output, "\"state\": \"not_running\"")
     }
+
+    @Test
+    fun rootHelpDocumentsTheExitCodeContract() {
+        isolatedHome()
+        val result = CrossPasteCommand().test("--help")
+        assertEquals(0, result.statusCode)
+        assertContains(result.output, "Exit codes: 0 success, 1 error, 2 usage error, 3 CrossPaste not running")
+    }
+
+    @Test
+    fun noNewlineWithoutRawIsAUsageError() {
+        isolatedHome()
+        val result = CrossPasteCommand().test("paste --no-newline")
+        assertContains(result.stderr, "--no-newline requires --raw")
+    }
 }

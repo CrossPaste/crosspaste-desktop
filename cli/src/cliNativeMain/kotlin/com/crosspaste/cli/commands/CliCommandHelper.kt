@@ -23,6 +23,9 @@ import kotlinx.serialization.json.Json
 /** Scripts can rely on this exit code to mean "CrossPaste is not running". */
 const val EXIT_CODE_APP_NOT_RUNNING = 3
 
+/** Invalid arguments or options (Clikt usage errors are remapped to this in main). */
+const val EXIT_CODE_USAGE = 2
+
 val cliJson =
     Json {
         ignoreUnknownKeys = true

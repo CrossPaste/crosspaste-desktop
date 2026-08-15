@@ -43,6 +43,7 @@
 - **🔍 Built-in OCR**: Extract text from images locally — no network calls, your screenshots never leave the device.
 - **🤖 MCP Server**: Expose your pasteboard history to AI assistants (Claude, etc.) via the Model Context Protocol.
 - **🌍 Chrome Extension**: Sync clipboard with the browser — copy from a web page on one device, paste on any other.
+- **⌨️ Command-Line Interface**: Drive CrossPaste from the terminal — copy, paste, and search your history from shell scripts and pipes. See the [CLI guide](doc/en/CLI.md).
 
 ## 🏗 Getting Started with Development
 

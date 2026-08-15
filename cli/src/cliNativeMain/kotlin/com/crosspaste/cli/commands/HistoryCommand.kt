@@ -3,10 +3,13 @@ package com.crosspaste.cli.commands
 import com.crosspaste.cli.CliContext
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.requireObject
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.mordant.rendering.TextColors
 import io.ktor.http.*
 import kotlinx.serialization.Serializable
 
@@ -27,6 +30,25 @@ data class PasteListResponse(
     val items: List<PasteSummaryDto>,
     val total: Long,
 )
+
+enum class ListFormat { TABLE, JSON, ID }
+
+/** Shared --format option for the list-producing commands (history, search). */
+fun ParameterHolder.listFormatOption() =
+    option(
+        "--format",
+        help = "Output format: table (default), json, or id (one paste ID per line, for piping)",
+    ).choice(
+        "table" to ListFormat.TABLE,
+        "json" to ListFormat.JSON,
+        "id" to ListFormat.ID,
+    )
+
+/** An explicit --format wins; the global --json flag implies json; else table. */
+fun resolveListFormat(
+    explicit: ListFormat?,
+    json: Boolean,
+): ListFormat = explicit ?: if (json) ListFormat.JSON else ListFormat.TABLE
 
 fun buildListQuery(
     limit: Int,
@@ -56,6 +78,8 @@ class HistoryCommand : CliktCommand(name = "history") {
 
     private val tag by option("--tag", "-g", help = "Filter by tag name")
 
+    private val format by listFormatOption()
+
     override fun run() =
         runCli { client ->
             val list =
@@ -64,10 +88,10 @@ class HistoryCommand : CliktCommand(name = "history") {
                     PasteListResponse.serializer(),
                 )
 
-            if (ctx.json) {
-                echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
-            } else {
-                printList(list)
+            when (resolveListFormat(format, ctx.json)) {
+                ListFormat.JSON -> echo(cliJson.encodeToString(PasteListResponse.serializer(), list))
+                ListFormat.ID -> list.items.forEach { echo(it.id) }
+                ListFormat.TABLE -> printList(list)
             }
         }
 
@@ -79,15 +103,15 @@ class HistoryCommand : CliktCommand(name = "history") {
         echo("${list.items.size} of ${list.total} pastes:")
         echo("")
         for (item in list.items) {
-            val fav = if (item.tagged) "*" else " "
+            val fav = if (item.tagged) TextColors.yellow("*") else " "
             val remote = if (item.remote) "R" else "L"
             val preview = item.preview.replace("\n", " ").take(60)
             echo(
                 "$fav ${item.id.toString().padStart(8)} " +
-                    "${item.typeName.padEnd(6)} " +
+                    "${TextColors.cyan(item.typeName.padEnd(6))} " +
                     "$remote " +
-                    "${formatRelativeTime(item.createTime).padEnd(8)} " +
-                    "${formatSize(item.size).padEnd(6)} " +
+                    "${TextColors.gray(formatRelativeTime(item.createTime).padEnd(8))} " +
+                    "${TextColors.gray(formatSize(item.size).padEnd(6))} " +
                     preview,
             )
         }
