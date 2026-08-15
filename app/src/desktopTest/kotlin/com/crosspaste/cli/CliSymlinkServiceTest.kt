@@ -45,8 +45,8 @@ class CliSymlinkServiceTest {
         tempDir.toFile().deleteRecursively()
     }
 
-    private fun fakeAppPathProvider(): AppPathProvider {
-        val jarPath = tempDir.resolve("Resources").toOkioPath()
+    private fun fakeAppPathProvider(jarDir: NioPath): AppPathProvider {
+        val jarPath = jarDir.toOkioPath()
         val root = tempDir.toOkioPath()
         return object : AppPathProvider {
             override val userHome: Path = root
@@ -64,10 +64,11 @@ class CliSymlinkServiceTest {
 
     private fun createService(
         supported: Boolean = true,
+        jarDir: NioPath = tempDir.resolve("Resources"),
         escalatedInstall: ((Path, Path) -> CliInstallResult)? = null,
     ): CliSymlinkService =
         CliSymlinkService(
-            appPathProvider = fakeAppPathProvider(),
+            appPathProvider = fakeAppPathProvider(jarDir),
             // The platform check is bypassed via supportedOverride; any value works
             platform = Platform(name = Platform.MACOS, arch = "arm64", bitMode = 64, version = "14.0"),
             linkPath = linkPath.toOkioPath(),
@@ -123,10 +124,63 @@ class CliSymlinkServiceTest {
         }
 
     @Test
-    fun `needs repair when a regular file occupies the link path`() =
+    fun `conflict when a regular file occupies the link path`() =
         runTest {
             Files.write(linkPath, byteArrayOf(1))
-            assertEquals(CliSymlinkState.NEEDS_REPAIR, refreshedState(createService()))
+            assertEquals(CliSymlinkState.CONFLICT, refreshedState(createService()))
+        }
+
+    @Test
+    fun `conflict when a directory occupies the link path`() =
+        runTest {
+            Files.createDirectories(linkPath)
+            assertEquals(CliSymlinkState.CONFLICT, refreshedState(createService()))
+        }
+
+    @Test
+    fun `translocated when the bundle runs from an AppTranslocation mount`() =
+        runTest {
+            val translocatedJar = tempDir.resolve("AppTranslocation").resolve("Resources")
+            val binDir = translocatedJar.resolve("bin")
+            Files.createDirectories(binDir)
+            Files.write(binDir.resolve("crosspaste-cli"), byteArrayOf(1))
+            assertEquals(
+                CliSymlinkState.TRANSLOCATED,
+                refreshedState(createService(jarDir = translocatedJar)),
+            )
+        }
+
+    @Test
+    fun `install refuses to touch a conflicting regular file`() =
+        runTest {
+            Files.write(linkPath, byteArrayOf(7))
+            val service = createService()
+            assertEquals(CliInstallResult.FAILURE, service.install())
+            assertEquals(CliSymlinkState.CONFLICT, service.state.value)
+            // The foreign file is untouched
+            assertEquals(7, Files.readAllBytes(linkPath)[0].toInt())
+        }
+
+    @Test
+    fun `install refuses when translocated`() =
+        runTest {
+            val translocatedJar = tempDir.resolve("AppTranslocation").resolve("Resources")
+            val binDir = translocatedJar.resolve("bin")
+            Files.createDirectories(binDir)
+            Files.write(binDir.resolve("crosspaste-cli"), byteArrayOf(1))
+            val service = createService(jarDir = translocatedJar)
+            assertEquals(CliInstallResult.FAILURE, service.install())
+            assertEquals(CliSymlinkState.TRANSLOCATED, service.state.value)
+        }
+
+    @Test
+    fun `install fails when escalation claims success but the link is still wrong`() =
+        runTest {
+            Files.setPosixFilePermissions(linkDir, PosixFilePermissions.fromString("r-xr-xr-x"))
+            // Escalation lies: reports SUCCESS without creating anything
+            val service = createService(escalatedInstall = { _, _ -> CliInstallResult.SUCCESS })
+            assertEquals(CliInstallResult.FAILURE, service.install())
+            assertEquals(CliSymlinkState.NOT_INSTALLED, service.state.value)
         }
 
     @Test

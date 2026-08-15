@@ -17,14 +17,29 @@ enum class CliSymlinkState {
     /** Not macOS, not a production install, or the bundled CLI binary is absent (dev run). */
     NOT_SUPPORTED,
 
+    /**
+     * The app runs from a Gatekeeper App Translocation mount (randomized,
+     * ephemeral path): a symlink installed now would die as soon as the app
+     * exits or moves. The user must move CrossPaste to /Applications first;
+     * installation is refused in this state.
+     */
+    TRANSLOCATED,
+
     /** The symlink exists and points at this bundle's CLI binary. */
     INSTALLED,
 
     /** No file at the link path. */
     NOT_INSTALLED,
 
-    /** Something exists at the link path but it is not a link to this bundle's CLI. */
+    /** A symlink exists at the link path but points somewhere else (or dangles). */
     NEEDS_REPAIR,
+
+    /**
+     * A regular file or directory — not ours to delete — occupies the link
+     * path. Automatic install/repair is refused; the user must resolve it
+     * manually.
+     */
+    CONFLICT,
 }
 
 enum class CliInstallResult { SUCCESS, CANCELLED, FAILURE }
@@ -85,12 +100,15 @@ class CliSymlinkService(
         if (!supported || !Files.isRegularFile(cliBinaryPath.toNioPath())) {
             return CliSymlinkState.NOT_SUPPORTED
         }
+        if (cliBinaryPath.toString().contains("/AppTranslocation/")) {
+            return CliSymlinkState.TRANSLOCATED
+        }
         val nioLink = linkPath.toNioPath()
         if (!Files.exists(nioLink, LinkOption.NOFOLLOW_LINKS)) {
             return CliSymlinkState.NOT_INSTALLED
         }
         if (!Files.isSymbolicLink(nioLink)) {
-            return CliSymlinkState.NEEDS_REPAIR
+            return CliSymlinkState.CONFLICT
         }
         val target = runCatching { Files.readSymbolicLink(nioLink) }.getOrNull()
         return if (target?.normalize() == cliBinaryPath.toNioPath().normalize()) {
@@ -102,16 +120,24 @@ class CliSymlinkService(
 
     /**
      * Creates or repairs the symlink. Never throws; the outcome is reported
-     * as a [CliInstallResult] and [state] is refreshed either way.
+     * as a [CliInstallResult] and [state] is refreshed either way. Only the
+     * NOT_INSTALLED and NEEDS_REPAIR states are actionable: TRANSLOCATED and
+     * CONFLICT refuse so a foreign file is never deleted and a doomed link is
+     * never created. SUCCESS is only reported when the link verifiably points
+     * at the bundled CLI afterwards.
      */
     suspend fun install(): CliInstallResult =
         withContext(ioDispatcher) {
-            if (computeState() == CliSymlinkState.NOT_SUPPORTED) {
+            val current = computeState()
+            if (current != CliSymlinkState.NOT_INSTALLED && current != CliSymlinkState.NEEDS_REPAIR) {
+                _state.value = current
                 return@withContext CliInstallResult.FAILURE
             }
             val result =
                 runCatching {
                     val nioLink = linkPath.toNioPath()
+                    // The guard above only allows a missing path or a symlink
+                    // here, so this delete can never destroy a foreign file
                     Files.deleteIfExists(nioLink)
                     Files.createSymbolicLink(nioLink, cliBinaryPath.toNioPath())
                     CliInstallResult.SUCCESS
@@ -119,8 +145,16 @@ class CliSymlinkService(
                     logger.info { "Direct symlink install failed (${e.message}); escalating to admin prompt" }
                     (escalatedInstall ?: ::osascriptInstall)(cliBinaryPath, linkPath)
                 }
-            _state.value = computeState()
-            result
+            val finalState = computeState()
+            _state.value = finalState
+            when {
+                result != CliInstallResult.SUCCESS -> result
+                // A "successful" escalation may still not have produced the
+                // right link (e.g. an unexpected filesystem state); only a
+                // verified link counts as success
+                finalState == CliSymlinkState.INSTALLED -> CliInstallResult.SUCCESS
+                else -> CliInstallResult.FAILURE
+            }
         }
 
     /**
@@ -134,9 +168,14 @@ class CliSymlinkService(
         link: Path,
     ): CliInstallResult =
         runCatching {
+            // rm -f + plain ln -s instead of ln -sf: macOS ln has no -h/-n,
+            // so ln -sf through an existing link-to-directory would create
+            // the new link INSIDE that directory and still exit 0. rm -f
+            // removes a symlink without following it and refuses directories.
             val script =
                 "do shell script \"mkdir -p \" & quoted form of (item 2 of argv) & " +
-                    "\" && ln -sf \" & quoted form of (item 1 of argv) & " +
+                    "\" && rm -f \" & quoted form of (item 3 of argv) & " +
+                    "\" && ln -s \" & quoted form of (item 1 of argv) & " +
                     "\" \" & quoted form of (item 3 of argv) " +
                     "with administrator privileges"
             val process =

@@ -43,7 +43,12 @@ fun CliToolSettingItem() {
 
     SettingListItem(
         title = "install_cli_tool",
-        subtitle = "install_cli_tool_desc",
+        subtitle =
+            when (state) {
+                CliSymlinkState.TRANSLOCATED -> "cli_tool_translocated_desc"
+                CliSymlinkState.CONFLICT -> "cli_tool_conflict_desc"
+                else -> "install_cli_tool_desc"
+            },
         icon = IconData(MaterialSymbols.Rounded.Terminal, themeExt.greenIconColor),
         trailingContent = {
             when (state) {
@@ -84,6 +89,10 @@ fun CliToolSettingItem() {
                         Text(copywriter.getText(if (installing) "installing" else actionKey))
                     }
                 }
+                // Explained via the state-dependent subtitle; deliberately no
+                // action button — installing would create a doomed or
+                // destructive link
+                CliSymlinkState.TRANSLOCATED, CliSymlinkState.CONFLICT -> Unit
                 CliSymlinkState.NOT_SUPPORTED -> Unit
             }
         },

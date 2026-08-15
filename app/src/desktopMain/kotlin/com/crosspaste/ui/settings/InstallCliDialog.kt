@@ -117,11 +117,14 @@ fun InstallCliDialog(doneAction: () -> Unit) {
                             installing = false
                         }
                         CliInstallResult.FAILURE -> {
+                            // Keep the dialog (and the one-time flag) so the
+                            // user can retry; only success or an explicit
+                            // "Later" consumes the prompt
                             notificationManager.sendNotification(
                                 title = { it.getText("install_cli_tool_failed") },
                                 messageType = MessageType.Error,
                             )
-                            doneAction()
+                            installing = false
                         }
                     }
                 }
