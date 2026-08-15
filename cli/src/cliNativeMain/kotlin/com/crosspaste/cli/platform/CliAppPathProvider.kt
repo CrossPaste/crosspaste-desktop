@@ -9,32 +9,28 @@ import kotlin.experimental.ExperimentalNativeApi
 
 /**
  * Provides application paths for the CLI binary, derived from the
- * executable's own location. The CLI binary is bundled inside the
- * app package with a fixed directory structure relative to start scripts.
+ * executable's own location. The CLI ships as application payload
+ * (decision D6): a plain Conveyor input that lands in the JVM payload
+ * area of every package and channel.
  *
  * macOS (.app bundle):
- *   CrossPaste.app/                     ← appPath
+ *   CrossPaste.app/                     ← appPath (launch via `open`)
  *     Contents/
- *       bin/
- *         crosspaste-cli                ← CLI binary (binDir)
- *         start.sh                      ← start script
+ *       Resources/
+ *         bin/crosspaste-cli            ← CLI binary (binDir)
  *       MacOS/CrossPaste                ← JVM launcher
  *
- * Linux:
- *   /usr/lib/crosspaste/               ← appPath
- *     bin/
- *       crosspaste-cli                  ← CLI binary (binDir)
- *       start.sh                        ← start script
- *       crosspaste                      ← JVM launcher
+ * Linux (deb: /usr/lib/crosspaste; tarball/AppImage: the extracted root):
+ *   <root>/                             ← appPath
+ *     bin/crosspaste                    ← JVM launcher
+ *     lib/app/
+ *       bin/crosspaste-cli              ← CLI binary (binDir)
  *
- * Windows (Conveyor puts JVM-app inputs under app/, so the start script
- * does not sit next to the executables):
- *   CrossPaste/                         ← appPath
- *     bin/
- *       crosspaste-cli.exe              ← CLI binary (binDir)
- *       CrossPaste.exe                  ← JVM launcher
+ * Windows (installed MSIX tree or extracted portable zip):
+ *   <root>/                             ← appPath
+ *     bin/CrossPaste.exe                ← JVM launcher
  *     app/
- *       bin/start.bat                   ← start script
+ *       bin/crosspaste-cli.exe          ← CLI binary (binDir)
  */
 class CliAppPathProvider {
 
@@ -42,46 +38,44 @@ class CliAppPathProvider {
 
     val appPath: Path
 
-    val startScriptPath: Path
-
     init {
         val execDir = resolveExecutableDir()
         binDir = execDir
-        val os = getPlatformOsFamily()
-        appPath = resolveAppPath(execDir, os)
-        startScriptPath = resolveStartScriptPath(execDir, os)
+        appPath = resolveAppPath(execDir, getPlatformOsFamily())
     }
 
     private fun resolveAppPath(
         binDir: Path,
         os: OsFamilyCompat,
     ): Path {
-        val parent = binDir.parent ?: binDir
+        fun up(
+            path: Path,
+            levels: Int,
+        ): Path {
+            var current = path
+            repeat(levels) { current = current.parent ?: current }
+            return current
+        }
         return when (os) {
-            // bin/ → Contents/ → CrossPaste.app/
-            OsFamilyCompat.MACOSX -> parent.parent ?: parent
-            // bin/ → /usr/lib/crosspaste/
-            OsFamilyCompat.LINUX -> parent
-            // bin/ → CrossPaste/
-            OsFamilyCompat.WINDOWS -> parent
+            // Resources/bin/ → Resources/ → Contents/ → CrossPaste.app/
+            OsFamilyCompat.MACOSX -> up(binDir, 3)
+            // lib/app/bin/ → lib/app/ → lib/ → <root>/
+            OsFamilyCompat.LINUX -> up(binDir, 3)
+            // app\bin\ → app\ → <root>\
+            OsFamilyCompat.WINDOWS -> up(binDir, 2)
         }
     }
 
-    private fun resolveStartScriptPath(
-        binDir: Path,
-        os: OsFamilyCompat,
-    ): Path =
-        when (os) {
-            OsFamilyCompat.MACOSX -> binDir.resolve("start.sh")
-            OsFamilyCompat.LINUX -> binDir.resolve("start.sh")
-            // bin/ → CrossPaste/ → app/bin/start.bat
-            OsFamilyCompat.WINDOWS -> (binDir.parent ?: binDir).resolve("app/bin/start.bat")
-        }
-
     /**
-     * On Windows, start.bat requires the exe path as its first argument.
+     * The thing to launch to bring up the desktop app: the .app bundle on
+     * macOS (started via `open`), the Conveyor JVM launcher elsewhere.
      */
-    fun resolveAppExePath(): Path = binDir.resolve("CrossPaste.exe")
+    fun resolveGuiLaunchTarget(): Path =
+        when (getPlatformOsFamily()) {
+            OsFamilyCompat.MACOSX -> appPath
+            OsFamilyCompat.LINUX -> appPath.resolve("bin/crosspaste")
+            OsFamilyCompat.WINDOWS -> appPath.resolve("bin/CrossPaste.exe")
+        }
 }
 
 @OptIn(ExperimentalForeignApi::class)

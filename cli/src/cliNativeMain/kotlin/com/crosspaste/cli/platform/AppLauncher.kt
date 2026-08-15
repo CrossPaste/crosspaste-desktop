@@ -12,11 +12,18 @@ interface AppLauncher {
 }
 
 /**
- * The shell commands below background the start script, so a missing script
- * would still "succeed" and leave the caller waiting out the full readiness
- * timeout — check it up front instead.
+ * Launches the desktop app directly (decision D6): `open` on the .app bundle
+ * on macOS, the Conveyor JVM launcher executable elsewhere. The start.sh /
+ * start.bat scripts are NOT used here — their job is the app's own
+ * wait-for-old-pid update restart (DesktopAppRestartService), and unlike the
+ * launcher they don't exist in every channel (the Linux tarball has no
+ * root-inputs, so no start.sh).
+ *
+ * The shell commands below background or detach the launch, so a missing
+ * target would still "succeed" and leave the caller waiting out the full
+ * readiness timeout — check it up front instead.
  */
-private fun startScriptExists(script: Path): Boolean = FileSystem.SYSTEM.exists(script)
+private fun launchTargetExists(target: Path): Boolean = FileSystem.SYSTEM.exists(target)
 
 @OptIn(ExperimentalNativeApi::class)
 fun createAppLauncher(appPathProvider: CliAppPathProvider): AppLauncher {
@@ -35,9 +42,9 @@ class MacosAppLauncher(
 ) : AppLauncher {
 
     override fun launch(): Boolean {
-        val script = appPathProvider.startScriptPath
-        if (!startScriptExists(script)) return false
-        val exitCode = system("nohup bash \"$script\" > /dev/null 2>&1 &")
+        val bundle = appPathProvider.resolveGuiLaunchTarget()
+        if (!launchTargetExists(bundle)) return false
+        val exitCode = system("open \"$bundle\"")
         return exitCode == 0
     }
 }
@@ -48,9 +55,9 @@ class LinuxAppLauncher(
 ) : AppLauncher {
 
     override fun launch(): Boolean {
-        val script = appPathProvider.startScriptPath
-        if (!startScriptExists(script)) return false
-        val exitCode = system("nohup bash \"$script\" > /dev/null 2>&1 &")
+        val launcher = appPathProvider.resolveGuiLaunchTarget()
+        if (!launchTargetExists(launcher)) return false
+        val exitCode = system("nohup \"$launcher\" > /dev/null 2>&1 &")
         return exitCode == 0
     }
 }
@@ -61,10 +68,11 @@ class WindowsAppLauncher(
 ) : AppLauncher {
 
     override fun launch(): Boolean {
-        val script = appPathProvider.startScriptPath
-        if (!startScriptExists(script)) return false
-        val exePath = appPathProvider.resolveAppExePath()
-        val exitCode = system("\"$script\" \"$exePath\"")
+        val exe = appPathProvider.resolveGuiLaunchTarget()
+        if (!launchTargetExists(exe)) return false
+        // system() runs via cmd.exe; `start ""` detaches so the CLI does not
+        // block on the app process (the empty "" is the window title slot).
+        val exitCode = system("start \"\" \"$exe\"")
         return exitCode == 0
     }
 }
