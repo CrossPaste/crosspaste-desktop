@@ -1,6 +1,6 @@
 package com.crosspaste.cli.commands
 
-import com.crosspaste.cli.platform.StdinTooLargeException
+import com.crosspaste.cli.platform.StdinException
 import com.crosspaste.cli.platform.readAllStdin
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
@@ -47,7 +47,7 @@ class CopyCommand(
         val content =
             try {
                 stdinReader()
-            } catch (e: StdinTooLargeException) {
+            } catch (e: StdinException) {
                 echo("Error: ${e.message}", err = true)
                 throw ProgramResult(1)
             }

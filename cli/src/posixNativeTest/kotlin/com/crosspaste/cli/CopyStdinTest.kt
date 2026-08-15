@@ -1,6 +1,7 @@
 package com.crosspaste.cli
 
 import com.crosspaste.cli.commands.CopyCommand
+import com.crosspaste.cli.platform.StdinReadException
 import com.crosspaste.cli.platform.StdinTooLargeException
 import com.github.ajalt.clikt.testing.test
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -73,6 +74,16 @@ class CopyStdinTest {
                 .test("", inputInteractive = false)
         assertEquals(1, result.statusCode)
         assertContains(result.stderr, "MiB limit")
+    }
+
+    @Test
+    fun stdinReadErrorFailsWithExitOneInsteadOfCopyingTruncatedContent() {
+        isolatedHome()
+        val result =
+            CopyCommand(stdinReader = { throw StdinReadException("failed to read stdin: Bad file descriptor") })
+                .test("", inputInteractive = false)
+        assertEquals(1, result.statusCode)
+        assertContains(result.stderr, "failed to read stdin")
     }
 
     @Test
