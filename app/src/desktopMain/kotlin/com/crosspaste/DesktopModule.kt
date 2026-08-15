@@ -61,6 +61,7 @@ import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KLogger
 import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
+import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
@@ -170,33 +171,36 @@ class DesktopModule(
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
         }
 
+    fun modules(): List<Module> =
+        if (headless) {
+            listOf(
+                appModule(),
+                extensionModule(),
+                sqlDelightModule(),
+                networkModule(),
+                securityModule(),
+                pasteTypePluginModule(),
+                pasteComponentModule(),
+                headlessUiModule(),
+                headlessViewModelModule(),
+            )
+        } else {
+            listOf(
+                appModule(),
+                extensionModule(),
+                sqlDelightModule(),
+                networkModule(),
+                securityModule(),
+                pasteTypePluginModule(),
+                pasteComponentModule(),
+                uiModule(),
+                viewModelModule(),
+            )
+        }
+
     fun initKoinApplication(): KoinApplication =
         GlobalContext.startKoin {
-            if (headless) {
-                modules(
-                    appModule(),
-                    extensionModule(),
-                    sqlDelightModule(),
-                    networkModule(),
-                    securityModule(),
-                    pasteTypePluginModule(),
-                    pasteComponentModule(),
-                    headlessUiModule(),
-                    headlessViewModelModule(),
-                )
-            } else {
-                modules(
-                    appModule(),
-                    extensionModule(),
-                    sqlDelightModule(),
-                    networkModule(),
-                    securityModule(),
-                    pasteTypePluginModule(),
-                    pasteComponentModule(),
-                    uiModule(),
-                    viewModelModule(),
-                )
-            }
+            modules(this@DesktopModule.modules())
         }
 }
 

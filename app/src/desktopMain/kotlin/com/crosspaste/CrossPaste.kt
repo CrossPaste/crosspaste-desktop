@@ -181,14 +181,17 @@ class CrossPaste {
                     koin.get<PasteBonjourService>()
                     koin.get<CleanScheduler>().start()
                     koin.get<DesktopPidFileService>().start()
-                    koin.get<AppUpdateService>().start()
 
                     if (!headless) {
                         // These only serve an interactive desktop session: OS login-item
                         // autostart would relaunch the GUI app on login, native-messaging
                         // manifests target local browsers, guide pastes are onboarding
-                        // content, and the CLI symlink probe drives the install prompt
-                        // and the extension-page entry.
+                        // content, the CLI symlink probe drives the install prompt and
+                        // the extension-page entry, and the update service drives the
+                        // in-app update UI (its DesktopAppUpdateService implementation
+                        // requires the GUI-only DesktopAppWindowManager binding; server
+                        // updates are an OS package-manager concern).
+                        koin.get<AppUpdateService>().start()
                         koin.get<AppStartUpService>().followConfig()
                         koin.get<NativeMessagingHostService>().register()
                         koin.get<GuidePasteDataService>().initData()
@@ -281,7 +284,6 @@ class CrossPaste {
                 supervisorScope {
                     val jobs =
                         buildList {
-                            add(async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } })
                             add(async { stopService<TaskExecutor>("TaskExecutor") { it.shutdown() } })
                             add(
                                 async {
@@ -299,6 +301,7 @@ class CrossPaste {
                             add(async { stopService<SyncManager>("SyncManager") { it.stop() } })
                             add(async { stopService<CleanScheduler>("CleanPasteScheduler") { it.stop() } })
                             if (!headless) {
+                                add(async { stopService<AppUpdateService>("AppUpdateService") { it.stop() } })
                                 add(
                                     async {
                                         stopService<DesktopAppWindowManager>("DesktopAppWindowManager") {
