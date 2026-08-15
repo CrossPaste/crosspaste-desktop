@@ -225,6 +225,16 @@ class CrossPaste {
             }.onFailure { e ->
                 logger.error(e) { "cant start crosspaste" }
                 if (headless) {
+                    // The shutdown hook is only registered later in runHeadless(), so
+                    // run the exit hooks (e.g. pid-file removal) best-effort here; if
+                    // the failure happened before any hook was registered the list is
+                    // simply empty.
+                    runCatching {
+                        koinApplication.koin
+                            .get<AppExitService>()
+                            .beforeExitList
+                            .forEach { hook -> runCatching { hook.invoke() } }
+                    }
                     System.err.println("Error: CrossPaste failed to start in headless mode: ${e.message}")
                     exitProcess(1)
                 }
