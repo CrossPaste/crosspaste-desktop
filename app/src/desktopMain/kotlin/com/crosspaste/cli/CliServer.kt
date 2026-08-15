@@ -95,6 +95,12 @@ class CliServer(
 
     private var socketPath: Path? = null
 
+    /**
+     * Starts the CLI server. On failure the partially created resources are
+     * cleaned up and the failure is rethrown: callers decide whether a missing
+     * CLI control plane is fatal (headless daemon) or a degraded-but-running
+     * state (GUI).
+     */
     suspend fun start() {
         withContext(ioDispatcher) {
             lifecycleMutex.withLock {
@@ -129,6 +135,7 @@ class CliServer(
                 }.onFailure { e ->
                     logger.error(e) { "Failed to start CLI server" }
                     cleanup()
+                    throw e
                 }
             }
         }

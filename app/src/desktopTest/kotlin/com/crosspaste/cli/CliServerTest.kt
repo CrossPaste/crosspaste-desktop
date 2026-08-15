@@ -32,6 +32,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -166,6 +167,33 @@ class CliServerTest {
             } finally {
                 server.stop()
             }
+        }
+
+        socketBaseDir.toFile().deleteRecursively()
+    }
+
+    /**
+     * The headless daemon treats a CLI-server startup failure as a startup
+     * failure of the whole process (the UDS API is its only control plane),
+     * so start() must propagate the failure after cleaning up instead of
+     * swallowing it into a log line.
+     */
+    @Test
+    fun `start rethrows after cleanup when the socket path is unusable`() {
+        val userDataDir = Files.createTempDirectory("cli-server-data")
+        // Exceeds the 100-byte socket-path guard in resolveSocketPath
+        val socketBaseDir =
+            Path
+                .of(System.getProperty("java.io.tmpdir"), "cs-long-${"x".repeat(120)}")
+                .also { Files.createDirectories(it) }
+        val (server, endpointFile) = createServer(userDataDir, socketBaseDir)
+
+        runBlocking {
+            assertFailsWith<IllegalStateException> { server.start() }
+            assertFalse(
+                endpointFile.getPath().exists(),
+                "endpoint file must not be published after a failed start",
+            )
         }
 
         socketBaseDir.toFile().deleteRecursively()

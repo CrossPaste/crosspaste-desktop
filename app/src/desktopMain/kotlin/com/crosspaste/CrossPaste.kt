@@ -173,7 +173,18 @@ class CrossPaste {
                     koin.get<SyncManager>().start()
                     koin.get<PastePullService>().init()
                     koin.get<Server>().start()
-                    ioCoroutineDispatcher.launch { koin.get<CliServer>().start() }
+                    if (headless) {
+                        // The UDS CLI API is the daemon's only control plane, so a
+                        // CliServer startup failure is a daemon startup failure
+                        // (fail-closed, propagates to the headless exit-1 path).
+                        koin.get<CliServer>().start()
+                    } else {
+                        // The GUI tolerates a degraded CLI and keeps running.
+                        ioCoroutineDispatcher.launch {
+                            runCatching { koin.get<CliServer>().start() }
+                                .onFailure { logger.warn { "CLI unavailable for this session" } }
+                        }
+                    }
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
                     }
