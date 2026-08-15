@@ -80,8 +80,8 @@ class PasteCommand : CliktCommand(name = "paste") {
 
     /**
      * A missing rawContent while the summary exists means the app predates
-     * CLI API v2 (it ignored ?includeRaw=true) — that deserves an actionable
-     * message, not "has no content".
+     * the includeRaw capability (it ignored ?includeRaw=true) — that deserves
+     * an actionable message, not "has no content".
      */
     private fun printRawContent(detail: PasteDetailResponse) {
         if (detail.rawContent == null && detail.content != null) {
