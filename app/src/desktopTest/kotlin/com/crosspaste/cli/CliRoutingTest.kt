@@ -335,7 +335,15 @@ class CliRoutingTest {
             // their dedicated workflows in the app.
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"storagePath","value":"/tmp/x"}"""))
             assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"useDefaultStoragePath","value":"false"}"""))
-            assertEquals(HttpStatusCode.BadRequest, putConfig("""{"key":"port","value":"13130"}"""))
+            // The sync port has no app setting to point at; the hint must say
+            // the app manages it rather than send users hunting for one
+            val portResponse =
+                client.put("/cli/config") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"key":"port","value":"13130"}""")
+                }
+            assertEquals(HttpStatusCode.BadRequest, portResponse.status)
+            assertTrue(portResponse.bodyAsText().contains("managed automatically"))
             assertEquals(
                 HttpStatusCode.BadRequest,
                 putConfig("""{"key":"enablePasteboardListening","value":"false"}"""),

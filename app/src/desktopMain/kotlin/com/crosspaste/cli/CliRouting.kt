@@ -216,17 +216,20 @@ private suspend fun handleTagCreate(
 }
 
 // These settings require workflows beyond persisting one config field. Storage
-// changes migrate data and restart the app; port, pasteboard, and MCP changes
-// must start, stop, or restart their running services. A generic config write
+// changes migrate data and restart the app; pasteboard and MCP changes must
+// start, stop, or restart their running services. A generic config write
 // would report success while leaving the process in a contradictory state.
+// Each entry carries the hint shown to the user; the sync port is special in
+// that no app setting exists either — the server binds the configured port at
+// startup and writes the actually-bound port back on conflict.
 private val cliBlockedConfigKeys =
-    setOf(
-        "storagePath",
-        "useDefaultStoragePath",
-        "port",
-        "enablePasteboardListening",
-        "enableMcpServer",
-        "mcpServerPort",
+    mapOf(
+        "storagePath" to "use the storage settings in the app instead.",
+        "useDefaultStoragePath" to "use the storage settings in the app instead.",
+        "port" to "the sync port is managed automatically by the app.",
+        "enablePasteboardListening" to "use the pasteboard controls in the app instead.",
+        "enableMcpServer" to "use the MCP server settings in the app instead.",
+        "mcpServerPort" to "use the MCP server settings in the app instead.",
     )
 
 private suspend fun handleConfigSet(
@@ -234,13 +237,11 @@ private suspend fun handleConfigSet(
     configManager: DesktopConfigManager,
 ) {
     val request = call.receive<CliConfigSetRequest>()
-    if (request.key in cliBlockedConfigKeys) {
+    val blockedHint = cliBlockedConfigKeys[request.key]
+    if (blockedHint != null) {
         call.respond(
             HttpStatusCode.BadRequest,
-            CliMessageDto(
-                "Config key '${request.key}' cannot be changed via the CLI; " +
-                    "use the corresponding settings in the app instead.",
-            ),
+            CliMessageDto("Config key '${request.key}' cannot be changed via the CLI; $blockedHint"),
         )
         return
     }
