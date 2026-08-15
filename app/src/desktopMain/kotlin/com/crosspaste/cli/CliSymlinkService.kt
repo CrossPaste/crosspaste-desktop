@@ -5,16 +5,20 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okio.Path
 import okio.Path.Companion.toPath
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.LinkOption
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 enum class CliSymlinkState {
     /** Not macOS, not a production install, or the bundled CLI binary is absent (dev run). */
@@ -87,6 +91,10 @@ class CliSymlinkService(
         /** The marker is only printed when `command -v` succeeded, so parsing needs no exit-code check. */
         private val PROBE_COMMAND =
             "p=\$(command -v $COMMAND_NAME) && printf '$RESOLVED_MARKER%s\\n' \"\$p\""
+
+        private val PROBE_TIMEOUT = 5.seconds
+
+        private const val MAX_PROBE_LINE_BYTES = 64 * 1024
     }
 
     private val logger = KotlinLogging.logger {}
@@ -211,39 +219,76 @@ class CliSymlinkService(
 
     /**
      * -l: login shell, so the user's profile PATH applies — which also means
-     * the profile may print banners or arbitrary amounts of text. The result
-     * is therefore tagged with a unique marker and stdout is consumed
-     * concurrently: a chatty profile can exceed pipe capacity, and a blocked
-     * shell would otherwise sit until the timeout and read as "unavailable".
+     * the profile may print banners, spawn background jobs that inherit
+     * stdout (keeping the pipe open after the shell exits, so EOF may never
+     * come), or emit arbitrary amounts of text. The probe therefore never
+     * blocks on the stream: it polls available bytes, scans line by line
+     * with a bounded buffer, returns the moment the marker line appears, and
+     * gives up as soon as the shell has exited with nothing left to scan.
+     * Timeout and cancellation ride on cancellable [delay]s; cleanup (closing
+     * our pipe end, killing a still-running shell) happens in finally either
+     * way. A background child of the shell is not ours to kill — we just stop
+     * reading from it.
      */
     internal suspend fun resolveCommandIn(
         shell: String,
         probeCommand: String = PROBE_COMMAND,
-    ): String? =
-        runCatching {
-            val process =
+        timeout: Duration = PROBE_TIMEOUT,
+    ): String? {
+        val process =
+            try {
                 ProcessBuilder(shell, "-lc", probeCommand)
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start()
-            coroutineScope {
-                val output =
-                    async(ioDispatcher) {
-                        runCatching {
-                            process.inputStream.bufferedReader().readText()
-                        }.getOrDefault("")
-                    }
-                val finished = process.waitFor(5, TimeUnit.SECONDS)
-                if (!finished) {
-                    process.destroyForcibly()
-                }
-                // Killing the process closes its stdout, so this cannot hang
-                val text = output.await()
-                if (finished) parseResolvedCommand(text) else null
+            } catch (e: IOException) {
+                logger.warn(e) { "Failed to probe $shell for $COMMAND_NAME" }
+                return null
             }
-        }.getOrElse { e ->
-            logger.warn(e) { "Failed to probe $shell for $COMMAND_NAME" }
-            null
+        try {
+            return withTimeoutOrNull(timeout) { awaitMarker(process) }
+        } finally {
+            runCatching { process.inputStream.close() }
+            if (process.isAlive) {
+                process.destroyForcibly()
+            }
         }
+    }
+
+    private suspend fun awaitMarker(process: Process): String? {
+        val stream = process.inputStream
+        val lineBuffer = ByteArrayOutputStream()
+        val chunk = ByteArray(8192)
+        while (true) {
+            var progressed = false
+            while (stream.available() > 0) {
+                val n = stream.read(chunk, 0, minOf(chunk.size, stream.available()))
+                if (n <= 0) break
+                progressed = true
+                for (i in 0 until n) {
+                    val byte = chunk[i]
+                    if (byte == '\n'.code.toByte()) {
+                        val line = lineBuffer.toString(Charsets.UTF_8.name())
+                        lineBuffer.reset()
+                        parseResolvedCommand(line)?.let { return it }
+                    } else if (lineBuffer.size() < MAX_PROBE_LINE_BYTES) {
+                        // Longer lines cannot be the marker line (paths are
+                        // orders of magnitude shorter); cap so a firehose
+                        // profile cannot balloon memory
+                        lineBuffer.write(byte.toInt())
+                    }
+                }
+            }
+            if (!process.isAlive && stream.available() == 0) {
+                // Everything the shell wrote has been scanned and no marker
+                // appeared; never wait for EOF — a background child may hold
+                // the pipe open forever
+                return null
+            }
+            if (!progressed) {
+                delay(20.milliseconds)
+            }
+        }
+    }
 
     /**
      * `do shell script … with administrator privileges` shows the standard

@@ -3,6 +3,7 @@ package com.crosspaste.cli
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import okio.Path
 import okio.Path.Companion.toOkioPath
@@ -13,6 +14,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTime
 import java.nio.file.Path as NioPath
 
 class CliSymlinkServiceTest {
@@ -301,9 +305,12 @@ class CliSymlinkServiceTest {
 
     @Test
     fun `shell probe survives a banner larger than the pipe capacity`() =
-        runTest {
-            // 200KB of profile noise before the marker: without concurrent
-            // stdout consumption the shell would block on a full pipe and
+        // runBlocking, not runTest: the probe polls with real delays, and
+        // runTest's virtual clock would race to the timeout before the real
+        // shell produces output (same for the probe tests below)
+        runBlocking {
+            // 200KB of profile noise before the marker: without draining the
+            // stream while the shell runs it would block on a full pipe and
             // the probe would time out
             val probe =
                 "i=0; while [ ${'$'}i -lt 5000 ]; do echo banner-line-of-noise-banner-line-of-noise; " +
@@ -314,10 +321,41 @@ class CliSymlinkServiceTest {
 
     @Test
     fun `shell probe reports null when the command is not found`() =
-        runTest {
+        runBlocking {
             val probe =
                 "p=${'$'}(command -v definitely-not-a-real-command-xyz) && " +
                     "printf '$RESOLVED_MARKER%s\\n' \"${'$'}p\""
             assertEquals(null, createService().resolveCommandIn("/bin/sh", probe))
+        }
+
+    @Test
+    fun `shell probe returns immediately when a background child keeps stdout open`() =
+        runBlocking {
+            // The background sleep inherits stdout, so EOF never arrives
+            // while it lives; the marker alone must be enough to return
+            val probe = "sleep 30 & printf '$RESOLVED_MARKER%s\\n' /tmp/fake-crosspaste"
+            val elapsed =
+                measureTime {
+                    assertEquals(
+                        "/tmp/fake-crosspaste",
+                        createService().resolveCommandIn("/bin/sh", probe),
+                    )
+                }
+            assertTrue(
+                elapsed < 5.seconds,
+                "probe must not wait for the background child: took $elapsed",
+            )
+        }
+
+    @Test
+    fun `shell probe times out on a hung foreground shell`() =
+        runBlocking {
+            val resolved =
+                createService().resolveCommandIn(
+                    "/bin/sh",
+                    "sleep 30",
+                    timeout = 1.seconds,
+                )
+            assertEquals(null, resolved)
         }
 }
