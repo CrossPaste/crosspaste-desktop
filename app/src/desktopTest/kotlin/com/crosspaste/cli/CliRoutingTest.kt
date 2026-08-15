@@ -165,7 +165,9 @@ class CliRoutingTest {
             val detail = json.decodeFromString<CliPasteDetailDto>(response.bodyAsText())
             assertEquals(42L, detail.id)
             assertEquals("hello", detail.content)
-            assertEquals("hello", detail.rawContent)
+            // Raw is opt-in: without ?includeRaw=true it must not be shipped
+            // (for plain text it would duplicate the whole content)
+            assertEquals(null, detail.rawContent)
         }
 
         coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns null
@@ -194,11 +196,19 @@ class CliRoutingTest {
             )
         coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns pasteData
         withCliRouting(fixture) {
-            val response = client.get("/cli/paste/latest")
-            assertEquals(HttpStatusCode.OK, response.status)
-            val detail = json.decodeFromString<CliPasteDetailDto>(response.bodyAsText())
-            assertEquals("bold text", detail.content)
-            assertEquals(html, detail.rawContent)
+            val withRaw =
+                json.decodeFromString<CliPasteDetailDto>(
+                    client.get("/cli/paste/latest?includeRaw=true").bodyAsText(),
+                )
+            assertEquals("bold text", withRaw.content)
+            assertEquals(html, withRaw.rawContent)
+
+            val withoutRaw =
+                json.decodeFromString<CliPasteDetailDto>(
+                    client.get("/cli/paste/latest").bodyAsText(),
+                )
+            assertEquals("bold text", withoutRaw.content)
+            assertEquals(null, withoutRaw.rawContent)
         }
     }
 

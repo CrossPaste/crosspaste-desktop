@@ -63,7 +63,10 @@ class PasteCommand : CliktCommand(name = "paste") {
             throw usageError("--no-newline requires --raw or --summary")
         }
         runCli { client ->
-            val path = id?.let { "/cli/paste/$it" } ?: "/cli/paste/latest"
+            val basePath = id?.let { "/cli/paste/$it" } ?: "/cli/paste/latest"
+            // Raw markup is opt-in server-side: for plain text raw == summary,
+            // and always shipping both would double large payloads
+            val path = if (raw) "$basePath?includeRaw=true" else basePath
             val detail = client.getBody(path, PasteDetailResponse.serializer())
 
             when {

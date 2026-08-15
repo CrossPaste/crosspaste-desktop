@@ -160,10 +160,14 @@ private suspend fun respondPasteDetail(
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
 ) {
+    // Raw markup is opt-in (?includeRaw=true): for plain text raw == summary,
+    // so sending both unconditionally would ship large pastes twice per
+    // request (the CLI buffers the whole body before decoding)
+    val includeRaw = call.request.queryParameters["includeRaw"] == "true"
     if (pasteData == null) {
         call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste not found."))
     } else {
-        call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader))
+        call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader, includeRaw))
     }
 }
 
@@ -464,6 +468,7 @@ private suspend fun PasteData.toSummaryDto(
 private suspend fun PasteData.toDetailDto(
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
+    includeRaw: Boolean,
 ): CliPasteDetailDto =
     CliPasteDetailDto(
         id = id,
@@ -475,7 +480,7 @@ private suspend fun PasteData.toDetailDto(
         remote = remote,
         hash = hash,
         content = pasteAppearItem?.let { pasteItemReader.getSummary(it) },
-        rawContent = pasteAppearItem?.let { pasteItemReader.getRaw(it) },
+        rawContent = if (includeRaw) pasteAppearItem?.let { pasteItemReader.getRaw(it) } else null,
     )
 
 private fun parseConfigValue(
