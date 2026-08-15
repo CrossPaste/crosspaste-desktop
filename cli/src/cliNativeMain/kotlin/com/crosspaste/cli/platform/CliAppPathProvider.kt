@@ -27,12 +27,14 @@ import kotlin.experimental.ExperimentalNativeApi
  *       start.sh                        ← start script
  *       crosspaste                      ← JVM launcher
  *
- * Windows:
+ * Windows (Conveyor puts JVM-app inputs under app/, so the start script
+ * does not sit next to the executables):
  *   CrossPaste/                         ← appPath
  *     bin/
  *       crosspaste-cli.exe              ← CLI binary (binDir)
  *       CrossPaste.exe                  ← JVM launcher
- *       start.bat                       ← start script
+ *     app/
+ *       bin/start.bat                   ← start script
  */
 class CliAppPathProvider {
 
@@ -72,7 +74,8 @@ class CliAppPathProvider {
         when (os) {
             OsFamilyCompat.MACOSX -> binDir.resolve("start.sh")
             OsFamilyCompat.LINUX -> binDir.resolve("start.sh")
-            OsFamilyCompat.WINDOWS -> binDir.resolve("start.bat")
+            // bin/ → CrossPaste/ → app/bin/start.bat
+            OsFamilyCompat.WINDOWS -> (binDir.parent ?: binDir).resolve("app/bin/start.bat")
         }
 
     /**

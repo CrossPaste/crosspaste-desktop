@@ -98,6 +98,17 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew app:build
 
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      - name: Build CLI binaries (Linux targets)
+        run: |
+          VERSION=$(grep '^version=' app/src/desktopMain/resources/crosspaste-version.properties | cut -d= -f2)
+          ./gradlew :cli:assembleDistLinuxX64 :cli:assembleDistLinuxArm64 "-PcliVersion=${VERSION}.${REVISION}"
+
       - name: Prepare Conveyor config (Linux only)
         run: |
           ./gradlew -q writeConveyorConfig -PappEnv=PRODUCTION
@@ -109,6 +120,7 @@ jobs:
           # so mac/windows signing secrets are never needed.
           cat > beta.conveyor.conf <<CONF
           include required("conveyor.conf")
+          include required("cli.conveyor.conf")
           app.machines = [ "linux.amd64.glibc", "linux.aarch64.glibc" ]
           app.revision = ${REVISION}
           CONF
