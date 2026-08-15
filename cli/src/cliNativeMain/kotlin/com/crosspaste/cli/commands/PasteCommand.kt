@@ -70,12 +70,29 @@ class PasteCommand : CliktCommand(name = "paste") {
             val detail = client.getBody(path, PasteDetailResponse.serializer())
 
             when {
-                raw -> printContentOnly(detail, detail.rawContent)
+                raw -> printRawContent(detail)
                 summary -> printContentOnly(detail, detail.content)
                 ctx.json -> echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
                 else -> printDetail(detail)
             }
         }
+    }
+
+    /**
+     * A missing rawContent while the summary exists means the app predates
+     * CLI API v2 (it ignored ?includeRaw=true) — that deserves an actionable
+     * message, not "has no content".
+     */
+    private fun printRawContent(detail: PasteDetailResponse) {
+        if (detail.rawContent == null && detail.content != null) {
+            echo(
+                "Error: the running CrossPaste app does not support --raw yet; " +
+                    "update (or restart) the app, or use --summary instead.",
+                err = true,
+            )
+            throw ProgramResult(1)
+        }
+        printContentOnly(detail, detail.rawContent)
     }
 
     /**

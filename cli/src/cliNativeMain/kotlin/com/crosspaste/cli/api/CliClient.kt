@@ -14,8 +14,10 @@ import okio.FileSystem
 /**
  * Version of the local /cli API this binary speaks. Mirrors CLI_API_VERSION
  * on the app side; a mismatch produces a warning, not a failure.
+ *
+ * 2: paste detail supports ?includeRaw=true / rawContent (--raw).
  */
-const val CLI_API_VERSION = 1
+const val CLI_API_VERSION = 2
 
 /**
  * Mirror of the app's CliEndpoint (see design D5): the app atomically writes

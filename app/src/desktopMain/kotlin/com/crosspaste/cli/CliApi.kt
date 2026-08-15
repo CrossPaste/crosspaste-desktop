@@ -5,8 +5,10 @@ import kotlinx.serialization.Serializable
 /**
  * Version of the local /cli HTTP API served over the Unix domain socket.
  * Bump when the wire contract changes in a way the CLI must know about.
+ *
+ * 2: paste detail supports ?includeRaw=true / rawContent (CLI --raw).
  */
-const val CLI_API_VERSION = 1
+const val CLI_API_VERSION = 2
 
 const val CLI_ENDPOINT_FILE_NAME = "cli-endpoint.json"
 
