@@ -40,6 +40,20 @@ build_appimage() {
     # (e.g. crosspaste-1.2.4/) and extract contents directly into BUILD_DIR
     tar -xzf "$TAR_FILE" -C "$BUILD_DIR" --strip-components=1
 
+    # The Conveyor tarball never carries root-inputs (they are deb-only), so
+    # the CLI binary must be copied in from the staged dist explicitly or the
+    # AppImage would silently ship without it. The CI workflows build the
+    # Linux CLI targets before this script runs; set -e turns a missing
+    # binary into a hard failure instead of a silent drop.
+    local CLI_TARGET
+    case "$ARCH_TOKEN" in
+        amd64) CLI_TARGET="linuxX64" ;;
+        aarch64) CLI_TARGET="linuxArm64" ;;
+        *) echo "Error: no CLI target mapping for arch ${ARCH_TOKEN}"; exit 1 ;;
+    esac
+    install -m 755 "cli/dist/${CLI_TARGET}/crosspaste-cli" "$BUILD_DIR/bin/crosspaste-cli"
+    test -x "$BUILD_DIR/bin/crosspaste-cli"
+
     # Configure AppImage metadata (AppRun, Desktop file, Icon) inside a subshell
     # so the working directory stays at the workspace root for appimagetool.
     (
