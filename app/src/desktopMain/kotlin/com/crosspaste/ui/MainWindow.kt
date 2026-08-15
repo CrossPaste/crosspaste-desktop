@@ -29,7 +29,6 @@ import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvide
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -219,12 +218,10 @@ fun MainWindow(windowIcon: Painter?) {
                     }
                 } else if (isMacos && config.showInstallCliPrompt) {
                     // One-time offer to install the `crosspaste` terminal
-                    // command (D6 PATH integration). Deferred while the
-                    // accessibility dialog is up so prompts never stack.
+                    // command (D6 PATH integration; symlink state probed once
+                    // at app startup). Deferred while the accessibility
+                    // dialog is up so prompts never stack.
                     val cliSymlinkService = koinInject<CliSymlinkService>()
-                    LaunchedEffect(Unit) {
-                        cliSymlinkService.refresh()
-                    }
                     val cliSymlinkState by cliSymlinkService.state.collectAsState()
                     if (cliSymlinkState == CliSymlinkState.NOT_INSTALLED) {
                         InstallCliDialog {

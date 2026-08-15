@@ -26,6 +26,7 @@ import com.crosspaste.app.NativeMessagingHostService
 import com.crosspaste.bootstrap.DesktopBootstrap
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.cli.CliServer
+import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
@@ -173,6 +174,9 @@ class CrossPaste {
                     koin.get<PastePullService>().init()
                     koin.get<Server>().start()
                     ioCoroutineDispatcher.launch { koin.get<CliServer>().start() }
+                    // Probe the CLI symlink state once at startup; it drives
+                    // the install prompt and the extension-page entry
+                    ioCoroutineDispatcher.launch { koin.get<CliSymlinkService>().refresh() }
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch { koin.get<McpServer>().start() }
                     }

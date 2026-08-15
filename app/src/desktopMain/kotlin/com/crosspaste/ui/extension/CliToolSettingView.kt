@@ -1,10 +1,9 @@
-package com.crosspaste.ui.settings
+package com.crosspaste.ui.extension
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,11 +20,12 @@ import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
+import com.crosspaste.ui.settings.SettingListItem
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /**
- * Settings row for the macOS `crosspaste` terminal command: shows whether the
+ * Extension-page row for the macOS `crosspaste` terminal command: shows whether the
  * /usr/local/bin symlink is in place and offers install/repair. Only rendered
  * when [CliSymlinkService] reports the feature as supported — the caller
  * gates on [CliSymlinkState.NOT_SUPPORTED].
@@ -40,10 +40,6 @@ fun CliToolSettingItem() {
     val scope = rememberCoroutineScope()
     val state by cliSymlinkService.state.collectAsState()
     var installing by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        cliSymlinkService.refresh()
-    }
 
     SettingListItem(
         title = "install_cli_tool",
