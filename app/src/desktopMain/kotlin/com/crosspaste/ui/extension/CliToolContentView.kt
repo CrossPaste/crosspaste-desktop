@@ -10,6 +10,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -37,6 +38,13 @@ fun CliToolContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
 
     val symlinkState by cliSymlinkService.state.collectAsState()
+
+    // Re-probe on every visit: the user may just have resolved a CONFLICT
+    // (or removed the link) outside the app, and this page is the natural
+    // place to notice that without restarting
+    LaunchedEffect(Unit) {
+        cliSymlinkService.refresh()
+    }
 
     // Re-probed whenever the symlink state changes (e.g. right after install)
     val shellAvailability by

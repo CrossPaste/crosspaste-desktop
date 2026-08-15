@@ -41,14 +41,24 @@ fun CliToolSettingItem() {
     val state by cliSymlinkService.state.collectAsState()
     var installing by remember { mutableStateOf(false) }
 
+    val subtitleKey =
+        when (state) {
+            CliSymlinkState.TRANSLOCATED -> "cli_tool_translocated_desc"
+            CliSymlinkState.CONFLICT -> "cli_tool_conflict_desc"
+            else -> "install_cli_tool_desc"
+        }
     SettingListItem(
         title = "install_cli_tool",
-        subtitle =
-            when (state) {
-                CliSymlinkState.TRANSLOCATED -> "cli_tool_translocated_desc"
-                CliSymlinkState.CONFLICT -> "cli_tool_conflict_desc"
-                else -> "install_cli_tool_desc"
-            },
+        // Raw subtitle content instead of the key parameter: the
+        // translocation/conflict guidance is a full recovery instruction and
+        // must not be ellipsized to a single line
+        subtitleContent = {
+            Text(
+                text = copywriter.getText(subtitleKey),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
         icon = IconData(MaterialSymbols.Rounded.Terminal, themeExt.greenIconColor),
         trailingContent = {
             when (state) {

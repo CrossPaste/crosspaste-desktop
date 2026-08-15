@@ -134,10 +134,11 @@ class CliSymlinkService(
     /**
      * Creates or repairs the symlink. Never throws; the outcome is reported
      * as a [CliInstallResult] and [state] is refreshed either way. Only the
-     * NOT_INSTALLED and NEEDS_REPAIR states are actionable: TRANSLOCATED and
-     * CONFLICT refuse so a foreign file is never deleted and a doomed link is
-     * never created. SUCCESS is only reported when the link verifiably points
-     * at the bundled CLI afterwards.
+     * NOT_INSTALLED and NEEDS_REPAIR states are actionable — and because that
+     * pre-check races against other processes, both the direct attempt and
+     * the escalated shell command re-verify at execution time that nothing
+     * but a symlink is ever deleted. SUCCESS is only reported when the link
+     * verifiably points at the bundled CLI afterwards.
      */
     suspend fun install(): CliInstallResult =
         withContext(ioDispatcher) {
@@ -147,17 +148,8 @@ class CliSymlinkService(
                 return@withContext CliInstallResult.FAILURE
             }
             val result =
-                runCatching {
-                    val nioLink = linkPath.toNioPath()
-                    // The guard above only allows a missing path or a symlink
-                    // here, so this delete can never destroy a foreign file
-                    Files.deleteIfExists(nioLink)
-                    Files.createSymbolicLink(nioLink, cliBinaryPath.toNioPath())
-                    CliInstallResult.SUCCESS
-                }.getOrElse { e ->
-                    logger.info { "Direct symlink install failed (${e.message}); escalating to admin prompt" }
-                    (escalatedInstall ?: ::osascriptInstall)(cliBinaryPath, linkPath)
-                }
+                attemptDirectInstall()
+                    ?: (escalatedInstall ?: ::osascriptInstall)(cliBinaryPath, linkPath)
             val finalState = computeState()
             _state.value = finalState
             when {
@@ -169,6 +161,31 @@ class CliSymlinkService(
                 else -> CliInstallResult.FAILURE
             }
         }
+
+    /**
+     * Execution-time-guarded direct attempt: deletes only a symlink, fails on
+     * a foreign file that appeared after the pre-check (without escalating —
+     * asking for admin credentials would not make destroying it acceptable),
+     * and returns null when escalation should take over (e.g. no write
+     * permission).
+     */
+    internal fun attemptDirectInstall(): CliInstallResult? {
+        val nioLink = linkPath.toNioPath()
+        if (Files.exists(nioLink, LinkOption.NOFOLLOW_LINKS) && !Files.isSymbolicLink(nioLink)) {
+            logger.warn { "A foreign file appeared at $linkPath; refusing to replace it" }
+            return CliInstallResult.FAILURE
+        }
+        return runCatching {
+            if (Files.isSymbolicLink(nioLink)) {
+                Files.deleteIfExists(nioLink)
+            }
+            Files.createSymbolicLink(nioLink, cliBinaryPath.toNioPath())
+            CliInstallResult.SUCCESS
+        }.getOrElse { e ->
+            logger.info { "Direct symlink install failed (${e.message}); escalating to admin prompt" }
+            null
+        }
+    }
 
     /**
      * Answers "can the user actually type `crosspaste` in a terminal right
@@ -226,16 +243,12 @@ class CliSymlinkService(
         link: Path,
     ): CliInstallResult =
         runCatching {
-            // rm -f + plain ln -s instead of ln -sf: macOS ln has no -h/-n,
-            // so ln -sf through an existing link-to-directory would create
-            // the new link INSIDE that directory and still exit 0. rm -f
-            // removes a symlink without following it and refuses directories.
-            val script =
-                "do shell script \"mkdir -p \" & quoted form of (item 2 of argv) & " +
-                    "\" && rm -f \" & quoted form of (item 3 of argv) & " +
-                    "\" && ln -s \" & quoted form of (item 1 of argv) & " +
-                    "\" \" & quoted form of (item 3 of argv) " +
-                    "with administrator privileges"
+            val shellCommand =
+                INSTALL_SHELL_TEMPLATE
+                    .replace("%CLI%", "\" & quoted form of (item 1 of argv) & \"")
+                    .replace("%DIR%", "\" & quoted form of (item 2 of argv) & \"")
+                    .replace("%LINK%", "\" & quoted form of (item 3 of argv) & \"")
+            val script = "do shell script \"$shellCommand\" with administrator privileges"
             val process =
                 ProcessBuilder(
                     "osascript",
@@ -264,6 +277,24 @@ class CliSymlinkService(
             CliInstallResult.FAILURE
         }
 }
+
+/**
+ * The escalated install command, executed by /bin/sh as root. It re-verifies
+ * the link path at execution time: only a symlink is ever removed, and any
+ * other occupant makes it bail out with exit 40 before touching anything —
+ * the state check done before requesting credentials can race against other
+ * processes. Plain `ln -s` (not -sf) because macOS ln has no -h/-n: `-sf`
+ * through a surviving link-to-directory would create the new link INSIDE that
+ * directory and still exit 0.
+ *
+ * %CLI% / %DIR% / %LINK% are replaced with AppleScript `quoted form of` argv
+ * references at runtime (and with shell-quoted literal paths in tests).
+ */
+internal const val INSTALL_SHELL_TEMPLATE =
+    "mkdir -p %DIR%; " +
+        "if [ -L %LINK% ]; then rm -f %LINK%; fi; " +
+        "if [ -e %LINK% ] || [ -L %LINK% ]; then exit 40; fi; " +
+        "ln -s %CLI% %LINK%"
 
 /** Maps an osascript run to a result; AppleScript reports a declined credentials dialog as error (-128). */
 internal fun classifyOsascriptResult(

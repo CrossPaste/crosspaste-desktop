@@ -233,4 +233,56 @@ class CliSymlinkServiceTest {
         assertEquals(CliInstallResult.FAILURE, classifyOsascriptResult(1, "some error (-12800)"))
         assertEquals(CliInstallResult.FAILURE, classifyOsascriptResult(1, "execution error: broken"))
     }
+
+    private fun renderInstallTemplate(): String {
+        fun q(path: NioPath) = "'" + path.toString().replace("'", "'\\''") + "'"
+        return INSTALL_SHELL_TEMPLATE
+            .replace("%CLI%", q(cliBinary))
+            .replace("%DIR%", q(linkDir))
+            .replace("%LINK%", q(linkPath))
+    }
+
+    private fun runSh(command: String): Int = ProcessBuilder("/bin/sh", "-c", command).start().waitFor()
+
+    @Test
+    fun `install shell template bails out on a foreign file without touching it`() {
+        Files.write(linkPath, byteArrayOf(9))
+        assertEquals(40, runSh(renderInstallTemplate()))
+        assertEquals(9, Files.readAllBytes(linkPath)[0].toInt())
+    }
+
+    @Test
+    fun `install shell template creates the link when the path is free`() {
+        assertEquals(0, runSh(renderInstallTemplate()))
+        assertEquals(cliBinary, Files.readSymbolicLink(linkPath))
+    }
+
+    @Test
+    fun `install shell template replaces a wrong symlink`() {
+        val other = tempDir.resolve("other-cli")
+        Files.write(other, byteArrayOf(1))
+        Files.createSymbolicLink(linkPath, other)
+        assertEquals(0, runSh(renderInstallTemplate()))
+        assertEquals(cliBinary, Files.readSymbolicLink(linkPath))
+    }
+
+    @Test
+    fun `install shell template does not follow a symlink to a directory`() {
+        val dir = tempDir.resolve("some-dir")
+        Files.createDirectories(dir)
+        Files.createSymbolicLink(linkPath, dir)
+        assertEquals(0, runSh(renderInstallTemplate()))
+        // The link itself was replaced; nothing was created inside the directory
+        assertEquals(cliBinary, Files.readSymbolicLink(linkPath))
+        assertEquals(0, Files.list(dir).count())
+    }
+
+    @Test
+    fun `direct install refuses a foreign file at execution time`() {
+        // Calls the internal attempt directly, bypassing install()'s
+        // pre-check — modeling a file that appeared after that check
+        Files.write(linkPath, byteArrayOf(9))
+        assertEquals(CliInstallResult.FAILURE, createService().attemptDirectInstall())
+        assertEquals(9, Files.readAllBytes(linkPath)[0].toInt())
+    }
 }
