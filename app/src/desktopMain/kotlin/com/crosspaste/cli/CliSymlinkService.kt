@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.yield
 import okio.Path
 import okio.Path.Companion.toPath
 import java.io.ByteArrayOutputStream
@@ -90,7 +91,7 @@ class CliSymlinkService(
 
         /** The marker is only printed when `command -v` succeeded, so parsing needs no exit-code check. */
         private val PROBE_COMMAND =
-            "p=\$(command -v $COMMAND_NAME) && printf '$RESOLVED_MARKER%s\\n' \"\$p\""
+            "p=\$(command -v $COMMAND_NAME) && printf '\\n$RESOLVED_MARKER%s\\n' \"\$p\""
 
         private val PROBE_TIMEOUT = 5.seconds
 
@@ -277,6 +278,10 @@ class CliSymlinkService(
                         lineBuffer.write(byte.toInt())
                     }
                 }
+                // A continuously chatty profile can keep available() positive
+                // forever. Yield once per bounded chunk so timeout and caller
+                // cancellation are always observed.
+                yield()
             }
             if (!process.isAlive && stream.available() == 0) {
                 // Everything the shell wrote has been scanned and no marker

@@ -15,6 +15,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 import java.nio.file.Path as NioPath
@@ -304,6 +305,18 @@ class CliSymlinkServiceTest {
     }
 
     @Test
+    fun `shell probe marker starts on a new line after unterminated profile output`() =
+        runBlocking {
+            val probe =
+                "printf profile-without-newline; " +
+                    "printf '\\n$RESOLVED_MARKER%s\\n' /tmp/fake-crosspaste"
+            assertEquals(
+                "/tmp/fake-crosspaste",
+                createService().resolveCommandIn("/bin/sh", probe),
+            )
+        }
+
+    @Test
     fun `shell probe survives a banner larger than the pipe capacity`() =
         // runBlocking, not runTest: the probe polls with real delays, and
         // runTest's virtual clock would race to the timeout before the real
@@ -333,7 +346,7 @@ class CliSymlinkServiceTest {
         runBlocking {
             // The background sleep inherits stdout, so EOF never arrives
             // while it lives; the marker alone must be enough to return
-            val probe = "sleep 30 & printf '$RESOLVED_MARKER%s\\n' /tmp/fake-crosspaste"
+            val probe = "sleep 2 & printf '$RESOLVED_MARKER%s\\n' /tmp/fake-crosspaste"
             val elapsed =
                 measureTime {
                     assertEquals(
@@ -342,7 +355,7 @@ class CliSymlinkServiceTest {
                     )
                 }
             assertTrue(
-                elapsed < 5.seconds,
+                elapsed < 1.seconds,
                 "probe must not wait for the background child: took $elapsed",
             )
         }
@@ -357,5 +370,22 @@ class CliSymlinkServiceTest {
                     timeout = 1.seconds,
                 )
             assertEquals(null, resolved)
+        }
+
+    @Test
+    fun `shell probe timeout remains effective under continuous output`() =
+        runBlocking {
+            val elapsed =
+                measureTime {
+                    assertEquals(
+                        null,
+                        createService().resolveCommandIn(
+                            "/bin/sh",
+                            "while :; do printf noise-line\\n; done",
+                            timeout = 300.milliseconds,
+                        ),
+                    )
+                }
+            assertTrue(elapsed < 2.seconds, "continuous output bypassed timeout: took $elapsed")
         }
 }
