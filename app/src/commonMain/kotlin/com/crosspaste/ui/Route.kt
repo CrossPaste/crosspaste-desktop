@@ -19,6 +19,12 @@ object ChangeLog : Route {
 }
 
 @Serializable
+object CliTool : Route {
+    const val NAME: String = "command_line"
+    override val name: String = NAME
+}
+
+@Serializable
 object ExtensionGraph : Route {
     override val name = "extension_graph"
 }
