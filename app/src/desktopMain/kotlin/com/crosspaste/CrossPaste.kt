@@ -163,6 +163,14 @@ class CrossPaste {
                 val koin = koinApplication.koin
                 val appLaunchState = koin.get<AppLaunchState>()
                 if (appLaunchState.acquiredLock) {
+                    if (headless) {
+                        // Register as soon as the single-instance lock is held (and
+                        // never earlier: a second instance must not run this hook and
+                        // delete the running daemon's files): from here on SIGTERM and
+                        // the startup-failure exitProcess(1) run the same shutdown
+                        // chain even while services are still starting.
+                        registerHeadlessShutdownHook()
+                    }
                     val configManager = koin.get<DesktopConfigManager>()
                     val notificationManager = koin.get<NotificationManager>()
                     configManager.notificationManager = notificationManager
@@ -239,16 +247,9 @@ class CrossPaste {
             }.onFailure { e ->
                 logger.error(e) { "cant start crosspaste" }
                 if (headless) {
-                    // The shutdown hook is only registered later in runHeadless(), so
-                    // run the exit hooks (e.g. pid-file removal) best-effort here; if
-                    // the failure happened before any hook was registered the list is
-                    // simply empty.
-                    runCatching {
-                        koinApplication.koin
-                            .get<AppExitService>()
-                            .beforeExitList
-                            .forEach { hook -> runCatching { hook.invoke() } }
-                    }
+                    // exitProcess(1) triggers the headless shutdown hook (registered
+                    // once the lock was acquired), which runs the full cleanup chain;
+                    // before lock acquisition there is nothing to clean up.
                     System.err.println("Error: CrossPaste failed to start in headless mode: ${e.message}")
                     exitProcess(1)
                 }
@@ -355,33 +356,51 @@ class CrossPaste {
             }
         }
 
-        private fun runHeadless() {
-            logger.info { "Running in headless mode" }
-            val latch = java.util.concurrent.CountDownLatch(1)
+        private val headlessLatch = java.util.concurrent.CountDownLatch(1)
+
+        private val headlessShutdownStarted =
+            java.util.concurrent.atomic
+                .AtomicBoolean(false)
+
+        /**
+         * The daemon counterpart of [exitCrossPasteApplication]: runs the exit
+         * hooks around [shutdownAllServices] and releases the lock. Idempotent,
+         * and each step is guarded, so the SIGTERM hook and the startup-failure
+         * path cannot double-clean and one failing step cannot skip the rest.
+         */
+        private fun headlessShutdown() {
+            if (!headlessShutdownStarted.compareAndSet(false, true)) {
+                return
+            }
+            val koin = koinApplication.koin
+            val appExitService = runCatching { koin.get<AppExitService>() }.getOrNull()
+            appExitService?.beforeExitList?.forEach { hook ->
+                runCatching { hook.invoke() }
+                    .onFailure { e -> logger.error(e) { "beforeExit hook failed" } }
+            }
+            runCatching { runBlocking { shutdownAllServices() } }
+                .onFailure { e -> logger.error(e) { "shutdownAllServices failed" } }
+            appExitService?.beforeReleaseLockList?.forEach { hook ->
+                runCatching { hook.invoke() }
+                    .onFailure { e -> logger.error(e) { "beforeReleaseLock hook failed" } }
+            }
+            runCatching { koin.get<AppLock>().releaseLock() }
+                .onFailure { e -> logger.error(e) { "releaseLock failed" } }
+        }
+
+        private fun registerHeadlessShutdownHook() {
             Runtime.getRuntime().addShutdownHook(
                 Thread {
                     logger.info { "Shutdown signal received" }
-                    val koin = koinApplication.koin
-                    // Mirror exitCrossPasteApplication(): run the exit hooks around
-                    // shutdownAllServices() so that cleanup registered via
-                    // AppExitService (e.g. the pid-file removal) also happens on the
-                    // daemon path. Each hook is guarded so one failure cannot skip
-                    // the remaining cleanup or the lock release.
-                    val appExitService = koin.get<AppExitService>()
-                    appExitService.beforeExitList.forEach { hook ->
-                        runCatching { hook.invoke() }
-                            .onFailure { e -> logger.error(e) { "beforeExit hook failed" } }
-                    }
-                    runBlocking { shutdownAllServices() }
-                    appExitService.beforeReleaseLockList.forEach { hook ->
-                        runCatching { hook.invoke() }
-                            .onFailure { e -> logger.error(e) { "beforeReleaseLock hook failed" } }
-                    }
-                    koin.get<AppLock>().releaseLock()
-                    latch.countDown()
+                    headlessShutdown()
+                    headlessLatch.countDown()
                 },
             )
-            latch.await()
+        }
+
+        private fun runHeadless() {
+            logger.info { "Running in headless mode" }
+            headlessLatch.await()
         }
 
         @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
