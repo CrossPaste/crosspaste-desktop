@@ -12,6 +12,7 @@ import okio.Path
 import okio.Path.Companion.toPath
 import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.util.concurrent.TimeUnit
 
 enum class CliSymlinkState {
     /** Not macOS, not a production install, or the bundled CLI binary is absent (dev run). */
@@ -44,6 +45,14 @@ enum class CliSymlinkState {
 
 enum class CliInstallResult { SUCCESS, CANCELLED, FAILURE }
 
+/** Whether `crosspaste` resolves in a given shell; [resolvedPath] is non-null when it does. */
+data class ShellAvailability(
+    val shell: String,
+    val resolvedPath: String?,
+) {
+    val available: Boolean get() = resolvedPath != null
+}
+
 /**
  * macOS PATH integration for the bundled CLI (design decision D6): maintains
  * the /usr/local/bin/crosspaste symlink pointing at
@@ -68,6 +77,10 @@ class CliSymlinkService(
 
     companion object {
         const val DEFAULT_LINK_PATH = "/usr/local/bin/crosspaste"
+
+        const val COMMAND_NAME = "crosspaste"
+
+        private val PROBED_SHELLS = listOf("/bin/zsh", "/bin/bash")
     }
 
     private val logger = KotlinLogging.logger {}
@@ -155,6 +168,51 @@ class CliSymlinkService(
                 finalState == CliSymlinkState.INSTALLED -> CliInstallResult.SUCCESS
                 else -> CliInstallResult.FAILURE
             }
+        }
+
+    /**
+     * Answers "can the user actually type `crosspaste` in a terminal right
+     * now?" by asking each login shell to resolve the command — this honors
+     * whatever PATH the user's shell profiles set up, not just our default
+     * symlink location.
+     */
+    suspend fun probeShellAvailability(): List<ShellAvailability> =
+        withContext(ioDispatcher) {
+            PROBED_SHELLS.map { shell ->
+                ShellAvailability(
+                    shell = shell.substringAfterLast('/'),
+                    resolvedPath = resolveCommandIn(shell),
+                )
+            }
+        }
+
+    private fun resolveCommandIn(shell: String): String? =
+        runCatching {
+            // -l: login shell, so the user's profile PATH applies. Output is
+            // at most one short path, far below pipe capacity, so waiting
+            // before reading cannot deadlock — and lets a hung shell profile
+            // be killed instead of blocking a read forever.
+            val process =
+                ProcessBuilder(shell, "-lc", "command -v $COMMAND_NAME")
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                    .start()
+            if (!process.waitFor(5, TimeUnit.SECONDS)) {
+                process.destroyForcibly()
+                return@runCatching null
+            }
+            val output =
+                process.inputStream
+                    .bufferedReader()
+                    .readText()
+                    .trim()
+            if (process.exitValue() == 0 && output.isNotEmpty()) {
+                output.lineSequence().first()
+            } else {
+                null
+            }
+        }.getOrElse { e ->
+            logger.warn(e) { "Failed to probe $shell for $COMMAND_NAME" }
+            null
         }
 
     /**

@@ -9,6 +9,7 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<ChangeLog>() -> ChangeLog.NAME
         dest.hasRoute<DeviceDetail>() -> DeviceDetail.NAME
         dest.hasRoute<Devices>() -> Devices.NAME
+        dest.hasRoute<CliTool>() -> CliTool.NAME
         dest.hasRoute<Export>() -> Export.NAME
         dest.hasRoute<Extension>() -> Extension.NAME
         dest.hasRoute<Import>() -> Import.NAME
@@ -34,6 +35,7 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<ChangeLog>() -> ChangeLog.NAME
         dest.hasRoute<DeviceDetail>() -> Devices.NAME
         dest.hasRoute<Devices>() -> Devices.NAME
+        dest.hasRoute<CliTool>() -> Extension.NAME
         dest.hasRoute<Export>() -> Export.NAME
         dest.hasRoute<Extension>() -> Extension.NAME
         dest.hasRoute<Import>() -> Import.NAME

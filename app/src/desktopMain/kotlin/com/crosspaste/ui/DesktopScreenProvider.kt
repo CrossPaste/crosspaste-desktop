@@ -38,6 +38,7 @@ import com.crosspaste.ui.devices.NearbyDeviceDetailContentView
 import com.crosspaste.ui.devices.PairingCodeContentView
 import com.crosspaste.ui.devices.SyncScopeFactory
 import com.crosspaste.ui.devices.TokenView
+import com.crosspaste.ui.extension.CliToolContentView
 import com.crosspaste.ui.extension.ExtensionContentView
 import com.crosspaste.ui.extension.mcp.McpContentView
 import com.crosspaste.ui.extension.ocr.OCRContentView
@@ -158,6 +159,12 @@ class DesktopScreenProvider(
             composable<Export> { ExportScreen() }
             navigation<ExtensionGraph>(startDestination = Extension) {
                 composable<Extension> { ExtensionScreen() }
+                composable<CliTool>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    CliToolScreen()
+                }
                 composable<MCP>(
                     exitTransition = { slideOutRight() },
                     enterTransition = { slideInLeft() },
@@ -300,6 +307,13 @@ class DesktopScreenProvider(
     private fun ExtensionScreen() {
         DesktopScreenLayout {
             ExtensionContentView()
+        }
+    }
+
+    @Composable
+    private fun CliToolScreen() {
+        DesktopScreenLayout {
+            CliToolContentView()
         }
     }
 
