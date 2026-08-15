@@ -69,11 +69,16 @@ class CliSymlinkService(
     private val supported: Boolean =
         supportedOverride ?: (platform.isMacos() && getAppEnvUtils().isProduction())
 
-    private val _state = MutableStateFlow(computeState())
+    // Starts pessimistic and is populated by refresh(): computeState() does
+    // filesystem probes, which must not run on the main thread where Koin
+    // first constructs this service.
+    private val _state = MutableStateFlow(CliSymlinkState.NOT_SUPPORTED)
     val state: StateFlow<CliSymlinkState> = _state
 
-    fun refresh() {
-        _state.value = computeState()
+    suspend fun refresh() {
+        withContext(ioDispatcher) {
+            _state.value = computeState()
+        }
     }
 
     private fun computeState(): CliSymlinkState {
@@ -114,7 +119,7 @@ class CliSymlinkService(
                     logger.info { "Direct symlink install failed (${e.message}); escalating to admin prompt" }
                     (escalatedInstall ?: ::osascriptInstall)(cliBinaryPath, linkPath)
                 }
-            refresh()
+            _state.value = computeState()
             result
         }
 
@@ -146,20 +151,30 @@ class CliSymlinkService(
                     cliBinary.toString(),
                     (link.parent ?: link).toString(),
                     link.toString(),
-                ).start()
+                    // The command produces no stdout today, but discard it
+                    // anyway so a full pipe can never deadlock the single
+                    // stderr read below.
+                ).redirectOutput(ProcessBuilder.Redirect.DISCARD).start()
             val stderr = process.errorStream.bufferedReader().readText()
             val exitCode = process.waitFor()
-            when {
-                exitCode == 0 -> CliInstallResult.SUCCESS
-                // AppleScript "User canceled." carries error number -128
-                stderr.contains("-128") -> CliInstallResult.CANCELLED
-                else -> {
-                    logger.warn { "osascript symlink install failed (exit $exitCode): $stderr" }
-                    CliInstallResult.FAILURE
-                }
+            val result = classifyOsascriptResult(exitCode, stderr)
+            if (result == CliInstallResult.FAILURE) {
+                logger.warn { "osascript symlink install failed (exit $exitCode): $stderr" }
             }
+            result
         }.getOrElse { e ->
             logger.warn(e) { "Failed to run osascript for symlink install" }
             CliInstallResult.FAILURE
         }
 }
+
+/** Maps an osascript run to a result; AppleScript reports a declined credentials dialog as error (-128). */
+internal fun classifyOsascriptResult(
+    exitCode: Int,
+    stderr: String,
+): CliInstallResult =
+    when {
+        exitCode == 0 -> CliInstallResult.SUCCESS
+        stderr.contains("(-128)") -> CliInstallResult.CANCELLED
+        else -> CliInstallResult.FAILURE
+    }

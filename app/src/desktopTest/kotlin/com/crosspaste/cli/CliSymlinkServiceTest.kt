@@ -75,47 +75,59 @@ class CliSymlinkServiceTest {
             escalatedInstall = escalatedInstall,
         )
 
-    @Test
-    fun `not supported when override is false`() {
-        assertEquals(CliSymlinkState.NOT_SUPPORTED, createService(supported = false).state.value)
+    private suspend fun refreshedState(service: CliSymlinkService): CliSymlinkState {
+        service.refresh()
+        return service.state.value
     }
 
     @Test
-    fun `not supported when cli binary is absent`() {
-        Files.delete(cliBinary)
-        assertEquals(CliSymlinkState.NOT_SUPPORTED, createService().state.value)
-    }
+    fun `not supported when override is false`() =
+        runTest {
+            assertEquals(CliSymlinkState.NOT_SUPPORTED, refreshedState(createService(supported = false)))
+        }
 
     @Test
-    fun `not installed when link is missing`() {
-        assertEquals(CliSymlinkState.NOT_INSTALLED, createService().state.value)
-    }
+    fun `not supported when cli binary is absent`() =
+        runTest {
+            Files.delete(cliBinary)
+            assertEquals(CliSymlinkState.NOT_SUPPORTED, refreshedState(createService()))
+        }
 
     @Test
-    fun `installed when link points at the bundled cli`() {
-        Files.createSymbolicLink(linkPath, cliBinary)
-        assertEquals(CliSymlinkState.INSTALLED, createService().state.value)
-    }
+    fun `not installed when link is missing`() =
+        runTest {
+            assertEquals(CliSymlinkState.NOT_INSTALLED, refreshedState(createService()))
+        }
 
     @Test
-    fun `needs repair when link points elsewhere`() {
-        val other = tempDir.resolve("other-cli")
-        Files.write(other, byteArrayOf(1))
-        Files.createSymbolicLink(linkPath, other)
-        assertEquals(CliSymlinkState.NEEDS_REPAIR, createService().state.value)
-    }
+    fun `installed when link points at the bundled cli`() =
+        runTest {
+            Files.createSymbolicLink(linkPath, cliBinary)
+            assertEquals(CliSymlinkState.INSTALLED, refreshedState(createService()))
+        }
 
     @Test
-    fun `needs repair when link is dangling`() {
-        Files.createSymbolicLink(linkPath, tempDir.resolve("gone"))
-        assertEquals(CliSymlinkState.NEEDS_REPAIR, createService().state.value)
-    }
+    fun `needs repair when link points elsewhere`() =
+        runTest {
+            val other = tempDir.resolve("other-cli")
+            Files.write(other, byteArrayOf(1))
+            Files.createSymbolicLink(linkPath, other)
+            assertEquals(CliSymlinkState.NEEDS_REPAIR, refreshedState(createService()))
+        }
 
     @Test
-    fun `needs repair when a regular file occupies the link path`() {
-        Files.write(linkPath, byteArrayOf(1))
-        assertEquals(CliSymlinkState.NEEDS_REPAIR, createService().state.value)
-    }
+    fun `needs repair when link is dangling`() =
+        runTest {
+            Files.createSymbolicLink(linkPath, tempDir.resolve("gone"))
+            assertEquals(CliSymlinkState.NEEDS_REPAIR, refreshedState(createService()))
+        }
+
+    @Test
+    fun `needs repair when a regular file occupies the link path`() =
+        runTest {
+            Files.write(linkPath, byteArrayOf(1))
+            assertEquals(CliSymlinkState.NEEDS_REPAIR, refreshedState(createService()))
+        }
 
     @Test
     fun `install creates the symlink directly`() =
@@ -156,4 +168,15 @@ class CliSymlinkServiceTest {
         runTest {
             assertEquals(CliInstallResult.FAILURE, createService(supported = false).install())
         }
+
+    @Test
+    fun `classify osascript results`() {
+        assertEquals(CliInstallResult.SUCCESS, classifyOsascriptResult(0, ""))
+        assertEquals(
+            CliInstallResult.CANCELLED,
+            classifyOsascriptResult(1, "execution error: User canceled. (-128)"),
+        )
+        assertEquals(CliInstallResult.FAILURE, classifyOsascriptResult(1, "some error (-12800)"))
+        assertEquals(CliInstallResult.FAILURE, classifyOsascriptResult(1, "execution error: broken"))
+    }
 }
