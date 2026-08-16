@@ -89,6 +89,7 @@ kotlin {
         target.compilations.getByName("main") {
             cinterops {
                 val execpath by creating
+                val secretinput by creating
             }
         }
         // Workaround for Clikt duplicate symbol bug in Kotlin/Native

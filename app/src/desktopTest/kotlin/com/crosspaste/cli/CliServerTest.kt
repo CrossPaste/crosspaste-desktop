@@ -71,6 +71,7 @@ class CliServerTest {
                         appRevision = "Unknown",
                         userName = "tester",
                     ),
+                cliPairingService = mockk<CliPairingService>(),
                 configManager = configManager,
                 cliEndpointFile = endpointFile,
                 pasteboardService = mockk<PasteboardService>(),

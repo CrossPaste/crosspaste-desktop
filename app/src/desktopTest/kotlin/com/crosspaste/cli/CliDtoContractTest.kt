@@ -175,6 +175,78 @@ class CliDtoContractTest {
     }
 
     @Test
+    fun `pair dtos keep their wire fields`() {
+        assertEquals(
+            setOf("appInstanceId", "deviceName", "platform", "appVersion", "pairingVersion", "credentialType"),
+            fieldsOf(
+                json.encodeToString(
+                    CliNearbyDeviceDto.serializer(),
+                    CliNearbyDeviceDto(
+                        appInstanceId = "instance",
+                        deviceName = "device",
+                        platform = "Macos",
+                        appVersion = "2.1.7",
+                        pairingVersion = 2,
+                        credentialType = "SAS_CODE",
+                    ),
+                ),
+            ),
+        )
+        assertEquals(
+            setOf("appInstanceId"),
+            fieldsOf(
+                json.encodeToString(
+                    CliPairInitiateRequest.serializer(),
+                    CliPairInitiateRequest("instance"),
+                ),
+            ),
+        )
+        assertEquals(
+            setOf("sessionId", "appInstanceId", "deviceName", "credentialType", "peerFingerprint", "pinExpiresAt"),
+            fieldsOf(
+                json.encodeToString(
+                    CliPairSessionDto.serializer(),
+                    CliPairSessionDto(
+                        sessionId = "session",
+                        appInstanceId = "instance",
+                        deviceName = "device",
+                        credentialType = "V3_PIN",
+                        peerFingerprint = "AB:CD",
+                        pinExpiresAt = 123L,
+                    ),
+                ),
+            ),
+        )
+        assertEquals(
+            setOf("sessionId", "code"),
+            fieldsOf(
+                json.encodeToString(
+                    CliPairSubmitRequest.serializer(),
+                    CliPairSubmitRequest("session", "123456"),
+                ),
+            ),
+        )
+        assertEquals(
+            setOf("paired", "retryable", "message"),
+            fieldsOf(
+                json.encodeToString(
+                    CliPairSubmitResultDto.serializer(),
+                    CliPairSubmitResultDto(paired = true, retryable = false, message = "ok"),
+                ),
+            ),
+        )
+        assertEquals(
+            setOf("sessionId"),
+            fieldsOf(
+                json.encodeToString(
+                    CliPairCancelRequest.serializer(),
+                    CliPairCancelRequest("session"),
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `endpoint file keeps its wire fields`() {
         val encoded =
             json.encodeToString(

@@ -38,6 +38,7 @@ private val configJson = Json { encodeDefaults = true }
 
 fun Routing.cliRouting(
     appInfo: AppInfo,
+    cliPairingService: CliPairingService,
     configManager: DesktopConfigManager,
     pasteboardService: PasteboardService,
     pasteDao: PasteDao,
@@ -119,6 +120,97 @@ fun Routing.cliRouting(
             val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@delete
             handlePasteDelete(call, id, pasteDao)
         }
+
+        route("/pair") {
+            get("/nearby") {
+                handlePairNearby(call, cliPairingService)
+            }
+
+            post("/initiate") {
+                handlePairInitiate(call, cliPairingService)
+            }
+
+            post("/submit") {
+                handlePairSubmit(call, cliPairingService)
+            }
+
+            post("/cancel") {
+                handlePairCancel(call, cliPairingService)
+            }
+        }
+    }
+}
+
+private suspend fun handlePairNearby(
+    call: ApplicationCall,
+    cliPairingService: CliPairingService,
+) {
+    val refresh = call.request.queryParameters["refresh"] == "true"
+    call.respond(cliPairingService.nearbyDevices(refresh))
+}
+
+private suspend fun handlePairInitiate(
+    call: ApplicationCall,
+    cliPairingService: CliPairingService,
+) {
+    val request = call.receive<CliPairInitiateRequest>()
+    if (request.appInstanceId.isBlank()) {
+        call.respond(HttpStatusCode.BadRequest, CliMessageDto("appInstanceId must not be blank."))
+        return
+    }
+    when (val outcome = cliPairingService.initiate(request.appInstanceId)) {
+        is CliPairingService.InitiateOutcome.Started ->
+            call.respond(outcome.session)
+
+        is CliPairingService.InitiateOutcome.DeviceNotFound ->
+            call.respond(HttpStatusCode.NotFound, CliMessageDto(outcome.message))
+
+        is CliPairingService.InitiateOutcome.AlreadyPaired ->
+            call.respond(HttpStatusCode.Conflict, CliMessageDto(outcome.message))
+
+        is CliPairingService.InitiateOutcome.UnsupportedPeer ->
+            call.respond(HttpStatusCode.BadRequest, CliMessageDto(outcome.message))
+
+        is CliPairingService.InitiateOutcome.Unavailable ->
+            call.respond(HttpStatusCode.BadGateway, CliMessageDto(outcome.message))
+    }
+}
+
+private suspend fun handlePairSubmit(
+    call: ApplicationCall,
+    cliPairingService: CliPairingService,
+) {
+    val request = call.receive<CliPairSubmitRequest>()
+    when (val outcome = cliPairingService.submit(request.sessionId, request.code)) {
+        is CliPairingService.SubmitOutcome.Completed ->
+            call.respond(outcome.result)
+
+        CliPairingService.SubmitOutcome.SessionNotFound ->
+            call.respond(
+                HttpStatusCode.NotFound,
+                CliMessageDto("Pairing session not found or expired; start pairing again."),
+            )
+
+        CliPairingService.SubmitOutcome.InvalidCode ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                CliMessageDto("The pairing code must be exactly 6 digits."),
+            )
+    }
+}
+
+private suspend fun handlePairCancel(
+    call: ApplicationCall,
+    cliPairingService: CliPairingService,
+) {
+    val request = call.receive<CliPairCancelRequest>()
+    if (cliPairingService.cancel(request.sessionId)) {
+        call.respond(CliMessageDto("Pairing cancelled."))
+    } else {
+        call.respond(
+            HttpStatusCode.NotFound,
+            CliMessageDto("Pairing session not found or expired."),
+        )
     }
 }
 

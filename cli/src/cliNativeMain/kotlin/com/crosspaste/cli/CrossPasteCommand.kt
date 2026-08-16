@@ -5,6 +5,7 @@ import com.crosspaste.cli.commands.CopyCommand
 import com.crosspaste.cli.commands.DeleteCommand
 import com.crosspaste.cli.commands.DevicesCommand
 import com.crosspaste.cli.commands.HistoryCommand
+import com.crosspaste.cli.commands.PairCommand
 import com.crosspaste.cli.commands.PasteCommand
 import com.crosspaste.cli.commands.SearchCommand
 import com.crosspaste.cli.commands.StatusCommand
@@ -63,6 +64,7 @@ class CrossPasteCommand : CliktCommand(name = cliCommandName) {
             CopyCommand(),
             DeleteCommand(),
             DevicesCommand(),
+            PairCommand(),
             ConfigCommand(),
             TagsCommand(),
             VersionCommand(),
