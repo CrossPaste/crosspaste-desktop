@@ -49,6 +49,7 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 class CliServer(
     private val appInfo: AppInfo,
+    private val cliPairingService: CliPairingService,
     private val configManager: DesktopConfigManager,
     private val cliEndpointFile: CliEndpointFile,
     private val pasteboardService: PasteboardService,
@@ -185,6 +186,7 @@ class CliServer(
         routing {
             cliRouting(
                 appInfo = appInfo,
+                cliPairingService = cliPairingService,
                 configManager = configManager,
                 pasteboardService = pasteboardService,
                 pasteDao = pasteDao,

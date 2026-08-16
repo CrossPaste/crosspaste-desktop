@@ -110,3 +110,51 @@ data class CliConfigSetRequest(
 data class CliMessageDto(
     val message: String,
 )
+
+@Serializable
+data class CliNearbyDeviceDto(
+    val appInstanceId: String,
+    val deviceName: String,
+    val platform: String,
+    val appVersion: String,
+    val pairingVersion: Int?,
+    /** [com.crosspaste.sync.PairingCredentialType] name the local peer would negotiate. */
+    val credentialType: String,
+)
+
+@Serializable
+data class CliPairInitiateRequest(
+    val appInstanceId: String,
+)
+
+@Serializable
+data class CliPairSessionDto(
+    val sessionId: String,
+    val appInstanceId: String,
+    val deviceName: String,
+    /** "SAS_CODE" or "V3_PIN"; QR-only peers are refused at initiate. */
+    val credentialType: String,
+    /** v3 only: acceptor identity-key fingerprint for out-of-band comparison. */
+    val peerFingerprint: String?,
+    /** v3 only: epoch millis after which the displayed PIN rotates. */
+    val pinExpiresAt: Long?,
+)
+
+@Serializable
+data class CliPairSubmitRequest(
+    val sessionId: String,
+    val code: String,
+)
+
+@Serializable
+data class CliPairSubmitResultDto(
+    val paired: Boolean,
+    /** When false the session is closed; a new `initiate` is required. */
+    val retryable: Boolean,
+    val message: String,
+)
+
+@Serializable
+data class CliPairCancelRequest(
+    val sessionId: String,
+)

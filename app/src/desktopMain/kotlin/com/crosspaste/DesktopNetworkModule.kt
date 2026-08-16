@@ -2,6 +2,7 @@ package com.crosspaste
 
 import com.crosspaste.app.AppEnv
 import com.crosspaste.cli.CliEndpointFile
+import com.crosspaste.cli.CliPairingService
 import com.crosspaste.cli.CliServer
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.image.DesktopFaviconLoader
@@ -72,6 +73,8 @@ import com.crosspaste.sync.SyncDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncResolver
 import com.crosspaste.sync.SyncResolverApi
+import com.crosspaste.ui.devices.DefaultPairingV3UiController
+import com.crosspaste.ui.devices.PairingV3UiController
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.WebSockets
@@ -84,9 +87,19 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
     module {
         // region CLI
         single<CliEndpointFile> { CliEndpointFile(get()) }
+        single<CliPairingService> {
+            CliPairingService(
+                nearbyDeviceManager = get(),
+                pairingCapabilityFlag = get(),
+                pairingV3UiController = get(),
+                pasteBonjourService = get(),
+                syncManager = get(),
+            )
+        }
         single<CliServer> {
             CliServer(
                 appInfo = get(),
+                cliPairingService = get(),
                 configManager = get(),
                 cliEndpointFile = get(),
                 pasteboardService = get(),
@@ -190,6 +203,10 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
 
         // region Pairing v3
         single<PairingAcceptanceWindow> { PairingAcceptanceWindow() }
+        // Despite the ui.devices package, this controller has no Compose
+        // dependency; it lives here so the headless daemon (which swaps the UI
+        // module for stubs) can drive initiator-side pairing through the CLI
+        single<PairingV3UiController> { DefaultPairingV3UiController(get(), get()) }
         single<PairingProtocolV3Service> {
             val pairingCapabilityFlag = get<PairingCapabilityFlag>()
             PairingProtocolV3Service(

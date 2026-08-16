@@ -3,6 +3,7 @@ package com.crosspaste.cli.api
 import com.crosspaste.cli.platform.CliConfigReader
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -16,6 +17,9 @@ import okio.FileSystem
  * on the app side; a mismatch produces a warning, not a failure.
  */
 const val CLI_API_VERSION = 1
+
+/** Default per-request timeout; long-running pair calls override it per call. */
+internal const val DEFAULT_REQUEST_TIMEOUT_MILLIS = 5000L
 
 /**
  * Mirror of the app's CliEndpoint (see design D5): the app atomically writes
@@ -56,7 +60,13 @@ class CliClient(
     private val httpClient =
         HttpClient(CIO) {
             engine {
-                requestTimeout = 5000
+                // Disable the engine-level cap so the HttpTimeout plugin below
+                // is the single authority (some pair calls need more than the
+                // engine default of 15s)
+                requestTimeout = 0
+            }
+            install(HttpTimeout) {
+                requestTimeoutMillis = DEFAULT_REQUEST_TIMEOUT_MILLIS
             }
         }
 
@@ -81,13 +91,15 @@ class CliClient(
     suspend fun <T> getBody(
         path: String,
         deserializer: DeserializationStrategy<T>,
-    ): T = decode(get(path), deserializer)
+        timeoutMillis: Long? = null,
+    ): T = decode(request(HttpMethod.Get, path, timeoutMillis = timeoutMillis), deserializer)
 
     suspend fun <T> postBody(
         path: String,
         body: String,
         deserializer: DeserializationStrategy<T>,
-    ): T = decode(post(path, body), deserializer)
+        timeoutMillis: Long? = null,
+    ): T = decode(request(HttpMethod.Post, path, body, timeoutMillis), deserializer)
 
     suspend fun <T> putBody(
         path: String,
@@ -118,11 +130,17 @@ class CliClient(
         httpMethod: HttpMethod,
         path: String,
         body: String? = null,
+        timeoutMillis: Long? = null,
     ): HttpResponse =
         try {
             httpClient.request("http://localhost$path") {
                 method = httpMethod
                 unixSocket(endpoint.socketPath)
+                timeoutMillis?.let { millis ->
+                    timeout {
+                        requestTimeoutMillis = millis
+                    }
+                }
                 body?.let {
                     contentType(ContentType.Application.Json)
                     setBody(it)

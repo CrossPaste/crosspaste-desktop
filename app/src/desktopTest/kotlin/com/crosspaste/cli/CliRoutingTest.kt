@@ -63,6 +63,7 @@ class CliRoutingTest {
         )
 
     private class Fixture {
+        val cliPairingService = mockk<CliPairingService>()
         val configManager = mockk<DesktopConfigManager>()
         val pasteboardService = mockk<PasteboardService>()
         val pasteDao = mockk<PasteDao>()
@@ -107,6 +108,7 @@ class CliRoutingTest {
         routing {
             cliRouting(
                 appInfo = appInfo,
+                cliPairingService = fixture.cliPairingService,
                 configManager = fixture.configManager,
                 pasteboardService = fixture.pasteboardService,
                 pasteDao = fixture.pasteDao,
@@ -558,6 +560,125 @@ class CliRoutingTest {
             assertEquals(HttpStatusCode.OK, client.delete("/cli/paste/42").status)
             assertEquals(HttpStatusCode.NotFound, client.delete("/cli/paste/43").status)
             assertEquals(HttpStatusCode.BadRequest, client.delete("/cli/paste/abc").status)
+        }
+    }
+
+    @Test
+    fun `pair nearby forwards the refresh flag and returns the device list`() {
+        val fixture = Fixture()
+        val device =
+            CliNearbyDeviceDto(
+                appInstanceId = "peer-1",
+                deviceName = "Laptop",
+                platform = "Macos",
+                appVersion = "2.1.7",
+                pairingVersion = 2,
+                credentialType = "SAS_CODE",
+            )
+        coEvery { fixture.cliPairingService.nearbyDevices(refresh = true) } returns listOf(device)
+        coEvery { fixture.cliPairingService.nearbyDevices(refresh = false) } returns listOf()
+
+        withCliRouting(fixture) {
+            val refreshed = client.get("/cli/pair/nearby?refresh=true")
+            assertEquals(HttpStatusCode.OK, refreshed.status)
+            assertContains(refreshed.bodyAsText(), "\"appInstanceId\":\"peer-1\"")
+
+            val cached = client.get("/cli/pair/nearby")
+            assertEquals(HttpStatusCode.OK, cached.status)
+            coVerify(exactly = 1) { fixture.cliPairingService.nearbyDevices(refresh = false) }
+        }
+    }
+
+    @Test
+    fun `pair initiate maps outcomes to status codes`() {
+        val fixture = Fixture()
+        val session =
+            CliPairSessionDto(
+                sessionId = "session-1",
+                appInstanceId = "peer-1",
+                deviceName = "Laptop",
+                credentialType = "SAS_CODE",
+                peerFingerprint = null,
+                pinExpiresAt = null,
+            )
+        coEvery { fixture.cliPairingService.initiate("peer-1") } returns
+            CliPairingService.InitiateOutcome.Started(session)
+        coEvery { fixture.cliPairingService.initiate("missing") } returns
+            CliPairingService.InitiateOutcome.DeviceNotFound("not found")
+        coEvery { fixture.cliPairingService.initiate("paired") } returns
+            CliPairingService.InitiateOutcome.AlreadyPaired("already paired")
+        coEvery { fixture.cliPairingService.initiate("legacy") } returns
+            CliPairingService.InitiateOutcome.UnsupportedPeer("too old")
+        coEvery { fixture.cliPairingService.initiate("busy") } returns
+            CliPairingService.InitiateOutcome.Unavailable("not accepting")
+
+        withCliRouting(fixture) {
+            suspend fun initiate(appInstanceId: String) =
+                client.post("/cli/pair/initiate") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"appInstanceId":"$appInstanceId"}""")
+                }
+
+            val started = initiate("peer-1")
+            assertEquals(HttpStatusCode.OK, started.status)
+            assertContains(started.bodyAsText(), "\"sessionId\":\"session-1\"")
+
+            assertEquals(HttpStatusCode.NotFound, initiate("missing").status)
+            assertEquals(HttpStatusCode.Conflict, initiate("paired").status)
+            assertEquals(HttpStatusCode.BadRequest, initiate("legacy").status)
+            assertEquals(HttpStatusCode.BadGateway, initiate("busy").status)
+
+            val blank = initiate("")
+            assertEquals(HttpStatusCode.BadRequest, blank.status)
+            coVerify(exactly = 0) { fixture.cliPairingService.initiate("") }
+        }
+    }
+
+    @Test
+    fun `pair submit maps outcomes to status codes`() {
+        val fixture = Fixture()
+        coEvery { fixture.cliPairingService.submit("session-1", "123456") } returns
+            CliPairingService.SubmitOutcome.Completed(
+                CliPairSubmitResultDto(paired = true, retryable = false, message = "Paired with Laptop."),
+            )
+        coEvery { fixture.cliPairingService.submit("gone", any()) } returns
+            CliPairingService.SubmitOutcome.SessionNotFound
+        coEvery { fixture.cliPairingService.submit("session-1", "12") } returns
+            CliPairingService.SubmitOutcome.InvalidCode
+
+        withCliRouting(fixture) {
+            suspend fun submit(
+                sessionId: String,
+                code: String,
+            ) = client.post("/cli/pair/submit") {
+                contentType(ContentType.Application.Json)
+                setBody("""{"sessionId":"$sessionId","code":"$code"}""")
+            }
+
+            val paired = submit("session-1", "123456")
+            assertEquals(HttpStatusCode.OK, paired.status)
+            assertContains(paired.bodyAsText(), "\"paired\":true")
+
+            assertEquals(HttpStatusCode.NotFound, submit("gone", "123456").status)
+            assertEquals(HttpStatusCode.BadRequest, submit("session-1", "12").status)
+        }
+    }
+
+    @Test
+    fun `pair cancel maps the session lookup to status`() {
+        val fixture = Fixture()
+        every { fixture.cliPairingService.cancel("session-1") } returns true
+        every { fixture.cliPairingService.cancel("gone") } returns false
+
+        withCliRouting(fixture) {
+            suspend fun cancel(sessionId: String) =
+                client.post("/cli/pair/cancel") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"sessionId":"$sessionId"}""")
+                }
+
+            assertEquals(HttpStatusCode.OK, cancel("session-1").status)
+            assertEquals(HttpStatusCode.NotFound, cancel("gone").status)
         }
     }
 }
