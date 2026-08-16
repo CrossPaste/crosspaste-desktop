@@ -4,7 +4,7 @@ outline: deep
 
 # 命令行工具
 
-CrossPaste 自带一个命令行客户端，与同一台机器上运行的桌面应用通信。你可以在终端和 shell 脚本里复制、粘贴、搜索和管理粘贴板历史。
+CrossPaste 自带一个命令行客户端，与同一台机器上运行的 CrossPaste 应用通信——桌面应用，或无图形会话服务器上的 [headless 守护进程](#headless-守护进程linux-服务器)。你可以在终端和 shell 脚本里复制、粘贴、搜索和管理粘贴板历史。
 
 CLI 是一个薄客户端：所有命令都经由本机的 CrossPaste 应用完成（通过 Unix domain socket），因此终端看到的历史、标签、设备与 UI 完全一致；从 CLI 复制的文本也会像普通粘贴一样同步到你的其他设备。
 
@@ -34,6 +34,7 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | `copy [text]` | 通过 CrossPaste 复制文本到剪贴板；接管道时读取 stdin。 |
 | `delete <id>` | 按 ID 删除一条粘贴。 |
 | `devices` | 列出已配对设备及连接状态。 |
+| `pair` | 与附近设备配对：输入对方屏幕上显示的配对码（见[在终端里配对](#在终端里配对)）。 |
 | `config` | 查看配置；`config set <key> <value>` 修改配置。 |
 | `tags` | 管理粘贴标签（`create`、`delete`）。 |
 | `version` | 显示 CLI 版本。 |
@@ -92,6 +93,99 @@ if ! crosspaste status > /dev/null; then
   echo "CrossPaste 尚未就绪"
 fi
 ```
+
+## 在终端里配对
+
+`crosspaste pair` 让这台机器不经任何 UI 就能与另一台 CrossPaste 设备配对——这是所有同步功能的前提：
+
+1. 命令列出局域网内发现的附近未配对设备（以及已知但尚未信任的设备）。按序号选择，或用 `--target <app-instance-id>` 跳过列表。
+2. 目标设备（桌面或移动端，任何有屏幕的设备）会显示一个 6 位配对码；如有弹窗请在该设备上确认。
+3. 在终端输入配对码（输入不回显）。成功后两台设备互相信任并开始同步。
+
+配对本质是一次人工确认，因此 `pair` 要求交互式终端——向它管道输入会被视为参数错误。每个会话最多允许输入 5 次配对码；命令退出时会取消进行中的会话。
+
+如果设备列表为空，请确认对方设备上的 CrossPaste 正在运行、两台机器在同一网络，且防火墙没有拦截 multicast/mDNS 流量。
+
+## headless 守护进程（Linux 服务器）
+
+CrossPaste 也能在没有图形会话的机器上运行——例如通过 SSH 访问的 Linux 服务器。它就是同一个应用以 headless 模式（`--headless`）启动：完整的同步引擎、粘贴历史数据库和 CLI 端点，只是没有窗口、不接触系统剪贴板。在这样的机器上，`crosspaste copy` 直接把内容写入历史并同步到已配对设备；`crosspaste paste --raw` 取回你在其他设备上复制的内容。
+
+headless 模式是自动检测的：机器上没有 `DISPLAY`/`WAYLAND_DISPLAY` 时，即使不带参数也会进入 headless 模式。
+
+### 快速开始
+
+按[安装](#安装)一节装好 deb（或解压 tarball），然后运行任意 CLI 命令：
+
+```sh
+crosspaste history
+```
+
+守护进程未运行时，CLI 会询问是否拉起（也可用 `--start` 免询问；脚本场景不会弹询问，直接返回退出码 3）。然后与其他设备配对：
+
+```sh
+crosspaste pair
+```
+
+图形应用与守护进程是同一个 peer：它们共享同一数据目录和单实例锁，同一用户同一时刻只会运行其中一个。
+
+### 用 systemd 用户服务常驻
+
+CLI 拉起只是便捷方式；服务器上应该让守护进程被托管、开机自启。守护进程是按用户隔离的（数据与 socket 都在用户主目录下），所以要用 systemd **用户** 单元，而不是系统单元。
+
+创建 `~/.config/systemd/user/crosspaste.service`：
+
+```ini
+[Unit]
+Description=CrossPaste headless daemon
+
+[Service]
+# deb 安装路径；tarball 用 <安装目录>/bin/crosspaste
+ExecStart=/usr/lib/crosspaste/bin/crosspaste --headless
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
+启用它，并允许在未登录时运行：
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable --now crosspaste
+sudo loginctl enable-linger "$USER"   # 开机自启，注销后继续运行
+```
+
+CLI 刻意不提供 `daemon start/stop` 子命令：`systemctl --user stop crosspaste`（或直接 SIGTERM）即可优雅停机，`crosspaste status` 查看是否在运行。
+
+### macOS（launchd）
+
+headless 的 macOS 机器很少见，等价方式是 LaunchAgent。只在桌面应用从不运行的 Mac 上使用：应用与守护进程是共享单实例锁的同一个 peer，图形应用在跑时 launchd 会不断把守护进程重启到锁上。创建 `~/Library/LaunchAgents/com.crosspaste.daemon.plist`：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.crosspaste.daemon</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Applications/CrossPaste.app/Contents/MacOS/CrossPaste</string>
+    <string>--headless</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+</dict>
+</plist>
+```
+
+然后执行 `launchctl load ~/Library/LaunchAgents/com.crosspaste.daemon.plist`。
+
+### 排障
+
+- `crosspaste status` 查看守护进程是否在运行；退出码 3 表示未运行。
+- 日志写入 `~/.local/share/.crosspaste/logs/`（macOS 为 `~/Library/Application Support/CrossPaste/logs/`）。
+- 第二个实例会拒绝启动（stderr 报错 + 非零退出码）——包括桌面应用运行时再启动守护进程（每台机器只有一个 peer）。
+- 设备发现依赖局域网 mDNS/multicast；`crosspaste pair` 找不到设备时，请检查防火墙以及两台机器是否在同一网段。
 
 ## Shell 补全
 

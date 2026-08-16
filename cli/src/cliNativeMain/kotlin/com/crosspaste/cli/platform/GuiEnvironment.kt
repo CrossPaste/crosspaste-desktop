@@ -7,9 +7,9 @@ import kotlin.experimental.ExperimentalNativeApi
 
 /**
  * macOS and Windows always have a graphical session the desktop app can
- * attach to; on Linux the CLI may be running on a headless server where
- * launching the desktop app is impossible (headless daemon support is a
- * separate future deliverable, design P6).
+ * attach to; on Linux the CLI may be running on a headless server, in which
+ * case the app is launched as a headless daemon (`--headless`) instead of
+ * the desktop GUI.
  */
 @OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 fun isGuiEnvironment(): Boolean =

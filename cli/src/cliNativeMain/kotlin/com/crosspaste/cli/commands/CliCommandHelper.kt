@@ -116,26 +116,20 @@ private suspend fun CliktCommand.ensureAppRunning(readinessChecker: AppReadiness
  * blocked on input: it fails fast with [EXIT_CODE_APP_NOT_RUNNING].
  */
 private suspend fun CliktCommand.startApp(readinessChecker: AppReadinessChecker) {
-    if (!isGuiEnvironment()) {
-        echo(
-            "Error: CrossPaste is not running, and this looks like a headless environment " +
-                "(no DISPLAY or WAYLAND_DISPLAY), so the desktop application cannot be " +
-                "started here. Headless daemon support is not available yet.",
-            err = true,
-        )
+    // No graphical session (Linux server without DISPLAY/WAYLAND_DISPLAY):
+    // the same app is launched as a headless daemon instead of the GUI.
+    val headless = !isGuiEnvironment()
+    if (!consentToStart(headless)) {
         throw ProgramResult(EXIT_CODE_APP_NOT_RUNNING)
     }
-    if (!consentToStart()) {
-        throw ProgramResult(EXIT_CODE_APP_NOT_RUNNING)
-    }
-    val starter = AppAutoStarter(createAppLauncher(CliAppPathProvider()), readinessChecker)
+    val starter = AppAutoStarter(createAppLauncher(CliAppPathProvider(), headless), readinessChecker)
     val started = starter.startAndWait { message -> echo(message, err = true) }
     if (!started) {
         throw ProgramResult(1)
     }
 }
 
-private fun CliktCommand.consentToStart(): Boolean =
+private fun CliktCommand.consentToStart(headless: Boolean): Boolean =
     when (currentContext.findObject<CliContext>()?.autoStart) {
         true -> true
         false -> {
@@ -144,7 +138,7 @@ private fun CliktCommand.consentToStart(): Boolean =
         }
         null -> {
             if (terminal.terminalInfo.inputInteractive) {
-                val confirmed = promptStartConfirmation()
+                val confirmed = promptStartConfirmation(headless)
                 if (!confirmed) {
                     echo("Error: CrossPaste is not running.", err = true)
                 }
@@ -165,9 +159,15 @@ private fun CliktCommand.consentToStart(): Boolean =
  * stdout must stay pipe-clean even when stdin is a TTY but stdout is
  * redirected (e.g. `crosspaste --json paste > out`).
  */
-private fun CliktCommand.promptStartConfirmation(): Boolean {
+private fun CliktCommand.promptStartConfirmation(headless: Boolean): Boolean {
+    val prompt =
+        if (headless) {
+            "CrossPaste is not running. Start the headless daemon now? [Y/n]: "
+        } else {
+            "CrossPaste is not running. Start it now? [Y/n]: "
+        }
     while (true) {
-        echo("CrossPaste is not running. Start it now? [Y/n]: ", trailingNewline = false, err = true)
+        echo(prompt, trailingNewline = false, err = true)
         val answer = readlnOrNull()?.trim()?.lowercase() ?: return false
         when (answer) {
             "", "y", "yes" -> return true
