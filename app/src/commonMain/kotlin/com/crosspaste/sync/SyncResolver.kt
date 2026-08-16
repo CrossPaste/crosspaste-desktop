@@ -738,7 +738,7 @@ class SyncResolver(
 
             if (code.value != localSAS) {
                 logger.warn {
-                    "v2 SAS mismatch for $appInstanceId: expected $localSAS, got ${code.value} (possible MITM)"
+                    "v2 SAS mismatch for $appInstanceId (possible MITM)"
                 }
                 callback(false)
                 return

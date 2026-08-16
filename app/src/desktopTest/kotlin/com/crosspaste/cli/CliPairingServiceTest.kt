@@ -26,6 +26,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -331,6 +332,37 @@ class CliPairingServiceTest {
             )
         }
 
+    @Test
+    fun `concurrent initiates for the same device are serialized`() =
+        runTest {
+            val fixture = Fixture()
+            fixture.nearbySyncInfos.value = listOf(syncInfo())
+            every { fixture.syncManager.updateSyncInfo(any()) } answers {
+                fixture.runtimeInfos.value = listOf(runtimeInfo(SyncState.UNVERIFIED))
+            }
+            val enteredCredentialRefresh = CompletableDeferred<Unit>()
+            val releaseCredentialRefresh = CompletableDeferred<Unit>()
+            coEvery { fixture.syncManager.refreshPairingCredentialType(PEER_ID) } coAnswers {
+                enteredCredentialRefresh.complete(Unit)
+                releaseCredentialRefresh.await()
+                PairingCredentialRefreshResult.Resolved(PairingCredentialType.SAS_CODE)
+            }
+
+            val first = async { fixture.service.initiate(PEER_ID) }
+            enteredCredentialRefresh.await()
+            val second = async { fixture.service.initiate(PEER_ID) }
+            yield()
+            assertFalse(second.isCompleted)
+
+            releaseCredentialRefresh.complete(Unit)
+            val firstSession = assertIs<CliPairingService.InitiateOutcome.Started>(first.await()).session
+            assertIs<CliPairingService.InitiateOutcome.Started>(second.await())
+            verify(exactly = 1) { fixture.syncManager.cancelPairing(PEER_ID) }
+            assertIs<CliPairingService.SubmitOutcome.SessionNotFound>(
+                fixture.service.submit(firstSession.sessionId, "123456"),
+            )
+        }
+
     // endregion
 
     // region submit
@@ -460,7 +492,7 @@ class CliPairingServiceTest {
         }
 
     @Test
-    fun `submit v3 remembers a pending commit and retries it on the next submit`() =
+    fun `submit v3 remembers pending recovery and retries commit on the next submit`() =
         runTest {
             val fixture = Fixture(localPairingVersion = 3)
             val session = startedV3Session(fixture)
@@ -497,6 +529,8 @@ class CliPairingServiceTest {
             coEvery { fixture.pairingV3UiController.submitPin("v3-session", V3Pin("123456")) } coAnswers {
                 awaitCancellation()
             }
+            coEvery { fixture.pairingV3UiController.recover("v3-session") } returns
+                PairingV3UiResult.SessionReady("v3-session", 2L, 789L, "")
 
             val outcome = fixture.service.submit(session.sessionId, "123456")
 
@@ -504,6 +538,90 @@ class CliPairingServiceTest {
             assertFalse(completed.result.paired)
             assertTrue(completed.result.retryable)
             assertContains(completed.result.message, "timed out")
+            coVerify(exactly = 1) { fixture.pairingV3UiController.recover("v3-session") }
+        }
+
+    @Test
+    fun `submit v3 retries recovery before using another pin after refresh fails`() =
+        runTest {
+            val fixture = Fixture(localPairingVersion = 3)
+            val session = startedV3Session(fixture)
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session", V3Pin("111111")) } returns
+                PairingV3UiResult.Error(PairingV3UiError.INCORRECT_PIN, PairingV3Recovery.REFRESH_OFFER)
+            coEvery { fixture.pairingV3UiController.recover("v3-session") } returns
+                PairingV3UiResult.Error(PairingV3UiError.NETWORK_FAILURE, PairingV3Recovery.REFRESH_OFFER)
+
+            val first =
+                assertIs<CliPairingService.SubmitOutcome.Completed>(
+                    fixture.service.submit(session.sessionId, "111111"),
+                )
+            assertFalse(first.result.paired)
+            assertTrue(first.result.retryable)
+
+            coEvery { fixture.pairingV3UiController.recover("v3-session") } returns
+                PairingV3UiResult.SessionReady("v3-session", 2L, 789L, "")
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session", V3Pin("123456")) } returns
+                PairingV3UiResult.Paired
+
+            val second =
+                assertIs<CliPairingService.SubmitOutcome.Completed>(
+                    fixture.service.submit(session.sessionId, "123456"),
+                )
+            assertTrue(second.result.paired)
+            coVerify(exactly = 2) { fixture.pairingV3UiController.recover("v3-session") }
+        }
+
+    @Test
+    fun `concurrent v3 submits are serialized per session`() =
+        runTest {
+            val fixture = Fixture(localPairingVersion = 3)
+            val session = startedV3Session(fixture)
+            val enteredProtocol = CompletableDeferred<Unit>()
+            val releaseProtocol = CompletableDeferred<Unit>()
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session", V3Pin("123456")) } coAnswers {
+                enteredProtocol.complete(Unit)
+                releaseProtocol.await()
+                PairingV3UiResult.Paired
+            }
+
+            val first = async { fixture.service.submit(session.sessionId, "123456") }
+            enteredProtocol.await()
+            val second = async { fixture.service.submit(session.sessionId, "123456") }
+            yield()
+            assertFalse(second.isCompleted)
+
+            releaseProtocol.complete(Unit)
+            val firstResult = assertIs<CliPairingService.SubmitOutcome.Completed>(first.await())
+            assertTrue(firstResult.result.paired)
+            assertIs<CliPairingService.SubmitOutcome.SessionNotFound>(second.await())
+            coVerify(exactly = 1) {
+                fixture.pairingV3UiController.submitPin("v3-session", V3Pin("123456"))
+            }
+        }
+
+    @Test
+    fun `cancelled v3 session is not resurrected by an in-flight submit`() =
+        runTest {
+            val fixture = Fixture(localPairingVersion = 3)
+            val session = startedV3Session(fixture)
+            val enteredProtocol = CompletableDeferred<Unit>()
+            val releaseProtocol = CompletableDeferred<Unit>()
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session", V3Pin("123456")) } coAnswers {
+                enteredProtocol.complete(Unit)
+                releaseProtocol.await()
+                PairingV3UiResult.Error(PairingV3UiError.NETWORK_FAILURE, PairingV3Recovery.REFRESH_OFFER)
+            }
+            every { fixture.pairingV3UiController.cancelDetached("v3-session") } just Runs
+
+            val submit = async { fixture.service.submit(session.sessionId, "123456") }
+            enteredProtocol.await()
+            assertTrue(fixture.service.cancel(session.sessionId))
+            releaseProtocol.complete(Unit)
+
+            assertIs<CliPairingService.SubmitOutcome.SessionNotFound>(submit.await())
+            assertIs<CliPairingService.SubmitOutcome.SessionNotFound>(
+                fixture.service.submit(session.sessionId, "123456"),
+            )
         }
 
     @Test
