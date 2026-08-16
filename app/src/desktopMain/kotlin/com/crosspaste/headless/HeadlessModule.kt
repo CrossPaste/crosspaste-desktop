@@ -1,5 +1,6 @@
 package com.crosspaste.headless
 
+import coil3.PlatformContext
 import com.crosspaste.app.AppTokenApi
 import com.crosspaste.app.AppWindowManager
 import com.crosspaste.app.DesktopRatingPromptManager
@@ -20,6 +21,11 @@ fun headlessUiModule() =
         single<AppWindowManager> { HeadlessAppWindowManager() }
         single<GlobalCopywriter> { DesktopGlobalCopywriter(get(), lazy { get() }, get()) }
         single<NotificationManager> { HeadlessNotificationManager(get()) }
+        // The coil ImageLoader/MemoryCache singles in desktopAppModule resolve
+        // PlatformContext, which is otherwise only bound by uiModule; without this
+        // binding any lazy resolution of them in headless mode crashes with
+        // NoDefinitionFoundException.
+        single<PlatformContext> { PlatformContext.INSTANCE }
         single<RatingPromptManager> { DesktopRatingPromptManager() }
         single<SoundService> { HeadlessSoundService() }
         single<TokenCacheApi> { TokenCache }
