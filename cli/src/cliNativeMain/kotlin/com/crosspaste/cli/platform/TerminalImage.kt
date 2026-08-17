@@ -46,6 +46,8 @@ internal fun detectTerminalImageProtocol(env: (String) -> String?): TerminalImag
 internal val TERM_ESC: String = 27.toChar().toString()
 internal val TERM_BEL: String = 7.toChar().toString()
 
+internal const val PNG_SIGNATURE_SIZE = 8
+
 private val PNG_MAGIC = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
 
 internal fun isPng(bytes: ByteArray): Boolean =

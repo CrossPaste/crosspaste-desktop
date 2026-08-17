@@ -1,5 +1,6 @@
 package com.crosspaste.cli.commands
 
+import com.crosspaste.cli.platform.PNG_SIGNATURE_SIZE
 import com.crosspaste.cli.platform.TerminalImageProtocol
 import com.crosspaste.cli.platform.flushStdout
 import com.crosspaste.cli.platform.isPng
@@ -65,10 +66,11 @@ internal class ImageByteStreamer(
 
 /**
  * Inline previews with hard resource ceilings: at most [maxImages] images and
- * [maxTotalBytes] bytes read in total per invocation — a file paste may
- * legitimately reference thousands of entries, and previewing must never turn
- * one `paste` into a multi-gigabyte read. Skipped images are summarized in a
- * single note; their paths are already listed in the detail view.
+ * [maxCandidates] inspected paths, with at most [maxTotalBytes] payload bytes
+ * read in total per invocation. A file paste may legitimately reference
+ * thousands of entries, and previewing must never turn one `paste` into a
+ * multi-gigabyte read. Skipped images are summarized in a single note; their
+ * paths are already listed in the detail view.
  */
 internal class InlineImageRenderer(
     private val protocol: TerminalImageProtocol?,
@@ -76,40 +78,44 @@ internal class InlineImageRenderer(
     private val note: (String) -> Unit,
     private val fileSystem: FileSystem = FileSystem.SYSTEM,
     private val maxImages: Int = MAX_PREVIEW_IMAGES,
+    private val maxCandidates: Int = MAX_PREVIEW_CANDIDATES,
     private val maxTotalBytes: Long = MAX_PREVIEW_TOTAL_BYTES,
 ) {
     companion object {
         internal const val MAX_PREVIEW_IMAGES = 4
+        internal const val MAX_PREVIEW_CANDIDATES = 16
         internal const val MAX_PREVIEW_TOTAL_BYTES = 20L * 1024 * 1024
     }
 
     fun render(paths: List<String>) {
         val protocol = protocol ?: return
         var rendered = 0
+        var inspected = 0
         var remainingBudget = maxTotalBytes
         var skipped = 0
-        for (path in paths) {
-            if (rendered >= maxImages) {
-                skipped++
-                continue
+        for ((index, path) in paths.withIndex()) {
+            if (rendered >= maxImages || inspected >= maxCandidates || remainingBudget <= 0) {
+                skipped += paths.size - index
+                break
             }
-            val bytes = readWithinBudget(path, remainingBudget)
+            inspected++
+            val bytes =
+                readWithinBudget(
+                    path = path,
+                    budget = remainingBudget,
+                    requirePng = protocol == TerminalImageProtocol.KITTY,
+                )
             if (bytes == null) {
                 skipped++
                 continue
             }
-            // Kitty's f=100 transfer is PNG-only; other formats keep the path fallback
-            if (protocol == TerminalImageProtocol.KITTY && !isPng(bytes)) {
-                skipped++
-                continue
-            }
+            remainingBudget -= bytes.size
             when (protocol) {
                 TerminalImageProtocol.ITERM -> writeItermInlineImage(path.toPath().name, bytes, emit)
                 TerminalImageProtocol.KITTY -> writeKittyInlineImage(bytes, emit)
             }
             emit("\n")
             rendered++
-            remainingBudget -= bytes.size
         }
         if (skipped > 0) {
             note("($skipped image(s) not previewed; file paths listed above)")
@@ -119,12 +125,26 @@ internal class InlineImageRenderer(
     private fun readWithinBudget(
         path: String,
         budget: Long,
+        requirePng: Boolean,
     ): ByteArray? {
         val okioPath = path.toPath()
         return try {
             val size = fileSystem.metadata(okioPath).size ?: return null
-            if (size > budget) return null
-            fileSystem.read(okioPath) { readByteArray() }
+            if (size <= 0 || size > budget || size > Int.MAX_VALUE) return null
+            fileSystem.source(okioPath).buffer().use { source ->
+                if (requirePng) {
+                    if (!source.request(PNG_SIGNATURE_SIZE.toLong())) return null
+                    val signature = source.peek().readByteArray(PNG_SIGNATURE_SIZE.toLong())
+                    if (!isPng(signature)) return null
+                }
+
+                val bytes = ByteArray(size.toInt())
+                source.readFully(bytes)
+                // Reference-backed files can change after metadata(). Reject a
+                // file that grew instead of reading beyond the declared budget.
+                if (!source.exhausted()) return null
+                bytes
+            }
         } catch (_: IOException) {
             null
         }

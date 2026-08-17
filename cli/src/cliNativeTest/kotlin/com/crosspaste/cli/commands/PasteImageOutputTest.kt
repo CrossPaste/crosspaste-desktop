@@ -2,9 +2,12 @@ package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.platform.StdoutWriteException
 import com.crosspaste.cli.platform.TerminalImageProtocol
+import okio.Buffer
 import okio.FileSystem
+import okio.ForwardingFileSystem
+import okio.ForwardingSource
 import okio.Path
-import okio.SYSTEM
+import okio.Source
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -101,7 +104,9 @@ class PasteImageOutputTest {
     private fun renderer(
         paths: List<String>,
         protocol: TerminalImageProtocol? = TerminalImageProtocol.ITERM,
+        fileSystem: FileSystem = fs,
         maxImages: Int = 4,
+        maxCandidates: Int = 16,
         maxTotalBytes: Long = 1_000_000,
     ): Pair<StringBuilder, MutableList<String>> {
         val emitted = StringBuilder()
@@ -110,7 +115,9 @@ class PasteImageOutputTest {
             protocol = protocol,
             emit = { emitted.append(it) },
             note = { notes.add(it) },
+            fileSystem = fileSystem,
             maxImages = maxImages,
+            maxCandidates = maxCandidates,
             maxTotalBytes = maxTotalBytes,
         ).render(paths)
         return emitted to notes
@@ -157,6 +164,68 @@ class PasteImageOutputTest {
         assertTrue(emitted.contains("a=T,f=100,"))
         assertEquals(1, "a=T".toRegex().findAll(emitted).count())
         assertEquals(1, notes.size)
+    }
+
+    @Test
+    fun unsupportedKittyImagesCountTowardTheCandidateCeiling() {
+        val dir = tempDir()
+        val jpegPaths =
+            (1..4).map { index ->
+                val path = dir / "image$index.jpg"
+                fs.write(path) {
+                    write(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()))
+                    write(ByteArray(64 * 1024))
+                }
+                path.toString()
+            }
+        val png = writePng(dir, "later.png", 64).toString()
+
+        val (emitted, notes) =
+            renderer(
+                paths = jpegPaths + png,
+                protocol = TerminalImageProtocol.KITTY,
+                maxCandidates = 4,
+            )
+
+        assertTrue(emitted.isEmpty())
+        assertEquals(listOf("(5 image(s) not previewed; file paths listed above)"), notes)
+    }
+
+    @Test
+    fun kittyRejectsJpegAfterReadingOnlyItsSignatureBuffer() {
+        val dir = tempDir()
+        val jpeg = dir / "large.jpg"
+        val jpegSize = 1024 * 1024
+        fs.write(jpeg) {
+            write(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()))
+            write(ByteArray(jpegSize - 3))
+        }
+
+        var bytesRead = 0L
+        val countingFileSystem =
+            object : ForwardingFileSystem(fs) {
+                override fun source(file: Path): Source =
+                    object : ForwardingSource(super.source(file)) {
+                        override fun read(
+                            sink: Buffer,
+                            byteCount: Long,
+                        ): Long =
+                            super.read(sink, byteCount).also { read ->
+                                if (read > 0) bytesRead += read
+                            }
+                    }
+            }
+
+        val (emitted, notes) =
+            renderer(
+                paths = listOf(jpeg.toString()),
+                protocol = TerminalImageProtocol.KITTY,
+                fileSystem = countingFileSystem,
+            )
+
+        assertTrue(emitted.isEmpty())
+        assertEquals(1, notes.size)
+        assertTrue(bytesRead < jpegSize, "unsupported JPEG payload must not be read in full")
     }
 
     @Test
