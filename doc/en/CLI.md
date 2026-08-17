@@ -72,6 +72,8 @@ crosspaste paste --raw > screenshot.png
 crosspaste paste --raw | magick - -resize 50% small.png
 ```
 
+On Windows, redirect through cmd — `cmd /c "crosspaste-cli paste --raw > shot.png"` — or use PowerShell 7.4+. Windows PowerShell 5.1's `>` re-encodes native command output as UTF-16 text and corrupts binary data.
+
 List and bulk-process history:
 
 ```sh

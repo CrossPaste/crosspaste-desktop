@@ -72,6 +72,8 @@ crosspaste paste --raw > screenshot.png
 crosspaste paste --raw | magick - -resize 50% small.png
 ```
 
+Windows 上请经 cmd 重定向——`cmd /c "crosspaste-cli paste --raw > shot.png"`——或使用 PowerShell 7.4+。Windows PowerShell 5.1 的 `>` 会把原生命令输出按 UTF-16 文本重编码,损坏二进制数据。
+
 列表与批量处理：
 
 ```sh
