@@ -218,7 +218,7 @@ class PasteCommand : CliktCommand(name = "paste") {
         for (path in detail.filePaths) {
             val bytes = readImageForInline(path) ?: continue
             when (protocol) {
-                TerminalImageProtocol.ITERM -> print(buildItermInlineImage(path.substringAfterLast('/'), bytes))
+                TerminalImageProtocol.ITERM -> print(buildItermInlineImage(path.toPath().name, bytes))
                 TerminalImageProtocol.KITTY -> {
                     // Kitty's f=100 transfer is PNG-only; other formats keep
                     // the path fallback
