@@ -20,6 +20,7 @@ import com.github.ajalt.clikt.core.terminal
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlin.experimental.ExperimentalNativeApi
 
 /** Scripts can rely on this exit code to mean "CrossPaste is not running". */
 const val EXIT_CODE_APP_NOT_RUNNING = 3
@@ -115,14 +116,21 @@ private suspend fun CliktCommand.ensureAppRunning(readinessChecker: AppReadiness
  * forced no, or (the default) a TTY prompt. A non-interactive caller is never
  * blocked on input: it fails fast with [EXIT_CODE_APP_NOT_RUNNING].
  */
+@OptIn(ExperimentalNativeApi::class)
 private suspend fun CliktCommand.startApp(readinessChecker: AppReadinessChecker) {
     // No graphical session (Linux server without DISPLAY/WAYLAND_DISPLAY):
     // the same app is launched as a headless daemon instead of the GUI.
-    val headless = !isGuiEnvironment()
+    // createAppLauncher owns that decision; headless here only picks the prompt.
+    val guiEnvironment = isGuiEnvironment()
+    val headless = !guiEnvironment
     if (!consentToStart(headless)) {
         throw ProgramResult(EXIT_CODE_APP_NOT_RUNNING)
     }
-    val starter = AppAutoStarter(createAppLauncher(CliAppPathProvider(), headless), readinessChecker)
+    val starter =
+        AppAutoStarter(
+            createAppLauncher(CliAppPathProvider(), guiEnvironment = guiEnvironment),
+            readinessChecker,
+        )
     val started = starter.startAndWait { message -> echo(message, err = true) }
     if (!started) {
         throw ProgramResult(1)

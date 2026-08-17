@@ -27,7 +27,8 @@ class CopyCommand(
     private val stdinReader: () -> String = ::readAllStdin,
 ) : CliktCommand(name = "copy") {
 
-    override fun help(context: Context): String = "Copy text to the clipboard via CrossPaste (reads stdin when piped)"
+    override fun help(context: Context): String =
+        "Copy text via CrossPaste: stores it in history and syncs it to your devices (reads stdin when piped)"
 
     // findObject instead of requireObject: tests run this command standalone
     private val ctx: CliContext? by findObject()
@@ -43,7 +44,9 @@ class CopyCommand(
             if (ctx?.json == true) {
                 echo(cliJson.encodeToString(CopyResponse.serializer(), response))
             } else {
-                echo("Copied to clipboard (id=${response.id}).")
+                // "to CrossPaste", not "to clipboard": a headless daemon has no
+                // system clipboard — the paste is stored in history and synced
+                echo("Copied to CrossPaste (id=${response.id}).")
             }
         }
     }

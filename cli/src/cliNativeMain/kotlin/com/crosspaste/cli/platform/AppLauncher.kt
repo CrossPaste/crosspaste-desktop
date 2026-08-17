@@ -25,12 +25,20 @@ interface AppLauncher {
  */
 private fun launchTargetExists(target: Path): Boolean = FileSystem.SYSTEM.exists(target)
 
+/**
+ * The environment → launch-mode decision lives here (not at the call site) so
+ * tests can pin the whole wiring: no graphical session on Linux must produce
+ * a launcher that starts the headless daemon. [os] is injectable for tests
+ * only — macOS and Windows always have a GUI session (see isGuiEnvironment),
+ * so their launchers ignore the flag.
+ */
 @OptIn(ExperimentalNativeApi::class)
 fun createAppLauncher(
     appPathProvider: CliAppPathProvider,
-    headless: Boolean = false,
+    guiEnvironment: Boolean = true,
+    os: OsFamily = Platform.osFamily,
 ): AppLauncher {
-    val os = Platform.osFamily
+    val headless = !guiEnvironment
     return when (os) {
         OsFamily.MACOSX -> MacosAppLauncher(appPathProvider)
         OsFamily.LINUX -> LinuxAppLauncher(appPathProvider, headless)
@@ -55,7 +63,7 @@ class MacosAppLauncher(
 @OptIn(ExperimentalForeignApi::class)
 class LinuxAppLauncher(
     private val appPathProvider: CliAppPathProvider,
-    private val headless: Boolean = false,
+    internal val headless: Boolean = false,
 ) : AppLauncher {
 
     override fun launch(): Boolean {
