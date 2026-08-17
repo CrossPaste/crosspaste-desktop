@@ -28,7 +28,7 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | 命令 | 说明 |
 |---|---|
 | `status` | 显示应用是否在运行，以及版本、设备数、粘贴条数。永不自动拉起应用。 |
-| `paste [id]` | 显示最近一条粘贴，或按 ID 显示指定一条。 |
+| `paste [id]` | 显示最近一条粘贴，或按 ID 显示指定一条。图片粘贴在支持的终端（iTerm2、WezTerm、Kitty、Ghostty）内联显示，并始终列出存储文件路径。 |
 | `history` | 列出最近粘贴历史（`--limit`、`--type`、`--tag`、`--format`）。 |
 | `search <query>` | 搜索粘贴历史（过滤参数与 `history` 相同）。 |
 | `copy [text]` | 通过 CrossPaste 复制文本：写入历史并同步到其他设备；仅当桌面应用（而非 headless 守护进程）在运行时才会写系统剪贴板。接管道时读取 stdin。 |
@@ -64,6 +64,15 @@ crosspaste paste --raw | pbcopy
 crosspaste paste --raw --no-newline > snippet.html
 crosspaste paste --summary            # HTML/RTF 转为纯文本
 ```
+
+图片粘贴的 `--raw` 输出的是存储的图片字节，任何设备上复制的截图都能直接导出成文件或接给其他工具。仅支持单图片粘贴；一条记录含多张图片时会报错并列出各图片的存储路径：
+
+```sh
+crosspaste paste --raw > screenshot.png
+crosspaste paste --raw | magick - -resize 50% small.png
+```
+
+Windows 上请经 cmd 重定向——`cmd /c "crosspaste-cli paste --raw > shot.png"`——或使用 PowerShell 7.4+。Windows PowerShell 5.1 的 `>` 会把原生命令输出按 UTF-16 文本重编码,损坏二进制数据。
 
 列表与批量处理：
 

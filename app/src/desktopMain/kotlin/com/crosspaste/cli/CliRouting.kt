@@ -16,8 +16,11 @@ import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItemReader
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
@@ -48,6 +51,7 @@ fun Routing.cliRouting(
     pasteTagDao: PasteTagDao,
     searchContentService: SearchContentService,
     syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    userDataPathProvider: UserDataPathProvider,
 ) {
     route("/cli") {
         get("/status") {
@@ -55,12 +59,24 @@ fun Routing.cliRouting(
         }
 
         get("/paste/latest") {
-            respondPasteDetail(call, pasteDao.getLatestLoadedPasteData(), pasteTagDao, pasteItemReader)
+            respondPasteDetail(
+                call,
+                pasteDao.getLatestLoadedPasteData(),
+                pasteTagDao,
+                pasteItemReader,
+                userDataPathProvider,
+            )
         }
 
         get("/paste/{id}") {
             val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@get
-            respondPasteDetail(call, pasteDao.getNoDeletePasteData(id), pasteTagDao, pasteItemReader)
+            respondPasteDetail(
+                call,
+                pasteDao.getNoDeletePasteData(id),
+                pasteTagDao,
+                pasteItemReader,
+                userDataPathProvider,
+            )
         }
 
         get("/history") {
@@ -251,6 +267,7 @@ private suspend fun respondPasteDetail(
     pasteData: PasteData?,
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
+    userDataPathProvider: UserDataPathProvider,
 ) {
     // Raw markup is opt-in (?includeRaw=true): for plain text raw == summary,
     // so sending both unconditionally would ship large pastes twice per
@@ -259,7 +276,7 @@ private suspend fun respondPasteDetail(
     if (pasteData == null) {
         call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste not found."))
     } else {
-        call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader, includeRaw))
+        call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader, includeRaw, userDataPathProvider))
     }
 }
 
@@ -561,6 +578,7 @@ private suspend fun PasteData.toDetailDto(
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
     includeRaw: Boolean,
+    userDataPathProvider: UserDataPathProvider,
 ): CliPasteDetailDto =
     CliPasteDetailDto(
         id = id,
@@ -573,6 +591,11 @@ private suspend fun PasteData.toDetailDto(
         hash = hash,
         content = pasteAppearItem?.let { pasteItemReader.getSummary(it) },
         rawContent = if (includeRaw) pasteAppearItem?.let { pasteItemReader.getRaw(it) } else null,
+        filePaths =
+            (pasteAppearItem as? PasteFiles)
+                ?.getFilePaths(userDataPathProvider)
+                ?.map { it.toString() }
+                .orEmpty(),
     )
 
 private fun parseConfigValue(

@@ -28,7 +28,7 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 | Command | Description |
 |---|---|
 | `status` | Show whether the app is running, plus version, device and paste counts. Never auto-starts the app. |
-| `paste [id]` | Show the most recent paste, or a specific paste by ID. |
+| `paste [id]` | Show the most recent paste, or a specific paste by ID. Image pastes render inline in terminals that support it (iTerm2, WezTerm, Kitty, Ghostty) and always list their stored file paths. |
 | `history` | List recent paste history (`--limit`, `--type`, `--tag`, `--format`). |
 | `search <query>` | Search paste history (same filters as `history`). |
 | `copy [text]` | Copy text via CrossPaste: stores it in history and syncs it to your devices; the system clipboard is set when the desktop app (not the headless daemon) is running. Reads stdin when piped. |
@@ -64,6 +64,15 @@ crosspaste paste --raw | pbcopy
 crosspaste paste --raw --no-newline > snippet.html
 crosspaste paste --summary            # HTML/RTF converted to plain text
 ```
+
+For an image paste, `--raw` dumps the stored image bytes, so a screenshot copied on any device can be piped straight into a file or another tool. This works for single-image pastes; a paste containing several images fails with the list of stored file paths instead:
+
+```sh
+crosspaste paste --raw > screenshot.png
+crosspaste paste --raw | magick - -resize 50% small.png
+```
+
+On Windows, redirect through cmd — `cmd /c "crosspaste-cli paste --raw > shot.png"` — or use PowerShell 7.4+. Windows PowerShell 5.1's `>` re-encodes native command output as UTF-16 text and corrupts binary data.
 
 List and bulk-process history:
 

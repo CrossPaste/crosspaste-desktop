@@ -1,6 +1,7 @@
 package com.crosspaste.cli
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
@@ -17,10 +18,14 @@ import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.path.PlatformUserDataPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.utils.getJsonUtils
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -42,6 +47,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import okio.Path.Companion.toPath
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -65,6 +71,18 @@ class CliRoutingTest {
     private class Fixture {
         val cliPairingService = mockk<CliPairingService>()
         val configManager = mockk<DesktopConfigManager>()
+
+        // Real provider over a stub platform path: paste items in these tests
+        // carry an explicit basePath, so only relative resolution is exercised
+        val userDataPathProvider =
+            UserDataPathProvider(
+                mockk<CommonConfigManager> {
+                    every { getCurrentConfig() } returns DesktopAppConfig(language = "en")
+                },
+                object : PlatformUserDataPathProvider {
+                    override fun getUserDefaultStoragePath() = "/tmp/cli-routing-test".toPath()
+                },
+            )
         val pasteboardService = mockk<PasteboardService>()
         val pasteDao = mockk<PasteDao>()
         val pasteReleaseService = mockk<PasteReleaseService>()
@@ -118,6 +136,7 @@ class CliRoutingTest {
                 pasteTagDao = fixture.pasteTagDao,
                 searchContentService = fixture.searchContentService,
                 syncRuntimeInfoDao = fixture.syncRuntimeInfoDao,
+                userDataPathProvider = fixture.userDataPathProvider,
             )
         }
     }
@@ -139,6 +158,52 @@ class CliRoutingTest {
             createTime = 123L,
             pasteState = PasteState.LOADED,
         )
+    }
+
+    @Test
+    fun `image paste detail carries absolute file paths`() {
+        val fixture = Fixture()
+        val item =
+            createImagesPasteItem(
+                basePath = "/tmp/images-store",
+                relativePathList = listOf("shot.png"),
+                fileInfoTreeMap = mapOf("shot.png" to SingleFileInfoTree(size = 10L, hash = "img")),
+            )
+        val pasteData =
+            PasteData(
+                id = 7L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.IMAGE_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns pasteData
+        withCliRouting(fixture) {
+            val detail =
+                json.decodeFromString<CliPasteDetailDto>(
+                    client.get("/cli/paste/latest").bodyAsText(),
+                )
+            assertEquals("image", detail.typeName)
+            assertEquals(listOf("/tmp/images-store/shot.png"), detail.filePaths)
+        }
+    }
+
+    @Test
+    fun `text paste detail has no file paths`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getLatestLoadedPasteData() } returns textPasteData(42L, "hello")
+        withCliRouting(fixture) {
+            val detail =
+                json.decodeFromString<CliPasteDetailDto>(
+                    client.get("/cli/paste/latest").bodyAsText(),
+                )
+            assertEquals(emptyList(), detail.filePaths)
+        }
     }
 
     @Test
