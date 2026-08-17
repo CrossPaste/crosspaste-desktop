@@ -65,7 +65,7 @@ crosspaste paste --raw --no-newline > snippet.html
 crosspaste paste --summary            # HTML/RTF converted to plain text
 ```
 
-For an image paste, `--raw` dumps the stored image bytes, so a screenshot copied on any device can be piped straight into a file or another tool:
+For an image paste, `--raw` dumps the stored image bytes, so a screenshot copied on any device can be piped straight into a file or another tool. This works for single-image pastes; a paste containing several images fails with the list of stored file paths instead:
 
 ```sh
 crosspaste paste --raw > screenshot.png

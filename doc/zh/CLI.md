@@ -65,7 +65,7 @@ crosspaste paste --raw --no-newline > snippet.html
 crosspaste paste --summary            # HTML/RTF 转为纯文本
 ```
 
-图片粘贴的 `--raw` 输出的是存储的图片字节，任何设备上复制的截图都能直接导出成文件或接给其他工具：
+图片粘贴的 `--raw` 输出的是存储的图片字节，任何设备上复制的截图都能直接导出成文件或接给其他工具。仅支持单图片粘贴；一条记录含多张图片时会报错并列出各图片的存储路径：
 
 ```sh
 crosspaste paste --raw > screenshot.png

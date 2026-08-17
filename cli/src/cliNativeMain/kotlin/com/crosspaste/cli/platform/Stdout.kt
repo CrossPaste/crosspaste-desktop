@@ -40,7 +40,14 @@ fun writeBytesToStdout(
     }
 }
 
+/**
+ * A failed flush means the tail of the payload never left the CRT buffer
+ * (closed pipe, full disk) — that must surface as an error, not exit 0.
+ */
 @OptIn(ExperimentalForeignApi::class)
 fun flushStdout() {
-    fflush(stdout)
+    if (fflush(stdout) != 0) {
+        val reason = strerror(errno)?.toKString() ?: "errno $errno"
+        throw StdoutWriteException("failed to flush stdout: $reason")
+    }
 }

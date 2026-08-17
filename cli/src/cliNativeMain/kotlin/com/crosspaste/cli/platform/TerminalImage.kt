@@ -51,14 +51,31 @@ private val PNG_MAGIC = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A,
 internal fun isPng(bytes: ByteArray): Boolean =
     bytes.size >= PNG_MAGIC.size && PNG_MAGIC.indices.all { bytes[it] == PNG_MAGIC[it] }
 
+/**
+ * Base64-encode in slices of 3072 source bytes: a multiple of 3, so chunk
+ * outputs concatenate to exactly the whole-input encoding (no mid-stream
+ * padding), and each chunk is exactly 4096 chars — the Kitty protocol's
+ * per-chunk payload limit. Streaming through [write] keeps only one small
+ * chunk in memory instead of the full base64 plus protocol string.
+ */
+private const val BASE64_CHUNK_SOURCE_BYTES = 3072
+
 /** OSC 1337: ESC ] 1337 ; File = inline=1;... : <base64> BEL */
 @OptIn(ExperimentalEncodingApi::class)
-internal fun buildItermInlineImage(
+internal fun writeItermInlineImage(
     name: String,
     bytes: ByteArray,
-): String {
+    write: (String) -> Unit,
+) {
     val nameB64 = Base64.encode(name.encodeToByteArray())
-    return "$TERM_ESC]1337;File=inline=1;size=${bytes.size};name=$nameB64:${Base64.encode(bytes)}$TERM_BEL"
+    write("$TERM_ESC]1337;File=inline=1;size=${bytes.size};name=$nameB64:")
+    var offset = 0
+    while (offset < bytes.size) {
+        val end = minOf(offset + BASE64_CHUNK_SOURCE_BYTES, bytes.size)
+        write(Base64.encode(bytes, offset, end))
+        offset = end
+    }
+    write(TERM_BEL)
 }
 
 /**
@@ -67,23 +84,25 @@ internal fun buildItermInlineImage(
  * m=1 marks continuation and m=0 the final chunk.
  */
 @OptIn(ExperimentalEncodingApi::class)
-internal fun buildKittyInlineImage(bytes: ByteArray): String {
-    val b64 = Base64.encode(bytes)
-    val sb = StringBuilder()
+internal fun writeKittyInlineImage(
+    bytes: ByteArray,
+    write: (String) -> Unit,
+) {
     var offset = 0
     var first = true
-    while (offset < b64.length) {
-        val end = minOf(offset + 4096, b64.length)
-        val more = if (end < b64.length) 1 else 0
+    while (offset < bytes.size) {
+        val end = minOf(offset + BASE64_CHUNK_SOURCE_BYTES, bytes.size)
+        val more = if (end < bytes.size) 1 else 0
+        val sb = StringBuilder()
         sb.append(TERM_ESC).append("_G")
         if (first) {
             sb.append("a=T,f=100,")
             first = false
         }
-        sb.append("m=$more;")
-        sb.append(b64, offset, end)
-        sb.append(TERM_ESC).append("\\")
+        sb.append("m=").append(more).append(';')
+        sb.append(Base64.encode(bytes, offset, end))
+        sb.append(TERM_ESC).append('\\')
+        write(sb.toString())
         offset = end
     }
-    return sb.toString()
 }

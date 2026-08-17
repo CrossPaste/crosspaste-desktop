@@ -16,6 +16,13 @@ class TerminalImageTest {
 
     private fun env(vararg pairs: Pair<String, String>): (String) -> String? = mapOf(*pairs)::get
 
+    private fun itermSequence(
+        name: String,
+        bytes: ByteArray,
+    ): String = buildString { writeItermInlineImage(name, bytes) { append(it) } }
+
+    private fun kittySequence(bytes: ByteArray): String = buildString { writeKittyInlineImage(bytes) { append(it) } }
+
     @Test
     fun detectsKnownTerminals() {
         assertEquals(
@@ -72,7 +79,7 @@ class TerminalImageTest {
     @Test
     fun itermSequenceWrapsBase64PayloadAndName() {
         val bytes = byteArrayOf(1, 2, 3, 4)
-        val sequence = buildItermInlineImage("shot.png", bytes)
+        val sequence = itermSequence("shot.png", bytes)
         val expectedName = Base64.encode("shot.png".encodeToByteArray())
         assertEquals(
             "$esc]1337;File=inline=1;size=4;name=$expectedName:${Base64.encode(bytes)}$bel",
@@ -81,9 +88,21 @@ class TerminalImageTest {
     }
 
     @Test
+    fun itermChunkedEncodingEqualsWholeInputEncoding() {
+        // Chunking at a multiple of 3 source bytes must concatenate to the
+        // exact whole-input base64 (no mid-stream padding)
+        val bytes = ByteArray(9001) { (it % 251).toByte() }
+        val sequence = itermSequence("a.png", bytes)
+        assertEquals(
+            Base64.encode(bytes),
+            sequence.substringAfter(':').removeSuffix(bel),
+        )
+    }
+
+    @Test
     fun kittySingleChunkCarriesControlKeysAndFinalMarker() {
         val bytes = byteArrayOf(9, 8, 7)
-        val sequence = buildKittyInlineImage(bytes)
+        val sequence = kittySequence(bytes)
         assertEquals("${esc}_Ga=T,f=100,m=0;${Base64.encode(bytes)}$esc\\", sequence)
     }
 
@@ -91,7 +110,7 @@ class TerminalImageTest {
     fun kittyLargePayloadIsChunkedAndReassembles() {
         // 9000 bytes -> 12000 base64 chars -> 3 chunks (4096 + 4096 + 3808)
         val bytes = ByteArray(9000) { (it % 251).toByte() }
-        val sequence = buildKittyInlineImage(bytes)
+        val sequence = kittySequence(bytes)
         val chunks =
             sequence
                 .split("$esc\\")

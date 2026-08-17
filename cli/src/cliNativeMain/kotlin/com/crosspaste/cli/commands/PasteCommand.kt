@@ -1,14 +1,7 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.cli.platform.TerminalImageProtocol
-import com.crosspaste.cli.platform.buildItermInlineImage
-import com.crosspaste.cli.platform.buildKittyInlineImage
 import com.crosspaste.cli.platform.detectTerminalImageProtocol
-import com.crosspaste.cli.platform.flushStdout
-import com.crosspaste.cli.platform.isPng
-import com.crosspaste.cli.platform.prepareStdoutForBinary
-import com.crosspaste.cli.platform.writeBytesToStdout
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
@@ -20,10 +13,6 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.long
 import kotlinx.serialization.Serializable
-import okio.FileSystem
-import okio.Path.Companion.toPath
-import okio.buffer
-import okio.use
 
 @Serializable
 data class PasteDetailResponse(
@@ -138,48 +127,34 @@ class PasteCommand : CliktCommand(name = "paste") {
      * app and CLI share the machine. Text pastes keep the string path.
      */
     private fun printRawImage(detail: PasteDetailResponse) {
-        if (detail.filePaths.isEmpty()) {
-            echo(
-                "Error: the running CrossPaste app does not expose image file paths yet; " +
-                    "update (or restart) the app.",
-                err = true,
-            )
-            throw ProgramResult(1)
-        }
-        if (detail.filePaths.size > 1) {
-            echo(
-                "Error: paste #${detail.id} contains ${detail.filePaths.size} images; " +
-                    "--raw needs a single image. Paths:",
-                err = true,
-            )
-            detail.filePaths.forEach { echo("  $it", err = true) }
-            throw ProgramResult(1)
-        }
-        streamFileToStdout(detail, detail.filePaths.single())
-    }
-
-    private fun streamFileToStdout(
-        detail: PasteDetailResponse,
-        path: String,
-    ) {
-        prepareStdoutForBinary()
-        try {
-            FileSystem.SYSTEM.source(path.toPath()).buffer().use { source ->
-                val buffer = ByteArray(64 * 1024)
-                while (true) {
-                    val read = source.read(buffer, 0, buffer.size)
-                    if (read == -1) break
-                    writeBytesToStdout(buffer, read)
-                }
+        when (val action = resolveRawImageAction(detail.filePaths)) {
+            RawImageAction.MissingPaths -> {
+                echo(
+                    "Error: the running CrossPaste app does not expose image file paths yet; " +
+                        "update (or restart) the app.",
+                    err = true,
+                )
+                throw ProgramResult(1)
             }
-        } catch (e: okio.IOException) {
-            echo(
-                "Error: cannot read the stored image of paste #${detail.id}: ${e.message}",
-                err = true,
-            )
-            throw ProgramResult(1)
-        } finally {
-            flushStdout()
+            is RawImageAction.TooManyImages -> {
+                echo(
+                    "Error: paste #${detail.id} contains ${action.paths.size} images; " +
+                        "--raw needs a single image. Paths:",
+                    err = true,
+                )
+                action.paths.forEach { echo("  $it", err = true) }
+                throw ProgramResult(1)
+            }
+            is RawImageAction.StreamSingle ->
+                try {
+                    ImageByteStreamer().stream(action.path)
+                } catch (e: okio.IOException) {
+                    echo(
+                        "Error: cannot read the stored image of paste #${detail.id}: ${e.message}",
+                        err = true,
+                    )
+                    throw ProgramResult(1)
+                }
         }
     }
 
@@ -209,43 +184,15 @@ class PasteCommand : CliktCommand(name = "paste") {
 
     /**
      * Inline preview in terminals with an image protocol; anywhere else the
-     * absolute paths printed above are the fallback. Uses stdlib print like
-     * [printContentOnly]: Mordant re-renders strings and would mangle the
-     * escape sequences.
+     * absolute paths printed above are the fallback. Escape sequences go
+     * through stdlib print like [printContentOnly]: Mordant re-renders
+     * strings and would mangle them.
      */
     private fun renderInlineImages(detail: PasteDetailResponse) {
-        val protocol = detectTerminalImageProtocol() ?: return
-        for (path in detail.filePaths) {
-            val bytes = readImageForInline(path) ?: continue
-            when (protocol) {
-                TerminalImageProtocol.ITERM -> print(buildItermInlineImage(path.toPath().name, bytes))
-                TerminalImageProtocol.KITTY -> {
-                    // Kitty's f=100 transfer is PNG-only; other formats keep
-                    // the path fallback
-                    if (!isPng(bytes)) continue
-                    print(buildKittyInlineImage(bytes))
-                }
-            }
-            println()
-        }
-    }
-
-    private fun readImageForInline(path: String): ByteArray? {
-        val okioPath = path.toPath()
-        return try {
-            val size = FileSystem.SYSTEM.metadata(okioPath).size ?: return null
-            if (size > MAX_INLINE_IMAGE_BYTES) {
-                echo("  (image too large for inline preview: $path)", err = true)
-                return null
-            }
-            FileSystem.SYSTEM.read(okioPath) { readByteArray() }
-        } catch (_: okio.IOException) {
-            null
-        }
-    }
-
-    companion object {
-        /** Inline preview only; --raw streams without a cap. */
-        private const val MAX_INLINE_IMAGE_BYTES = 20L * 1024 * 1024
+        InlineImageRenderer(
+            protocol = detectTerminalImageProtocol(),
+            emit = { print(it) },
+            note = { echo("  $it") },
+        ).render(detail.filePaths)
     }
 }
