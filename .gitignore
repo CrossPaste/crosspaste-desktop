@@ -9,6 +9,7 @@ development.properties
 generated.conveyor.conf
 local.properties
 local.conveyor.conf
+local-mac.conveyor.conf
 i18n_key.txt
 package*.json
 selenium-manager
