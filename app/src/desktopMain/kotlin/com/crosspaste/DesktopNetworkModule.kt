@@ -110,6 +110,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 pasteTagDao = get(),
                 searchContentService = get(),
                 syncRuntimeInfoDao = get(),
+                userDataPathProvider = get(),
             )
         }
         // endregion

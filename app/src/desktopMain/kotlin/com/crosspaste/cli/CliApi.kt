@@ -62,6 +62,12 @@ data class CliPasteDetailDto(
     val content: String?,
     /** Content exactly as stored (HTML/RTF keep their source markup). */
     val rawContent: String?,
+    /**
+     * Absolute paths of the stored payload files (image/file pastes only,
+     * empty otherwise). The CLI runs on the same machine, so it reads the
+     * bytes directly instead of streaming them over the socket.
+     */
+    val filePaths: List<String> = emptyList(),
 )
 
 @Serializable

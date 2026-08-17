@@ -1,16 +1,29 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
+import com.crosspaste.cli.platform.TerminalImageProtocol
+import com.crosspaste.cli.platform.buildItermInlineImage
+import com.crosspaste.cli.platform.buildKittyInlineImage
+import com.crosspaste.cli.platform.detectTerminalImageProtocol
+import com.crosspaste.cli.platform.flushStdout
+import com.crosspaste.cli.platform.isPng
+import com.crosspaste.cli.platform.prepareStdoutForBinary
+import com.crosspaste.cli.platform.writeBytesToStdout
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.requireObject
+import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.long
 import kotlinx.serialization.Serializable
+import okio.FileSystem
+import okio.Path.Companion.toPath
+import okio.buffer
+import okio.use
 
 @Serializable
 data class PasteDetailResponse(
@@ -26,6 +39,8 @@ data class PasteDetailResponse(
     val content: String?,
     /** Content exactly as stored (HTML/RTF keep their source markup). */
     val rawContent: String? = null,
+    /** Absolute paths of stored payload files (image/file pastes only). */
+    val filePaths: List<String> = emptyList(),
 )
 
 class PasteCommand : CliktCommand(name = "paste") {
@@ -41,7 +56,8 @@ class PasteCommand : CliktCommand(name = "paste") {
         "-r",
         help =
             "Print only the paste content, exactly as stored — HTML/RTF print their source " +
-                "markup (for piping, e.g. `crosspaste paste -r | pbcopy`)",
+                "markup, image pastes dump the image bytes (for piping, e.g. " +
+                "`crosspaste paste -r | pbcopy` or `crosspaste paste -r > shot.png`)",
     ).flag()
 
     private val summary by option(
@@ -70,6 +86,7 @@ class PasteCommand : CliktCommand(name = "paste") {
             val detail = client.getBody(path, PasteDetailResponse.serializer())
 
             when {
+                raw && detail.typeName == "image" -> printRawImage(detail)
                 raw -> printRawContent(detail)
                 summary -> printContentOnly(detail, detail.content)
                 ctx.json -> echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
@@ -115,6 +132,57 @@ class PasteCommand : CliktCommand(name = "paste") {
         }
     }
 
+    /**
+     * `--raw` on an image paste dumps the stored image bytes (for piping:
+     * `crosspaste paste --raw > shot.png`); the file is read directly since
+     * app and CLI share the machine. Text pastes keep the string path.
+     */
+    private fun printRawImage(detail: PasteDetailResponse) {
+        if (detail.filePaths.isEmpty()) {
+            echo(
+                "Error: the running CrossPaste app does not expose image file paths yet; " +
+                    "update (or restart) the app.",
+                err = true,
+            )
+            throw ProgramResult(1)
+        }
+        if (detail.filePaths.size > 1) {
+            echo(
+                "Error: paste #${detail.id} contains ${detail.filePaths.size} images; " +
+                    "--raw needs a single image. Paths:",
+                err = true,
+            )
+            detail.filePaths.forEach { echo("  $it", err = true) }
+            throw ProgramResult(1)
+        }
+        streamFileToStdout(detail, detail.filePaths.single())
+    }
+
+    private fun streamFileToStdout(
+        detail: PasteDetailResponse,
+        path: String,
+    ) {
+        prepareStdoutForBinary()
+        try {
+            FileSystem.SYSTEM.source(path.toPath()).buffer().use { source ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val read = source.read(buffer, 0, buffer.size)
+                    if (read == -1) break
+                    writeBytesToStdout(buffer, read)
+                }
+            }
+        } catch (e: okio.IOException) {
+            echo(
+                "Error: cannot read the stored image of paste #${detail.id}: ${e.message}",
+                err = true,
+            )
+            throw ProgramResult(1)
+        } finally {
+            flushStdout()
+        }
+    }
+
     private fun printDetail(detail: PasteDetailResponse) {
         val fav = if (detail.tagged) " [tagged]" else ""
         val remote = if (detail.remote) " (remote)" else ""
@@ -124,11 +192,60 @@ class PasteCommand : CliktCommand(name = "paste") {
         echo("  Size:    ${formatSize(detail.size)}")
         echo("  Time:    ${formatRelativeTime(detail.createTime)}")
         echo("  Hash:    ${detail.hash}")
-        if (detail.content != null) {
+        if (detail.filePaths.isNotEmpty()) {
+            echo("  Files:")
+            detail.filePaths.forEach { echo("    $it") }
+        }
+        if (detail.content != null && detail.filePaths.isEmpty()) {
             echo("  Content:")
             detail.content.lines().forEach { line ->
                 echo("    $line")
             }
         }
+        if (detail.typeName == "image" && terminal.terminalInfo.outputInteractive) {
+            renderInlineImages(detail)
+        }
+    }
+
+    /**
+     * Inline preview in terminals with an image protocol; anywhere else the
+     * absolute paths printed above are the fallback. Uses stdlib print like
+     * [printContentOnly]: Mordant re-renders strings and would mangle the
+     * escape sequences.
+     */
+    private fun renderInlineImages(detail: PasteDetailResponse) {
+        val protocol = detectTerminalImageProtocol() ?: return
+        for (path in detail.filePaths) {
+            val bytes = readImageForInline(path) ?: continue
+            when (protocol) {
+                TerminalImageProtocol.ITERM -> print(buildItermInlineImage(path.substringAfterLast('/'), bytes))
+                TerminalImageProtocol.KITTY -> {
+                    // Kitty's f=100 transfer is PNG-only; other formats keep
+                    // the path fallback
+                    if (!isPng(bytes)) continue
+                    print(buildKittyInlineImage(bytes))
+                }
+            }
+            println()
+        }
+    }
+
+    private fun readImageForInline(path: String): ByteArray? {
+        val okioPath = path.toPath()
+        return try {
+            val size = FileSystem.SYSTEM.metadata(okioPath).size ?: return null
+            if (size > MAX_INLINE_IMAGE_BYTES) {
+                echo("  (image too large for inline preview: $path)", err = true)
+                return null
+            }
+            FileSystem.SYSTEM.read(okioPath) { readByteArray() }
+        } catch (_: okio.IOException) {
+            null
+        }
+    }
+
+    companion object {
+        /** Inline preview only; --raw streams without a cap. */
+        private const val MAX_INLINE_IMAGE_BYTES = 20L * 1024 * 1024
     }
 }

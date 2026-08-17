@@ -55,7 +55,8 @@ class CliServerTest {
             object : PlatformUserDataPathProvider {
                 override fun getUserDefaultStoragePath() = userDataDir.toFile().toOkioPath()
             }
-        val endpointFile = CliEndpointFile(UserDataPathProvider(pathConfigManager, platformProvider))
+        val userDataPathProvider = UserDataPathProvider(pathConfigManager, platformProvider)
+        val endpointFile = CliEndpointFile(userDataPathProvider)
 
         val pasteDao = mockk<PasteDao>()
         coEvery { pasteDao.getActiveCount() } returns 3L
@@ -82,6 +83,7 @@ class CliServerTest {
                 pasteTagDao = mockk<PasteTagDao>(),
                 searchContentService = mockk<SearchContentService>(),
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
+                userDataPathProvider = userDataPathProvider,
                 socketBaseDir = socketBaseDir,
             )
         return server to endpointFile

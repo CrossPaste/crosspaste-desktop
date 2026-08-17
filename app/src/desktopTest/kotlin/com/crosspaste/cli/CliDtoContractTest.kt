@@ -92,6 +92,7 @@ class CliDtoContractTest {
                     hash = "abc",
                     content = "hello",
                     rawContent = "<b>hello</b>",
+                    filePaths = listOf("/tmp/images/shot.png"),
                 ),
             )
         assertEquals(
@@ -106,6 +107,7 @@ class CliDtoContractTest {
                 "hash",
                 "content",
                 "rawContent",
+                "filePaths",
             ),
             fieldsOf(encoded),
         )
