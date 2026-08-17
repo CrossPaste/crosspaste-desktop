@@ -31,7 +31,7 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 | `paste [id]` | Show the most recent paste, or a specific paste by ID. |
 | `history` | List recent paste history (`--limit`, `--type`, `--tag`, `--format`). |
 | `search <query>` | Search paste history (same filters as `history`). |
-| `copy [text]` | Copy text to the clipboard via CrossPaste. Reads stdin when piped. |
+| `copy [text]` | Copy text via CrossPaste: stores it in history and syncs it to your devices; the system clipboard is set when the desktop app (not the headless daemon) is running. Reads stdin when piped. |
 | `delete <id>` | Delete a paste by ID. |
 | `devices` | List paired devices and their connection state. |
 | `pair` | Pair with a nearby device by entering the code it displays (see [Pairing from the terminal](#pairing-from-the-terminal)). |
@@ -102,7 +102,7 @@ fi
 2. The target device (desktop or mobile — anything with a screen) displays a 6-digit code. Confirm on that device if it asks.
 3. Type the code in the terminal (input is hidden). On success the two devices trust each other and start syncing.
 
-Pairing is a human confirmation by design, so `pair` requires an interactive terminal — piping input into it is a usage error. You get up to 5 code attempts per session, and an in-progress session is cancelled when the command exits.
+Pairing is a human confirmation by design, so `pair` requires an interactive terminal — piping input into it is a usage error. You get up to 5 code attempts per session; on normal exit the CLI cancels an in-progress session, and a session orphaned by an interrupt (Ctrl-C) is reclaimed by a server-side timeout.
 
 If the device list comes up empty, make sure CrossPaste is running on the other device, both machines are on the same network, and multicast/mDNS traffic is not blocked by a firewall.
 
@@ -114,7 +114,9 @@ Headless mode is auto-detected: on a machine with no `DISPLAY`/`WAYLAND_DISPLAY`
 
 ### Getting started
 
-Install the deb (or unpack the tarball) as described in [Installation](#installation). Then run any CLI command:
+There are two mutually exclusive ways to run the daemon: let the CLI launch it on demand (this section), or have systemd supervise it ([next section](#running-as-a-systemd-user-service)). Pick one — if you want the daemon supervised and started at boot, skip the CLI launch and set up the systemd unit directly.
+
+For the on-demand path: install the deb (or unpack the tarball) as described in [Installation](#installation), then run any command that needs the daemon (`status` is the one exception — it never auto-starts):
 
 ```sh
 crosspaste history
@@ -130,7 +132,13 @@ The GUI and the daemon are one peer: they share the same data directory and sing
 
 ### Running as a systemd user service
 
-The CLI launch above is a convenience; for a server you want the daemon supervised and started at boot. The daemon is per-user (its data and socket live in your home directory), so use a systemd **user** unit, not a system one.
+For a server you want the daemon supervised and started at boot. The daemon is per-user (its data and socket live in your home directory), so use a systemd **user** unit, not a system one.
+
+If a CLI-launched (unmanaged) daemon is already running, stop it **before** enabling the unit — the two are the same single-instance daemon, so each systemd start attempt would otherwise die against the instance lock and `Restart=on-failure` would keep retrying:
+
+```sh
+kill "$(cat ~/.local/share/.crosspaste/crosspaste.pid)"   # graceful shutdown (SIGTERM)
+```
 
 Create `~/.config/systemd/user/crosspaste.service`:
 
@@ -156,6 +164,8 @@ sudo loginctl enable-linger "$USER"   # start at boot, keep running after logout
 ```
 
 There is deliberately no `daemon start/stop` CLI subcommand: `systemctl --user stop crosspaste` (or plain SIGTERM) shuts the daemon down gracefully, and `crosspaste status` reports whether it is running.
+
+Once systemd owns the daemon, keep it that way: if the unit is stopped and a CLI command offers to start CrossPaste, decline (or run with `--no-start`) and use `systemctl --user start crosspaste` instead, so the daemon stays supervised.
 
 ### macOS (launchd)
 
@@ -184,7 +194,7 @@ Then `launchctl load ~/Library/LaunchAgents/com.crosspaste.daemon.plist`.
 
 - `crosspaste status` shows whether the daemon is up; exit code 3 means not running.
 - Logs are written to `~/.local/share/.crosspaste/logs/` (on macOS: `~/Library/Application Support/CrossPaste/logs/`).
-- A second instance refuses to start with an error on stderr and a non-zero exit — that includes trying to start the daemon while the desktop app is running (one peer per machine).
+- A second instance refuses to start with an error on stderr and a non-zero exit — that includes trying to start the daemon while the desktop app is running (the GUI and the daemon are one peer per user).
 - Device discovery needs mDNS/multicast on the local network; if `crosspaste pair` finds nothing, check the firewall and that both machines share a network segment.
 
 ## Shell completion

@@ -31,7 +31,7 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | `paste [id]` | 显示最近一条粘贴，或按 ID 显示指定一条。 |
 | `history` | 列出最近粘贴历史（`--limit`、`--type`、`--tag`、`--format`）。 |
 | `search <query>` | 搜索粘贴历史（过滤参数与 `history` 相同）。 |
-| `copy [text]` | 通过 CrossPaste 复制文本到剪贴板；接管道时读取 stdin。 |
+| `copy [text]` | 通过 CrossPaste 复制文本：写入历史并同步到其他设备；仅当桌面应用（而非 headless 守护进程）在运行时才会写系统剪贴板。接管道时读取 stdin。 |
 | `delete <id>` | 按 ID 删除一条粘贴。 |
 | `devices` | 列出已配对设备及连接状态。 |
 | `pair` | 与附近设备配对：输入对方屏幕上显示的配对码（见[在终端里配对](#在终端里配对)）。 |
@@ -102,7 +102,7 @@ fi
 2. 目标设备（桌面或移动端，任何有屏幕的设备）会显示一个 6 位配对码；如有弹窗请在该设备上确认。
 3. 在终端输入配对码（输入不回显）。成功后两台设备互相信任并开始同步。
 
-配对本质是一次人工确认，因此 `pair` 要求交互式终端——向它管道输入会被视为参数错误。每个会话最多允许输入 5 次配对码；命令退出时会取消进行中的会话。
+配对本质是一次人工确认，因此 `pair` 要求交互式终端——向它管道输入会被视为参数错误。每个会话最多允许输入 5 次配对码；命令正常退出时会取消进行中的会话，被中断（Ctrl-C）遗留的会话则由服务端超时兜底回收。
 
 如果设备列表为空，请确认对方设备上的 CrossPaste 正在运行、两台机器在同一网络，且防火墙没有拦截 multicast/mDNS 流量。
 
@@ -114,7 +114,9 @@ headless 模式是自动检测的：机器上没有 `DISPLAY`/`WAYLAND_DISPLAY` 
 
 ### 快速开始
 
-按[安装](#安装)一节装好 deb（或解压 tarball），然后运行任意 CLI 命令：
+运行守护进程有两条互斥的路径：让 CLI 按需拉起（本节），或交给 systemd 托管（[下一节](#用-systemd-用户服务常驻)）。二选一——如果你想要守护进程被托管、开机自启，请跳过 CLI 拉起，直接配置 systemd 单元。
+
+按需拉起路径：按[安装](#安装)一节装好 deb（或解压 tarball），然后运行任意需要守护进程的命令（唯一例外是 `status`，它刻意永不自动拉起）：
 
 ```sh
 crosspaste history
@@ -130,7 +132,13 @@ crosspaste pair
 
 ### 用 systemd 用户服务常驻
 
-CLI 拉起只是便捷方式；服务器上应该让守护进程被托管、开机自启。守护进程是按用户隔离的（数据与 socket 都在用户主目录下），所以要用 systemd **用户** 单元，而不是系统单元。
+服务器上应该让守护进程被托管、开机自启。守护进程是按用户隔离的（数据与 socket 都在用户主目录下），所以要用 systemd **用户** 单元，而不是系统单元。
+
+如果已经有一个 CLI 拉起的（非托管）守护进程在跑，**先停掉它再启用单元**——两者是同一个单实例守护进程，否则 systemd 每次启动都会撞单实例锁退出，`Restart=on-failure` 会不停重试：
+
+```sh
+kill "$(cat ~/.local/share/.crosspaste/crosspaste.pid)"   # 优雅停机（SIGTERM）
+```
 
 创建 `~/.config/systemd/user/crosspaste.service`：
 
@@ -156,6 +164,8 @@ sudo loginctl enable-linger "$USER"   # 开机自启，注销后继续运行
 ```
 
 CLI 刻意不提供 `daemon start/stop` 子命令：`systemctl --user stop crosspaste`（或直接 SIGTERM）即可优雅停机，`crosspaste status` 查看是否在运行。
+
+一旦交给 systemd 托管，就保持托管：单元停止时如果某个 CLI 命令询问是否拉起 CrossPaste，请拒绝（或用 `--no-start`），改用 `systemctl --user start crosspaste`，让守护进程始终处于被托管状态。
 
 ### macOS（launchd）
 
@@ -184,7 +194,7 @@ headless 的 macOS 机器很少见，等价方式是 LaunchAgent。只在桌面�
 
 - `crosspaste status` 查看守护进程是否在运行；退出码 3 表示未运行。
 - 日志写入 `~/.local/share/.crosspaste/logs/`（macOS 为 `~/Library/Application Support/CrossPaste/logs/`）。
-- 第二个实例会拒绝启动（stderr 报错 + 非零退出码）——包括桌面应用运行时再启动守护进程（每台机器只有一个 peer）。
+- 第二个实例会拒绝启动（stderr 报错 + 非零退出码）——包括桌面应用运行时再启动守护进程（图形应用与守护进程是同一用户下的同一个 peer）。
 - 设备发现依赖局域网 mDNS/multicast；`crosspaste pair` 找不到设备时，请检查防火墙以及两台机器是否在同一网段。
 
 ## Shell 补全
