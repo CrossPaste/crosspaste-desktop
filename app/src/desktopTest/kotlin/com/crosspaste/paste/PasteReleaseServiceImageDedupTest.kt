@@ -329,7 +329,13 @@ class PasteReleaseServiceImageDedupTest {
             )
 
             assertNull(
-                fixture.pasteDao.getRecentSameHashLocalPasteId(item.hash, PasteType.IMAGE_TYPE.type, 0L, -1L),
+                fixture.pasteDao.getRecentSameHashLocalPasteId(
+                    item.hash,
+                    PasteType.IMAGE_TYPE.type,
+                    0L,
+                    Long.MAX_VALUE,
+                    -1L,
+                ),
             )
         }
 
@@ -354,7 +360,13 @@ class PasteReleaseServiceImageDedupTest {
             )
 
             assertNull(
-                fixture.pasteDao.getRecentSameHashLocalPasteId(item.hash, PasteType.IMAGE_TYPE.type, 0L, -1L),
+                fixture.pasteDao.getRecentSameHashLocalPasteId(
+                    item.hash,
+                    PasteType.IMAGE_TYPE.type,
+                    0L,
+                    Long.MAX_VALUE,
+                    -1L,
+                ),
             )
         }
 
@@ -373,6 +385,28 @@ class PasteReleaseServiceImageDedupTest {
 
             assertNotNull(fixture.pasteDao.getDeletePasteData(loadingId))
             assertContentEquals(listOf(loadingId), fixture.taskSubmitter.builder.deleteIds)
+        }
+
+    @Test
+    fun `loaded candidate newer than the window does not trigger dedup`() =
+        runTest {
+            val fixture = newFixture()
+            val now = DateUtils.nowEpochMilliseconds()
+            // The same image was copied again 10s after this record's event and
+            // finished releasing first (out of order); the delayed old record is a
+            // separate operation and must not discard itself against it.
+            fixture.createLoadedRecord(imageItem(), PasteType.IMAGE_TYPE, now)
+            val loadingId = fixture.createLoadingRecord(createTime = now - 10_000L)
+
+            fixture.service.releaseLocalPasteData(loadingId, listOf(imageItem()), null)
+
+            val released = fixture.pasteDao.getNoDeletePasteDataBlock(loadingId)
+            assertNotNull(released)
+            assertEquals(PasteState.LOADED, released.pasteState)
+            assertTrue(
+                fixture.taskSubmitter.builder.deleteIds
+                    .isEmpty(),
+            )
         }
 
     @Test

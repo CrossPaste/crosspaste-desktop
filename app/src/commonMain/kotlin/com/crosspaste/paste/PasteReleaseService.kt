@@ -180,6 +180,31 @@ class PasteReleaseService(
         }
     }
 
+    /**
+     * Single writer of the updatePasteDataToLoaded statement so the normal
+     * release and the duplicate-discard transaction cannot drift apart when
+     * fields are added. Must be called inside a transaction.
+     */
+    private fun writeLoadedRow(
+        firstItem: PasteItem,
+        remainingItems: List<PasteItem>,
+        size: Long,
+        hash: String,
+        pasteType: PasteType,
+        id: Long,
+        pasteSearchContent: String?,
+    ) {
+        database.pasteDatabaseQueries.updatePasteDataToLoaded(
+            pasteAppearItem = firstItem.toStoredJson(),
+            pasteCollection = PasteCollection(remainingItems).toStoredJson(),
+            pasteType = pasteType.type.toLong(),
+            pasteSearchContent = pasteSearchContent,
+            size = size,
+            hash = hash,
+            id = id,
+        )
+    }
+
     private fun persistLoaded(
         pasteData: PasteData,
         firstItem: PasteItem,
@@ -190,18 +215,18 @@ class PasteReleaseService(
         id: Long,
     ): Boolean =
         database.transactionWithResult {
-            database.pasteDatabaseQueries.updatePasteDataToLoaded(
-                pasteAppearItem = firstItem.toStoredJson(),
-                pasteCollection = PasteCollection(remainingItems).toStoredJson(),
-                pasteType = pasteType.type.toLong(),
+            writeLoadedRow(
+                firstItem = firstItem,
+                remainingItems = remainingItems,
+                size = size,
+                hash = hash,
+                pasteType = pasteType,
+                id = id,
                 pasteSearchContent =
                     searchContentService.createSearchContent(
                         pasteData.source,
                         pasteItemReader.getSearchContent(firstItem),
                     ),
-                size = size,
-                hash = hash,
-                id = id,
             )
             database.pasteDatabaseQueries.change().executeAsOne() > 0
         }
@@ -244,11 +269,13 @@ class PasteReleaseService(
         id: Long,
     ): Boolean? =
         imageDedupMutex.withLock("${pasteType.type}:$hash") {
+            val windowMillis = IMAGE_DEDUP_WINDOW.inWholeMilliseconds
             val keptId =
                 pasteDao.getRecentSameHashLocalPasteId(
                     hash = hash,
                     pasteType = pasteType.type,
-                    minCreateTime = pasteData.createTime - IMAGE_DEDUP_WINDOW.inWholeMilliseconds,
+                    minCreateTime = pasteData.createTime - windowMillis,
+                    maxCreateTime = pasteData.createTime + windowMillis,
                     excludeId = id,
                 )
 
@@ -258,14 +285,14 @@ class PasteReleaseService(
                 logger.info { "Discarding duplicate local image paste id=$id, keeping recent record id=$keptId" }
                 taskSubmitter.submit {
                     database.transaction {
-                        database.pasteDatabaseQueries.updatePasteDataToLoaded(
-                            pasteAppearItem = firstItem.toStoredJson(),
-                            pasteCollection = PasteCollection(remainingItems).toStoredJson(),
-                            pasteType = pasteType.type.toLong(),
-                            pasteSearchContent = null,
+                        writeLoadedRow(
+                            firstItem = firstItem,
+                            remainingItems = remainingItems,
                             size = size,
                             hash = hash,
+                            pasteType = pasteType,
                             id = id,
+                            pasteSearchContent = null,
                         )
                         database.pasteDatabaseQueries.markDeletePasteData(listOf(id))
                         addDeletePasteTasks(listOf(id))

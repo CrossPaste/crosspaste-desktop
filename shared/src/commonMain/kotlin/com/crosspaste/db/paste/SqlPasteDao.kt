@@ -245,6 +245,7 @@ class SqlPasteDao(
         hash: String,
         pasteType: Int,
         minCreateTime: Long,
+        maxCreateTime: Long,
         excludeId: Long,
     ): Long? =
         pasteDatabaseQueries
@@ -252,6 +253,7 @@ class SqlPasteDao(
                 hash,
                 pasteType.toLong(),
                 minCreateTime,
+                maxCreateTime,
                 excludeId,
             ).executeAsOneOrNull()
 
