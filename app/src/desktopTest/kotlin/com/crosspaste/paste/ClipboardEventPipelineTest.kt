@@ -323,6 +323,58 @@ class ClipboardEventPipelineTest {
         }
 
     @Test
+    fun `an event queued before stopCapture is not replayed after restart`() =
+        runTest {
+            val harness = Harness()
+            harness.pipeline.startCapture(this)
+
+            // The signal is queued but the quiet window has not elapsed yet.
+            harness.write("AppA")
+            harness.pipeline.stopCapture()
+            harness.pipeline.startCapture(this)
+            advanceUntilIdle()
+
+            assertTrue(harness.snapshots.isEmpty())
+
+            harness.write("AppB")
+            advanceUntilIdle()
+
+            assertEquals(listOf(2), harness.consumed.map { it.second.sequence })
+            harness.pipeline.close(1.seconds)
+        }
+
+    @Test
+    fun `stopCapture during a blocking read discards the result without marking it processed`() =
+        runTest {
+            val harness = Harness()
+            var stopOnce = true
+            harness.onSnapshot = { event ->
+                if (stopOnce) {
+                    stopOnce = false
+                    harness.pipeline.stopCapture()
+                }
+                "snap-${event.sequence}"
+            }
+            harness.pipeline.startCapture(this)
+
+            harness.write("AppA")
+            advanceUntilIdle()
+
+            assertEquals(1, harness.snapshots.size)
+            assertTrue(harness.consumed.isEmpty())
+
+            // After restart the same sequence is still readable: it was never marked
+            // processed by the discarded read.
+            harness.pipeline.startCapture(this)
+            harness.pipeline.onEvent(1, "AppA")
+            advanceUntilIdle()
+
+            assertEquals(2, harness.snapshots.size)
+            assertEquals(listOf(1), harness.consumed.map { it.second.sequence })
+            harness.pipeline.close(1.seconds)
+        }
+
+    @Test
     fun `queue overflow drops the oldest snapshot and keeps the newest states`() =
         runTest {
             val harness = Harness(snapshotQueueCapacity = 2)

@@ -57,7 +57,11 @@ data class ClipboardEvent(
  * bounded: when the consumer falls behind, the oldest unconsumed snapshot is dropped in
  * favor of newer clipboard states and counted in [droppedSnapshotCount].
  *
- * Lifecycle: [startCapture] / [stopCapture] toggle snapshot capture at runtime — the
+ * Lifecycle: [startCapture] / [stopCapture] toggle snapshot capture at runtime through
+ * a capture-generation gate — both workers are launched once and stay up. A stop
+ * invalidates the current generation, so leftover signals, recorded events, and reads
+ * still in flight from before the stop are discarded instead of being replayed after a
+ * restart, and a stop/start cycle can never run two snapshot readers concurrently. The
  * consumer deliberately keeps running across stops so snapshots that were already
  * captured are persisted in order rather than cancelled halfway through a write.
  * [close] shuts the whole pipeline down for application exit.
@@ -114,8 +118,22 @@ class ClipboardEventPipeline<S : Any>(
             },
         )
 
+    private data class RecordedEvent(
+        val event: ClipboardEvent,
+        val generation: Long,
+    )
+
     @Volatile
-    private var latestEvent: ClipboardEvent? = null
+    private var latestEvent: RecordedEvent? = null
+
+    // 0 = capture disabled. Runtime start/stop only moves this gate; the workers are
+    // launched once and stay up, so a stop/start cycle can never run two snapshotters
+    // concurrently (an in-flight blocking AWT read is not cancellable).
+    @Volatile
+    private var activeGeneration = 0L
+
+    // Guarded by the @Synchronized start/stop methods.
+    private var generationCounter = 0L
 
     // Only read and written by the snapshot worker coroutine.
     private var lastProcessedSequence: Int? = null
@@ -127,13 +145,17 @@ class ClipboardEventPipeline<S : Any>(
     /**
      * Records a clipboard change and wakes the snapshot worker. Safe to call from any
      * thread; events arriving faster than the worker drains them conflate into the
-     * latest one.
+     * latest one. Events arriving while capture is stopped are dropped.
      */
     fun onEvent(
         sequence: Int,
         source: String?,
     ) {
-        latestEvent = ClipboardEvent(sequence, source)
+        val generation = activeGeneration
+        if (generation == 0L) {
+            return
+        }
+        latestEvent = RecordedEvent(ClipboardEvent(sequence, source), generation)
         signal.trySend(Unit)
     }
 
@@ -151,15 +173,21 @@ class ClipboardEventPipeline<S : Any>(
                     snapshotLoop()
                 }
         }
+        if (activeGeneration == 0L) {
+            activeGeneration = ++generationCounter
+        }
     }
 
     /**
-     * Stops taking new snapshots. The consumer keeps running so already captured
-     * snapshots are persisted in order instead of being cancelled mid-write.
+     * Stops taking new snapshots by closing the generation gate: events, pending
+     * signals, and in-flight reads from the closed generation are discarded by the
+     * snapshot worker instead of being replayed after a restart. The consumer keeps
+     * running so already captured snapshots are persisted in order instead of being
+     * cancelled mid-write.
      */
     @Synchronized
     fun stopCapture() {
-        snapshotterJob?.cancel()
+        activeGeneration = 0L
     }
 
     /**
@@ -171,6 +199,7 @@ class ClipboardEventPipeline<S : Any>(
     suspend fun close(gracePeriod: Duration) {
         stopCapture()
         signal.close()
+        snapshotterJob?.cancel()
         snapshotQueue.close()
         consumerJob?.let { job ->
             if (withTimeoutOrNull(gracePeriod) { job.join() } == null) {
@@ -208,7 +237,17 @@ class ClipboardEventPipeline<S : Any>(
     }
 
     private suspend fun captureBurst() {
-        var event = latestEvent ?: return
+        val generation = activeGeneration
+        if (generation == 0L) {
+            return
+        }
+        val recorded = latestEvent ?: return
+        if (recorded.generation != generation) {
+            // A signal left over from a previous capture session; its event must not
+            // leak into this one (e.g. bypassing enableSkipPreLaunchPasteboardContent).
+            return
+        }
+        var event = recorded.event
         if (event.sequence == lastProcessedSequence) {
             return
         }
@@ -217,7 +256,10 @@ class ClipboardEventPipeline<S : Any>(
         var restarts = 0
         while (true) {
             delay(wait)
-            val newest = latestEvent ?: event
+            if (activeGeneration != generation) {
+                return
+            }
+            val newest = latestEvent?.takeIf { it.generation == generation }?.event ?: event
             if (newest.sequence == event.sequence) {
                 break
             }
@@ -234,6 +276,11 @@ class ClipboardEventPipeline<S : Any>(
         }
 
         val snapshot = takeSnapshot(event)
+        if (activeGeneration != generation) {
+            // Capture was stopped while the non-cancellable blocking read was in
+            // flight: discard the result without recording anything.
+            return
+        }
         if (snapshot == null) {
             lastProcessedSequence = event.sequence
             return
