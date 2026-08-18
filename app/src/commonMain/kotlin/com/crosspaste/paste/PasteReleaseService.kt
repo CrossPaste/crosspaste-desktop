@@ -131,6 +131,10 @@ class PasteReleaseService(
             val hash = firstItem.hash
             val pasteType = firstItem.getPasteType()
 
+            if (discardDuplicateLocalImage(pasteData, firstItem, remainingItems, size, hash, pasteType, id)) {
+                return@let
+            }
+
             val change =
                 database.transactionWithResult {
                     database.pasteDatabaseQueries.updatePasteDataToLoaded(
@@ -171,6 +175,63 @@ class PasteReleaseService(
                 }
             }
         }
+    }
+
+    /**
+     * Keep-first dedup for locally collected non-ref images: a single clipboard
+     * operation can fire multiple clipboard events (Windows Snipping Tool writes
+     * twice per capture), each collected into an identical record. Non-ref images
+     * intentionally bypass [markDeleteSameHash] (the #2693 resource-lifecycle
+     * guard), so an identical local image released within
+     * [com.crosspaste.db.paste.SqlPasteDao.RECENT_SAME_HASH_WINDOW] identifies
+     * this record as that duplicate: keep the first record, discard this one.
+     *
+     * The final items (with the real file paths) must be persisted before the row
+     * is marked deleted — at this point the row still holds the pre-collect
+     * placeholder, and deleting it as-is would orphan the just-written files.
+     * Only a delete task is created, never sync or rendering tasks, so the
+     * discarded record never has in-flight consumers and clearing its files
+     * cannot race anything — which is what keeps the #2693 guard intact.
+     *
+     * Returns true when the record was discarded as a duplicate.
+     */
+    private suspend fun discardDuplicateLocalImage(
+        pasteData: PasteData,
+        firstItem: PasteItem,
+        remainingItems: List<PasteItem>,
+        size: Long,
+        hash: String,
+        pasteType: PasteType,
+        id: Long,
+    ): Boolean {
+        if (pasteData.remote ||
+            !pasteType.isImage() ||
+            firstItem !is PasteFiles ||
+            firstItem.isRefFiles() ||
+            hash.isEmpty()
+        ) {
+            return false
+        }
+
+        val keptId = pasteDao.getRecentSameHashLocalPasteId(hash, pasteType.type, id) ?: return false
+
+        logger.info { "Discarding duplicate local image paste id=$id, keeping recent record id=$keptId" }
+        taskSubmitter.submit {
+            database.transaction {
+                database.pasteDatabaseQueries.updatePasteDataToLoaded(
+                    pasteAppearItem = firstItem.toStoredJson(),
+                    pasteCollection = PasteCollection(remainingItems).toStoredJson(),
+                    pasteType = pasteType.type.toLong(),
+                    pasteSearchContent = null,
+                    size = size,
+                    hash = hash,
+                    id = id,
+                )
+                database.pasteDatabaseQueries.markDeletePasteData(listOf(id))
+                addDeletePasteTasks(listOf(id))
+            }
+        }
+        return true
     }
 
     /**

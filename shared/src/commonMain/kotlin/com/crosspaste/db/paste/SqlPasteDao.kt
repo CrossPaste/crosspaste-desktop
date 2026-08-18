@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.seconds
 
 class SqlPasteDao(
     private val appInfo: AppInfo,
@@ -32,6 +33,13 @@ class SqlPasteDao(
     private val taskSubmitter: TaskSubmitter,
     private val userDataPathProvider: UserDataPathProvider,
 ) : PasteDao {
+
+    companion object {
+        // Wide enough to cover a duplicate write from a single clipboard operation
+        // (Snipping Tool writes twice, 30–90 ms apart) plus collection latency,
+        // short enough to rarely collapse intentional re-copies.
+        val RECENT_SAME_HASH_WINDOW = 5.seconds
+    }
 
     private val logger = KotlinLogging.logger {}
 
@@ -240,6 +248,19 @@ class SqlPasteDao(
                 DateUtils.getOffsetDay(days = -1),
                 excludeId,
             ).executeAsList()
+
+    override fun getRecentSameHashLocalPasteId(
+        hash: String,
+        pasteType: Int,
+        excludeId: Long,
+    ): Long? =
+        pasteDatabaseQueries
+            .getRecentSameHashLocalPasteId(
+                hash,
+                pasteType.toLong(),
+                DateUtils.nowEpochMilliseconds() - RECENT_SAME_HASH_WINDOW.inWholeMilliseconds,
+                excludeId,
+            ).executeAsOneOrNull()
 
     override suspend fun markDeleteByCleanTime(
         cleanTime: Long,
