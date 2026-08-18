@@ -10,9 +10,9 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.WindowClipboard
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
-import com.crosspaste.utils.DesktopControlUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
+import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -24,9 +24,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
+import kotlin.time.Duration.Companion.seconds
 
 class WindowsPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -43,13 +45,11 @@ class WindowsPasteboardService(
     User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
 
-    private val controlUtils = getControlUtils() as DesktopControlUtils
+    private val controlUtils = getControlUtils()
 
     private val desktopConfigManager = configManager as DesktopConfigManager
 
     @Volatile
-    private var existNew = false
-
     private var changeCount = configManager.getCurrentConfig().lastPasteboardChangeCount
 
     @Volatile
@@ -61,6 +61,42 @@ class WindowsPasteboardService(
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
     private val serviceConsumerScope = namedScope(cpuDispatcher, "WindowsPasteboardService")
+
+    // Single-consumer pipeline (#4793): the message-thread callback only records events;
+    // this worker coalesces bursts, takes one snapshot per burst, and consumes serially.
+    private val pipeline =
+        ClipboardEventPipeline<Transferable>(
+            currentSequence = { User32.INSTANCE.GetClipboardSequenceNumber() },
+            takeSnapshot = { event ->
+                if (sourceExclusionService.isExcluded(event.source)) {
+                    logger.debug { "Ignoring excluded source: ${event.source}" }
+                    null
+                } else {
+                    // The AWT snapshot is a blocking native read (retried on failure);
+                    // keep it off the CPU worker pool.
+                    withContext(ioDispatcher) {
+                        controlUtils.exponentialBackoffUntilValid(
+                            initTime = 20L,
+                            maxTime = 1000L,
+                            isValidResult = ::isValidContents,
+                        ) {
+                            getPasteboardContentsBySafe()
+                        }
+                    }
+                }
+            },
+            consume = { contents, event ->
+                if (contents != ownerTransferable) {
+                    ownerTransferable = contents
+                    val pasteTransferable = DesktopReadTransferable(contents)
+                    // in windows, we don't know if the pasteboard is local or remote
+                    pasteConsumer.consume(
+                        pasteTransferable,
+                        PasteSourceContext(source = event.source, remote = false),
+                    )
+                }
+            },
+        )
 
     private var job: Job? = null
     private var viewer: HWND? = null
@@ -124,8 +160,6 @@ class WindowsPasteboardService(
                     User32.QS_ALLINPUT,
                 )
 
-            existNew = true
-
             if (result == Kernel32.WAIT_OBJECT_0) {
                 User32.INSTANCE.RemoveClipboardFormatListener(viewer)
                 User32.INSTANCE.DestroyWindow(viewer)
@@ -158,6 +192,7 @@ class WindowsPasteboardService(
 
     override fun start() {
         if (job?.isActive != true) {
+            pipeline.startCapture(serviceConsumerScope)
             job =
                 serviceScope.launch(CoroutineName("WindowsPasteboardService")) {
                     val firstChange =
@@ -170,7 +205,10 @@ class WindowsPasteboardService(
                             .getCurrentConfig()
                             .enableSkipPreLaunchPasteboardContent
                     ) {
-                        onChange(true)
+                        pipeline.onEvent(
+                            sequence = User32.INSTANCE.GetClipboardSequenceNumber(),
+                            source = null,
+                        )
                     }
                     run()
                 }
@@ -179,51 +217,16 @@ class WindowsPasteboardService(
 
     override fun stop() {
         Kernel32.INSTANCE.SetEvent(event)
+        // Only capture stops here: the pipeline's consumer keeps draining snapshots that
+        // were already taken, so a consume in the middle of persisting is not cancelled.
+        pipeline.stopCapture()
         job?.cancel()
         configManager.updateConfig("lastPasteboardChangeCount", changeCount)
     }
 
-    private fun onChange(firstChange: Boolean = false) {
-        runCatching {
-            val source =
-                if (firstChange) {
-                    null
-                } else {
-                    controlUtils.blockEnsureMinExecutionTime(delayTime = 20) {
-                        appWindowManager.getCurrentActiveAppName()
-                    }
-                }
-
-            if (sourceExclusionService.isExcluded(source)) {
-                logger.debug { "Ignoring excluded source: $source" }
-                return
-            }
-
-            val contents =
-                controlUtils.blockExponentialBackoffUntilValid(
-                    initTime = 20L,
-                    maxTime = 1000L,
-                    isValidResult = ::isValidContents,
-                ) {
-                    getPasteboardContentsBySafe()
-                }
-
-            contents?.let {
-                if (it != ownerTransferable) {
-                    ownerTransferable = it
-                    serviceConsumerScope.launch(CoroutineName("WindowsPasteboardConsumer")) {
-                        val pasteTransferable = DesktopReadTransferable(it)
-                        // in windows, we don't know if the pasteboard is local or remote
-                        pasteConsumer.consume(
-                            pasteTransferable,
-                            PasteSourceContext(source = source, remote = false),
-                        )
-                    }
-                }
-            }
-        }.onFailure { e ->
-            logger.error(e) { "Failed to consume transferable" }
-        }
+    override suspend fun shutdown() {
+        stop()
+        pipeline.close(gracePeriod = 3.seconds)
     }
 
     override fun callback(
@@ -233,14 +236,17 @@ class WindowsPasteboardService(
         lParam: LPARAM?,
     ): Int {
         if (uMsg == User32.WM_CLIPBOARDUPDATE) {
-            if (existNew) {
-                existNew = false
-                runCatching {
-                    val clipboardSequenceNumber = User32.INSTANCE.GetClipboardSequenceNumber()
-                    if (changeCount != clipboardSequenceNumber) {
-                        changeCount = clipboardSequenceNumber
-                        onChange()
-                    }
+            runCatching {
+                val clipboardSequenceNumber = User32.INSTANCE.GetClipboardSequenceNumber()
+                if (changeCount != clipboardSequenceNumber) {
+                    changeCount = clipboardSequenceNumber
+                    // Sample the source at event time so it stays bound to this sequence;
+                    // no clipboard read happens on the message thread.
+                    val source =
+                        runCatching {
+                            appWindowManager.getCurrentActiveAppName()
+                        }.getOrNull()
+                    pipeline.onEvent(clipboardSequenceNumber, source)
                 }
             }
             return 0
