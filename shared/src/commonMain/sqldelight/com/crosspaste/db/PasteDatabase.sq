@@ -166,6 +166,24 @@ WHERE hash = :hash AND
         WHERE PasteTagEntity.pasteId = PasteDataEntity.id
     );
 
+-- Keep-first dedup probe: a matching row means the paste being released is a
+-- duplicate of a record collected moments ago (e.g. Windows Snipping Tool writes
+-- the clipboard twice per capture) and should be discarded instead of kept.
+-- Only LOADED rows qualify: the kept candidate must be fully released with
+-- complete resource information. The createTime range is bounded on both sides:
+-- an identical image copied again long after this record's event (and released
+-- first, out of order) is a separate operation, not a duplicate.
+getRecentSameHashLocalPasteId:
+SELECT id FROM PasteDataEntity
+WHERE hash = :hash AND
+    pasteType = :pasteType AND
+    pasteState = 1 AND
+    remote = 0 AND
+    createTime > :minCreateTime AND
+    createTime < :maxCreateTime AND
+    id != :id
+LIMIT 1;
+
 -- pasteType filter: filterByPasteType=TRUE means no type filter (return all types);
 -- filterByPasteType=FALSE applies the IN clause to match any of the given types.
 -- This supports mobile clients that need to query multiple paste types in one request.

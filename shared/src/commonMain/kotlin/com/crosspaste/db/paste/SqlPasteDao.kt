@@ -241,6 +241,22 @@ class SqlPasteDao(
                 excludeId,
             ).executeAsList()
 
+    override fun getRecentSameHashLocalPasteId(
+        hash: String,
+        pasteType: Int,
+        minCreateTime: Long,
+        maxCreateTime: Long,
+        excludeId: Long,
+    ): Long? =
+        pasteDatabaseQueries
+            .getRecentSameHashLocalPasteId(
+                hash,
+                pasteType.toLong(),
+                minCreateTime,
+                maxCreateTime,
+                excludeId,
+            ).executeAsOneOrNull()
+
     override suspend fun markDeleteByCleanTime(
         cleanTime: Long,
         pasteType: Int?,

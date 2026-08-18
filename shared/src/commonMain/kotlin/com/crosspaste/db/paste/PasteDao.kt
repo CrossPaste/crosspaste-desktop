@@ -49,6 +49,22 @@ interface PasteDao : SearchPasteData {
         excludeId: Long,
     ): List<Long>
 
+    /**
+     * Returns the id of a LOADED, locally collected record with the same hash
+     * and paste type created inside ([minCreateTime], [maxCreateTime]), or null.
+     * Used for keep-first dedup of duplicate records produced by a single
+     * clipboard operation (e.g. Windows Snipping Tool writes twice per capture);
+     * the caller owns the dedup window policy and passes it as an explicit
+     * createTime range.
+     */
+    fun getRecentSameHashLocalPasteId(
+        hash: String,
+        pasteType: Int,
+        minCreateTime: Long,
+        maxCreateTime: Long,
+        excludeId: Long,
+    ): Long?
+
     suspend fun markDeleteByCleanTime(
         cleanTime: Long,
         pasteType: Int? = null,
