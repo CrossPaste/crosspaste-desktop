@@ -15,8 +15,8 @@ class ClipboardEventPipelineTest {
 
     private class Harness(
         quietWindow: Duration = 100.milliseconds,
+        burstQuietWindow: Duration = 500.milliseconds,
         maxQuietWindowRestarts: Int = ClipboardEventPipeline.DEFAULT_MAX_QUIET_WINDOW_RESTARTS,
-        maxRevalidations: Int = ClipboardEventPipeline.DEFAULT_MAX_REVALIDATIONS,
     ) {
         var sequence = 0
 
@@ -30,8 +30,8 @@ class ClipboardEventPipelineTest {
         val pipeline =
             ClipboardEventPipeline(
                 quietWindow = quietWindow,
+                burstQuietWindow = burstQuietWindow,
                 maxQuietWindowRestarts = maxQuietWindowRestarts,
-                maxRevalidations = maxRevalidations,
                 currentSequence = { sequence },
                 takeSnapshot = { event ->
                     snapshots.add(event)
@@ -61,7 +61,7 @@ class ClipboardEventPipelineTest {
 
             assertEquals(listOf(ClipboardEvent(1, "AppA")), harness.snapshots)
             assertEquals(listOf("snap-1" to ClipboardEvent(1, "AppA")), harness.consumed)
-            assertEquals(0L, harness.pipeline.degradedSnapshotCount)
+            assertEquals(0L, harness.pipeline.discardedSnapshotCount)
             worker.cancel()
         }
 
@@ -78,7 +78,27 @@ class ClipboardEventPipelineTest {
 
             assertEquals(listOf(ClipboardEvent(2, "SnippingTool")), harness.snapshots)
             assertEquals(listOf("snap-2" to ClipboardEvent(2, "SnippingTool")), harness.consumed)
-            assertEquals(0L, harness.pipeline.degradedSnapshotCount)
+            assertEquals(0L, harness.pipeline.discardedSnapshotCount)
+            worker.cancel()
+        }
+
+    @Test
+    fun `detecting a burst extends the wait to the burst quiet window`() =
+        runTest {
+            val harness = Harness()
+            val worker = harness.pipeline.launchIn(this)
+
+            harness.write("SnippingTool")
+            advanceTimeBy(60.milliseconds)
+            harness.write("SnippingTool")
+
+            // The burst is detected at 100 ms; the snapshot is then deferred by the
+            // 500 ms burst window instead of another base window.
+            advanceTimeBy(500.milliseconds)
+            assertTrue(harness.snapshots.isEmpty())
+
+            advanceUntilIdle()
+            assertEquals(listOf(ClipboardEvent(2, "SnippingTool")), harness.snapshots)
             worker.cancel()
         }
 
@@ -104,7 +124,7 @@ class ClipboardEventPipelineTest {
         }
 
     @Test
-    fun `snapshot is retaken when the sequence changes during the read`() =
+    fun `snapshot is discarded when the sequence changes during the read`() =
         runTest {
             val harness = Harness()
             var firstSnapshot = true
@@ -121,40 +141,51 @@ class ClipboardEventPipelineTest {
             harness.write("AppA")
             advanceUntilIdle()
 
-            assertEquals(2, harness.snapshots.size)
+            // The mixed-state snapshot is dropped; the late event re-enters through its
+            // own quiet window carrying its own source.
+            assertEquals(
+                listOf(ClipboardEvent(1, "AppA"), ClipboardEvent(2, "Late")),
+                harness.snapshots,
+            )
             assertEquals(listOf("snap-2" to ClipboardEvent(2, "Late")), harness.consumed)
-            assertEquals(0L, harness.pipeline.degradedSnapshotCount)
+            assertEquals(1L, harness.pipeline.discardedSnapshotCount)
             worker.cancel()
         }
 
     @Test
-    fun `revalidation is bounded and the latest event is still processed afterwards`() =
+    fun `a write during the read does not inherit the previous source and exclusions hold`() =
         runTest {
-            val harness = Harness(maxRevalidations = 2)
+            val harness = Harness()
             harness.onSnapshot = { event ->
-                if (harness.sequence < 4) {
-                    // The clipboard keeps changing under the reader, and the matching
-                    // change messages have not been recorded yet.
+                if (event.source == "AppA" && harness.sequence == 1) {
+                    // An excluded app writes while AppA's snapshot is being taken; its
+                    // change message has not arrived yet.
                     harness.sequence++
                 }
-                "snap-${event.sequence}"
+                if (event.source == "ExcludedApp") {
+                    null
+                } else {
+                    "snap-${event.sequence}"
+                }
             }
             val worker = harness.pipeline.launchIn(this)
 
             harness.write("AppA")
             advanceUntilIdle()
 
-            assertEquals(3, harness.snapshots.size)
-            assertEquals(1L, harness.pipeline.degradedSnapshotCount)
-            // The degraded snapshot keeps the source of the event it was re-bound from.
-            assertEquals(listOf("snap-3" to ClipboardEvent(3, "AppA")), harness.consumed)
+            // The mixed snapshot was dropped instead of being processed as AppA.
+            assertEquals(1L, harness.pipeline.discardedSnapshotCount)
+            assertTrue(harness.consumed.isEmpty())
 
-            // The change message for the newest write arrives afterwards and is processed.
-            harness.pipeline.onEvent(4, "AppB")
+            // The excluded app's own event arrives and is excluded, not recorded.
+            harness.pipeline.onEvent(2, "ExcludedApp")
             advanceUntilIdle()
 
-            assertEquals(4, harness.snapshots.size)
-            assertEquals("snap-4" to ClipboardEvent(4, "AppB"), harness.consumed.last())
+            assertEquals(
+                listOf(ClipboardEvent(1, "AppA"), ClipboardEvent(2, "ExcludedApp")),
+                harness.snapshots,
+            )
+            assertTrue(harness.consumed.isEmpty())
             worker.cancel()
         }
 
@@ -179,6 +210,26 @@ class ClipboardEventPipelineTest {
 
             assertEquals(listOf(1, 2), harness.consumed.map { it.second.sequence })
             assertEquals(1, maxActive)
+            worker.cancel()
+        }
+
+    @Test
+    fun `a slow consume does not conflate or drop later events`() =
+        runTest {
+            val harness = Harness()
+            harness.onConsume = { _, _ -> delay(10.seconds) }
+            val worker = harness.pipeline.launchIn(this)
+
+            harness.write("AppA")
+            advanceTimeBy(500.milliseconds)
+            // Both writes land while AppA's consume is still running.
+            harness.write("AppB")
+            advanceTimeBy(1500.milliseconds)
+            harness.write("AppC")
+            advanceUntilIdle()
+
+            assertEquals(listOf(1, 2, 3), harness.snapshots.map { it.sequence })
+            assertEquals(listOf(1, 2, 3), harness.consumed.map { it.second.sequence })
             worker.cancel()
         }
 
@@ -217,10 +268,11 @@ class ClipboardEventPipelineTest {
             advanceUntilIdle()
 
             assertTrue(harness.consumed.isNotEmpty())
-            // The first pass stops extending after two restarts instead of waiting out
-            // the whole write storm.
+            // First wake at 100 ms adopts seq 2, the burst wait of 500 ms wakes at
+            // 600 ms and adopts seq 11, then the restart cap forces the snapshot
+            // instead of waiting out the whole write storm.
             assertEquals(
-                4,
+                11,
                 harness.consumed
                     .first()
                     .second.sequence,

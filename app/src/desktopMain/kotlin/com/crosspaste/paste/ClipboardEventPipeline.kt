@@ -30,65 +30,72 @@ data class ClipboardEvent(
  * Apps like Snipping Tool write the clipboard several times per user operation within a
  * short burst, and each eager full snapshot taken in that window competes with the
  * writer's own clipboard access (#4737). This pipeline decouples event delivery from
- * clipboard reading:
+ * clipboard reading, and clipboard reading from record processing:
  *
  * - [onEvent] is cheap and non-blocking: it records the latest event and signals the
- *   worker through a conflated channel. It never touches the clipboard, so the caller
- *   (e.g. a Windows message loop) returns immediately.
- * - The worker waits for the clipboard to stay quiet for [quietWindow] before reading;
- *   every further event restarts the wait (at most [maxQuietWindowRestarts] times), so a
- *   whole burst collapses into one [takeSnapshot] call.
- * - After the snapshot, the sequence is re-validated: if the clipboard changed while the
- *   snapshot was being taken, the snapshot may hold a mixed state, so it is discarded and
- *   retaken — at most [maxRevalidations] times. On exhausting the budget the possibly
- *   intermediate snapshot is accepted, [degradedSnapshotCount] is incremented, and the
- *   newer content is still processed by the next pass (its event has already re-signaled
- *   the channel).
- * - [consume] is awaited by the worker, so consume passes never overlap and record order
- *   matches event order.
+ *   snapshot worker through a conflated channel. It never touches the clipboard, so the
+ *   caller (e.g. a Windows message loop) returns immediately.
+ * - The snapshot worker waits for the clipboard to stay quiet for [quietWindow] before
+ *   reading. Detecting a further write during the wait marks the burst as such and the
+ *   remaining waits use the longer [burstQuietWindow] (at most [maxQuietWindowRestarts]
+ *   restarts), so a whole burst collapses into **one** [takeSnapshot] call.
+ * - After the snapshot, the sequence is re-validated. If the clipboard changed while the
+ *   snapshot was being taken, the snapshot may hold a mixed state and the event carrying
+ *   the new sequence's source has not been seen yet — so the snapshot is **discarded**
+ *   ([discardedSnapshotCount] tracks this) and the sequence is left unprocessed: the new
+ *   write's own event re-enters through a fresh quiet window with its correct source.
+ *   Inheriting the previous event's source here would misattribute the new content and
+ *   could bypass source exclusions; an immediate re-read would recreate the back-to-back
+ *   full snapshots this pipeline exists to avoid.
+ * - Captured snapshots are queued to a separate consume worker that awaits each
+ *   [consume] serially: consume passes never overlap, record order matches event order,
+ *   and a slow consume does not delay or conflate the capture of later events.
  *
  * The default windows are initial values; final parameters must be validated on a real
  * machine over 50+ consecutive Snipping Tool captures (#4793).
  */
 class ClipboardEventPipeline<S : Any>(
     private val quietWindow: Duration = DEFAULT_QUIET_WINDOW,
+    private val burstQuietWindow: Duration = DEFAULT_BURST_QUIET_WINDOW,
     private val maxQuietWindowRestarts: Int = DEFAULT_MAX_QUIET_WINDOW_RESTARTS,
-    private val maxRevalidations: Int = DEFAULT_MAX_REVALIDATIONS,
     private val currentSequence: () -> Int,
     private val takeSnapshot: suspend (ClipboardEvent) -> S?,
     private val consume: suspend (snapshot: S, event: ClipboardEvent) -> Unit,
 ) {
 
     companion object {
-        // Snipping Tool's two writes land 30–90 ms apart, so the quiet window must span
-        // that gap for the burst to collapse into a single snapshot.
+        // A normal single copy only pays this small delay before the snapshot.
         val DEFAULT_QUIET_WINDOW = 100.milliseconds
 
-        // Worst-case added wait ≈ quietWindow * (restarts + 1); Ditto's field experience
-        // suggests ~500 ms is an effective total delay for misbehaving writers.
-        const val DEFAULT_MAX_QUIET_WINDOW_RESTARTS = 4
+        // Snipping Tool's two writes land 30–90 ms apart; once a second write is seen
+        // inside the base window, wait out the longer window that Ditto's field
+        // experience (~500 ms) suggests misbehaving writers need to finish.
+        val DEFAULT_BURST_QUIET_WINDOW = 500.milliseconds
 
-        const val DEFAULT_MAX_REVALIDATIONS = 2
+        const val DEFAULT_MAX_QUIET_WINDOW_RESTARTS = 4
     }
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val signal = Channel<Unit>(Channel.CONFLATED)
 
+    private val snapshotQueue = Channel<Pair<S, ClipboardEvent>>(Channel.UNLIMITED)
+
     @Volatile
     private var latestEvent: ClipboardEvent? = null
 
-    // Only read and written by the worker coroutine.
+    // Only read and written by the snapshot worker coroutine.
     private var lastProcessedSequence: Int? = null
 
-    private val degradedCount = AtomicLong(0)
+    private val discardedCount = AtomicLong(0)
 
-    val degradedSnapshotCount: Long
-        get() = degradedCount.get()
+    val discardedSnapshotCount: Long
+        get() = discardedCount.get()
 
     /**
-     * Records a clipboard change and wakes the worker. Safe to call from any thread;
-     * events arriving faster than the worker drains them conflate into the latest one.
+     * Records a clipboard change and wakes the snapshot worker. Safe to call from any
+     * thread; events arriving faster than the worker drains them conflate into the
+     * latest one.
      */
     fun onEvent(
         sequence: Int,
@@ -99,33 +106,57 @@ class ClipboardEventPipeline<S : Any>(
     }
 
     fun launchIn(scope: CoroutineScope): Job =
-        scope.launch(CoroutineName("ClipboardEventPipelineWorker")) {
-            for (unused in signal) {
-                runCatching {
-                    processBurst()
-                }.onFailure { e ->
-                    if (e is CancellationException) {
-                        throw e
-                    }
-                    logger.error(e) { "Failed to process clipboard burst" }
-                }
+        scope.launch(CoroutineName("ClipboardEventPipeline")) {
+            launch(CoroutineName("ClipboardEventPipelineConsumer")) {
+                consumeLoop()
+            }
+            launch(CoroutineName("ClipboardEventPipelineSnapshotter")) {
+                snapshotLoop()
             }
         }
 
-    private suspend fun processBurst() {
+    private suspend fun snapshotLoop() {
+        for (unused in signal) {
+            runCatching {
+                captureBurst()
+            }.onFailure { e ->
+                if (e is CancellationException) {
+                    throw e
+                }
+                logger.error(e) { "Failed to capture clipboard burst" }
+            }
+        }
+    }
+
+    private suspend fun consumeLoop() {
+        for ((snapshot, event) in snapshotQueue) {
+            runCatching {
+                consume(snapshot, event)
+            }.onFailure { e ->
+                if (e is CancellationException) {
+                    throw e
+                }
+                logger.error(e) { "Failed to consume clipboard snapshot at sequence ${event.sequence}" }
+            }
+        }
+    }
+
+    private suspend fun captureBurst() {
         var event = latestEvent ?: return
         if (event.sequence == lastProcessedSequence) {
             return
         }
 
+        var wait = quietWindow
         var restarts = 0
         while (true) {
-            delay(quietWindow)
+            delay(wait)
             val newest = latestEvent ?: event
             if (newest.sequence == event.sequence) {
                 break
             }
             event = newest
+            wait = burstQuietWindow
             restarts++
             if (restarts >= maxQuietWindowRestarts) {
                 logger.warn {
@@ -136,34 +167,23 @@ class ClipboardEventPipeline<S : Any>(
             }
         }
 
-        var snapshot: S?
-        var revalidations = 0
-        while (true) {
-            snapshot = takeSnapshot(event)
-            val sequenceNow = currentSequence()
-            if (sequenceNow == event.sequence) {
-                break
+        val snapshot = takeSnapshot(event)
+        if (snapshot == null) {
+            lastProcessedSequence = event.sequence
+            return
+        }
+
+        val sequenceNow = currentSequence()
+        if (sequenceNow != event.sequence) {
+            discardedCount.incrementAndGet()
+            logger.warn {
+                "Discarding snapshot at sequence ${event.sequence}: clipboard moved to " +
+                    "$sequenceNow during the read; awaiting its own event"
             }
-            if (revalidations >= maxRevalidations) {
-                degradedCount.incrementAndGet()
-                logger.warn {
-                    "Accepting possibly intermediate snapshot at sequence ${event.sequence} " +
-                        "after $revalidations revalidations (clipboard now at $sequenceNow)"
-                }
-                break
-            }
-            revalidations++
-            // Re-bind to the event actually recorded for the new sequence so source
-            // attribution follows the captured content; if its message has not been
-            // recorded yet, keep the previous source rather than re-querying now —
-            // the foreground app may have changed since the write.
-            event = latestEvent?.takeIf { it.sequence == sequenceNow }
-                ?: ClipboardEvent(sequenceNow, event.source)
+            return
         }
 
         lastProcessedSequence = event.sequence
-        snapshot?.let {
-            consume(it, event)
-        }
+        snapshotQueue.send(snapshot to event)
     }
 }

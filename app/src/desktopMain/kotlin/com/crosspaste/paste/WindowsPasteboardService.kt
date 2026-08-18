@@ -12,6 +12,7 @@ import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.getControlUtils
+import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -23,6 +24,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
@@ -69,12 +71,16 @@ class WindowsPasteboardService(
                     logger.debug { "Ignoring excluded source: ${event.source}" }
                     null
                 } else {
-                    controlUtils.exponentialBackoffUntilValid(
-                        initTime = 20L,
-                        maxTime = 1000L,
-                        isValidResult = ::isValidContents,
-                    ) {
-                        getPasteboardContentsBySafe()
+                    // The AWT snapshot is a blocking native read (retried on failure);
+                    // keep it off the CPU worker pool.
+                    withContext(ioDispatcher) {
+                        controlUtils.exponentialBackoffUntilValid(
+                            initTime = 20L,
+                            maxTime = 1000L,
+                            isValidResult = ::isValidContents,
+                        ) {
+                            getPasteboardContentsBySafe()
+                        }
                     }
                 }
             },
