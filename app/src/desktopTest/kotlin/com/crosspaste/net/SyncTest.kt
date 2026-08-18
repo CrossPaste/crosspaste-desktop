@@ -29,6 +29,7 @@ import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.PendingKeyExchangeStore
+import com.crosspaste.test.IntegrationTest
 import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
@@ -54,6 +55,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@IntegrationTest
 class SyncTest : KoinTest {
 
     private val appTokenApi by inject<AppTokenApi>()

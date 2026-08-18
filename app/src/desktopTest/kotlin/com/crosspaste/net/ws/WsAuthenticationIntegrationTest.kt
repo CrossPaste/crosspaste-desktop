@@ -11,6 +11,7 @@ import com.crosspaste.net.routing.wsRouting
 import com.crosspaste.secure.GeneralSecureStore
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
+import com.crosspaste.test.IntegrationTest
 import com.crosspaste.utils.CryptographyUtils
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -34,6 +35,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@IntegrationTest
 class WsAuthenticationIntegrationTest {
 
     @Test

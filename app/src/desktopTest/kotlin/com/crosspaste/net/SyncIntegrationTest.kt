@@ -9,6 +9,7 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.sync.SyncHandler
+import com.crosspaste.test.IntegrationTest
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import io.ktor.client.call.body
@@ -27,6 +28,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
+@IntegrationTest
 class SyncIntegrationTest {
 
     private val instances = mutableListOf<TestInstance>()

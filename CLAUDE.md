@@ -12,10 +12,13 @@ CrossPaste is a Kotlin Multiplatform application using Gradle. Key commands:
 
 - **Run the application**: `./gradlew app:run`
 - **Build**: `./gradlew build`
-- **Run tests**: `./gradlew test`
+- **Run tests (fast tier)**: `./gradlew app:desktopTest` — the default; suites annotated `@IntegrationTest` (real processes, full pairing handshakes, wall-clock timing) are excluded
+- **Run all tests including integration tier**: `./gradlew app:desktopTest -PintegrationTests` — release/beta CI builds run this; PR CI runs only the fast tier
 - **Code formatting**: `./gradlew ktlintFormat`
 - **Code style check**: `./gradlew ktlintCheck`
-- **Run single test**: `./gradlew test --tests "ClassName.testMethodName"`
+- **Run single test**: `./gradlew test --tests "ClassName.testMethodName"` (add `-PintegrationTests` if the class is `@IntegrationTest`-tagged)
+
+When adding a test suite that spawns processes, performs real pairing/sync handshakes, or sleeps on wall-clock time (roughly: anything adding multiple seconds), tag the class with `@com.crosspaste.test.IntegrationTest` so it lands in the integration tier instead of slowing every PR.
 
 First startup downloads JBR (JetBrains Runtime) and gradle dependencies automatically.
 
