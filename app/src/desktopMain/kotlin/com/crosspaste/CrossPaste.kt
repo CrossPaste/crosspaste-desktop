@@ -374,7 +374,7 @@ class CrossPaste {
                                     stopManagedService<PasteboardService>(
                                         ManagedService.PASTEBOARD,
                                         "PasteboardService",
-                                    ) { it.stop() }
+                                    ) { it.shutdown() }
                                 },
                             )
                             add(

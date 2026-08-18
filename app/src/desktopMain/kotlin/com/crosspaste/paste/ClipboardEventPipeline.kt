@@ -6,9 +6,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -51,6 +53,15 @@ data class ClipboardEvent(
  *   [consume] serially: consume passes never overlap, record order matches event order,
  *   and a slow consume does not delay or conflate the capture of later events.
  *
+ * Snapshots hold full clipboard contents (potentially large images), so the queue is
+ * bounded: when the consumer falls behind, the oldest unconsumed snapshot is dropped in
+ * favor of newer clipboard states and counted in [droppedSnapshotCount].
+ *
+ * Lifecycle: [startCapture] / [stopCapture] toggle snapshot capture at runtime — the
+ * consumer deliberately keeps running across stops so snapshots that were already
+ * captured are persisted in order rather than cancelled halfway through a write.
+ * [close] shuts the whole pipeline down for application exit.
+ *
  * The default windows are initial values; final parameters must be validated on a real
  * machine over 50+ consecutive Snipping Tool captures (#4793).
  */
@@ -58,6 +69,7 @@ class ClipboardEventPipeline<S : Any>(
     private val quietWindow: Duration = DEFAULT_QUIET_WINDOW,
     private val burstQuietWindow: Duration = DEFAULT_BURST_QUIET_WINDOW,
     private val maxQuietWindowRestarts: Int = DEFAULT_MAX_QUIET_WINDOW_RESTARTS,
+    snapshotQueueCapacity: Int = DEFAULT_SNAPSHOT_QUEUE_CAPACITY,
     private val currentSequence: () -> Int,
     private val takeSnapshot: suspend (ClipboardEvent) -> S?,
     private val consume: suspend (snapshot: S, event: ClipboardEvent) -> Unit,
@@ -73,13 +85,34 @@ class ClipboardEventPipeline<S : Any>(
         val DEFAULT_BURST_QUIET_WINDOW = 500.milliseconds
 
         const val DEFAULT_MAX_QUIET_WINDOW_RESTARTS = 4
+
+        // Each entry can hold a full-size image, so the backlog must stay small.
+        const val DEFAULT_SNAPSHOT_QUEUE_CAPACITY = 8
     }
 
     private val logger: KLogger = KotlinLogging.logger {}
 
     private val signal = Channel<Unit>(Channel.CONFLATED)
 
-    private val snapshotQueue = Channel<Pair<S, ClipboardEvent>>(Channel.UNLIMITED)
+    private val discardedCount = AtomicLong(0)
+
+    val discardedSnapshotCount: Long
+        get() = discardedCount.get()
+
+    private val droppedCount = AtomicLong(0)
+
+    val droppedSnapshotCount: Long
+        get() = droppedCount.get()
+
+    private val snapshotQueue =
+        Channel<Pair<S, ClipboardEvent>>(
+            capacity = snapshotQueueCapacity,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+            onUndeliveredElement = { (_, event) ->
+                droppedCount.incrementAndGet()
+                logger.warn { "Dropping unconsumed clipboard snapshot at sequence ${event.sequence}" }
+            },
+        )
 
     @Volatile
     private var latestEvent: ClipboardEvent? = null
@@ -87,10 +120,9 @@ class ClipboardEventPipeline<S : Any>(
     // Only read and written by the snapshot worker coroutine.
     private var lastProcessedSequence: Int? = null
 
-    private val discardedCount = AtomicLong(0)
+    private var snapshotterJob: Job? = null
 
-    val discardedSnapshotCount: Long
-        get() = discardedCount.get()
+    private var consumerJob: Job? = null
 
     /**
      * Records a clipboard change and wakes the snapshot worker. Safe to call from any
@@ -105,15 +137,49 @@ class ClipboardEventPipeline<S : Any>(
         signal.trySend(Unit)
     }
 
-    fun launchIn(scope: CoroutineScope): Job =
-        scope.launch(CoroutineName("ClipboardEventPipeline")) {
-            launch(CoroutineName("ClipboardEventPipelineConsumer")) {
-                consumeLoop()
-            }
-            launch(CoroutineName("ClipboardEventPipelineSnapshotter")) {
-                snapshotLoop()
+    @Synchronized
+    fun startCapture(scope: CoroutineScope) {
+        if (consumerJob?.isActive != true) {
+            consumerJob =
+                scope.launch(CoroutineName("ClipboardEventPipelineConsumer")) {
+                    consumeLoop()
+                }
+        }
+        if (snapshotterJob?.isActive != true) {
+            snapshotterJob =
+                scope.launch(CoroutineName("ClipboardEventPipelineSnapshotter")) {
+                    snapshotLoop()
+                }
+        }
+    }
+
+    /**
+     * Stops taking new snapshots. The consumer keeps running so already captured
+     * snapshots are persisted in order instead of being cancelled mid-write.
+     */
+    @Synchronized
+    fun stopCapture() {
+        snapshotterJob?.cancel()
+    }
+
+    /**
+     * Application-exit shutdown: stops capture, then gives the consumer [gracePeriod]
+     * to finish the in-flight consume and drain the queue before cancelling it.
+     * Whatever is still unconsumed afterwards is dropped and counted. The pipeline
+     * cannot be restarted after closing.
+     */
+    suspend fun close(gracePeriod: Duration) {
+        stopCapture()
+        signal.close()
+        snapshotQueue.close()
+        consumerJob?.let { job ->
+            if (withTimeoutOrNull(gracePeriod) { job.join() } == null) {
+                logger.warn { "Clipboard consume did not finish within $gracePeriod, cancelling" }
+                job.cancel()
             }
         }
+        snapshotQueue.cancel()
+    }
 
     private suspend fun snapshotLoop() {
         for (unused in signal) {
@@ -184,6 +250,6 @@ class ClipboardEventPipeline<S : Any>(
         }
 
         lastProcessedSequence = event.sequence
-        snapshotQueue.send(snapshot to event)
+        snapshotQueue.trySend(snapshot to event)
     }
 }

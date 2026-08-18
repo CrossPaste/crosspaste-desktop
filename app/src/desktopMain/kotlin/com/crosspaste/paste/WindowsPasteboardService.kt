@@ -28,6 +28,7 @@ import kotlinx.coroutines.withContext
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
+import kotlin.time.Duration.Companion.seconds
 
 class WindowsPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -98,7 +99,6 @@ class WindowsPasteboardService(
         )
 
     private var job: Job? = null
-    private var workerJob: Job? = null
     private var viewer: HWND? = null
     private val event =
         Kernel32.INSTANCE.CreateEvent(
@@ -192,9 +192,7 @@ class WindowsPasteboardService(
 
     override fun start() {
         if (job?.isActive != true) {
-            if (workerJob?.isActive != true) {
-                workerJob = pipeline.launchIn(serviceConsumerScope)
-            }
+            pipeline.startCapture(serviceConsumerScope)
             job =
                 serviceScope.launch(CoroutineName("WindowsPasteboardService")) {
                     val firstChange =
@@ -219,9 +217,16 @@ class WindowsPasteboardService(
 
     override fun stop() {
         Kernel32.INSTANCE.SetEvent(event)
-        workerJob?.cancel()
+        // Only capture stops here: the pipeline's consumer keeps draining snapshots that
+        // were already taken, so a consume in the middle of persisting is not cancelled.
+        pipeline.stopCapture()
         job?.cancel()
         configManager.updateConfig("lastPasteboardChangeCount", changeCount)
+    }
+
+    override suspend fun shutdown() {
+        stop()
+        pipeline.close(gracePeriod = 3.seconds)
     }
 
     override fun callback(
