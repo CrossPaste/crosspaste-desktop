@@ -84,6 +84,22 @@ SQLDelight manages database schema in `.sq` files:
 - Platform-specific test utilities in `desktopTest/`
 - System property `appEnv=TEST` is set automatically during test runs
 
+#### Test Tiers
+
+The desktop suite is split into two tiers via the JUnit 5 tag `integration`. Every new test class MUST be assigned to the correct tier:
+
+- **Fast tier (default, untagged)** — runs on every PR (`./gradlew app:desktopTest`) and must stay fast. A fast-tier test uses mocks/fakes, in-memory SQLite (`TestDriverFactory`), and virtual time (`runTest`); a whole class should finish in well under a second.
+- **Integration tier (`@com.crosspaste.test.IntegrationTest` on the class)** — excluded from PRs; runs with `-PintegrationTests`, which the release and beta build workflows pass, so published artifacts are always gated by the full suite.
+
+Tag a class `@IntegrationTest` if it does ANY of the following:
+- spawns real child processes (e.g. headless daemon launch tests)
+- performs full cryptographic pairing/sync handshakes end to end
+- opens real sockets/servers and exchanges real network traffic beyond a trivial request
+- sleeps or waits on wall-clock time (real `delay`/timeouts not under `runTest` virtual time)
+- takes more than ~1 second for the class in total
+
+Everything else stays untagged in the fast tier. Do not "fix" a slow test by tagging it if it could instead be rewritten against virtual time or mocks — tagging is for tests whose value comes from exercising the real thing. Never delete or weaken a test to make the fast tier faster; move it to the integration tier instead.
+
 ## Code Style and Conventions
 
 - **Commit messages**: Use emoji prefixes (see `doc/en/CommitMessage.md`)
