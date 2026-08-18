@@ -16,7 +16,12 @@ import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -56,10 +61,11 @@ class PasteReleaseServiceImageDedupTest {
                 }
         }
 
+    // Thread-safe: the concurrent-release test records from parallel coroutines.
     private class RecordingTaskBuilder : TaskBuilder {
-        val deleteIds = mutableListOf<Long>()
-        var syncTaskCount = 0
-        var renderingTaskCount = 0
+        val deleteIds = CopyOnWriteArrayList<Long>()
+        val syncTaskCount = AtomicInteger(0)
+        val renderingTaskCount = AtomicInteger(0)
 
         override fun addDelayedDeletePasteTask(
             id: Long,
@@ -82,7 +88,7 @@ class PasteReleaseServiceImageDedupTest {
             appInstanceId: String,
             targetAppInstanceIds: Set<String>?,
         ): TaskBuilder {
-            syncTaskCount++
+            syncTaskCount.incrementAndGet()
             return this
         }
 
@@ -100,7 +106,7 @@ class PasteReleaseServiceImageDedupTest {
             id: Long,
             pasteType: PasteType,
         ): TaskBuilder {
-            renderingTaskCount++
+            renderingTaskCount.incrementAndGet()
             return this
         }
     }
@@ -182,7 +188,7 @@ class PasteReleaseServiceImageDedupTest {
             ),
         )
 
-    private suspend fun Fixture.createLoadingRecord(): Long =
+    private suspend fun Fixture.createLoadingRecord(createTime: Long = DateUtils.nowEpochMilliseconds()): Long =
         pasteDao.createPasteData(
             PasteData(
                 appInstanceId = appInfo.appInstanceId,
@@ -190,6 +196,7 @@ class PasteReleaseServiceImageDedupTest {
                 pasteType = PasteType.INVALID_TYPE.type,
                 size = 0L,
                 hash = "",
+                createTime = createTime,
                 pasteState = PasteState.LOADING,
             ),
         )
@@ -215,8 +222,16 @@ class PasteReleaseServiceImageDedupTest {
 
             // Only a delete task for the discarded record — never sync or rendering.
             assertContentEquals(listOf(loadingId), fixture.taskSubmitter.builder.deleteIds)
-            assertEquals(0, fixture.taskSubmitter.builder.syncTaskCount)
-            assertEquals(0, fixture.taskSubmitter.builder.renderingTaskCount)
+            assertEquals(
+                0,
+                fixture.taskSubmitter.builder.syncTaskCount
+                    .get(),
+            )
+            assertEquals(
+                0,
+                fixture.taskSubmitter.builder.renderingTaskCount
+                    .get(),
+            )
             coVerify(exactly = 0) { fixture.currentPaste.setPasteId(any()) }
 
             // First record is untouched.
@@ -229,7 +244,7 @@ class PasteReleaseServiceImageDedupTest {
             val fixture = newFixture()
             val outsideWindow =
                 DateUtils.nowEpochMilliseconds() -
-                    SqlPasteDao.RECENT_SAME_HASH_WINDOW.inWholeMilliseconds - 1000L
+                    PasteReleaseService.IMAGE_DEDUP_WINDOW.inWholeMilliseconds - 1000L
             fixture.createLoadedRecord(imageItem(), PasteType.IMAGE_TYPE, outsideWindow)
             val loadingId = fixture.createLoadingRecord()
 
@@ -242,8 +257,16 @@ class PasteReleaseServiceImageDedupTest {
                 fixture.taskSubmitter.builder.deleteIds
                     .isEmpty(),
             )
-            assertEquals(1, fixture.taskSubmitter.builder.syncTaskCount)
-            assertEquals(1, fixture.taskSubmitter.builder.renderingTaskCount)
+            assertEquals(
+                1,
+                fixture.taskSubmitter.builder.syncTaskCount
+                    .get(),
+            )
+            assertEquals(
+                1,
+                fixture.taskSubmitter.builder.renderingTaskCount
+                    .get(),
+            )
         }
 
     @Test
@@ -306,7 +329,73 @@ class PasteReleaseServiceImageDedupTest {
             )
 
             assertNull(
-                fixture.pasteDao.getRecentSameHashLocalPasteId(item.hash, PasteType.IMAGE_TYPE.type, -1L),
+                fixture.pasteDao.getRecentSameHashLocalPasteId(item.hash, PasteType.IMAGE_TYPE.type, 0L, -1L),
             )
+        }
+
+    @Test
+    fun `loading row with same hash is not a kept candidate`() =
+        runTest {
+            val fixture = newFixture()
+            val item = imageItem()
+            // A LOADING row that (contrary to the current convention of an empty
+            // placeholder hash) already carries the final hash must still not be
+            // treated as a kept candidate: it is not fully released yet.
+            fixture.pasteDao.createPasteData(
+                PasteData(
+                    appInstanceId = appInfo.appInstanceId,
+                    pasteAppearItem = item,
+                    pasteCollection = PasteCollection(emptyList()),
+                    pasteType = PasteType.IMAGE_TYPE.type,
+                    size = item.size,
+                    hash = item.hash,
+                    pasteState = PasteState.LOADING,
+                ),
+            )
+
+            assertNull(
+                fixture.pasteDao.getRecentSameHashLocalPasteId(item.hash, PasteType.IMAGE_TYPE.type, 0L, -1L),
+            )
+        }
+
+    @Test
+    fun `dedup window compares record create times not release time`() =
+        runTest {
+            val fixture = newFixture()
+            val now = DateUtils.nowEpochMilliseconds()
+            // Both records were created ~8s ago, only 50ms apart — slow image
+            // processing delayed the release, but they are still duplicates of a
+            // single clipboard operation and must be deduped.
+            fixture.createLoadedRecord(imageItem(), PasteType.IMAGE_TYPE, now - 8000L)
+            val loadingId = fixture.createLoadingRecord(createTime = now - 7950L)
+
+            fixture.service.releaseLocalPasteData(loadingId, listOf(imageItem()), null)
+
+            assertNotNull(fixture.pasteDao.getDeletePasteData(loadingId))
+            assertContentEquals(listOf(loadingId), fixture.taskSubmitter.builder.deleteIds)
+        }
+
+    @Test
+    fun `concurrent duplicate releases keep exactly one record`() =
+        runTest {
+            val fixture = newFixture()
+            val firstId = fixture.createLoadingRecord()
+            val secondId = fixture.createLoadingRecord()
+
+            listOf(firstId, secondId)
+                .map { id ->
+                    async(Dispatchers.Default) {
+                        fixture.service.releaseLocalPasteData(id, listOf(imageItem()), null)
+                    }
+                }.awaitAll()
+
+            val loadedIds =
+                listOf(firstId, secondId).filter {
+                    fixture.pasteDao.getNoDeletePasteDataBlock(it) != null
+                }
+            assertEquals(1, loadedIds.size)
+            val discardedId = (listOf(firstId, secondId) - loadedIds.toSet()).single()
+            assertNotNull(fixture.pasteDao.getDeletePasteData(discardedId))
+            assertContentEquals(listOf(discardedId), fixture.taskSubmitter.builder.deleteIds)
         }
 }

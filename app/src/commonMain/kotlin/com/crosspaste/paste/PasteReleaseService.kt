@@ -21,6 +21,7 @@ import com.crosspaste.sync.FilePullService
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
+import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,6 +31,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 data class PushPrepareResult(
@@ -60,9 +62,17 @@ class PasteReleaseService(
         private val fileUtils = getFileUtils()
         private const val DISCARD_PUSH_PREPARED_ATTEMPTS = 3
         private val DISCARD_PUSH_PREPARED_RETRY_DELAY = 50.milliseconds
+
+        // Keep-first image dedup window, measured between record createTimes.
+        // Wide enough to cover a duplicate write from a single clipboard operation
+        // (Snipping Tool writes twice, 30–90 ms apart) plus collection latency,
+        // short enough to rarely collapse intentional re-copies.
+        val IMAGE_DEDUP_WINDOW = 5.seconds
     }
 
     private val logger = KotlinLogging.logger {}
+
+    private val imageDedupMutex = StripedMutex()
 
     @OptIn(ExperimentalTime::class)
     private fun TaskBuilder.markDeleteSameHash(
@@ -131,26 +141,19 @@ class PasteReleaseService(
             val hash = firstItem.hash
             val pasteType = firstItem.getPasteType()
 
-            if (discardDuplicateLocalImage(pasteData, firstItem, remainingItems, size, hash, pasteType, id)) {
-                return@let
-            }
+            val isLocalNonRefImage =
+                !pasteData.remote &&
+                    pasteType.isImage() &&
+                    firstItem is PasteFiles &&
+                    !firstItem.isRefFiles() &&
+                    hash.isNotEmpty()
 
             val change =
-                database.transactionWithResult {
-                    database.pasteDatabaseQueries.updatePasteDataToLoaded(
-                        pasteAppearItem = firstItem.toStoredJson(),
-                        pasteCollection = PasteCollection(remainingItems).toStoredJson(),
-                        pasteType = pasteType.type.toLong(),
-                        pasteSearchContent =
-                            searchContentService.createSearchContent(
-                                pasteData.source,
-                                pasteItemReader.getSearchContent(firstItem),
-                            ),
-                        size = size,
-                        hash = hash,
-                        id = id,
-                    )
-                    database.pasteDatabaseQueries.change().executeAsOne() > 0
+                if (isLocalNonRefImage) {
+                    releaseLocalImageDeduped(pasteData, firstItem, remainingItems, size, hash, pasteType, id)
+                        ?: return@let
+                } else {
+                    persistLoaded(pasteData, firstItem, remainingItems, size, hash, pasteType, id)
                 }
 
             if (change) {
@@ -177,25 +180,7 @@ class PasteReleaseService(
         }
     }
 
-    /**
-     * Keep-first dedup for locally collected non-ref images: a single clipboard
-     * operation can fire multiple clipboard events (Windows Snipping Tool writes
-     * twice per capture), each collected into an identical record. Non-ref images
-     * intentionally bypass [markDeleteSameHash] (the #2693 resource-lifecycle
-     * guard), so an identical local image released within
-     * [com.crosspaste.db.paste.SqlPasteDao.RECENT_SAME_HASH_WINDOW] identifies
-     * this record as that duplicate: keep the first record, discard this one.
-     *
-     * The final items (with the real file paths) must be persisted before the row
-     * is marked deleted — at this point the row still holds the pre-collect
-     * placeholder, and deleting it as-is would orphan the just-written files.
-     * Only a delete task is created, never sync or rendering tasks, so the
-     * discarded record never has in-flight consumers and clearing its files
-     * cannot race anything — which is what keeps the #2693 guard intact.
-     *
-     * Returns true when the record was discarded as a duplicate.
-     */
-    private suspend fun discardDuplicateLocalImage(
+    private fun persistLoaded(
         pasteData: PasteData,
         firstItem: PasteItem,
         remainingItems: List<PasteItem>,
@@ -203,36 +188,92 @@ class PasteReleaseService(
         hash: String,
         pasteType: PasteType,
         id: Long,
-    ): Boolean {
-        if (pasteData.remote ||
-            !pasteType.isImage() ||
-            firstItem !is PasteFiles ||
-            firstItem.isRefFiles() ||
-            hash.isEmpty()
-        ) {
-            return false
+    ): Boolean =
+        database.transactionWithResult {
+            database.pasteDatabaseQueries.updatePasteDataToLoaded(
+                pasteAppearItem = firstItem.toStoredJson(),
+                pasteCollection = PasteCollection(remainingItems).toStoredJson(),
+                pasteType = pasteType.type.toLong(),
+                pasteSearchContent =
+                    searchContentService.createSearchContent(
+                        pasteData.source,
+                        pasteItemReader.getSearchContent(firstItem),
+                    ),
+                size = size,
+                hash = hash,
+                id = id,
+            )
+            database.pasteDatabaseQueries.change().executeAsOne() > 0
         }
 
-        val keptId = pasteDao.getRecentSameHashLocalPasteId(hash, pasteType.type, id) ?: return false
-
-        logger.info { "Discarding duplicate local image paste id=$id, keeping recent record id=$keptId" }
-        taskSubmitter.submit {
-            database.transaction {
-                database.pasteDatabaseQueries.updatePasteDataToLoaded(
-                    pasteAppearItem = firstItem.toStoredJson(),
-                    pasteCollection = PasteCollection(remainingItems).toStoredJson(),
-                    pasteType = pasteType.type.toLong(),
-                    pasteSearchContent = null,
-                    size = size,
+    /**
+     * Keep-first dedup for locally collected non-ref images: a single clipboard
+     * operation can fire multiple clipboard events (Windows Snipping Tool writes
+     * twice per capture), each collected into an identical record. Non-ref images
+     * intentionally bypass [markDeleteSameHash] (the #2693 resource-lifecycle
+     * guard), so an identical local image whose record was created within
+     * [IMAGE_DEDUP_WINDOW] of this one identifies this record as that duplicate:
+     * keep the first record, discard this one. The window compares record
+     * createTimes (event proximity), so slow image processing before release
+     * cannot shrink it.
+     *
+     * The duplicate probe and the row's final state commit run under a per-hash
+     * striped lock: without it, two concurrent releases of the same image could
+     * each miss the other's not-yet-committed record and both survive (macOS and
+     * Linux launch a consumer per clipboard change; only the Windows pipeline
+     * serializes consumes).
+     *
+     * When discarding, the final items (with the real file paths) must be
+     * persisted before the row is marked deleted — at this point the row still
+     * holds the pre-collect placeholder, and deleting it as-is would orphan the
+     * just-written files. Only a delete task is created, never sync or rendering
+     * tasks, so the discarded record never has in-flight consumers and clearing
+     * its files cannot race anything — which is what keeps the #2693 guard
+     * intact.
+     *
+     * Returns null when the record was discarded as a duplicate, otherwise the
+     * result of persisting the record as LOADED.
+     */
+    private suspend fun releaseLocalImageDeduped(
+        pasteData: PasteData,
+        firstItem: PasteItem,
+        remainingItems: List<PasteItem>,
+        size: Long,
+        hash: String,
+        pasteType: PasteType,
+        id: Long,
+    ): Boolean? =
+        imageDedupMutex.withLock("${pasteType.type}:$hash") {
+            val keptId =
+                pasteDao.getRecentSameHashLocalPasteId(
                     hash = hash,
-                    id = id,
+                    pasteType = pasteType.type,
+                    minCreateTime = pasteData.createTime - IMAGE_DEDUP_WINDOW.inWholeMilliseconds,
+                    excludeId = id,
                 )
-                database.pasteDatabaseQueries.markDeletePasteData(listOf(id))
-                addDeletePasteTasks(listOf(id))
+
+            if (keptId == null) {
+                persistLoaded(pasteData, firstItem, remainingItems, size, hash, pasteType, id)
+            } else {
+                logger.info { "Discarding duplicate local image paste id=$id, keeping recent record id=$keptId" }
+                taskSubmitter.submit {
+                    database.transaction {
+                        database.pasteDatabaseQueries.updatePasteDataToLoaded(
+                            pasteAppearItem = firstItem.toStoredJson(),
+                            pasteCollection = PasteCollection(remainingItems).toStoredJson(),
+                            pasteType = pasteType.type.toLong(),
+                            pasteSearchContent = null,
+                            size = size,
+                            hash = hash,
+                            id = id,
+                        )
+                        database.pasteDatabaseQueries.markDeletePasteData(listOf(id))
+                        addDeletePasteTasks(listOf(id))
+                    }
+                }
+                null
             }
         }
-        return true
-    }
 
     /**
      * Shared file-paste landing pad for both directions of remote receive:
