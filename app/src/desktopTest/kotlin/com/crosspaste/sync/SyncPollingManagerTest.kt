@@ -1,5 +1,6 @@
 package com.crosspaste.sync
 
+import com.crosspaste.test.IntegrationTest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -18,6 +19,7 @@ import kotlin.time.Duration.Companion.seconds
  * so these tests use runBlocking with real-time delays instead of runTest with virtual time.
  * The fail() backoff starts at 1500ms (500 + 500*2^1), keeping test times reasonable.
  */
+@IntegrationTest
 class SyncPollingManagerTest {
 
     @Test

@@ -28,6 +28,7 @@ import com.crosspaste.pairing.v3.PakeSession
 import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.pairing.v3.TestPakeProvider
 import com.crosspaste.pairing.v3.pairingV3ErrorCodeOf
+import com.crosspaste.test.IntegrationTest
 import com.crosspaste.utils.CryptographyUtils
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
@@ -50,6 +51,7 @@ import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@IntegrationTest
 class PairingV3IntegrationTest {
 
     private val instances = mutableListOf<TestInstance>()

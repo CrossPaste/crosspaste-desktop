@@ -1,5 +1,6 @@
 package com.crosspaste.headless
 
+import com.crosspaste.test.IntegrationTest
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,6 +23,7 @@ import kotlin.test.assertTrue
  * POSIX-only: `Process.destroy()` must deliver SIGTERM so that JVM shutdown
  * hooks run; on Windows it terminates the process without running hooks.
  */
+@IntegrationTest
 class HeadlessDaemonProcessTest {
 
     private fun isPosix(): Boolean =

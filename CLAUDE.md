@@ -12,10 +12,13 @@ CrossPaste is a Kotlin Multiplatform application using Gradle. Key commands:
 
 - **Run the application**: `./gradlew app:run`
 - **Build**: `./gradlew build`
-- **Run tests**: `./gradlew test`
+- **Run tests (fast tier)**: `./gradlew app:desktopTest` — the default; suites annotated `@IntegrationTest` (real processes, full pairing handshakes, wall-clock timing) are excluded
+- **Run all tests including integration tier**: `./gradlew app:desktopTest -PintegrationTests` — release/beta CI builds run this; PR CI runs only the fast tier
 - **Code formatting**: `./gradlew ktlintFormat`
 - **Code style check**: `./gradlew ktlintCheck`
-- **Run single test**: `./gradlew test --tests "ClassName.testMethodName"`
+- **Run single test**: `./gradlew test --tests "ClassName.testMethodName"` (add `-PintegrationTests` if the class is `@IntegrationTest`-tagged)
+
+When adding a test suite that spawns processes, performs real pairing/sync handshakes, or sleeps on wall-clock time (roughly: anything adding multiple seconds), tag the class with `@com.crosspaste.test.IntegrationTest` so it lands in the integration tier instead of slowing every PR.
 
 First startup downloads JBR (JetBrains Runtime) and gradle dependencies automatically.
 
@@ -80,6 +83,22 @@ SQLDelight manages database schema in `.sq` files:
 - Tests use MockK for mocking
 - Platform-specific test utilities in `desktopTest/`
 - System property `appEnv=TEST` is set automatically during test runs
+
+#### Test Tiers
+
+The desktop suite is split into two tiers via the JUnit 5 tag `integration`. Every new test class MUST be assigned to the correct tier:
+
+- **Fast tier (default, untagged)** — runs on every PR (`./gradlew app:desktopTest`) and must stay fast. A fast-tier test uses mocks/fakes, in-memory SQLite (`TestDriverFactory`), and virtual time (`runTest`); a whole class should finish in well under a second.
+- **Integration tier (`@com.crosspaste.test.IntegrationTest` on the class)** — excluded from PRs; runs with `-PintegrationTests`, which the release and beta build workflows pass, so published artifacts are always gated by the full suite.
+
+Tag a class `@IntegrationTest` if it does ANY of the following:
+- spawns real child processes (e.g. headless daemon launch tests)
+- performs full cryptographic pairing/sync handshakes end to end
+- opens real sockets/servers and exchanges real network traffic beyond a trivial request
+- sleeps or waits on wall-clock time (real `delay`/timeouts not under `runTest` virtual time)
+- takes more than ~1 second for the class in total
+
+Everything else stays untagged in the fast tier. Do not "fix" a slow test by tagging it if it could instead be rewritten against virtual time or mocks — tagging is for tests whose value comes from exercising the real thing. Never delete or weaken a test to make the fast tier faster; move it to the integration tier instead.
 
 ## Code Style and Conventions
 

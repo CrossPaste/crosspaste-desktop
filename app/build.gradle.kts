@@ -589,7 +589,14 @@ compose.desktop {
 }
 
 tasks.withType<Test> {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        // Fast tier by default: suites tagged @IntegrationTest (real processes,
+        // full handshakes, wall-clock timing) only run with -PintegrationTests,
+        // which release/beta CI builds pass. See com.crosspaste.test.IntegrationTest.
+        if (!providers.gradleProperty("integrationTests").isPresent) {
+            excludeTags("integration")
+        }
+    }
     systemProperty("appEnv", "TEST")
     systemProperty("project.root", rootProject.rootDir.absolutePath)
     testLogging {

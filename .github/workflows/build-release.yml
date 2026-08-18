@@ -212,7 +212,7 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Build with Gradle
-        run: ./gradlew app:build
+        run: ./gradlew app:build -PintegrationTests
 
       - name: Cache Kotlin/Native toolchain
         uses: actions/cache@v5
