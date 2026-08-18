@@ -9,11 +9,13 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TaskExecutorTest {
@@ -148,6 +150,106 @@ class TaskExecutorTest {
             coVerify { taskDao.failureTask(1L, false, any()) }
 
             executor.shutdown()
+        }
+
+    @Test
+    fun `recoverPersistedTasks executes claimed tasks`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+            coEvery { taskDao.claimRecoverableTasks(any()) } returns listOf(1L, 2L)
+            coEvery { taskDao.getTask(1L) } returns createMockTask(taskId = 1L)
+            coEvery { taskDao.getTask(2L) } returns createMockTask(taskId = 2L)
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.recoverPersistedTasks()
+            advanceUntilIdle()
+
+            coVerify { taskDao.executingTask(1L) }
+            coVerify { taskDao.executingTask(2L) }
+
+            executor.shutdown()
+        }
+
+    @Test
+    fun `recoverPersistedTasks claims at most once`() =
+        runTest {
+            val taskDao: TaskDao = mockk(relaxed = true)
+            coEvery { taskDao.claimRecoverableTasks(any()) } returns emptyList()
+
+            val executor =
+                TaskExecutor(
+                    emptyList(),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.recoverPersistedTasks()
+            executor.recoverPersistedTasks()
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { taskDao.claimRecoverableTasks(any()) }
+
+            executor.shutdown()
+        }
+
+    @Test
+    fun `submitTask after shutdown neither throws nor touches the task`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.shutdown()
+            executor.submitTask(1L)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { taskDao.executingTask(any()) }
+            coVerify(exactly = 0) { taskDao.failureTask(any(), any(), any()) }
+        }
+
+    @Test
+    fun `shutdown drains queued tasks before cancelling scope`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+            coEvery { singleExecutor.executeTask(any(), any(), any(), any()) } coAnswers {
+                delay(100.milliseconds)
+                @Suppress("UNCHECKED_CAST")
+                val successCallback = it.invocation.args[1] as (suspend (String?) -> Unit)
+                successCallback(null)
+            }
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+            coEvery { taskDao.getTask(1L) } returns createMockTask()
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.submitTask(1L)
+            executor.shutdown()
+
+            coVerify { taskDao.successTask(1L, any()) }
         }
 
     @Test

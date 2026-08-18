@@ -37,6 +37,15 @@ UPDATE PasteTaskEntity SET
   extraInfo = ?
 WHERE taskId = ?;
 
+getRecoverableTaskIds:
+SELECT taskId FROM PasteTaskEntity
+WHERE status IN (0, 1) AND createTime < :createdBefore
+ORDER BY taskId;
+
+resetStaleExecutingTasks:
+UPDATE PasteTaskEntity SET status = 0, modifyTime = :now
+WHERE status = 1 AND createTime < :createdBefore;
+
 cleanSuccess:
 DELETE FROM PasteTaskEntity
 WHERE status = 2 AND

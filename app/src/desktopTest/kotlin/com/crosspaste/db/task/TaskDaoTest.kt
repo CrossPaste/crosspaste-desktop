@@ -261,6 +261,74 @@ class TaskDaoTest {
             assertNotNull(task)
         }
 
+    // --- Recovery claim ---
+
+    @Test
+    fun `claimRecoverableTasks returns PREPARING task and keeps its status`() =
+        runTest {
+            val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
+
+            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+
+            assertEquals(listOf(taskId), claimed)
+            assertEquals(TaskStatus.PREPARING, taskDao.getTask(taskId)!!.status)
+        }
+
+    @Test
+    fun `claimRecoverableTasks resets EXECUTING task back to PREPARING`() =
+        runTest {
+            val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
+            taskDao.executingTask(taskId)
+
+            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+
+            assertEquals(listOf(taskId), claimed)
+            assertEquals(TaskStatus.PREPARING, taskDao.getTask(taskId)!!.status)
+        }
+
+    @Test
+    fun `claimRecoverableTasks ignores SUCCESS and FAILURE tasks`() =
+        runTest {
+            val successId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
+            taskDao.executingTask(successId)
+            taskDao.successTask(successId, newExtraInfo = null)
+
+            val failureId = taskDao.createTask(pasteDataId = 2L, taskType = TaskType.SYNC_PASTE_TASK)
+            taskDao.executingTask(failureId)
+            taskDao.failureTask(failureId, needRetry = false, newExtraInfo = null)
+
+            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+
+            assertEquals(emptyList(), claimed)
+            assertEquals(TaskStatus.SUCCESS, taskDao.getTask(successId)!!.status)
+            assertEquals(TaskStatus.FAILURE, taskDao.getTask(failureId)!!.status)
+        }
+
+    @Test
+    fun `claimRecoverableTasks ignores tasks created after the bound`() =
+        runTest {
+            val bound = System.currentTimeMillis() - 10000
+            val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
+            taskDao.executingTask(taskId)
+
+            val claimed = taskDao.claimRecoverableTasks(bound)
+
+            assertEquals(emptyList(), claimed)
+            assertEquals(TaskStatus.EXECUTING, taskDao.getTask(taskId)!!.status)
+        }
+
+    @Test
+    fun `claimRecoverableTasks returns unfinished tasks in creation order`() =
+        runTest {
+            val first = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
+            val second = taskDao.createTask(pasteDataId = 2L, taskType = TaskType.DELETE_PASTE_TASK)
+            taskDao.executingTask(second)
+
+            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+
+            assertEquals(listOf(first, second), claimed)
+        }
+
     // --- Full lifecycle ---
 
     @Test
