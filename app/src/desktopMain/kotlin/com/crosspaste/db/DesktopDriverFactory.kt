@@ -32,7 +32,14 @@ class DesktopDriverFactory(
                 isAutoCommit = true
                 poolName = "CrossPastePool"
 
-                connectionInitSql = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=10000;"
+                // Pragmas must go through connection properties (sqlite-jdbc's
+                // SQLiteConfig): a multi-statement connectionInitSql silently
+                // executes only its first statement, leaving synchronous=FULL
+                // and busy_timeout at the driver default (3 s) — which surfaced
+                // as SQLITE_BUSY under concurrent clipboard-burst writes.
+                addDataSourceProperty("journal_mode", "WAL")
+                addDataSourceProperty("synchronous", "NORMAL")
+                addDataSourceProperty("busy_timeout", "10000")
             }
 
         val hikariDataSource = HikariDataSource(config)
