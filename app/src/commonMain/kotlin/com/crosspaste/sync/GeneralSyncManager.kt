@@ -20,6 +20,7 @@ import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -37,7 +38,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 
 class GeneralSyncManager(
     override val realTimeSyncScope: CoroutineScope = namedScope(ioDispatcher, "GeneralSyncManager"),
@@ -87,6 +90,14 @@ class GeneralSyncManager(
 
     private val started = atomic(false)
 
+    /**
+     * Completed after the first device snapshot from the database has been
+     * turned into sync handlers. [start] waits for it (bounded) so callers —
+     * in particular startup task recovery, which runs right after [start]
+     * returns — never observe an empty handler map for known devices.
+     */
+    private val initialSnapshotLoaded = CompletableDeferred<Unit>()
+
     private var syncRuntimeInfosJob: Job? = null
 
     override suspend fun start() {
@@ -122,6 +133,11 @@ class GeneralSyncManager(
         }
 
         startCollectingSyncRuntimeInfosFlow()
+
+        // Bounded: the first emission is a local DB read that normally lands in
+        // milliseconds; the timeout only guards startup against a stuck flow.
+        withTimeoutOrNull(3.seconds) { initialSnapshotLoaded.await() }
+            ?: logger.warn { "Timed out waiting for the initial device snapshot" }
     }
 
     override suspend fun stop() {
@@ -186,6 +202,8 @@ class GeneralSyncManager(
                             .filter {
                                 it in currentAppInstanceIdSet
                             }.toSet()
+
+                    initialSnapshotLoaded.complete(Unit)
                 }
             }
     }

@@ -2,7 +2,6 @@ package com.crosspaste.task
 
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.TaskDao
-import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.cpuDispatcher
 import com.crosspaste.utils.namedScope
@@ -50,16 +49,20 @@ class TaskExecutor(
             }
         }
 
-    private fun getExecutorImpl(taskType: Int): SingleTypeTaskExecutor =
-        singleTypeTaskExecutorMap[taskType] ?: throw IllegalArgumentException("Unknown task type: $taskType")
-
     private suspend fun executeTask(taskId: Long) {
         var currentTask: PasteTask? = null
         runCatching {
             taskDao.getTask(taskId)?.let { task ->
+                val executor = singleTypeTaskExecutorMap[task.taskType]
+                if (executor == null) {
+                    // A downgraded build can see task types persisted by a newer
+                    // version. Leave the row untouched (instead of failing it
+                    // terminally) so a future version can still recover it.
+                    logger.warn { "No executor for task type ${task.taskType}, task $taskId left for future recovery" }
+                    return
+                }
                 currentTask = task
                 taskDao.executingTask(taskId)
-                val executor = getExecutorImpl(task.taskType)
                 executor.executeTask(task, success = {
                     taskDao.successTask(taskId, it)
                 }, fail = { pasteTaskExtraInfo, needRetry ->
@@ -74,7 +77,16 @@ class TaskExecutor(
             if (e is CancellationException) throw e
             logger.error(e) { "execute task error: $taskId" }
             currentTask?.let { task ->
-                taskDao.failureTask(taskId, false, TaskUtils.createFailExtraInfo(task, e))
+                // Failure recording must itself be fault-tolerant: an exception
+                // escaping here (e.g. corrupt extraInfo JSON) would cancel the
+                // consumer coroutine and permanently stop task processing.
+                val failExtraInfo = runCatching { TaskUtils.createFailExtraInfo(task, e) }.getOrNull()
+                runCatching {
+                    taskDao.failureTask(taskId, false, failExtraInfo)
+                }.onFailure { persistError ->
+                    if (persistError is CancellationException) throw persistError
+                    logger.error(persistError) { "record task failure error: $taskId" }
+                }
             }
         }
     }
@@ -83,22 +95,25 @@ class TaskExecutor(
      * Re-enqueues tasks a previous process durably recorded but never finished.
      *
      * Must be called during startup after all task executors are registered.
-     * [createdBefore] must be captured before any task producer of the current
-     * process starts submitting work: producer tasks then have
-     * createTime >= the bound and are never claimed, so recovery cannot
-     * enqueue them twice. Runs at most once.
+     * [maxTaskId] must be captured (via [TaskDao.getMaxTaskId]) before any task
+     * producer of the current process starts submitting work: task ids are
+     * monotonic, so producer tasks always exceed the bound and are never
+     * claimed — recovery cannot enqueue them twice. Runs at most once; the
+     * claim itself is bounded, any overflow is claimed on a later startup.
      */
-    suspend fun recoverPersistedTasks(createdBefore: Long = nowEpochMilliseconds()) {
+    suspend fun recoverPersistedTasks(maxTaskId: Long) {
         if (!recoveryStarted.compareAndSet(expect = false, update = true)) {
             return
         }
         runCatching {
-            val taskIds = taskDao.claimRecoverableTasks(createdBefore)
+            val taskIds = taskDao.claimRecoverableTasks(maxTaskId)
             if (taskIds.isEmpty()) {
                 logger.info { "No persisted tasks to recover" }
             } else {
                 taskIds.forEach { submitTask(it) }
-                logger.info { "Recovered ${taskIds.size} persisted tasks: $taskIds" }
+                logger.info {
+                    "Recovered ${taskIds.size} persisted tasks, first ids: ${taskIds.take(20)}"
+                }
             }
         }.onFailure { e ->
             logger.error(e) { "Failed to recover persisted tasks" }
@@ -125,8 +140,13 @@ class TaskExecutor(
      */
     suspend fun shutdown() {
         taskChannel.close()
-        val drained = withTimeoutOrNull(drainTimeout) { consumerJob.join() } != null
-        scope.cancel()
-        logger.info { "TaskExecutor shutdown complete (drained=$drained)" }
+        try {
+            val drained = withTimeoutOrNull(drainTimeout) { consumerJob.join() } != null
+            logger.info { "TaskExecutor shutdown complete (drained=$drained)" }
+        } finally {
+            // Must run even when an enclosing shutdown timeout cancels the
+            // drain, otherwise task coroutines outlive the closed database.
+            scope.cancel()
+        }
     }
 }

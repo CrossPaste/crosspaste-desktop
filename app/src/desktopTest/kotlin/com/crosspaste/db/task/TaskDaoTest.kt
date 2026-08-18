@@ -264,11 +264,20 @@ class TaskDaoTest {
     // --- Recovery claim ---
 
     @Test
+    fun `getMaxTaskId returns zero on empty table and highest id otherwise`() =
+        runTest {
+            assertEquals(0L, taskDao.getMaxTaskId())
+            taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
+            val second = taskDao.createTask(pasteDataId = 2L, taskType = TaskType.SYNC_PASTE_TASK)
+            assertEquals(second, taskDao.getMaxTaskId())
+        }
+
+    @Test
     fun `claimRecoverableTasks returns PREPARING task and keeps its status`() =
         runTest {
             val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
 
-            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+            val claimed = taskDao.claimRecoverableTasks(taskDao.getMaxTaskId())
 
             assertEquals(listOf(taskId), claimed)
             assertEquals(TaskStatus.PREPARING, taskDao.getTask(taskId)!!.status)
@@ -280,7 +289,7 @@ class TaskDaoTest {
             val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
             taskDao.executingTask(taskId)
 
-            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+            val claimed = taskDao.claimRecoverableTasks(taskDao.getMaxTaskId())
 
             assertEquals(listOf(taskId), claimed)
             assertEquals(TaskStatus.PREPARING, taskDao.getTask(taskId)!!.status)
@@ -297,7 +306,7 @@ class TaskDaoTest {
             taskDao.executingTask(failureId)
             taskDao.failureTask(failureId, needRetry = false, newExtraInfo = null)
 
-            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+            val claimed = taskDao.claimRecoverableTasks(taskDao.getMaxTaskId())
 
             assertEquals(emptyList(), claimed)
             assertEquals(TaskStatus.SUCCESS, taskDao.getTask(successId)!!.status)
@@ -305,9 +314,9 @@ class TaskDaoTest {
         }
 
     @Test
-    fun `claimRecoverableTasks ignores tasks created after the bound`() =
+    fun `claimRecoverableTasks ignores tasks above the id bound`() =
         runTest {
-            val bound = System.currentTimeMillis() - 10000
+            val bound = taskDao.getMaxTaskId()
             val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
             taskDao.executingTask(taskId)
 
@@ -324,9 +333,23 @@ class TaskDaoTest {
             val second = taskDao.createTask(pasteDataId = 2L, taskType = TaskType.DELETE_PASTE_TASK)
             taskDao.executingTask(second)
 
-            val claimed = taskDao.claimRecoverableTasks(System.currentTimeMillis() + 10000)
+            val claimed = taskDao.claimRecoverableTasks(taskDao.getMaxTaskId())
 
             assertEquals(listOf(first, second), claimed)
+        }
+
+    @Test
+    fun `claimRecoverableTasks bounds the claim and leaves the overflow intact`() =
+        runTest {
+            val first = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.SYNC_PASTE_TASK)
+            val second = taskDao.createTask(pasteDataId = 2L, taskType = TaskType.SYNC_PASTE_TASK)
+            taskDao.executingTask(second)
+
+            val claimed = taskDao.claimRecoverableTasks(taskDao.getMaxTaskId(), limit = 1)
+
+            assertEquals(listOf(first), claimed)
+            // The overflow EXECUTING row keeps its status for a later claim.
+            assertEquals(TaskStatus.EXECUTING, taskDao.getTask(second)!!.status)
         }
 
     // --- Full lifecycle ---

@@ -22,7 +22,10 @@ import io.mockk.runs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -32,6 +35,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GeneralSyncManagerTest {
@@ -595,5 +599,46 @@ class GeneralSyncManagerTest {
             assertEquals("app-2", handler2.currentSyncRuntimeInfo.appInstanceId)
             assertEquals("device-1", handler1.currentSyncRuntimeInfo.deviceId)
             assertEquals("device-2", handler2.currentSyncRuntimeInfo.deviceId)
+        }
+
+    @Test
+    fun `start waits for the first device snapshot before returning`() =
+        runTest {
+            val mocks = createMocks()
+            val testSyncRuntimeInfo = createTestSyncRuntimeInfo()
+            // No replay: the snapshot only exists once the emitter below fires,
+            // modeling a database flow whose first emission is delayed.
+            val syncInfosFlow = MutableSharedFlow<List<SyncRuntimeInfo>>()
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns syncInfosFlow
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+
+            launch {
+                delay(100.milliseconds)
+                syncInfosFlow.emit(listOf(testSyncRuntimeInfo))
+            }
+
+            syncManager.start()
+
+            // Callers that run right after start() (startup task recovery) must
+            // already see the handler for the persisted device.
+            assertNotNull(syncManager.getSyncHandlers()[testSyncRuntimeInfo.appInstanceId])
+        }
+
+    @Test
+    fun `start returns after a bounded wait when the snapshot flow stalls`() =
+        runTest {
+            val mocks = createMocks()
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableSharedFlow()
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+
+            // Must not hang startup: the wait is bounded by the internal timeout.
+            syncManager.start()
+
+            assertTrue(syncManager.getSyncHandlers().isEmpty())
         }
 }

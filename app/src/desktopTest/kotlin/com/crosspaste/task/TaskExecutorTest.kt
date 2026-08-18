@@ -159,7 +159,7 @@ class TaskExecutorTest {
             coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
 
             val taskDao: TaskDao = mockk(relaxed = true)
-            coEvery { taskDao.claimRecoverableTasks(any()) } returns listOf(1L, 2L)
+            coEvery { taskDao.claimRecoverableTasks(any(), any()) } returns listOf(1L, 2L)
             coEvery { taskDao.getTask(1L) } returns createMockTask(taskId = 1L)
             coEvery { taskDao.getTask(2L) } returns createMockTask(taskId = 2L)
 
@@ -170,7 +170,7 @@ class TaskExecutorTest {
                     scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
                 )
 
-            executor.recoverPersistedTasks()
+            executor.recoverPersistedTasks(2L)
             advanceUntilIdle()
 
             coVerify { taskDao.executingTask(1L) }
@@ -183,7 +183,7 @@ class TaskExecutorTest {
     fun `recoverPersistedTasks claims at most once`() =
         runTest {
             val taskDao: TaskDao = mockk(relaxed = true)
-            coEvery { taskDao.claimRecoverableTasks(any()) } returns emptyList()
+            coEvery { taskDao.claimRecoverableTasks(any(), any()) } returns emptyList()
 
             val executor =
                 TaskExecutor(
@@ -192,11 +192,11 @@ class TaskExecutorTest {
                     scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
                 )
 
-            executor.recoverPersistedTasks()
-            executor.recoverPersistedTasks()
+            executor.recoverPersistedTasks(10L)
+            executor.recoverPersistedTasks(10L)
             advanceUntilIdle()
 
-            coVerify(exactly = 1) { taskDao.claimRecoverableTasks(any()) }
+            coVerify(exactly = 1) { taskDao.claimRecoverableTasks(any(), any()) }
 
             executor.shutdown()
         }
@@ -250,6 +250,73 @@ class TaskExecutorTest {
             executor.shutdown()
 
             coVerify { taskDao.successTask(1L, any()) }
+        }
+
+    @Test
+    fun `unknown task type is left untouched for future recovery`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+            coEvery { taskDao.getTask(1L) } returns createMockTask(taskType = 999)
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.submitTask(1L)
+            advanceUntilIdle()
+
+            // The row must keep its status: neither EXECUTING nor terminal FAILURE.
+            coVerify(exactly = 0) { taskDao.executingTask(any()) }
+            coVerify(exactly = 0) { taskDao.failureTask(any(), any(), any()) }
+
+            executor.shutdown()
+        }
+
+    @Test
+    fun `corrupt extraInfo does not kill the consumer`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+            coEvery { singleExecutor.executeTask(any(), any(), any(), any()) } coAnswers {
+                val task = it.invocation.args[0] as PasteTask
+                if (task.taskId == 1L) {
+                    throw RuntimeException("boom")
+                }
+                @Suppress("UNCHECKED_CAST")
+                val successCallback = it.invocation.args[1] as (suspend (String?) -> Unit)
+                successCallback(null)
+            }
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+            // Corrupt extraInfo makes createFailExtraInfo throw while recording
+            // the failure; that error must not cancel the consumer coroutine.
+            coEvery { taskDao.getTask(1L) } returns
+                createMockTask(taskId = 1L).copy(extraInfo = "not json")
+            coEvery { taskDao.getTask(2L) } returns createMockTask(taskId = 2L)
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.submitTask(1L)
+            advanceUntilIdle()
+            // Fallback: the failure is still recorded, without the new extraInfo.
+            coVerify { taskDao.failureTask(1L, false, null) }
+
+            executor.submitTask(2L)
+            advanceUntilIdle()
+            coVerify { taskDao.successTask(2L, any()) }
+
+            executor.shutdown()
         }
 
     @Test

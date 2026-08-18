@@ -36,14 +36,6 @@ class TaskRecoveryTest {
         driverFactory.closeDriver()
     }
 
-    /**
-     * In production the claim bound is captured at next-process startup, long
-     * after the orphaned rows were written; a future bound models that without
-     * relying on the test's task creation and recovery call landing in
-     * different milliseconds.
-     */
-    private fun recoveryBound(): Long = System.currentTimeMillis() + 10000
-
     private class RecordingExecutor : SingleTypeTaskExecutor {
         val executedTaskIds = Channel<Long>(Channel.UNLIMITED)
 
@@ -82,7 +74,7 @@ class TaskRecoveryTest {
             // Simulates a crash between the task commit and the channel submit.
             val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.DELETE_PASTE_TASK)
 
-            executor.recoverPersistedTasks(recoveryBound())
+            executor.recoverPersistedTasks(taskDao.getMaxTaskId())
 
             withContext(Dispatchers.Default) {
                 withTimeout(5.seconds) {
@@ -104,7 +96,7 @@ class TaskRecoveryTest {
             val taskId = taskDao.createTask(pasteDataId = 1L, taskType = TaskType.DELETE_PASTE_TASK)
             taskDao.executingTask(taskId)
 
-            executor.recoverPersistedTasks(recoveryBound())
+            executor.recoverPersistedTasks(taskDao.getMaxTaskId())
 
             withContext(Dispatchers.Default) {
                 withTimeout(5.seconds) {

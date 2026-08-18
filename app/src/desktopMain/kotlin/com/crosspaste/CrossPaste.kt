@@ -30,6 +30,7 @@ import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
+import com.crosspaste.db.task.TaskDao
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.mcp.McpServer
@@ -54,7 +55,6 @@ import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.LocalNavHostController
 import com.crosspaste.ui.theme.DesktopTheme
-import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
@@ -76,6 +76,7 @@ import org.koin.core.KoinApplication
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.named
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
@@ -209,11 +210,13 @@ class CrossPaste {
                         getManagedService<PasteboardService>(ManagedService.PASTEBOARD)
                     koin.get<QRCodeGenerator>()
                     // Capture the recovery claim bound before any task producer can
-                    // start (SyncManager below launches background sync work): every
-                    // task the current process creates has createTime >= this bound
-                    // and can never be claimed, so recovery cannot double-enqueue a
-                    // task that a live producer just committed and submitted.
-                    val taskRecoveryBound = nowEpochMilliseconds()
+                    // start (SyncManager below launches background sync work): task
+                    // ids are monotonic, so every task the current process creates
+                    // exceeds this bound and can never be claimed — recovery cannot
+                    // double-enqueue a task a live producer just committed.
+                    val taskRecoveryBound = koin.get<TaskDao>().getMaxTaskId()
+                    // start() waits (bounded) for the first device snapshot, so the
+                    // recovered sync/pull tasks below see the known sync handlers.
                     getManagedService<SyncManager>(ManagedService.SYNC_MANAGER).start()
                     koin.get<PastePullService>().init()
                     getManagedService<TaskExecutor>(ManagedService.TASK_EXECUTOR)
@@ -354,149 +357,21 @@ class CrossPaste {
 
         private suspend fun shutdownAllServices() {
             withTimeoutOrNull(5.seconds) {
-                // Phase 1: stop every task producer (pasteboard listener, schedulers,
-                // servers accepting remote work) so no new task IDs get submitted.
-                // Bounded by its own budget so one slow stop (e.g. a Ktor server's
-                // grace period) cannot starve the drain and phase 3 of the shared
-                // 5s window; a producer that outlives the budget can still only
-                // trySend into a closed channel, which defers the task to recovery.
-                withTimeoutOrNull(2.seconds) {
-                    supervisorScope {
-                        val jobs =
-                            buildList {
-                                add(
-                                    async {
-                                        stopManagedService<PasteboardService>(
-                                            ManagedService.PASTEBOARD,
-                                            "PasteboardService",
-                                        ) { it.shutdown() }
-                                    },
-                                )
-                                add(
-                                    async {
-                                        stopManagedService<CleanScheduler>(
-                                            ManagedService.CLEAN_SCHEDULER,
-                                            "CleanPasteScheduler",
-                                        ) { it.stop() }
-                                    },
-                                )
-                                add(
-                                    async {
-                                        stopManagedService<Server>(ManagedService.PASTE_SERVER, "PasteServer") {
-                                            it.stop()
-                                        }
-                                    },
-                                )
-                                add(
-                                    async {
-                                        stopManagedService<CliServer>(ManagedService.CLI_SERVER, "CliServer") {
-                                            it.stop()
-                                        }
-                                    },
-                                )
-                                add(
-                                    async {
-                                        stopManagedService<McpServer>(ManagedService.MCP_SERVER, "McpServer") {
-                                            it.stop()
-                                        }
-                                    },
-                                )
-                                add(
-                                    async {
-                                        stopManagedService<PasteBonjourService>(
-                                            ManagedService.PASTE_BONJOUR,
-                                            "PasteBonjourService",
-                                        ) { it.close() }
-                                    },
-                                )
-                                if (!headless) {
-                                    add(
-                                        async {
-                                            stopManagedService<AppUpdateService>(
-                                                ManagedService.APP_UPDATE,
-                                                "AppUpdateService",
-                                            ) { it.stop() }
-                                        },
-                                    )
-                                    add(
-                                        async {
-                                            stopManagedService<DesktopAppWindowManager>(
-                                                ManagedService.WINDOW_MANAGER,
-                                                "DesktopAppWindowManager",
-                                            ) {
-                                                it.stopWindowService()
-                                            }
-                                        },
-                                    )
-                                    add(
-                                        async {
-                                            stopManagedService<GlobalListener>(
-                                                ManagedService.GLOBAL_LISTENER,
-                                                "GlobalListener",
-                                            ) { it.stop() }
-                                        },
-                                    )
-                                }
-                            }
-
-                        jobs.awaitAll()
-                    }
-                }
-
-                // Phase 2: with producers stopped, drain already-queued tasks so a
-                // normal shutdown completes its work instead of leaving it to
-                // next-start crash recovery.
-                stopManagedService<TaskExecutor>(
-                    ManagedService.TASK_EXECUTOR,
-                    "TaskExecutor",
-                ) { it.shutdown() }
-
-                // Phase 3: stop the services draining tasks may still depend on
-                // (sync push, rendering, HTTP clients).
                 supervisorScope {
-                    val jobs =
-                        buildList {
-                            add(
-                                async {
-                                    stopManagedService<SyncManager>(ManagedService.SYNC_MANAGER, "SyncManager") {
-                                        it.stop()
-                                    }
-                                },
-                            )
-                            add(
-                                async {
-                                    stopManagedService<RenderingService<String>>(
-                                        service = ManagedService.RENDERING,
-                                        serviceName = "RenderingService",
-                                    ) { it.stop() }
-                                },
-                            )
-                            add(
-                                async {
-                                    stopManagedService<UserDataPathProvider>(
-                                        ManagedService.USER_DATA_PATH,
-                                        "UserDataPathProvider",
-                                    ) { it.cleanTemp() }
-                                },
-                            )
-                            add(
-                                async {
-                                    stopManagedService<PasteClient>(ManagedService.PASTE_CLIENT, "PasteClient") {
-                                        it.close()
-                                    }
-                                },
-                            )
-                            add(
-                                async {
-                                    stopManagedService<ResourcesClient>(
-                                        ManagedService.RESOURCES_CLIENT,
-                                        "ResourcesClient",
-                                    ) { it.close() }
-                                },
-                            )
+                    // Bonjour teardown blocks in its own runBlocking for up to 4s and
+                    // is not a task producer: run it concurrently with all phases so
+                    // it cannot eat the phased budgets below.
+                    val bonjourJob =
+                        async {
+                            stopManagedService<PasteBonjourService>(
+                                ManagedService.PASTE_BONJOUR,
+                                "PasteBonjourService",
+                            ) { it.close() }
                         }
 
-                    jobs.awaitAll()
+                    shutdownPhasedServices()
+
+                    bonjourJob.await()
                 }
             }
 
@@ -504,6 +379,145 @@ class CrossPaste {
                 stopManagedService<DriverFactory>(ManagedService.DRIVER_FACTORY, "DriverFactory") {
                     it.closeDriver()
                 }
+            }
+        }
+
+        private suspend fun shutdownPhasedServices() {
+            // Phase 1: stop every task producer (pasteboard listener, schedulers,
+            // servers accepting remote work) so no new task IDs get submitted.
+            // Bounded by its own budget so one slow stop (e.g. a Ktor server's
+            // grace period) cannot starve the drain and phase 3 of the shared
+            // 5s window; a producer that outlives the budget can still only
+            // trySend into a closed channel, which defers the task to recovery.
+            withTimeoutOrNull(2.seconds) {
+                supervisorScope {
+                    val jobs =
+                        buildList {
+                            add(
+                                async {
+                                    stopManagedService<PasteboardService>(
+                                        ManagedService.PASTEBOARD,
+                                        "PasteboardService",
+                                    ) { it.shutdown() }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<CleanScheduler>(
+                                        ManagedService.CLEAN_SCHEDULER,
+                                        "CleanPasteScheduler",
+                                    ) { it.stop() }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<Server>(ManagedService.PASTE_SERVER, "PasteServer") {
+                                        it.stop()
+                                    }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<CliServer>(ManagedService.CLI_SERVER, "CliServer") {
+                                        it.stop()
+                                    }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<McpServer>(ManagedService.MCP_SERVER, "McpServer") {
+                                        it.stop()
+                                    }
+                                },
+                            )
+                            if (!headless) {
+                                add(
+                                    async {
+                                        stopManagedService<AppUpdateService>(
+                                            ManagedService.APP_UPDATE,
+                                            "AppUpdateService",
+                                        ) { it.stop() }
+                                    },
+                                )
+                                add(
+                                    async {
+                                        stopManagedService<DesktopAppWindowManager>(
+                                            ManagedService.WINDOW_MANAGER,
+                                            "DesktopAppWindowManager",
+                                        ) {
+                                            it.stopWindowService()
+                                        }
+                                    },
+                                )
+                                add(
+                                    async {
+                                        stopManagedService<GlobalListener>(
+                                            ManagedService.GLOBAL_LISTENER,
+                                            "GlobalListener",
+                                        ) { it.stop() }
+                                    },
+                                )
+                            }
+                        }
+
+                    jobs.awaitAll()
+                }
+            }
+
+            // Phase 2: with producers stopped, drain already-queued tasks so a
+            // normal shutdown completes its work instead of leaving it to
+            // next-start crash recovery.
+            stopManagedService<TaskExecutor>(
+                ManagedService.TASK_EXECUTOR,
+                "TaskExecutor",
+            ) { it.shutdown() }
+
+            // Phase 3: stop the services draining tasks may still depend on
+            // (sync push, rendering, HTTP clients).
+            supervisorScope {
+                val jobs =
+                    buildList {
+                        add(
+                            async {
+                                stopManagedService<SyncManager>(ManagedService.SYNC_MANAGER, "SyncManager") {
+                                    it.stop()
+                                }
+                            },
+                        )
+                        add(
+                            async {
+                                stopManagedService<RenderingService<String>>(
+                                    service = ManagedService.RENDERING,
+                                    serviceName = "RenderingService",
+                                ) { it.stop() }
+                            },
+                        )
+                        add(
+                            async {
+                                stopManagedService<UserDataPathProvider>(
+                                    ManagedService.USER_DATA_PATH,
+                                    "UserDataPathProvider",
+                                ) { it.cleanTemp() }
+                            },
+                        )
+                        add(
+                            async {
+                                stopManagedService<PasteClient>(ManagedService.PASTE_CLIENT, "PasteClient") {
+                                    it.close()
+                                }
+                            },
+                        )
+                        add(
+                            async {
+                                stopManagedService<ResourcesClient>(
+                                    ManagedService.RESOURCES_CLIENT,
+                                    "ResourcesClient",
+                                ) { it.close() }
+                            },
+                        )
+                    }
+
+                jobs.awaitAll()
             }
         }
 
@@ -531,6 +545,9 @@ class CrossPaste {
             }.onSuccess {
                 logger.info { "$serviceName stop completed" }
             }.onFailure { e ->
+                // Shutdown-timeout cancellation must propagate so an expired
+                // phase budget actually skips ahead instead of being swallowed.
+                if (e is CancellationException) throw e
                 logger.error(e) { "Error stopping $serviceName" }
             }
         }

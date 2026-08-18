@@ -37,14 +37,18 @@ UPDATE PasteTaskEntity SET
   extraInfo = ?
 WHERE taskId = ?;
 
+getMaxTaskId:
+SELECT IFNULL(MAX(taskId), 0) AS maxTaskId FROM PasteTaskEntity;
+
 getRecoverableTaskIds:
 SELECT taskId FROM PasteTaskEntity
-WHERE status IN (0, 1) AND createTime < :createdBefore
-ORDER BY taskId;
+WHERE status IN (0, 1) AND taskId <= :maxTaskId
+ORDER BY taskId
+LIMIT :limit;
 
-resetStaleExecutingTasks:
+resetExecutingTasks:
 UPDATE PasteTaskEntity SET status = 0, modifyTime = :now
-WHERE status = 1 AND createTime < :createdBefore;
+WHERE status = 1 AND taskId IN :taskIds;
 
 cleanSuccess:
 DELETE FROM PasteTaskEntity

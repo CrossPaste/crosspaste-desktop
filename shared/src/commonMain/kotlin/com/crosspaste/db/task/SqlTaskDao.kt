@@ -116,17 +116,27 @@ class SqlTaskDao(
             }
         }
 
-    override suspend fun claimRecoverableTasks(createdBefore: Long): List<Long> =
+    override suspend fun getMaxTaskId(): Long =
+        withContext(ioDispatcher) {
+            pasteTaskDatabaseQueries.getMaxTaskId().executeAsOne()
+        }
+
+    override suspend fun claimRecoverableTasks(
+        maxTaskId: Long,
+        limit: Long,
+    ): List<Long> =
         withContext(ioDispatcher) {
             database.transactionWithResult {
                 val taskIds =
                     pasteTaskDatabaseQueries
-                        .getRecoverableTaskIds(createdBefore)
+                        .getRecoverableTaskIds(maxTaskId, limit)
                         .executeAsList()
-                pasteTaskDatabaseQueries.resetStaleExecutingTasks(
-                    now = nowEpochMilliseconds(),
-                    createdBefore = createdBefore,
-                )
+                if (taskIds.isNotEmpty()) {
+                    pasteTaskDatabaseQueries.resetExecutingTasks(
+                        now = nowEpochMilliseconds(),
+                        taskIds = taskIds,
+                    )
+                }
                 taskIds
             }
         }
