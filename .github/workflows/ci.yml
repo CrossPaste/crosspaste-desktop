@@ -93,12 +93,18 @@ jobs:
 
       # The Kotlin/Native toolchain dependencies (gcc sysroot, llvm, lldb, libffi)
       # are downloaded and extracted into ~/.konan on every run otherwise.
+      # Job-scoped key: app-build and cli-build need different toolchain pieces
+      # (cli cross-compiles linuxArm64/mingwX64), and actions/cache never
+      # re-saves on an exact-key hit — a shared key seeded by one job would
+      # permanently miss the other job's dependencies and re-download them on
+      # every run. The bare konan- fallback bootstraps from pre-split caches.
       - name: Cache Kotlin/Native toolchain
         uses: actions/cache@v5
         with:
           path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          key: konan-app-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
+            konan-app-${{ runner.os }}-
             konan-${{ runner.os }}-
 
       - name: Install native build dependencies
@@ -143,14 +149,16 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      # The Kotlin/Native toolchain dependencies (gcc sysroot, llvm, lldb, libffi)
-      # are downloaded and extracted into ~/.konan on every run otherwise.
+      # Job-scoped Kotlin/Native toolchain cache — see the app-build comment.
+      # This job's save includes the linuxArm64/mingwX64 cross sysroots and qemu
+      # that the link targets below download on first run.
       - name: Cache Kotlin/Native toolchain
         uses: actions/cache@v5
         with:
           path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          key: konan-cli-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
+            konan-cli-${{ runner.os }}-
             konan-${{ runner.os }}-
 
       - name: Right-size Gradle for the hosted runner
