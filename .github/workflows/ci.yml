@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       app: ${{ steps.filter.outputs.app }}
+      cli: ${{ steps.filter.outputs.cli }}
       web: ${{ steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@v6
@@ -29,7 +30,6 @@ jobs:
               - 'app/**'
               - 'shared/**'
               - 'core/**'
-              - 'cli/**'
               - 'gradle/**'
               - 'gradlew'
               - 'gradlew.bat'
@@ -37,6 +37,18 @@ jobs:
               - 'build.gradle.kts'
               - 'gradle.properties'
               - 'compose-stability.conf'
+              - '.github/workflows/ci.yml'
+            # The cli module has no project dependencies (pure Kotlin/Native HTTP
+            # client), so core/shared changes cannot affect it — only its own
+            # sources and the shared build configuration trigger this gate.
+            cli:
+              - 'cli/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'gradlew.bat'
+              - 'settings.gradle.kts'
+              - 'build.gradle.kts'
+              - 'gradle.properties'
               - '.github/workflows/ci.yml'
             web:
               - 'web/**'
@@ -109,11 +121,47 @@ jobs:
       - name: Build common modules and desktop app
         run: ./gradlew :core:build :shared:build :app:build
 
-      # Compile gate for the CLI native binary (host target = linuxX64).
-      # Pure Kotlin since the CLI went all-HTTP; only needs the Kotlin/Native
-      # toolchain already set up above. The release links for linuxArm64 and
-      # mingwX64 guard the cross-compilation path build-release.yml depends on
-      # (its ubuntu job cross-compiles both before Conveyor packaging).
+  # Compile gate for the CLI native binary, split from app-build so the two run
+  # in parallel and app-only PRs skip the ~3 min Kotlin/Native build entirely.
+  # The release links for linuxArm64 and mingwX64 guard the cross-compilation
+  # path build-release.yml depends on (its ubuntu job cross-compiles both
+  # before Conveyor packaging).
+  cli-build:
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          check-latest: true
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      # The Kotlin/Native toolchain dependencies (gcc sysroot, llvm, lldb, libffi)
+      # are downloaded and extracted into ~/.konan on every run otherwise.
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            konan-${{ runner.os }}-
+
+      - name: Right-size Gradle for the hosted runner
+        run: |
+          {
+            echo ""
+            echo "# CI-only overrides"
+            echo "org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8 -Dkotlin.daemon.jvm.options=-Xmx4g"
+            echo "org.gradle.parallel=true"
+          } >> gradle.properties
+
       - name: Build CLI native binary
         run: >
           ./gradlew :cli:ktlintCheck :cli:cliNativeTest :cli:linkDebugExecutableLinuxX64
@@ -151,7 +199,7 @@ jobs:
         run: npm test
 
   ci:
-    needs: [app-build, web-build]
+    needs: [app-build, cli-build, web-build]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -159,10 +207,12 @@ jobs:
       - name: Verify CI results
         run: |
           app_result="${{ needs.app-build.result }}"
+          cli_result="${{ needs.cli-build.result }}"
           web_result="${{ needs.web-build.result }}"
           echo "app-build: $app_result"
+          echo "cli-build: $cli_result"
           echo "web-build: $web_result"
-          for result in "$app_result" "$web_result"; do
+          for result in "$app_result" "$cli_result" "$web_result"; do
             if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
               echo "CI failed"
               exit 1
