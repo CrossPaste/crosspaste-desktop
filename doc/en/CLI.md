@@ -39,6 +39,8 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 | `tags` | Manage paste tags (`create`, `delete`). |
 | `version` | Show the CLI version. |
 
+The most common commands have single-letter aliases: `c` = `copy`, `p` = `paste`, `h` = `history`.
+
 Global options:
 
 - `--json` — machine-readable JSON output for any command.
@@ -50,11 +52,12 @@ Run `crosspaste --help` or `crosspaste <command> --help` for the full reference.
 
 The CLI is built to compose with other tools. Prompts and progress messages go to stderr, so stdout stays clean for pipes.
 
-Copy from a pipe:
+Copy from a pipe — when input is piped and no command is given, the CLI behaves as `copy`, so the command name can be dropped entirely:
 
 ```sh
-git log -1 --format=%H | crosspaste copy
-cat notes.md | crosspaste copy
+git log -1 --format=%H | crosspaste
+cat notes.md | crosspaste
+history | grep test | crosspaste copy   # the explicit form works the same
 ```
 
 Print only the paste content (no decoration), for piping onward. `--raw` reproduces the content exactly as stored — HTML/RTF pastes print their source markup; `--summary` prints the plain-text rendering instead:

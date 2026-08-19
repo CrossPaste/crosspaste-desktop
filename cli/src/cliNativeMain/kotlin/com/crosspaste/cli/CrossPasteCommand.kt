@@ -11,11 +11,16 @@ import com.crosspaste.cli.commands.SearchCommand
 import com.crosspaste.cli.commands.StatusCommand
 import com.crosspaste.cli.commands.TagsCommand
 import com.crosspaste.cli.commands.VersionCommand
+import com.crosspaste.cli.commands.copyToCrossPaste
+import com.crosspaste.cli.commands.readPipedStdinOrFail
+import com.crosspaste.cli.commands.usageError
+import com.crosspaste.cli.platform.readAllStdin
 import com.github.ajalt.clikt.completion.completionOption
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.obj
 import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.switch
@@ -31,12 +36,29 @@ import kotlin.experimental.ExperimentalNativeApi
 internal val cliCommandName: String =
     if (Platform.osFamily == OsFamily.WINDOWS) "crosspaste-cli" else "crosspaste"
 
-class CrossPasteCommand : CliktCommand(name = cliCommandName) {
+class CrossPasteCommand(
+    /** Injectable so tests of the implicit-copy path never touch real stdin. */
+    private val stdinReader: () -> String = ::readAllStdin,
+) : CliktCommand(name = cliCommandName) {
 
-    override fun help(context: Context): String = "CrossPaste CLI - interact with your local CrossPaste application"
+    /** Lets a bare invocation with piped stdin behave as `copy`. */
+    override val invokeWithoutSubcommand: Boolean get() = true
+
+    override fun aliases(): Map<String, List<String>> =
+        mapOf(
+            "c" to listOf("copy"),
+            "p" to listOf("paste"),
+            "h" to listOf("history"),
+        )
+
+    override fun help(context: Context): String =
+        "CrossPaste CLI - interact with your local CrossPaste application. " +
+            "When input is piped and no command is given, behaves as `copy`: " +
+            "`git log | $cliCommandName` copies the log."
 
     override fun helpEpilog(context: Context): String =
-        "Exit codes: 0 success, 1 error, 2 usage error, 3 CrossPaste not running."
+        "Command aliases: c = copy, p = paste, h = history.\n\n" +
+            "Exit codes: 0 success, 1 error, 2 usage error, 3 CrossPaste not running."
 
     val json by option("--json", help = "Output in JSON format for machine consumption").flag()
 
@@ -51,7 +73,15 @@ class CrossPasteCommand : CliktCommand(name = cliCommandName) {
     )
 
     override fun run() {
-        currentContext.obj = CliContext(json = json, autoStart = autoStart)
+        val cliContext = CliContext(json = json, autoStart = autoStart)
+        currentContext.obj = cliContext
+        if (currentContext.invokedSubcommand != null) return
+        // No subcommand: piped stdin means an implicit `copy`; an interactive
+        // terminal keeps the pre-invokeWithoutSubcommand usage-error behavior
+        if (terminal.terminalInfo.inputInteractive) {
+            throw usageError("missing command (pipe input via stdin to copy it without one)")
+        }
+        copyToCrossPaste(readPipedStdinOrFail(stdinReader), jsonOutput = cliContext.json)
     }
 
     init {
