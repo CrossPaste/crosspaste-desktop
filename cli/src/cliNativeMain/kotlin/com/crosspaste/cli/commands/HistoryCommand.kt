@@ -5,7 +5,10 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.requireObject
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.int
@@ -32,7 +35,7 @@ data class PasteListResponse(
 
 enum class ListFormat { TABLE, JSON, ID }
 
-/** Shared --format option for the list-producing commands (history, search). */
+/** The --format option for list-producing commands. */
 fun ParameterHolder.listFormatOption() =
     option(
         "--format",
@@ -49,33 +52,54 @@ fun resolveListFormat(
     json: Boolean,
 ): ListFormat = explicit ?: if (json) ListFormat.JSON else ListFormat.TABLE
 
+const val SORT_NEWEST = "newest"
+const val SORT_OLDEST = "oldest"
+
 fun buildListQuery(
     limit: Int,
-    type: String?,
+    types: List<String>,
     tag: String?,
+    sort: String? = null,
     query: String? = null,
 ): String {
     val params =
         buildList {
             query?.let { add("q=${it.encodeURLParameter()}") }
             add("limit=$limit")
-            type?.let { add("type=${it.encodeURLParameter()}") }
+            // Repeated for OR-matching, mirroring the search window's multi-type filter
+            types.forEach { add("type=${it.encodeURLParameter()}") }
             tag?.let { add("tag=${it.encodeURLParameter()}") }
+            sort?.let { add("sort=${it.encodeURLParameter()}") }
         }
     return params.joinToString("&", prefix = "?")
 }
 
 class HistoryCommand : CliktCommand(name = "history") {
 
-    override fun help(context: Context): String = "List recent paste history"
+    override fun help(context: Context): String = "List or search paste history"
 
     private val ctx by requireObject<CliContext>()
 
+    private val query by argument(
+        name = "query",
+        help = "Search words; without them the newest pastes are listed",
+    ).multiple()
+
     private val limit by option("--limit", "-n", help = "Number of items to show").int().default(20)
 
-    private val type by option("--type", "-t", help = "Filter by type (text, link, image, file, html, rtf, color)")
+    private val types by option(
+        "--type",
+        "-t",
+        help = "Filter by type (text, link, image, file, html, rtf, color); repeat to match any of several",
+    ).multiple()
 
     private val tag by option("--tag", "-g", help = "Filter by tag name")
+
+    private val sort by option(
+        "--sort",
+        "-s",
+        help = "Sort by creation time: newest (default) or oldest first",
+    ).choice(SORT_NEWEST, SORT_OLDEST)
 
     private val format by listFormatOption()
 
@@ -83,7 +107,7 @@ class HistoryCommand : CliktCommand(name = "history") {
         runCli { client ->
             val list =
                 client.getBody(
-                    "/cli/history${buildListQuery(limit, type, tag)}",
+                    "/cli/history${buildListQuery(limit, types, tag, sort, searchQuery())}",
                     PasteListResponse.serializer(),
                 )
 
@@ -94,9 +118,12 @@ class HistoryCommand : CliktCommand(name = "history") {
             }
         }
 
+    private fun searchQuery(): String? = query.joinToString(" ").ifBlank { null }
+
     private fun printList(list: PasteListResponse) {
         if (list.items.isEmpty()) {
-            echo("No pastes found.")
+            val q = searchQuery()
+            echo(if (q == null) "No pastes found." else "No results found for \"$q\".")
             return
         }
         echo("${list.items.size} of ${list.total} pastes:")

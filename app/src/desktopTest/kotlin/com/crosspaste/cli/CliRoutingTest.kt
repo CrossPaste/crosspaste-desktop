@@ -290,7 +290,7 @@ class CliRoutingTest {
     }
 
     @Test
-    fun `history resolves type and tag filters`() {
+    fun `history resolves repeated types and the tag filter`() {
         val fixture = Fixture()
         every { fixture.pasteTagDao.getAllTagsBlock() } returns
             listOf(PasteTag(id = 5L, name = "Work", color = 1L, sortOrder = 0L))
@@ -307,27 +307,51 @@ class CliRoutingTest {
         coEvery { fixture.pasteDao.getActiveCount() } returns 10L
 
         withCliRouting(fixture) {
-            val response = client.get("/cli/history?limit=5&type=text&tag=work")
+            val response = client.get("/cli/history?limit=5&type=text&type=link&tag=work")
             assertEquals(HttpStatusCode.OK, response.status)
             val list = json.decodeFromString<CliPasteListDto>(response.bodyAsText())
             assertEquals(1, list.items.size)
             assertEquals(10L, list.total)
-            assertEquals(listOf(PasteType.TEXT_TYPE.type), typeSlot.captured)
+            assertEquals(listOf(PasteType.TEXT_TYPE.type, PasteType.URL_TYPE.type), typeSlot.captured)
             assertEquals(5L, tagSlot.captured)
         }
     }
 
     @Test
-    fun `history rejects unknown type and tag`() {
+    fun `history rejects unknown type tag and sort`() {
         val fixture = Fixture()
         withCliRouting(fixture) {
             assertEquals(HttpStatusCode.BadRequest, client.get("/cli/history?type=nope").status)
+            assertEquals(HttpStatusCode.BadRequest, client.get("/cli/history?type=text&type=nope").status)
             assertEquals(HttpStatusCode.BadRequest, client.get("/cli/history?tag=nope").status)
+            assertEquals(HttpStatusCode.BadRequest, client.get("/cli/history?sort=sideways").status)
         }
     }
 
     @Test
-    fun `search uses search terms from the query`() {
+    fun `history maps sort to creation time order`() {
+        val fixture = Fixture()
+        val sortSlot = mutableListOf<Boolean>()
+        coEvery {
+            fixture.pasteDao.searchPasteData(
+                searchTerms = listOf(),
+                pasteTypeList = listOf(),
+                sort = capture(sortSlot),
+                tag = null,
+                limit = 20,
+            )
+        } returns listOf()
+
+        withCliRouting(fixture) {
+            assertEquals(HttpStatusCode.OK, client.get("/cli/history?sort=oldest").status)
+            assertEquals(HttpStatusCode.OK, client.get("/cli/history?sort=Newest").status)
+            assertEquals(HttpStatusCode.OK, client.get("/cli/history").status)
+            assertEquals(listOf(false, true, true), sortSlot)
+        }
+    }
+
+    @Test
+    fun `history searches with q and reports a result-sized total`() {
         val fixture = Fixture()
         every { fixture.searchContentService.createSearchTerms("hello world") } returns listOf("hello", "world")
         val termsSlot = slot<List<String>>()
@@ -338,14 +362,14 @@ class CliRoutingTest {
                 tag = null,
                 limit = 20,
             )
-        } returns listOf()
-
+        } returns listOf(textPasteData(1L, "hello world"))
+        // getActiveCount (fixture default 0) must not be consulted for a search
         withCliRouting(fixture) {
-            val response = client.get("/cli/search?q=hello%20world")
+            val response = client.get("/cli/history?q=hello%20world")
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals(listOf("hello", "world"), termsSlot.captured)
             val list = json.decodeFromString<CliPasteListDto>(response.bodyAsText())
-            assertEquals(0L, list.total)
+            assertEquals(1L, list.total)
         }
     }
 
