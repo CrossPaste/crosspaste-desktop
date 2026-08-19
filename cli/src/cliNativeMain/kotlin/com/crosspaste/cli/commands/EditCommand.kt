@@ -2,7 +2,9 @@ package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
 import com.crosspaste.cli.platform.FALLBACK_EDITOR
-import com.crosspaste.cli.platform.runEditorCommand
+import com.crosspaste.cli.platform.createEditTempDir
+import com.crosspaste.cli.platform.readPlatformEnv
+import com.crosspaste.cli.platform.runEditor
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
@@ -11,11 +13,9 @@ import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.types.long
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.toKString
 import okio.FileSystem
+import okio.IOException
 import okio.Path
-import okio.Path.Companion.toPath
 import okio.SYSTEM
 
 class EditCommand : CliktCommand(name = "edit") {
@@ -32,7 +32,7 @@ class EditCommand : CliktCommand(name = "edit") {
         if (!info.inputInteractive || !info.outputInteractive) {
             throw usageError("edit requires an interactive terminal")
         }
-        val editor = resolveEditor(::readEnv) ?: FALLBACK_EDITOR
+        val editor = resolveEditor(::readPlatformEnv) ?: FALLBACK_EDITOR
         val detail = fetchPaste()
         val original =
             editableContent(detail) ?: run {
@@ -42,8 +42,18 @@ class EditCommand : CliktCommand(name = "edit") {
                 )
                 throw ProgramResult(1)
             }
-        val tempFile = tempDirectory(::readEnv) / editTempFileName(detail.id, detail.typeName)
-        editRoundTrip(editor, tempFile, original)
+        // A fresh private directory per edit (0700 on POSIX, random name on
+        // both) — see createEditTempDir for the threat model
+        val tempDir =
+            createEditTempDir() ?: run {
+                echo("Error: could not create a private temporary directory for editing.", err = true)
+                throw ProgramResult(1)
+            }
+        try {
+            editRoundTrip(editor, tempDir / editTempFileName(detail.id, detail.typeName), original)
+        } finally {
+            cleanupBestEffort(tempDir)
+        }
     }
 
     private fun fetchPaste(): PasteDetailResponse {
@@ -68,40 +78,50 @@ class EditCommand : CliktCommand(name = "edit") {
         tempFile: Path,
         original: String,
     ) {
-        val fs = FileSystem.SYSTEM
-        fs.write(tempFile) { writeUtf8(original) }
-        try {
-            val status = runEditorCommand(buildEditorCommand(editor, tempFile.toString()))
-            if (status != 0) {
-                echo("Error: editor '$editor' failed (status $status); nothing copied.", err = true)
+        writeOrFail(tempFile, original)
+        val status = runEditor(editor, tempFile.toString())
+        if (status != 0) {
+            echo("Error: editor '$editor' failed (status $status); nothing copied.", err = true)
+            throw ProgramResult(1)
+        }
+        val edited = normalizeEditedContent(original, readBackOrFail(tempFile))
+        when {
+            edited == original -> echo("No changes; nothing copied.")
+            edited.isEmpty() -> {
+                // An emptied buffer reads as "abort", like an empty commit message
+                echo("Error: edited content is empty; nothing copied.", err = true)
                 throw ProgramResult(1)
             }
-            val edited = normalizeEditedContent(original, fs.read(tempFile) { readUtf8() })
-            when {
-                edited == original -> echo("No changes; nothing copied.")
-                edited.isEmpty() -> {
-                    // An emptied buffer reads as "abort", like an empty commit message
-                    echo("Error: edited content is empty; nothing copied.", err = true)
-                    throw ProgramResult(1)
-                }
-                else -> copyToCrossPaste(edited, jsonOutput = ctx.json)
-            }
-        } finally {
-            fs.delete(tempFile, mustExist = false)
+            else -> copyToCrossPaste(edited, jsonOutput = ctx.json)
         }
     }
+
+    private fun writeOrFail(
+        file: Path,
+        content: String,
+    ) {
+        try {
+            FileSystem.SYSTEM.write(file) { writeUtf8(content) }
+        } catch (e: IOException) {
+            echo("Error: cannot write the edit file $file: ${e.message}", err = true)
+            throw ProgramResult(1)
+        }
+    }
+
+    private fun readBackOrFail(file: Path): String =
+        try {
+            FileSystem.SYSTEM.read(file) { readUtf8() }
+        } catch (e: IOException) {
+            // e.g. the editor deleted or renamed the file instead of saving it
+            echo("Error: cannot read the edited file back from $file: ${e.message}", err = true)
+            throw ProgramResult(1)
+        }
+
+    /** Never throws: cleanup must not mask the command's real outcome. */
+    private fun cleanupBestEffort(dir: Path) {
+        runCatching { FileSystem.SYSTEM.deleteRecursively(dir, mustExist = false) }
+    }
 }
-
-@OptIn(ExperimentalForeignApi::class)
-private fun readEnv(name: String): String? = platform.posix.getenv(name)?.toKString()
-
-/**
- * okio's native targets have no SYSTEM_TEMPORARY_DIRECTORY, so the temp dir
- * comes from the environment: TMPDIR (posix) then TEMP/TMP (Windows, where
- * TEMP is always set), falling back to /tmp.
- */
-internal fun tempDirectory(env: (String) -> String?): Path =
-    (env("TMPDIR") ?: env("TEMP") ?: env("TMP") ?: "/tmp").toPath(normalize = true)
 
 /** VISUAL wins over EDITOR (the POSIX convention); blank values are ignored. */
 internal fun resolveEditor(env: (String) -> String?): String? =
@@ -109,18 +129,9 @@ internal fun resolveEditor(env: (String) -> String?): String? =
         ?: env("EDITOR")?.takeIf { it.isNotBlank() }
 
 /**
- * $VISUAL/$EDITOR may carry arguments ("code --wait"), so the value is passed
- * to the shell as-is and only the file path is quoted.
- */
-internal fun buildEditorCommand(
-    editor: String,
-    filePath: String,
-): String = "$editor \"$filePath\""
-
-/**
  * html/rtf keep their source extension so editors highlight the markup. The
- * name is stable per paste ID: concurrent edits of the same paste share (and
- * overwrite) one temp file, which is acceptable.
+ * name only needs to be readable — uniqueness comes from the per-edit temp
+ * directory around it.
  */
 internal fun editTempFileName(
     id: Long,
@@ -136,11 +147,17 @@ internal fun editTempFileName(
 }
 
 /**
- * Returns the text to edit, or null for pastes that are not editable as text
- * (images, files). html/rtf edit their raw markup when the app exposes it.
+ * The explicit allowlist of text-like paste types: unknown or future types
+ * must be rejected rather than edited as text by default.
+ */
+private val EDITABLE_TYPES = setOf("text", "link", "html", "rtf", "color")
+
+/**
+ * Returns the text to edit, or null for pastes that are not editable as text.
+ * html/rtf edit their raw markup when the app exposes it.
  */
 internal fun editableContent(detail: PasteDetailResponse): String? {
-    if (detail.typeName == "image" || detail.typeName == "file") return null
+    if (detail.typeName !in EDITABLE_TYPES) return null
     return detail.rawContent ?: detail.content
 }
 

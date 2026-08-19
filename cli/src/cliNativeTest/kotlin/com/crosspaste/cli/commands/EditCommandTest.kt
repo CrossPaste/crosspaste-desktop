@@ -48,14 +48,6 @@ class EditCommandTest {
     }
 
     @Test
-    fun editorCommandQuotesOnlyTheFilePath() {
-        assertEquals(
-            "code --wait \"/tmp dir/crosspaste-edit-7.txt\"",
-            buildEditorCommand("code --wait", "/tmp dir/crosspaste-edit-7.txt"),
-        )
-    }
-
-    @Test
     fun tempFileExtensionFollowsThePasteType() {
         assertEquals("crosspaste-edit-1.html", editTempFileName(1, "html"))
         assertEquals("crosspaste-edit-2.rtf", editTempFileName(2, "rtf"))
@@ -67,6 +59,21 @@ class EditCommandTest {
     fun imagesAndFilesAreNotEditable() {
         assertNull(editableContent(detail(typeName = "image", content = "shot.png")))
         assertNull(editableContent(detail(typeName = "file", content = "a.txt")))
+    }
+
+    @Test
+    fun unknownTypesAreNotEditable() {
+        // Editability is an allowlist: a type this CLI does not know (a newer
+        // app, or "invalid") must be rejected, not edited as text by default
+        assertNull(editableContent(detail(typeName = "invalid", content = "?")))
+        assertNull(editableContent(detail(typeName = "someFutureType", content = "?")))
+    }
+
+    @Test
+    fun allTextLikeTypesAreEditable() {
+        for (type in listOf("text", "link", "html", "rtf", "color")) {
+            assertEquals("v", editableContent(detail(typeName = type, content = "v")))
+        }
     }
 
     @Test
