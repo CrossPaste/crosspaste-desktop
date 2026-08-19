@@ -8,7 +8,6 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
-import com.github.ajalt.mordant.rendering.TextColors
 
 class SearchCommand : CliktCommand(name = "search") {
 
@@ -48,15 +47,6 @@ class SearchCommand : CliktCommand(name = "search") {
         }
         echo("${list.items.size} result(s):")
         echo("")
-        for (item in list.items) {
-            val fav = if (item.tagged) TextColors.yellow("*") else " "
-            val preview = item.preview.replace("\n", " ").take(60)
-            echo(
-                "$fav ${item.id.toString().padStart(8)} " +
-                    "${TextColors.cyan(item.typeName.padEnd(6))} " +
-                    "${TextColors.gray(formatRelativeTime(item.createTime).padEnd(8))} " +
-                    preview,
-            )
-        }
+        printPasteRows(list.items, showRemote = false, showSize = false)
     }
 }
