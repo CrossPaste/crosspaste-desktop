@@ -39,6 +39,8 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | `tags` | 管理粘贴标签（`create`、`delete`）。 |
 | `version` | 显示 CLI 版本。 |
 
+最常用的命令有单字母别名：`c` = `copy`、`p` = `paste`、`h` = `history`。
+
 全局选项：
 
 - `--json` — 任意命令输出机器可读的 JSON。
@@ -50,11 +52,12 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 
 CLI 为组合其他工具而设计。询问与进度信息都输出到 stderr，stdout 始终保持纯净、可安全接入管道。
 
-从管道复制：
+从管道复制——当输入来自管道且未指定命令时，CLI 直接按 `copy` 处理，命令名可以完全省略：
 
 ```sh
-git log -1 --format=%H | crosspaste copy
-cat notes.md | crosspaste copy
+git log -1 --format=%H | crosspaste
+cat notes.md | crosspaste
+history | grep test | crosspaste copy   # 显式写法效果相同
 ```
 
 仅输出粘贴内容本体（无任何装饰），供后续管道使用。`--raw` 按存储原样输出——HTML/RTF 输出源码；`--summary` 则输出纯文本摘要：

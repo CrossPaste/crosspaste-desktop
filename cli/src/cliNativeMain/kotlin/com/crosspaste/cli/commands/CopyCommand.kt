@@ -38,33 +38,49 @@ class CopyCommand(
 
     override fun run() {
         val content = text ?: readPipedStdin()
-        runCli { client ->
-            val body = cliJson.encodeToString(CopyRequest.serializer(), CopyRequest(content))
-            val response = client.postBody("/cli/copy", body, CopyResponse.serializer())
-            if (ctx?.json == true) {
-                echo(cliJson.encodeToString(CopyResponse.serializer(), response))
-            } else {
-                // "to CrossPaste", not "to clipboard": a headless daemon has no
-                // system clipboard — the paste is stored in history and synced
-                echo("Copied to CrossPaste (id=${response.id}).")
-            }
-        }
+        copyToCrossPaste(content, jsonOutput = ctx?.json == true)
     }
 
     private fun readPipedStdin(): String {
         if (terminal.terminalInfo.inputInteractive) {
             throw usageError("provide text as an argument, or pipe it via stdin")
         }
-        val content =
-            try {
-                stdinReader()
-            } catch (e: StdinException) {
-                echo("Error: ${e.message}", err = true)
-                throw ProgramResult(1)
-            }
-        if (content.isEmpty()) {
-            throw usageError("stdin was empty; nothing to copy")
+        return readPipedStdinOrFail(stdinReader)
+    }
+}
+
+/**
+ * Reads all of piped stdin, mapping read failures to exit code 1 and empty
+ * input to a usage error. Shared between `copy` and the root command's
+ * implicit copy; callers must have checked that stdin is not interactive.
+ */
+internal fun CliktCommand.readPipedStdinOrFail(stdinReader: () -> String): String {
+    val content =
+        try {
+            stdinReader()
+        } catch (e: StdinException) {
+            echo("Error: ${e.message}", err = true)
+            throw ProgramResult(1)
         }
-        return content
+    if (content.isEmpty()) {
+        throw usageError("stdin was empty; nothing to copy")
+    }
+    return content
+}
+
+internal fun CliktCommand.copyToCrossPaste(
+    content: String,
+    jsonOutput: Boolean,
+) {
+    runCli { client ->
+        val body = cliJson.encodeToString(CopyRequest.serializer(), CopyRequest(content))
+        val response = client.postBody("/cli/copy", body, CopyResponse.serializer())
+        if (jsonOutput) {
+            echo(cliJson.encodeToString(CopyResponse.serializer(), response))
+        } else {
+            // "to CrossPaste", not "to clipboard": a headless daemon has no
+            // system clipboard — the paste is stored in history and synced
+            echo("Copied to CrossPaste (id=${response.id}).")
+        }
     }
 }
