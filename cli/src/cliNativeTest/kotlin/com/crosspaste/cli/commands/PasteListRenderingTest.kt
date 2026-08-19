@@ -47,6 +47,24 @@ class PasteListRenderingTest {
     }
 
     @Test
+    fun eastAsianWideCharsOutsideTheCjkBlocksCountTwoCells() {
+        // ⌚ U+231A and ⏩ U+23E9 are East_Asian_Width Wide despite living in
+        // the misc-technical block; a 2-cell budget with 1 cell left must
+        // drop them rather than overflow the row.
+        assertEquals(2, approxCellWidth(0x231A))
+        assertEquals(2, approxCellWidth(0x23E9))
+        assertEquals("a", truncateToCellWidth("a⌚", 2))
+        assertEquals("a", truncateToCellWidth("a⏩", 2))
+    }
+
+    @Test
+    fun nonBmpWideCharsCountTwoCells() {
+        // Tangut U+17000 (non-BMP, East_Asian_Width Wide) is a surrogate pair.
+        assertEquals(2, approxCellWidth(0x17000))
+        assertEquals("𗀀", truncateToCellWidth("𗀀𗀀", 3))
+    }
+
+    @Test
     fun emojiWithVariationSelectorDoesNotUndercount() {
         // ❤️ (U+2764 U+FE0F) renders 2 cells wide; the estimate must be >= 2
         // so the row never overflows. Budget 1 must therefore keep nothing.

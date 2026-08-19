@@ -12,11 +12,14 @@ internal fun collapsePreviewWhitespace(text: String): String = text.trim().repla
 private val whitespaceRun = Regex("\\s+")
 
 /**
- * Approximate wcwidth. Deliberately biased toward overestimating: a preview
- * truncated one cell early is invisible, one cell late wraps the whole row.
- * Wide CJK blocks and emoji count 2; joiners/variation selectors count 0
- * (except VS16, which requests emoji presentation and can widen its base by
- * one); everything else counts 1.
+ * Approximate wcwidth. Codepoints with East_Asian_Width Wide/Fullwidth count
+ * 2 (complete generated interval table, see [EAST_ASIAN_WIDE_RANGES]);
+ * joiners/variation selectors count 0 — except VS16, which requests emoji
+ * presentation and can widen its base by one, so it counts 1 to keep the
+ * estimate biased toward overestimating (a preview truncated one cell early
+ * is invisible, one cell late wraps the whole row). ZWJ sequences are counted
+ * per component for the same reason. Ambiguous-width chars count 1, matching
+ * the default terminal convention.
  */
 internal fun approxCellWidth(codepoint: Int): Int =
     when (codepoint) {
@@ -26,31 +29,29 @@ internal fun approxCellWidth(codepoint: Int): Int =
         in 0xFE00..0xFE0E, // variation selectors (text presentation)
         -> 0
         0xFE0F -> 1 // VS16: emoji presentation, may widen the base char
-        in 0x1100..0x115F, // Hangul Jamo
-        in 0x2329..0x232A,
-        in 0x2600..0x27BF, // misc symbols/dingbats, often emoji presentation
-        in 0x2E80..0x303E, // CJK radicals, punctuation
-        in 0x3041..0x33FF, // kana, CJK symbols
-        in 0x3400..0x4DBF, // CJK ext A
-        in 0x4E00..0x9FFF, // CJK unified
-        in 0xA000..0xA4CF, // Yi
-        in 0xA960..0xA97F, // Hangul Jamo ext A
-        in 0xAC00..0xD7A3, // Hangul syllables
-        in 0xF900..0xFAFF, // CJK compat
-        in 0xFE10..0xFE19, // vertical forms
-        in 0xFE30..0xFE6F, // CJK compat forms
-        in 0xFF00..0xFF60, // fullwidth forms
-        in 0xFFE0..0xFFE6,
-        in 0x1F1E6..0x1F1FF, // regional indicators (flags)
-        in 0x1F300..0x1FAFF, // emoji
-        in 0x20000..0x3FFFD, // CJK ext B+
-        -> 2
-        else -> 1
+        else -> if (isEastAsianWide(codepoint)) 2 else 1
     }
+
+private fun isEastAsianWide(codepoint: Int): Boolean {
+    val table = EAST_ASIAN_WIDE_RANGES
+    var low = 0
+    var high = table.size / 2 - 1
+    while (low <= high) {
+        val mid = (low + high) / 2
+        when {
+            codepoint > table[mid * 2 + 1] -> low = mid + 1
+            codepoint < table[mid * 2] -> high = mid - 1
+            else -> return true
+        }
+    }
+    return false
+}
 
 /**
  * Longest prefix of [text] that fits in [maxCells] display cells. Never
- * splits a surrogate pair.
+ * splits a surrogate pair, and keeps a base char together with its trailing
+ * zero-width marks/joiners and VS16 (dropping only a variation selector
+ * would silently change the glyph's presentation).
  */
 internal fun truncateToCellWidth(
     text: String,
@@ -59,20 +60,35 @@ internal fun truncateToCellWidth(
     var cells = 0
     var i = 0
     while (i < text.length) {
-        val high = text[i]
-        val pair = high.isHighSurrogate() && i + 1 < text.length && text[i + 1].isLowSurrogate()
-        val codepoint =
-            if (pair) {
-                0x10000 + ((high.code - 0xD800) shl 10) + (text[i + 1].code - 0xDC00)
-            } else {
-                high.code
-            }
-        cells += approxCellWidth(codepoint)
-        if (cells > maxCells) break
-        i += if (pair) 2 else 1
+        // Consume one cluster: a base codepoint plus any zero-width
+        // continuations (combining marks, ZWJ/ZWNJ, variation selectors).
+        var j = i
+        var clusterCells = 0
+        do {
+            val codepoint = codepointAt(text, j)
+            clusterCells += approxCellWidth(codepoint)
+            j += if (codepoint > 0xFFFF) 2 else 1
+        } while (j < text.length && isClusterContinuation(codepointAt(text, j)))
+        if (cells + clusterCells > maxCells) break
+        cells += clusterCells
+        i = j
     }
     return text.substring(0, i)
 }
+
+private fun codepointAt(
+    text: String,
+    index: Int,
+): Int {
+    val high = text[index]
+    return if (high.isHighSurrogate() && index + 1 < text.length && text[index + 1].isLowSurrogate()) {
+        0x10000 + ((high.code - 0xD800) shl 10) + (text[index + 1].code - 0xDC00)
+    } else {
+        high.code
+    }
+}
+
+private fun isClusterContinuation(codepoint: Int): Boolean = codepoint == 0xFE0F || approxCellWidth(codepoint) == 0
 
 /**
  * The row width budget. Interactive stdout uses the detected terminal size.
