@@ -168,6 +168,57 @@ tasks.register("cliNativeTest") {
     hostTestTaskName?.let { dependsOn(it) }
 }
 
+// Runs the debug CLI for the host target against the dev app instance
+// (`./gradlew app:run`, whose user-data dir is app/.user) without packaging
+// a release build. Usage: ./gradlew :cli:run --args="history -n 5"
+// An explicit CROSSPASTE_USER_DATA_DIR in the caller's environment wins over
+// the app/.user default, so the task can also target other instances.
+abstract class CliRunTask : Exec() {
+    @get:Input
+    @get:org.gradle.api.tasks.options.Option(
+        option = "args",
+        description = "Arguments passed to the CLI (whitespace-separated)",
+    )
+    abstract val cliArgs: Property<String>
+
+    init {
+        cliArgs.convention("")
+    }
+}
+
+kotlin.targets
+    .withType<KotlinNativeTarget>()
+    .firstOrNull { it.konanTarget == HostManager.host }
+    ?.let { hostTarget ->
+        val debugExecutable = hostTarget.binaries.getExecutable(NativeBuildType.DEBUG)
+        tasks.register<CliRunTask>("run") {
+            group = "application"
+            description = "Runs the debug CLI against the dev app started with ./gradlew app:run."
+            dependsOn(debugExecutable.linkTaskProvider)
+            executable(debugExecutable.outputFile.absolutePath)
+            standardInput = System.`in`
+            // The CLI uses non-zero exits as part of its contract (3 = app not
+            // running, 2 = usage); don't turn those into Gradle build failures.
+            isIgnoreExitValue = true
+            if (System.getenv("CROSSPASTE_USER_DATA_DIR") == null) {
+                environment(
+                    "CROSSPASTE_USER_DATA_DIR",
+                    rootProject.layout.projectDirectory
+                        .dir("app/.user")
+                        .asFile.absolutePath,
+                )
+            }
+            doFirst {
+                args(
+                    cliArgs
+                        .get()
+                        .split(Regex("\\s+"))
+                        .filter { it.isNotEmpty() },
+                )
+            }
+        }
+    }
+
 // Collects release executables under cli/dist/<target>/crosspaste-cli(.exe),
 // the layout the packaging pipeline (Conveyor + release workflow) consumes.
 kotlin.targets.withType<KotlinNativeTarget>().forEach { target ->

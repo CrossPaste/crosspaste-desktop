@@ -224,3 +224,29 @@ crosspaste --generate-completion fish > ~/.config/fish/completions/crosspaste.fi
 ## Colors
 
 Human-readable output uses a few colors (paste types, device states, app status). Colors are automatically disabled when output is not a terminal, and the [`NO_COLOR`](https://no-color.org) environment variable is respected.
+
+## Development
+
+To test the CLI against a development app instance without packaging a release build:
+
+```sh
+# Terminal 1: start the dev app (its user-data dir is app/.user)
+./gradlew app:run
+
+# Terminal 2: run the debug CLI against it
+./gradlew :cli:run --args="history -n 5"
+```
+
+The `:cli:run` task links the host's debug executable and sets `CROSSPASTE_USER_DATA_DIR` to `app/.user`, so the CLI discovers the dev instance's `cli-endpoint.json` instead of the installed app's. An explicit `CROSSPASTE_USER_DATA_DIR` in your environment wins over the default, and the same variable also works when invoking a built CLI binary directly — useful for testing with a real TTY (colors, full terminal width):
+
+```sh
+CROSSPASTE_USER_DATA_DIR=app/.user cli/build/bin/macosArm64/debugExecutable/crosspaste-cli.kexe history
+```
+
+Output through Gradle is not a TTY, so the CLI cannot detect your window size and falls back to 79 columns. Pass the width explicitly via `COLUMNS` (the CLI honors it whenever stdout is not interactive):
+
+```sh
+COLUMNS=$(tput cols) ./gradlew :cli:run --args="history"
+```
+
+When the override is set, the CLI never offers to auto-launch the app (that would start the installed one); start the target instance yourself.

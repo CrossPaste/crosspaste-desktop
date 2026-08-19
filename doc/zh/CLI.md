@@ -224,3 +224,29 @@ crosspaste --generate-completion fish > ~/.config/fish/completions/crosspaste.fi
 ## 颜色
 
 人类可读输出使用少量颜色（粘贴类型、设备状态、应用状态）。输出不是终端时自动关闭颜色，并遵循 [`NO_COLOR`](https://no-color.org) 环境变量。
+
+## 开发
+
+无需打包发行版即可让 CLI 连上开发模式的应用实例：
+
+```sh
+# 终端 1：启动 dev 应用（其用户数据目录为 app/.user）
+./gradlew app:run
+
+# 终端 2：用 debug CLI 连接它
+./gradlew :cli:run --args="history -n 5"
+```
+
+`:cli:run` 任务会链接宿主平台的 debug 可执行文件，并把 `CROSSPASTE_USER_DATA_DIR` 指向 `app/.user`，因此 CLI 会发现 dev 实例的 `cli-endpoint.json` 而不是已安装应用的。环境中显式设置的 `CROSSPASTE_USER_DATA_DIR` 优先于默认值；该变量同样适用于直接运行已构建的 CLI 二进制——适合在真实 TTY 下测试（颜色、完整终端宽度）：
+
+```sh
+CROSSPASTE_USER_DATA_DIR=app/.user cli/build/bin/macosArm64/debugExecutable/crosspaste-cli.kexe history
+```
+
+经 Gradle 转发的输出不是 TTY，CLI 探测不到窗口宽度，会回退到 79 列。可通过 `COLUMNS` 显式传入宽度（stdout 非交互时 CLI 都会遵循它）：
+
+```sh
+COLUMNS=$(tput cols) ./gradlew :cli:run --args="history"
+```
+
+设置了该覆盖变量后，CLI 不会再提示自动启动应用（那会启动已安装的正式版）；请自行启动目标实例。
