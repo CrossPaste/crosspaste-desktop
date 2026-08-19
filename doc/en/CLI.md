@@ -32,6 +32,7 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 | `history` | List recent paste history (`--limit`, `--type`, `--tag`, `--format`). |
 | `search <query>` | Search paste history (same filters as `history`). |
 | `copy [text]` | Copy text via CrossPaste: stores it in history and syncs it to your devices; the system clipboard is set when the desktop app (not the headless daemon) is running. Reads stdin when piped. |
+| `edit [id]` | Open the most recent paste (or a specific paste by ID) in `$VISUAL`/`$EDITOR`, and copy the edited result as a new paste. Saving without changes copies nothing. HTML/RTF pastes edit their source markup; the result is always a text paste. |
 | `delete <id>` | Delete a paste by ID. |
 | `devices` | List paired devices and their connection state. |
 | `pair` | Pair with a nearby device by entering the code it displays (see [Pairing from the terminal](#pairing-from-the-terminal)). |
