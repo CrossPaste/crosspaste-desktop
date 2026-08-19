@@ -9,13 +9,14 @@ import com.crosspaste.cli.platform.AppLiveness
 import com.crosspaste.cli.platform.AppReadinessChecker
 import com.crosspaste.cli.platform.CliAppPathProvider
 import com.crosspaste.cli.platform.CliConfigReader
+import com.crosspaste.cli.platform.NativePlatformPathProvider
 import com.crosspaste.cli.platform.createAppLauncher
 import com.crosspaste.cli.platform.createNativePlatformPathProvider
 import com.crosspaste.cli.platform.isGuiEnvironment
+import com.crosspaste.cli.platform.userDataDirOverride
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.ProgramResult
 import com.github.ajalt.clikt.core.UsageError
-import com.github.ajalt.clikt.core.findObject
 import com.github.ajalt.clikt.core.terminal
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.runBlocking
@@ -118,6 +119,19 @@ private suspend fun CliktCommand.ensureAppRunning(readinessChecker: AppReadiness
  */
 @OptIn(ExperimentalNativeApi::class)
 private suspend fun CliktCommand.startApp(readinessChecker: AppReadinessChecker) {
+    // With the user-data dir overridden, auto-launch would start the
+    // installed app, which writes its endpoint file to the production path —
+    // the CLI would then wait forever on the overridden path. The target
+    // (usually a dev instance via `./gradlew app:run`) must be started by hand.
+    userDataDirOverride()?.let { override ->
+        echo(
+            "Error: CrossPaste is not running at $override " +
+                "(set via ${NativePlatformPathProvider.USER_DATA_DIR_ENV}). " +
+                "Start that instance yourself, e.g. './gradlew app:run' for a dev build.",
+            err = true,
+        )
+        throw ProgramResult(EXIT_CODE_APP_NOT_RUNNING)
+    }
     // No graphical session (Linux server without DISPLAY/WAYLAND_DISPLAY):
     // the same app is launched as a headless daemon instead of the GUI.
     // createAppLauncher owns that decision; headless here only picks the prompt.

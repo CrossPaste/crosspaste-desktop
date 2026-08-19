@@ -168,6 +168,96 @@ tasks.register("cliNativeTest") {
     hostTestTaskName?.let { dependsOn(it) }
 }
 
+// Runs the debug CLI for the host target against the dev app instance
+// (`./gradlew app:run`, whose user-data dir is app/.user) without packaging
+// a release build. Usage: ./gradlew :cli:run --args="history -n 5"
+// An explicit CROSSPASTE_USER_DATA_DIR in the caller's environment wins over
+// the app/.user default, so the task can also target other instances.
+abstract class CliRunTask : Exec() {
+    @get:Input
+    @get:org.gradle.api.tasks.options.Option(
+        option = "args",
+        description = "Arguments passed to the CLI (whitespace-separated; quote to group)",
+    )
+    abstract val cliArgs: Property<String>
+
+    init {
+        cliArgs.convention("")
+    }
+
+    companion object {
+        // Quote-aware whitespace tokenizer matching Gradle's own
+        // JavaExec.setArgsString() semantics (ArgumentsSplitter): single or
+        // double quotes group text (including embedded mid-token quoting like
+        // foo"bar baz"); an unterminated quote runs to the end of the string.
+        fun splitArgs(argsString: String): List<String> {
+            val tokens = mutableListOf<String>()
+            val current = StringBuilder()
+            var quote: Char? = null
+            var inToken = false
+            for (c in argsString) {
+                when {
+                    quote != null ->
+                        if (c == quote) quote = null else current.append(c)
+                    c == '"' || c == '\'' -> {
+                        quote = c
+                        inToken = true
+                    }
+                    c.isWhitespace() -> {
+                        if (inToken) {
+                            tokens.add(current.toString())
+                            current.setLength(0)
+                            inToken = false
+                        }
+                    }
+                    else -> {
+                        current.append(c)
+                        inToken = true
+                    }
+                }
+            }
+            if (inToken) tokens.add(current.toString())
+            return tokens
+        }
+    }
+}
+
+kotlin.targets
+    .withType<KotlinNativeTarget>()
+    .firstOrNull { it.konanTarget == HostManager.host }
+    ?.let { hostTarget ->
+        val debugExecutable = hostTarget.binaries.getExecutable(NativeBuildType.DEBUG)
+        tasks.register<CliRunTask>("run") {
+            group = "application"
+            description = "Runs the debug CLI against the dev app started with ./gradlew app:run."
+            dependsOn(debugExecutable.linkTaskProvider)
+            executable(debugExecutable.outputFile.absolutePath)
+            standardInput = System.`in`
+            // The CLI uses non-zero exits as part of its contract (3 = app not
+            // running, 2 = usage); don't turn those into Gradle build failures.
+            // Anything else (internal error, crash, signal) still fails the
+            // build — checked in doLast below.
+            isIgnoreExitValue = true
+            if (System.getenv("CROSSPASTE_USER_DATA_DIR").isNullOrBlank()) {
+                environment(
+                    "CROSSPASTE_USER_DATA_DIR",
+                    rootProject.layout.projectDirectory
+                        .dir("app/.user")
+                        .asFile.absolutePath,
+                )
+            }
+            doFirst {
+                args(CliRunTask.splitArgs(cliArgs.get()))
+            }
+            doLast {
+                val exitValue = executionResult.get().exitValue
+                if (exitValue !in setOf(0, 2, 3)) {
+                    throw GradleException("CLI exited with unexpected exit code $exitValue")
+                }
+            }
+        }
+    }
+
 // Collects release executables under cli/dist/<target>/crosspaste-cli(.exe),
 // the layout the packaging pipeline (Conveyor + release workflow) consumes.
 kotlin.targets.withType<KotlinNativeTarget>().forEach { target ->
