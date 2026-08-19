@@ -4,6 +4,7 @@ import com.crosspaste.cli.commands.ConfigCommand
 import com.crosspaste.cli.commands.CopyCommand
 import com.crosspaste.cli.commands.DeleteCommand
 import com.crosspaste.cli.commands.DevicesCommand
+import com.crosspaste.cli.commands.EditCommand
 import com.crosspaste.cli.commands.HistoryCommand
 import com.crosspaste.cli.commands.PairCommand
 import com.crosspaste.cli.commands.PasteCommand
@@ -92,6 +93,7 @@ class CrossPasteCommand(
             HistoryCommand(),
             SearchCommand(),
             CopyCommand(),
+            EditCommand(),
             DeleteCommand(),
             DevicesCommand(),
             PairCommand(),
