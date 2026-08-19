@@ -12,6 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
+import kotlin.coroutines.cancellation.CancellationException
 
 class TaskExecutor(
     singleTypeTaskExecutors: List<SingleTypeTaskExecutor>,
@@ -61,19 +62,36 @@ class TaskExecutor(
                 })
             }
         }.onFailure { e ->
+            // A cancelled execution (shutdown) must not be recorded as a
+            // terminal FAILURE: rethrow so the row keeps its persisted status.
+            if (e is CancellationException) throw e
             logger.error(e) { "execute task error: $taskId" }
             currentTask?.let { task ->
-                taskDao.failureTask(taskId, false, TaskUtils.createFailExtraInfo(task, e))
+                // Failure recording must itself be fault-tolerant: an exception
+                // escaping here (e.g. corrupt extraInfo JSON in
+                // createFailExtraInfo) would cancel the consumer coroutine and
+                // permanently stop task processing for the whole session.
+                val failExtraInfo = runCatching { TaskUtils.createFailExtraInfo(task, e) }.getOrNull()
+                runCatching {
+                    taskDao.failureTask(taskId, false, failExtraInfo)
+                }.onFailure { persistError ->
+                    if (persistError is CancellationException) throw persistError
+                    logger.error(persistError) { "record task failure error: $taskId" }
+                }
             }
         }
     }
 
     suspend fun submitTask(taskId: Long) {
-        taskChannel.send(taskId)
+        if (taskChannel.trySend(taskId).isFailure) {
+            // The channel is only closed during shutdown; a producer racing it
+            // must not crash — the unfinished row just stays persisted.
+            logger.warn { "Task channel closed, dropping submission of task $taskId" }
+        }
     }
 
     suspend fun submitTasks(taskIds: List<Long>) {
-        taskIds.forEach { taskChannel.send(it) }
+        taskIds.forEach { submitTask(it) }
     }
 
     fun shutdown() {

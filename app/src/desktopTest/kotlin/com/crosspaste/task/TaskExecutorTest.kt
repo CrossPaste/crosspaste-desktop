@@ -9,11 +9,13 @@ import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TaskExecutorTest {
@@ -148,6 +150,97 @@ class TaskExecutorTest {
             coVerify { taskDao.failureTask(1L, false, any()) }
 
             executor.shutdown()
+        }
+
+    @Test
+    fun `corrupt extraInfo does not kill the consumer`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+            coEvery { singleExecutor.executeTask(any(), any(), any(), any()) } coAnswers {
+                val task = it.invocation.args[0] as PasteTask
+                if (task.taskId == 1L) {
+                    throw RuntimeException("boom")
+                }
+                @Suppress("UNCHECKED_CAST")
+                val successCallback = it.invocation.args[1] as (suspend (String?) -> Unit)
+                successCallback(null)
+            }
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+            // Corrupt extraInfo makes createFailExtraInfo throw while recording
+            // the failure; that error must not cancel the consumer coroutine.
+            coEvery { taskDao.getTask(1L) } returns
+                createMockTask(taskId = 1L).copy(extraInfo = "not json")
+            coEvery { taskDao.getTask(2L) } returns createMockTask(taskId = 2L)
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.submitTask(1L)
+            advanceUntilIdle()
+            // Fallback: the failure is still recorded, without the new extraInfo.
+            coVerify { taskDao.failureTask(1L, false, null) }
+
+            executor.submitTask(2L)
+            advanceUntilIdle()
+            coVerify { taskDao.successTask(2L, any()) }
+
+            executor.shutdown()
+        }
+
+    @Test
+    fun `cancelled in-flight task is not recorded as terminal failure`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+            coEvery { singleExecutor.executeTask(any(), any(), any(), any()) } coAnswers {
+                delay(1.seconds)
+            }
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+            coEvery { taskDao.getTask(1L) } returns createMockTask()
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.submitTask(1L)
+            // Shutdown cancels the execution mid-delay.
+            executor.shutdown()
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { taskDao.failureTask(any(), any(), any()) }
+        }
+
+    @Test
+    fun `submitTask after shutdown neither throws nor touches the task`() =
+        runTest {
+            val singleExecutor: SingleTypeTaskExecutor = mockk(relaxed = true)
+            coEvery { singleExecutor.taskType } returns TaskType.DELETE_PASTE_TASK
+
+            val taskDao: TaskDao = mockk(relaxed = true)
+
+            val executor =
+                TaskExecutor(
+                    listOf(singleExecutor),
+                    taskDao,
+                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
+                )
+
+            executor.shutdown()
+            executor.submitTask(1L)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { taskDao.executingTask(any()) }
+            coVerify(exactly = 0) { taskDao.failureTask(any(), any(), any()) }
         }
 
     @Test
