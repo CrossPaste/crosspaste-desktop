@@ -10,7 +10,10 @@ Usage:
 Collects every codepoint with East_Asian_Width W (Wide) or F (Fullwidth),
 unions the blocks whose *unassigned* codepoints also default to Wide (per the
 file header), and emits merged intervals. Emoji_Presentation characters are a
-subset of W/F since Unicode 9, so no separate emoji table is needed.
+subset of W/F since Unicode 9 with one exception: regional indicators
+(U+1F1E6..U+1F1FF) are Emoji_Presentation but EAW=N, so each counts 1 cell —
+a flag pair then totals 1+1=2, matching its rendered width, and needs no
+separate handling.
 """
 
 import re
