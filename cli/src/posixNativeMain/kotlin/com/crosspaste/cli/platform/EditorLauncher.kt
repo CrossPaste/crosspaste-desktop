@@ -5,16 +5,11 @@ import kotlinx.cinterop.cstr
 import kotlinx.cinterop.toKString
 import okio.Path
 import okio.Path.Companion.toPath
-import platform.posix.getenv
 import platform.posix.mkdtemp
 import platform.posix.system
 
 /** Default editor when neither VISUAL nor EDITOR is set. */
 const val FALLBACK_EDITOR = "vi"
-
-/** The narrow getenv is correct on POSIX, where the environment is byte-oriented. */
-@OptIn(ExperimentalForeignApi::class)
-fun readPlatformEnv(name: String): String? = getenv(name)?.toKString()
 
 /**
  * Creates a fresh private directory for an edit round-trip via mkdtemp(3):

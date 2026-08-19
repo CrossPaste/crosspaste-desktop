@@ -1,7 +1,5 @@
 package com.crosspaste.cli.platform
 
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.toKString
 import okio.Path
 import okio.Path.Companion.toPath
 import kotlin.experimental.ExperimentalNativeApi
@@ -48,8 +46,10 @@ fun createNativePlatformPathProvider(): NativePlatformPathProvider {
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
-private fun getEnv(name: String): String? = platform.posix.getenv(name)?.toKString()
+// readPlatformEnv, not a narrow getenv: USERPROFILE and the user-data
+// override may contain non-ASCII characters, which the ANSI environment on
+// Windows would garble before any path is ever resolved
+private fun getEnv(name: String): String? = readPlatformEnv(name)
 
 private fun getHomeDir(): String = getEnv("HOME") ?: getEnv("USERPROFILE") ?: "/tmp"
 
