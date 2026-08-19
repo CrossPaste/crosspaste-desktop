@@ -177,12 +177,48 @@ abstract class CliRunTask : Exec() {
     @get:Input
     @get:org.gradle.api.tasks.options.Option(
         option = "args",
-        description = "Arguments passed to the CLI (whitespace-separated)",
+        description = "Arguments passed to the CLI (whitespace-separated; quote to group)",
     )
     abstract val cliArgs: Property<String>
 
     init {
         cliArgs.convention("")
+    }
+
+    companion object {
+        // Quote-aware whitespace tokenizer matching Gradle's own
+        // JavaExec.setArgsString() semantics (ArgumentsSplitter): single or
+        // double quotes group text (including embedded mid-token quoting like
+        // foo"bar baz"); an unterminated quote runs to the end of the string.
+        fun splitArgs(argsString: String): List<String> {
+            val tokens = mutableListOf<String>()
+            val current = StringBuilder()
+            var quote: Char? = null
+            var inToken = false
+            for (c in argsString) {
+                when {
+                    quote != null ->
+                        if (c == quote) quote = null else current.append(c)
+                    c == '"' || c == '\'' -> {
+                        quote = c
+                        inToken = true
+                    }
+                    c.isWhitespace() -> {
+                        if (inToken) {
+                            tokens.add(current.toString())
+                            current.setLength(0)
+                            inToken = false
+                        }
+                    }
+                    else -> {
+                        current.append(c)
+                        inToken = true
+                    }
+                }
+            }
+            if (inToken) tokens.add(current.toString())
+            return tokens
+        }
     }
 }
 
@@ -199,8 +235,10 @@ kotlin.targets
             standardInput = System.`in`
             // The CLI uses non-zero exits as part of its contract (3 = app not
             // running, 2 = usage); don't turn those into Gradle build failures.
+            // Anything else (internal error, crash, signal) still fails the
+            // build — checked in doLast below.
             isIgnoreExitValue = true
-            if (System.getenv("CROSSPASTE_USER_DATA_DIR") == null) {
+            if (System.getenv("CROSSPASTE_USER_DATA_DIR").isNullOrBlank()) {
                 environment(
                     "CROSSPASTE_USER_DATA_DIR",
                     rootProject.layout.projectDirectory
@@ -209,12 +247,13 @@ kotlin.targets
                 )
             }
             doFirst {
-                args(
-                    cliArgs
-                        .get()
-                        .split(Regex("\\s+"))
-                        .filter { it.isNotEmpty() },
-                )
+                args(CliRunTask.splitArgs(cliArgs.get()))
+            }
+            doLast {
+                val exitValue = executionResult.get().exitValue
+                if (exitValue !in setOf(0, 2, 3)) {
+                    throw GradleException("CLI exited with unexpected exit code $exitValue")
+                }
             }
         }
     }

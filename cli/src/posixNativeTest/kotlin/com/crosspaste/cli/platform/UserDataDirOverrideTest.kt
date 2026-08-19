@@ -1,5 +1,7 @@
 package com.crosspaste.cli.platform
 
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.toKString
 import okio.Path.Companion.toPath
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,10 +11,12 @@ class UserDataDirOverrideTest {
 
     private val env = NativePlatformPathProvider.USER_DATA_DIR_ENV
 
+    @OptIn(ExperimentalForeignApi::class)
     private fun withEnv(
         value: String?,
         block: () -> Unit,
     ) {
+        val original = platform.posix.getenv(env)?.toKString()
         if (value == null) {
             platform.posix.unsetenv(env)
         } else {
@@ -21,7 +25,11 @@ class UserDataDirOverrideTest {
         try {
             block()
         } finally {
-            platform.posix.unsetenv(env)
+            if (original == null) {
+                platform.posix.unsetenv(env)
+            } else {
+                platform.posix.setenv(env, original, 1)
+            }
         }
     }
 
