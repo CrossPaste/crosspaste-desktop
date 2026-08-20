@@ -16,7 +16,9 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Block
 import com.composables.icons.materialsymbols.rounded.Code
 import com.composables.icons.materialsymbols.rounded.Document_scanner
+import com.composables.icons.materialsymbols.rounded.Mouse
 import com.composables.icons.materialsymbols.rounded.Terminal
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.cli.CliSymlinkState
 import com.crosspaste.ui.CliTool
@@ -38,6 +40,7 @@ import org.koin.compose.koinInject
 fun ExtensionContentView() {
     val cliSymlinkService = koinInject<CliSymlinkService>()
     val navigateManager = koinInject<NavigationManager>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
     val themeExt = LocalThemeExtState.current
 
     // Probed once at app startup; NOT_SUPPORTED covers non-macOS platforms
@@ -117,6 +120,19 @@ fun ExtensionContentView() {
                         },
                     )
                 }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "mouse_settings",
+                    subtitle = "mouse_settings_desc",
+                    icon =
+                        IconData(
+                            imageVector = MaterialSymbols.Rounded.Mouse,
+                            iconColor = themeExt.purpleIconColor,
+                        ),
+                    onClick = {
+                        appWindowManager.showMouseSettingsWindow()
+                    },
+                )
             }
         }
     }

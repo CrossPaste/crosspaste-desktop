@@ -15,6 +15,7 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.mouse.MouseSettingsWindow
 import com.crosspaste.ui.tray.MacTrayView
 import com.crosspaste.ui.tray.NonMacTrayView
 import org.jetbrains.compose.resources.painterResource
@@ -80,5 +81,10 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     val bubbleWindowInfo by appWindowManager.bubbleWindowInfo.collectAsState()
     if (bubbleWindowInfo.show) {
         BubbleWindow(windowIcon)
+    }
+
+    val mouseSettingsVisible by appWindowManager.mouseSettingsWindowVisible.collectAsState()
+    if (mouseSettingsVisible) {
+        MouseSettingsWindow(windowIcon)
     }
 }
