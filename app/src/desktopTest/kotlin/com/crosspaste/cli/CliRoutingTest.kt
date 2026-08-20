@@ -897,6 +897,53 @@ class CliRoutingTest {
     }
 
     @Test
+    fun `watch never builds its baseline from a masked query failure`() {
+        val fixture = Fixture()
+        // The DAO flow masks a failed query as an empty snapshot and completes;
+        // the history itself has rows, so that snapshot must not seed the
+        // baseline — otherwise the recovered window would replay as arrivals
+        coEvery { fixture.pasteDao.getActiveCount() } returns 2L
+        val history =
+            listOf(
+                textPasteData(2L, "history-b", createTime = 200L),
+                textPasteData(1L, "history-a", createTime = 100L),
+            )
+        val arrival = textPasteData(3L, "fresh", createTime = 300L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returnsMany
+            listOf(
+                flowOf(listOf()),
+                flowOf(history, listOf(arrival) + history),
+            )
+
+        withCliRouting(fixture) {
+            client.prepareGet("/cli/watch").execute { response ->
+                val channel = response.bodyAsChannel()
+                // Only the post-recovery arrival may appear, never the history
+                val line = readEventLine(channel, timeout = 5.seconds)
+                assertTrue(line != null, "expected the post-recovery arrival")
+                assertEquals(3L, json.decodeFromString<CliPasteSummaryDto>(line).id)
+                assertEquals(null, readEventLine(channel, timeout = 300.milliseconds))
+            }
+        }
+    }
+
+    @Test
+    fun `watch accepts an empty baseline when the history really is empty`() {
+        val fixture = Fixture()
+        val arrival = textPasteData(1L, "first-ever", createTime = 100L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(listOf(), listOf(arrival))
+
+        withCliRouting(fixture) {
+            client.prepareGet("/cli/watch").execute { response ->
+                val line = readEventLine(response.bodyAsChannel())
+                assertTrue(line != null, "expected the first-ever paste as an arrival")
+                assertEquals(1L, json.decodeFromString<CliPasteSummaryDto>(line).id)
+            }
+        }
+    }
+
+    @Test
     fun `watch type filter drops non-matching arrivals`() {
         val fixture = Fixture()
         val baseline = listOf(textPasteData(1L, "old", createTime = 100L))

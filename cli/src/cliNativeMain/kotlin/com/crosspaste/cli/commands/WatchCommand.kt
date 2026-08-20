@@ -67,7 +67,7 @@ class WatchCommand : CliktCommand(name = "watch") {
     )
 
     override fun run() =
-        runCli { client ->
+        runCli(persistentReconnect = true) { client ->
             val resolvedFormat = resolveWatchFormat(format, ctx.json)
             try {
                 client.streamLines("/cli/watch${buildWatchQuery(types, tag)}") { line ->

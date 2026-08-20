@@ -53,14 +53,20 @@ val cliJson =
  *
  * If the app goes away mid-command, the connection failure means the request
  * never reached it, so after re-running the liveness sequence the command is
- * retried once. The retry budget is time-aware: an attempt that ran for at
- * least [RETRY_BUDGET_RESET_THRESHOLD] before failing counts as a fresh
- * failure and earns a new retry. That lets a long-lived stream (`watch`)
- * survive any number of app restarts spread over hours, while a rapid
- * crash loop still exhausts the budget after one retry — important with
- * --start, which would otherwise relaunch a crashing app forever.
+ * retried once.
+ *
+ * With [persistentReconnect] (long-lived streaming commands: `watch`) the
+ * retry budget is time-aware instead: an attempt that ran for at least
+ * [RETRY_BUDGET_RESET_THRESHOLD] before failing counts as a fresh failure and
+ * earns a new retry. That lets the stream survive any number of app restarts
+ * spread over hours, while a rapid crash loop still exhausts the budget after
+ * one retry — important with --start, which would otherwise relaunch a
+ * crashing app forever. One-shot commands keep the plain single retry.
  */
-fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
+fun CliktCommand.runCli(
+    persistentReconnect: Boolean = false,
+    block: suspend (CliClient) -> Unit,
+) {
     runBlocking {
         val configReader = CliConfigReader(createNativePlatformPathProvider())
         val readinessChecker = AppReadinessChecker(configReader)
@@ -80,7 +86,7 @@ fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
             } catch (e: ProgramResult) {
                 throw e
             } catch (e: AppNotRunningException) {
-                if (attemptStart.elapsedNow() >= RETRY_BUDGET_RESET_THRESHOLD) {
+                if (persistentReconnect && attemptStart.elapsedNow() >= RETRY_BUDGET_RESET_THRESHOLD) {
                     retriedAfterRestart = false
                 }
                 if (retriedAfterRestart) {

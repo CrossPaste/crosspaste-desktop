@@ -24,6 +24,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -43,6 +44,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.longOrNull
+import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
 private val configJson = Json { encodeDefaults = true }
@@ -695,14 +697,22 @@ private suspend fun handleWatch(
             streamWatchEvents(this, filters, pasteDao, pasteDataHelper, pasteTagDao)
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Exception) {
-            // The stream body is writes plus DAO reads that already swallow
-            // their own errors, so a failure here means the client went away;
-            // letting it escape would only make StatusPages try to respond on
-            // a committed response
+        } catch (e: Exception) {
+            // Ending the stream is all that can be done either way — the
+            // response is already committed, so letting the exception escape
+            // would only make StatusPages fail on a second respond. A closed
+            // channel just means the client went away; anything else (tag
+            // lookup, serialization) is a real error and must be visible.
+            if (e is IOException || e is ClosedWriteChannelException) {
+                watchLogger.debug { "CLI watch client disconnected: ${e.message}" }
+            } else {
+                watchLogger.error(e) { "CLI watch stream failed" }
+            }
         }
     }
 }
+
+private val watchLogger = KotlinLogging.logger("com.crosspaste.cli.CliWatch")
 
 private suspend fun streamWatchEvents(
     channel: ByteWriteChannel,
@@ -734,22 +744,29 @@ private suspend fun streamWatchEvents(
             pasteDao.getPasteDataFlow(WATCH_WINDOW_LIMIT).collect { rows ->
                 val current = tracker
                 if (current == null) {
-                    // The first snapshot is the pre-subscription history baseline
+                    // The first snapshot is the pre-subscription history
+                    // baseline. An empty snapshot is ambiguous: it is either a
+                    // genuinely empty history or the DAO flow masking a failed
+                    // query. Building a baseline from the latter would replay
+                    // the whole window as arrivals once the DB recovers, so an
+                    // empty snapshot may only seed the baseline when the count
+                    // confirms the history really is empty.
+                    if (rows.isEmpty() && pasteDao.getActiveCount() > 0L) {
+                        return@collect
+                    }
                     tracker = CliWatchTracker(rows, WATCH_WINDOW_LIMIT.toInt())
                     return@collect
                 }
-                val arrived =
-                    current.onWindow(rows).filter { row ->
-                        matchesWatchFilters(row, filters, pasteTagDao)
+                // Filtering, tag lookups and JSON encoding all happen before
+                // taking the write lock, which exists only to keep event
+                // writes and heartbeats from interleaving
+                val lines =
+                    current.onWindow(rows).mapNotNull { row ->
+                        encodeWatchEvent(row, filters, pasteTagDao, pasteDataHelper)
                     }
-                if (arrived.isEmpty()) return@collect
+                if (lines.isEmpty()) return@collect
                 writeMutex.withLock {
-                    for (row in arrived) {
-                        val dto = row.toSummaryDto(pasteTagDao, pasteDataHelper)
-                        channel.writeStringUtf8(
-                            watchLineJson.encodeToString(CliPasteSummaryDto.serializer(), dto) + "\n",
-                        )
-                    }
+                    lines.forEach { channel.writeStringUtf8(it) }
                     channel.flush()
                 }
             }
@@ -762,20 +779,35 @@ private suspend fun streamWatchEvents(
 
 private val WATCH_RESUBSCRIBE_DELAY = 1.seconds
 
-private suspend fun matchesWatchFilters(
+/** Applies the type/tag filters and returns the NDJSON line, or null when filtered out. */
+private suspend fun encodeWatchEvent(
     row: PasteData,
     filters: ListFilters,
     pasteTagDao: PasteTagDao,
-): Boolean {
+    pasteDataHelper: PasteDataHelper,
+): String? {
     if (filters.pasteTypeList.isNotEmpty() && row.pasteType !in filters.pasteTypeList) {
-        return false
+        return null
     }
-    val tagId = filters.tagId ?: return true
-    return withContext(ioDispatcher) { pasteTagDao.getPasteTagsBlock(row.id) }.contains(tagId)
+    val tagIds = withContext(ioDispatcher) { pasteTagDao.getPasteTagsBlock(row.id) }
+    if (filters.tagId != null && filters.tagId !in tagIds) {
+        return null
+    }
+    val dto = row.toSummaryDto(tagged = tagIds.isNotEmpty(), pasteDataHelper = pasteDataHelper)
+    return watchLineJson.encodeToString(CliPasteSummaryDto.serializer(), dto) + "\n"
 }
 
 private suspend fun PasteData.toSummaryDto(
     pasteTagDao: PasteTagDao,
+    pasteDataHelper: PasteDataHelper,
+): CliPasteSummaryDto =
+    toSummaryDto(
+        tagged = withContext(ioDispatcher) { pasteTagDao.getPasteTagsBlock(id).isNotEmpty() },
+        pasteDataHelper = pasteDataHelper,
+    )
+
+private fun PasteData.toSummaryDto(
+    tagged: Boolean,
     pasteDataHelper: PasteDataHelper,
 ): CliPasteSummaryDto =
     CliPasteSummaryDto(
@@ -783,7 +815,7 @@ private suspend fun PasteData.toSummaryDto(
         typeName = getTypeName(),
         source = source,
         size = size,
-        tagged = withContext(ioDispatcher) { pasteTagDao.getPasteTagsBlock(id).isNotEmpty() },
+        tagged = tagged,
         createTime = createTime,
         preview = pasteDataHelper.getSummary(this, "Loading...", ""),
         remote = remote,
