@@ -70,7 +70,14 @@ internal fun CliktCommand.editPasteFlow(
             throw ProgramResult(1)
         }
     try {
-        editRoundTrip(editor, tempDir / editTempFileName(detail.id, detail.typeName), detail.id, original, jsonOutput)
+        editRoundTrip(
+            editor = editor,
+            tempFile = tempDir / editTempFileName(detail.id, detail.typeName),
+            pasteId = detail.id,
+            expectedHash = detail.hash,
+            original = original,
+            jsonOutput = jsonOutput,
+        )
     } finally {
         cleanupBestEffort(tempDir)
     }
@@ -97,6 +104,7 @@ private fun CliktCommand.editRoundTrip(
     editor: String,
     tempFile: Path,
     pasteId: Long,
+    expectedHash: String,
     original: String,
     jsonOutput: Boolean,
 ) {
@@ -114,13 +122,15 @@ private fun CliktCommand.editRoundTrip(
             echo("Error: edited content is empty; paste left as is.", err = true)
             throw ProgramResult(1)
         }
-        else -> updatePasteInPlace(pasteId, edited, jsonOutput)
+        else -> updatePasteInPlace(pasteId, expectedHash, edited, jsonOutput)
     }
 }
 
 @Serializable
 internal data class PasteUpdateRequest(
     val content: String,
+    /** Hash of the paste as it was fetched; the server CAS-guards on it. */
+    val expectedHash: String,
 )
 
 /**
@@ -129,12 +139,17 @@ internal data class PasteUpdateRequest(
  */
 private fun CliktCommand.updatePasteInPlace(
     id: Long,
+    expectedHash: String,
     content: String,
     jsonOutput: Boolean,
 ) {
     runCli { client ->
         try {
-            val body = cliJson.encodeToString(PasteUpdateRequest.serializer(), PasteUpdateRequest(content))
+            val body =
+                cliJson.encodeToString(
+                    PasteUpdateRequest.serializer(),
+                    PasteUpdateRequest(content, expectedHash),
+                )
             val message = client.putBody("/cli/paste/$id", body, MessageResponse.serializer())
             if (jsonOutput) {
                 echo(cliJson.encodeToString(MessageResponse.serializer(), message))
@@ -142,6 +157,12 @@ private fun CliktCommand.updatePasteInPlace(
                 echo(message.message)
             }
         } catch (e: CliClientException) {
+            // The paste changed (or was deleted) while the editor was open;
+            // the CAS refused the write, so nothing was overwritten
+            if (e.statusCode == 409) {
+                echo("Error: ${e.message}", err = true)
+                throw ProgramResult(1)
+            }
             // A 404 with no server message means the route itself is missing:
             // the running app predates in-place editing
             if (e.statusCode == 404 && !e.hasServerMessage) {

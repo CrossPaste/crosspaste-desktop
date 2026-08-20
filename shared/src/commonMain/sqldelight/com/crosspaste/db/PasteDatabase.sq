@@ -269,6 +269,30 @@ SET pasteAppearItem = :pasteAppearItem,
     hash = :hash
 WHERE id = :id;
 
+-- Content edit: replaces the appear item AND the collection (so derived
+-- clipboard flavors cannot go stale) in one guarded statement. The hash
+-- check is a CAS against concurrent edits, deletion, and late async
+-- writers; pasteState = 1 keeps LOADING and mark-deleted rows untouchable.
+updatePasteContent:
+UPDATE PasteDataEntity
+SET pasteAppearItem = :pasteAppearItem,
+    pasteCollection = :pasteCollection,
+    pasteSearchContent = :pasteSearchContent,
+    size = size + :addedSize,
+    hash = :hash
+WHERE id = :id AND pasteState = 1 AND hash = :expectedHash;
+
+-- Same CAS guard for single-item metadata writers (e.g. the async Open
+-- Graph title writeback, which must not apply onto a row whose URL was
+-- edited while the fetch was in flight).
+updatePasteAppearItemGuarded:
+UPDATE PasteDataEntity
+SET pasteAppearItem = :pasteAppearItem,
+    pasteSearchContent = :pasteSearchContent,
+    size = size + :addedSize,
+    hash = :hash
+WHERE id = :id AND pasteState = 1 AND hash = :expectedHash;
+
 updatePasteDataToLoaded:
 UPDATE PasteDataEntity
 SET pasteAppearItem = :pasteAppearItem,

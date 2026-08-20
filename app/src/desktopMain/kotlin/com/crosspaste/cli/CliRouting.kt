@@ -7,6 +7,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteReleaseService
@@ -15,18 +16,15 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
-import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
-import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItemReader
-import com.crosspaste.paste.item.RtfPasteItem
-import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.item.getFilePaths
+import com.crosspaste.paste.item.getRenderingFilePath
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
@@ -59,7 +57,8 @@ fun Routing.cliRouting(
     appInfo: AppInfo,
     cliPairingService: CliPairingService,
     configManager: DesktopConfigManager,
-    updatePasteItemHelper: UpdatePasteItemHelper,
+    pasteContentEditor: PasteContentEditor,
+    taskSubmitter: TaskSubmitter,
     /**
      * Whether re-copying an existing paste to the system clipboard actually
      * works here. The headless daemon's PasteboardService reports success
@@ -175,7 +174,15 @@ fun Routing.cliRouting(
 
         put("/paste/{id}") {
             val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@put
-            handlePasteUpdate(call, id, configManager, pasteDao, updatePasteItemHelper)
+            handlePasteUpdate(
+                call,
+                id,
+                configManager,
+                pasteDao,
+                pasteContentEditor,
+                taskSubmitter,
+                userDataPathProvider,
+            )
         }
 
         route("/pair") {
@@ -567,18 +574,22 @@ private suspend fun handlePasteCopy(
 }
 
 /**
- * Updates a paste's content in place — the same semantics as editing inside
- * the app: the row keeps its id, type, createTime, and tags; search content
- * and size are refreshed via [UpdatePasteItemHelper]. Like in-app edits, the
- * change is local only (not re-synced to devices that already hold the
- * original) and the system clipboard is not rewritten.
+ * Updates a paste's content in place: the row keeps its id, type, createTime,
+ * and tags; the appear item and every derived clipboard flavor in the
+ * collection are rebuilt together by [PasteContentEditor], guarded by a hash
+ * CAS against concurrent edits ([CliPasteUpdateRequest.expectedHash] is the
+ * hash the editor saw when it read the paste). Like in-app edits, the change
+ * is local only (not re-synced to devices that already hold the original)
+ * and the system clipboard is not rewritten.
  */
 private suspend fun handlePasteUpdate(
     call: ApplicationCall,
     id: Long,
     configManager: DesktopConfigManager,
     pasteDao: PasteDao,
-    updatePasteItemHelper: UpdatePasteItemHelper,
+    pasteContentEditor: PasteContentEditor,
+    taskSubmitter: TaskSubmitter,
+    userDataPathProvider: UserDataPathProvider,
 ) {
     val request = call.receive<CliPasteUpdateRequest>()
     if (request.content.isEmpty()) {
@@ -597,8 +608,8 @@ private suspend fun handlePasteUpdate(
         )
         return
     }
-    // updatePasteAppearItem bypasses the release plugin pipeline, so the
-    // non-file size cap must be enforced up front (mirrors POST /cli/copy)
+    // The content edit bypasses the release plugin pipeline, so the non-file
+    // size cap must be enforced up front (mirrors POST /cli/copy)
     val maxNonFilePasteSizeMb = configManager.getCurrentConfig().maxNonFilePasteSize
     val contentSize =
         request.content
@@ -615,58 +626,59 @@ private suspend fun handlePasteUpdate(
         )
         return
     }
-    val result =
-        when (val item = pasteData.pasteAppearItem) {
-            is TextPasteItem -> updatePasteItemHelper.updateText(pasteData, request.content, item)
-            is HtmlPasteItem -> updatePasteItemHelper.updateHtml(pasteData, request.content, htmlPasteItem = item)
-            is RtfPasteItem -> updatePasteItemHelper.updateRtf(pasteData, request.content, item)
-            is UrlPasteItem -> updatePasteItemHelper.updateUrl(pasteData, request.content, item)
-            is ColorPasteItem -> {
-                val color =
-                    parseColorHex(request.content) ?: run {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            CliMessageDto(
-                                "Invalid color '${request.content.trim()}'; expected #RRGGBB or #RRGGBBAA.",
-                            ),
-                        )
-                        return
-                    }
-                updatePasteItemHelper.updateColor(pasteData, color, item)
+    val oldUrlItem = pasteData.pasteAppearItem as? UrlPasteItem
+    when (
+        val outcome =
+            pasteContentEditor.updateContent(pasteData, request.content, request.expectedHash)
+    ) {
+        is PasteContentEditor.EditOutcome.Updated -> {
+            if (outcome.urlChanged && oldUrlItem != null) {
+                refreshUrlRendering(pasteData, oldUrlItem, taskSubmitter, userDataPathProvider)
             }
-
-            else -> {
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    CliMessageDto("Paste #$id (${pasteData.getTypeName()}) cannot be edited as text."),
-                )
-                return
-            }
-        }
-    result
-        .onSuccess {
             call.respond(CliMessageDto("Paste #$id updated."))
-        }.onFailure { e ->
-            call.respond(
-                HttpStatusCode.InternalServerError,
-                CliMessageDto(e.message ?: "Failed to update paste #$id."),
-            )
         }
+
+        PasteContentEditor.EditOutcome.Conflict ->
+            call.respond(
+                HttpStatusCode.Conflict,
+                CliMessageDto(
+                    "Paste #$id changed while it was being edited; fetch it again and retry.",
+                ),
+            )
+
+        PasteContentEditor.EditOutcome.NotEditable ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                CliMessageDto("Paste #$id (${pasteData.getTypeName()}) cannot be edited as text."),
+            )
+
+        is PasteContentEditor.EditOutcome.InvalidContent ->
+            call.respond(HttpStatusCode.BadRequest, CliMessageDto(outcome.reason))
+    }
 }
 
 /**
- * Parses the color notation the CLI shows (`PasteColor.toHexString`:
- * #RRGGBBAA, alpha last) plus the plain #RRGGBB shorthand (alpha = FF).
+ * A URL edit leaves Open Graph residue of the OLD page behind: the preview
+ * image file (keyed by paste coordinate, so the renderer would see it and
+ * skip re-rendering) and no pending fetch for the new link. Delete the old
+ * image — unless it is a shared marketing asset — and submit a fresh
+ * rendering task; the task's async title writeback is hash-CAS'd, so a late
+ * result for a since-changed URL can never clobber the row.
  */
-private fun parseColorHex(value: String): Long? {
-    val hex = value.trim().removePrefix("#")
-    if (hex.length != 6 && hex.length != 8) return null
-    if (!hex.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }) return null
-    val red = hex.substring(0, 2).toLong(16)
-    val green = hex.substring(2, 4).toLong(16)
-    val blue = hex.substring(4, 6).toLong(16)
-    val alpha = if (hex.length == 8) hex.substring(6, 8).toLong(16) else 0xFFL
-    return (alpha shl 24) or (red shl 16) or (green shl 8) or blue
+private suspend fun refreshUrlRendering(
+    pasteData: PasteData,
+    oldUrlItem: UrlPasteItem,
+    taskSubmitter: TaskSubmitter,
+    userDataPathProvider: UserDataPathProvider,
+) {
+    if (oldUrlItem.getMarketingPath() == null) {
+        val oldImage =
+            oldUrlItem.getRenderingFilePath(pasteData.getPasteCoordinate(), userDataPathProvider)
+        runCatching { getFileUtils().deleteFile(oldImage) }
+    }
+    taskSubmitter.submit {
+        addRenderingTask(pasteData.id, PasteType.URL_TYPE)
+    }
 }
 
 private suspend fun handlePasteDelete(

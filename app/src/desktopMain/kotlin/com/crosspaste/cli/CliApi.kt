@@ -109,6 +109,8 @@ data class CliCopyResponse(
 @Serializable
 data class CliPasteUpdateRequest(
     val content: String,
+    /** Hash of the paste as the editor read it; the update is CAS'd on it. */
+    val expectedHash: String,
 )
 
 @Serializable

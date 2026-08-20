@@ -1,5 +1,6 @@
 package com.crosspaste.db.paste
 
+import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.item.PasteItem
@@ -84,6 +85,34 @@ interface PasteDao : SearchPasteData {
         pasteSearchContent: String,
         addedSize: Long = 0L,
     ): Result<Unit>
+
+    /**
+     * Atomically replaces the appear item AND the collection (derived
+     * clipboard flavors) of a LOADED row, guarded by a hash CAS: returns
+     * false when the row changed concurrently, was deleted, or is still
+     * loading — the caller must re-read and retry.
+     */
+    suspend fun updatePasteContent(
+        id: Long,
+        pasteItem: PasteItem,
+        pasteCollection: PasteCollection,
+        pasteSearchContent: String,
+        addedSize: Long,
+        expectedHash: String,
+    ): Boolean
+
+    /**
+     * [updatePasteAppearItem] with the same hash CAS as [updatePasteContent],
+     * for async metadata writers that must not clobber an interleaved edit.
+     * Returns false when the guard did not match.
+     */
+    suspend fun updatePasteAppearItemIfUnchanged(
+        id: Long,
+        pasteItem: PasteItem,
+        pasteSearchContent: String,
+        addedSize: Long,
+        expectedHash: String,
+    ): Boolean
 
     suspend fun updatePasteState(
         id: Long,

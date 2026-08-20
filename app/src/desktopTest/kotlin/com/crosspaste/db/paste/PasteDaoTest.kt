@@ -650,4 +650,107 @@ class PasteDaoTest {
             assertNotNull(retrieved)
             assertEquals(newItem.hash, retrieved.hash)
         }
+
+    // --- Content update (hash CAS) ---
+
+    @Test
+    fun `updatePasteContent replaces item and collection when the hash matches`() =
+        runTest {
+            val pasteData = createTestPasteData(text = "original")
+            val id = pasteDao.createPasteData(pasteData)
+
+            val newItem = createTextPasteItem(text = "edited")
+            val companion = createTextPasteItem(text = "edited-flavor")
+            val applied =
+                pasteDao.updatePasteContent(
+                    id = id,
+                    pasteItem = newItem,
+                    pasteCollection = PasteCollection(listOf(companion)),
+                    pasteSearchContent = "edited",
+                    addedSize = newItem.size - pasteData.size,
+                    expectedHash = pasteData.hash,
+                )
+            assertTrue(applied)
+
+            val retrieved = pasteDao.getNoDeletePasteData(id)
+            assertNotNull(retrieved)
+            assertEquals(newItem.hash, retrieved.hash)
+            assertEquals(1, retrieved.pasteCollection.pasteItems.size)
+        }
+
+    @Test
+    fun `updatePasteContent refuses a stale hash and leaves the row untouched`() =
+        runTest {
+            val pasteData = createTestPasteData(text = "original")
+            val id = pasteDao.createPasteData(pasteData)
+
+            val newItem = createTextPasteItem(text = "edited")
+            val applied =
+                pasteDao.updatePasteContent(
+                    id = id,
+                    pasteItem = newItem,
+                    pasteCollection = PasteCollection(listOf()),
+                    pasteSearchContent = "edited",
+                    addedSize = 0L,
+                    expectedHash = "stale-hash",
+                )
+            assertFalse(applied)
+
+            val retrieved = pasteDao.getNoDeletePasteData(id)
+            assertNotNull(retrieved)
+            assertEquals(pasteData.hash, retrieved.hash)
+        }
+
+    @Test
+    fun `updatePasteContent refuses rows that are deleted or still loading`() =
+        runTest {
+            val deleted = createTestPasteData(text = "gone")
+            val deletedId = pasteDao.createPasteData(deleted)
+            pasteDao.updatePasteState(deletedId, PasteState.DELETED)
+
+            val loading = createTestPasteData(text = "loading")
+            val loadingId = pasteDao.createPasteData(loading, pasteState = PasteState.LOADING)
+
+            val newItem = createTextPasteItem(text = "edited")
+            for ((id, expectedHash) in listOf(deletedId to deleted.hash, loadingId to loading.hash)) {
+                assertFalse(
+                    pasteDao.updatePasteContent(
+                        id = id,
+                        pasteItem = newItem,
+                        pasteCollection = PasteCollection(listOf()),
+                        pasteSearchContent = "edited",
+                        addedSize = 0L,
+                        expectedHash = expectedHash,
+                    ),
+                )
+            }
+        }
+
+    @Test
+    fun `updatePasteAppearItemIfUnchanged applies only while the hash matches`() =
+        runTest {
+            val pasteData = createTestPasteData(text = "original")
+            val id = pasteDao.createPasteData(pasteData)
+
+            val newItem = createTextPasteItem(text = "metadata-write")
+            assertTrue(
+                pasteDao.updatePasteAppearItemIfUnchanged(
+                    id = id,
+                    pasteItem = newItem,
+                    pasteSearchContent = "metadata-write",
+                    addedSize = 0L,
+                    expectedHash = pasteData.hash,
+                ),
+            )
+            // The row hash advanced with the write, so the same guard now misses
+            assertFalse(
+                pasteDao.updatePasteAppearItemIfUnchanged(
+                    id = id,
+                    pasteItem = newItem,
+                    pasteSearchContent = "metadata-write",
+                    addedSize = 0L,
+                    expectedHash = pasteData.hash,
+                ),
+            )
+        }
 }

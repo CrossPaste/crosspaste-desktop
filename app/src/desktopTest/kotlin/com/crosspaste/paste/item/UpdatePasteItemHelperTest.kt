@@ -83,7 +83,43 @@ class UpdatePasteItemHelperTest {
                 addedSize = capture(addedSize),
             )
         } returns Result.success(Unit)
+        coEvery {
+            pasteDao.updatePasteAppearItemIfUnchanged(
+                id = any(),
+                pasteItem = any(),
+                pasteSearchContent = any(),
+                addedSize = capture(addedSize),
+                expectedHash = any(),
+            )
+        } returns true
     }
+
+    @Test
+    fun `updateTitle refuses to apply onto a row whose url changed`() =
+        runTest {
+            // The Open Graph writeback runs after a network fetch; if the URL
+            // was edited meanwhile, the row hash no longer matches the item
+            // the fetch was made for and the guarded update reports a miss
+            val original = createUrlPasteItem(url = "https://old.example.com")
+            every { pasteItemReader.getSearchContent(any()) } returns "content"
+            every { searchContentService.createSearchContent(any(), any<List<String>>()) } returns "content"
+            val expectedHash = slot<String>()
+            coEvery {
+                pasteDao.updatePasteAppearItemIfUnchanged(
+                    id = any(),
+                    pasteItem = any(),
+                    pasteSearchContent = any(),
+                    addedSize = any(),
+                    expectedHash = capture(expectedHash),
+                )
+            } returns false
+
+            val result = helper.updateTitle(createPasteData(original), "Late Title", original)
+
+            assertTrue(result.isFailure)
+            // The guard must be the hash of the item the fetch started from
+            assertEquals(original.hash, expectedHash.captured)
+        }
 
     private fun createPasteData(item: PasteItem): PasteData =
         PasteData(

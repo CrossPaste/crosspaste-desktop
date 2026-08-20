@@ -5,8 +5,6 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.copy
 import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
-import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.put
 
 class UpdatePasteItemHelper(
@@ -69,67 +67,6 @@ class UpdatePasteItemHelper(
             }
     }
 
-    suspend fun updateRtf(
-        pasteData: PasteData,
-        newRtf: String,
-        rtfPasteItem: RtfPasteItem,
-    ): Result<RtfPasteItem> {
-        val newPasteItem = rtfPasteItem.copy(newRtf)
-        return pasteDao
-            .updatePasteAppearItem(
-                id = pasteData.id,
-                pasteItem = newPasteItem,
-                pasteSearchContent =
-                    searchContentService.createSearchContent(
-                        pasteData.source,
-                        pasteItemReader.getSearchContent(newPasteItem),
-                    ),
-                addedSize = newPasteItem.size - rtfPasteItem.size,
-            ).map {
-                newPasteItem
-            }
-    }
-
-    suspend fun updateUrl(
-        pasteData: PasteData,
-        newUrl: String,
-        urlPasteItem: UrlPasteItem,
-    ): Result<PasteItem> {
-        // The stored title describes the OLD page; carrying it onto a changed
-        // URL would show (and index) stale metadata next to the new link
-        val extraInfo =
-            urlPasteItem.extraInfo
-                ?.let { info ->
-                    if (newUrl == urlPasteItem.url) {
-                        info
-                    } else {
-                        JsonObject(info.filterKeys { it != PasteItemProperties.TITLE })
-                    }
-                }?.takeIf { it.isNotEmpty() }
-        val newPasteItem =
-            createUrlPasteItem(
-                identifiers = urlPasteItem.identifiers,
-                url = newUrl,
-                extraInfo = extraInfo,
-            )
-        return pasteDao
-            .updatePasteAppearItem(
-                id = pasteData.id,
-                pasteItem = newPasteItem,
-                pasteSearchContent =
-                    searchContentService.createSearchContent(
-                        pasteData.source,
-                        listOfNotNull(
-                            (newPasteItem as? UrlPasteItem)?.getTitle(),
-                            pasteItemReader.getSearchContent(newPasteItem),
-                        ),
-                    ),
-                addedSize = newPasteItem.size - urlPasteItem.size,
-            ).map {
-                newPasteItem
-            }
-    }
-
     suspend fun updateText(
         pasteData: PasteData,
         newText: String,
@@ -161,8 +98,12 @@ class UpdatePasteItemHelper(
                 put(PasteItemProperties.TITLE, title)
             } as UrlPasteItem
 
-        return pasteDao
-            .updatePasteAppearItem(
+        // Hash-CAS'd write: this runs as an async writeback after a network
+        // fetch (Open Graph), and a URL item's hash is the hash of its url —
+        // so the guard applies the title only while the link is still the one
+        // the fetch was made for, never onto an interleaved URL edit
+        val applied =
+            pasteDao.updatePasteAppearItemIfUnchanged(
                 id = pasteData.id,
                 pasteItem = newUrlPasteItem,
                 pasteSearchContent =
@@ -174,9 +115,17 @@ class UpdatePasteItemHelper(
                         ),
                     ),
                 addedSize = newUrlPasteItem.size - urlPasteItem.size,
-            ).map {
-                newUrlPasteItem
-            }
+                expectedHash = urlPasteItem.hash,
+            )
+        return if (applied) {
+            Result.success(newUrlPasteItem)
+        } else {
+            Result.failure(
+                IllegalStateException(
+                    "Paste ${pasteData.id} changed since the title was fetched; title not applied.",
+                ),
+            )
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

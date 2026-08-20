@@ -114,7 +114,8 @@ fun desktopNetworkModule(
                 pasteTagDao = get(),
                 searchContentService = get(),
                 syncRuntimeInfoDao = get(),
-                updatePasteItemHelper = get(),
+                pasteContentEditor = get(),
+                taskSubmitter = get(),
                 userDataPathProvider = get(),
             )
         }
