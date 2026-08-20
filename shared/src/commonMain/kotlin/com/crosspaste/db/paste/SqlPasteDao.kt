@@ -291,34 +291,8 @@ class SqlPasteDao(
             pasteDatabaseQueries.updateCreateTime(id = id, time = DateUtils.nowEpochMilliseconds())
         }
 
-    override suspend fun updatePasteAppearItem(
-        id: Long,
-        pasteItem: PasteItem,
-        pasteSearchContent: String,
-        addedSize: Long,
-    ): Result<Unit> =
-        withContext(ioDispatcher) {
-            database
-                .transactionWithResult {
-                    pasteDatabaseQueries.updatePasteAppearItem(
-                        id = id,
-                        pasteAppearItem = pasteItem.toStoredJson(),
-                        pasteSearchContent = pasteSearchContent,
-                        addedSize = addedSize,
-                        hash = pasteItem.hash,
-                    )
-                    pasteDatabaseQueries.change().executeAsOne() > 0
-                }.let { changed ->
-                    if (changed) {
-                        Result.success(Unit)
-                    } else {
-                        Result.failure(Exception("Update paste appear item failed for id=$id"))
-                    }
-                }
-        }
-
     override suspend fun updatePasteContent(
-        id: Long,
+        expectedPasteData: PasteData,
         pasteItem: PasteItem,
         pasteCollection: PasteCollection,
         pasteSearchContent: String,
@@ -328,34 +302,40 @@ class SqlPasteDao(
         withContext(ioDispatcher) {
             database.transactionWithResult {
                 pasteDatabaseQueries.updatePasteContent(
-                    id = id,
+                    id = expectedPasteData.id,
                     pasteAppearItem = pasteItem.toStoredJson(),
                     pasteCollection = pasteCollection.toStoredJson(),
                     pasteSearchContent = pasteSearchContent,
                     addedSize = addedSize,
                     hash = pasteItem.hash,
                     expectedHash = expectedHash,
+                    expectedPasteAppearItem =
+                        expectedPasteData.pasteAppearItem?.toStoredJson()
+                            ?: return@transactionWithResult false,
+                    expectedPasteCollection = expectedPasteData.pasteCollection.toStoredJson(),
                 )
                 pasteDatabaseQueries.change().executeAsOne() > 0
             }
         }
 
     override suspend fun updatePasteAppearItemIfUnchanged(
-        id: Long,
+        expectedPasteData: PasteData,
         pasteItem: PasteItem,
         pasteSearchContent: String,
         addedSize: Long,
-        expectedHash: String,
     ): Boolean =
         withContext(ioDispatcher) {
             database.transactionWithResult {
                 pasteDatabaseQueries.updatePasteAppearItemGuarded(
-                    id = id,
+                    id = expectedPasteData.id,
                     pasteAppearItem = pasteItem.toStoredJson(),
                     pasteSearchContent = pasteSearchContent,
                     addedSize = addedSize,
                     hash = pasteItem.hash,
-                    expectedHash = expectedHash,
+                    expectedHash = expectedPasteData.hash,
+                    expectedPasteAppearItem =
+                        expectedPasteData.pasteAppearItem?.toStoredJson()
+                            ?: return@transactionWithResult false,
                 )
                 pasteDatabaseQueries.change().executeAsOne() > 0
             }

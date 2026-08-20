@@ -58,13 +58,13 @@ abstract class GuidePasteDataService(
                     pasteItem.extraInfo?.let { extraInfo ->
                         getGuideIndexFromJson(extraInfo)?.let { index ->
                             val newPasteItem = getGuidePasteItem(index)
-                            pasteDao.updatePasteAppearItem(
-                                id = pasteData.id,
-                                pasteItem = pasteItem,
+                            pasteDao.updatePasteAppearItemIfUnchanged(
+                                expectedPasteData = pasteData,
+                                pasteItem = newPasteItem,
                                 pasteSearchContent =
                                     searchContentService.createSearchContent(
                                         pasteData.source,
-                                        pasteItemReader.getSearchContent(pasteItem),
+                                        pasteItemReader.getSearchContent(newPasteItem),
                                     ),
                                 addedSize = newPasteItem.size - oldSize,
                             )

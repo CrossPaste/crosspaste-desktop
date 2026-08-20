@@ -76,20 +76,11 @@ class UpdatePasteItemHelperTest {
         every { pasteItemReader.getSearchContent(any()) } returns "content"
         every { searchContentService.createSearchContent(any(), any<List<String>>()) } returns "content"
         coEvery {
-            pasteDao.updatePasteAppearItem(
-                id = any(),
-                pasteItem = any(),
-                pasteSearchContent = any(),
-                addedSize = capture(addedSize),
-            )
-        } returns Result.success(Unit)
-        coEvery {
             pasteDao.updatePasteAppearItemIfUnchanged(
-                id = any(),
+                expectedPasteData = any(),
                 pasteItem = any(),
                 pasteSearchContent = any(),
                 addedSize = capture(addedSize),
-                expectedHash = any(),
             )
         } returns true
     }
@@ -103,22 +94,22 @@ class UpdatePasteItemHelperTest {
             val original = createUrlPasteItem(url = "https://old.example.com")
             every { pasteItemReader.getSearchContent(any()) } returns "content"
             every { searchContentService.createSearchContent(any(), any<List<String>>()) } returns "content"
-            val expectedHash = slot<String>()
+            val expectedPasteData = slot<PasteData>()
             coEvery {
                 pasteDao.updatePasteAppearItemIfUnchanged(
-                    id = any(),
+                    expectedPasteData = capture(expectedPasteData),
                     pasteItem = any(),
                     pasteSearchContent = any(),
                     addedSize = any(),
-                    expectedHash = capture(expectedHash),
                 )
             } returns false
 
-            val result = helper.updateTitle(createPasteData(original), "Late Title", original)
+            val pasteData = createPasteData(original)
+            val result = helper.updateTitle(pasteData, "Late Title", original)
 
             assertTrue(result.isFailure)
-            // The guard must be the hash of the item the fetch started from
-            assertEquals(original.hash, expectedHash.captured)
+            // The guard must be the complete snapshot the fetch started from.
+            assertEquals(pasteData, expectedPasteData.captured)
         }
 
     private fun createPasteData(item: PasteItem): PasteData =

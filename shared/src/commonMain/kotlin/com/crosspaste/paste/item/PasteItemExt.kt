@@ -11,16 +11,60 @@ private val fileUtils = getFileUtils()
 fun UrlPasteItem.getRenderingFilePath(
     pasteCoordinate: PasteCoordinate,
     userDataPathProvider: UserDataPathProvider,
+): Path {
+    getMarketingPath()?.let { return it.toPath() }
+
+    val contentAddressedPath =
+        getGeneratedRenderingFilePath(
+            pasteCoordinate = pasteCoordinate,
+            userDataPathProvider = userDataPathProvider,
+            fileName = "openGraphImage-$hash.png",
+        )
+    if (fileUtils.existFile(contentAddressedPath)) return contentAddressedPath
+
+    val legacyPath = getLegacyRenderingFilePath(pasteCoordinate, userDataPathProvider)
+    return legacyPath.takeIf(fileUtils::existFile) ?: contentAddressedPath
+}
+
+fun UrlPasteItem.getLegacyRenderingFilePath(
+    pasteCoordinate: PasteCoordinate,
+    userDataPathProvider: UserDataPathProvider,
 ): Path =
-    getMarketingPath()?.toPath() ?: run {
-        val basePath = userDataPathProvider.resolve(appFileType = AppFileType.OPEN_GRAPH)
-        val relativePath =
-            fileUtils.createPasteRelativePath(
-                pasteCoordinate = pasteCoordinate,
-                fileName = UrlPasteItem.OPEN_GRAPH_IMAGE,
-            )
-        userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+    getGeneratedRenderingFilePath(
+        pasteCoordinate = pasteCoordinate,
+        userDataPathProvider = userDataPathProvider,
+        fileName = UrlPasteItem.OPEN_GRAPH_IMAGE,
+    )
+
+fun UrlPasteItem.clearRenderingFiles(
+    pasteCoordinate: PasteCoordinate,
+    userDataPathProvider: UserDataPathProvider,
+) {
+    if (getMarketingPath() != null) return
+
+    listOf(
+        getRenderingFilePath(pasteCoordinate, userDataPathProvider),
+        getLegacyRenderingFilePath(pasteCoordinate, userDataPathProvider),
+    ).distinct().forEach { path ->
+        if (fileUtils.existFile(path)) {
+            fileUtils.deleteFile(path)
+        }
     }
+}
+
+private fun getGeneratedRenderingFilePath(
+    pasteCoordinate: PasteCoordinate,
+    userDataPathProvider: UserDataPathProvider,
+    fileName: String,
+): Path {
+    val basePath = userDataPathProvider.resolve(appFileType = AppFileType.OPEN_GRAPH)
+    val relativePath =
+        fileUtils.createPasteRelativePath(
+            pasteCoordinate = pasteCoordinate,
+            fileName = fileName,
+        )
+    return userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
+}
 
 fun PasteItem.clear(
     clearResource: Boolean = true,

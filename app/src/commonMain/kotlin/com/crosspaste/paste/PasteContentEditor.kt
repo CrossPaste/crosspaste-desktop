@@ -24,7 +24,7 @@ import kotlinx.serialization.json.JsonObject
  * faithfully) are dropped rather than left stale — a missing flavor degrades
  * gracefully, a stale one pastes the OLD content into plain-text targets.
  *
- * The write is a single hash-CAS'd statement ([PasteDao.updatePasteContent]),
+ * The write is a single old-value CAS statement ([PasteDao.updatePasteContent]),
  * so a concurrent edit, an in-app change, or a deletion surfaces as
  * [EditOutcome.Conflict] instead of a silent last-writer-wins overwrite.
  */
@@ -58,8 +58,8 @@ class PasteContentEditor(
     }
 
     /**
-     * [expectedHash] is the hash the editor saw when it read the paste; the
-     * update applies only while the row still matches it.
+     * [expectedHash] is the hash the editor saw when it read the paste. The
+     * DAO also compares the complete server-side snapshot in [pasteData].
      */
     suspend fun updateContent(
         pasteData: PasteData,
@@ -97,12 +97,14 @@ class PasteContentEditor(
             }
 
         val oldCompanions = pasteData.pasteCollection.pasteItems
+        val derivedText = pasteItemReader.getText(newMainItem)
         val newCompanions =
             oldCompanions.mapNotNull { item ->
                 when (item) {
                     // The plain-text flavor is always derivable from the new
-                    // main item, so it is re-derived instead of dropped
-                    is TextPasteItem -> item.copy(pasteItemReader.getText(newMainItem))
+                    // main item. Match the release pipeline by dropping it
+                    // when rich content has no valid plain-text representation.
+                    is TextPasteItem -> derivedText.takeIf { it.isNotEmpty() }?.let { item.copy(it) }
                     is HtmlPasteItem, is RtfPasteItem, is UrlPasteItem, is ColorPasteItem -> null
                     else -> item
                 }
@@ -120,7 +122,7 @@ class PasteContentEditor(
             )
         val applied =
             pasteDao.updatePasteContent(
-                id = pasteData.id,
+                expectedPasteData = pasteData,
                 pasteItem = newMainItem,
                 pasteCollection = PasteCollection(newCompanions),
                 pasteSearchContent = searchContent,

@@ -157,11 +157,17 @@ class DesktopUISupport(
 
                     logger.info { "Selected color: $rgbColor" }
                     actionScope.launch {
-                        updatePasteItemHelper.updateColor(
-                            pasteData,
-                            newColor,
-                            pasteItem,
-                        )
+                        updatePasteItemHelper
+                            .updateColor(
+                                pasteData,
+                                newColor,
+                                pasteItem,
+                            ).onFailure {
+                                notificationManager.sendNotification(
+                                    title = { copywriter.getText("save_failed") },
+                                    messageType = MessageType.Error,
+                                )
+                            }
                     }
                 }
             }

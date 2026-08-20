@@ -20,8 +20,8 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.item.clearRenderingFiles
 import com.crosspaste.paste.item.getFilePaths
-import com.crosspaste.paste.item.getRenderingFilePath
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
@@ -52,6 +52,8 @@ import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
 private val configJson = Json { encodeDefaults = true }
+
+private val cliLogger = KotlinLogging.logger("com.crosspaste.cli.CliRouting")
 
 fun Routing.cliRouting(
     appInfo: AppInfo,
@@ -576,11 +578,11 @@ private suspend fun handlePasteCopy(
 /**
  * Updates a paste's content in place: the row keeps its id, type, createTime,
  * and tags; the appear item and every derived clipboard flavor in the
- * collection are rebuilt together by [PasteContentEditor], guarded by a hash
- * CAS against concurrent edits ([CliPasteUpdateRequest.expectedHash] is the
- * hash the editor saw when it read the paste). Like in-app edits, the change
- * is local only (not re-synced to devices that already hold the original)
- * and the system clipboard is not rewritten.
+ * collection are rebuilt together by [PasteContentEditor], guarded by the
+ * editor's expected hash and a complete old-value CAS against concurrent
+ * writes. Like in-app edits, the change is local only (not re-synced to
+ * devices that already hold the original) and the system clipboard is not
+ * rewritten.
  */
 private suspend fun handlePasteUpdate(
     call: ApplicationCall,
@@ -633,7 +635,16 @@ private suspend fun handlePasteUpdate(
     ) {
         is PasteContentEditor.EditOutcome.Updated -> {
             if (outcome.urlChanged && oldUrlItem != null) {
-                refreshUrlRendering(pasteData, oldUrlItem, taskSubmitter, userDataPathProvider)
+                try {
+                    refreshUrlRendering(pasteData, oldUrlItem, taskSubmitter, userDataPathProvider)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // The content CAS has already committed. Preview refresh
+                    // is best-effort and must not turn that success into a
+                    // misleading 500 response.
+                    cliLogger.warn(e) { "Paste #$id updated, but URL preview refresh failed" }
+                }
             }
             call.respond(CliMessageDto("Paste #$id updated."))
         }
@@ -659,11 +670,10 @@ private suspend fun handlePasteUpdate(
 
 /**
  * A URL edit leaves Open Graph residue of the OLD page behind: the preview
- * image file (keyed by paste coordinate, so the renderer would see it and
- * skip re-rendering) and no pending fetch for the new link. Delete the old
- * image — unless it is a shared marketing asset — and submit a fresh
- * rendering task; the task's async title writeback is hash-CAS'd, so a late
- * result for a since-changed URL can never clobber the row.
+ * image file and no pending fetch for the new link. Delete the old URL's
+ * content-addressed image — unless it is a shared marketing asset — and
+ * submit a fresh rendering task. A late task writes only its old URL's cache
+ * path, and its title writeback is guarded by the complete old item.
  */
 private suspend fun refreshUrlRendering(
     pasteData: PasteData,
@@ -672,9 +682,10 @@ private suspend fun refreshUrlRendering(
     userDataPathProvider: UserDataPathProvider,
 ) {
     if (oldUrlItem.getMarketingPath() == null) {
-        val oldImage =
-            oldUrlItem.getRenderingFilePath(pasteData.getPasteCoordinate(), userDataPathProvider)
-        runCatching { getFileUtils().deleteFile(oldImage) }
+        oldUrlItem.clearRenderingFiles(
+            pasteCoordinate = pasteData.getPasteCoordinate(),
+            userDataPathProvider = userDataPathProvider,
+        )
     }
     taskSubmitter.submit {
         addRenderingTask(pasteData.id, PasteType.URL_TYPE)

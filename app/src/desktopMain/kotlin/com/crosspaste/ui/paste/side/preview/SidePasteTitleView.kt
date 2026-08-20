@@ -40,6 +40,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
@@ -64,6 +66,7 @@ fun PasteDataScope.SidePasteTitleView() {
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
     val pasteTagDao = koinInject<PasteTagDao>()
     val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
+    val notificationManager = koinInject<NotificationManager>()
 
     val pasteItem = getPasteItem(PasteItem::class)
 
@@ -192,12 +195,20 @@ fun PasteDataScope.SidePasteTitleView() {
                                         } else {
                                             // Proceed with update if not empty
                                             scope.launch {
-                                                updatePasteItemHelper.updateName(
-                                                    pasteData,
-                                                    editedTextValue.text,
-                                                    pasteItem,
-                                                )
-                                                isEditing = false
+                                                updatePasteItemHelper
+                                                    .updateName(
+                                                        pasteData,
+                                                        editedTextValue.text,
+                                                        pasteItem,
+                                                    ).onSuccess {
+                                                        pasteboardName = editedTextValue.text
+                                                        isEditing = false
+                                                    }.onFailure {
+                                                        notificationManager.sendNotification(
+                                                            title = { copywriter.getText("save_failed") },
+                                                            messageType = MessageType.Error,
+                                                        )
+                                                    }
                                             }
                                         }
                                     },

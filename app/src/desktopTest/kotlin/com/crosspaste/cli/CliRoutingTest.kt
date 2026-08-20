@@ -887,7 +887,7 @@ class CliRoutingTest {
         val hashSlot = slot<String>()
         coEvery {
             fixture.pasteDao.updatePasteContent(
-                42L,
+                pasteData,
                 capture(itemSlot),
                 any(),
                 any(),
@@ -954,7 +954,7 @@ class CliRoutingTest {
         val collectionSlot = slot<PasteCollection>()
         coEvery {
             fixture.pasteDao.updatePasteContent(
-                7L,
+                pasteData,
                 capture(itemSlot),
                 capture(collectionSlot),
                 any(),
@@ -984,6 +984,41 @@ class CliRoutingTest {
     }
 
     @Test
+    fun `paste update drops an empty derived text flavor`() {
+        val fixture = Fixture()
+        val item = createHtmlPasteItem(html = "<b>old</b>")
+        val pasteData =
+            PasteData(
+                id = 8L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf(createTextPasteItem(text = "old"))),
+                pasteType = PasteType.HTML_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        coEvery { fixture.pasteDao.getNoDeletePasteData(8L) } returns pasteData
+        val collectionSlot = slot<PasteCollection>()
+        coEvery {
+            fixture.pasteDao.updatePasteContent(pasteData, any(), capture(collectionSlot), any(), any(), any())
+        } returns true
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/paste/8") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"content":"<img>","expectedHash":"${pasteData.hash}"}""")
+                }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertTrue(collectionSlot.captured.pasteItems.isEmpty())
+        }
+    }
+
+    @Test
     fun `paste update round-trips a color and rejects bad hex`() {
         val fixture = Fixture()
         val item = createColorPasteItem(color = 0x11223344)
@@ -1002,7 +1037,7 @@ class CliRoutingTest {
             )
         val itemSlot = slot<PasteItem>()
         coEvery {
-            fixture.pasteDao.updatePasteContent(5L, capture(itemSlot), any(), any(), any(), any())
+            fixture.pasteDao.updatePasteContent(any(), capture(itemSlot), any(), any(), any(), any())
         } returns true
 
         withCliRouting(fixture) {
@@ -1047,7 +1082,7 @@ class CliRoutingTest {
             )
         val itemSlot = slot<PasteItem>()
         coEvery {
-            fixture.pasteDao.updatePasteContent(6L, capture(itemSlot), any(), any(), any(), any())
+            fixture.pasteDao.updatePasteContent(any(), capture(itemSlot), any(), any(), any(), any())
         } returns true
 
         withCliRouting(fixture) {
@@ -1063,6 +1098,40 @@ class CliRoutingTest {
             assertEquals(null, updated.getTitle())
             // A changed link re-renders its Open Graph preview
             coVerify { fixture.taskSubmitter.submit(any()) }
+        }
+    }
+
+    @Test
+    fun `paste update stays successful when url preview refresh fails`() {
+        val fixture = Fixture()
+        val item = createUrlPasteItem(url = "https://old.example.com")
+        val pasteData =
+            PasteData(
+                id = 16L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.URL_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        coEvery { fixture.pasteDao.getNoDeletePasteData(16L) } returns pasteData
+        coEvery { fixture.taskSubmitter.submit(any()) } throws IllegalStateException("task database unavailable")
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/paste/16") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        """{"content":"https://new.example.com","expectedHash":"${pasteData.hash}"}""",
+                    )
+                }
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertContains(response.bodyAsText(), "Paste #16 updated.")
         }
     }
 

@@ -79,21 +79,15 @@ interface PasteDao : SearchPasteData {
 
     suspend fun updateCreateTime(id: Long)
 
-    suspend fun updatePasteAppearItem(
-        id: Long,
-        pasteItem: PasteItem,
-        pasteSearchContent: String,
-        addedSize: Long = 0L,
-    ): Result<Unit>
-
     /**
      * Atomically replaces the appear item AND the collection (derived
-     * clipboard flavors) of a LOADED row, guarded by a hash CAS: returns
-     * false when the row changed concurrently, was deleted, or is still
-     * loading — the caller must re-read and retry.
+     * clipboard flavors) of a LOADED row. [expectedHash] is the content hash
+     * supplied by the editor, while [expectedPasteData] supplies the complete
+     * old database values used to reject a race after the server-side read.
+     * Returns false on either conflict, deletion, or a still-loading row.
      */
     suspend fun updatePasteContent(
-        id: Long,
+        expectedPasteData: PasteData,
         pasteItem: PasteItem,
         pasteCollection: PasteCollection,
         pasteSearchContent: String,
@@ -102,16 +96,15 @@ interface PasteDao : SearchPasteData {
     ): Boolean
 
     /**
-     * [updatePasteAppearItem] with the same hash CAS as [updatePasteContent],
-     * for async metadata writers that must not clobber an interleaved edit.
-     * Returns false when the guard did not match.
+     * Updates one appear item only while its complete serialized old value is
+     * still the one in [expectedPasteData]. This is intentionally stricter
+     * than a hash guard because metadata changes need not change an item hash.
      */
     suspend fun updatePasteAppearItemIfUnchanged(
-        id: Long,
+        expectedPasteData: PasteData,
         pasteItem: PasteItem,
         pasteSearchContent: String,
         addedSize: Long,
-        expectedHash: String,
     ): Boolean
 
     suspend fun updatePasteState(

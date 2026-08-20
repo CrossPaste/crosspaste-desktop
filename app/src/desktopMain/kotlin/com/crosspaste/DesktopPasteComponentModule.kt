@@ -246,7 +246,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
         single<GenerateImageService> { GenerateImageService() }
         single<RenderingService<String>>(named("urlRendering")) {
-            OpenGraphService(get(), get(), get<ImageHandler<BufferedImage>>(), get(), get(), get())
+            OpenGraphService(get(), get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
         }
         // endregion
     }
