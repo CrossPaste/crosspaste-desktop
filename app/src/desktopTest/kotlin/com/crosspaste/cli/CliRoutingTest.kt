@@ -39,6 +39,7 @@ import io.ktor.utils.io.*
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -940,6 +941,14 @@ class CliRoutingTest {
                 assertTrue(line != null, "expected the first-ever paste as an arrival")
                 assertEquals(1L, json.decodeFromString<CliPasteSummaryDto>(line).id)
             }
+        }
+        // The count must be sampled BEFORE the snapshot subscription: sampled
+        // inside the collect it would race with a paste created right after an
+        // honestly empty first snapshot (count > 0 → snapshot misread as a
+        // masked failure → that first paste swallowed as the baseline)
+        coVerifyOrder {
+            fixture.pasteDao.getActiveCount()
+            fixture.pasteDao.getPasteDataFlow(any())
         }
     }
 

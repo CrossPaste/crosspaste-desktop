@@ -732,6 +732,14 @@ private suspend fun streamWatchEvents(
                 }
             }
         }
+    // Sampled BEFORE subscribing so the count and the snapshots cannot
+    // disagree about a paste created in between: with the count at zero here,
+    // anything created afterwards shows up in a snapshot, never behind one.
+    // Sampling inside the collect instead would race — a paste created between
+    // an honestly empty first snapshot and the count query would make the
+    // count read > 0, the empty snapshot look like a masked failure, and the
+    // next snapshot (carrying that first paste) get swallowed as baseline.
+    val activeCountAtConnect = pasteDao.getActiveCount()
     try {
         var tracker: CliWatchTracker? = null
         // The DAO flow only ever completes after swallowing a transient DB
@@ -749,9 +757,13 @@ private suspend fun streamWatchEvents(
                     // genuinely empty history or the DAO flow masking a failed
                     // query. Building a baseline from the latter would replay
                     // the whole window as arrivals once the DB recovers, so an
-                    // empty snapshot may only seed the baseline when the count
-                    // confirms the history really is empty.
-                    if (rows.isEmpty() && pasteDao.getActiveCount() > 0L) {
+                    // empty snapshot may only seed the baseline when the
+                    // connect-time count confirms the history really is empty.
+                    // (Accepted residue: a history that is fully deleted
+                    // between the count and the first snapshot makes the next
+                    // non-empty snapshot seed the baseline silently — a
+                    // one-time swallow in a vanishingly rare sequence.)
+                    if (rows.isEmpty() && activeCountAtConnect > 0L) {
                         return@collect
                     }
                     tracker = CliWatchTracker(rows, WATCH_WINDOW_LIMIT.toInt())
