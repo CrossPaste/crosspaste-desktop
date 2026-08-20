@@ -43,7 +43,7 @@ private var restoreLength = 0
  * correctly here. Only the native-Windows implementation needs the explicit
  * console-mode restore (see the mingw TerminalGuard).
  */
-fun restoreConsoleModes() {}
+fun restoreConsoleModes() = Unit
 
 /**
  * Restores the terminal when the process is killed from OUTSIDE while a
