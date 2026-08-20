@@ -19,10 +19,14 @@ import com.crosspaste.paste.PasteState
  * still in flight, so they are reported once they finish.
  *
  * The window is a top-N by createTime, so deleting newer rows can slide an
- * old, never-seen row back into view. Such rows carry a createTime at or
- * below the baseline floor and are silently adopted instead of reported.
+ * old, never-seen row back into view. Such rows are silently adopted instead
+ * of reported — recognized by a createTime at or below the baseline floor AND
+ * an id at or below the baseline maximum. The id condition matters because
+ * ids are insertion-ordered while createTime is not trustworthy as an arrival
+ * signal on its own: a paste synced from a device with a lagging clock can
+ * carry an old createTime, but its locally assigned id is always new.
  * Seen-row state is kept for the lifetime of the subscription (a few dozen
- * bytes per distinct row) — pruning would reopen that same hole.
+ * bytes per distinct row) — pruning would reopen the slide-back hole.
  */
 class CliWatchTracker(
     baseline: List<PasteData>,
@@ -44,6 +48,8 @@ class CliWatchTracker(
             baseline.minOf { it.createTime }
         }
 
+    private val baselineMaxId: Long = baseline.maxOfOrNull { it.id } ?: Long.MIN_VALUE
+
     init {
         for (row in baseline) {
             known[row.id] = KnownRow(row.createTime, reported = row.pasteState == PasteState.LOADED)
@@ -62,8 +68,9 @@ class CliWatchTracker(
             when {
                 knownRow == null -> {
                     // Old rows sliding back into the window after deletions
-                    // are pre-subscription history, not arrivals
-                    val preexisting = row.createTime <= baselineFloor
+                    // are pre-subscription history, not arrivals; the id bound
+                    // keeps lagging-clock remote arrivals out of this bucket
+                    val preexisting = row.createTime <= baselineFloor && row.id <= baselineMaxId
                     val report = loaded && !preexisting
                     known[row.id] = KnownRow(row.createTime, reported = report || preexisting)
                     if (report) arrived += row

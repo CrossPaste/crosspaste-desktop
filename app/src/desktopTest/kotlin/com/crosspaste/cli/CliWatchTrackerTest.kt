@@ -132,6 +132,18 @@ class CliWatchTrackerTest {
     }
 
     @Test
+    fun `a lagging-clock remote arrival with an old createTime still arrives`() {
+        val baseline = window(row(2, 200), row(3, 300), row(4, 400))
+        val tracker = CliWatchTracker(baseline, WINDOW_LIMIT)
+
+        // Row 4 is deleted and a remote device with a lagging clock syncs a
+        // genuinely new paste: its createTime sits below the baseline floor,
+        // but its locally assigned id is newer than anything in the baseline
+        val snapshot = window(row(9, 150), row(2, 200), row(3, 300))
+        assertEquals(listOf(9L), tracker.onWindow(snapshot).map { it.id })
+    }
+
+    @Test
     fun `a re-copied slid-back row does arrive`() {
         val baseline = window(row(2, 200), row(3, 300), row(4, 400))
         val tracker = CliWatchTracker(baseline, WINDOW_LIMIT)

@@ -724,32 +724,43 @@ private suspend fun streamWatchEvents(
         }
     try {
         var tracker: CliWatchTracker? = null
-        pasteDao.getPasteDataFlow(WATCH_WINDOW_LIMIT).collect { rows ->
-            val current = tracker
-            if (current == null) {
-                // The first snapshot is the pre-subscription history baseline
-                tracker = CliWatchTracker(rows, WATCH_WINDOW_LIMIT.toInt())
-                return@collect
-            }
-            val arrived =
-                current.onWindow(rows).filter { row ->
-                    matchesWatchFilters(row, filters, pasteTagDao)
+        // The DAO flow only ever completes after swallowing a transient DB
+        // error (its catch emits an empty snapshot and ends). Resubscribe with
+        // the tracker intact — resetting it would replay the whole window as
+        // fresh arrivals — instead of ending the client's stream over a blip.
+        // The delay keeps a persistently broken DB from turning this into a
+        // busy loop.
+        while (true) {
+            pasteDao.getPasteDataFlow(WATCH_WINDOW_LIMIT).collect { rows ->
+                val current = tracker
+                if (current == null) {
+                    // The first snapshot is the pre-subscription history baseline
+                    tracker = CliWatchTracker(rows, WATCH_WINDOW_LIMIT.toInt())
+                    return@collect
                 }
-            if (arrived.isEmpty()) return@collect
-            writeMutex.withLock {
-                for (row in arrived) {
-                    val dto = row.toSummaryDto(pasteTagDao, pasteDataHelper)
-                    channel.writeStringUtf8(
-                        watchLineJson.encodeToString(CliPasteSummaryDto.serializer(), dto) + "\n",
-                    )
+                val arrived =
+                    current.onWindow(rows).filter { row ->
+                        matchesWatchFilters(row, filters, pasteTagDao)
+                    }
+                if (arrived.isEmpty()) return@collect
+                writeMutex.withLock {
+                    for (row in arrived) {
+                        val dto = row.toSummaryDto(pasteTagDao, pasteDataHelper)
+                        channel.writeStringUtf8(
+                            watchLineJson.encodeToString(CliPasteSummaryDto.serializer(), dto) + "\n",
+                        )
+                    }
+                    channel.flush()
                 }
-                channel.flush()
             }
+            delay(WATCH_RESUBSCRIBE_DELAY)
         }
     } finally {
         heartbeat.cancel()
     }
 }
+
+private val WATCH_RESUBSCRIBE_DELAY = 1.seconds
 
 private suspend fun matchesWatchFilters(
     row: PasteData,

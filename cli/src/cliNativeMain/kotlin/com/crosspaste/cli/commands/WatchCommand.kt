@@ -92,24 +92,23 @@ class WatchCommand : CliktCommand(name = "watch") {
         line: String,
         format: WatchFormat,
     ) {
-        when (format) {
-            // Pass the server's compact JSON through untouched: kotlinx
-            // escapes control characters inside JSON strings, so the line is
-            // terminal-safe as-is and re-encoding could only lose fidelity
-            WatchFormat.JSON -> println(line)
-            WatchFormat.ID, WatchFormat.LINE -> {
-                val item =
-                    runCatching {
-                        cliJson.decodeFromString(PasteSummaryDto.serializer(), line)
-                    }.getOrElse {
-                        echo("Warning: skipped an unparseable watch event.", err = true)
-                        return
-                    }
-                when (format) {
-                    WatchFormat.ID -> println(item.id)
-                    else -> println(collapsePreviewWhitespace(item.preview))
-                }
+        // Every mode validates the line first, so a final line truncated by a
+        // hard disconnect is warned about and skipped instead of feeding half
+        // a JSON object to the pipe downstream
+        val item =
+            runCatching {
+                cliJson.decodeFromString(PasteSummaryDto.serializer(), line)
+            }.getOrElse {
+                echo("Warning: skipped an unparseable watch event.", err = true)
+                return
             }
+        when (format) {
+            // The validated line is passed through untouched: kotlinx escapes
+            // control characters inside JSON strings, so it is terminal-safe
+            // as-is, and re-encoding would drop fields this CLI predates
+            WatchFormat.JSON -> println(line)
+            WatchFormat.ID -> println(item.id)
+            WatchFormat.LINE -> println(collapsePreviewWhitespace(item.preview))
         }
         // Events must reach a pipe as they happen, not when the CRT buffer
         // fills; stdlib print instead of Mordant keeps non-TTY output verbatim

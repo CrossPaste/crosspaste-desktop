@@ -35,6 +35,7 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
+import io.ktor.utils.io.*
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -44,6 +45,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -53,6 +55,9 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class CliRoutingTest {
 
@@ -845,6 +850,24 @@ class CliRoutingTest {
         }
     }
 
+    /**
+     * Reads the next non-blank (non-heartbeat) event line, or null when
+     * [timeout] elapses first. The watch response never completes on its own
+     * (the handler resubscribes to the DAO flow), so tests read the body
+     * incrementally instead of waiting for it to end.
+     */
+    private suspend fun readEventLine(
+        channel: ByteReadChannel,
+        timeout: Duration = 2.seconds,
+    ): String? =
+        withTimeoutOrNull(timeout) {
+            var line = channel.readLine()
+            while (line != null && line.isEmpty()) {
+                line = channel.readLine()
+            }
+            line
+        }
+
     @Test
     fun `watch streams arrivals after the baseline as ndjson lines`() {
         val fixture = Fixture()
@@ -854,17 +877,22 @@ class CliRoutingTest {
             flowOf(baseline, listOf(arrival) + baseline)
 
         withCliRouting(fixture) {
-            val response = client.get("/cli/watch")
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals(
-                "application/x-ndjson",
-                response.contentType()?.let { "${it.contentType}/${it.contentSubtype}" },
-            )
-            val lines = response.bodyAsText().lines().filter { it.isNotBlank() }
-            assertEquals(1, lines.size)
-            val dto = json.decodeFromString<CliPasteSummaryDto>(lines[0])
-            assertEquals(2L, dto.id)
-            assertEquals("fresh", dto.preview)
+            client.prepareGet("/cli/watch").execute { response ->
+                assertEquals(HttpStatusCode.OK, response.status)
+                assertEquals(
+                    "application/x-ndjson",
+                    response.contentType()?.let { "${it.contentType}/${it.contentSubtype}" },
+                )
+                val channel = response.bodyAsChannel()
+                val line = readEventLine(channel)
+                assertTrue(line != null, "expected an arrival event line")
+                val dto = json.decodeFromString<CliPasteSummaryDto>(line)
+                assertEquals(2L, dto.id)
+                assertEquals("fresh", dto.preview)
+                // The tracker survives DAO flow resubscription, so replaying
+                // the same snapshots must not produce duplicate events
+                assertEquals(null, readEventLine(channel, timeout = 300.milliseconds))
+            }
         }
     }
 
@@ -877,8 +905,9 @@ class CliRoutingTest {
             flowOf(baseline, listOf(arrival) + baseline)
 
         withCliRouting(fixture) {
-            val body = client.get("/cli/watch?type=link").bodyAsText()
-            assertTrue(body.lines().none { it.isNotBlank() })
+            client.prepareGet("/cli/watch?type=link").execute { response ->
+                assertEquals(null, readEventLine(response.bodyAsChannel(), timeout = 300.milliseconds))
+            }
         }
     }
 
@@ -911,14 +940,14 @@ class CliRoutingTest {
         every { fixture.pasteTagDao.getPasteTagsBlock(3L) } returns listOf()
 
         withCliRouting(fixture) {
-            val lines =
-                client
-                    .get("/cli/watch?tag=work")
-                    .bodyAsText()
-                    .lines()
-                    .filter { it.isNotBlank() }
-            assertEquals(1, lines.size)
-            assertEquals(2L, json.decodeFromString<CliPasteSummaryDto>(lines[0]).id)
+            client.prepareGet("/cli/watch?tag=work").execute { response ->
+                val channel = response.bodyAsChannel()
+                val line = readEventLine(channel)
+                assertTrue(line != null, "expected the tagged arrival")
+                assertEquals(2L, json.decodeFromString<CliPasteSummaryDto>(line).id)
+                // The untagged arrival must have been filtered out
+                assertEquals(null, readEventLine(channel, timeout = 300.milliseconds))
+            }
         }
     }
 }

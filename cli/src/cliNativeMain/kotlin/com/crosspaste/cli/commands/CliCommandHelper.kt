@@ -22,6 +22,8 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlin.experimental.ExperimentalNativeApi
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 /** Scripts can rely on this exit code to mean "CrossPaste is not running". */
 const val EXIT_CODE_APP_NOT_RUNNING = 3
@@ -51,7 +53,12 @@ val cliJson =
  *
  * If the app goes away mid-command, the connection failure means the request
  * never reached it, so after re-running the liveness sequence the command is
- * retried once.
+ * retried once. The retry budget is time-aware: an attempt that ran for at
+ * least [RETRY_BUDGET_RESET_THRESHOLD] before failing counts as a fresh
+ * failure and earns a new retry. That lets a long-lived stream (`watch`)
+ * survive any number of app restarts spread over hours, while a rapid
+ * crash loop still exhausts the budget after one retry — important with
+ * --start, which would otherwise relaunch a crashing app forever.
  */
 fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
     runBlocking {
@@ -62,6 +69,7 @@ fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
         var versionWarningShown = false
         while (true) {
             var client: CliClient? = null
+            val attemptStart = TimeSource.Monotonic.markNow()
             try {
                 client = CliClient(configReader)
                 if (!versionWarningShown) {
@@ -72,6 +80,9 @@ fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
             } catch (e: ProgramResult) {
                 throw e
             } catch (e: AppNotRunningException) {
+                if (attemptStart.elapsedNow() >= RETRY_BUDGET_RESET_THRESHOLD) {
+                    retriedAfterRestart = false
+                }
                 if (retriedAfterRestart) {
                     echo("Error: ${e.message}", err = true)
                     throw ProgramResult(EXIT_CODE_APP_NOT_RUNNING)
@@ -87,6 +98,12 @@ fun CliktCommand.runCli(block: suspend (CliClient) -> Unit) {
         }
     }
 }
+
+/**
+ * An attempt that survived this long was genuinely connected, not bouncing
+ * off a dead socket; its eventual failure resets the single-retry budget.
+ */
+private val RETRY_BUDGET_RESET_THRESHOLD = 30.seconds
 
 /**
  * D5 unified pre-flight: running → proceed; starting (endpoint file present,
