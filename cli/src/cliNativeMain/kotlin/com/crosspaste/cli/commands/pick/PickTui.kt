@@ -10,6 +10,7 @@ import com.crosspaste.cli.commands.readImageWithinBudget
 import com.crosspaste.cli.platform.TerminalImageProtocol
 import com.crosspaste.cli.platform.detectTerminalImageProtocol
 import com.crosspaste.cli.platform.fitImageCellBox
+import com.crosspaste.cli.platform.isRawModeReadTimeout
 import com.crosspaste.cli.platform.kittyDeleteImages
 import com.crosspaste.cli.platform.parsePngDimensions
 import com.crosspaste.cli.platform.restoreConsoleModes
@@ -234,15 +235,15 @@ internal class PickTui(
             // RuntimeException("Timeout reading from console input") when the
             // wait expires instead of returning null like the other platforms
             // (readKeyOrNull only swallows TimeoutException), so every idle
-            // poll tick would crash the picker. Treat any read failure as "no
-            // key this tick": a transient error costs one poll interval, and
-            // a genuinely dead console still exits via the TerminalGuard
-            // console-control handler.
+            // poll tick would crash the picker. Only that known signature is
+            // treated as "no key this tick" (isRawModeReadTimeout is
+            // platform-split: always false on POSIX); real console errors
+            // still propagate and end the picker.
             val event =
                 try {
                     raw.readKeyOrNull(KEY_POLL_INTERVAL)
-                } catch (_: RuntimeException) {
-                    null
+                } catch (e: RuntimeException) {
+                    if (isRawModeReadTimeout(e)) null else throw e
                 } ?: return null
             val action = toPickAction(event, state.query.isEmpty()) ?: return null
             val selectedBefore = state.selectedItem?.id
