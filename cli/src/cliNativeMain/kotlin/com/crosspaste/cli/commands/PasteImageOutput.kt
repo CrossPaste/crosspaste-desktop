@@ -126,27 +126,35 @@ internal class InlineImageRenderer(
         path: String,
         budget: Long,
         requirePng: Boolean,
-    ): ByteArray? {
-        val okioPath = path.toPath()
-        return try {
-            val size = fileSystem.metadata(okioPath).size ?: return null
-            if (size <= 0 || size > budget || size > Int.MAX_VALUE) return null
-            fileSystem.source(okioPath).buffer().use { source ->
-                if (requirePng) {
-                    if (!source.request(PNG_SIGNATURE_SIZE.toLong())) return null
-                    val signature = source.peek().readByteArray(PNG_SIGNATURE_SIZE.toLong())
-                    if (!isPng(signature)) return null
-                }
+    ): ByteArray? = readImageWithinBudget(path, budget, requirePng, fileSystem)
+}
 
-                val bytes = ByteArray(size.toInt())
-                source.readFully(bytes)
-                // Reference-backed files can change after metadata(). Reject a
-                // file that grew instead of reading beyond the declared budget.
-                if (!source.exhausted()) return null
-                bytes
+/** Shared budget-guarded image read (used by `paste` previews and `pick`). */
+internal fun readImageWithinBudget(
+    path: String,
+    budget: Long,
+    requirePng: Boolean,
+    fileSystem: FileSystem = FileSystem.SYSTEM,
+): ByteArray? {
+    val okioPath = path.toPath()
+    return try {
+        val size = fileSystem.metadata(okioPath).size ?: return null
+        if (size <= 0 || size > budget || size > Int.MAX_VALUE) return null
+        fileSystem.source(okioPath).buffer().use { source ->
+            if (requirePng) {
+                if (!source.request(PNG_SIGNATURE_SIZE.toLong())) return null
+                val signature = source.peek().readByteArray(PNG_SIGNATURE_SIZE.toLong())
+                if (!isPng(signature)) return null
             }
-        } catch (_: IOException) {
-            null
+
+            val bytes = ByteArray(size.toInt())
+            source.readFully(bytes)
+            // Reference-backed files can change after metadata(). Reject a
+            // file that grew instead of reading beyond the declared budget.
+            if (!source.exhausted()) return null
+            bytes
         }
+    } catch (_: IOException) {
+        null
     }
 }

@@ -7,6 +7,7 @@ import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -36,6 +37,14 @@ data class CliEndpoint(
 class CliClientException(
     message: String,
     cause: Throwable? = null,
+    /** HTTP status of a failed response, null for transport-level failures. */
+    val statusCode: Int? = null,
+    /**
+     * Whether the failure body carried a structured server message. A 404
+     * WITHOUT one means the route itself does not exist (an older app);
+     * callers must branch on this, never on the message text.
+     */
+    val hasServerMessage: Boolean = false,
 ) : Exception(message, cause)
 
 class AppNotRunningException : Exception("CrossPaste is not running. Please start the application first.")
@@ -146,6 +155,11 @@ class CliClient(
                     setBody(it)
                 }
             }
+        } catch (e: CancellationException) {
+            // Cancelling a caller's coroutine must stay a cancellation:
+            // wrapping it would make a deliberately-abandoned request look
+            // like a request FAILURE to the caller's error handling
+            throw e
         } catch (e: Exception) {
             if (isAppUnreachable(e)) {
                 throw AppNotRunningException()
@@ -159,7 +173,12 @@ class CliClient(
     ): T {
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) {
-            throw CliClientException(extractMessage(text) ?: "Request failed with status ${response.status}")
+            val serverMessage = extractMessage(text)
+            throw CliClientException(
+                serverMessage ?: "Request failed with status ${response.status}",
+                statusCode = response.status.value,
+                hasServerMessage = serverMessage != null,
+            )
         }
         return try {
             json.decodeFromString(deserializer, text)

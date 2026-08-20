@@ -43,6 +43,14 @@ fun Routing.cliRouting(
     appInfo: AppInfo,
     cliPairingService: CliPairingService,
     configManager: DesktopConfigManager,
+    /**
+     * Whether re-copying an existing paste to the system clipboard actually
+     * works here. The headless daemon's PasteboardService reports success
+     * without touching any clipboard, so the copy-by-id endpoint must refuse
+     * instead of lying (plain POST /cli/copy keeps its store-and-sync
+     * semantics in both modes).
+     */
+    supportsPasteCopy: Boolean,
     pasteboardService: PasteboardService,
     pasteDao: PasteDao,
     pasteDataHelper: PasteDataHelper,
@@ -77,6 +85,21 @@ fun Routing.cliRouting(
                 pasteItemReader,
                 userDataPathProvider,
             )
+        }
+
+        post("/paste/{id}/copy") {
+            if (!supportsPasteCopy) {
+                call.respond(
+                    HttpStatusCode.NotImplemented,
+                    CliMessageDto(
+                        "CrossPaste is running headless; copying a paste to the " +
+                            "system clipboard requires the desktop app.",
+                    ),
+                )
+                return@post
+            }
+            val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@post
+            handlePasteCopy(call, id, pasteDao, pasteboardService)
         }
 
         get("/history") {
@@ -476,6 +499,40 @@ private suspend fun handleCopy(
         return
     }
     call.respond(CliCopyResponse(id))
+}
+
+/**
+ * Re-copies an existing paste of any type — the same action as pressing Enter
+ * on an item in the search window: the item (with its full type, not a text
+ * rendering) is written back to the pasteboard and bumped to the top of
+ * history. This is what `pick` (and any "copy item N again" flow) uses; the
+ * text-only POST /cli/copy creates new pastes from terminal input instead.
+ */
+private suspend fun handlePasteCopy(
+    call: ApplicationCall,
+    id: Long,
+    pasteDao: PasteDao,
+    pasteboardService: PasteboardService,
+) {
+    val pasteData =
+        pasteDao.getNoDeletePasteData(id) ?: run {
+            call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste #$id not found."))
+            return
+        }
+    val written =
+        pasteboardService.tryWritePasteboard(
+            pasteData = pasteData,
+            localOnly = true,
+            updateCreateTime = true,
+        )
+    if (written.isFailure) {
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            CliMessageDto("Failed to write paste #$id to the system clipboard."),
+        )
+        return
+    }
+    call.respond(CliMessageDto("Paste #$id copied."))
 }
 
 private suspend fun handlePasteDelete(

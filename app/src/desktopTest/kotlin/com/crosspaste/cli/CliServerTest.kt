@@ -75,6 +75,7 @@ class CliServerTest {
                 cliPairingService = mockk<CliPairingService>(),
                 configManager = configManager,
                 cliEndpointFile = endpointFile,
+                supportsPasteCopy = true,
                 pasteboardService = mockk<PasteboardService>(),
                 pasteDao = pasteDao,
                 pasteDataHelper = PasteDataHelper(DefaultPasteItemReader()),

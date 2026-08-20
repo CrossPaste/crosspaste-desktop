@@ -6,8 +6,19 @@ import com.github.ajalt.mordant.rendering.TextColors
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 
+/**
+ * Strips C0/C1 control characters (and DEL) so pasteboard-derived text can
+ * never inject terminal sequences — an ESC or BEL inside a paste (local or
+ * synced from another device) could otherwise exit the alternate screen,
+ * fake UI, or smuggle OSC payloads. Every dynamic string that reaches the
+ * terminal (history rows, picker rows, preview panels, OSC 8 URLs, tag and
+ * source names) must pass through here.
+ */
+internal fun sanitizeTerminalText(text: String): String = text.filterNot { it.isISOControl() || it.code in 0x80..0x9F }
+
 /** Joins embedded newlines and whitespace runs into single spaces. */
-internal fun collapsePreviewWhitespace(text: String): String = text.trim().replace(whitespaceRun, " ")
+internal fun collapsePreviewWhitespace(text: String): String =
+    sanitizeTerminalText(text.trim().replace(whitespaceRun, " "))
 
 private val whitespaceRun = Regex("\\s+")
 

@@ -103,6 +103,12 @@ class CliRoutingTest {
                 currentConfig = currentConfig.copy(key = firstArg<String>(), value = secondArg<Any>())
             }
             coEvery { syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf()
+            // The PasteData overload of tryWritePasteboard defaults `primary`
+            // from configManager, which resolves through this property
+            every { pasteboardService.configManager } returns
+                mockk<CommonConfigManager> {
+                    every { getCurrentConfig() } answers { currentConfig }
+                }
             coEvery { pasteDao.getActiveCount() } returns 0L
             every { pasteTagDao.getAllTagsBlock() } returns listOf()
             every { pasteTagDao.getPasteTagsBlock(any()) } returns listOf()
@@ -111,15 +117,19 @@ class CliRoutingTest {
 
     private fun withCliRouting(
         fixture: Fixture,
+        supportsPasteCopy: Boolean = true,
         block: suspend ApplicationTestBuilder.() -> Unit,
     ) = testApplication {
         application {
-            cliTestModule(fixture)
+            cliTestModule(fixture, supportsPasteCopy)
         }
         block()
     }
 
-    private fun Application.cliTestModule(fixture: Fixture) {
+    private fun Application.cliTestModule(
+        fixture: Fixture,
+        supportsPasteCopy: Boolean,
+    ) {
         install(ContentNegotiation) {
             json(Json { encodeDefaults = true })
         }
@@ -128,6 +138,7 @@ class CliRoutingTest {
                 appInfo = appInfo,
                 cliPairingService = fixture.cliPairingService,
                 configManager = fixture.configManager,
+                supportsPasteCopy = supportsPasteCopy,
                 pasteboardService = fixture.pasteboardService,
                 pasteDao = fixture.pasteDao,
                 pasteDataHelper = fixture.pasteDataHelper,
@@ -635,6 +646,67 @@ class CliRoutingTest {
                     updateCreateTime = any(),
                 )
             }
+        }
+    }
+
+    @Test
+    fun `paste copy rewrites the item to the pasteboard like the search window`() {
+        val fixture = Fixture()
+        val pasteData = textPasteData(7L, "hello")
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returns pasteData
+        coEvery {
+            fixture.pasteboardService.tryWritePasteboard(
+                pasteData = pasteData,
+                localOnly = true,
+                primary = any(),
+                updateCreateTime = true,
+            )
+        } returns Result.success(null)
+
+        withCliRouting(fixture) {
+            val response = client.post("/cli/paste/7/copy")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertContains(response.bodyAsText(), "Paste #7 copied.")
+        }
+        coVerify(exactly = 1) {
+            fixture.pasteboardService.tryWritePasteboard(
+                pasteData = pasteData,
+                localOnly = true,
+                primary = any(),
+                updateCreateTime = true,
+            )
+        }
+    }
+
+    @Test
+    fun `paste copy maps missing paste and write failure to errors`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(404L) } returns null
+        val failing = textPasteData(8L, "boom")
+        coEvery { fixture.pasteDao.getNoDeletePasteData(8L) } returns failing
+        coEvery {
+            fixture.pasteboardService.tryWritePasteboard(
+                pasteData = failing,
+                localOnly = true,
+                primary = any(),
+                updateCreateTime = true,
+            )
+        } returns Result.failure(RuntimeException("no clipboard"))
+
+        withCliRouting(fixture) {
+            assertEquals(HttpStatusCode.BadRequest, client.post("/cli/paste/abc/copy").status)
+            assertEquals(HttpStatusCode.NotFound, client.post("/cli/paste/404/copy").status)
+            assertEquals(HttpStatusCode.InternalServerError, client.post("/cli/paste/8/copy").status)
+        }
+    }
+
+    @Test
+    fun `paste copy refuses on a headless peer instead of reporting a no-op success`() {
+        val fixture = Fixture()
+        withCliRouting(fixture, supportsPasteCopy = false) {
+            val response = client.post("/cli/paste/7/copy")
+            assertEquals(HttpStatusCode.NotImplemented, response.status)
+            assertContains(response.bodyAsText(), "headless")
         }
     }
 

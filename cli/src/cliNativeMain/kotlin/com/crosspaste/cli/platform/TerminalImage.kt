@@ -62,15 +62,29 @@ internal fun isPng(bytes: ByteArray): Boolean =
  */
 private const val BASE64_CHUNK_SOURCE_BYTES = 3072
 
-/** OSC 1337: ESC ] 1337 ; File = inline=1;... : <base64> BEL */
+/**
+ * OSC 1337: ESC ] 1337 ; File = inline=1;... : <base64> BEL
+ *
+ * [widthCells]/[heightCells] bound the DISPLAY size in terminal cells (bare
+ * numbers mean cells in this protocol); the terminal letterboxes inside that
+ * box since preserveAspectRatio defaults to 1. The transmitted bytes are the
+ * stored file either way — the CLI never rescales pixels.
+ */
 @OptIn(ExperimentalEncodingApi::class)
 internal fun writeItermInlineImage(
     name: String,
     bytes: ByteArray,
     write: (String) -> Unit,
+    widthCells: Int? = null,
+    heightCells: Int? = null,
 ) {
     val nameB64 = Base64.encode(name.encodeToByteArray())
-    write("$TERM_ESC]1337;File=inline=1;size=${bytes.size};name=$nameB64:")
+    val sizeParams =
+        buildString {
+            widthCells?.let { append("width=$it;") }
+            heightCells?.let { append("height=$it;") }
+        }
+    write("$TERM_ESC]1337;File=inline=1;size=${bytes.size};$sizeParams" + "name=$nameB64:")
     var offset = 0
     while (offset < bytes.size) {
         val end = minOf(offset + BASE64_CHUNK_SOURCE_BYTES, bytes.size)
@@ -84,11 +98,17 @@ internal fun writeItermInlineImage(
  * Kitty graphics protocol: APC chunks of at most 4096 base64 chars; control
  * keys (a=T transmit-and-display, f=100 PNG) go on the first chunk only,
  * m=1 marks continuation and m=0 the final chunk.
+ *
+ * [columns]/[rows] bound the display area in cells. Kitty scales the image
+ * to FILL that rectangle without preserving aspect, so callers must pre-fit
+ * the box with [fitImageCellBox] using the PNG's header dimensions.
  */
 @OptIn(ExperimentalEncodingApi::class)
 internal fun writeKittyInlineImage(
     bytes: ByteArray,
     write: (String) -> Unit,
+    columns: Int? = null,
+    rows: Int? = null,
 ) {
     var offset = 0
     var first = true
@@ -99,6 +119,8 @@ internal fun writeKittyInlineImage(
         sb.append(TERM_ESC).append("_G")
         if (first) {
             sb.append("a=T,f=100,")
+            columns?.let { sb.append("c=$it,") }
+            rows?.let { sb.append("r=$it,") }
             first = false
         }
         sb.append("m=").append(more).append(';')
@@ -107,4 +129,59 @@ internal fun writeKittyInlineImage(
         write(sb.toString())
         offset = end
     }
+}
+
+/** Deletes all visible kitty image placements (a=d, default d=a). */
+internal fun kittyDeleteImages(write: (String) -> Unit) {
+    write("$TERM_ESC" + "_Ga=d$TERM_ESC\\")
+}
+
+/**
+ * Reads the pixel dimensions from a PNG's IHDR header — plain metadata in
+ * the first 24 bytes, NOT pixel decoding (which the CLI never does). Returns
+ * null unless the signature and IHDR chunk are where the spec puts them.
+ */
+internal fun parsePngDimensions(bytes: ByteArray): Pair<Int, Int>? {
+    if (bytes.size < 24 || !isPng(bytes)) return null
+    // Bytes 12..15 must spell "IHDR"; width and height follow big-endian
+    if (bytes[12] != 'I'.code.toByte() ||
+        bytes[13] != 'H'.code.toByte() ||
+        bytes[14] != 'D'.code.toByte() ||
+        bytes[15] != 'R'.code.toByte()
+    ) {
+        return null
+    }
+    val width = readBigEndianInt(bytes, 16)
+    val height = readBigEndianInt(bytes, 20)
+    if (width <= 0 || height <= 0) return null
+    return width to height
+}
+
+private fun readBigEndianInt(
+    bytes: ByteArray,
+    offset: Int,
+): Int =
+    ((bytes[offset].toInt() and 0xFF) shl 24) or
+        ((bytes[offset + 1].toInt() and 0xFF) shl 16) or
+        ((bytes[offset + 2].toInt() and 0xFF) shl 8) or
+        (bytes[offset + 3].toInt() and 0xFF)
+
+/**
+ * Fits an image into a cell box preserving aspect ratio, assuming the usual
+ * ~1:2 terminal cell (a cell is about twice as tall as wide in pixels).
+ */
+internal fun fitImageCellBox(
+    pixelWidth: Int,
+    pixelHeight: Int,
+    maxColumns: Int,
+    maxRows: Int,
+): Pair<Int, Int> {
+    val scale =
+        minOf(
+            maxColumns.toFloat() / pixelWidth,
+            maxRows * 2f / pixelHeight,
+        )
+    val columns = (pixelWidth * scale).toInt().coerceIn(1, maxColumns)
+    val rows = (pixelHeight * scale / 2f).toInt().coerceIn(1, maxRows)
+    return columns to rows
 }
