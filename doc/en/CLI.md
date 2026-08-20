@@ -39,6 +39,7 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 | `config` | View configuration; `config set <key> <value>` changes it. |
 | `tags` | Manage paste tags (`create`, `delete`). |
 | `version` | Show the CLI version. |
+| `watch` | Stream new pastes as they arrive — including entries synced from other devices — one per line, until interrupted. Filters: `--type` (repeat for several), `--tag`; `--format line\|json\|id`. |
 
 The most common commands have single-letter aliases: `c` = `copy`, `p` = `paste`, `h` = `history`.
 
@@ -89,6 +90,21 @@ crosspaste history TODO --type text --sort oldest
 
 # JSON output — combine with jq
 crosspaste history TODO --format json | jq '.items[].preview'
+```
+
+React to new pastes as they arrive — `watch` streams every new entry (a copy on this machine, a `crosspaste copy`, or an entry synced from another device) and runs until interrupted. Existing history is not replayed; the stream starts at "now". The default output is one sanitized line per paste (its text content; for links, the URL). It is a live feed, not a durable queue — events that arrive while the CLI is not running are not delivered later:
+
+```sh
+# Download every video link copied on any of your devices
+crosspaste watch --type link | xargs -n1 yt-dlp
+
+# Full metadata as one JSON object per line
+crosspaste watch --format json | jq '.preview'
+
+# Exact bytes: take IDs from the stream and fetch each paste raw
+crosspaste watch --format id | while read -r id; do
+  crosspaste paste "$id" --raw > "paste-$id.txt"
+done
 ```
 
 ### Exit codes

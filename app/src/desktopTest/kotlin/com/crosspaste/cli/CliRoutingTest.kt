@@ -35,14 +35,18 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
+import io.ktor.utils.io.*
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -52,6 +56,9 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class CliRoutingTest {
 
@@ -155,6 +162,7 @@ class CliRoutingTest {
     private fun textPasteData(
         id: Long,
         text: String,
+        createTime: Long = 123L,
     ): PasteData {
         val item = createTextPasteItem(text = text)
         return PasteData(
@@ -166,7 +174,7 @@ class CliRoutingTest {
             source = "Test",
             size = item.size,
             hash = item.hash,
-            createTime = 123L,
+            createTime = createTime,
             pasteState = PasteState.LOADED,
         )
     }
@@ -840,6 +848,162 @@ class CliRoutingTest {
 
             assertEquals(HttpStatusCode.OK, cancel("session-1").status)
             assertEquals(HttpStatusCode.NotFound, cancel("gone").status)
+        }
+    }
+
+    /**
+     * Reads the next non-blank (non-heartbeat) event line, or null when
+     * [timeout] elapses first. The watch response never completes on its own
+     * (the handler resubscribes to the DAO flow), so tests read the body
+     * incrementally instead of waiting for it to end.
+     */
+    private suspend fun readEventLine(
+        channel: ByteReadChannel,
+        timeout: Duration = 2.seconds,
+    ): String? =
+        withTimeoutOrNull(timeout) {
+            var line = channel.readLine()
+            while (line != null && line.isEmpty()) {
+                line = channel.readLine()
+            }
+            line
+        }
+
+    @Test
+    fun `watch streams arrivals after the baseline as ndjson lines`() {
+        val fixture = Fixture()
+        val baseline = listOf(textPasteData(1L, "old", createTime = 100L))
+        val arrival = textPasteData(2L, "fresh", createTime = 200L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(baseline, listOf(arrival) + baseline)
+
+        withCliRouting(fixture) {
+            client.prepareGet("/cli/watch").execute { response ->
+                assertEquals(HttpStatusCode.OK, response.status)
+                assertEquals(
+                    "application/x-ndjson",
+                    response.contentType()?.let { "${it.contentType}/${it.contentSubtype}" },
+                )
+                val channel = response.bodyAsChannel()
+                val line = readEventLine(channel)
+                assertTrue(line != null, "expected an arrival event line")
+                val dto = json.decodeFromString<CliPasteSummaryDto>(line)
+                assertEquals(2L, dto.id)
+                assertEquals("fresh", dto.preview)
+                // The tracker survives DAO flow resubscription, so replaying
+                // the same snapshots must not produce duplicate events
+                assertEquals(null, readEventLine(channel, timeout = 300.milliseconds))
+            }
+        }
+    }
+
+    @Test
+    fun `watch never builds its baseline from a masked query failure`() {
+        val fixture = Fixture()
+        // The DAO flow masks a failed query as an empty snapshot and completes;
+        // the history itself has rows, so that snapshot must not seed the
+        // baseline — otherwise the recovered window would replay as arrivals
+        coEvery { fixture.pasteDao.getActiveCount() } returns 2L
+        val history =
+            listOf(
+                textPasteData(2L, "history-b", createTime = 200L),
+                textPasteData(1L, "history-a", createTime = 100L),
+            )
+        val arrival = textPasteData(3L, "fresh", createTime = 300L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returnsMany
+            listOf(
+                flowOf(listOf()),
+                flowOf(history, listOf(arrival) + history),
+            )
+
+        withCliRouting(fixture) {
+            client.prepareGet("/cli/watch").execute { response ->
+                val channel = response.bodyAsChannel()
+                // Only the post-recovery arrival may appear, never the history
+                val line = readEventLine(channel, timeout = 5.seconds)
+                assertTrue(line != null, "expected the post-recovery arrival")
+                assertEquals(3L, json.decodeFromString<CliPasteSummaryDto>(line).id)
+                assertEquals(null, readEventLine(channel, timeout = 300.milliseconds))
+            }
+        }
+    }
+
+    @Test
+    fun `watch accepts an empty baseline when the history really is empty`() {
+        val fixture = Fixture()
+        val arrival = textPasteData(1L, "first-ever", createTime = 100L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(listOf(), listOf(arrival))
+
+        withCliRouting(fixture) {
+            client.prepareGet("/cli/watch").execute { response ->
+                val line = readEventLine(response.bodyAsChannel())
+                assertTrue(line != null, "expected the first-ever paste as an arrival")
+                assertEquals(1L, json.decodeFromString<CliPasteSummaryDto>(line).id)
+            }
+        }
+        // The count must be sampled BEFORE the snapshot subscription: sampled
+        // inside the collect it would race with a paste created right after an
+        // honestly empty first snapshot (count > 0 → snapshot misread as a
+        // masked failure → that first paste swallowed as the baseline)
+        coVerifyOrder {
+            fixture.pasteDao.getActiveCount()
+            fixture.pasteDao.getPasteDataFlow(any())
+        }
+    }
+
+    @Test
+    fun `watch type filter drops non-matching arrivals`() {
+        val fixture = Fixture()
+        val baseline = listOf(textPasteData(1L, "old", createTime = 100L))
+        val arrival = textPasteData(2L, "fresh", createTime = 200L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(baseline, listOf(arrival) + baseline)
+
+        withCliRouting(fixture) {
+            client.prepareGet("/cli/watch?type=link").execute { response ->
+                assertEquals(null, readEventLine(response.bodyAsChannel(), timeout = 300.milliseconds))
+            }
+        }
+    }
+
+    @Test
+    fun `watch rejects unknown type and tag before streaming`() {
+        val fixture = Fixture()
+
+        withCliRouting(fixture) {
+            val badType = client.get("/cli/watch?type=bogus")
+            assertEquals(HttpStatusCode.BadRequest, badType.status)
+            assertContains(badType.bodyAsText(), "Unknown paste type")
+
+            val badTag = client.get("/cli/watch?tag=missing")
+            assertEquals(HttpStatusCode.BadRequest, badTag.status)
+            assertContains(badTag.bodyAsText(), "Unknown tag")
+        }
+    }
+
+    @Test
+    fun `watch tag filter only passes tagged arrivals`() {
+        val fixture = Fixture()
+        val baseline = listOf(textPasteData(1L, "old", createTime = 100L))
+        val tagged = textPasteData(2L, "tagged", createTime = 200L)
+        val untagged = textPasteData(3L, "untagged", createTime = 300L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(baseline, listOf(untagged, tagged) + baseline)
+        every { fixture.pasteTagDao.getAllTagsBlock() } returns
+            listOf(PasteTag(id = 9L, name = "work", color = 0L, sortOrder = 0L))
+        every { fixture.pasteTagDao.getPasteTagsBlock(2L) } returns listOf(9L)
+        every { fixture.pasteTagDao.getPasteTagsBlock(3L) } returns listOf()
+
+        withCliRouting(fixture) {
+            client.prepareGet("/cli/watch?tag=work").execute { response ->
+                val channel = response.bodyAsChannel()
+                val line = readEventLine(channel)
+                assertTrue(line != null, "expected the tagged arrival")
+                assertEquals(2L, json.decodeFromString<CliPasteSummaryDto>(line).id)
+                // The untagged arrival must have been filtered out
+                assertEquals(null, readEventLine(channel, timeout = 300.milliseconds))
+            }
         }
     }
 }
