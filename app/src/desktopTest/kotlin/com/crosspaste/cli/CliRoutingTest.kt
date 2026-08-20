@@ -17,14 +17,19 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.item.ColorPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UpdatePasteItemHelper
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
@@ -51,9 +56,11 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.put
 import okio.Path.Companion.toPath
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -920,6 +927,104 @@ class CliRoutingTest {
             val updated = itemSlot.captured
             assertTrue(updated is HtmlPasteItem)
             assertEquals("<i>new</i>", updated.html)
+        }
+    }
+
+    @Test
+    fun `paste update round-trips a color and rejects bad hex`() {
+        val fixture = Fixture()
+        val item = createColorPasteItem(color = 0x11223344)
+        coEvery { fixture.pasteDao.getNoDeletePasteData(5L) } returns
+            PasteData(
+                id = 5L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.COLOR_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        val itemSlot = slot<PasteItem>()
+        coEvery {
+            fixture.pasteDao.updatePasteAppearItem(5L, capture(itemSlot), any(), any())
+        } returns Result.success(Unit)
+
+        withCliRouting(fixture) {
+            suspend fun update(content: String) =
+                client.put("/cli/paste/5") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"content":"$content"}""")
+                }
+
+            // The CLI shows PasteColor.toHexString(): #RRGGBBAA, alpha last
+            assertEquals(HttpStatusCode.OK, update("#0080FFFF").status)
+            val updated = itemSlot.captured
+            assertTrue(updated is ColorPasteItem)
+            assertEquals(0xFF0080FF.toInt(), updated.color)
+
+            val invalid = update("not-a-color")
+            assertEquals(HttpStatusCode.BadRequest, invalid.status)
+            assertContains(invalid.bodyAsText(), "Invalid color")
+        }
+    }
+
+    @Test
+    fun `paste update on a changed url drops the stale title`() {
+        val fixture = Fixture()
+        val item =
+            createUrlPasteItem(
+                url = "https://old.example.com",
+                extraInfo = buildJsonObject { put(PasteItemProperties.TITLE, "Old Page Title") },
+            )
+        coEvery { fixture.pasteDao.getNoDeletePasteData(6L) } returns
+            PasteData(
+                id = 6L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.URL_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        val itemSlot = slot<PasteItem>()
+        coEvery {
+            fixture.pasteDao.updatePasteAppearItem(6L, capture(itemSlot), any(), any())
+        } returns Result.success(Unit)
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/paste/6") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"content":"https://new.example.com"}""")
+                }
+            assertEquals(HttpStatusCode.OK, response.status)
+            val updated = itemSlot.captured
+            assertTrue(updated is UrlPasteItem)
+            assertEquals("https://new.example.com", updated.url)
+            assertEquals(null, updated.getTitle())
+        }
+    }
+
+    @Test
+    fun `paste update enforces the non-file size cap`() {
+        val fixture = Fixture()
+        fixture.currentConfig = DesktopAppConfig(language = "en", maxNonFilePasteSize = 0L)
+        coEvery { fixture.pasteDao.getNoDeletePasteData(42L) } returns textPasteData(42L, "old")
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/paste/42") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"content":"too big for a zero cap"}""")
+                }
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertContains(response.bodyAsText(), "maxNonFilePasteSize")
         }
     }
 
