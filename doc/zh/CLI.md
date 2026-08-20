@@ -30,6 +30,7 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | `status` | 显示应用是否在运行，以及版本、设备数、粘贴条数。永不自动拉起应用。 |
 | `paste [id]` | 显示最近一条粘贴，或按 ID 显示指定一条。图片粘贴在支持的终端（iTerm2、WezTerm、Kitty、Ghostty）内联显示，并始终列出存储文件路径。 |
 | `history [query]` | 列出最近粘贴历史；带查询词时执行搜索。过滤参数对等搜索窗口：`--type`（可重复指定多个）、`--tag`、`--sort newest\|oldest`，另有 `--limit`、`--format`。 |
+| `pick [query]` | 全屏交互选择器：输入即模糊过滤，↑/↓ 选择条目，回车经 CrossPaste 复制选中条目（任意类型）。Ctrl-E 在 `$EDITOR` 中编辑；Ctrl-T/Ctrl-G 打开类型/标签选择条，←/→ 即时切换取值；Ctrl-S 切换排序；Tab 开合预览面板（图片条目在 iTerm2/WezTerm/Kitty/Ghostty 中内联显示第一张图，显示尺寸受限不占满屏）；`?` 显示帮助；Esc 取消（退出码 130）。 |
 | `copy [text]` | 通过 CrossPaste 复制文本：写入历史并同步到其他设备；仅当桌面应用（而非 headless 守护进程）在运行时才会写系统剪贴板。接管道时读取 stdin。 |
 | `edit [id]` | 在 `$VISUAL`/`$EDITOR` 中打开最近一条(或指定 ID 的)粘贴,编辑后的结果作为新条目复制。保存但未修改则不复制。HTML/RTF 编辑其源码,结果始终是文本粘贴。 |
 | `delete <id>` | 按 ID 删除一条粘贴。 |

@@ -83,7 +83,10 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-fun desktopNetworkModule(marketingMode: Boolean): Module =
+fun desktopNetworkModule(
+    marketingMode: Boolean,
+    headless: Boolean,
+): Module =
     module {
         // region CLI
         single<CliEndpointFile> { CliEndpointFile(get()) }
@@ -102,6 +105,7 @@ fun desktopNetworkModule(marketingMode: Boolean): Module =
                 cliPairingService = get(),
                 configManager = get(),
                 cliEndpointFile = get(),
+                supportsPasteCopy = !headless,
                 pasteboardService = get(),
                 pasteDao = get(),
                 pasteDataHelper = get(),

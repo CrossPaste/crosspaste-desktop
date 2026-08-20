@@ -127,7 +127,7 @@ class DesktopModule(
             single<TaskDao> { SqlTaskDao(get()) }
         }
 
-    override fun networkModule() = desktopNetworkModule(marketingMode)
+    override fun networkModule() = desktopNetworkModule(marketingMode, headless)
 
     // SecurityModule
     override fun securityModule() =

@@ -19,9 +19,10 @@ class TerminalImageTest {
     private fun itermSequence(
         name: String,
         bytes: ByteArray,
-    ): String = buildString { writeItermInlineImage(name, bytes) { append(it) } }
+    ): String = buildString { writeItermInlineImage(name, bytes, write = { append(it) }) }
 
-    private fun kittySequence(bytes: ByteArray): String = buildString { writeKittyInlineImage(bytes) { append(it) } }
+    private fun kittySequence(bytes: ByteArray): String =
+        buildString { writeKittyInlineImage(bytes, write = { append(it) }) }
 
     @Test
     fun detectsKnownTerminals() {
