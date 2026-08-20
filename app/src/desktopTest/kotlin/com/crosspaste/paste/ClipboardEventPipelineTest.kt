@@ -1,5 +1,6 @@
 package com.crosspaste.paste
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -11,6 +12,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ClipboardEventPipelineTest {
 
     private class Harness(

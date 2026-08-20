@@ -80,7 +80,7 @@ kotlin {
             implementation(libs.kotlin.logging)
         }
 
-        val desktopMain by getting {
+        getByName("desktopMain") {
             dependencies {
                 implementation(libs.cryptography.provider.jdk)
                 // Low-level P-256 point/scalar ops for the SPAKE2 provider (ADR D7,
@@ -89,13 +89,13 @@ kotlin {
             }
         }
 
-        val desktopTest by getting {
+        getByName("desktopTest") {
             dependencies {
                 implementation(libs.logback.classic)
             }
         }
 
-        val jsMain by getting {
+        getByName("jsMain") {
             dependencies {
                 implementation(libs.cryptography.provider.webcrypto)
                 // Low-level P-256 point/scalar ops for the SPAKE2 provider (ADR D7,
@@ -111,7 +111,7 @@ kotlin {
 
         // The production nativeApp (CLI) binary does not register a cryptography provider;
         // tests need one so commonTest crypto vectors also run on the native target.
-        val nativeAppTest by getting {
+        getByName("nativeAppTest") {
             dependencies {
                 implementation(libs.cryptography.provider.openssl3.prebuilt)
             }

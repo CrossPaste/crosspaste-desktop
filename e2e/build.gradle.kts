@@ -28,7 +28,7 @@ kotlin {
     jvm("desktop") {}
 
     sourceSets {
-        val desktopMain by getting {
+        getByName("desktopMain") {
             dependencies {
                 implementation(project(":app"))
                 implementation(project(":shared"))
@@ -60,7 +60,8 @@ kotlin {
 
 // Match :app's `ui=awt` attribute so depending on it resolves the correct variant.
 configurations.all {
-    if (isCanBeResolved || isCanBeConsumed) {
+    // The legacy "archives" configuration reports consumable but deprecates attribute calls.
+    if (name != "archives" && (isCanBeResolved || isCanBeConsumed)) {
         attributes {
             attribute(Attribute.of("ui", String::class.java), "awt")
         }

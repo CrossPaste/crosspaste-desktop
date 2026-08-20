@@ -116,7 +116,7 @@ kotlin {
             implementation(libs.semver)
         }
 
-        val desktopMain by getting
+        val desktopMain = getByName("desktopMain")
 
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -632,8 +632,9 @@ afterEvaluate {
 // region Work around temporary Compose bugs.
 configurations.all {
     // Check if the configuration is either Resolvable or Consumable
-    // In Gradle 9, only these types allow attribute modification
-    if (isCanBeResolved || isCanBeConsumed) {
+    // In Gradle 9, only these types allow attribute modification; the legacy
+    // "archives" configuration reports consumable but deprecates attribute calls
+    if (name != "archives" && (isCanBeResolved || isCanBeConsumed)) {
         attributes {
             // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
             attribute(Attribute.of("ui", String::class.java), "awt")

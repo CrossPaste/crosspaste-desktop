@@ -46,10 +46,5 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
         }
-
-        val desktopMain by getting {
-            dependencies {
-            }
-        }
     }
 }
