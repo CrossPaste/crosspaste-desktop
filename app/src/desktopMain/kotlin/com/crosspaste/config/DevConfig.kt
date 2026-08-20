@@ -16,10 +16,18 @@ object DevConfig {
         developmentPairingV3InteropEnabled(
             development.getProperty("pairingV3InteropEnabled"),
         )
+
+    val mouseBinaryPath: String? =
+        developmentOptionalProperty(development.getProperty("mouseBinaryPath"))
 }
 
 internal fun developmentPairingV3InteropEnabled(configuredValue: String?): Boolean =
     when (configuredValue) {
         null -> true
         else -> configuredValue.toBooleanStrictOrNull() ?: false
+    }
+
+internal fun developmentOptionalProperty(configuredValue: String?): String? =
+    configuredValue?.trim()?.takeIf {
+        it.isNotEmpty()
     }

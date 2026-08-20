@@ -1,3 +1,9 @@
 pasteAppPath=.
 pasteUserPath=.user
 pairingV3InteropEnabled=false
+
+# --- crosspaste-mouse (optional, developer-local) ---
+# Absolute path to a locally built crosspaste-mouse daemon binary
+# (build it yourself with `cargo build --release` in the mouse repo).
+# Packaged releases bundle the binary in the app resources directory instead.
+# mouseBinaryPath=/path/to/crosspaste-mouse/target/release/crosspaste-mouse
