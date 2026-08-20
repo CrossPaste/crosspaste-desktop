@@ -107,14 +107,14 @@ kotlin {
             api(libs.sqldelight.coroutines.extensions)
         }
 
-        val desktopMain by getting {
+        getByName("desktopMain") {
             dependencies {
                 implementation(libs.cryptography.provider.jdk)
                 implementation(libs.sqlite.driver)
             }
         }
 
-        val nativeAppMain by getting {
+        getByName("nativeAppMain") {
             dependencies {
                 implementation(libs.sqlite.native.driver)
             }

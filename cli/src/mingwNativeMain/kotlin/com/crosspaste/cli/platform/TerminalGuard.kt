@@ -11,6 +11,7 @@ import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.windows.DWORD
 import platform.windows.DWORDVar
+import platform.windows.FALSE
 import platform.windows.GetConsoleMode
 import platform.windows.GetStdHandle
 import platform.windows.STD_INPUT_HANDLE
@@ -18,7 +19,6 @@ import platform.windows.STD_OUTPUT_HANDLE
 import platform.windows.SetConsoleCtrlHandler
 import platform.windows.SetConsoleMode
 import platform.windows.TRUE
-import platform.windows.WINBOOL
 import platform.windows.WriteFile
 
 private var savedStdinMode: DWORD = 0u
@@ -56,7 +56,7 @@ fun installTerminalGuard() {
                 SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), savedStdoutMode)
             }
             writeRestoreSequence()
-            0 as WINBOOL
+            FALSE
         },
         TRUE,
     )
