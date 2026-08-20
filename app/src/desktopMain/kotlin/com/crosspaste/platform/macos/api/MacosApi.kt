@@ -49,6 +49,10 @@ interface MacosApi : Library {
 
     fun getHardwareUUID(): Pointer?
 
+    fun getLocalScreensJson(): Pointer?
+
+    fun getDesktopWallpaperPng(displayId: Int): Pointer?
+
     fun getCurrentActiveAppInfo(): Pointer?
 
     fun getRunningApplications(): Pointer?
