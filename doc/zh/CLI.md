@@ -39,6 +39,7 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | `config` | 查看配置；`config set <key> <value>` 修改配置。 |
 | `tags` | 管理粘贴标签（`create`、`delete`）。 |
 | `version` | 显示 CLI 版本。 |
+| `watch` | 实时流式输出新到达的粘贴（包括从其他设备同步来的条目），每条一行，直到中断。过滤:`--type`（可重复）、`--tag`;`--format line\|json\|id`。 |
 
 最常用的命令有单字母别名：`c` = `copy`、`p` = `paste`、`h` = `history`。
 
@@ -89,6 +90,21 @@ crosspaste history TODO --type text --sort oldest
 
 # JSON 输出——配合 jq
 crosspaste history TODO --format json | jq '.items[].preview'
+```
+
+实时响应新粘贴——`watch` 流式输出每一条新条目（本机复制、`crosspaste copy` 写入、或从其他设备同步来的条目），直到中断。不回放已有历史,流从"现在"开始。默认输出为每条一行的净化文本内容（链接类型即 URL 本体）。它是实时信息流而非持久队列——CLI 未运行期间到达的条目不会补发：
+
+```sh
+# 自动下载任意设备上复制的视频链接
+crosspaste watch --type link | xargs -n1 yt-dlp
+
+# 每行一个 JSON 对象的完整元数据
+crosspaste watch --format json | jq '.preview'
+
+# 需要精确字节时：从流中取 ID,再逐条取原始内容
+crosspaste watch --format id | while read -r id; do
+  crosspaste paste "$id" --raw > "paste-$id.txt"
+done
 ```
 
 ### 退出码

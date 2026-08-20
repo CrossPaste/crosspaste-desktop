@@ -3,10 +3,12 @@ package com.crosspaste.cli.api
 import com.crosspaste.cli.platform.CliConfigReader
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.network.sockets.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
@@ -21,6 +23,13 @@ const val CLI_API_VERSION = 1
 
 /** Default per-request timeout; long-running pair calls override it per call. */
 internal const val DEFAULT_REQUEST_TIMEOUT_MILLIS = 5000L
+
+/**
+ * How long a watch stream may stay silent before the connection counts as
+ * broken. The server heartbeats every 10s, so three missed beats end the read
+ * instead of blocking forever on a wedged peer.
+ */
+internal const val STREAM_SILENCE_TIMEOUT_MILLIS = 30_000L
 
 /**
  * Mirror of the app's CliEndpoint (see design D5): the app atomically writes
@@ -122,6 +131,59 @@ class CliClient(
     ): T = decode(delete(path), deserializer)
 
     suspend fun get(path: String): HttpResponse = request(HttpMethod.Get, path)
+
+    /**
+     * Opens a long-lived streaming GET (the /cli/watch NDJSON feed) and hands
+     * each non-blank line to [onLine]; blank lines are server heartbeats.
+     *
+     * This never returns normally: the feed only ends when the app goes away,
+     * so end-of-stream — like a connect failure or a silence past
+     * [STREAM_SILENCE_TIMEOUT_MILLIS] — surfaces as [AppNotRunningException],
+     * which runCli answers with its usual probe-and-retry sequence. An error
+     * status on the initial response is a [CliClientException] as elsewhere.
+     */
+    suspend fun streamLines(
+        path: String,
+        onLine: suspend (String) -> Unit,
+    ) {
+        try {
+            httpClient
+                .prepareRequest("http://localhost$path") {
+                    method = HttpMethod.Get
+                    unixSocket(endpoint.socketPath)
+                    timeout {
+                        requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
+                        socketTimeoutMillis = STREAM_SILENCE_TIMEOUT_MILLIS
+                    }
+                }.execute { response ->
+                    if (!response.status.isSuccess()) {
+                        val serverMessage = extractMessage(response.bodyAsText())
+                        throw CliClientException(
+                            serverMessage ?: "Request failed with status ${response.status}",
+                            statusCode = response.status.value,
+                            hasServerMessage = serverMessage != null,
+                        )
+                    }
+                    val body = response.bodyAsChannel()
+                    while (true) {
+                        val line = body.readLine() ?: break
+                        if (line.isNotEmpty()) {
+                            onLine(line)
+                        }
+                    }
+                }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: CliClientException) {
+            throw e
+        } catch (e: Exception) {
+            if (isAppUnreachable(e) || e is SocketTimeoutException) {
+                throw AppNotRunningException()
+            }
+            throw CliClientException("Stream failed: ${e.message}", e)
+        }
+        throw AppNotRunningException()
+    }
 
     suspend fun post(
         path: String,

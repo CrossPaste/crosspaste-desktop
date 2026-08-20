@@ -43,6 +43,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -155,6 +156,7 @@ class CliRoutingTest {
     private fun textPasteData(
         id: Long,
         text: String,
+        createTime: Long = 123L,
     ): PasteData {
         val item = createTextPasteItem(text = text)
         return PasteData(
@@ -166,7 +168,7 @@ class CliRoutingTest {
             source = "Test",
             size = item.size,
             hash = item.hash,
-            createTime = 123L,
+            createTime = createTime,
             pasteState = PasteState.LOADED,
         )
     }
@@ -840,6 +842,83 @@ class CliRoutingTest {
 
             assertEquals(HttpStatusCode.OK, cancel("session-1").status)
             assertEquals(HttpStatusCode.NotFound, cancel("gone").status)
+        }
+    }
+
+    @Test
+    fun `watch streams arrivals after the baseline as ndjson lines`() {
+        val fixture = Fixture()
+        val baseline = listOf(textPasteData(1L, "old", createTime = 100L))
+        val arrival = textPasteData(2L, "fresh", createTime = 200L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(baseline, listOf(arrival) + baseline)
+
+        withCliRouting(fixture) {
+            val response = client.get("/cli/watch")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(
+                "application/x-ndjson",
+                response.contentType()?.let { "${it.contentType}/${it.contentSubtype}" },
+            )
+            val lines = response.bodyAsText().lines().filter { it.isNotBlank() }
+            assertEquals(1, lines.size)
+            val dto = json.decodeFromString<CliPasteSummaryDto>(lines[0])
+            assertEquals(2L, dto.id)
+            assertEquals("fresh", dto.preview)
+        }
+    }
+
+    @Test
+    fun `watch type filter drops non-matching arrivals`() {
+        val fixture = Fixture()
+        val baseline = listOf(textPasteData(1L, "old", createTime = 100L))
+        val arrival = textPasteData(2L, "fresh", createTime = 200L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(baseline, listOf(arrival) + baseline)
+
+        withCliRouting(fixture) {
+            val body = client.get("/cli/watch?type=link").bodyAsText()
+            assertTrue(body.lines().none { it.isNotBlank() })
+        }
+    }
+
+    @Test
+    fun `watch rejects unknown type and tag before streaming`() {
+        val fixture = Fixture()
+
+        withCliRouting(fixture) {
+            val badType = client.get("/cli/watch?type=bogus")
+            assertEquals(HttpStatusCode.BadRequest, badType.status)
+            assertContains(badType.bodyAsText(), "Unknown paste type")
+
+            val badTag = client.get("/cli/watch?tag=missing")
+            assertEquals(HttpStatusCode.BadRequest, badTag.status)
+            assertContains(badTag.bodyAsText(), "Unknown tag")
+        }
+    }
+
+    @Test
+    fun `watch tag filter only passes tagged arrivals`() {
+        val fixture = Fixture()
+        val baseline = listOf(textPasteData(1L, "old", createTime = 100L))
+        val tagged = textPasteData(2L, "tagged", createTime = 200L)
+        val untagged = textPasteData(3L, "untagged", createTime = 300L)
+        every { fixture.pasteDao.getPasteDataFlow(any()) } returns
+            flowOf(baseline, listOf(untagged, tagged) + baseline)
+        every { fixture.pasteTagDao.getAllTagsBlock() } returns
+            listOf(PasteTag(id = 9L, name = "work", color = 0L, sortOrder = 0L))
+        every { fixture.pasteTagDao.getPasteTagsBlock(2L) } returns listOf(9L)
+        every { fixture.pasteTagDao.getPasteTagsBlock(3L) } returns listOf()
+
+        withCliRouting(fixture) {
+            val lines =
+                client
+                    .get("/cli/watch?tag=work")
+                    .bodyAsText()
+                    .lines()
+                    .filter { it.isNotBlank() }
+            assertEquals(1, lines.size)
+            assertEquals(2L, json.decodeFromString<CliPasteSummaryDto>(lines[0]).id)
         }
     }
 }

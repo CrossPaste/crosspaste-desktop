@@ -12,6 +12,7 @@ import com.crosspaste.cli.commands.PickCommand
 import com.crosspaste.cli.commands.StatusCommand
 import com.crosspaste.cli.commands.TagsCommand
 import com.crosspaste.cli.commands.VersionCommand
+import com.crosspaste.cli.commands.WatchCommand
 import com.crosspaste.cli.commands.copyToCrossPaste
 import com.crosspaste.cli.commands.readPipedStdinOrFail
 import com.crosspaste.cli.commands.usageError
@@ -100,6 +101,7 @@ class CrossPasteCommand(
             ConfigCommand(),
             TagsCommand(),
             VersionCommand(),
+            WatchCommand(),
         )
     }
 }

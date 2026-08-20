@@ -29,6 +29,13 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
@@ -36,6 +43,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.longOrNull
+import kotlin.time.Duration.Companion.seconds
 
 private val configJson = Json { encodeDefaults = true }
 
@@ -106,6 +114,15 @@ fun Routing.cliRouting(
             handleList(
                 call = call,
                 searchContentService = searchContentService,
+                pasteDao = pasteDao,
+                pasteDataHelper = pasteDataHelper,
+                pasteTagDao = pasteTagDao,
+            )
+        }
+
+        get("/watch") {
+            handleWatch(
+                call = call,
                 pasteDao = pasteDao,
                 pasteDataHelper = pasteDataHelper,
                 pasteTagDao = pasteTagDao,
@@ -564,29 +581,7 @@ private suspend fun handleList(
             ?.toIntOrNull()
             ?.coerceIn(1, 1000)
             ?: DEFAULT_LIST_LIMIT
-    // The type parameter repeats for OR-matching: type=text&type=link
-    val pasteTypeList =
-        call.request.queryParameters
-            .getAll("type")
-            .orEmpty()
-            .map { name ->
-                PasteType.TYPES.firstOrNull { it.name.equals(name, ignoreCase = true) }?.type
-                    ?: run {
-                        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown paste type: '$name'."))
-                        return
-                    }
-            }
-    val tagName = call.request.queryParameters["tag"]
-    val tagId =
-        tagName?.let { name ->
-            withContext(ioDispatcher) { pasteTagDao.getAllTagsBlock() }
-                .firstOrNull { it.name.equals(name, ignoreCase = true) }
-                ?.id
-                ?: run {
-                    call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown tag: '$name'."))
-                    return
-                }
-        }
+    val filters = parseListFilters(call, pasteTagDao) ?: return
     val sortParam = call.request.queryParameters["sort"]
     val sortNewestFirst =
         when (sortParam?.lowercase()) {
@@ -606,9 +601,9 @@ private suspend fun handleList(
     val results =
         pasteDao.searchPasteData(
             searchTerms = searchTerms,
-            pasteTypeList = pasteTypeList,
+            pasteTypeList = filters.pasteTypeList,
             sort = sortNewestFirst,
-            tag = tagId,
+            tag = filters.tagId,
             limit = limit,
         )
     call.respond(
@@ -624,6 +619,149 @@ private const val SORT_NEWEST = "newest"
 private const val SORT_OLDEST = "oldest"
 
 private const val DEFAULT_LIST_LIMIT = 20
+
+/** Shared ?type=&tag= filters of the list and watch endpoints. */
+private class ListFilters(
+    /** Resolved [PasteType] codes; empty means all types. */
+    val pasteTypeList: List<Int>,
+    /** Resolved tag id; null when no tag filter was given. */
+    val tagId: Long?,
+)
+
+/**
+ * Parses the repeated `type` and single `tag` query parameters. Returns null
+ * after responding 400 when a value does not resolve.
+ */
+private suspend fun parseListFilters(
+    call: ApplicationCall,
+    pasteTagDao: PasteTagDao,
+): ListFilters? {
+    // The type parameter repeats for OR-matching: type=text&type=link
+    val pasteTypeList =
+        call.request.queryParameters
+            .getAll("type")
+            .orEmpty()
+            .map { name ->
+                PasteType.TYPES.firstOrNull { it.name.equals(name, ignoreCase = true) }?.type
+                    ?: run {
+                        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown paste type: '$name'."))
+                        return null
+                    }
+            }
+    val tagName = call.request.queryParameters["tag"]
+    val tagId =
+        tagName?.let { name ->
+            withContext(ioDispatcher) { pasteTagDao.getAllTagsBlock() }
+                .firstOrNull { it.name.equals(name, ignoreCase = true) }
+                ?.id
+                ?: run {
+                    call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown tag: '$name'."))
+                    return null
+                }
+        }
+    return ListFilters(pasteTypeList, tagId)
+}
+
+/** How many newest rows the watch diff window covers per snapshot. */
+private const val WATCH_WINDOW_LIMIT = 100L
+
+/**
+ * Keeps idle connections visibly alive: the client treats a long silence as a
+ * broken socket, and the periodic write also keeps the server's idle-connection
+ * reaper away. Must stay well below the CLI's read-silence budget.
+ */
+private val WATCH_HEARTBEAT_INTERVAL = 10.seconds
+
+private val watchLineJson = Json { encodeDefaults = true }
+
+/**
+ * Streams newly arriving pastes (local captures, CLI copies, re-copies, and
+ * entries synced from remote devices) as NDJSON: one [CliPasteSummaryDto] per
+ * line, with a blank line as heartbeat. Existing history is never replayed —
+ * the stream starts at "now". The source of truth is the same SQLDelight
+ * query flow the UI observes, diffed by [CliWatchTracker], so the stream is a
+ * best-effort live feed, not a durable queue: a burst larger than the diff
+ * window between two snapshots can drop events.
+ */
+private suspend fun handleWatch(
+    call: ApplicationCall,
+    pasteDao: PasteDao,
+    pasteDataHelper: PasteDataHelper,
+    pasteTagDao: PasteTagDao,
+) {
+    val filters = parseListFilters(call, pasteTagDao) ?: return
+    call.respondBytesWriter(contentType = ContentType("application", "x-ndjson")) {
+        try {
+            streamWatchEvents(this, filters, pasteDao, pasteDataHelper, pasteTagDao)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // The stream body is writes plus DAO reads that already swallow
+            // their own errors, so a failure here means the client went away;
+            // letting it escape would only make StatusPages try to respond on
+            // a committed response
+        }
+    }
+}
+
+private suspend fun streamWatchEvents(
+    channel: ByteWriteChannel,
+    filters: ListFilters,
+    pasteDao: PasteDao,
+    pasteDataHelper: PasteDataHelper,
+    pasteTagDao: PasteTagDao,
+) = coroutineScope {
+    val writeMutex = Mutex()
+    val heartbeat =
+        launch {
+            while (true) {
+                delay(WATCH_HEARTBEAT_INTERVAL)
+                writeMutex.withLock {
+                    channel.writeStringUtf8("\n")
+                    channel.flush()
+                }
+            }
+        }
+    try {
+        var tracker: CliWatchTracker? = null
+        pasteDao.getPasteDataFlow(WATCH_WINDOW_LIMIT).collect { rows ->
+            val current = tracker
+            if (current == null) {
+                // The first snapshot is the pre-subscription history baseline
+                tracker = CliWatchTracker(rows, WATCH_WINDOW_LIMIT.toInt())
+                return@collect
+            }
+            val arrived =
+                current.onWindow(rows).filter { row ->
+                    matchesWatchFilters(row, filters, pasteTagDao)
+                }
+            if (arrived.isEmpty()) return@collect
+            writeMutex.withLock {
+                for (row in arrived) {
+                    val dto = row.toSummaryDto(pasteTagDao, pasteDataHelper)
+                    channel.writeStringUtf8(
+                        watchLineJson.encodeToString(CliPasteSummaryDto.serializer(), dto) + "\n",
+                    )
+                }
+                channel.flush()
+            }
+        }
+    } finally {
+        heartbeat.cancel()
+    }
+}
+
+private suspend fun matchesWatchFilters(
+    row: PasteData,
+    filters: ListFilters,
+    pasteTagDao: PasteTagDao,
+): Boolean {
+    if (filters.pasteTypeList.isNotEmpty() && row.pasteType !in filters.pasteTypeList) {
+        return false
+    }
+    val tagId = filters.tagId ?: return true
+    return withContext(ioDispatcher) { pasteTagDao.getPasteTagsBlock(row.id) }.contains(tagId)
+}
 
 private suspend fun PasteData.toSummaryDto(
     pasteTagDao: PasteTagDao,
