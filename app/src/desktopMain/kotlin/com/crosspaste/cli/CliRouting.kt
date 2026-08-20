@@ -7,6 +7,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteReleaseService
@@ -18,9 +19,12 @@ import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItemReader
+import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.item.clearRenderingFiles
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
@@ -49,10 +53,14 @@ import kotlin.time.Duration.Companion.seconds
 
 private val configJson = Json { encodeDefaults = true }
 
+private val cliLogger = KotlinLogging.logger("com.crosspaste.cli.CliRouting")
+
 fun Routing.cliRouting(
     appInfo: AppInfo,
     cliPairingService: CliPairingService,
     configManager: DesktopConfigManager,
+    pasteContentEditor: PasteContentEditor,
+    taskSubmitter: TaskSubmitter,
     /**
      * Whether re-copying an existing paste to the system clipboard actually
      * works here. The headless daemon's PasteboardService reports success
@@ -164,6 +172,19 @@ fun Routing.cliRouting(
         delete("/paste/{id}") {
             val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@delete
             handlePasteDelete(call, id, pasteDao)
+        }
+
+        put("/paste/{id}") {
+            val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@put
+            handlePasteUpdate(
+                call,
+                id,
+                configManager,
+                pasteDao,
+                pasteContentEditor,
+                taskSubmitter,
+                userDataPathProvider,
+            )
         }
 
         route("/pair") {
@@ -552,6 +573,123 @@ private suspend fun handlePasteCopy(
         return
     }
     call.respond(CliMessageDto("Paste #$id copied."))
+}
+
+/**
+ * Updates a paste's content in place: the row keeps its id, type, createTime,
+ * and tags; the appear item and every derived clipboard flavor in the
+ * collection are rebuilt together by [PasteContentEditor], guarded by the
+ * editor's expected hash and a complete old-value CAS against concurrent
+ * writes. Like in-app edits, the change is local only (not re-synced to
+ * devices that already hold the original) and the system clipboard is not
+ * rewritten.
+ */
+private suspend fun handlePasteUpdate(
+    call: ApplicationCall,
+    id: Long,
+    configManager: DesktopConfigManager,
+    pasteDao: PasteDao,
+    pasteContentEditor: PasteContentEditor,
+    taskSubmitter: TaskSubmitter,
+    userDataPathProvider: UserDataPathProvider,
+) {
+    val request = call.receive<CliPasteUpdateRequest>()
+    if (request.content.isEmpty()) {
+        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Content must not be empty."))
+        return
+    }
+    val pasteData =
+        pasteDao.getNoDeletePasteData(id) ?: run {
+            call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste #$id not found."))
+            return
+        }
+    if (pasteData.pasteState != PasteState.LOADED) {
+        call.respond(
+            HttpStatusCode.Conflict,
+            CliMessageDto("Paste #$id is still loading; try again shortly."),
+        )
+        return
+    }
+    // The content edit bypasses the release plugin pipeline, so the non-file
+    // size cap must be enforced up front (mirrors POST /cli/copy)
+    val maxNonFilePasteSizeMb = configManager.getCurrentConfig().maxNonFilePasteSize
+    val contentSize =
+        request.content
+            .encodeToByteArray()
+            .size
+            .toLong()
+    if (contentSize > getFileUtils().bytesSize(maxNonFilePasteSizeMb)) {
+        call.respond(
+            HttpStatusCode.PayloadTooLarge,
+            CliMessageDto(
+                "Content ($contentSize bytes) exceeds the configured non-file paste " +
+                    "limit of $maxNonFilePasteSizeMb MB (maxNonFilePasteSize).",
+            ),
+        )
+        return
+    }
+    val oldUrlItem = pasteData.pasteAppearItem as? UrlPasteItem
+    when (
+        val outcome =
+            pasteContentEditor.updateContent(pasteData, request.content, request.expectedHash)
+    ) {
+        is PasteContentEditor.EditOutcome.Updated -> {
+            if (outcome.urlChanged && oldUrlItem != null) {
+                try {
+                    refreshUrlRendering(pasteData, oldUrlItem, taskSubmitter, userDataPathProvider)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // The content CAS has already committed. Preview refresh
+                    // is best-effort and must not turn that success into a
+                    // misleading 500 response.
+                    cliLogger.warn(e) { "Paste #$id updated, but URL preview refresh failed" }
+                }
+            }
+            call.respond(CliMessageDto("Paste #$id updated."))
+        }
+
+        PasteContentEditor.EditOutcome.Conflict ->
+            call.respond(
+                HttpStatusCode.Conflict,
+                CliMessageDto(
+                    "Paste #$id changed while it was being edited; fetch it again and retry.",
+                ),
+            )
+
+        PasteContentEditor.EditOutcome.NotEditable ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                CliMessageDto("Paste #$id (${pasteData.getTypeName()}) cannot be edited as text."),
+            )
+
+        is PasteContentEditor.EditOutcome.InvalidContent ->
+            call.respond(HttpStatusCode.BadRequest, CliMessageDto(outcome.reason))
+    }
+}
+
+/**
+ * A URL edit leaves Open Graph residue of the OLD page behind: the preview
+ * image file and no pending fetch for the new link. Delete the old URL's
+ * content-addressed image — unless it is a shared marketing asset — and
+ * submit a fresh rendering task. A late task writes only its old URL's cache
+ * path, and its title writeback is guarded by the complete old item.
+ */
+private suspend fun refreshUrlRendering(
+    pasteData: PasteData,
+    oldUrlItem: UrlPasteItem,
+    taskSubmitter: TaskSubmitter,
+    userDataPathProvider: UserDataPathProvider,
+) {
+    if (oldUrlItem.getMarketingPath() == null) {
+        oldUrlItem.clearRenderingFiles(
+            pasteCoordinate = pasteData.getPasteCoordinate(),
+            userDataPathProvider = userDataPathProvider,
+        )
+    }
+    taskSubmitter.submit {
+        addRenderingTask(pasteData.id, PasteType.URL_TYPE)
+    }
 }
 
 private suspend fun handlePasteDelete(

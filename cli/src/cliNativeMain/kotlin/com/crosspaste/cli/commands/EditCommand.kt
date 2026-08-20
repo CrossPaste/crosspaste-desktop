@@ -1,6 +1,7 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
+import com.crosspaste.cli.api.CliClientException
 import com.crosspaste.cli.platform.FALLBACK_EDITOR
 import com.crosspaste.cli.platform.createEditTempDir
 import com.crosspaste.cli.platform.readPlatformEnv
@@ -13,6 +14,7 @@ import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.types.long
+import kotlinx.serialization.Serializable
 import okio.FileSystem
 import okio.IOException
 import okio.Path
@@ -21,7 +23,13 @@ import okio.SYSTEM
 class EditCommand : CliktCommand(name = "edit") {
 
     override fun help(context: Context): String =
-        "Edit a paste in \$EDITOR and copy the result as a new text paste (omit ID for the most recent)"
+        "Edit a paste in \$EDITOR and update it in place (omit ID for the most recent)"
+
+    override fun helpEpilog(context: Context): String =
+        "The paste keeps its id, type, and tags: HTML/RTF edit their source markup " +
+            "and stay HTML/RTF, links edit the URL, colors edit the #RRGGBBAA value. " +
+            "Like editing inside the app, the change is not re-synced to devices " +
+            "that already received the original."
 
     private val ctx by requireObject<CliContext>()
 
@@ -62,7 +70,14 @@ internal fun CliktCommand.editPasteFlow(
             throw ProgramResult(1)
         }
     try {
-        editRoundTrip(editor, tempDir / editTempFileName(detail.id, detail.typeName), original, jsonOutput)
+        editRoundTrip(
+            editor = editor,
+            tempFile = tempDir / editTempFileName(detail.id, detail.typeName),
+            pasteId = detail.id,
+            expectedHash = detail.hash,
+            original = original,
+            jsonOutput = jsonOutput,
+        )
     } finally {
         cleanupBestEffort(tempDir)
     }
@@ -82,30 +97,84 @@ private fun CliktCommand.fetchPasteForEdit(id: Long?): PasteDetailResponse {
 
 /**
  * The HTTP client is NOT held open across the editor session (fetch and
- * copy are separate [runCli] rounds): an edit can take minutes, and the
+ * update are separate [runCli] rounds): an edit can take minutes, and the
  * app restarting meanwhile should not fail the save.
  */
 private fun CliktCommand.editRoundTrip(
     editor: String,
     tempFile: Path,
+    pasteId: Long,
+    expectedHash: String,
     original: String,
     jsonOutput: Boolean,
 ) {
     writeOrFail(tempFile, original)
     val status = runEditor(editor, tempFile.toString())
     if (status != 0) {
-        echo("Error: editor '$editor' failed (status $status); nothing copied.", err = true)
+        echo("Error: editor '$editor' failed (status $status); paste left as is.", err = true)
         throw ProgramResult(1)
     }
     val edited = normalizeEditedContent(original, readBackOrFail(tempFile))
     when {
-        edited == original -> echo("No changes; nothing copied.")
+        edited == original -> echo("No changes; paste left as is.")
         edited.isEmpty() -> {
             // An emptied buffer reads as "abort", like an empty commit message
-            echo("Error: edited content is empty; nothing copied.", err = true)
+            echo("Error: edited content is empty; paste left as is.", err = true)
             throw ProgramResult(1)
         }
-        else -> copyToCrossPaste(edited, jsonOutput = jsonOutput)
+        else -> updatePasteInPlace(pasteId, expectedHash, edited, jsonOutput)
+    }
+}
+
+@Serializable
+internal data class PasteUpdateRequest(
+    val content: String,
+    /** Hash of the paste as it was fetched; the server CAS-guards on it. */
+    val expectedHash: String,
+)
+
+/**
+ * Writes the edited content back onto the same paste via PUT /cli/paste/{id}.
+ * The row keeps its id, type, and tags — HTML/RTF stay HTML/RTF.
+ */
+private fun CliktCommand.updatePasteInPlace(
+    id: Long,
+    expectedHash: String,
+    content: String,
+    jsonOutput: Boolean,
+) {
+    runCli { client ->
+        try {
+            val body =
+                cliJson.encodeToString(
+                    PasteUpdateRequest.serializer(),
+                    PasteUpdateRequest(content, expectedHash),
+                )
+            val message = client.putBody("/cli/paste/$id", body, MessageResponse.serializer())
+            if (jsonOutput) {
+                echo(cliJson.encodeToString(MessageResponse.serializer(), message))
+            } else {
+                echo(message.message)
+            }
+        } catch (e: CliClientException) {
+            // The paste changed (or was deleted) while the editor was open;
+            // the CAS refused the write, so nothing was overwritten
+            if (e.statusCode == 409) {
+                echo("Error: ${e.message}", err = true)
+                throw ProgramResult(1)
+            }
+            // A 404 with no server message means the route itself is missing:
+            // the running app predates in-place editing
+            if (e.statusCode == 404 && !e.hasServerMessage) {
+                echo(
+                    "Error: the running CrossPaste app does not support editing " +
+                        "pastes in place; please update the app.",
+                    err = true,
+                )
+                throw ProgramResult(1)
+            }
+            throw e
+        }
     }
 }
 

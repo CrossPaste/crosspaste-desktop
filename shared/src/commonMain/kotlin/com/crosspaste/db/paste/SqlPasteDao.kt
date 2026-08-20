@@ -4,6 +4,7 @@ import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
 import com.crosspaste.Database
 import com.crosspaste.app.AppInfo
+import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.PasteState
@@ -290,30 +291,54 @@ class SqlPasteDao(
             pasteDatabaseQueries.updateCreateTime(id = id, time = DateUtils.nowEpochMilliseconds())
         }
 
-    override suspend fun updatePasteAppearItem(
-        id: Long,
+    override suspend fun updatePasteContent(
+        expectedPasteData: PasteData,
+        pasteItem: PasteItem,
+        pasteCollection: PasteCollection,
+        pasteSearchContent: String,
+        addedSize: Long,
+        expectedHash: String,
+    ): Boolean =
+        withContext(ioDispatcher) {
+            database.transactionWithResult {
+                pasteDatabaseQueries.updatePasteContent(
+                    id = expectedPasteData.id,
+                    pasteAppearItem = pasteItem.toStoredJson(),
+                    pasteCollection = pasteCollection.toStoredJson(),
+                    pasteSearchContent = pasteSearchContent,
+                    addedSize = addedSize,
+                    hash = pasteItem.hash,
+                    expectedHash = expectedHash,
+                    expectedPasteAppearItem =
+                        expectedPasteData.pasteAppearItem?.toStoredJson()
+                            ?: return@transactionWithResult false,
+                    expectedPasteCollection = expectedPasteData.pasteCollection.toStoredJson(),
+                )
+                pasteDatabaseQueries.change().executeAsOne() > 0
+            }
+        }
+
+    override suspend fun updatePasteAppearItemIfUnchanged(
+        expectedPasteData: PasteData,
         pasteItem: PasteItem,
         pasteSearchContent: String,
         addedSize: Long,
-    ): Result<Unit> =
+    ): Boolean =
         withContext(ioDispatcher) {
-            database
-                .transactionWithResult {
-                    pasteDatabaseQueries.updatePasteAppearItem(
-                        id = id,
-                        pasteAppearItem = pasteItem.toStoredJson(),
-                        pasteSearchContent = pasteSearchContent,
-                        addedSize = addedSize,
-                        hash = pasteItem.hash,
-                    )
-                    pasteDatabaseQueries.change().executeAsOne() > 0
-                }.let { changed ->
-                    if (changed) {
-                        Result.success(Unit)
-                    } else {
-                        Result.failure(Exception("Update paste appear item failed for id=$id"))
-                    }
-                }
+            database.transactionWithResult {
+                pasteDatabaseQueries.updatePasteAppearItemGuarded(
+                    id = expectedPasteData.id,
+                    pasteAppearItem = pasteItem.toStoredJson(),
+                    pasteSearchContent = pasteSearchContent,
+                    addedSize = addedSize,
+                    hash = pasteItem.hash,
+                    expectedHash = expectedPasteData.hash,
+                    expectedPasteAppearItem =
+                        expectedPasteData.pasteAppearItem?.toStoredJson()
+                            ?: return@transactionWithResult false,
+                )
+                pasteDatabaseQueries.change().executeAsOne() > 0
+            }
         }
 
     override suspend fun updatePasteState(

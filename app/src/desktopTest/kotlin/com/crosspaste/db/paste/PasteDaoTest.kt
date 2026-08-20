@@ -20,6 +20,8 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -625,29 +627,181 @@ class PasteDaoTest {
             assertTrue(results.isEmpty())
         }
 
-    // --- Update paste appear item ---
+    // --- Guarded paste edits ---
 
     @Test
-    fun `updatePasteAppearItem changes the item and hash`() =
+    fun `updatePasteAppearItemIfUnchanged changes the item and hash`() =
         runTest {
             val pasteData = createTestPasteData(text = "original")
             val id = pasteDao.createPasteData(pasteData)
+            val expectedPasteData = pasteDao.getNoDeletePasteData(id)!!
 
             val newItem =
                 createTextPasteItem(
                     identifiers = listOf(DesktopTextTypePlugin.TEXT),
                     text = "updated",
                 )
-            val result =
-                pasteDao.updatePasteAppearItem(
-                    id = id,
+            val applied =
+                pasteDao.updatePasteAppearItemIfUnchanged(
+                    expectedPasteData = expectedPasteData,
                     pasteItem = newItem,
                     pasteSearchContent = "updated",
+                    addedSize = newItem.size - expectedPasteData.size,
                 )
-            assertTrue(result.isSuccess)
+            assertTrue(applied)
 
             val retrieved = pasteDao.getNoDeletePasteData(id)
             assertNotNull(retrieved)
             assertEquals(newItem.hash, retrieved.hash)
+        }
+
+    @Test
+    fun `updatePasteContent replaces item and collection when the hash matches`() =
+        runTest {
+            val pasteData = createTestPasteData(text = "original")
+            val id = pasteDao.createPasteData(pasteData)
+            val expectedPasteData = pasteDao.getNoDeletePasteData(id)!!
+
+            val newItem = createTextPasteItem(text = "edited")
+            val companion = createTextPasteItem(text = "edited-flavor")
+            val applied =
+                pasteDao.updatePasteContent(
+                    expectedPasteData = expectedPasteData,
+                    pasteItem = newItem,
+                    pasteCollection = PasteCollection(listOf(companion)),
+                    pasteSearchContent = "edited",
+                    addedSize = newItem.size - pasteData.size,
+                    expectedHash = pasteData.hash,
+                )
+            assertTrue(applied)
+
+            val retrieved = pasteDao.getNoDeletePasteData(id)
+            assertNotNull(retrieved)
+            assertEquals(newItem.hash, retrieved.hash)
+            assertEquals(1, retrieved.pasteCollection.pasteItems.size)
+        }
+
+    @Test
+    fun `updatePasteContent refuses a stale hash and leaves the row untouched`() =
+        runTest {
+            val pasteData = createTestPasteData(text = "original")
+            val id = pasteDao.createPasteData(pasteData)
+            val expectedPasteData = pasteDao.getNoDeletePasteData(id)!!
+
+            val newItem = createTextPasteItem(text = "edited")
+            val applied =
+                pasteDao.updatePasteContent(
+                    expectedPasteData = expectedPasteData,
+                    pasteItem = newItem,
+                    pasteCollection = PasteCollection(listOf()),
+                    pasteSearchContent = "edited",
+                    addedSize = 0L,
+                    expectedHash = "stale-hash",
+                )
+            assertFalse(applied)
+
+            val retrieved = pasteDao.getNoDeletePasteData(id)
+            assertNotNull(retrieved)
+            assertEquals(pasteData.hash, retrieved.hash)
+        }
+
+    @Test
+    fun `updatePasteContent refuses rows that are deleted or still loading`() =
+        runTest {
+            val deleted = createTestPasteData(text = "gone")
+            val deletedId = pasteDao.createPasteData(deleted)
+            pasteDao.updatePasteState(deletedId, PasteState.DELETED)
+
+            val loading = createTestPasteData(text = "loading")
+            val loadingId = pasteDao.createPasteData(loading, pasteState = PasteState.LOADING)
+
+            val newItem = createTextPasteItem(text = "edited")
+            val guardedRows =
+                listOf(
+                    deleted.copy(id = deletedId) to deleted.hash,
+                    loading.copy(id = loadingId, pasteState = PasteState.LOADING) to loading.hash,
+                )
+            for ((expectedPasteData, expectedHash) in guardedRows) {
+                assertFalse(
+                    pasteDao.updatePasteContent(
+                        expectedPasteData = expectedPasteData,
+                        pasteItem = newItem,
+                        pasteCollection = PasteCollection(listOf()),
+                        pasteSearchContent = "edited",
+                        addedSize = 0L,
+                        expectedHash = expectedHash,
+                    ),
+                )
+            }
+        }
+
+    @Test
+    fun `metadata CAS rejects a stale item even when its hash is unchanged`() =
+        runTest {
+            val url = "https://example.com"
+            val pasteData =
+                createTestPasteData(text = url, pasteType = PasteType.URL_TYPE).copy(
+                    pasteAppearItem = createUrlPasteItem(url = url),
+                )
+            val id = pasteDao.createPasteData(pasteData)
+            val expectedPasteData = pasteDao.getNoDeletePasteData(id)!!
+
+            val firstItem =
+                createUrlPasteItem(
+                    url = url,
+                    extraInfo = buildJsonObject { put("title", "first") },
+                )
+            assertTrue(
+                pasteDao.updatePasteAppearItemIfUnchanged(
+                    expectedPasteData = expectedPasteData,
+                    pasteItem = firstItem,
+                    pasteSearchContent = "first",
+                    addedSize = 0L,
+                ),
+            )
+            val secondItem =
+                createUrlPasteItem(
+                    url = url,
+                    extraInfo = buildJsonObject { put("title", "second") },
+                )
+            assertEquals(firstItem.hash, secondItem.hash)
+            assertFalse(
+                pasteDao.updatePasteAppearItemIfUnchanged(
+                    expectedPasteData = expectedPasteData,
+                    pasteItem = secondItem,
+                    pasteSearchContent = "second",
+                    addedSize = 0L,
+                ),
+            )
+        }
+
+    @Test
+    fun `content CAS rejects a stale collection when item and hash are unchanged`() =
+        runTest {
+            val pasteData = createTestPasteData(text = "original")
+            val id = pasteDao.createPasteData(pasteData)
+            val expectedPasteData = pasteDao.getNoDeletePasteData(id)!!
+            val item = expectedPasteData.pasteAppearItem!!
+
+            assertTrue(
+                pasteDao.updatePasteContent(
+                    expectedPasteData = expectedPasteData,
+                    pasteItem = item,
+                    pasteCollection = PasteCollection(listOf(createTextPasteItem(text = "first flavor"))),
+                    pasteSearchContent = "original",
+                    addedSize = 0L,
+                    expectedHash = expectedPasteData.hash,
+                ),
+            )
+            assertFalse(
+                pasteDao.updatePasteContent(
+                    expectedPasteData = expectedPasteData,
+                    pasteItem = item,
+                    pasteCollection = PasteCollection(listOf(createTextPasteItem(text = "second flavor"))),
+                    pasteSearchContent = "original",
+                    addedSize = 0L,
+                    expectedHash = expectedPasteData.hash,
+                ),
+            )
         }
 }

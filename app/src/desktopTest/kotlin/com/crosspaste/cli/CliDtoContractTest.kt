@@ -171,6 +171,15 @@ class CliDtoContractTest {
             fieldsOf(json.encodeToString(CliConfigSetRequest.serializer(), CliConfigSetRequest("port", "13130"))),
         )
         assertEquals(
+            setOf("content", "expectedHash"),
+            fieldsOf(
+                json.encodeToString(
+                    CliPasteUpdateRequest.serializer(),
+                    CliPasteUpdateRequest("new content", "abc123"),
+                ),
+            ),
+        )
+        assertEquals(
             setOf("message"),
             fieldsOf(json.encodeToString(CliMessageDto.serializer(), CliMessageDto("ok"))),
         )

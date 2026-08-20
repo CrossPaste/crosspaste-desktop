@@ -17,6 +17,7 @@ import com.crosspaste.paste.DesktopSourceExclusionService
 import com.crosspaste.paste.DesktopTransferableConsumer
 import com.crosspaste.paste.DesktopTransferableProducer
 import com.crosspaste.paste.GuidePasteDataService
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
@@ -206,6 +207,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         }
         single<PasteSyncProcessManager<Long>> { DefaultPasteSyncProcessManager() }
         single<SearchContentService> { DesktopSearchContentService() }
+        single<PasteContentEditor> { PasteContentEditor(get(), get(), get()) }
         single<UpdatePasteItemHelper> {
             UpdatePasteItemHelper(get(), get(), get())
         }
@@ -244,7 +246,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         single<CleanScheduler> { CleanScheduler(get(), get(), get()) }
         single<GenerateImageService> { GenerateImageService() }
         single<RenderingService<String>>(named("urlRendering")) {
-            OpenGraphService(get(), get(), get<ImageHandler<BufferedImage>>(), get(), get(), get())
+            OpenGraphService(get(), get(), get<ImageHandler<BufferedImage>>(), get(), get(), get(), get())
         }
         // endregion
     }

@@ -7,6 +7,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
@@ -14,6 +15,7 @@ import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.task.TaskSubmitter
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -84,6 +86,8 @@ class CliServerTest {
                 pasteTagDao = mockk<PasteTagDao>(),
                 searchContentService = mockk<SearchContentService>(),
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
+                pasteContentEditor = mockk<PasteContentEditor>(),
+                taskSubmitter = mockk<TaskSubmitter>(),
                 userDataPathProvider = userDataPathProvider,
                 socketBaseDir = socketBaseDir,
             )

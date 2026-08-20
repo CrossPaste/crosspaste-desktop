@@ -1,6 +1,7 @@
 package com.crosspaste.rendering
 
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.net.ClientResponse
@@ -8,6 +9,8 @@ import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
+import com.crosspaste.paste.item.clearRenderingFiles
+import com.crosspaste.paste.item.getLegacyRenderingFilePath
 import com.crosspaste.paste.item.getRenderingFilePath
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
@@ -25,6 +28,7 @@ class OpenGraphService<Image>(
     private val resourcesClient: ResourcesClient,
     private val updatePasteItemHelper: UpdatePasteItemHelper,
     private val userDataPathProvider: UserDataPathProvider,
+    private val pasteDao: PasteDao,
 ) : RenderingService<String> {
 
     private val logger = KotlinLogging.logger {}
@@ -136,12 +140,41 @@ class OpenGraphService<Image>(
         ogImage?.let { imageUrl ->
             resourcesClient.request(imageUrl).onSuccess { imageResponse ->
                 imageHandler.readImage(imageResponse.getBody())?.also { image ->
-                    imageHandler.writeImage(image, "png", openGraphImage)
-                    generateImageService.markGenerationComplete(openGraphImage)
+                    if (imageHandler.writeImage(image, "png", openGraphImage)) {
+                        val currentUrlItem =
+                            pasteDao
+                                .getNoDeletePasteData(pasteData.id)
+                                ?.pasteAppearItem as? UrlPasteItem
+                        if (currentUrlItem?.url == urlPasteItem.url) {
+                            generateImageService.markGenerationComplete(openGraphImage)
+                            deleteLegacyRenderingFile(pasteData, urlPasteItem)
+                        } else {
+                            urlPasteItem.clearRenderingFiles(
+                                pasteCoordinate = pasteData.getPasteCoordinate(),
+                                userDataPathProvider = userDataPathProvider,
+                            )
+                        }
+                    }
                 }
             }
         } ?: run {
             logger.warn { "No Open Graph image found for URL: ${urlPasteItem.url}" }
+        }
+    }
+
+    private fun deleteLegacyRenderingFile(
+        pasteData: PasteData,
+        urlPasteItem: UrlPasteItem,
+    ) {
+        if (urlPasteItem.getMarketingPath() != null) return
+
+        val legacyPath =
+            urlPasteItem.getLegacyRenderingFilePath(
+                pasteCoordinate = pasteData.getPasteCoordinate(),
+                userDataPathProvider = userDataPathProvider,
+            )
+        if (fileUtils.existFile(legacyPath)) {
+            fileUtils.deleteFile(legacyPath)
         }
     }
 

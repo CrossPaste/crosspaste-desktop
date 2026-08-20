@@ -76,14 +76,41 @@ class UpdatePasteItemHelperTest {
         every { pasteItemReader.getSearchContent(any()) } returns "content"
         every { searchContentService.createSearchContent(any(), any<List<String>>()) } returns "content"
         coEvery {
-            pasteDao.updatePasteAppearItem(
-                id = any(),
+            pasteDao.updatePasteAppearItemIfUnchanged(
+                expectedPasteData = any(),
                 pasteItem = any(),
                 pasteSearchContent = any(),
                 addedSize = capture(addedSize),
             )
-        } returns Result.success(Unit)
+        } returns true
     }
+
+    @Test
+    fun `updateTitle refuses to apply onto a row whose url changed`() =
+        runTest {
+            // The Open Graph writeback runs after a network fetch; if the URL
+            // was edited meanwhile, the row hash no longer matches the item
+            // the fetch was made for and the guarded update reports a miss
+            val original = createUrlPasteItem(url = "https://old.example.com")
+            every { pasteItemReader.getSearchContent(any()) } returns "content"
+            every { searchContentService.createSearchContent(any(), any<List<String>>()) } returns "content"
+            val expectedPasteData = slot<PasteData>()
+            coEvery {
+                pasteDao.updatePasteAppearItemIfUnchanged(
+                    expectedPasteData = capture(expectedPasteData),
+                    pasteItem = any(),
+                    pasteSearchContent = any(),
+                    addedSize = any(),
+                )
+            } returns false
+
+            val pasteData = createPasteData(original)
+            val result = helper.updateTitle(pasteData, "Late Title", original)
+
+            assertTrue(result.isFailure)
+            // The guard must be the complete snapshot the fetch started from.
+            assertEquals(pasteData, expectedPasteData.captured)
+        }
 
     private fun createPasteData(item: PasteItem): PasteData =
         PasteData(

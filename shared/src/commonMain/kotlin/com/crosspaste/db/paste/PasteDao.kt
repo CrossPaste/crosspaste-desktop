@@ -1,5 +1,6 @@
 package com.crosspaste.db.paste
 
+import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteExportParam
 import com.crosspaste.paste.item.PasteItem
@@ -78,12 +79,33 @@ interface PasteDao : SearchPasteData {
 
     suspend fun updateCreateTime(id: Long)
 
-    suspend fun updatePasteAppearItem(
-        id: Long,
+    /**
+     * Atomically replaces the appear item AND the collection (derived
+     * clipboard flavors) of a LOADED row. [expectedHash] is the content hash
+     * supplied by the editor, while [expectedPasteData] supplies the complete
+     * old database values used to reject a race after the server-side read.
+     * Returns false on either conflict, deletion, or a still-loading row.
+     */
+    suspend fun updatePasteContent(
+        expectedPasteData: PasteData,
+        pasteItem: PasteItem,
+        pasteCollection: PasteCollection,
+        pasteSearchContent: String,
+        addedSize: Long,
+        expectedHash: String,
+    ): Boolean
+
+    /**
+     * Updates one appear item only while its complete serialized old value is
+     * still the one in [expectedPasteData]. This is intentionally stricter
+     * than a hash guard because metadata changes need not change an item hash.
+     */
+    suspend fun updatePasteAppearItemIfUnchanged(
+        expectedPasteData: PasteData,
         pasteItem: PasteItem,
         pasteSearchContent: String,
-        addedSize: Long = 0L,
-    ): Result<Unit>
+        addedSize: Long,
+    ): Boolean
 
     suspend fun updatePasteState(
         id: Long,

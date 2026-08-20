@@ -23,18 +23,15 @@ class UpdatePasteItemHelper(
                 color = newColor.toInt(),
                 extraInfo = colorPasteItem.extraInfo,
             )
-        return pasteDao
-            .updatePasteAppearItem(
-                id = pasteData.id,
-                pasteItem = newPasteItem,
-                pasteSearchContent =
-                    searchContentService.createSearchContent(
-                        pasteData.source,
-                        pasteItemReader.getSearchContent(newPasteItem),
-                    ),
-            ).map {
-                newPasteItem
-            }
+        return updateIfUnchanged(
+            pasteData = pasteData,
+            pasteItem = newPasteItem,
+            pasteSearchContent =
+                searchContentService.createSearchContent(
+                    pasteData.source,
+                    pasteItemReader.getSearchContent(newPasteItem),
+                ),
+        )
     }
 
     suspend fun updateHtml(
@@ -52,19 +49,16 @@ class UpdatePasteItemHelper(
                 } as HtmlPasteItem
         }
 
-        return pasteDao
-            .updatePasteAppearItem(
-                id = pasteData.id,
-                pasteItem = newPasteItem,
-                pasteSearchContent =
-                    searchContentService.createSearchContent(
-                        pasteData.source,
-                        pasteItemReader.getSearchContent(newPasteItem),
-                    ),
-                addedSize = newPasteItem.size - htmlPasteItem.size,
-            ).map {
-                newPasteItem
-            }
+        return updateIfUnchanged(
+            pasteData = pasteData,
+            pasteItem = newPasteItem,
+            pasteSearchContent =
+                searchContentService.createSearchContent(
+                    pasteData.source,
+                    pasteItemReader.getSearchContent(newPasteItem),
+                ),
+            addedSize = newPasteItem.size - htmlPasteItem.size,
+        )
     }
 
     suspend fun updateText(
@@ -73,19 +67,16 @@ class UpdatePasteItemHelper(
         textPasteItem: TextPasteItem,
     ): Result<TextPasteItem> {
         val newPasteItem = textPasteItem.copy(newText)
-        return pasteDao
-            .updatePasteAppearItem(
-                id = pasteData.id,
-                pasteItem = newPasteItem,
-                pasteSearchContent =
-                    searchContentService.createSearchContent(
-                        pasteData.source,
-                        pasteItemReader.getSearchContent(newPasteItem),
-                    ),
-                addedSize = newPasteItem.size - textPasteItem.size,
-            ).map {
-                newPasteItem
-            }
+        return updateIfUnchanged(
+            pasteData = pasteData,
+            pasteItem = newPasteItem,
+            pasteSearchContent =
+                searchContentService.createSearchContent(
+                    pasteData.source,
+                    pasteItemReader.getSearchContent(newPasteItem),
+                ),
+            addedSize = newPasteItem.size - textPasteItem.size,
+        )
     }
 
     suspend fun updateTitle(
@@ -98,9 +89,12 @@ class UpdatePasteItemHelper(
                 put(PasteItemProperties.TITLE, title)
             } as UrlPasteItem
 
-        return pasteDao
-            .updatePasteAppearItem(
-                id = pasteData.id,
+        // This runs as an async writeback after a network fetch. Compare the
+        // complete old item so neither URL edits nor same-hash metadata edits
+        // can be overwritten by the late title.
+        val applied =
+            pasteDao.updatePasteAppearItemIfUnchanged(
+                expectedPasteData = pasteData,
                 pasteItem = newUrlPasteItem,
                 pasteSearchContent =
                     searchContentService.createSearchContent(
@@ -111,9 +105,16 @@ class UpdatePasteItemHelper(
                         ),
                     ),
                 addedSize = newUrlPasteItem.size - urlPasteItem.size,
-            ).map {
-                newUrlPasteItem
-            }
+            )
+        return if (applied) {
+            Result.success(newUrlPasteItem)
+        } else {
+            Result.failure(
+                IllegalStateException(
+                    "Paste ${pasteData.id} changed since the title was fetched; title not applied.",
+                ),
+            )
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -133,21 +134,41 @@ class UpdatePasteItemHelper(
                 put(PasteItemProperties.NAME, name)
             } as T
 
-        return pasteDao
-            .updatePasteAppearItem(
-                id = pasteData.id,
-                pasteItem = newPasteItem,
-                pasteSearchContent =
-                    searchContentService.createSearchContent(
-                        pasteData.source,
-                        listOfNotNull(
-                            name,
-                            pasteItemReader.getSearchContent(newPasteItem),
-                        ),
+        return updateIfUnchanged(
+            pasteData = pasteData,
+            pasteItem = newPasteItem,
+            pasteSearchContent =
+                searchContentService.createSearchContent(
+                    pasteData.source,
+                    listOfNotNull(
+                        name,
+                        pasteItemReader.getSearchContent(newPasteItem),
                     ),
-                addedSize = name.encodeToByteArray().size.toLong() - oldNameSize,
-            ).map {
-                newPasteItem
-            }
+                ),
+            addedSize = name.encodeToByteArray().size.toLong() - oldNameSize,
+        )
     }
+
+    private suspend fun <T : PasteItem> updateIfUnchanged(
+        pasteData: PasteData,
+        pasteItem: T,
+        pasteSearchContent: String,
+        addedSize: Long = 0L,
+    ): Result<T> =
+        if (
+            pasteDao.updatePasteAppearItemIfUnchanged(
+                expectedPasteData = pasteData,
+                pasteItem = pasteItem,
+                pasteSearchContent = pasteSearchContent,
+                addedSize = addedSize,
+            )
+        ) {
+            Result.success(pasteItem)
+        } else {
+            Result.failure(
+                IllegalStateException(
+                    "Paste ${pasteData.id} changed while it was being edited.",
+                ),
+            )
+        }
 }
