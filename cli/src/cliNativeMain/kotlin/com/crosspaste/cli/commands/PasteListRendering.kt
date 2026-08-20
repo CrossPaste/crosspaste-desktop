@@ -110,7 +110,7 @@ internal fun CliktCommand.rowWidthBudget(): Int =
     }
 
 /**
- * Row rendering for the `history`/`search` tables: the preview fills whatever
+ * Row rendering for the `history` table: the preview fills whatever
  * terminal width is left after the fixed columns instead of being cut at a
  * fixed char count, and truncation is by display cells so wide CJK/emoji text
  * never overflows the line and wraps.

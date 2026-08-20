@@ -29,8 +29,7 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 |---|---|
 | `status` | Show whether the app is running, plus version, device and paste counts. Never auto-starts the app. |
 | `paste [id]` | Show the most recent paste, or a specific paste by ID. Image pastes render inline in terminals that support it (iTerm2, WezTerm, Kitty, Ghostty) and always list their stored file paths. |
-| `history` | List recent paste history (`--limit`, `--type`, `--tag`, `--format`). |
-| `search <query>` | Search paste history (same filters as `history`). |
+| `history [query]` | List recent paste history, or search it when query words are given. Filters mirror the search window: `--type` (repeat for several), `--tag`, `--sort newest\|oldest`, plus `--limit` and `--format`. |
 | `copy [text]` | Copy text via CrossPaste: stores it in history and syncs it to your devices; the system clipboard is set when the desktop app (not the headless daemon) is running. Reads stdin when piped. |
 | `edit [id]` | Open the most recent paste (or a specific paste by ID) in `$VISUAL`/`$EDITOR`, and copy the edited result as a new paste. Saving without changes copies nothing. HTML/RTF pastes edit their source markup; the result is always a text paste. |
 | `delete <id>` | Delete a paste by ID. |
@@ -84,8 +83,11 @@ List and bulk-process history:
 # One paste ID per line — combine with xargs
 crosspaste history --format id | xargs -n1 crosspaste delete
 
+# Search with filters — query words need no quotes
+crosspaste history TODO --type text --sort oldest
+
 # JSON output — combine with jq
-crosspaste search "TODO" --format json | jq '.items[].preview'
+crosspaste history TODO --format json | jq '.items[].preview'
 ```
 
 ### Exit codes

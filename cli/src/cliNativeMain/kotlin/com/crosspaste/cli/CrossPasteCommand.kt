@@ -8,7 +8,6 @@ import com.crosspaste.cli.commands.EditCommand
 import com.crosspaste.cli.commands.HistoryCommand
 import com.crosspaste.cli.commands.PairCommand
 import com.crosspaste.cli.commands.PasteCommand
-import com.crosspaste.cli.commands.SearchCommand
 import com.crosspaste.cli.commands.StatusCommand
 import com.crosspaste.cli.commands.TagsCommand
 import com.crosspaste.cli.commands.VersionCommand
@@ -91,7 +90,6 @@ class CrossPasteCommand(
             StatusCommand(),
             PasteCommand(),
             HistoryCommand(),
-            SearchCommand(),
             CopyCommand(),
             EditCommand(),
             DeleteCommand(),

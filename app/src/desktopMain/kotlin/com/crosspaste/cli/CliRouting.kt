@@ -82,23 +82,10 @@ fun Routing.cliRouting(
         get("/history") {
             handleList(
                 call = call,
-                searchTerms = listOf(),
+                searchContentService = searchContentService,
                 pasteDao = pasteDao,
                 pasteDataHelper = pasteDataHelper,
                 pasteTagDao = pasteTagDao,
-                total = { pasteDao.getActiveCount() },
-            )
-        }
-
-        get("/search") {
-            val query = call.request.queryParameters["q"] ?: ""
-            handleList(
-                call = call,
-                searchTerms = searchContentService.createSearchTerms(query),
-                pasteDao = pasteDao,
-                pasteDataHelper = pasteDataHelper,
-                pasteTagDao = pasteTagDao,
-                total = null,
             )
         }
 
@@ -510,26 +497,28 @@ private suspend fun handlePasteDelete(
 
 private suspend fun handleList(
     call: ApplicationCall,
-    searchTerms: List<String>,
+    searchContentService: SearchContentService,
     pasteDao: PasteDao,
     pasteDataHelper: PasteDataHelper,
     pasteTagDao: PasteTagDao,
-    total: (suspend () -> Long)?,
 ) {
     val limit =
         call.request.queryParameters["limit"]
             ?.toIntOrNull()
             ?.coerceIn(1, 1000)
             ?: DEFAULT_LIST_LIMIT
-    val typeName = call.request.queryParameters["type"]
-    val pasteType =
-        typeName?.let { name ->
-            PasteType.TYPES.firstOrNull { it.name.equals(name, ignoreCase = true) }
-                ?: run {
-                    call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown paste type: '$name'."))
-                    return
-                }
-        }
+    // The type parameter repeats for OR-matching: type=text&type=link
+    val pasteTypeList =
+        call.request.queryParameters
+            .getAll("type")
+            .orEmpty()
+            .map { name ->
+                PasteType.TYPES.firstOrNull { it.name.equals(name, ignoreCase = true) }?.type
+                    ?: run {
+                        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Unknown paste type: '$name'."))
+                        return
+                    }
+            }
     val tagName = call.request.queryParameters["tag"]
     val tagId =
         tagName?.let { name ->
@@ -541,21 +530,41 @@ private suspend fun handleList(
                     return
                 }
         }
+    val sortParam = call.request.queryParameters["sort"]
+    val sortNewestFirst =
+        when (sortParam?.lowercase()) {
+            null, SORT_NEWEST -> true
+            SORT_OLDEST -> false
+            else -> {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    CliMessageDto("Unknown sort order: '$sortParam'. Use '$SORT_NEWEST' or '$SORT_OLDEST'."),
+                )
+                return
+            }
+        }
+    val query = call.request.queryParameters["q"].orEmpty()
+    val searchTerms = if (query.isBlank()) listOf() else searchContentService.createSearchTerms(query)
 
     val results =
         pasteDao.searchPasteData(
             searchTerms = searchTerms,
-            pasteTypeList = listOfNotNull(pasteType?.type),
+            pasteTypeList = pasteTypeList,
+            sort = sortNewestFirst,
             tag = tagId,
             limit = limit,
         )
     call.respond(
         CliPasteListDto(
             items = results.map { it.toSummaryDto(pasteTagDao, pasteDataHelper) },
-            total = total?.invoke() ?: results.size.toLong(),
+            // A keyword search has no cheap total; report the result size there.
+            total = if (searchTerms.isEmpty()) pasteDao.getActiveCount() else results.size.toLong(),
         ),
     )
 }
+
+private const val SORT_NEWEST = "newest"
+private const val SORT_OLDEST = "oldest"
 
 private const val DEFAULT_LIST_LIMIT = 20
 
