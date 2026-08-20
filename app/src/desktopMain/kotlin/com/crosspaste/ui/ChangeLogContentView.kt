@@ -27,10 +27,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.ChangelogEntry
@@ -267,13 +272,14 @@ private fun ChangelogEntryView(entry: ChangelogEntry) {
 
 @Composable
 private fun ChangelogLine(line: String) {
+    val linkColor = MaterialTheme.colorScheme.primary
     when {
         line.isBlank() -> {
             Spacer(modifier = Modifier.height(tiny))
         }
         line.startsWith("## ") -> {
             Text(
-                text = parseInline(line.removePrefix("## ").trim()),
+                text = parseInline(line.removePrefix("## ").trim(), linkColor),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -286,7 +292,7 @@ private fun ChangelogLine(line: String) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = parseInline(line.removePrefix("- ").trim()),
+                    text = parseInline(line.removePrefix("- ").trim(), linkColor),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -294,7 +300,7 @@ private fun ChangelogLine(line: String) {
         }
         else -> {
             Text(
-                text = parseInline(line.trim()),
+                text = parseInline(line.trim(), linkColor),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = small3X),
@@ -303,20 +309,26 @@ private fun ChangelogLine(line: String) {
     }
 }
 
-/** Renders the small markdown subset used in the bundled changelog: `**bold**` spans. */
-private fun parseInline(text: String): AnnotatedString =
+/**
+ * Renders the small markdown subset used in the bundled changelog: `**bold**` spans,
+ * plus bare http(s) URLs as clickable links.
+ */
+private fun parseInline(
+    text: String,
+    linkColor: Color,
+): AnnotatedString =
     buildAnnotatedString {
         var index = 0
         while (index < text.length) {
             val start = text.indexOf("**", index)
             if (start < 0) {
-                append(text.substring(index))
+                appendLinkified(text.substring(index), linkColor)
                 break
             }
-            append(text.substring(index, start))
+            appendLinkified(text.substring(index, start), linkColor)
             val end = text.indexOf("**", start + 2)
             if (end < 0) {
-                append(text.substring(start))
+                appendLinkified(text.substring(start), linkColor)
                 break
             }
             withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
@@ -325,3 +337,35 @@ private fun parseInline(text: String): AnnotatedString =
             index = end + 2
         }
     }
+
+private val urlRegex = Regex("""https?://\S+""")
+
+/** Appends [text], turning bare http(s) URLs into clickable, link-styled spans. */
+private fun androidx.compose.ui.text.AnnotatedString.Builder.appendLinkified(
+    text: String,
+    linkColor: Color,
+) {
+    var index = 0
+    for (match in urlRegex.findAll(text)) {
+        append(text.substring(index, match.range.first))
+        // Trailing punctuation after a URL belongs to the sentence, not the link.
+        val url = match.value.trimEnd('.', ',', ';', ':', ')', ']', '。', ',', ')')
+        withLink(
+            LinkAnnotation.Url(
+                url,
+                TextLinkStyles(
+                    style =
+                        SpanStyle(
+                            color = linkColor,
+                            textDecoration = TextDecoration.Underline,
+                        ),
+                ),
+            ),
+        ) {
+            append(url)
+        }
+        append(match.value.substring(url.length))
+        index = match.range.last + 1
+    }
+    append(text.substring(index))
+}

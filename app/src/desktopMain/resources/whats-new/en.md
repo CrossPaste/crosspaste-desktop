@@ -1,3 +1,21 @@
+# [2.2.0] - 2026-08-20
+
+## ⌨️ Brand-new command-line tool
+CrossPaste now ships with a command-line tool, crosspaste, bundled in every desktop package (on macOS, the app offers a one-click install on first launch). Copy, paste, search, pick interactively, edit, and watch your clipboard history live — plus pair devices and run headless — all from the terminal and your scripts. See the CLI guide for every command and example:
+https://github.com/CrossPaste/crosspaste-desktop/blob/main/doc/en/CLI.md
+
+## 🪟 More reliable clipboard capture on Windows
+Rapid consecutive clipboard changes are now coalesced into a single capture, fixing an issue on Windows 11 where Snipping Tool screenshots taken with PrtScr failed to auto-save while CrossPaste was running. A single copy no longer produces duplicate image records, and sporadic write failures while the database was busy are fixed too.
+
+## 🖥️ The main window now stays on screen
+Fixed an issue where the main window could be taller than the screen, cutting off the bottom of the UI and putting it out of reach. The window height is now clamped to the usable screen area.
+
+## ✨ Pairing polish
+The pairing dialog now focuses the first input box when it opens; the countdown bar on older-style pairing cards matches the newer look; and cards close automatically when pairing is cancelled.
+
+## ⚙️ Sturdier background tasks
+A single corrupted task record no longer stalls background task processing, and task failures are now recorded more accurately.
+
 # [2.1.7] - 2026-08-09
 
 ## 🛡️ Hardened device sync

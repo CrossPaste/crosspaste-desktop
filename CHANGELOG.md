@@ -2,6 +2,101 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.2.0] - 2026-08-20
+# Highlights 🌟
+
+- ⌨️ **CrossPaste CLI**
+  CrossPaste now ships a native command-line tool, `crosspaste`, in
+  every desktop package (macOS offers a one-click terminal command
+  install on first launch). Pipe into it to copy
+  (`echo hello | crosspaste`), pull entries out with `paste`, search
+  history with the same filters as the search window, select entries
+  interactively with the full-screen fuzzy `pick`, edit an entry in
+  `$EDITOR` and update it in place, stream new pastes as NDJSON with
+  `watch`, and export or inline-preview images in capable terminals.
+  The CLI is a pure HTTP thin client over a local unix domain socket,
+  with script-friendly output formats, well-defined exit codes, and
+  cell-accurate width-aware rendering. See the
+  [CLI guide](https://github.com/CrossPaste/crosspaste-desktop/blob/main/doc/en/CLI.md)
+  for every command and example (#243 #3828 #4769 #4776 #4778 #4780
+  #4790 #4809 #4812 #4815 #4817 #4822 #4824 #4826 #4828).
+
+- 🤝 **Pair and manage devices from the terminal**
+  `crosspaste pair` completes device pairing entirely in the terminal,
+  and `devices`, `status`, and `config` cover day-to-day management.
+  The CLI probes app liveness and auto-starts the desktop app when
+  needed, and the app's headless mode is hardened for daemon use on
+  servers and other display-less environments (#4771 #4782 #4786
+  #4788).
+
+- 🪟 **More reliable Windows clipboard capture**
+  Rapid clipboard bursts are coalesced into one snapshot through a
+  single-consumer pipeline, fixing interference with Snipping Tool's
+  PrtScr auto-save on Windows 11; duplicate image records from a
+  single copy are deduplicated; and SQLite's busy timeout now takes
+  effect, fixing sporadic write failures under contention (#4737
+  #4791 #4793 #4796 #4798 #4799).
+
+- 🖥️ **The main window now stays on screen**
+  The main window height is clamped to the usable screen area, so the
+  bottom of the UI can no longer end up below the screen edge
+  (#4759 #4761).
+
+# Bug Fixes 🐛
+
+- :bug: Survive mordant's native-Windows raw-mode timeout and restore console modes on exit (#4826)
+- :bug: Harden TaskExecutor: tolerate corrupt extraInfo, rethrow cancellation, no-throw submit after shutdown (#4806)
+- :bug: Apply sqlite pragmas via connection properties so busy_timeout takes effect (#4799)
+- :bug: Discard duplicate local image records via short-window keep-first dedup (#4798)
+- :bug: Coalesce Windows clipboard bursts into one snapshot via a single-consumer pipeline (#4796)
+- :bug: Harden the headless mode startup and shutdown paths for daemon use (#4782)
+- :bug: Give blocked CLI config keys accurate per-key hints (#4774)
+- :bug: Reject CLI config keys requiring runtime workflows (#4773)
+- :bug: Reject lossy CLI config conversions (#4772)
+- :bug: Clamp the main window height to the usable screen area (#4761)
+
+# New Features ✨
+
+- :sparkles: Make edit update the paste in place instead of copying a new entry (#4828)
+- :sparkles: Add a watch command streaming new pastes over an NDJSON feed (#4824)
+- :sparkles: Add an interactive pick command with a full-screen fuzzy picker (#4822)
+- :sparkles: Merge the search command into history with search-window-parity filters (#4817)
+- :sparkles: Add an edit command that round-trips a paste through $EDITOR (#4815)
+- :sparkles: Treat piped stdin to bare crosspaste as implicit copy and add c/p/h command aliases (#4812)
+- :sparkles: Support targeting a dev app instance via CROSSPASTE_USER_DATA_DIR and a :cli:run task (#4810)
+- :sparkles: Fit CLI list previews to the terminal width with cell-accurate truncation (#4809)
+- :sparkles: Dump image bytes and render inline terminal previews from the CLI (#4790)
+- :sparkles: Launch the headless daemon from the CLI and document daemon deployment (#4788)
+- :sparkles: Pair devices from the terminal via the /cli pairing API (#4786)
+- :sparkles: Improve the CLI terminal experience with pipes, formats, colors, and exit codes (#4780)
+- :sparkles: Offer to install the crosspaste terminal command on macOS (#4778)
+- :sparkles: Probe app liveness and auto-start the desktop app from the CLI (#4771)
+- :sparkles: Serve a local /cli API over a unix domain socket and make the CLI a pure HTTP client (#4769)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Derive CLI version at build time and add a cli compile gate to CI (#4767)
+- :art: Focus the first token input box when the pairing dialog opens (#4758)
+- :art: Auto-close the v3 pairing card when the session is cancelled (#4756)
+- :art: Drain the v2 token countdown bar to match v3 pairing cards (#4754)
+
+# Build & CI 👷
+
+- :construction_worker: Split the CLI native build into a parallel path-gated CI job (#4803)
+- :construction_worker: Tier the test suite so PRs run fast tests and releases run integration suites (#4801)
+- :construction_worker: Suppress expected Kotlin/Native disabled-target and cinterop commonization warnings (#4784)
+- :construction_worker: Ship the CLI binary in all desktop packages (#4776)
+- :white_check_mark: Add an --advertise-address option to the e2e harness (#4752)
+
+# Dependencies ⬆️
+
+- :arrow_up: Bump io.github.vinceglb:filekit-dialogs from 0.14.2 to 0.15.0 (#4819)
+- :arrow_up: Bump ch.qos.logback:logback-classic from 1.6.1 to 1.6.3 (#4818)
+- :arrow_up: Bump org.bouncycastle:bcprov-jdk18on from 1.85 to 1.85.2 (#4765)
+- :arrow_up: Bump org.jetbrains.compose.hot-reload from 1.1.1 to 1.2.0 (#4764)
+- :arrow_up: Bump gradle-wrapper from 9.6.1 to 9.7.0 (#4763)
+- :arrow_up: Bump postcss to 8.5.26 to fix source map disclosure advisories (#4762)
+
 # [2.1.7] - 2026-08-09
 # Highlights 🌟
 
