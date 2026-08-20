@@ -12,6 +12,7 @@ import com.crosspaste.cli.platform.detectTerminalImageProtocol
 import com.crosspaste.cli.platform.fitImageCellBox
 import com.crosspaste.cli.platform.kittyDeleteImages
 import com.crosspaste.cli.platform.parsePngDimensions
+import com.crosspaste.cli.platform.restoreConsoleModes
 import com.crosspaste.cli.platform.writeItermInlineImage
 import com.crosspaste.cli.platform.writeKittyInlineImage
 import com.github.ajalt.mordant.input.RawModeScope
@@ -163,6 +164,11 @@ internal class PickTui(
                 fetchScope.cancel()
                 session.deleteDrawnKittyImage()
                 terminal.rawPrint(CURSOR_SHOW + ALT_SCREEN_EXIT)
+                // Undo Mordant's broken native-Windows raw-mode restore (it
+                // writes console mode 0 instead of the saved value); no-op on
+                // POSIX. Runs on every exit from the loop, so the Ctrl-E
+                // editor hop also gets a sane console back.
+                restoreConsoleModes()
             }
         }
 
@@ -224,7 +230,20 @@ internal class PickTui(
          * non-null return is the picker's final outcome.
          */
         suspend fun readAndHandleKey(raw: RawModeScope): PickOutcome? {
-            val event = raw.readKeyOrNull(KEY_POLL_INTERVAL) ?: return null
+            // Mordant 3.0.2's native-Windows readRawEvent throws a plain
+            // RuntimeException("Timeout reading from console input") when the
+            // wait expires instead of returning null like the other platforms
+            // (readKeyOrNull only swallows TimeoutException), so every idle
+            // poll tick would crash the picker. Treat any read failure as "no
+            // key this tick": a transient error costs one poll interval, and
+            // a genuinely dead console still exits via the TerminalGuard
+            // console-control handler.
+            val event =
+                try {
+                    raw.readKeyOrNull(KEY_POLL_INTERVAL)
+                } catch (_: RuntimeException) {
+                    null
+                } ?: return null
             val action = toPickAction(event, state.query.isEmpty()) ?: return null
             val selectedBefore = state.selectedItem?.id
             applyEffect(state.handle(action, pageSize()))?.let { return it }

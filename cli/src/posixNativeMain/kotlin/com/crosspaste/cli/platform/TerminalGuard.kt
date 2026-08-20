@@ -39,6 +39,13 @@ private var restoreBuffer: CPointer<ByteVar>? = null
 private var restoreLength = 0
 
 /**
+ * No-op on POSIX: Mordant's raw-mode exit restores the saved termios
+ * correctly here. Only the native-Windows implementation needs the explicit
+ * console-mode restore (see the mingw TerminalGuard).
+ */
+fun restoreConsoleModes() {}
+
+/**
  * Restores the terminal when the process is killed from OUTSIDE while a
  * full-screen TUI owns it: in raw mode Ctrl-C arrives as a key event, but an
  * external SIGINT/SIGTERM/SIGHUP would otherwise leave the shell stuck in

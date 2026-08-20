@@ -62,6 +62,20 @@ fun installTerminalGuard() {
     )
 }
 
+/**
+ * Puts the console modes saved by [installTerminalGuard] back. Called after
+ * leaving raw mode because Mordant 3.0.2's native-Windows setStdinConsoleMode
+ * ignores its argument and always writes 0, so its own raw-mode "restore"
+ * leaves the console with echo and line input disabled.
+ */
+@OptIn(ExperimentalForeignApi::class)
+fun restoreConsoleModes() {
+    if (modesSaved) {
+        SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), savedStdinMode)
+        SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), savedStdoutMode)
+    }
+}
+
 /** Cursor show + alternate-screen exit, written straight to the console. */
 @OptIn(ExperimentalForeignApi::class)
 private fun writeRestoreSequence() {
