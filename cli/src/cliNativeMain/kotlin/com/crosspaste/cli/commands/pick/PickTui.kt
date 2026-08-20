@@ -14,6 +14,7 @@ import com.crosspaste.cli.platform.kittyDeleteImages
 import com.crosspaste.cli.platform.parsePngDimensions
 import com.crosspaste.cli.platform.writeItermInlineImage
 import com.crosspaste.cli.platform.writeKittyInlineImage
+import com.github.ajalt.mordant.input.RawModeScope
 import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.coroutines.CoroutineScope
@@ -145,303 +146,14 @@ internal class PickTui(
             // otherwise WAIT for those children, delaying Enter/Esc/Ctrl-E by
             // up to a full request timeout
             val fetchScope = CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]))
-            val results = Channel<FetchMsg>(Channel.UNLIMITED)
-            var fetchSeq = 0
-            var latestWindowSeq = 0
-            var latestSearchSeq = 0
-            // One live job per kind: a rapid burst of filter keys must replace
-            // the previous query, not stack dozens of them on the server
-            var windowJob: kotlinx.coroutines.Job? = null
-            var searchJob: kotlinx.coroutines.Job? = null
-            var windowInFlight = false
-            var searchInFlight = false
-            // The last applied window payload: an unchanged quiet re-poll must
-            // not repaint (iTerm would retransmit the inline image every time)
-            var lastWindowItems: List<PasteSummaryDto>? = null
-            var lastWindowTotal = -1L
-
-            fun refreshSpinner() {
-                state.searching = windowInFlight || searchInFlight
-            }
-
-            // A result or failure only counts while its request key still
-            // describes what the user is looking at
-            fun isCurrent(key: RequestKey): Boolean {
-                val latest = if (key.isSearch) latestSearchSeq else latestWindowSeq
-                return key.seq == latest &&
-                    key.filters == state.filters &&
-                    (!key.isSearch || key.query == state.query)
-            }
-
-            fun launchList(
-                isSearch: Boolean,
-                quiet: Boolean = false,
-            ) {
-                val seq = ++fetchSeq
-                if (isSearch) latestSearchSeq = seq else latestWindowSeq = seq
-                val key =
-                    RequestKey(
-                        seq = seq,
-                        isSearch = isSearch,
-                        query = if (isSearch) state.query else null,
-                        filters = state.filters,
-                    )
-                // A quiet background refresh must not blink the spinner
-                if (!quiet) {
-                    if (isSearch) searchInFlight = true else windowInFlight = true
-                    refreshSpinner()
-                    if (!isSearch) {
-                        // The change-detection baseline only dedupes QUIET
-                        // re-polls; a user-initiated fetch (state was cleared
-                        // for new filters) must always apply, even when the
-                        // fresh result happens to equal the previous one
-                        lastWindowItems = null
-                        lastWindowTotal = -1L
-                    }
-                }
-                val job =
-                    fetchScope.launch(Dispatchers.Default) {
-                        val path =
-                            "/cli/history" +
-                                buildListQuery(
-                                    limit,
-                                    key.filters.types,
-                                    key.filters.tag,
-                                    key.filters.sortParam,
-                                    key.query,
-                                )
-                        try {
-                            val list = client.getBody(path, PasteListResponse.serializer())
-                            results.trySend(FetchMsg.ListResult(key, list))
-                        } catch (e: kotlinx.coroutines.CancellationException) {
-                            throw e
-                        } catch (e: Throwable) {
-                            results.trySend(FetchMsg.Failed(key, e))
-                        }
-                    }
-                if (isSearch) {
-                    searchJob?.cancel()
-                    searchJob = job
-                } else {
-                    windowJob?.cancel()
-                    windowJob = job
-                }
-            }
-
-            fun launchPreview(id: Long) {
-                fetchScope.launch(Dispatchers.Default) {
-                    runCatching { client.getBody("/cli/paste/$id", PasteDetailResponse.serializer()) }
-                        .onSuccess { results.trySend(FetchMsg.Preview(id, it)) }
-                    // Preview failures are cosmetic; the panel just keeps the summary
-                }
-            }
-
-            launchList(isSearch = false)
-            if (state.query.isNotBlank()) launchList(isSearch = true)
-
-            var previewDetail: PasteDetailResponse? = null
-            var previewRequestedId: Long? = null
-            var searchDeadline: TimeMark? = null
-            var previewDeadline: TimeMark? = null
-            var spinnerAt = timeSource.markNow()
-            var spinnerFrame = 0
-            var dirty = true
-            var imageDrawnId: Long? = null
-            var imageFailedId: Long? = null
-            var imageDeadline: TimeMark? = null
-            var lastPanelRow: Int? = null
-            var lastSize: Pair<Int, Int>? = null
-            var lastRefreshAt = timeSource.markNow()
-
-            fun imageCandidate(detail: PasteDetailResponse?): Pair<PasteSummaryDto, String>? {
-                if (imageProtocol == null || !state.previewOpen || state.helpOpen) return null
-                val item = state.selectedItem?.takeIf { it.typeName == "image" } ?: return null
-                // A failed draw (unsupported format, too big, read error) is
-                // not retried; the panel shows the path fallback instead
-                if (item.id == imageFailedId) return null
-                val path = detail?.takeIf { it.id == item.id }?.filePaths?.firstOrNull() ?: return null
-                return item to path
-            }
-
+            val session = Session(fetchScope)
             terminal.rawPrint(ALT_SCREEN_ENTER + CURSOR_HIDE)
             try {
                 terminal.enterRawMode().use { raw ->
+                    session.launchInitialFetches()
                     while (true) {
-                        // A resize repaints on the next tick even without input.
-                        // terminal.size alone serves mordant's CACHED value —
-                        // updateSize() re-detects. Kitty placements are anchored
-                        // to cells, so they are dropped and re-placed at the
-                        // panel's new position.
-                        val sizeNow = terminal.updateSize()
-                        if (lastSize != null && lastSize != (sizeNow.width to sizeNow.height)) {
-                            dirty = true
-                            if (imageDrawnId != null && imageProtocol == TerminalImageProtocol.KITTY) {
-                                kittyDeleteImages { terminal.rawPrint(it) }
-                            }
-                            imageDrawnId = null
-                        }
-                        lastSize = sizeNow.width to sizeNow.height
-
-                        while (true) {
-                            val msg = results.tryReceive().getOrNull() ?: break
-                            when (msg) {
-                                is FetchMsg.ListResult -> {
-                                    if (msg.key.seq == (if (msg.key.isSearch) latestSearchSeq else latestWindowSeq)) {
-                                        if (msg.key.isSearch) searchInFlight = false else windowInFlight = false
-                                    }
-                                    if (isCurrent(msg.key)) {
-                                        if (msg.key.isSearch) {
-                                            state.setSearchExtra(msg.list.items)
-                                            dirty = true
-                                        } else if (msg.list.items != lastWindowItems ||
-                                            msg.list.total != lastWindowTotal
-                                        ) {
-                                            lastWindowItems = msg.list.items
-                                            lastWindowTotal = msg.list.total
-                                            state.setWindow(msg.list.items, msg.list.total)
-                                            dirty = true
-                                        }
-                                    } else {
-                                        dirty = true
-                                    }
-                                }
-                                is FetchMsg.Preview -> {
-                                    if (msg.id == state.selectedItem?.id) {
-                                        previewDetail = msg.detail
-                                    }
-                                    dirty = true
-                                }
-                                is FetchMsg.Failed -> {
-                                    dirty = true
-                                    if (msg.key.seq == (if (msg.key.isSearch) latestSearchSeq else latestWindowSeq)) {
-                                        if (msg.key.isSearch) searchInFlight = false else windowInFlight = false
-                                    }
-                                    // Only a failure the user is still WAITING on
-                                    // surfaces (torn down via finally-restore, then
-                                    // runCli reports or retries AppNotRunning); a
-                                    // failure for an outdated query/filters is moot
-                                    if (isCurrent(msg.key)) throw msg.cause
-                                }
-                            }
-                            refreshSpinner()
-                        }
-
-                        // Live refresh: pastes copied or synced in while the
-                        // picker is open surface within a second. Skipped
-                        // while a window fetch is running or the user is
-                        // mid-keystroke (debounce pending).
-                        if (lastRefreshAt.elapsedNow() >= LIST_REFRESH_INTERVAL) {
-                            lastRefreshAt = timeSource.markNow()
-                            if (windowJob?.isActive != true && searchDeadline == null) {
-                                launchList(isSearch = false, quiet = true)
-                            }
-                        }
-
-                        searchDeadline?.let { deadline ->
-                            if (deadline.elapsedNow() >= SEARCH_DEBOUNCE) {
-                                searchDeadline = null
-                                if (state.query.isNotBlank()) {
-                                    launchList(isSearch = true)
-                                } else {
-                                    // No keyword: nothing to search for, and a
-                                    // still-flying old search must not survive
-                                    searchJob?.cancel()
-                                    searchInFlight = false
-                                    refreshSpinner()
-                                    state.setSearchExtra(emptyList())
-                                }
-                                dirty = true
-                            }
-                        }
-                        previewDeadline?.let { deadline ->
-                            if (deadline.elapsedNow() >= PREVIEW_DEBOUNCE) {
-                                previewDeadline = null
-                                state.selectedItem?.let { item ->
-                                    if (item.id != previewRequestedId) {
-                                        previewRequestedId = item.id
-                                        launchPreview(item.id)
-                                    }
-                                }
-                            }
-                        }
-                        if (state.searching && spinnerAt.elapsedNow() >= SPINNER_INTERVAL) {
-                            spinnerAt = timeSource.markNow()
-                            spinnerFrame++
-                            dirty = true
-                        }
-
-                        if (dirty) {
-                            dirty = false
-                            if (state.previewOpen && state.selectedItem?.id != previewRequestedId) {
-                                previewDeadline = previewDeadline ?: timeSource.markNow()
-                            }
-                            lastPanelRow =
-                                paint(spinnerFrame, previewDetail, imageFailedId, flashSelected = false)
-                                    .previewPanelRow
-                            // Repaints erase iTerm images (they live in cells);
-                            // kitty placements survive text redraws, so only a
-                            // new selection needs a retransmit there
-                            val candidate = imageCandidate(previewDetail)
-                            if (candidate != null && lastPanelRow != null) {
-                                val needsDraw =
-                                    imageDrawnId != candidate.first.id ||
-                                        imageProtocol == TerminalImageProtocol.ITERM
-                                if (needsDraw) imageDeadline = timeSource.markNow()
-                            } else {
-                                if (imageDrawnId != null && imageProtocol == TerminalImageProtocol.KITTY) {
-                                    kittyDeleteImages { terminal.rawPrint(it) }
-                                }
-                                imageDrawnId = null
-                                imageDeadline = null
-                            }
-                        }
-                        imageDeadline?.let { deadline ->
-                            if (deadline.elapsedNow() >= IMAGE_DRAW_IDLE) {
-                                imageDeadline = null
-                                val candidate = imageCandidate(previewDetail)
-                                val panelRow = lastPanelRow
-                                if (candidate != null && panelRow != null) {
-                                    if (drawInlineImage(candidate.second, panelRow)) {
-                                        imageDrawnId = candidate.first.id
-                                    } else {
-                                        // Repaint with the path fallback instead
-                                        // of leaving the reserved lines blank
-                                        imageFailedId = candidate.first.id
-                                        dirty = true
-                                    }
-                                }
-                            }
-                        }
-
-                        val event = raw.readKeyOrNull(KEY_POLL_INTERVAL) ?: continue
-                        val action = toPickAction(event, state.query.isEmpty()) ?: continue
-                        val selectedBefore = state.selectedItem?.id
-                        when (val effect = state.handle(action, pageSize())) {
-                            PickEffect.None -> Unit
-                            PickEffect.Redraw -> dirty = true
-                            PickEffect.RefetchDebounced -> {
-                                searchDeadline = timeSource.markNow()
-                                dirty = true
-                            }
-                            PickEffect.RefetchNow -> {
-                                state.clearForRefetch()
-                                launchList(isSearch = false)
-                                if (state.query.isNotBlank()) launchList(isSearch = true)
-                                dirty = true
-                            }
-                            is PickEffect.Accept -> {
-                                paint(spinnerFrame, previewDetail, imageFailedId, flashSelected = true)
-                                delay(COPY_FLASH_DURATION)
-                                return@coroutineScope PickOutcome.Copied(effect.item)
-                            }
-                            is PickEffect.Edit -> return@coroutineScope PickOutcome.Edit(effect.item)
-                            PickEffect.Cancel -> return@coroutineScope PickOutcome.Cancelled
-                        }
-                        if (state.selectedItem?.id != selectedBefore) {
-                            previewDetail = null
-                            previewRequestedId = null
-                            imageFailedId = null
-                        }
+                        session.tick()
+                        session.readAndHandleKey(raw)?.let { return@coroutineScope it }
                     }
                 }
                 // enterRawMode().use returns Unit; the loop above always
@@ -449,12 +161,357 @@ internal class PickTui(
                 error("pick loop ended without an outcome")
             } finally {
                 fetchScope.cancel()
-                if (imageDrawnId != null && imageProtocol == TerminalImageProtocol.KITTY) {
-                    kittyDeleteImages { terminal.rawPrint(it) }
-                }
+                session.deleteDrawnKittyImage()
                 terminal.rawPrint(CURSOR_SHOW + ALT_SCREEN_EXIT)
             }
         }
+
+    /**
+     * One picker run's mutable state plus the per-tick steps of the event
+     * loop, so each concern (resize, fetch results, timers, repaint, inline
+     * image, keys) stays its own small method.
+     */
+    private inner class Session(
+        private val fetchScope: CoroutineScope,
+    ) {
+        private val results = Channel<FetchMsg>(Channel.UNLIMITED)
+        private var fetchSeq = 0
+        private var latestWindowSeq = 0
+        private var latestSearchSeq = 0
+
+        // One live job per kind: a rapid burst of filter keys must replace
+        // the previous query, not stack dozens of them on the server
+        private var windowJob: Job? = null
+        private var searchJob: Job? = null
+        private var windowInFlight = false
+        private var searchInFlight = false
+
+        // The last applied window payload: an unchanged quiet re-poll must
+        // not repaint (iTerm would retransmit the inline image every time)
+        private var lastWindowItems: List<PasteSummaryDto>? = null
+        private var lastWindowTotal = -1L
+
+        private var previewDetail: PasteDetailResponse? = null
+        private var previewRequestedId: Long? = null
+        private var searchDeadline: TimeMark? = null
+        private var previewDeadline: TimeMark? = null
+        private var spinnerAt = timeSource.markNow()
+        private var spinnerFrame = 0
+        private var dirty = true
+        private var imageDrawnId: Long? = null
+        private var imageFailedId: Long? = null
+        private var imageDeadline: TimeMark? = null
+        private var lastPanelRow: Int? = null
+        private var lastSize: Pair<Int, Int>? = null
+        private var lastRefreshAt = timeSource.markNow()
+
+        fun launchInitialFetches() {
+            launchList(isSearch = false)
+            if (state.query.isNotBlank()) launchList(isSearch = true)
+        }
+
+        /** Everything one loop iteration does before waiting on a key. */
+        fun tick() {
+            checkResize()
+            drainResults()
+            tickTimers()
+            repaintIfDirty()
+            drawImageIfDue()
+        }
+
+        /**
+         * Waits up to [KEY_POLL_INTERVAL] for a key and applies it; a
+         * non-null return is the picker's final outcome.
+         */
+        suspend fun readAndHandleKey(raw: RawModeScope): PickOutcome? {
+            val event = raw.readKeyOrNull(KEY_POLL_INTERVAL) ?: return null
+            val action = toPickAction(event, state.query.isEmpty()) ?: return null
+            val selectedBefore = state.selectedItem?.id
+            applyEffect(state.handle(action, pageSize()))?.let { return it }
+            if (state.selectedItem?.id != selectedBefore) {
+                previewDetail = null
+                previewRequestedId = null
+                imageFailedId = null
+            }
+            return null
+        }
+
+        fun deleteDrawnKittyImage() {
+            if (imageDrawnId != null && imageProtocol == TerminalImageProtocol.KITTY) {
+                kittyDeleteImages { terminal.rawPrint(it) }
+            }
+        }
+
+        private fun refreshSpinner() {
+            state.searching = windowInFlight || searchInFlight
+        }
+
+        // A result or failure only counts while its request key still
+        // describes what the user is looking at
+        private fun isCurrent(key: RequestKey): Boolean {
+            val latest = if (key.isSearch) latestSearchSeq else latestWindowSeq
+            return key.seq == latest &&
+                key.filters == state.filters &&
+                (!key.isSearch || key.query == state.query)
+        }
+
+        private fun launchList(
+            isSearch: Boolean,
+            quiet: Boolean = false,
+        ) {
+            val seq = ++fetchSeq
+            if (isSearch) latestSearchSeq = seq else latestWindowSeq = seq
+            val key =
+                RequestKey(
+                    seq = seq,
+                    isSearch = isSearch,
+                    query = if (isSearch) state.query else null,
+                    filters = state.filters,
+                )
+            // A quiet background refresh must not blink the spinner
+            if (!quiet) {
+                if (isSearch) searchInFlight = true else windowInFlight = true
+                refreshSpinner()
+                if (!isSearch) {
+                    // The change-detection baseline only dedupes QUIET
+                    // re-polls; a user-initiated fetch (state was cleared
+                    // for new filters) must always apply, even when the
+                    // fresh result happens to equal the previous one
+                    lastWindowItems = null
+                    lastWindowTotal = -1L
+                }
+            }
+            val job =
+                fetchScope.launch(Dispatchers.Default) {
+                    val path =
+                        "/cli/history" +
+                            buildListQuery(
+                                limit,
+                                key.filters.types,
+                                key.filters.tag,
+                                key.filters.sortParam,
+                                key.query,
+                            )
+                    try {
+                        val list = client.getBody(path, PasteListResponse.serializer())
+                        results.trySend(FetchMsg.ListResult(key, list))
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        results.trySend(FetchMsg.Failed(key, e))
+                    }
+                }
+            if (isSearch) {
+                searchJob?.cancel()
+                searchJob = job
+            } else {
+                windowJob?.cancel()
+                windowJob = job
+            }
+        }
+
+        private fun launchPreview(id: Long) {
+            fetchScope.launch(Dispatchers.Default) {
+                runCatching { client.getBody("/cli/paste/$id", PasteDetailResponse.serializer()) }
+                    .onSuccess { results.trySend(FetchMsg.Preview(id, it)) }
+                // Preview failures are cosmetic; the panel just keeps the summary
+            }
+        }
+
+        private fun imageCandidate(detail: PasteDetailResponse?): Pair<PasteSummaryDto, String>? {
+            if (imageProtocol == null || !state.previewOpen || state.helpOpen) return null
+            val item = state.selectedItem?.takeIf { it.typeName == "image" } ?: return null
+            // A failed draw (unsupported format, too big, read error) is
+            // not retried; the panel shows the path fallback instead
+            if (item.id == imageFailedId) return null
+            val path = detail?.takeIf { it.id == item.id }?.filePaths?.firstOrNull() ?: return null
+            return item to path
+        }
+
+        // A resize repaints on the next tick even without input.
+        // terminal.size alone serves mordant's CACHED value — updateSize()
+        // re-detects. Kitty placements are anchored to cells, so they are
+        // dropped and re-placed at the panel's new position.
+        private fun checkResize() {
+            val sizeNow = terminal.updateSize()
+            if (lastSize != null && lastSize != (sizeNow.width to sizeNow.height)) {
+                dirty = true
+                deleteDrawnKittyImage()
+                imageDrawnId = null
+            }
+            lastSize = sizeNow.width to sizeNow.height
+        }
+
+        private fun drainResults() {
+            while (true) {
+                when (val msg = results.tryReceive().getOrNull() ?: break) {
+                    is FetchMsg.ListResult -> onListResult(msg)
+                    is FetchMsg.Preview -> onPreview(msg)
+                    is FetchMsg.Failed -> onFailed(msg)
+                }
+                refreshSpinner()
+            }
+        }
+
+        private fun clearInFlightIfLatest(key: RequestKey) {
+            if (key.seq == (if (key.isSearch) latestSearchSeq else latestWindowSeq)) {
+                if (key.isSearch) searchInFlight = false else windowInFlight = false
+            }
+        }
+
+        private fun onListResult(msg: FetchMsg.ListResult) {
+            clearInFlightIfLatest(msg.key)
+            if (!isCurrent(msg.key)) {
+                dirty = true
+                return
+            }
+            if (msg.key.isSearch) {
+                state.setSearchExtra(msg.list.items)
+                dirty = true
+            } else if (msg.list.items != lastWindowItems || msg.list.total != lastWindowTotal) {
+                lastWindowItems = msg.list.items
+                lastWindowTotal = msg.list.total
+                state.setWindow(msg.list.items, msg.list.total)
+                dirty = true
+            }
+        }
+
+        private fun onPreview(msg: FetchMsg.Preview) {
+            if (msg.id == state.selectedItem?.id) {
+                previewDetail = msg.detail
+            }
+            dirty = true
+        }
+
+        private fun onFailed(msg: FetchMsg.Failed) {
+            dirty = true
+            clearInFlightIfLatest(msg.key)
+            // Only a failure the user is still WAITING on surfaces (torn down
+            // via finally-restore, then runCli reports or retries
+            // AppNotRunning); a failure for an outdated query/filters is moot
+            if (isCurrent(msg.key)) throw msg.cause
+        }
+
+        private fun tickTimers() {
+            // Live refresh: pastes copied or synced in while the picker is
+            // open surface within a second. Skipped while a window fetch is
+            // running or the user is mid-keystroke (debounce pending).
+            if (lastRefreshAt.elapsedNow() >= LIST_REFRESH_INTERVAL) {
+                lastRefreshAt = timeSource.markNow()
+                if (windowJob?.isActive != true && searchDeadline == null) {
+                    launchList(isSearch = false, quiet = true)
+                }
+            }
+            searchDeadline?.let { deadline ->
+                if (deadline.elapsedNow() >= SEARCH_DEBOUNCE) {
+                    searchDeadline = null
+                    fireDebouncedSearch()
+                    dirty = true
+                }
+            }
+            previewDeadline?.let { deadline ->
+                if (deadline.elapsedNow() >= PREVIEW_DEBOUNCE) {
+                    previewDeadline = null
+                    requestPreviewForSelection()
+                }
+            }
+            if (state.searching && spinnerAt.elapsedNow() >= SPINNER_INTERVAL) {
+                spinnerAt = timeSource.markNow()
+                spinnerFrame++
+                dirty = true
+            }
+        }
+
+        private fun fireDebouncedSearch() {
+            if (state.query.isNotBlank()) {
+                launchList(isSearch = true)
+            } else {
+                // No keyword: nothing to search for, and a still-flying old
+                // search must not survive
+                searchJob?.cancel()
+                searchInFlight = false
+                refreshSpinner()
+                state.setSearchExtra(emptyList())
+            }
+        }
+
+        private fun requestPreviewForSelection() {
+            state.selectedItem?.let { item ->
+                if (item.id != previewRequestedId) {
+                    previewRequestedId = item.id
+                    launchPreview(item.id)
+                }
+            }
+        }
+
+        private fun repaintIfDirty() {
+            if (!dirty) return
+            dirty = false
+            if (state.previewOpen && state.selectedItem?.id != previewRequestedId) {
+                previewDeadline = previewDeadline ?: timeSource.markNow()
+            }
+            lastPanelRow =
+                paint(spinnerFrame, previewDetail, imageFailedId, flashSelected = false)
+                    .previewPanelRow
+            // Repaints erase iTerm images (they live in cells); kitty
+            // placements survive text redraws, so only a new selection
+            // needs a retransmit there
+            val candidate = imageCandidate(previewDetail)
+            if (candidate != null && lastPanelRow != null) {
+                val needsDraw =
+                    imageDrawnId != candidate.first.id ||
+                        imageProtocol == TerminalImageProtocol.ITERM
+                if (needsDraw) imageDeadline = timeSource.markNow()
+            } else {
+                deleteDrawnKittyImage()
+                imageDrawnId = null
+                imageDeadline = null
+            }
+        }
+
+        private fun drawImageIfDue() {
+            val deadline = imageDeadline ?: return
+            if (deadline.elapsedNow() < IMAGE_DRAW_IDLE) return
+            imageDeadline = null
+            val candidate = imageCandidate(previewDetail) ?: return
+            val panelRow = lastPanelRow ?: return
+            if (drawInlineImage(candidate.second, panelRow)) {
+                imageDrawnId = candidate.first.id
+            } else {
+                // Repaint with the path fallback instead of leaving the
+                // reserved lines blank
+                imageFailedId = candidate.first.id
+                dirty = true
+            }
+        }
+
+        private suspend fun applyEffect(effect: PickEffect): PickOutcome? =
+            when (effect) {
+                PickEffect.None -> null
+                PickEffect.Redraw -> {
+                    dirty = true
+                    null
+                }
+                PickEffect.RefetchDebounced -> {
+                    searchDeadline = timeSource.markNow()
+                    dirty = true
+                    null
+                }
+                PickEffect.RefetchNow -> {
+                    state.clearForRefetch()
+                    launchInitialFetches()
+                    dirty = true
+                    null
+                }
+                is PickEffect.Accept -> {
+                    paint(spinnerFrame, previewDetail, imageFailedId, flashSelected = true)
+                    delay(COPY_FLASH_DURATION)
+                    PickOutcome.Copied(effect.item)
+                }
+                is PickEffect.Edit -> PickOutcome.Edit(effect.item)
+                PickEffect.Cancel -> PickOutcome.Cancelled
+            }
+    }
 
     private fun pageSize(): Int =
         pickListHeight(

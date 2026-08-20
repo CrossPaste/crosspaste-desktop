@@ -320,13 +320,22 @@ internal fun scrollOffset(
 /** Below this width the time and size columns give way to the preview. */
 internal const val COMPACT_WIDTH_THRESHOLD = 60
 
-private fun renderRow(
+/** One row's column strings, computed once for both render treatments. */
+private data class RowCells(
+    val fav: String,
+    val id: String,
+    val type: String,
+    val origin: String,
+    val time: String,
+    val size: String,
+    val compact: Boolean,
+    val preview: String,
+)
+
+private fun rowCells(
     row: PickRow,
-    selected: Boolean,
-    flash: Boolean,
     width: Int,
-    style: StylePalette,
-): String {
+): RowCells {
     val item = row.item
     val compact = width < COMPACT_WIDTH_THRESHOLD
     val fav = if (item.tagged) "*" else " "
@@ -342,28 +351,59 @@ private fun renderRow(
             (if (compact) 0 else origin.length + 1 + time.length + 1 + size.length + 1)
     val previewBudget = (width - prefixCells).coerceAtLeast(1)
     val preview = truncateToCellWidth(row.displayText, previewBudget)
+    return RowCells(fav, id, type, origin, time, size, compact, preview)
+}
 
-    if (selected) {
-        // The selected row keeps a single strong treatment (accent bar +
-        // inverse); inner colors are dropped so the inversion stays readable
-        val columns = if (compact) "$fav $id $type" else "$fav $id $type $origin $time $size"
-        val rowStyle = if (flash) style.flashStyle else style.selectedStyle
-        return style.apply(style.accent, "▌") + style.apply(rowStyle, "$columns $preview")
+private fun renderRow(
+    row: PickRow,
+    selected: Boolean,
+    flash: Boolean,
+    width: Int,
+    style: StylePalette,
+): String {
+    val cells = rowCells(row, width)
+    return if (selected) {
+        selectedRowLine(cells, flash, style)
+    } else {
+        plainRowLine(row, cells, style)
     }
-    val highlighted = highlightMatches(preview, row.match.positions.toSet(), style)
+}
+
+private fun selectedRowLine(
+    cells: RowCells,
+    flash: Boolean,
+    style: StylePalette,
+): String {
+    // The selected row keeps a single strong treatment (accent bar +
+    // inverse); inner colors are dropped so the inversion stays readable
+    val columns =
+        with(cells) {
+            if (compact) "$fav $id $type" else "$fav $id $type $origin $time $size"
+        }
+    val rowStyle = if (flash) style.flashStyle else style.selectedStyle
+    return style.apply(style.accent, "▌") + style.apply(rowStyle, "$columns ${cells.preview}")
+}
+
+private fun plainRowLine(
+    row: PickRow,
+    cells: RowCells,
+    style: StylePalette,
+): String {
+    val item = row.item
+    val highlighted = highlightMatches(cells.preview, row.match.positions.toSet(), style)
     val typeColored =
         if (item.typeName == "color") {
-            colorSwatch(row.displayText, style) ?: style.apply(typeStyle(item.typeName), type)
+            colorSwatch(row.displayText, style) ?: style.apply(typeStyle(item.typeName), cells.type)
         } else {
-            style.apply(typeStyle(item.typeName), type)
+            style.apply(typeStyle(item.typeName), cells.type)
         }
     val tail =
-        if (compact) {
+        if (cells.compact) {
             ""
         } else {
-            origin + " " + style.apply(style.dim, time) + " " + style.apply(style.dim, size) + " "
+            cells.origin + " " + style.apply(style.dim, cells.time) + " " + style.apply(style.dim, cells.size) + " "
         }
-    return " $fav $id $typeColored $tail$highlighted"
+    return " ${cells.fav} ${cells.id} $typeColored $tail$highlighted"
 }
 
 /**
@@ -434,7 +474,7 @@ private fun previewBlock(
     // Always exactly PREVIEW_PANEL_LINES content lines: a variable-height
     // panel would make the layout jump per selection and desync the list
     // height from pickListHeight
-    (0 until PREVIEW_PANEL_LINES).forEach { i ->
+    for (i in 0 until PREVIEW_PANEL_LINES) {
         val line = data.previewLines.getOrNull(i) ?: ""
         // Detail content, source names, and file paths are pasteboard data
         val truncated = truncateToCellWidth(sanitizeTerminalText(line), (width - 2).coerceAtLeast(1))
