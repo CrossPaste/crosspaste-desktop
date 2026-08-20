@@ -107,6 +107,11 @@ data class CliCopyResponse(
 )
 
 @Serializable
+data class CliPasteUpdateRequest(
+    val content: String,
+)
+
+@Serializable
 data class CliConfigSetRequest(
     val key: String,
     val value: String,

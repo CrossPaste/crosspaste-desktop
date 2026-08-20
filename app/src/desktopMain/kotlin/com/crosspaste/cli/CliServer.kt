@@ -11,6 +11,7 @@ import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItemReader
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.ioDispatcher
@@ -62,6 +63,7 @@ class CliServer(
     private val pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
+    private val updatePasteItemHelper: UpdatePasteItemHelper,
     private val userDataPathProvider: UserDataPathProvider,
     private val socketBaseDir: Path = Paths.get(System.getProperty("java.io.tmpdir")),
 ) {
@@ -200,6 +202,7 @@ class CliServer(
                 pasteTagDao = pasteTagDao,
                 searchContentService = searchContentService,
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
+                updatePasteItemHelper = updatePasteItemHelper,
                 userDataPathProvider = userDataPathProvider,
             )
         }

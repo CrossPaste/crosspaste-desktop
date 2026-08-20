@@ -15,9 +15,15 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
+import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItemReader
+import com.crosspaste.paste.item.RtfPasteItem
+import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.item.UpdatePasteItemHelper
+import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
@@ -53,6 +59,7 @@ fun Routing.cliRouting(
     appInfo: AppInfo,
     cliPairingService: CliPairingService,
     configManager: DesktopConfigManager,
+    updatePasteItemHelper: UpdatePasteItemHelper,
     /**
      * Whether re-copying an existing paste to the system clipboard actually
      * works here. The headless daemon's PasteboardService reports success
@@ -164,6 +171,11 @@ fun Routing.cliRouting(
         delete("/paste/{id}") {
             val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@delete
             handlePasteDelete(call, id, pasteDao)
+        }
+
+        put("/paste/{id}") {
+            val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@put
+            handlePasteUpdate(call, id, configManager, pasteDao, updatePasteItemHelper)
         }
 
         route("/pair") {
@@ -552,6 +564,109 @@ private suspend fun handlePasteCopy(
         return
     }
     call.respond(CliMessageDto("Paste #$id copied."))
+}
+
+/**
+ * Updates a paste's content in place — the same semantics as editing inside
+ * the app: the row keeps its id, type, createTime, and tags; search content
+ * and size are refreshed via [UpdatePasteItemHelper]. Like in-app edits, the
+ * change is local only (not re-synced to devices that already hold the
+ * original) and the system clipboard is not rewritten.
+ */
+private suspend fun handlePasteUpdate(
+    call: ApplicationCall,
+    id: Long,
+    configManager: DesktopConfigManager,
+    pasteDao: PasteDao,
+    updatePasteItemHelper: UpdatePasteItemHelper,
+) {
+    val request = call.receive<CliPasteUpdateRequest>()
+    if (request.content.isEmpty()) {
+        call.respond(HttpStatusCode.BadRequest, CliMessageDto("Content must not be empty."))
+        return
+    }
+    val pasteData =
+        pasteDao.getNoDeletePasteData(id) ?: run {
+            call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste #$id not found."))
+            return
+        }
+    if (pasteData.pasteState != PasteState.LOADED) {
+        call.respond(
+            HttpStatusCode.Conflict,
+            CliMessageDto("Paste #$id is still loading; try again shortly."),
+        )
+        return
+    }
+    // updatePasteAppearItem bypasses the release plugin pipeline, so the
+    // non-file size cap must be enforced up front (mirrors POST /cli/copy)
+    val maxNonFilePasteSizeMb = configManager.getCurrentConfig().maxNonFilePasteSize
+    val contentSize =
+        request.content
+            .encodeToByteArray()
+            .size
+            .toLong()
+    if (contentSize > getFileUtils().bytesSize(maxNonFilePasteSizeMb)) {
+        call.respond(
+            HttpStatusCode.PayloadTooLarge,
+            CliMessageDto(
+                "Content ($contentSize bytes) exceeds the configured non-file paste " +
+                    "limit of $maxNonFilePasteSizeMb MB (maxNonFilePasteSize).",
+            ),
+        )
+        return
+    }
+    val result =
+        when (val item = pasteData.pasteAppearItem) {
+            is TextPasteItem -> updatePasteItemHelper.updateText(pasteData, request.content, item)
+            is HtmlPasteItem -> updatePasteItemHelper.updateHtml(pasteData, request.content, htmlPasteItem = item)
+            is RtfPasteItem -> updatePasteItemHelper.updateRtf(pasteData, request.content, item)
+            is UrlPasteItem -> updatePasteItemHelper.updateUrl(pasteData, request.content, item)
+            is ColorPasteItem -> {
+                val color =
+                    parseColorHex(request.content) ?: run {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            CliMessageDto(
+                                "Invalid color '${request.content.trim()}'; expected #RRGGBB or #RRGGBBAA.",
+                            ),
+                        )
+                        return
+                    }
+                updatePasteItemHelper.updateColor(pasteData, color, item)
+            }
+
+            else -> {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    CliMessageDto("Paste #$id (${pasteData.getTypeName()}) cannot be edited as text."),
+                )
+                return
+            }
+        }
+    result
+        .onSuccess {
+            call.respond(CliMessageDto("Paste #$id updated."))
+        }.onFailure { e ->
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                CliMessageDto(e.message ?: "Failed to update paste #$id."),
+            )
+        }
+}
+
+/**
+ * Parses the color notation the CLI shows (`PasteColor.toHexString`:
+ * #RRGGBBAA, alpha last) plus the plain #RRGGBB shorthand (alpha = FF).
+ */
+private fun parseColorHex(value: String): Long? {
+    val hex = value.trim().removePrefix("#")
+    if (hex.length != 6 && hex.length != 8) return null
+    if (!hex.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }) return null
+    val red = hex.substring(0, 2).toLong(16)
+    val green = hex.substring(2, 4).toLong(16)
+    val blue = hex.substring(4, 6).toLong(16)
+    val alpha = if (hex.length == 8) hex.substring(6, 8).toLong(16) else 0xFFL
+    return (alpha shl 24) or (red shl 16) or (green shl 8) or blue
 }
 
 private suspend fun handlePasteDelete(

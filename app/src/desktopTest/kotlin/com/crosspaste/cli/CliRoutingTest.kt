@@ -21,7 +21,10 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
+import com.crosspaste.paste.item.HtmlPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.TextPasteItem
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
@@ -98,6 +101,11 @@ class CliRoutingTest {
         val syncRuntimeInfoDao = mockk<SyncRuntimeInfoDao>()
         val pasteDataHelper = PasteDataHelper(DefaultPasteItemReader())
 
+        // Real helper over the mocked DAO: update tests capture the item the
+        // route hands to updatePasteAppearItem instead of re-mocking dispatch
+        val updatePasteItemHelper =
+            UpdatePasteItemHelper(pasteDao, DefaultPasteItemReader(), searchContentService)
+
         var currentConfig = DesktopAppConfig(language = "en")
 
         init {
@@ -119,6 +127,9 @@ class CliRoutingTest {
             coEvery { pasteDao.getActiveCount() } returns 0L
             every { pasteTagDao.getAllTagsBlock() } returns listOf()
             every { pasteTagDao.getPasteTagsBlock(any()) } returns listOf()
+            every { searchContentService.createSearchContent(any(), any<String>()) } returns ""
+            every { searchContentService.createSearchContent(any(), any<List<String>>()) } returns ""
+            coEvery { pasteDao.updatePasteAppearItem(any(), any(), any(), any()) } returns Result.success(Unit)
         }
     }
 
@@ -145,6 +156,7 @@ class CliRoutingTest {
                 appInfo = appInfo,
                 cliPairingService = fixture.cliPairingService,
                 configManager = fixture.configManager,
+                updatePasteItemHelper = fixture.updatePasteItemHelper,
                 supportsPasteCopy = supportsPasteCopy,
                 pasteboardService = fixture.pasteboardService,
                 pasteDao = fixture.pasteDao,
@@ -163,6 +175,7 @@ class CliRoutingTest {
         id: Long,
         text: String,
         createTime: Long = 123L,
+        pasteState: Int = PasteState.LOADED,
     ): PasteData {
         val item = createTextPasteItem(text = text)
         return PasteData(
@@ -175,7 +188,7 @@ class CliRoutingTest {
             size = item.size,
             hash = item.hash,
             createTime = createTime,
-            pasteState = PasteState.LOADED,
+            pasteState = pasteState,
         )
     }
 
@@ -848,6 +861,109 @@ class CliRoutingTest {
 
             assertEquals(HttpStatusCode.OK, cancel("session-1").status)
             assertEquals(HttpStatusCode.NotFound, cancel("gone").status)
+        }
+    }
+
+    @Test
+    fun `paste update rewrites the text item in place`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(42L) } returns textPasteData(42L, "old text")
+        val itemSlot = slot<PasteItem>()
+        coEvery {
+            fixture.pasteDao.updatePasteAppearItem(42L, capture(itemSlot), any(), any())
+        } returns Result.success(Unit)
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/paste/42") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"content":"new text"}""")
+                }
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertContains(response.bodyAsText(), "Paste #42 updated.")
+            val updated = itemSlot.captured
+            assertTrue(updated is TextPasteItem)
+            assertEquals("new text", updated.text)
+        }
+    }
+
+    @Test
+    fun `paste update keeps html pastes html`() {
+        val fixture = Fixture()
+        val item = createHtmlPasteItem(html = "<b>old</b>")
+        val pasteData =
+            PasteData(
+                id = 7L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.HTML_TYPE.type,
+                source = "Test",
+                size = item.size,
+                hash = item.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returns pasteData
+        val itemSlot = slot<PasteItem>()
+        coEvery {
+            fixture.pasteDao.updatePasteAppearItem(7L, capture(itemSlot), any(), any())
+        } returns Result.success(Unit)
+
+        withCliRouting(fixture) {
+            val response =
+                client.put("/cli/paste/7") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"content":"<i>new</i>"}""")
+                }
+            assertEquals(HttpStatusCode.OK, response.status)
+            val updated = itemSlot.captured
+            assertTrue(updated is HtmlPasteItem)
+            assertEquals("<i>new</i>", updated.html)
+        }
+    }
+
+    @Test
+    fun `paste update validates content, id and type`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(404L) } returns null
+        val imagesItem =
+            createImagesPasteItem(
+                basePath = "/tmp/images-store",
+                relativePathList = listOf("shot.png"),
+                fileInfoTreeMap = mapOf("shot.png" to SingleFileInfoTree(size = 10L, hash = "img")),
+            )
+        coEvery { fixture.pasteDao.getNoDeletePasteData(9L) } returns
+            PasteData(
+                id = 9L,
+                appInstanceId = appInfo.appInstanceId,
+                pasteAppearItem = imagesItem,
+                pasteCollection = PasteCollection(listOf()),
+                pasteType = PasteType.IMAGE_TYPE.type,
+                source = "Test",
+                size = imagesItem.size,
+                hash = imagesItem.hash,
+                createTime = 123L,
+                pasteState = PasteState.LOADED,
+            )
+        coEvery { fixture.pasteDao.getNoDeletePasteData(11L) } returns
+            textPasteData(11L, "loading", pasteState = PasteState.LOADING)
+
+        withCliRouting(fixture) {
+            suspend fun update(
+                id: Long,
+                content: String,
+            ) = client.put("/cli/paste/$id") {
+                contentType(ContentType.Application.Json)
+                setBody("""{"content":"$content"}""")
+            }
+
+            assertEquals(HttpStatusCode.BadRequest, update(42L, "").status)
+            assertEquals(HttpStatusCode.NotFound, update(404L, "x").status)
+            val notEditable = update(9L, "x")
+            assertEquals(HttpStatusCode.BadRequest, notEditable.status)
+            assertContains(notEditable.bodyAsText(), "cannot be edited as text")
+            assertEquals(HttpStatusCode.Conflict, update(11L, "x").status)
         }
     }
 

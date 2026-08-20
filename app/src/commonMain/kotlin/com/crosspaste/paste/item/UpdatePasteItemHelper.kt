@@ -67,6 +67,51 @@ class UpdatePasteItemHelper(
             }
     }
 
+    suspend fun updateRtf(
+        pasteData: PasteData,
+        newRtf: String,
+        rtfPasteItem: RtfPasteItem,
+    ): Result<RtfPasteItem> {
+        val newPasteItem = rtfPasteItem.copy(newRtf)
+        return pasteDao
+            .updatePasteAppearItem(
+                id = pasteData.id,
+                pasteItem = newPasteItem,
+                pasteSearchContent =
+                    searchContentService.createSearchContent(
+                        pasteData.source,
+                        pasteItemReader.getSearchContent(newPasteItem),
+                    ),
+                addedSize = newPasteItem.size - rtfPasteItem.size,
+            ).map {
+                newPasteItem
+            }
+    }
+
+    suspend fun updateUrl(
+        pasteData: PasteData,
+        newUrl: String,
+        urlPasteItem: UrlPasteItem,
+    ): Result<PasteItem> {
+        val newPasteItem = urlPasteItem.copy(newUrl)
+        return pasteDao
+            .updatePasteAppearItem(
+                id = pasteData.id,
+                pasteItem = newPasteItem,
+                pasteSearchContent =
+                    searchContentService.createSearchContent(
+                        pasteData.source,
+                        listOfNotNull(
+                            (newPasteItem as? UrlPasteItem)?.getTitle(),
+                            pasteItemReader.getSearchContent(newPasteItem),
+                        ),
+                    ),
+                addedSize = newPasteItem.size - urlPasteItem.size,
+            ).map {
+                newPasteItem
+            }
+    }
+
     suspend fun updateText(
         pasteData: PasteData,
         newText: String,

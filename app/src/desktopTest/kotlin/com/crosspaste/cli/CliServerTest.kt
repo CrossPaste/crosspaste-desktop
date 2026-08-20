@@ -12,6 +12,7 @@ import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.DefaultPasteItemReader
+import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import io.mockk.coEvery
@@ -84,6 +85,7 @@ class CliServerTest {
                 pasteTagDao = mockk<PasteTagDao>(),
                 searchContentService = mockk<SearchContentService>(),
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
+                updatePasteItemHelper = mockk<UpdatePasteItemHelper>(),
                 userDataPathProvider = userDataPathProvider,
                 socketBaseDir = socketBaseDir,
             )
