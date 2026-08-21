@@ -1,5 +1,6 @@
 package com.crosspaste.cli
 
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
@@ -8,6 +9,7 @@ import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PairingCredentialRefreshResult
 import com.crosspaste.sync.PairingCredentialType
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.SasCode
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.V3Pin
@@ -51,7 +53,9 @@ import kotlin.time.Duration.Companion.seconds
  * Pairing codes are never logged.
  */
 class CliPairingService(
+    private val appTokenApi: AppTokenApi,
     private val nearbyDeviceManager: NearbyDeviceManager,
+    private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val pairingCapabilityFlag: PairingCapabilityFlag,
     private val pairingV3UiController: PairingV3UiController,
     private val pasteBonjourService: PasteBonjourService,
@@ -137,6 +141,37 @@ class CliPairingService(
         }
         return nearbyDeviceManager.nearbySyncInfos.value.map { it.toNearbyDto() }
     }
+
+    /**
+     * Acceptor-side snapshot of the pending pairing codes. Each code comes
+     * from the requester's OWN stored key exchange ([PendingKeyExchangeStore]),
+     * never from the single-slot display token: under concurrent pairings the
+     * global token holds only the latest exchange's SAS, and pairing it with
+     * the full verifier list would caption one requester's name with another
+     * requester's code. Verifiers without a live exchange (legacy QR peers,
+     * expired exchanges) are excluded — their code is not a per-peer SAS.
+     * Read-only, and the codes are never logged.
+     */
+    fun pairingToken(): CliPairTokenDto =
+        CliPairTokenDto(
+            requests =
+                appTokenApi.pendingVerifiers.value.mapNotNull { appInstanceId ->
+                    pendingKeyExchangeStore.get(appInstanceId)?.let { exchange ->
+                        CliPairRequestDto(
+                            appInstanceId = appInstanceId,
+                            deviceName = resolveDeviceName(appInstanceId),
+                            token = exchange.sas.toString().padStart(6, '0'),
+                        )
+                    }
+                },
+        )
+
+    private fun resolveDeviceName(appInstanceId: String): String? =
+        nearbyDeviceManager.nearbySyncInfos.value
+            .firstOrNull { it.appInfo.appInstanceId == appInstanceId }
+            ?.endpointInfo
+            ?.deviceName
+            ?: findRuntimeInfo(appInstanceId)?.getDeviceDisplayName()
 
     suspend fun initiate(appInstanceId: String): InitiateOutcome =
         initiateMutex.withLock(appInstanceId) { initiateLocked(appInstanceId) }

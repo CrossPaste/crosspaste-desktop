@@ -19,8 +19,9 @@ import okio.FileSystem
  * Version of the local /cli API this binary speaks. Mirrors CLI_API_VERSION
  * on the app side; a mismatch produces a warning, not a failure.
  * 2: GET /cli/paste/{id}/image raw-RGBA transcode endpoint (sixel support).
+ * 3: GET /cli/pair/token acceptor-side pairing code endpoint.
  */
-const val CLI_API_VERSION = 2
+const val CLI_API_VERSION = 3
 
 /** Response headers carrying the exact dimensions of a transcoded image. */
 internal const val CLI_IMAGE_WIDTH_HEADER = "X-Image-Width"

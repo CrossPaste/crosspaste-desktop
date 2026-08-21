@@ -11,6 +11,7 @@ import com.crosspaste.cli.commands.PasteCommand
 import com.crosspaste.cli.commands.PickCommand
 import com.crosspaste.cli.commands.StatusCommand
 import com.crosspaste.cli.commands.TagsCommand
+import com.crosspaste.cli.commands.TokenCommand
 import com.crosspaste.cli.commands.VersionCommand
 import com.crosspaste.cli.commands.WatchCommand
 import com.crosspaste.cli.commands.copyToCrossPaste
@@ -98,6 +99,7 @@ class CrossPasteCommand(
             DeleteCommand(),
             DevicesCommand(),
             PairCommand(),
+            TokenCommand(),
             ConfigCommand(),
             TagsCommand(),
             VersionCommand(),

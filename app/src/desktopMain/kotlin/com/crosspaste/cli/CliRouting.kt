@@ -200,6 +200,10 @@ fun Routing.cliRouting(
                 handlePairNearby(call, cliPairingService)
             }
 
+            get("/token") {
+                call.respond(cliPairingService.pairingToken())
+            }
+
             post("/initiate") {
                 handlePairInitiate(call, cliPairingService)
             }

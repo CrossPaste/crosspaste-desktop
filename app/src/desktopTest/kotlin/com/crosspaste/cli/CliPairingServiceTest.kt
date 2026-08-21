@@ -1,6 +1,7 @@
 package com.crosspaste.cli
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
@@ -12,6 +13,8 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PairingCredentialRefreshResult
 import com.crosspaste.sync.PairingCredentialType
+import com.crosspaste.sync.PendingKeyExchange
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.SasCode
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.V3Pin
@@ -19,6 +22,7 @@ import com.crosspaste.ui.devices.PairingV3Recovery
 import com.crosspaste.ui.devices.PairingV3UiController
 import com.crosspaste.ui.devices.PairingV3UiError
 import com.crosspaste.ui.devices.PairingV3UiResult
+import com.crosspaste.utils.DateUtils
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -57,7 +61,13 @@ class CliPairingServiceTest {
         val nearbySyncInfos = MutableStateFlow<List<SyncInfo>>(listOf())
         val searching = MutableStateFlow(false)
         val runtimeInfos = MutableStateFlow<List<SyncRuntimeInfo>>(listOf())
+        val pendingVerifiersFlow = MutableStateFlow<Set<String>>(setOf())
 
+        val appTokenApi =
+            mockk<AppTokenApi> {
+                every { pendingVerifiers } returns pendingVerifiersFlow
+            }
+        val pendingKeyExchangeStore = PendingKeyExchangeStore()
         val nearbyDeviceManager =
             mockk<NearbyDeviceManager> {
                 every { nearbySyncInfos } returns this@Fixture.nearbySyncInfos
@@ -79,7 +89,9 @@ class CliPairingServiceTest {
 
         val service =
             CliPairingService(
+                appTokenApi = appTokenApi,
                 nearbyDeviceManager = nearbyDeviceManager,
+                pendingKeyExchangeStore = pendingKeyExchangeStore,
                 pairingCapabilityFlag = PairingCapabilityFlag(localPairingVersion),
                 pairingV3UiController = pairingV3UiController,
                 pasteBonjourService = pasteBonjourService,
@@ -122,6 +134,86 @@ class CliPairingServiceTest {
             connectHostAddress = connectHostAddress,
             connectState = connectState,
         )
+
+    // region token
+
+    private fun Fixture.storeExchange(
+        appInstanceId: String,
+        sas: Int,
+        ageMillis: Long = 0L,
+    ) {
+        pendingKeyExchangeStore.put(
+            appInstanceId,
+            PendingKeyExchange(
+                signPublicKey = byteArrayOf(1),
+                cryptPublicKey = byteArrayOf(2),
+                sas = sas,
+                timestamp = DateUtils.nowEpochMilliseconds() - ageMillis,
+                generation = 1L,
+            ),
+        )
+    }
+
+    @Test
+    fun `pairingToken is empty when no exchange is pending`() {
+        val fixture = Fixture()
+
+        assertTrue(
+            fixture.service
+                .pairingToken()
+                .requests
+                .isEmpty(),
+        )
+    }
+
+    @Test
+    fun `pairingToken binds each requester to its own exchange code`() {
+        val fixture = Fixture()
+        fixture.pendingVerifiersFlow.value = setOf(PEER_ID, "peer-2")
+        fixture.storeExchange(PEER_ID, sas = 42420)
+        fixture.storeExchange("peer-2", sas = 987654)
+        fixture.nearbySyncInfos.value = listOf(syncInfo())
+
+        val requests =
+            fixture.service
+                .pairingToken()
+                .requests
+                .associateBy { it.appInstanceId }
+
+        assertEquals(setOf(PEER_ID, "peer-2"), requests.keys)
+        assertEquals("042420", requests.getValue(PEER_ID).token)
+        assertEquals(PEER_NAME, requests.getValue(PEER_ID).deviceName)
+        assertEquals("987654", requests.getValue("peer-2").token)
+        assertNull(requests.getValue("peer-2").deviceName)
+    }
+
+    @Test
+    fun `pairingToken excludes verifiers without a live exchange`() {
+        val fixture = Fixture()
+        // A legacy QR verifier holds no exchange; an abandoned one is expired
+        fixture.pendingVerifiersFlow.value = setOf("qr-peer", "expired-peer", PEER_ID)
+        fixture.storeExchange("expired-peer", sas = 111111, ageMillis = 120_000L)
+        fixture.storeExchange(PEER_ID, sas = 222222)
+
+        val requests = fixture.service.pairingToken().requests
+
+        assertEquals(PEER_ID, requests.single().appInstanceId)
+        assertEquals("222222", requests.single().token)
+    }
+
+    @Test
+    fun `pairingToken falls back to the runtime info display name`() {
+        val fixture = Fixture()
+        fixture.pendingVerifiersFlow.value = setOf(PEER_ID)
+        fixture.storeExchange(PEER_ID, sas = 123456)
+        fixture.runtimeInfos.value = listOf(runtimeInfo(SyncState.UNVERIFIED))
+
+        val dto = fixture.service.pairingToken()
+
+        assertEquals(PEER_NAME, dto.requests.single().deviceName)
+    }
+
+    // endregion
 
     // region nearby
 
