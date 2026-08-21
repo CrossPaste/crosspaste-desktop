@@ -936,6 +936,25 @@ class CliRoutingTest {
     }
 
     @Test
+    fun `pair token returns the service snapshot`() {
+        val fixture = Fixture()
+        every { fixture.cliPairingService.pairingToken() } returns
+            CliPairTokenDto(
+                active = true,
+                token = "123456",
+                requesters = listOf(CliPairRequesterDto("peer-1", "Laptop")),
+            )
+
+        withCliRouting(fixture) {
+            val response = client.get("/cli/pair/token")
+            assertEquals(HttpStatusCode.OK, response.status)
+            val dto = Json.decodeFromString(CliPairTokenDto.serializer(), response.bodyAsText())
+            assertEquals("123456", dto.token)
+            assertEquals("peer-1", dto.requesters.single().appInstanceId)
+        }
+    }
+
+    @Test
     fun `pair nearby forwards the refresh flag and returns the device list`() {
         val fixture = Fixture()
         val device =

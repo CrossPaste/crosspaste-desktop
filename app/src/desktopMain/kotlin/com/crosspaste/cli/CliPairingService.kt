@@ -1,5 +1,6 @@
 package com.crosspaste.cli
 
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
@@ -51,6 +52,7 @@ import kotlin.time.Duration.Companion.seconds
  * Pairing codes are never logged.
  */
 class CliPairingService(
+    private val appTokenApi: AppTokenApi,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val pairingCapabilityFlag: PairingCapabilityFlag,
     private val pairingV3UiController: PairingV3UiController,
@@ -137,6 +139,35 @@ class CliPairingService(
         }
         return nearbyDeviceManager.nearbySyncInfos.value.map { it.toNearbyDto() }
     }
+
+    /**
+     * Acceptor-side snapshot of the pairing code display — the same state the
+     * desktop token overlay observes. `active` follows [AppTokenApi.showToken]
+     * exactly, so the code is exposed only while a peer's exchange (or an
+     * explicit show-token request) has it on display; the value is meaningless
+     * otherwise. Read-only, and the code itself is never logged.
+     */
+    fun pairingToken(): CliPairTokenDto {
+        val active = appTokenApi.showToken.value
+        return CliPairTokenDto(
+            active = active,
+            token = if (active) appTokenApi.token.value.concatToString() else null,
+            requesters =
+                appTokenApi.pendingVerifiers.value.map { appInstanceId ->
+                    CliPairRequesterDto(
+                        appInstanceId = appInstanceId,
+                        deviceName = resolveDeviceName(appInstanceId),
+                    )
+                },
+        )
+    }
+
+    private fun resolveDeviceName(appInstanceId: String): String? =
+        nearbyDeviceManager.nearbySyncInfos.value
+            .firstOrNull { it.appInfo.appInstanceId == appInstanceId }
+            ?.endpointInfo
+            ?.deviceName
+            ?: findRuntimeInfo(appInstanceId)?.getDeviceDisplayName()
 
     suspend fun initiate(appInstanceId: String): InitiateOutcome =
         initiateMutex.withLock(appInstanceId) { initiateLocked(appInstanceId) }

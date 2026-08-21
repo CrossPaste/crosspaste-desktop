@@ -255,6 +255,28 @@ class CliDtoContractTest {
                 ),
             ),
         )
+        val tokenEncoded =
+            json.encodeToString(
+                CliPairTokenDto.serializer(),
+                CliPairTokenDto(
+                    active = true,
+                    token = "123456",
+                    requesters =
+                        listOf(
+                            CliPairRequesterDto(appInstanceId = "instance", deviceName = "device"),
+                        ),
+                ),
+            )
+        assertEquals(setOf("active", "token", "requesters"), fieldsOf(tokenEncoded))
+        assertEquals(
+            setOf("appInstanceId", "deviceName"),
+            fieldsOf(
+                json.encodeToString(
+                    CliPairRequesterDto.serializer(),
+                    CliPairRequesterDto(appInstanceId = "instance", deviceName = null),
+                ),
+            ),
+        )
     }
 
     @Test

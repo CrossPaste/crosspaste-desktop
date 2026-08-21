@@ -1,6 +1,7 @@
 package com.crosspaste.cli
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppTokenApi
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
@@ -57,7 +58,16 @@ class CliPairingServiceTest {
         val nearbySyncInfos = MutableStateFlow<List<SyncInfo>>(listOf())
         val searching = MutableStateFlow(false)
         val runtimeInfos = MutableStateFlow<List<SyncRuntimeInfo>>(listOf())
+        val showTokenFlow = MutableStateFlow(false)
+        val tokenFlow = MutableStateFlow(charArrayOf('0', '0', '0', '0', '0', '0'))
+        val pendingVerifiersFlow = MutableStateFlow<Set<String>>(setOf())
 
+        val appTokenApi =
+            mockk<AppTokenApi> {
+                every { showToken } returns showTokenFlow
+                every { token } returns tokenFlow
+                every { pendingVerifiers } returns pendingVerifiersFlow
+            }
         val nearbyDeviceManager =
             mockk<NearbyDeviceManager> {
                 every { nearbySyncInfos } returns this@Fixture.nearbySyncInfos
@@ -79,6 +89,7 @@ class CliPairingServiceTest {
 
         val service =
             CliPairingService(
+                appTokenApi = appTokenApi,
                 nearbyDeviceManager = nearbyDeviceManager,
                 pairingCapabilityFlag = PairingCapabilityFlag(localPairingVersion),
                 pairingV3UiController = pairingV3UiController,
@@ -122,6 +133,52 @@ class CliPairingServiceTest {
             connectHostAddress = connectHostAddress,
             connectState = connectState,
         )
+
+    // region token
+
+    @Test
+    fun `pairingToken hides the code when no pairing display is active`() {
+        val fixture = Fixture()
+        fixture.tokenFlow.value = charArrayOf('1', '2', '3', '4', '5', '6')
+
+        val dto = fixture.service.pairingToken()
+
+        assertFalse(dto.active)
+        assertNull(dto.token)
+        assertTrue(dto.requesters.isEmpty())
+    }
+
+    @Test
+    fun `pairingToken exposes the code and resolves requester names while active`() {
+        val fixture = Fixture()
+        fixture.showTokenFlow.value = true
+        fixture.tokenFlow.value = charArrayOf('0', '4', '2', '4', '2', '0')
+        fixture.pendingVerifiersFlow.value = setOf(PEER_ID, "peer-unknown")
+        fixture.nearbySyncInfos.value = listOf(syncInfo())
+
+        val dto = fixture.service.pairingToken()
+
+        assertTrue(dto.active)
+        assertEquals("042420", dto.token)
+        val requesters = dto.requesters.associateBy { it.appInstanceId }
+        assertEquals(setOf(PEER_ID, "peer-unknown"), requesters.keys)
+        assertEquals(PEER_NAME, requesters.getValue(PEER_ID).deviceName)
+        assertNull(requesters.getValue("peer-unknown").deviceName)
+    }
+
+    @Test
+    fun `pairingToken falls back to the runtime info display name`() {
+        val fixture = Fixture()
+        fixture.showTokenFlow.value = true
+        fixture.pendingVerifiersFlow.value = setOf(PEER_ID)
+        fixture.runtimeInfos.value = listOf(runtimeInfo(SyncState.UNVERIFIED))
+
+        val dto = fixture.service.pairingToken()
+
+        assertEquals(PEER_NAME, dto.requesters.single().deviceName)
+    }
+
+    // endregion
 
     // region nearby
 

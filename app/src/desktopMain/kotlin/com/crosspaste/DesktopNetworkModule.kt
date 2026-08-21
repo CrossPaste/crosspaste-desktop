@@ -93,6 +93,7 @@ fun desktopNetworkModule(
         single<CliEndpointFile> { CliEndpointFile(get(), devCliEndpointPointerPath(get())) }
         single<CliPairingService> {
             CliPairingService(
+                appTokenApi = get(),
                 nearbyDeviceManager = get(),
                 pairingCapabilityFlag = get(),
                 pairingV3UiController = get(),

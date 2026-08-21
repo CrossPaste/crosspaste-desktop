@@ -6,8 +6,9 @@ import kotlinx.serialization.Serializable
  * Version of the local /cli HTTP API served over the Unix domain socket.
  * Bump when the wire contract changes in a way the CLI must know about.
  * 2: GET /cli/paste/{id}/image raw-RGBA transcode endpoint (sixel support).
+ * 3: GET /cli/pair/token acceptor-side pairing code endpoint.
  */
-const val CLI_API_VERSION = 2
+const val CLI_API_VERSION = 3
 
 /** Response headers carrying the exact dimensions of a transcoded image. */
 const val CLI_IMAGE_WIDTH_HEADER = "X-Image-Width"
@@ -182,4 +183,21 @@ data class CliPairSubmitResultDto(
 @Serializable
 data class CliPairCancelRequest(
     val sessionId: String,
+)
+
+@Serializable
+data class CliPairRequesterDto(
+    val appInstanceId: String,
+    /** Best-effort display name; null when the peer is not known locally. */
+    val deviceName: String?,
+)
+
+@Serializable
+data class CliPairTokenDto(
+    /** Mirrors the state that opens the desktop token overlay. */
+    val active: Boolean,
+    /** The 6-digit pairing code; non-null only while [active]. */
+    val token: String?,
+    /** Peers currently waiting on this device's code. */
+    val requesters: List<CliPairRequesterDto>,
 )
