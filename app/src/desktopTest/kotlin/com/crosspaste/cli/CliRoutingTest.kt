@@ -52,7 +52,9 @@ import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.slot
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withTimeoutOrNull
@@ -341,6 +343,29 @@ class CliRoutingTest {
             // Without the 1000 px clamp this would come back at 2000x100
             assertEquals("1000", response.headers[CLI_IMAGE_WIDTH_HEADER])
             assertEquals("50", response.headers[CLI_IMAGE_HEIGHT_HEADER])
+        }
+    }
+
+    @Test
+    fun `image endpoint maps native graphics load failure to actionable 503`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(11L) } returns
+            imagePasteDataOnDisk(11L, pngBytes(4, 2, 0xFFFF0000.toInt()))
+        // A missing libGL surfaces as an Error (skiko class-init failure),
+        // which the transcoder's Exception handling cannot catch (#4854)
+        mockkObject(CliImageTranscoder)
+        try {
+            every { CliImageTranscoder.transcode(any(), any(), any()) } throws
+                NoClassDefFoundError("Could not initialize class org.jetbrains.skia.Image")
+            withCliRouting(fixture) {
+                val response = client.get("/cli/paste/11/image?maxWidth=100&maxHeight=100")
+                assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
+                val message = response.bodyAsText()
+                assertContains(message, "libgl1")
+                assertContains(message, "restart")
+            }
+        } finally {
+            unmockkObject(CliImageTranscoder)
         }
     }
 

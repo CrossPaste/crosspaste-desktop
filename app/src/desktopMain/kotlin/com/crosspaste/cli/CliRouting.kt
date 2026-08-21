@@ -409,11 +409,28 @@ private suspend fun handlePasteImage(
                 return
             }
     val raw =
-        withContext(ioDispatcher) {
-            cliImageTranscodeSemaphore.withPermit {
-                readImageBytesBounded(path.toFile(), CLI_IMAGE_MAX_SOURCE_BYTES)
-                    ?.let { CliImageTranscoder.transcode(it, maxWidth, maxHeight) }
+        try {
+            withContext(ioDispatcher) {
+                cliImageTranscodeSemaphore.withPermit {
+                    readImageBytesBounded(path.toFile(), CLI_IMAGE_MAX_SOURCE_BYTES)
+                        ?.let { CliImageTranscoder.transcode(it, maxWidth, maxHeight) }
+                }
             }
+        } catch (e: LinkageError) {
+            // Skia's native library failed to load — on headless Linux servers
+            // this means libGL.so.1/libEGL.so.1 are missing (#4854). It surfaces
+            // as ExceptionInInitializerError on first use and NoClassDefFoundError
+            // on every later call, and stays broken for the process lifetime, so
+            // the remedy must include a restart.
+            call.respond(
+                HttpStatusCode.ServiceUnavailable,
+                CliMessageDto(
+                    "Image decoding is unavailable: CrossPaste could not load its " +
+                        "native graphics library (${e.message ?: e::class.simpleName}). " +
+                        "On Debian/Ubuntu install libgl1 and libegl1, then restart CrossPaste.",
+                ),
+            )
+            return
         }
     if (raw == null) {
         call.respond(
