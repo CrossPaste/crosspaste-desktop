@@ -127,8 +127,19 @@ private suspend fun executeTokenInner(
     sleep: suspend (Duration) -> Unit,
     fetch: suspend () -> PairTokenSnapshot,
 ): Int {
-    var snapshot = fetch()
-    if (snapshot.requests.isEmpty() && wait) {
+    // With --wait the FIRST fetch already counts against the wall-clock
+    // budget: it can block for its own HTTP timeout, and a runCli retry can
+    // re-enter here with the deadline already expired — in both cases the
+    // budget must hold (a late active answer past the deadline is discarded,
+    // not reported as success). Without --wait there is no time contract and
+    // the single fetch runs unbounded as before.
+    var snapshot =
+        if (wait) {
+            fetchWithinDeadline(deadline, fetch) ?: PairTokenSnapshot()
+        } else {
+            fetch()
+        }
+    if (wait && snapshot.requests.isEmpty() && deadline.hasNotPassedNow()) {
         io.stderr("Waiting for a pairing request... (Ctrl-C to stop)")
         awaitPairingRequests(deadline, pollInterval, sleep, fetch)?.let { snapshot = it }
     }
@@ -155,6 +166,17 @@ private suspend fun executeTokenInner(
         },
     )
     return 0
+}
+
+/** Runs [fetch] under the remaining budget; null when the budget is spent. */
+private suspend fun fetchWithinDeadline(
+    deadline: ComparableTimeMark,
+    fetch: suspend () -> PairTokenSnapshot,
+): PairTokenSnapshot? {
+    if (!deadline.hasNotPassedNow()) {
+        return null
+    }
+    return withTimeoutOrNull(-deadline.elapsedNow()) { fetch() }
 }
 
 /**

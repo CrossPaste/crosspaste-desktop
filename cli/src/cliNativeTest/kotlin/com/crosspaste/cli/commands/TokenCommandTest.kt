@@ -1,6 +1,7 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.api.CliClientException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -142,6 +143,64 @@ class TokenCommandTest {
             assertContains(recording.err.last(), "No pairing request arrived within 2s.")
             // 2s budget at 500ms per poll = the initial fetch plus exactly 4 polls
             assertEquals(5, calls)
+        }
+
+    @Test
+    fun waitCutsABlockingFirstFetchAtTheDeadline() =
+        runTest {
+            val timeSource = TestTimeSource()
+            val recording = RecordingIo()
+            var fetches = 0
+            val exit =
+                executeToken(
+                    wait = true,
+                    timeoutSeconds = 1,
+                    deadline = timeSource.markNow() + 1.seconds,
+                    json = false,
+                    io = recording.io,
+                    pollInterval = 500.milliseconds,
+                    sleep = {
+                        timeSource += it
+                        delay(it)
+                    },
+                ) {
+                    fetches++
+                    // Hangs past the whole budget, then would report success —
+                    // the late answer must be discarded, never printed
+                    delay(10.seconds)
+                    PairTokenSnapshot(listOf(request()))
+                }
+            assertEquals(1, exit)
+            assertTrue(recording.out.isEmpty())
+            assertContains(recording.err.last(), "No pairing request arrived within 1s.")
+        }
+
+    @Test
+    fun waitWithAnAlreadyExpiredDeadlineFailsWithoutFetching() =
+        runTest {
+            val timeSource = TestTimeSource()
+            val deadline = timeSource.markNow() + 1.seconds
+            // Simulates a runCli retry re-entering after the budget was spent
+            timeSource += 2.seconds
+            val recording = RecordingIo()
+            var fetches = 0
+            val exit =
+                executeToken(
+                    wait = true,
+                    timeoutSeconds = 1,
+                    deadline = deadline,
+                    json = false,
+                    io = recording.io,
+                    pollInterval = 500.milliseconds,
+                    sleep = { timeSource += it },
+                ) {
+                    fetches++
+                    PairTokenSnapshot(listOf(request()))
+                }
+            assertEquals(1, exit)
+            assertEquals(0, fetches)
+            assertTrue(recording.out.isEmpty())
+            assertContains(recording.err.single(), "No pairing request arrived within 1s.")
         }
 
     @Test
