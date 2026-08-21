@@ -9,6 +9,7 @@ import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PairingCredentialRefreshResult
 import com.crosspaste.sync.PairingCredentialType
+import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.SasCode
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.V3Pin
@@ -54,6 +55,7 @@ import kotlin.time.Duration.Companion.seconds
 class CliPairingService(
     private val appTokenApi: AppTokenApi,
     private val nearbyDeviceManager: NearbyDeviceManager,
+    private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val pairingCapabilityFlag: PairingCapabilityFlag,
     private val pairingV3UiController: PairingV3UiController,
     private val pasteBonjourService: PasteBonjourService,
@@ -141,26 +143,28 @@ class CliPairingService(
     }
 
     /**
-     * Acceptor-side snapshot of the pairing code display — the same state the
-     * desktop token overlay observes. `active` follows [AppTokenApi.showToken]
-     * exactly, so the code is exposed only while a peer's exchange (or an
-     * explicit show-token request) has it on display; the value is meaningless
-     * otherwise. Read-only, and the code itself is never logged.
+     * Acceptor-side snapshot of the pending pairing codes. Each code comes
+     * from the requester's OWN stored key exchange ([PendingKeyExchangeStore]),
+     * never from the single-slot display token: under concurrent pairings the
+     * global token holds only the latest exchange's SAS, and pairing it with
+     * the full verifier list would caption one requester's name with another
+     * requester's code. Verifiers without a live exchange (legacy QR peers,
+     * expired exchanges) are excluded — their code is not a per-peer SAS.
+     * Read-only, and the codes are never logged.
      */
-    fun pairingToken(): CliPairTokenDto {
-        val active = appTokenApi.showToken.value
-        return CliPairTokenDto(
-            active = active,
-            token = if (active) appTokenApi.token.value.concatToString() else null,
-            requesters =
-                appTokenApi.pendingVerifiers.value.map { appInstanceId ->
-                    CliPairRequesterDto(
-                        appInstanceId = appInstanceId,
-                        deviceName = resolveDeviceName(appInstanceId),
-                    )
+    fun pairingToken(): CliPairTokenDto =
+        CliPairTokenDto(
+            requests =
+                appTokenApi.pendingVerifiers.value.mapNotNull { appInstanceId ->
+                    pendingKeyExchangeStore.get(appInstanceId)?.let { exchange ->
+                        CliPairRequestDto(
+                            appInstanceId = appInstanceId,
+                            deviceName = resolveDeviceName(appInstanceId),
+                            token = exchange.sas.toString().padStart(6, '0'),
+                        )
+                    }
                 },
         )
-    }
 
     private fun resolveDeviceName(appInstanceId: String): String? =
         nearbyDeviceManager.nearbySyncInfos.value

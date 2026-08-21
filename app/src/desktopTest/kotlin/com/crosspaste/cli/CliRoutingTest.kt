@@ -940,17 +940,16 @@ class CliRoutingTest {
         val fixture = Fixture()
         every { fixture.cliPairingService.pairingToken() } returns
             CliPairTokenDto(
-                active = true,
-                token = "123456",
-                requesters = listOf(CliPairRequesterDto("peer-1", "Laptop")),
+                requests = listOf(CliPairRequestDto("peer-1", "Laptop", "123456")),
             )
 
         withCliRouting(fixture) {
             val response = client.get("/cli/pair/token")
             assertEquals(HttpStatusCode.OK, response.status)
             val dto = Json.decodeFromString(CliPairTokenDto.serializer(), response.bodyAsText())
-            assertEquals("123456", dto.token)
-            assertEquals("peer-1", dto.requesters.single().appInstanceId)
+            val request = dto.requests.single()
+            assertEquals("peer-1", request.appInstanceId)
+            assertEquals("123456", request.token)
         }
     }
 

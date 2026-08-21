@@ -259,21 +259,23 @@ class CliDtoContractTest {
             json.encodeToString(
                 CliPairTokenDto.serializer(),
                 CliPairTokenDto(
-                    active = true,
-                    token = "123456",
-                    requesters =
+                    requests =
                         listOf(
-                            CliPairRequesterDto(appInstanceId = "instance", deviceName = "device"),
+                            CliPairRequestDto(
+                                appInstanceId = "instance",
+                                deviceName = "device",
+                                token = "123456",
+                            ),
                         ),
                 ),
             )
-        assertEquals(setOf("active", "token", "requesters"), fieldsOf(tokenEncoded))
+        assertEquals(setOf("requests"), fieldsOf(tokenEncoded))
         assertEquals(
-            setOf("appInstanceId", "deviceName"),
+            setOf("appInstanceId", "deviceName", "token"),
             fieldsOf(
                 json.encodeToString(
-                    CliPairRequesterDto.serializer(),
-                    CliPairRequesterDto(appInstanceId = "instance", deviceName = null),
+                    CliPairRequestDto.serializer(),
+                    CliPairRequestDto(appInstanceId = "instance", deviceName = null, token = "123456"),
                 ),
             ),
         )

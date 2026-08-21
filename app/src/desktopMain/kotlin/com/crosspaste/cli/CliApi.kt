@@ -186,18 +186,20 @@ data class CliPairCancelRequest(
 )
 
 @Serializable
-data class CliPairRequesterDto(
+data class CliPairRequestDto(
     val appInstanceId: String,
     /** Best-effort display name; null when the peer is not known locally. */
     val deviceName: String?,
+    /** The 6-digit SAS of THIS peer's key exchange, zero-padded. */
+    val token: String,
 )
 
 @Serializable
 data class CliPairTokenDto(
-    /** Mirrors the state that opens the desktop token overlay. */
-    val active: Boolean,
-    /** The 6-digit pairing code; non-null only while [active]. */
-    val token: String?,
-    /** Peers currently waiting on this device's code. */
-    val requesters: List<CliPairRequesterDto>,
+    /**
+     * One entry per pending v2 key exchange, each carrying its own code —
+     * never a single global token, which under concurrent pairings could
+     * pair one requester's name with another requester's code.
+     */
+    val requests: List<CliPairRequestDto>,
 )

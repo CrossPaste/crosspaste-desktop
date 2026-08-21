@@ -95,6 +95,7 @@ fun desktopNetworkModule(
             CliPairingService(
                 appTokenApi = get(),
                 nearbyDeviceManager = get(),
+                pendingKeyExchangeStore = get(),
                 pairingCapabilityFlag = get(),
                 pairingV3UiController = get(),
                 pasteBonjourService = get(),

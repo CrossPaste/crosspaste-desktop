@@ -1,7 +1,6 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.cli.api.CliClient
 import com.crosspaste.cli.api.CliClientException
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
@@ -13,40 +12,48 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.restrictTo
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
+import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 // Mirrors of the app-side pair token DTOs (CliApi.kt); parsed with ignoreUnknownKeys.
 @Serializable
-internal data class PairRequesterSummary(
+internal data class PairRequestSummary(
     val appInstanceId: String,
     val deviceName: String? = null,
+    val token: String = "",
 )
 
 @Serializable
 internal data class PairTokenSnapshot(
-    val active: Boolean = false,
-    val token: String? = null,
-    val requesters: List<PairRequesterSummary> = listOf(),
+    val requests: List<PairRequestSummary> = listOf(),
 )
+
+/** How the terminal-facing token flow reports back; injectable for tests. */
+internal class TokenIo(
+    val stdout: (String) -> Unit,
+    val stderr: (String) -> Unit,
+)
+
+internal val TOKEN_POLL_INTERVAL = 500.milliseconds
 
 /**
  * Acceptor-side counterpart of `pair` (issue #4858): while `pair` types the
  * code the OTHER device displays, `token` displays THIS device's code so a
  * headless daemon can be paired with at all (its SAS otherwise only lands in
- * the daemon log). The code goes to stdout alone — `CODE=$(crosspaste token)`
+ * the daemon log). Codes go to stdout alone — `CODE=$(crosspaste token)`
  * works — and all context lines go to stderr.
  *
- * The SAS is deterministic for a given device pair, so print-once-and-exit is
- * the whole contract; there is nothing to live-update.
+ * Each request carries its own code (the SAS of that peer's key exchange), so
+ * concurrent pairings can never caption one device's name with another's
+ * code. A SAS is deterministic for a given device pair, so print-once-and-exit
+ * is the whole contract; there is nothing to live-update.
  */
 internal class TokenCommand : CliktCommand(name = "token") {
-
-    companion object {
-        internal val POLL_INTERVAL = 500.milliseconds
-    }
 
     override fun help(context: Context): String = "Show the pairing code when another device is pairing with this one"
 
@@ -63,55 +70,139 @@ internal class TokenCommand : CliktCommand(name = "token") {
     ).int().restrictTo(min = 1).default(600)
 
     override fun run() {
+        // The deadline is fixed before runCli so an app restart mid-wait
+        // (runCli re-runs the whole block) resumes the SAME wall-clock budget
+        // instead of granting a fresh one
+        val deadline = TimeSource.Monotonic.markNow() + timeout.seconds
         runCli { client ->
-            var snapshot = fetchSnapshot(client)
-            if (!snapshot.active && wait) {
-                echo("Waiting for a pairing request... (Ctrl-C to stop)", err = true)
-                awaitActiveSnapshot(
-                    timeout = timeout.seconds,
-                    fetch = { fetchSnapshot(client) },
-                )?.let { snapshot = it }
+            val exitCode =
+                executeToken(
+                    wait = wait,
+                    timeoutSeconds = timeout,
+                    deadline = deadline,
+                    json = ctx.json,
+                    io = TokenIo(stdout = { echo(it) }, stderr = { echo(it, err = true) }),
+                    fetch = { client.getBody("/cli/pair/token", PairTokenSnapshot.serializer()) },
+                )
+            if (exitCode != 0) {
+                throw ProgramResult(exitCode)
             }
-            // A timed-out --wait falls through with the inactive snapshot, so
-            // the JSON contract is uniform: stdout always carries one snapshot
-            // and the exit code alone reports failure
-            if (ctx.json) {
-                echo(cliJson.encodeToString(PairTokenSnapshot.serializer(), snapshot))
-                if (!snapshot.active) {
-                    throw ProgramResult(1)
-                }
-                return@runCli
-            }
-            val token = snapshot.token
-            if (!snapshot.active || token == null) {
-                echo("Error: ${noPairingMessage(waited = wait, timeoutSeconds = timeout)}", err = true)
-                throw ProgramResult(1)
-            }
-            describeRequesters(snapshot.requesters)?.let { echo(it, err = true) }
-            echo(token)
-            echo("Enter this code on the initiating device.", err = true)
+        }
+    }
+}
+
+/**
+ * The whole token flow behind the Clikt/runCli shell, so tests can drive it
+ * with a fake [fetch] and captured [io]. Returns the exit code; exceptions
+ * other than the old-app 404 propagate to runCli's uniform handling.
+ */
+internal suspend fun executeToken(
+    wait: Boolean,
+    timeoutSeconds: Int,
+    deadline: ComparableTimeMark,
+    json: Boolean,
+    io: TokenIo,
+    pollInterval: Duration = TOKEN_POLL_INTERVAL,
+    sleep: suspend (Duration) -> Unit = { delay(it) },
+    fetch: suspend () -> PairTokenSnapshot,
+): Int =
+    try {
+        executeTokenInner(wait, timeoutSeconds, deadline, json, io, pollInterval, sleep, fetch)
+    } catch (e: CliClientException) {
+        if (isTokenRouteMissing(e)) {
+            io.stderr("Error: The running CrossPaste app is too old for this command; update it first.")
+            1
+        } else {
+            throw e
         }
     }
 
-    private suspend fun fetchSnapshot(client: CliClient): PairTokenSnapshot =
-        try {
-            client.getBody("/cli/pair/token", PairTokenSnapshot.serializer())
-        } catch (e: CliClientException) {
-            if (isTokenRouteMissing(e)) {
-                echo(
-                    "Error: The running CrossPaste app is too old for this command; update it first.",
-                    err = true,
-                )
-                throw ProgramResult(1)
-            }
-            throw e
+private suspend fun executeTokenInner(
+    wait: Boolean,
+    timeoutSeconds: Int,
+    deadline: ComparableTimeMark,
+    json: Boolean,
+    io: TokenIo,
+    pollInterval: Duration,
+    sleep: suspend (Duration) -> Unit,
+    fetch: suspend () -> PairTokenSnapshot,
+): Int {
+    var snapshot = fetch()
+    if (snapshot.requests.isEmpty() && wait) {
+        io.stderr("Waiting for a pairing request... (Ctrl-C to stop)")
+        awaitPairingRequests(deadline, pollInterval, sleep, fetch)?.let { snapshot = it }
+    }
+    // A timed-out --wait falls through with the empty snapshot, so the JSON
+    // contract is uniform: stdout always carries one snapshot and the exit
+    // code alone reports failure
+    if (json) {
+        io.stdout(cliJson.encodeToString(PairTokenSnapshot.serializer(), snapshot))
+        return if (snapshot.requests.isEmpty()) 1 else 0
+    }
+    if (snapshot.requests.isEmpty()) {
+        io.stderr("Error: ${noPairingMessage(waited = wait, timeoutSeconds = timeoutSeconds)}")
+        return 1
+    }
+    for (request in snapshot.requests) {
+        io.stderr("Pairing request from '${requesterLabel(request)}':")
+        io.stdout(request.token)
+    }
+    io.stderr(
+        if (snapshot.requests.size == 1) {
+            "Enter this code on the initiating device."
+        } else {
+            "Enter each code on its initiating device."
+        },
+    )
+    return 0
+}
+
+/**
+ * Polls [fetch] every [pollInterval] until a pairing request appears, or null
+ * once [deadline] passes. The deadline is a true wall-clock bound: each round
+ * (sleep AND the fetch itself, which can block for its own HTTP timeout) runs
+ * under `withTimeoutOrNull` of the remaining budget. The first fetch happens
+ * after one interval — the caller has already seen an empty snapshot.
+ */
+internal suspend fun awaitPairingRequests(
+    deadline: ComparableTimeMark,
+    pollInterval: Duration = TOKEN_POLL_INTERVAL,
+    sleep: suspend (Duration) -> Unit = { delay(it) },
+    fetch: suspend () -> PairTokenSnapshot,
+): PairTokenSnapshot? {
+    while (deadline.hasNotPassedNow()) {
+        val remaining = -deadline.elapsedNow()
+        val snapshot =
+            withTimeoutOrNull(remaining) {
+                sleep(pollInterval)
+                fetch()
+            } ?: return null
+        if (snapshot.requests.isNotEmpty()) {
+            return snapshot
         }
+    }
+    return null
+}
+
+/**
+ * Display label for a requester, sanitized at the terminal boundary: names
+ * and instance ids arrive from unauthenticated peers (mDNS announcements,
+ * exchange headers) and could otherwise smuggle ESC/OSC/BEL sequences into
+ * the terminal. JSON output keeps the raw values — encoding escapes them.
+ */
+internal fun requesterLabel(request: PairRequestSummary): String {
+    val name =
+        request.deviceName
+            ?.let { sanitizeTerminalText(it) }
+            ?.takeIf { it.isNotBlank() }
+    return name
+        ?: sanitizeTerminalText(request.appInstanceId).ifBlank { "unknown device" }
 }
 
 /**
  * A 404 without a server message means the route itself does not exist — the
  * running app predates this command (see [CliClientException.hasServerMessage];
- * the endpoint's own inactive answer is a 200, never a 404).
+ * the endpoint's own no-requests answer is a 200, never a 404).
  */
 internal fun isTokenRouteMissing(e: CliClientException): Boolean = e.statusCode == 404 && !e.hasServerMessage
 
@@ -126,35 +217,3 @@ internal fun noPairingMessage(
         "No pairing in progress. Start pairing from the other device " +
             "(crosspaste pair), or rerun with --wait."
     }
-
-/**
- * Polls [fetch] every [pollInterval] until it reports an active pairing
- * display, or null after [timeout] worth of intervals. The first fetch
- * happens after one interval: the caller has already seen an inactive
- * snapshot. Attempt-counted rather than clock-based so the budget is
- * deterministic under an injected [sleep]; fetch latency (a local
- * unix-socket call) is negligible against the interval.
- */
-internal suspend fun awaitActiveSnapshot(
-    timeout: Duration,
-    pollInterval: Duration = TokenCommand.POLL_INTERVAL,
-    sleep: suspend (Duration) -> Unit = { delay(it) },
-    fetch: suspend () -> PairTokenSnapshot,
-): PairTokenSnapshot? {
-    val attempts = (timeout / pollInterval).toInt().coerceAtLeast(1)
-    repeat(attempts) {
-        sleep(pollInterval)
-        val snapshot = fetch()
-        if (snapshot.active) {
-            return snapshot
-        }
-    }
-    return null
-}
-
-/** One stderr context line naming who is asking, or null when unknown. */
-internal fun describeRequesters(requesters: List<PairRequesterSummary>): String? {
-    if (requesters.isEmpty()) return null
-    val names = requesters.map { it.deviceName ?: it.appInstanceId }
-    return "Pairing request from ${names.joinToString(", ") { "'$it'" }}."
-}
