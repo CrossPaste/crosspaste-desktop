@@ -5,8 +5,8 @@ package com.crosspaste.pairing.v3
  *
  * The SPAKE2 composition in [Spake2Protocol] performs NO field or point
  * arithmetic itself; every group operation goes through this interface, backed by
- * a reviewed library per platform (BouncyCastle on JVM/Android, OpenSSL 3 on
- * Kotlin/Native). Points cross this boundary as SEC1 **uncompressed** encodings
+ * a reviewed constant-time library per platform (OpenSSL 3 on desktop JVM via
+ * JNA and on Kotlin/Native). Points cross this boundary as SEC1 **uncompressed** encodings
  * (`0x04 || X || Y`, 65 bytes for P-256); scalars cross as big-endian byte arrays
  * padded to [scalarSize].
  *

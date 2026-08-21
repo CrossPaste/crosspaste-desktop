@@ -9,7 +9,7 @@ import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
-import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
+import com.crosspaste.pairing.v3.OpenSslPakeEcOps
 import com.crosspaste.pairing.v3.PairingKeySchedule
 import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingSessionState
@@ -191,8 +191,8 @@ class PairingV3IntegrationTest {
     @Test
     fun testRealProviderCompletesNetworkHandshake() =
         runBlocking {
-            val a = createInstance("real-a", pakeProvider = Spake2PakeProvider(BouncyCastlePakeEcOps()))
-            val b = createInstance("real-b", pakeProvider = Spake2PakeProvider(BouncyCastlePakeEcOps()))
+            val a = createInstance("real-a", pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()))
+            val b = createInstance("real-b", pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()))
             a.start()
             b.start()
             a.pairingAcceptanceWindow.open()

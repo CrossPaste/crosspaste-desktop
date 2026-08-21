@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
  * through a platform [PakeEcOps]. Given the published `w`, `x`, `y` and
  * identities, the backend must reproduce `pA`, `pB`, the shared element `K`, and
  * the derived `Ke` byte-for-byte. This is the correctness gate for every EC
- * backend (BouncyCastle on JVM, noble on JS) and the transcript/Ke composition;
+ * backend (OpenSSL on desktop JVM, noble on JS) and the transcript/Ke composition;
  * a mismatch fails here.
  *
  * The mandatory `pinContext` binding, `w` derivation from the PIN, and

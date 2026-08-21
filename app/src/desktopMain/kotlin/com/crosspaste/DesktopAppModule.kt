@@ -95,7 +95,7 @@ fun desktopAppModule(
     deviceUtils: DeviceUtils,
     klogger: KLogger,
     platform: Platform,
-    pairingCapabilityFlag: PairingCapabilityFlag,
+    pairingBackend: DesktopPairingBackend,
 ): Module =
     module {
         // region App
@@ -133,7 +133,8 @@ fun desktopAppModule(
         single<AppMetadataRepository> { appMetadataRepository }
         single<CommonConfigManager> { configManager as CommonConfigManager }
         single<DesktopConfigManager> { configManager }
-        single<PairingCapabilityFlag> { pairingCapabilityFlag }
+        single<DesktopPairingBackend> { pairingBackend }
+        single<PairingCapabilityFlag> { pairingBackend.capabilityFlag }
         single<ReadWriteConfig<Int>>(named("readWritePort")) { ReadWritePort(get()) }
         single<SimpleConfigFactory> { DesktopSimpleConfigFactory(get()) }
         // endregion

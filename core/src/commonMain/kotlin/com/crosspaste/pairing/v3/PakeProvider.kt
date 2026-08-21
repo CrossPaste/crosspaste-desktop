@@ -23,8 +23,10 @@ package com.crosspaste.pairing.v3
  * 5. **Implementation** (ADR D7): a thin, fully test-vectored protocol layer
  *    over reviewed EC primitives behind a narrow point-operations abstraction.
  *    Hand-rolled field or point arithmetic in application code is forbidden.
- *    BouncyCastle is retained for vectors only after the 2026-07-24 constant-time
- *    review; production platforms fail closed until reviewed backends land.
+ *    BouncyCastle was removed entirely after the 2026-07-24 constant-time review
+ *    (desktop JVM now binds OpenSSL libcrypto via JNA, keeping test and
+ *    production on one backend); production platforms fail closed until the
+ *    cross-platform security review lands.
  */
 interface PakeProvider {
 

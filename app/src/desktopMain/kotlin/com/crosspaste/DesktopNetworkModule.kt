@@ -48,13 +48,14 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
-import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
+import com.crosspaste.pairing.v3.OpenSslPakeEcOps
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingReceiptCache
 import com.crosspaste.pairing.v3.PairingSessionStore
+import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.Spake2PakeProvider
@@ -76,6 +77,7 @@ import com.crosspaste.sync.SyncResolver
 import com.crosspaste.sync.SyncResolverApi
 import com.crosspaste.ui.devices.DefaultPairingV3UiController
 import com.crosspaste.ui.devices.PairingV3UiController
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.WebSockets
@@ -236,7 +238,7 @@ fun desktopNetworkModule(
         single<PairingReceiptCache> { PairingReceiptCache() }
         single<PairingSessionStore> { PairingSessionStore() }
         single<PairingVersionCoordinator> { PairingVersionCoordinator() }
-        single<PakeProvider> { createDesktopPakeProvider(get(), get()) }
+        single<PakeProvider> { get<DesktopPairingBackend>().pakeProvider }
         // endregion
 
         // region WebSocket
@@ -353,14 +355,46 @@ fun desktopNetworkModule(
         // endregion
     }
 
-internal fun createDesktopPakeProvider(
+/**
+ * The advertised pairing capability and the PAKE backend, resolved TOGETHER as
+ * one immutable process-level snapshot. Keeping them in one value makes the
+ * split-brain state unrepresentable where a device advertises pairing v3 while
+ * its PAKE backend is unavailable — peers would select V3_PIN and then fail at
+ * the provider instead of negotiating v2.
+ */
+class DesktopPairingBackend(
+    val capabilityFlag: PairingCapabilityFlag,
+    val pakeProvider: PakeProvider,
+)
+
+internal fun resolveDesktopPairingBackend(
     appEnv: AppEnv,
-    pairingCapabilityFlag: PairingCapabilityFlag,
-): PakeProvider =
-    if (appEnv == AppEnv.DEVELOPMENT && pairingCapabilityFlag.isPairingV3Enabled) {
-        // DEVELOPMENT interoperability only. BouncyCastle's P-256 point
-        // formulas are not approved for production SPAKE2 operations.
-        Spake2PakeProvider(BouncyCastlePakeEcOps())
-    } else {
-        UnavailablePakeProvider
+    developmentV3InteropEnabled: Boolean,
+    loadPakeProvider: () -> PakeProvider = { Spake2PakeProvider(OpenSslPakeEcOps.load()) },
+): DesktopPairingBackend {
+    if (appEnv == AppEnv.DEVELOPMENT && developmentV3InteropEnabled) {
+        // DEVELOPMENT interoperability only until the cross-platform security
+        // review and rollout land (#4667). OpenSSL is the constant-time P-256
+        // backend; when libcrypto cannot be loaded we fail closed AND fall back
+        // to advertising v2, so the capability can never outrun the backend.
+        runCatching { loadPakeProvider() }
+            .onSuccess { pakeProvider ->
+                return DesktopPairingBackend(
+                    PairingCapabilityFlag(SyncApi.MAX_IMPLEMENTED_PAIRING_VERSION),
+                    pakeProvider,
+                )
+            }.onFailure { e ->
+                KotlinLogging.logger {}.warn(e) {
+                    "OpenSSL libcrypto unavailable, pairing v3 stays disabled"
+                }
+            }
     }
+    // Keep non-development builds fail-closed even if the rollout constant is
+    // changed before a reviewed provider is registered.
+    val clampedVersion =
+        minOf(
+            SyncApi.PAIRING_VERSION,
+            PairingV3.PROTOCOL_VERSION - 1,
+        )
+    return DesktopPairingBackend(PairingCapabilityFlag(clampedVersion), UnavailablePakeProvider)
+}
