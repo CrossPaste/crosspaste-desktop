@@ -9,7 +9,9 @@ import com.crosspaste.cli.commands.pick.PickFilters
 import com.crosspaste.cli.commands.pick.PickOutcome
 import com.crosspaste.cli.commands.pick.PickState
 import com.crosspaste.cli.commands.pick.PickTui
+import com.crosspaste.cli.platform.TerminalImageDisplay
 import com.crosspaste.cli.platform.installTerminalGuard
+import com.crosspaste.cli.platform.resolveTerminalImageDisplay
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
@@ -78,8 +80,14 @@ class PickCommand : CliktCommand(name = "pick") {
         // External SIGTERM/console-close must not strand the shell in raw
         // mode on the alternate screen (in-band Ctrl-C is a key event)
         installTerminalGuard()
+        // Probed once per command and BEFORE Mordant's raw mode: the sixel
+        // DA1 probe runs its own raw-mode transaction, and Mordant's
+        // key-event parser would eat or garble the reply. Ctrl-E editor
+        // round trips reuse the cached result.
+        val imageDisplay =
+            resolveTerminalImageDisplay(info.inputInteractive, info.outputInteractive)
         while (true) {
-            when (val outcome = runPickSession()) {
+            when (val outcome = runPickSession(imageDisplay)) {
                 is PickOutcome.Copied -> return
                 is PickOutcome.Edit -> editPasteFlow(outcome.item.id, jsonOutput = ctx.json)
                 PickOutcome.Cancelled -> throw ProgramResult(EXIT_CODE_CANCELLED)
@@ -88,11 +96,11 @@ class PickCommand : CliktCommand(name = "pick") {
         }
     }
 
-    private fun runPickSession(): PickOutcome? {
+    private fun runPickSession(imageDisplay: TerminalImageDisplay?): PickOutcome? {
         var outcome: PickOutcome? = null
         runCli { client ->
             val state = sessionState ?: createState(client).also { sessionState = it }
-            val result = PickTui(terminal, client, state, limit).run()
+            val result = PickTui(terminal, client, state, limit, imageDisplay).run()
             if (result is PickOutcome.Copied) {
                 val response = copyById(client, result.item.id)
                 reportCopied(result, response)

@@ -173,7 +173,7 @@ class CliClient(
                 "/cli/paste/$id/image?index=$index&maxWidth=$boxWidth&maxHeight=$boxHeight",
             )
         if (!response.status.isSuccess()) {
-            val serverMessage = extractMessage(response.bodyAsText())
+            val serverMessage = readBodyForImage { extractMessage(response.bodyAsText()) }
             throw CliClientException(
                 serverMessage ?: "Request failed with status ${response.status}",
                 statusCode = response.status.value,
@@ -189,7 +189,9 @@ class CliClient(
         ) {
             throw CliClientException("Unexpected image dimensions from CrossPaste: $width x $height")
         }
-        val rgba = response.readRawBytes()
+        val rgba =
+            readBodyForImage { response.readRawBytes() }
+                ?: throw CliClientException("Failed to read the image payload from CrossPaste.")
         if (rgba.size != width * height * 4) {
             throw CliClientException(
                 "Image payload size ${rgba.size} does not match $width x $height RGBA.",
@@ -197,6 +199,22 @@ class CliClient(
         }
         return CliRawImage(width, height, rgba)
     }
+
+    /**
+     * Body reads happen after [request] returns, so a mid-transfer socket
+     * failure would otherwise throw a raw ktor exception — escaping the
+     * documented contract that every [getRawImage] failure is a
+     * [CliClientException] (callers catch it and fall back to printing
+     * paths). Null means the read failed.
+     */
+    private suspend fun <T> readBodyForImage(read: suspend () -> T): T? =
+        try {
+            read()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
 
     /**
      * Opens a long-lived streaming GET (the /cli/watch NDJSON feed) and hands

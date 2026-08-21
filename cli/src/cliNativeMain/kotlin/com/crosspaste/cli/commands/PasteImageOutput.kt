@@ -1,5 +1,6 @@
 package com.crosspaste.cli.commands
 
+import com.crosspaste.cli.api.CliRawImage
 import com.crosspaste.cli.platform.PNG_SIGNATURE_SIZE
 import com.crosspaste.cli.platform.TerminalImageProtocol
 import com.crosspaste.cli.platform.flushStdout
@@ -8,6 +9,7 @@ import com.crosspaste.cli.platform.prepareStdoutForBinary
 import com.crosspaste.cli.platform.writeBytesToStdout
 import com.crosspaste.cli.platform.writeItermInlineImage
 import com.crosspaste.cli.platform.writeKittyInlineImage
+import com.crosspaste.cli.platform.writeSixelInlineImage
 import okio.FileSystem
 import okio.IOException
 import okio.Path.Companion.toPath
@@ -71,6 +73,11 @@ internal class ImageByteStreamer(
  * thousands of entries, and previewing must never turn one `paste` into a
  * multi-gigabyte read. Skipped images are summarized in a single note; their
  * paths are already listed in the detail view.
+ *
+ * ITERM/KITTY transmit the stored file as-is; SIXEL instead renders pixels
+ * from [sixelFetch] — the app's transcode endpoint (the CLI never decodes
+ * image files). A null fetch result (older app without the endpoint, or an
+ * undecodable file) skips the image, same as an unreadable file.
  */
 internal class InlineImageRenderer(
     private val protocol: TerminalImageProtocol?,
@@ -80,6 +87,7 @@ internal class InlineImageRenderer(
     private val maxImages: Int = MAX_PREVIEW_IMAGES,
     private val maxCandidates: Int = MAX_PREVIEW_CANDIDATES,
     private val maxTotalBytes: Long = MAX_PREVIEW_TOTAL_BYTES,
+    private val sixelFetch: suspend (index: Int) -> CliRawImage? = { null },
 ) {
     companion object {
         internal const val MAX_PREVIEW_IMAGES = 4
@@ -87,10 +95,8 @@ internal class InlineImageRenderer(
         internal const val MAX_PREVIEW_TOTAL_BYTES = 20L * 1024 * 1024
     }
 
-    fun render(paths: List<String>) {
-        // SIXEL renders from app-transcoded pixels, not stored files; it is
-        // wired into this renderer in #4848 and never selected until then
-        val protocol = protocol?.takeIf { it != TerminalImageProtocol.SIXEL } ?: return
+    suspend fun render(paths: List<String>) {
+        val protocol = protocol ?: return
         var rendered = 0
         var inspected = 0
         var remainingBudget = maxTotalBytes
@@ -101,22 +107,18 @@ internal class InlineImageRenderer(
                 break
             }
             inspected++
-            val bytes =
-                readWithinBudget(
-                    path = path,
-                    budget = remainingBudget,
-                    requirePng = protocol == TerminalImageProtocol.KITTY,
-                )
-            if (bytes == null) {
+            val consumed =
+                when (protocol) {
+                    TerminalImageProtocol.ITERM,
+                    TerminalImageProtocol.KITTY,
+                    -> emitFromFile(protocol, path, remainingBudget)
+                    TerminalImageProtocol.SIXEL -> emitFromFetch(index, remainingBudget)
+                }
+            if (consumed == null) {
                 skipped++
                 continue
             }
-            remainingBudget -= bytes.size
-            when (protocol) {
-                TerminalImageProtocol.ITERM -> writeItermInlineImage(path.toPath().name, bytes, emit)
-                TerminalImageProtocol.KITTY -> writeKittyInlineImage(bytes, emit)
-                TerminalImageProtocol.SIXEL -> {} // unreachable: filtered out above
-            }
+            remainingBudget -= consumed
             emit("\n")
             rendered++
         }
@@ -125,11 +127,39 @@ internal class InlineImageRenderer(
         }
     }
 
-    private fun readWithinBudget(
+    /** Returns the payload bytes consumed, or null when the image is skipped. */
+    private fun emitFromFile(
+        protocol: TerminalImageProtocol,
         path: String,
         budget: Long,
-        requirePng: Boolean,
-    ): ByteArray? = readImageWithinBudget(path, budget, requirePng, fileSystem)
+    ): Long? {
+        val bytes =
+            readImageWithinBudget(
+                path = path,
+                budget = budget,
+                requirePng = protocol == TerminalImageProtocol.KITTY,
+                fileSystem = fileSystem,
+            ) ?: return null
+        when (protocol) {
+            TerminalImageProtocol.ITERM -> writeItermInlineImage(path.toPath().name, bytes, emit)
+            else -> writeKittyInlineImage(bytes, emit)
+        }
+        return bytes.size.toLong()
+    }
+
+    /** Returns the RGBA bytes consumed, or null when the image is skipped. */
+    private suspend fun emitFromFetch(
+        index: Int,
+        budget: Long,
+    ): Long? {
+        val image = sixelFetch(index) ?: return null
+        // The size is only known after the fetch, so an over-budget image
+        // costs one wasted transcode round trip — acceptable, since the
+        // request box bounds every reply to a few MB
+        if (image.rgba.size > budget) return null
+        writeSixelInlineImage(image.rgba, image.width, image.height, emit)
+        return image.rgba.size.toLong()
+    }
 }
 
 /** Shared budget-guarded image read (used by `paste` previews and `pick`). */

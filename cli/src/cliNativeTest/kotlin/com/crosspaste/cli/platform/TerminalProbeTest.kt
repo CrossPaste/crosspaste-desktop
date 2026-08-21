@@ -1,5 +1,6 @@
 package com.crosspaste.cli.platform
 
+import com.crosspaste.cli.api.CLI_IMAGE_MAX_BOX_PX
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -162,4 +163,54 @@ class TerminalProbeTest {
         assertNull(resolve(env("TERM" to "xterm-256color"), query))
         assertEquals(0, query.calls)
     }
+
+    // region sixelPixelBox
+
+    private val defaultCellDisplay = TerminalImageDisplay(TerminalImageProtocol.SIXEL)
+
+    @Test
+    fun pixelBoxUsesTheDefaultCellWhenTheProbeGaveNone() {
+        // pick's panel box (60 columns x 9 rows) under the 10x20 assumption
+        assertEquals(600 to 180, sixelPixelBox(60, 9, defaultCellDisplay))
+    }
+
+    @Test
+    fun pixelBoxUsesProbedCellMetrics() {
+        val probed =
+            TerminalImageDisplay(
+                TerminalImageProtocol.SIXEL,
+                cellWidthPx = 8,
+                cellHeightPx = 16,
+            )
+        assertEquals(480 to 144, sixelPixelBox(60, 9, probed))
+        // A large probed cell saturates at the endpoint clamp per axis
+        val big =
+            TerminalImageDisplay(
+                TerminalImageProtocol.SIXEL,
+                cellWidthPx = 512,
+                cellHeightPx = 512,
+            )
+        assertEquals(CLI_IMAGE_MAX_BOX_PX to CLI_IMAGE_MAX_BOX_PX, sixelPixelBox(60, 9, big))
+    }
+
+    @Test
+    fun pixelBoxClampsToTheEndpointBoxAndNeverOverflows() {
+        // A huge COLUMNS override must saturate, not wrap negative
+        assertEquals(
+            CLI_IMAGE_MAX_BOX_PX to 180,
+            sixelPixelBox(Int.MAX_VALUE, 9, defaultCellDisplay),
+        )
+        assertEquals(
+            CLI_IMAGE_MAX_BOX_PX to CLI_IMAGE_MAX_BOX_PX,
+            sixelPixelBox(200, 100, defaultCellDisplay),
+        )
+    }
+
+    @Test
+    fun pixelBoxFloorsDegenerateCellCountsAtOnePixel() {
+        assertEquals(1 to 180, sixelPixelBox(0, 9, defaultCellDisplay))
+        assertEquals(1 to 1, sixelPixelBox(-5, -1, defaultCellDisplay))
+    }
+
+    // endregion
 }
