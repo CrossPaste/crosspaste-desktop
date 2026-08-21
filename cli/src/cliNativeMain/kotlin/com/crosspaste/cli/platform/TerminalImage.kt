@@ -17,6 +17,13 @@ enum class TerminalImageProtocol {
 
     /** Kitty graphics protocol; PNG payloads only (`f=100`). */
     KITTY,
+
+    /**
+     * Sixel (DCS q): unlike the two protocols above, the payload is quantized
+     * pixels, not a passed-through image file. Never selected from the
+     * environment alone — TerminalProbe.kt must confirm it via DA1 first.
+     */
+    SIXEL,
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -40,6 +47,22 @@ internal fun detectTerminalImageProtocol(env: (String) -> String?): TerminalImag
         termProgram == "iTerm.app" || termProgram == "WezTerm" || termProgram == "mintty" -> TerminalImageProtocol.ITERM
         else -> null
     }
+}
+
+/**
+ * Whether the environment suggests a sixel-capable terminal: Windows Terminal
+ * (`WT_SESSION`; conhost never sets it) or one of the Linux sixel terminals.
+ * This is only a CANDIDATE — an older Windows Terminal (< 1.22) sets
+ * WT_SESSION without supporting sixel, so selecting SIXEL additionally
+ * requires the DA1 probe confirmation in TerminalProbe.kt; env evidence alone
+ * must never put escape garbage on screen.
+ */
+internal fun isSixelCandidate(env: (String) -> String?): Boolean {
+    if (!env("TMUX").isNullOrEmpty()) return false
+    val term = env("TERM").orEmpty()
+    if (term.startsWith("tmux") || term.startsWith("screen")) return false
+    if (!env("WT_SESSION").isNullOrEmpty()) return true
+    return term.contains("foot") || term.contains("mlterm") || term.contains("yaft")
 }
 
 // Spelled out as char codes so the source contains no literal control bytes

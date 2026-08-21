@@ -88,7 +88,9 @@ internal class InlineImageRenderer(
     }
 
     fun render(paths: List<String>) {
-        val protocol = protocol ?: return
+        // SIXEL renders from app-transcoded pixels, not stored files; it is
+        // wired into this renderer in #4848 and never selected until then
+        val protocol = protocol?.takeIf { it != TerminalImageProtocol.SIXEL } ?: return
         var rendered = 0
         var inspected = 0
         var remainingBudget = maxTotalBytes
@@ -113,6 +115,7 @@ internal class InlineImageRenderer(
             when (protocol) {
                 TerminalImageProtocol.ITERM -> writeItermInlineImage(path.toPath().name, bytes, emit)
                 TerminalImageProtocol.KITTY -> writeKittyInlineImage(bytes, emit)
+                TerminalImageProtocol.SIXEL -> {} // unreachable: filtered out above
             }
             emit("\n")
             rendered++
