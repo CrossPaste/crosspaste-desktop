@@ -4,10 +4,14 @@ import kotlinx.serialization.Serializable
 
 /**
  * Version of the local /cli HTTP API served over the Unix domain socket.
- * Bump when the wire contract changes in a way the CLI must know about
- * (no bump needed while the CLI has never shipped in a release).
+ * Bump when the wire contract changes in a way the CLI must know about.
+ * 2: GET /cli/paste/{id}/image raw-RGBA transcode endpoint (sixel support).
  */
-const val CLI_API_VERSION = 1
+const val CLI_API_VERSION = 2
+
+/** Response headers carrying the exact dimensions of a transcoded image. */
+const val CLI_IMAGE_WIDTH_HEADER = "X-Image-Width"
+const val CLI_IMAGE_HEIGHT_HEADER = "X-Image-Height"
 
 const val CLI_ENDPOINT_FILE_NAME = "cli-endpoint.json"
 
