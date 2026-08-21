@@ -2,9 +2,11 @@ package com.crosspaste.headless
 
 import coil3.PlatformContext
 import coil3.memory.MemoryCache
+import com.crosspaste.DesktopPairingBackend
 import com.crosspaste.app.AppEnv
 import com.crosspaste.desktopAppModule
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
+import com.crosspaste.pairing.v3.UnavailablePakeProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.mockk.mockk
 import org.koin.dsl.koinApplication
@@ -46,7 +48,11 @@ class HeadlessModuleTest {
                         deviceUtils = mockk(relaxed = true),
                         klogger = KotlinLogging.logger {},
                         platform = mockk(relaxed = true),
-                        pairingCapabilityFlag = PairingCapabilityFlag(2),
+                        pairingBackend =
+                            DesktopPairingBackend(
+                                PairingCapabilityFlag(2),
+                                UnavailablePakeProvider,
+                            ),
                     ),
                     headlessUiModule(),
                 )

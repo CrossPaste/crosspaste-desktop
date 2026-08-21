@@ -10,13 +10,17 @@ import com.sun.jna.Pointer
 /**
  * JVM [PakeEcOps] backed by OpenSSL 3 libcrypto's low-level P-256 ops via JNA.
  *
- * This is the reviewed constant-time backend RFC 9382 §7 requires:
- * `EC_POINT_mul` performs a single fixed- or variable-point multiplication in
- * constant time whenever the scalar lies in `[0, n)` (enforced here before
- * every call), and the `ecp_nistz256` implementation handles point-formula
- * special cases with branch-free conditional copies — the input-dependent
- * branches that disqualified the previous BouncyCastle backend do not exist
- * on this path.
+ * This is the constant-time backend candidate for RFC 9382 §7 (final sign-off
+ * rests with the independent security review):
+ * - `EC_POINT_mul` performs a single fixed- or variable-point multiplication
+ *   in constant time whenever the scalar lies in `[0, n)` — enforced here
+ *   before every call via a branchless byte-level range check ([toScalar]),
+ *   never via variable-time `BN_cmp` on a secret. The `ecp_nistz256`
+ *   implementation handles point-formula special cases with branch-free
+ *   conditional copies — the input-dependent branches that disqualified the
+ *   previous BouncyCastle backend do not exist on this path.
+ * - [reduceScalar] sets `BN_FLG_CONSTTIME` on the PIN-derived wide input so
+ *   `BN_nnmod`'s division takes OpenSSL's no-branch path.
  *
  * Secret scalars live in OpenSSL `BIGNUM`s and are released with
  * `BN_clear_free`, which zeroes them before freeing — unlike the immutable
@@ -46,6 +50,9 @@ class OpenSslPakeEcOps private constructor(
         withBnCtx { ctx ->
             val wide = bnFromBytes(wideBigEndian)
             try {
+                // The input is the PIN-derived HKDF output: force BN_nnmod's
+                // division onto OpenSSL's no-branch constant-time path.
+                lib.BN_set_flags(wide, BN_FLG_CONSTTIME)
                 val reduced = lib.BN_new() ?: throw PakeException("libcrypto BN_new failed")
                 try {
                     checkOne(lib.BN_nnmod(reduced, wide, order, ctx), "BN_nnmod")
@@ -216,16 +223,33 @@ class OpenSslPakeEcOps private constructor(
         return out
     }
 
+    // Public group order bytes, cached for the branchless range check below.
+    private val orderBytes: ByteArray = bnToFixedBytes(order)
+
+    /**
+     * Validates a (potentially secret) scalar into `[1, n)` — the precondition
+     * for `EC_POINT_mul`'s constant-time path — using branchless byte
+     * arithmetic instead of variable-time `BN_cmp`/`BN_is_zero`. The single
+     * final branch only distinguishes valid from invalid, and an invalid
+     * scalar aborts the handshake publicly anyway.
+     */
     private fun toScalar(bytes: ByteArray): Pointer {
         if (bytes.size != scalarSize) {
             throw PakeException("SPAKE2 scalar must be $scalarSize bytes")
         }
-        val scalar = bnFromBytes(bytes)
-        if (lib.BN_is_zero(scalar) == 1 || lib.BN_cmp(scalar, order) >= 0) {
-            lib.BN_clear_free(scalar)
+        var borrow = 0
+        var nonZero = 0
+        for (i in bytes.indices.reversed()) {
+            val byteValue = bytes[i].toInt() and 0xFF
+            val diff = byteValue - (orderBytes[i].toInt() and 0xFF) - borrow
+            borrow = (diff ushr 31) and 1
+            nonZero = nonZero or byteValue
+        }
+        // borrow == 1 iff bytes < order (big-endian subtraction with borrow).
+        if (borrow == 0 || nonZero == 0) {
             throw PakeException("SPAKE2 scalar is outside the P-256 group order")
         }
-        return scalar
+        return bnFromBytes(bytes)
     }
 
     private fun bnFromBytes(bytes: ByteArray): Pointer =
@@ -257,6 +281,7 @@ class OpenSslPakeEcOps private constructor(
         private const val POINT_CONVERSION_UNCOMPRESSED = 4
         private const val P256_SCALAR_SIZE = 32
         private const val MAX_RANDOM_ATTEMPTS = 128
+        private const val BN_FLG_CONSTTIME = 0x04
 
         /** Every symbol [LibCrypto] binds; probed before a candidate is accepted. */
         private val REQUIRED_SYMBOLS =
@@ -279,7 +304,7 @@ class OpenSslPakeEcOps private constructor(
                 "BN_CTX_new",
                 "BN_CTX_free",
                 "BN_nnmod",
-                "BN_cmp",
+                "BN_set_flags",
                 "BN_is_zero",
                 "BN_priv_rand_range",
             )
@@ -443,10 +468,10 @@ internal interface LibCrypto : Library {
         ctx: Pointer,
     ): Int
 
-    fun BN_cmp(
-        a: Pointer,
+    fun BN_set_flags(
         b: Pointer,
-    ): Int
+        n: Int,
+    )
 
     fun BN_is_zero(a: Pointer): Int
 
