@@ -1,7 +1,11 @@
 package com.crosspaste.cli.commands
 
 import com.crosspaste.cli.CliContext
-import com.crosspaste.cli.platform.detectTerminalImageProtocol
+import com.crosspaste.cli.api.AppNotRunningException
+import com.crosspaste.cli.api.CLI_IMAGE_MAX_BOX_PX
+import com.crosspaste.cli.api.CliClient
+import com.crosspaste.cli.api.CliClientException
+import com.crosspaste.cli.platform.resolveTerminalImageDisplay
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
@@ -79,7 +83,7 @@ class PasteCommand : CliktCommand(name = "paste") {
                 raw -> printRawContent(detail)
                 summary -> printContentOnly(detail, detail.content)
                 ctx.json -> echo(cliJson.encodeToString(PasteDetailResponse.serializer(), detail))
-                else -> printDetail(detail)
+                else -> printDetail(client, detail)
             }
         }
     }
@@ -158,7 +162,10 @@ class PasteCommand : CliktCommand(name = "paste") {
         }
     }
 
-    private fun printDetail(detail: PasteDetailResponse) {
+    private suspend fun printDetail(
+        client: CliClient,
+        detail: PasteDetailResponse,
+    ) {
         val fav = if (detail.tagged) " [tagged]" else ""
         val remote = if (detail.remote) " (remote)" else ""
         echo("Paste #${detail.id}$fav$remote")
@@ -178,7 +185,7 @@ class PasteCommand : CliktCommand(name = "paste") {
             }
         }
         if (detail.typeName == "image" && terminal.terminalInfo.outputInteractive) {
-            renderInlineImages(detail)
+            renderInlineImages(client, detail)
         }
     }
 
@@ -187,12 +194,38 @@ class PasteCommand : CliktCommand(name = "paste") {
      * absolute paths printed above are the fallback. Escape sequences go
      * through stdlib print like [printContentOnly]: Mordant re-renders
      * strings and would mangle them.
+     *
+     * Sixel candidates run the DA1 probe inside [resolveTerminalImageDisplay]
+     * here (stdout is interactive per the caller's guard; the probe also
+     * requires interactive stdin). Sixel pixels come from the app's transcode
+     * endpoint at final display size: the terminal width in cells times the
+     * probed cell pixel width, height capped only by the endpoint's box clamp
+     * — tall images scroll like text, matching the other protocols' behavior.
      */
-    private fun renderInlineImages(detail: PasteDetailResponse) {
+    private suspend fun renderInlineImages(
+        client: CliClient,
+        detail: PasteDetailResponse,
+    ) {
+        val info = terminal.terminalInfo
+        val display =
+            resolveTerminalImageDisplay(info.inputInteractive, info.outputInteractive) ?: return
+        val sixelMaxWidthPx =
+            (terminal.size.width * display.cellWidthPx).coerceIn(1, CLI_IMAGE_MAX_BOX_PX)
         InlineImageRenderer(
-            protocol = detectTerminalImageProtocol(),
+            protocol = display.protocol,
             emit = { print(it) },
             note = { echo("  $it") },
+            sixelFetch = { index ->
+                // Any failure — including 404 from an app that predates the
+                // endpoint — falls back to the paths printed above
+                try {
+                    client.getRawImage(detail.id, index, sixelMaxWidthPx, CLI_IMAGE_MAX_BOX_PX)
+                } catch (_: CliClientException) {
+                    null
+                } catch (_: AppNotRunningException) {
+                    null
+                }
+            },
         ).render(detail.filePaths)
     }
 }

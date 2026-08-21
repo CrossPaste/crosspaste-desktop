@@ -1,14 +1,17 @@
 package com.crosspaste.cli.commands.pick
 
+import com.crosspaste.cli.api.AppNotRunningException
 import com.crosspaste.cli.api.CliClient
+import com.crosspaste.cli.api.CliClientException
+import com.crosspaste.cli.api.CliRawImage
 import com.crosspaste.cli.commands.PasteDetailResponse
 import com.crosspaste.cli.commands.PasteListResponse
 import com.crosspaste.cli.commands.PasteSummaryDto
 import com.crosspaste.cli.commands.buildListQuery
 import com.crosspaste.cli.commands.formatSize
 import com.crosspaste.cli.commands.readImageWithinBudget
+import com.crosspaste.cli.platform.TerminalImageDisplay
 import com.crosspaste.cli.platform.TerminalImageProtocol
-import com.crosspaste.cli.platform.detectTerminalImageProtocol
 import com.crosspaste.cli.platform.fitImageCellBox
 import com.crosspaste.cli.platform.isRawModeReadTimeout
 import com.crosspaste.cli.platform.kittyDeleteImages
@@ -16,6 +19,7 @@ import com.crosspaste.cli.platform.parsePngDimensions
 import com.crosspaste.cli.platform.restoreConsoleModes
 import com.crosspaste.cli.platform.writeItermInlineImage
 import com.crosspaste.cli.platform.writeKittyInlineImage
+import com.crosspaste.cli.platform.writeSixelInlineImage
 import com.github.ajalt.mordant.input.RawModeScope
 import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
@@ -124,6 +128,19 @@ private sealed interface FetchMsg {
         val key: RequestKey,
         val cause: Throwable,
     ) : FetchMsg
+
+    /**
+     * Transcoded pixels for the sixel preview (null image = fetch failed).
+     * The requested cell box rides along so a reply that no longer matches
+     * the current panel geometry (resized meanwhile) is discarded — the
+     * resize repaint has already scheduled a fresh fetch.
+     */
+    data class SixelPixels(
+        val id: Long,
+        val boxColumns: Int,
+        val boxRows: Int,
+        val image: CliRawImage?,
+    ) : FetchMsg
 }
 
 /**
@@ -137,9 +154,11 @@ internal class PickTui(
     private val client: CliClient,
     private val state: PickState,
     private val limit: Int,
+    /** Resolved (and sixel-probed) by PickCommand BEFORE Mordant's raw mode. */
+    private val imageDisplay: TerminalImageDisplay?,
 ) {
     private val timeSource = TimeSource.Monotonic
-    private val imageProtocol = detectTerminalImageProtocol()
+    private val imageProtocol = imageDisplay?.protocol
 
     suspend fun run(): PickOutcome =
         coroutineScope {
@@ -208,6 +227,7 @@ internal class PickTui(
         private var imageDrawnId: Long? = null
         private var imageFailedId: Long? = null
         private var imageDeadline: TimeMark? = null
+        private var sixelInFlightId: Long? = null
         private var lastPanelRow: Int? = null
         private var lastSize: Pair<Int, Int>? = null
         private var lastRefreshAt = timeSource.markNow()
@@ -368,6 +388,7 @@ internal class PickTui(
                     is FetchMsg.ListResult -> onListResult(msg)
                     is FetchMsg.Preview -> onPreview(msg)
                     is FetchMsg.Failed -> onFailed(msg)
+                    is FetchMsg.SixelPixels -> onSixelPixels(msg)
                 }
                 refreshSpinner()
             }
@@ -473,14 +494,14 @@ internal class PickTui(
             lastPanelRow =
                 paint(spinnerFrame, previewDetail, imageFailedId, flashSelected = false)
                     .previewPanelRow
-            // Repaints erase iTerm images (they live in cells); kitty
-            // placements survive text redraws, so only a new selection
-            // needs a retransmit there
+            // Repaints erase iTerm and sixel images (their pixels live in
+            // cells); kitty placements survive text redraws, so only a new
+            // selection needs a retransmit there
             val candidate = imageCandidate(previewDetail)
             if (candidate != null && lastPanelRow != null) {
                 val needsDraw =
                     imageDrawnId != candidate.first.id ||
-                        imageProtocol == TerminalImageProtocol.ITERM
+                        imageProtocol != TerminalImageProtocol.KITTY
                 if (needsDraw) imageDeadline = timeSource.markNow()
             } else {
                 deleteDrawnKittyImage()
@@ -495,6 +516,14 @@ internal class PickTui(
             imageDeadline = null
             val candidate = imageCandidate(previewDetail) ?: return
             val panelRow = lastPanelRow ?: return
+            if (imageProtocol == TerminalImageProtocol.SIXEL) {
+                // Sixel pixels come from the app's transcode endpoint; the
+                // fetch must not run inside the event loop (a slow transcode
+                // would freeze input), so it goes async like the other fetches
+                // and the reply draws via onSixelPixels
+                launchSixelFetch(candidate.first.id)
+                return
+            }
             if (drawInlineImage(candidate.second, panelRow)) {
                 imageDrawnId = candidate.first.id
             } else {
@@ -503,6 +532,60 @@ internal class PickTui(
                 imageFailedId = candidate.first.id
                 dirty = true
             }
+        }
+
+        private fun launchSixelFetch(id: Long) {
+            // One in-flight fetch per paste is enough: repaints keep
+            // rescheduling draws, and the reply itself completes the draw
+            if (sixelInFlightId == id) return
+            val display = imageDisplay ?: return
+            val (maxColumns, maxRows) = previewImageCellBox()
+            sixelInFlightId = id
+            fetchScope.launch(Dispatchers.Default) {
+                val image =
+                    try {
+                        client.getRawImage(
+                            id = id,
+                            index = 0,
+                            maxWidth = maxColumns * display.cellWidthPx,
+                            maxHeight = maxRows * display.cellHeightPx,
+                        )
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (_: CliClientException) {
+                        null
+                    } catch (_: AppNotRunningException) {
+                        null
+                    }
+                results.trySend(FetchMsg.SixelPixels(id, maxColumns, maxRows, image))
+            }
+        }
+
+        /**
+         * Draws a fetched sixel reply — the app already scaled the pixels to
+         * the requested panel box, so this is pure encoding plus escape
+         * output, fast enough for the loop thread. Stale replies (selection
+         * moved on, panel resized, a repaint is pending) are dropped; the
+         * repaint that superseded them has already rescheduled a fresh draw.
+         */
+        private fun onSixelPixels(msg: FetchMsg.SixelPixels) {
+            if (sixelInFlightId == msg.id) sixelInFlightId = null
+            val candidate = imageCandidate(previewDetail)
+            val panelRow = lastPanelRow
+            if (candidate?.first?.id != msg.id || panelRow == null || dirty) return
+            if (msg.boxColumns to msg.boxRows != previewImageCellBox()) return
+            val image = msg.image
+            if (image == null) {
+                // Repaint with the path fallback instead of leaving the
+                // reserved lines blank
+                imageFailedId = msg.id
+                dirty = true
+                return
+            }
+            terminal.rawPrint("${ESC}7$ESC[${panelRow + 2};3H")
+            writeSixelInlineImage(image.rgba, image.width, image.height) { terminal.rawPrint(it) }
+            terminal.rawPrint("${ESC}8")
+            imageDrawnId = msg.id
         }
 
         private suspend fun applyEffect(effect: PickEffect): PickOutcome? =
@@ -542,17 +625,27 @@ internal class PickTui(
         )
 
     /**
+     * The preview panel's image cell box. For sixel this times the probed
+     * cell pixel size becomes the requested pixel box, so the app's reply
+     * never occupies more rows than the panel reserves — and the box bounds
+     * the payload, so no [MAX_PICK_IMAGE_BYTES] cap is needed there.
+     */
+    private fun previewImageCellBox(): Pair<Int, Int> {
+        val maxColumns = (terminal.size.width - 6).coerceIn(10, IMAGE_MAX_COLUMNS)
+        return maxColumns to (PREVIEW_PANEL_LINES - 1)
+    }
+
+    /**
      * Transmits the first stored image into the preview panel, display-bounded
      * to a cell box (the terminal scales; the CLI still never decodes pixels).
      * Runs only after [IMAGE_DRAW_IDLE] of quiet — the payload is the whole
-     * encoded file.
+     * encoded file. SIXEL never reaches this: its pixels arrive async from
+     * the app's transcode endpoint and draw via onSixelPixels.
      */
     private fun drawInlineImage(
         path: String,
         panelRow: Int,
     ): Boolean {
-        // SIXEL renders from app-transcoded pixels, not stored files; it is
-        // wired into this preview in #4848 and never selected until then
         val protocol =
             imageProtocol?.takeIf { it != TerminalImageProtocol.SIXEL } ?: return false
         val bytes =
@@ -561,8 +654,7 @@ internal class PickTui(
                 budget = MAX_PICK_IMAGE_BYTES,
                 requirePng = protocol == TerminalImageProtocol.KITTY,
             ) ?: return false
-        val maxColumns = (terminal.size.width - 6).coerceIn(10, IMAGE_MAX_COLUMNS)
-        val maxRows = PREVIEW_PANEL_LINES - 1
+        val (maxColumns, maxRows) = previewImageCellBox()
         // PNG headers carry the pixel size; other formats (iTerm only) fall
         // back to the full box, which iTerm letterboxes itself
         val box =
@@ -571,20 +663,17 @@ internal class PickTui(
         val write: (String) -> Unit = { terminal.rawPrint(it) }
         // Save the cursor, draw at the panel's first content row, restore
         terminal.rawPrint("${ESC}7$ESC[${panelRow + 2};3H")
-        when (protocol) {
-            TerminalImageProtocol.KITTY -> {
-                kittyDeleteImages(write)
-                writeKittyInlineImage(bytes, write, columns = box.first, rows = box.second)
-            }
-            TerminalImageProtocol.ITERM ->
-                writeItermInlineImage(
-                    name = path.toPath().name,
-                    bytes = bytes,
-                    write = write,
-                    widthCells = box.first,
-                    heightCells = box.second,
-                )
-            TerminalImageProtocol.SIXEL -> {} // unreachable: filtered out above
+        if (protocol == TerminalImageProtocol.KITTY) {
+            kittyDeleteImages(write)
+            writeKittyInlineImage(bytes, write, columns = box.first, rows = box.second)
+        } else {
+            writeItermInlineImage(
+                name = path.toPath().name,
+                bytes = bytes,
+                write = write,
+                widthCells = box.first,
+                heightCells = box.second,
+            )
         }
         terminal.rawPrint("${ESC}8")
         return true
