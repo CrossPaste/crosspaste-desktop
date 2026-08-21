@@ -36,6 +36,7 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 | `delete <id>` | Delete a paste by ID. |
 | `devices` | List paired devices and their connection state. |
 | `pair` | Pair with a nearby device by entering the code it displays (see [Pairing from the terminal](#pairing-from-the-terminal)). |
+| `token` | Show this device's 6-digit pairing code while another device is pairing with it — the acceptor-side counterpart of `pair`, needed when this machine runs the headless daemon. `--wait` blocks until a pairing request arrives (`--timeout` seconds, default 600). |
 | `config` | View configuration; `config set <key> <value>` changes it. |
 | `tags` | Manage paste tags (`create`, `delete`). |
 | `version` | Show the CLI version. |
@@ -131,12 +132,27 @@ fi
 `crosspaste pair` pairs this machine with another CrossPaste device without touching the UI — the flow every other sync feature builds on:
 
 1. The command lists nearby unpaired devices discovered on the local network (plus devices that are already known but not yet trusted). Pick one by number, or skip the list with `--target <app-instance-id>`.
-2. The target device (desktop or mobile — anything with a screen) displays a 6-digit code. Confirm on that device if it asks.
+2. The target device displays a 6-digit code — in the app UI on desktop and mobile, or via `crosspaste token` when the target runs the headless daemon. Confirm on that device if it asks.
 3. Type the code in the terminal (input is hidden). On success the two devices trust each other and start syncing.
 
 Pairing is a human confirmation by design, so `pair` requires an interactive terminal — piping input into it is a usage error. You get up to 5 code attempts per session; on normal exit the CLI cancels an in-progress session, and a session orphaned by an interrupt (Ctrl-C) is reclaimed by a server-side timeout.
 
 If the device list comes up empty, make sure CrossPaste is running on the other device, both machines are on the same network, and multicast/mDNS traffic is not blocked by a firewall.
+
+### Pairing with a headless daemon
+
+When the device being paired *with* has no screen — it runs the headless daemon — its pairing code is shown by `crosspaste token` on that machine instead of a dialog:
+
+```sh
+# On the daemon machine (e.g. over SSH), before or during pairing:
+crosspaste token --wait
+
+# On the other machine, start pairing as usual (terminal or app UI),
+# then type the code the daemon machine printed.
+crosspaste pair
+```
+
+The code goes to stdout on its own line (`CODE=$(crosspaste token)` works in scripts); all explanatory text goes to stderr. Without `--wait` the command reports the code only if a pairing attempt is already in progress, and exits with code 1 otherwise.
 
 ## Headless daemon (Linux servers)
 
