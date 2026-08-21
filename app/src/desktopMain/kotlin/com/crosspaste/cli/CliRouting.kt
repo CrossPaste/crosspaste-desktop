@@ -105,6 +105,11 @@ fun Routing.cliRouting(
             )
         }
 
+        get("/paste/{id}/image") {
+            val id = call.requireLongParameter("id", "Invalid paste id.") ?: return@get
+            handlePasteImage(call, id, pasteDao, userDataPathProvider)
+        }
+
         post("/paste/{id}/copy") {
             if (!supportsPasteCopy) {
                 call.respond(
@@ -328,6 +333,71 @@ private suspend fun respondPasteDetail(
     } else {
         call.respond(pasteData.toDetailDto(pasteTagDao, pasteItemReader, includeRaw, userDataPathProvider))
     }
+}
+
+/** Input-file ceiling for CLI image transcoding; larger files are refused. */
+private const val CLI_IMAGE_MAX_SOURCE_BYTES = 64L * 1024 * 1024
+
+/**
+ * Serves decoded pixels for the CLI's sixel rendering: the stored image at
+ * `index` of the paste's file list, decoded and aspect-fit scaled by
+ * [CliImageTranscoder] into the requested `maxWidth` x `maxHeight` box (both
+ * clamped to [CliImageTranscoder.MAX_BOX_PX], defaulting to it), returned as
+ * straight-alpha RGBA8888 with the exact dimensions in X-Image-Width /
+ * X-Image-Height headers. Every not-servable case — unknown id, no file at
+ * the index, unreadable/oversized file, undecodable bytes — is a 404 with a
+ * message; the CLI falls back to printing paths on any non-200.
+ */
+private suspend fun handlePasteImage(
+    call: ApplicationCall,
+    id: Long,
+    pasteDao: PasteDao,
+    userDataPathProvider: UserDataPathProvider,
+) {
+    val index = call.request.queryParameters["index"]?.toIntOrNull() ?: 0
+    val maxWidth =
+        call.request.queryParameters["maxWidth"]?.toIntOrNull()
+            ?: CliImageTranscoder.MAX_BOX_PX
+    val maxHeight =
+        call.request.queryParameters["maxHeight"]?.toIntOrNull()
+            ?: CliImageTranscoder.MAX_BOX_PX
+    val pasteData =
+        pasteDao.getNoDeletePasteData(id) ?: run {
+            call.respond(HttpStatusCode.NotFound, CliMessageDto("Paste #$id not found."))
+            return
+        }
+    val path =
+        (pasteData.pasteAppearItem as? PasteFiles)
+            ?.getFilePaths(userDataPathProvider)
+            ?.getOrNull(index)
+            ?: run {
+                call.respond(
+                    HttpStatusCode.NotFound,
+                    CliMessageDto("Paste #$id has no stored file at index $index."),
+                )
+                return
+            }
+    val raw =
+        withContext(ioDispatcher) {
+            runCatching {
+                val file = path.toFile()
+                if (file.length() in 1..CLI_IMAGE_MAX_SOURCE_BYTES) {
+                    CliImageTranscoder.transcode(file.readBytes(), maxWidth, maxHeight)
+                } else {
+                    null
+                }
+            }.getOrNull()
+        }
+    if (raw == null) {
+        call.respond(
+            HttpStatusCode.NotFound,
+            CliMessageDto("Paste #$id file at index $index is not a decodable image."),
+        )
+        return
+    }
+    call.response.header(CLI_IMAGE_WIDTH_HEADER, raw.width)
+    call.response.header(CLI_IMAGE_HEIGHT_HEADER, raw.height)
+    call.respondBytes(raw.rgba, ContentType.Application.OctetStream)
 }
 
 private suspend fun handleDevices(

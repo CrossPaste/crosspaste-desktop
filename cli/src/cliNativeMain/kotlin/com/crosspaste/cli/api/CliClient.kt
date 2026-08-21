@@ -18,8 +18,27 @@ import okio.FileSystem
 /**
  * Version of the local /cli API this binary speaks. Mirrors CLI_API_VERSION
  * on the app side; a mismatch produces a warning, not a failure.
+ * 2: GET /cli/paste/{id}/image raw-RGBA transcode endpoint (sixel support).
  */
-const val CLI_API_VERSION = 1
+const val CLI_API_VERSION = 2
+
+/** Response headers carrying the exact dimensions of a transcoded image. */
+internal const val CLI_IMAGE_WIDTH_HEADER = "X-Image-Width"
+internal const val CLI_IMAGE_HEIGHT_HEADER = "X-Image-Height"
+
+/** Mirror of the app-side request box clamp; requests never exceed it. */
+internal const val CLI_IMAGE_MAX_BOX_PX = 1000
+
+/**
+ * Straight-alpha RGBA8888 pixels at exact display size, served by the app's
+ * transcode endpoint. The CLI never decodes image files (design:
+ * ai/design/cli-sixel-support.md); the sixel path renders from this.
+ */
+class CliRawImage(
+    val width: Int,
+    val height: Int,
+    val rgba: ByteArray,
+)
 
 /** Default per-request timeout; long-running pair calls override it per call. */
 internal const val DEFAULT_REQUEST_TIMEOUT_MILLIS = 5000L
@@ -131,6 +150,53 @@ class CliClient(
     ): T = decode(delete(path), deserializer)
 
     suspend fun get(path: String): HttpResponse = request(HttpMethod.Get, path)
+
+    /**
+     * Fetches the stored image at [index] of paste [id] as raw pixels, scaled
+     * by the app to fit [maxWidth] x [maxHeight] (clamped to
+     * [CLI_IMAGE_MAX_BOX_PX]). Any non-200 — including 404 from an app that
+     * predates the endpoint — surfaces as [CliClientException]; callers fall
+     * back to printing file paths. A 200 whose headers or body do not describe
+     * a consistent image is also an error, never a partial result.
+     */
+    suspend fun getRawImage(
+        id: Long,
+        index: Int,
+        maxWidth: Int,
+        maxHeight: Int,
+    ): CliRawImage {
+        val boxWidth = maxWidth.coerceIn(1, CLI_IMAGE_MAX_BOX_PX)
+        val boxHeight = maxHeight.coerceIn(1, CLI_IMAGE_MAX_BOX_PX)
+        val response =
+            request(
+                HttpMethod.Get,
+                "/cli/paste/$id/image?index=$index&maxWidth=$boxWidth&maxHeight=$boxHeight",
+            )
+        if (!response.status.isSuccess()) {
+            val serverMessage = extractMessage(response.bodyAsText())
+            throw CliClientException(
+                serverMessage ?: "Request failed with status ${response.status}",
+                statusCode = response.status.value,
+                hasServerMessage = serverMessage != null,
+            )
+        }
+        val width = response.headers[CLI_IMAGE_WIDTH_HEADER]?.toIntOrNull()
+        val height = response.headers[CLI_IMAGE_HEIGHT_HEADER]?.toIntOrNull()
+        if (width == null ||
+            height == null ||
+            width !in 1..CLI_IMAGE_MAX_BOX_PX ||
+            height !in 1..CLI_IMAGE_MAX_BOX_PX
+        ) {
+            throw CliClientException("Unexpected image dimensions from CrossPaste: $width x $height")
+        }
+        val rgba = response.readRawBytes()
+        if (rgba.size != width * height * 4) {
+            throw CliClientException(
+                "Image payload size ${rgba.size} does not match $width x $height RGBA.",
+            )
+        }
+        return CliRawImage(width, height, rgba)
+    }
 
     /**
      * Opens a long-lived streaming GET (the /cli/watch NDJSON feed) and hands

@@ -63,6 +63,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import okio.Path.Companion.toPath
+import org.jetbrains.skia.Surface
+import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -249,6 +252,121 @@ class CliRoutingTest {
                     client.get("/cli/paste/latest").bodyAsText(),
                 )
             assertEquals(emptyList(), detail.filePaths)
+        }
+    }
+
+    /** Builds an image paste whose stored file holds [bytes] on real disk. */
+    private fun imagePasteDataOnDisk(
+        id: Long,
+        bytes: ByteArray,
+        fileName: String = "shot.png",
+    ): PasteData {
+        val dir = Files.createTempDirectory("cli-image-route").toFile()
+        File(dir, fileName).writeBytes(bytes)
+        val item =
+            createImagesPasteItem(
+                basePath = dir.absolutePath,
+                relativePathList = listOf(fileName),
+                fileInfoTreeMap =
+                    mapOf(fileName to SingleFileInfoTree(size = bytes.size.toLong(), hash = "img")),
+            )
+        return PasteData(
+            id = id,
+            appInstanceId = appInfo.appInstanceId,
+            pasteAppearItem = item,
+            pasteCollection = PasteCollection(listOf()),
+            pasteType = PasteType.IMAGE_TYPE.type,
+            source = "Test",
+            size = item.size,
+            hash = item.hash,
+            createTime = 123L,
+            pasteState = PasteState.LOADED,
+        )
+    }
+
+    /** Encodes a solid-[argb] PNG of the given size via Skia. */
+    private fun pngBytes(
+        width: Int,
+        height: Int,
+        argb: Int,
+    ): ByteArray =
+        Surface.makeRasterN32Premul(width, height).use { surface ->
+            surface.canvas.clear(argb)
+            surface.makeImageSnapshot().encodeToData()!!.bytes
+        }
+
+    @Test
+    fun `image endpoint serves raw rgba with dimension headers`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returns
+            imagePasteDataOnDisk(7L, pngBytes(4, 2, 0xFFFF0000.toInt()))
+        withCliRouting(fixture) {
+            val response = client.get("/cli/paste/7/image?maxWidth=100&maxHeight=100")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("4", response.headers[CLI_IMAGE_WIDTH_HEADER])
+            assertEquals("2", response.headers[CLI_IMAGE_HEIGHT_HEADER])
+            val body = response.readRawBytes()
+            assertEquals(4 * 2 * 4, body.size, "payload must be width * height * 4")
+            // Straight-alpha RGBA byte order: opaque red
+            assertEquals(0xFF.toByte(), body[0])
+            assertEquals(0x00.toByte(), body[1])
+            assertEquals(0x00.toByte(), body[2])
+            assertEquals(0xFF.toByte(), body[3])
+        }
+    }
+
+    @Test
+    fun `image endpoint downscales into the requested box`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(8L) } returns
+            imagePasteDataOnDisk(8L, pngBytes(100, 50, 0xFF00FF00.toInt()))
+        withCliRouting(fixture) {
+            val response = client.get("/cli/paste/8/image?maxWidth=10&maxHeight=10")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("10", response.headers[CLI_IMAGE_WIDTH_HEADER])
+            assertEquals("5", response.headers[CLI_IMAGE_HEIGHT_HEADER])
+            assertEquals(10 * 5 * 4, response.readRawBytes().size)
+        }
+    }
+
+    @Test
+    fun `image endpoint returns 404 for an unknown paste`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(99L) } returns null
+        withCliRouting(fixture) {
+            val response = client.get("/cli/paste/99/image")
+            assertEquals(HttpStatusCode.NotFound, response.status)
+        }
+    }
+
+    @Test
+    fun `image endpoint returns 404 when the index has no file`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returns
+            imagePasteDataOnDisk(7L, pngBytes(4, 2, 0xFFFF0000.toInt()))
+        coEvery { fixture.pasteDao.getNoDeletePasteData(42L) } returns textPasteData(42L, "hello")
+        withCliRouting(fixture) {
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/cli/paste/7/image?index=5").status,
+            )
+            // A text paste has no stored files at all
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("/cli/paste/42/image").status,
+            )
+        }
+    }
+
+    @Test
+    fun `image endpoint returns 404 for an undecodable stored file`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returns
+            imagePasteDataOnDisk(7L, "definitely not an image".encodeToByteArray())
+        withCliRouting(fixture) {
+            val response = client.get("/cli/paste/7/image")
+            assertEquals(HttpStatusCode.NotFound, response.status)
+            assertContains(response.bodyAsText(), "not a decodable image")
         }
     }
 
