@@ -7,7 +7,10 @@ import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
+import java.security.MessageDigest
 import java.util.Properties
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 val versionProperties = Properties()
 versionProperties.load(
@@ -690,4 +693,113 @@ data class JbrReleases(
 data class JbrDetails(
     var url: String = "",
     var sha512: String = "",
+)
+
+// Downloads the pinned libcrypto binaries (openssl.yaml) and wraps each into a
+// thin jar whose only entry is the library under its runtime file name.
+// conveyor.conf feeds these jars to Conveyor as per-machine inputs, so its
+// extract-native-libraries step lands the library in the JVM lib directory
+// (= skiko.library.path) and signs it — the same pipeline as the skiko and
+// tesseract platform jars. Packaging-only: dev/test resolve libcrypto from the
+// environment and never run this task. The checksum chain ends at the
+// downloaded library file; the jar step is a local lossless copy.
+tasks.register("prepareOpenSslLibs") {
+    group = "build"
+    description = "Download pinned libcrypto binaries and wrap them into per-platform jars for Conveyor bundling."
+
+    val openSslYamlFile = project.projectDir.resolve("openssl.yaml")
+    val openSslDir = project.projectDir.resolve("openssl")
+
+    // Optional target subset (-PopenSslTargets=linux-x64,linux-arm64) so
+    // machine-scoped CI builds (e.g. the linux-only beta) don't couple their
+    // success to the reachability of the other platforms' binaries.
+    val requestedTargets = providers.gradleProperty("openSslTargets")
+
+    inputs.file(openSslYamlFile)
+    inputs.property("openSslTargets", requestedTargets.orElse(""))
+    outputs.dir(openSslDir)
+
+    doLast {
+        val allTargets = loadOpenSslReleases(openSslYamlFile).openssl.targets
+        val selectedTargets =
+            requestedTargets.orNull?.split(",")?.map(String::trim)?.let { names ->
+                names.forEach { name ->
+                    if (name !in allTargets) {
+                        throw GradleException("Unknown OpenSSL target '$name'; openssl.yaml defines ${allTargets.keys}")
+                    }
+                }
+                allTargets.filterKeys(names::contains)
+            } ?: allTargets
+        openSslDir.mkdirs()
+        // Drop leftovers from earlier versions (stale files keyed by the full
+        // target set, so a filtered run never deletes other targets' files).
+        val expectedFiles =
+            allTargets
+                .flatMap { (target, details) ->
+                    listOf(details.url.substringAfterLast("/"), "crosspaste-libcrypto-$target.jar")
+                }.toSet()
+        openSslDir.listFiles()?.forEach { file ->
+            if (file.isFile && file.name !in expectedFiles) {
+                file.delete()
+            }
+        }
+        selectedTargets.forEach { (target, details) ->
+            val libFile = openSslDir.resolve(details.url.substringAfterLast("/"))
+            if (!libFile.exists() || sha256Hex(libFile) != details.sha256) {
+                download.run {
+                    src { details.url }
+                    dest { openSslDir }
+                    overwrite(true)
+                    tempAndMove(true)
+                }
+            }
+            val actualSha256 = sha256Hex(libFile)
+            if (actualSha256 != details.sha256) {
+                throw GradleException(
+                    "SHA-256 mismatch for ${libFile.name}: expected ${details.sha256}, got $actualSha256",
+                )
+            }
+            val jarFile = openSslDir.resolve("crosspaste-libcrypto-$target.jar")
+            ZipOutputStream(jarFile.outputStream().buffered()).use { zip ->
+                zip.putNextEntry(ZipEntry(details.libName))
+                libFile.inputStream().use { it.copyTo(zip) }
+                zip.closeEntry()
+            }
+        }
+    }
+}
+
+fun sha256Hex(file: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().use { input ->
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            digest.update(buffer, 0, read)
+        }
+    }
+    return digest.digest().joinToString("") { "%02x".format(it) }
+}
+
+fun loadOpenSslReleases(file: File): OpenSslReleases {
+    val yaml = Yaml(Constructor(OpenSslReleases::class.java, LoaderOptions()))
+    file.inputStream().use {
+        return yaml.load(it)
+    }
+}
+
+data class OpenSslReleases(
+    var openssl: OpenSslConfig = OpenSslConfig(),
+)
+
+data class OpenSslConfig(
+    var version: String = "",
+    var targets: Map<String, OpenSslTarget> = mutableMapOf(),
+)
+
+data class OpenSslTarget(
+    var url: String = "",
+    var sha256: String = "",
+    var libName: String = "",
 )

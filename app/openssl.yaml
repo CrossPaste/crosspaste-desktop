@@ -1,0 +1,37 @@
+# Pinned OpenSSL libcrypto binaries bundled with the desktop app for the
+# pairing v3 SPAKE2 backend (OpenSslPakeEcOps). Built by our own CI at
+# https://github.com/CrossPaste/openssl-builds (fork of whyoleg/openssl-builds,
+# scripts unchanged; sources from the official OpenSSL tarball). Downloaded and
+# verified by the app:prepareOpenSslLibs Gradle task, then wrapped into thin
+# per-platform jars that conveyor.conf feeds to Conveyor, whose
+# extract-native-libraries step places the library into the JVM lib directory
+# and signs it. Keep the K/Native prebuilt (cryptography-provider-openssl3)
+# version aligned when bumping so all platforms review the same OpenSSL.
+#
+# When adopting a new version: rebuild via the fork's workflows (windows needs
+# build-windows.yaml), verify the ecp_nistz256 assembly is present (see the
+# fork release notes for the checklist), publish a fork release, then update
+# every url/sha256 here.
+openssl:
+  version: 3.6.0
+  targets:
+    macos-arm64:
+      url: https://github.com/CrossPaste/openssl-builds/releases/download/3.6.0/libcrypto-3.6.0-macos-arm64.dylib
+      sha256: fd9a1293128c129f99d58749e2f3c18d0567f485d7b134bd2576f1ce274ab027
+      libName: libcrypto.3.dylib
+    macos-x64:
+      url: https://github.com/CrossPaste/openssl-builds/releases/download/3.6.0/libcrypto-3.6.0-macos-x64.dylib
+      sha256: 1b68742cd3f8099ab4ebf9465a54b3c4c78ed3ec5f5acd13de0f5e3adc0a97d2
+      libName: libcrypto.3.dylib
+    linux-x64:
+      url: https://github.com/CrossPaste/openssl-builds/releases/download/3.6.0/libcrypto-3.6.0-linux-x64.so
+      sha256: 7cc44876e0c5769adc40d451564e40dca0cd45210d6fb6f719a6a5de02512235
+      libName: libcrypto.so.3
+    linux-arm64:
+      url: https://github.com/CrossPaste/openssl-builds/releases/download/3.6.0/libcrypto-3.6.0-linux-arm64.so
+      sha256: ab2c449a0bdc39bbcbc66d0528522df77cf71e289a93ab922297f505a417040e
+      libName: libcrypto.so.3
+    windows-x64:
+      url: https://github.com/CrossPaste/openssl-builds/releases/download/3.6.0/libcrypto-3.6.0-windows-x64.dll
+      sha256: a547e4f4085a19b91edd8e5aba0c253fc1efe1fed276eec903edc20ad1d66518
+      libName: libcrypto-3-x64.dll
