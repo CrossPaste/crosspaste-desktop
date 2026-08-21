@@ -297,6 +297,29 @@ class PasteImageOutputTest {
         }
 
     @Test
+    fun sixelBackendUnavailableStopsFetchingAndSurfacesTheServerMessage() =
+        runTest {
+            val remedy = "Image decoding is unavailable: install libgl1 and libegl1, then restart CrossPaste."
+            var fetches = 0
+            val (emitted, notes) =
+                renderer(
+                    paths = listOf("/a.png", "/b.png", "/c.png"),
+                    protocol = TerminalImageProtocol.SIXEL,
+                    sixelFetch = {
+                        fetches++
+                        throw PreviewUnavailableException(remedy)
+                    },
+                )
+            // A process-wide backend failure must not be retried per image
+            assertEquals(1, fetches)
+            assertTrue(emitted.isEmpty())
+            assertEquals(
+                listOf("(3 image(s) not previewed; file paths listed above)", remedy),
+                notes,
+            )
+        }
+
+    @Test
     fun sixelBudgetCountsFetchedRgbaBytes() =
         runTest {
             // Each 2x2 fetch is 16 RGBA bytes; a 24-byte budget fits one

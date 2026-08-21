@@ -39,6 +39,17 @@ internal fun resolveRawImageAction(filePaths: List<String>): RawImageAction =
     }
 
 /**
+ * Thrown by a sixelFetch when the app reports its image decode backend is
+ * unavailable (HTTP 503, e.g. missing native graphics libraries on a headless
+ * server, #4854). Unlike a null fetch result — a per-image skip — this is a
+ * process-wide condition: the renderer stops fetching and surfaces the
+ * server's actionable message once instead of failing image by image.
+ */
+internal class PreviewUnavailableException(
+    message: String,
+) : Exception(message)
+
+/**
  * Streams a stored image file to stdout in 64 KiB chunks. All effects are
  * injectable so tests can pin the byte fidelity and the failure paths;
  * production uses the binary-safe stdout primitives (on Windows the CRT is
@@ -101,6 +112,7 @@ internal class InlineImageRenderer(
         var inspected = 0
         var remainingBudget = maxTotalBytes
         var skipped = 0
+        var unavailableMessage: String? = null
         for ((index, path) in paths.withIndex()) {
             if (rendered >= maxImages || inspected >= maxCandidates || remainingBudget <= 0) {
                 skipped += paths.size - index
@@ -108,11 +120,19 @@ internal class InlineImageRenderer(
             }
             inspected++
             val consumed =
-                when (protocol) {
-                    TerminalImageProtocol.ITERM,
-                    TerminalImageProtocol.KITTY,
-                    -> emitFromFile(protocol, path, remainingBudget)
-                    TerminalImageProtocol.SIXEL -> emitFromFetch(index, remainingBudget)
+                try {
+                    when (protocol) {
+                        TerminalImageProtocol.ITERM,
+                        TerminalImageProtocol.KITTY,
+                        -> emitFromFile(protocol, path, remainingBudget)
+                        TerminalImageProtocol.SIXEL -> emitFromFetch(index, remainingBudget)
+                    }
+                } catch (e: PreviewUnavailableException) {
+                    // Process-wide backend failure: every further fetch would
+                    // fail the same way, so stop and report once
+                    unavailableMessage = e.message
+                    skipped += paths.size - index
+                    break
                 }
             if (consumed == null) {
                 skipped++
@@ -125,6 +145,7 @@ internal class InlineImageRenderer(
         if (skipped > 0) {
             note("($skipped image(s) not previewed; file paths listed above)")
         }
+        unavailableMessage?.let { note(it) }
     }
 
     /** Returns the payload bytes consumed, or null when the image is skipped. */
