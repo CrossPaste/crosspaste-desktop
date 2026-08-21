@@ -14,6 +14,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -67,17 +68,17 @@ class CliSymlinkServiceTest {
         }
     }
 
+    private fun macosPlatform() = Platform(name = Platform.MACOS, arch = "arm64", bitMode = 64, version = "14.0")
+
     private fun createService(
-        supported: Boolean = true,
+        platform: Platform = macosPlatform(),
         jarDir: NioPath = tempDir.resolve("Resources"),
         escalatedInstall: ((Path, Path) -> CliInstallResult)? = null,
     ): CliSymlinkService =
         CliSymlinkService(
             appPathProvider = fakeAppPathProvider(jarDir),
-            // The platform check is bypassed via supportedOverride; any value works
-            platform = Platform(name = Platform.MACOS, arch = "arm64", bitMode = 64, version = "14.0"),
+            platform = platform,
             linkPath = linkPath.toOkioPath(),
-            supportedOverride = supported,
             escalatedInstall = escalatedInstall,
         )
 
@@ -87,16 +88,38 @@ class CliSymlinkServiceTest {
     }
 
     @Test
-    fun `not supported when override is false`() =
+    fun `state starts at probing before the first refresh`() {
+        assertEquals(CliSymlinkState.PROBING, createService().state.value)
+    }
+
+    @Test
+    fun `binary missing when cli binary is absent`() =
         runTest {
-            assertEquals(CliSymlinkState.NOT_SUPPORTED, refreshedState(createService(supported = false)))
+            Files.delete(cliBinary)
+            assertEquals(CliSymlinkState.BINARY_MISSING, refreshedState(createService()))
         }
 
     @Test
-    fun `not supported when cli binary is absent`() =
+    fun `externally managed on windows when the packaged exe exists`() =
         runTest {
-            Files.delete(cliBinary)
-            assertEquals(CliSymlinkState.NOT_SUPPORTED, refreshedState(createService()))
+            Files.write(payloadBinDir.resolve("crosspaste-cli.exe"), byteArrayOf(1))
+            val platform = Platform(name = Platform.WINDOWS, arch = "amd64", bitMode = 64, version = "10.0")
+            assertEquals(CliSymlinkState.EXTERNALLY_MANAGED, refreshedState(createService(platform)))
+        }
+
+    @Test
+    fun `externally managed on linux when the packaged cli exists`() =
+        runTest {
+            val platform = Platform(name = Platform.LINUX, arch = "amd64", bitMode = 64, version = "6.1")
+            assertEquals(CliSymlinkState.EXTERNALLY_MANAGED, refreshedState(createService(platform)))
+        }
+
+    @Test
+    fun `binary missing on windows when only the unix binary name exists`() =
+        runTest {
+            // setUp created plain crosspaste-cli; windows resolves crosspaste-cli.exe
+            val platform = Platform(name = Platform.WINDOWS, arch = "amd64", bitMode = 64, version = "10.0")
+            assertEquals(CliSymlinkState.BINARY_MISSING, refreshedState(createService(platform)))
         }
 
     @Test
@@ -223,9 +246,21 @@ class CliSymlinkServiceTest {
         }
 
     @Test
-    fun `install fails when not supported`() =
+    fun `install fails when externally managed`() =
         runTest {
-            assertEquals(CliInstallResult.FAILURE, createService(supported = false).install())
+            val platform = Platform(name = Platform.LINUX, arch = "amd64", bitMode = 64, version = "6.1")
+            val service = createService(platform)
+            assertEquals(CliInstallResult.FAILURE, service.install())
+            assertEquals(CliSymlinkState.EXTERNALLY_MANAGED, service.state.value)
+        }
+
+    @Test
+    fun `install fails when the binary is missing`() =
+        runTest {
+            Files.delete(cliBinary)
+            val service = createService()
+            assertEquals(CliInstallResult.FAILURE, service.install())
+            assertEquals(CliSymlinkState.BINARY_MISSING, service.state.value)
         }
 
     @Test
@@ -287,8 +322,118 @@ class CliSymlinkServiceTest {
         // Calls the internal attempt directly, bypassing install()'s
         // pre-check — modeling a file that appeared after that check
         Files.write(linkPath, byteArrayOf(9))
-        assertEquals(CliInstallResult.FAILURE, createService().attemptDirectInstall())
+        assertEquals(
+            CliInstallResult.FAILURE,
+            createService().attemptDirectInstall(cliBinary.toOkioPath()),
+        )
         assertEquals(9, Files.readAllBytes(linkPath)[0].toInt())
+    }
+
+    @Test
+    fun `dev resolution prefers a valid configured path`() {
+        val configured = tempDir.resolve("custom-cli")
+        Files.write(configured, byteArrayOf(1))
+        assertEquals(
+            configured.toOkioPath(),
+            resolveDevCliBinary(configured.toString(), tempDir, "macosArm64", "crosspaste-cli"),
+        )
+    }
+
+    @Test
+    fun `dev resolution fails fast on a configured but missing path`() {
+        assertFailsWith<IllegalStateException> {
+            resolveDevCliBinary(
+                tempDir.resolve("does-not-exist").toString(),
+                tempDir,
+                "macosArm64",
+                "crosspaste-cli",
+            )
+        }
+    }
+
+    @Test
+    fun `dev resolution walks up to the conventional dist output`() {
+        val distBinary =
+            tempDir
+                .resolve("cli")
+                .resolve("dist")
+                .resolve("macosArm64")
+                .resolve("crosspaste-cli")
+        Files.createDirectories(distBinary.parent)
+        Files.write(distBinary, byteArrayOf(1))
+        // Start two levels below the repo root, as an app-module cwd would be
+        val startDir = tempDir.resolve("app").resolve("build")
+        Files.createDirectories(startDir)
+        assertEquals(
+            distBinary.toOkioPath(),
+            resolveDevCliBinary(null, startDir, "macosArm64", "crosspaste-cli"),
+        )
+    }
+
+    @Test
+    fun `dev resolution returns null when nothing is built or configured`() {
+        assertEquals(null, resolveDevCliBinary(null, tempDir, "macosArm64", "crosspaste-cli"))
+    }
+
+    @Test
+    fun `dev resolution absolutizes a relative configured path`() {
+        // A relative path written verbatim into /usr/local/bin/crosspaste
+        // would resolve relative to /usr/local/bin as a dangling link — yet
+        // still compare equal as INSTALLED
+        val configured = tempDir.resolve("custom-cli")
+        Files.write(configured, byteArrayOf(1))
+        val relative = NioPath.of("").toAbsolutePath().relativize(configured)
+        assertTrue(!relative.isAbsolute)
+        val resolved = resolveDevCliBinary(relative.toString(), tempDir, "macosArm64", "crosspaste-cli")
+        assertTrue(resolved!!.isAbsolute)
+        assertEquals(configured.toAbsolutePath().normalize(), resolved.toNioPath())
+    }
+
+    @Test
+    fun `refresh picks up a binary built after startup`() =
+        runTest {
+            // Models the dev convention resolver: nothing at first, then the
+            // user runs :cli:assembleDist while the app is up
+            val lateBinary = tempDir.resolve("late-cli")
+            val service =
+                CliSymlinkService(
+                    appPathProvider = fakeAppPathProvider(tempDir.resolve("Resources")),
+                    platform = macosPlatform(),
+                    linkPath = linkPath.toOkioPath(),
+                    binaryResolverOverride = {
+                        lateBinary.takeIf { Files.isRegularFile(it) }?.toOkioPath()
+                    },
+                )
+            assertEquals(CliSymlinkState.BINARY_MISSING, refreshedState(service))
+            assertEquals(null, service.cliBinaryPath.value)
+            Files.write(lateBinary, byteArrayOf(1))
+            assertEquals(CliSymlinkState.NOT_INSTALLED, refreshedState(service))
+            assertEquals(lateBinary.toOkioPath(), service.cliBinaryPath.value)
+        }
+
+    @Test
+    fun `dist target and binary name follow the host platform`() {
+        fun platform(
+            name: String,
+            arch: String,
+        ) = Platform(name = name, arch = arch, bitMode = 64, version = "1")
+        assertEquals("macosArm64", devCliDistTarget(platform(Platform.MACOS, "aarch64")))
+        assertEquals("macosX64", devCliDistTarget(platform(Platform.MACOS, "x86_64")))
+        assertEquals("linuxArm64", devCliDistTarget(platform(Platform.LINUX, "aarch64")))
+        assertEquals("linuxX64", devCliDistTarget(platform(Platform.LINUX, "amd64")))
+        assertEquals("mingwX64", devCliDistTarget(platform(Platform.WINDOWS, "amd64")))
+        assertEquals("crosspaste-cli.exe", cliBinaryFileName(platform(Platform.WINDOWS, "amd64")))
+        assertEquals("crosspaste-cli", cliBinaryFileName(platform(Platform.MACOS, "aarch64")))
+    }
+
+    @Test
+    fun `parse where output takes the first non-empty line`() {
+        assertEquals(
+            "C:\\Users\\me\\AppData\\Local\\Microsoft\\WindowsApps\\crosspaste-cli.exe",
+            parseWherePath("C:\\Users\\me\\AppData\\Local\\Microsoft\\WindowsApps\\crosspaste-cli.exe\r"),
+        )
+        assertEquals(null, parseWherePath(""))
+        assertEquals(null, parseWherePath("  \r"))
     }
 
     @Test

@@ -12,6 +12,13 @@ object DevConfig {
 
     val marketingMode: Boolean = development.getProperty("marketingMode")?.toBoolean() == true
 
+    /**
+     * Optional dev override for the CLI executable shown/probed by
+     * CliSymlinkService; when unset the conventional cli/dist output is used.
+     * A configured-but-missing path fails fast at first use.
+     */
+    val cliBinaryPath: String? = development.getProperty("cliBinaryPath")
+
     val pairingV3InteropEnabled: Boolean =
         developmentPairingV3InteropEnabled(
             development.getProperty("pairingV3InteropEnabled"),

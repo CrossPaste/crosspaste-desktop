@@ -17,6 +17,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import com.crosspaste.cli.CliSymlinkService
+import com.crosspaste.cli.CliSymlinkState
 import com.crosspaste.cli.ShellAvailability
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.SectionHeader
@@ -28,9 +29,10 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 /**
- * Extension sub-page for the `crosspaste` terminal command: install/repair,
- * where the bundled executable lives, and whether each login shell can
- * resolve the command right now.
+ * Extension sub-page for the terminal command, shown on every platform:
+ * a status/action row (install/repair on macOS, installer-managed status
+ * elsewhere), where the executable lives, and whether each shell can resolve
+ * the command right now.
  */
 @Composable
 fun CliToolContentView() {
@@ -71,13 +73,35 @@ fun CliToolContentView() {
                 Column(
                     modifier = Modifier.padding(medium),
                 ) {
-                    SelectionContainer {
-                        Text(
-                            text = cliSymlinkService.cliBinaryPath.toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    // Re-resolved on every refresh, so a CLI built while the
+                    // app runs shows up on the next visit to this page
+                    val binaryPath by cliSymlinkService.cliBinaryPath.collectAsState()
+                    when {
+                        binaryPath != null -> {
+                            SelectionContainer {
+                                Text(
+                                    text = binaryPath.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        symlinkState == CliSymlinkState.PROBING -> {
+                            Text(
+                                text = "…",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        else -> {
+                            Text(
+                                text = copywriter.getText("cli_binary_missing"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 }
             }
