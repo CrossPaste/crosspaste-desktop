@@ -132,14 +132,12 @@ private sealed interface FetchMsg {
 
     /**
      * Transcoded pixels for the sixel preview (null image = fetch failed).
-     * The requested cell box rides along so a reply that no longer matches
-     * the current panel geometry (resized meanwhile) is discarded — the
-     * resize repaint has already scheduled a fresh fetch.
+     * The full request key rides along: only the reply matching the ACTIVE
+     * key (same generation, paste, and cell box) is honored — anything else
+     * is a superseded or cancelled request racing back.
      */
     data class SixelPixels(
-        val id: Long,
-        val boxColumns: Int,
-        val boxRows: Int,
+        val key: SixelRequestKey,
         val image: CliRawImage?,
     ) : FetchMsg
 }
@@ -228,7 +226,7 @@ internal class PickTui(
         private var imageDrawnId: Long? = null
         private var imageFailedId: Long? = null
         private var imageDeadline: TimeMark? = null
-        private var sixelInFlightId: Long? = null
+        private val sixelFetch = SixelFetchState()
         private var sixelJob: Job? = null
         private var lastPanelRow: Int? = null
         private var lastSize: Pair<Int, Int>? = null
@@ -540,16 +538,16 @@ internal class PickTui(
         }
 
         private fun launchSixelFetch(id: Long) {
-            // One in-flight fetch per paste is enough: repaints keep
-            // rescheduling draws, and the reply itself completes the draw
-            if (sixelInFlightId == id) return
             val display = imageDisplay ?: return
             val (maxColumns, maxRows) = previewImageCellBox()
+            // Null = an IDENTICAL request (same paste and box) is in flight
+            // and its reply will complete this draw. A same-paste request for
+            // a new box (resize) gets a fresh key and supersedes the old one.
+            val key = sixelFetch.nextRequest(id, maxColumns, maxRows) ?: return
             val (maxWidthPx, maxHeightPx) = sixelPixelBox(maxColumns, maxRows, display)
             // The superseded fetch's reply would be dropped as stale anyway;
             // cancelling frees the connection instead of letting it run out
             sixelJob?.cancel()
-            sixelInFlightId = id
             sixelJob =
                 fetchScope.launch(Dispatchers.Default) {
                     val image =
@@ -567,47 +565,51 @@ internal class PickTui(
                         } catch (_: AppNotRunningException) {
                             null
                         }
-                    results.trySend(FetchMsg.SixelPixels(id, maxColumns, maxRows, image))
+                    results.trySend(FetchMsg.SixelPixels(key, image))
                 }
         }
 
-        /**
-         * Aborts any in-flight sixel fetch. Clearing [sixelInFlightId] with
-         * it is mandatory: a cancelled fetch never posts its reply, and a
-         * stale in-flight marker would block re-fetching the same paste when
-         * the user selects it again.
-         */
+        /** Aborts any in-flight sixel fetch (job AND active-key bookkeeping). */
         private fun cancelSixelFetch() {
             sixelJob?.cancel()
             sixelJob = null
-            sixelInFlightId = null
+            sixelFetch.cancel()
         }
 
         /**
          * Draws a fetched sixel reply — the app already scaled the pixels to
          * the requested panel box, so this is pure encoding plus escape
-         * output, fast enough for the loop thread. Stale replies (selection
-         * moved on, panel resized, a repaint is pending) are dropped; the
-         * repaint that superseded them has already rescheduled a fresh draw.
+         * output, fast enough for the loop thread. Only the reply matching
+         * the ACTIVE request key may clear that state or draw; anything else
+         * (superseded box or paste, cancelled generation racing back) is
+         * dropped without touching it.
          */
         private fun onSixelPixels(msg: FetchMsg.SixelPixels) {
-            if (sixelInFlightId == msg.id) sixelInFlightId = null
+            if (!sixelFetch.onReply(msg.key)) return
+            sixelJob = null
             val candidate = imageCandidate(previewDetail)
             val panelRow = lastPanelRow
-            if (candidate?.first?.id != msg.id || panelRow == null || dirty) return
-            if (msg.boxColumns to msg.boxRows != previewImageCellBox()) return
+            if (candidate?.first?.id != msg.key.pasteId || panelRow == null || dirty) return
+            // A resize whose refetch deadline has not fired yet leaves this
+            // reply active but sized for the OLD box; drawing it could
+            // overflow the new panel. The pending deadline redraws instead.
+            if (msg.key.boxColumns to msg.key.boxRows != previewImageCellBox()) return
             val image = msg.image
             if (image == null) {
                 // Repaint with the path fallback instead of leaving the
                 // reserved lines blank
-                imageFailedId = msg.id
+                imageFailedId = msg.key.pasteId
                 dirty = true
                 return
             }
             terminal.rawPrint("${ESC}7$ESC[${panelRow + 2};3H")
             writeSixelInlineImage(image.rgba, image.width, image.height) { terminal.rawPrint(it) }
             terminal.rawPrint("${ESC}8")
-            imageDrawnId = msg.id
+            imageDrawnId = msg.key.pasteId
+            // This draw satisfies any redraw scheduled while the fetch was in
+            // flight — without this, that deadline would relaunch the same
+            // fetch and transcode a second time for nothing
+            imageDeadline = null
         }
 
         private suspend fun applyEffect(effect: PickEffect): PickOutcome? =
