@@ -1,5 +1,6 @@
 package com.crosspaste.cli
 
+import com.crosspaste.config.DevConfig
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.getAppEnvUtils
@@ -12,18 +13,34 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.yield
 import okio.Path
+import okio.Path.Companion.toOkioPath
 import okio.Path.Companion.toPath
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.Paths
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import java.nio.file.Path as NioPath
 
 enum class CliSymlinkState {
-    /** Not macOS, not a production install, or the bundled CLI binary is absent (dev run). */
-    NOT_SUPPORTED,
+    /** Startup default until the first [CliSymlinkService.refresh] completes. */
+    PROBING,
+
+    /**
+     * No CLI executable was found: a dev run without a built/configured CLI,
+     * or a locally assembled package that omits the CLI payload.
+     */
+    BINARY_MISSING,
+
+    /**
+     * Windows/Linux: the terminal command is wired at install time (MSIX
+     * AppExecutionAlias / deb symlink), which the app can only observe, not
+     * manage. The CLI page shows the executable path and shell availability.
+     */
+    EXTERNALLY_MANAGED,
 
     /**
      * The app runs from a Gatekeeper App Translocation mount (randomized,
@@ -52,7 +69,7 @@ enum class CliSymlinkState {
 
 enum class CliInstallResult { SUCCESS, CANCELLED, FAILURE }
 
-/** Whether `crosspaste` resolves in a given shell; [resolvedPath] is non-null when it does. */
+/** Whether the CLI command resolves in a given shell; [resolvedPath] is non-null when it does. */
 data class ShellAvailability(
     val shell: String,
     val resolvedPath: String?,
@@ -61,24 +78,29 @@ data class ShellAvailability(
 }
 
 /**
- * macOS PATH integration for the bundled CLI (design decision D6): maintains
- * the /usr/local/bin/crosspaste symlink pointing at
- * CrossPaste.app/Contents/Resources/bin/crosspaste-cli.
+ * Cross-platform surface for the bundled CLI (design decision D6, revised
+ * 2026-08-21: the settings entry is visible on every platform and in dev
+ * runs; only the install action stays macOS-specific).
  *
- * Installing first tries a plain symlink (works when /usr/local/bin is
- * user-writable, e.g. Homebrew-on-Intel machines) and falls back to an
- * osascript "with administrator privileges" prompt (the VS Code model) —
- * /usr/local/bin is root-owned or absent on stock installs.
- *
- * On deb-based Linux and MSIX Windows the equivalent wiring happens at
- * install time (packaging symlink / app execution alias), so this service
- * reports [CliSymlinkState.NOT_SUPPORTED] everywhere but macOS.
+ * - macOS: maintains the /usr/local/bin/crosspaste symlink pointing at the
+ *   bundled CLI. Installing first tries a plain symlink (works when
+ *   /usr/local/bin is user-writable, e.g. Homebrew-on-Intel machines) and
+ *   falls back to an osascript "with administrator privileges" prompt (the
+ *   VS Code model) — /usr/local/bin is root-owned or absent on stock installs.
+ * - Windows/Linux: PATH wiring happens at install time (MSIX execution alias
+ *   `crosspaste-cli` / deb symlink /usr/bin/crosspaste), so the state is
+ *   [CliSymlinkState.EXTERNALLY_MANAGED] and only observation (executable
+ *   path, shell availability) is offered.
+ * - Dev runs: the binary is resolved from `cliBinaryPath` in
+ *   development.properties when set (a configured-but-missing path fails
+ *   fast), otherwise from the conventional `cli/dist/<target>/` output of
+ *   `./gradlew :cli:assembleDist`; nothing found means
+ *   [CliSymlinkState.BINARY_MISSING], never a crash.
  */
 class CliSymlinkService(
     appPathProvider: AppPathProvider,
-    platform: Platform,
+    private val platform: Platform,
     private val linkPath: Path = DEFAULT_LINK_PATH.toPath(),
-    supportedOverride: Boolean? = null,
     private val escalatedInstall: ((cliBinary: Path, link: Path) -> CliInstallResult)? = null,
 ) {
 
@@ -87,7 +109,10 @@ class CliSymlinkService(
 
         const val COMMAND_NAME = "crosspaste"
 
-        private val PROBED_SHELLS = listOf("/bin/zsh", "/bin/bash")
+        /** `crosspaste.exe` is Conveyor's GUI-launch alias, so the CLI keeps its own name. */
+        const val WINDOWS_COMMAND_NAME = "crosspaste-cli"
+
+        private val PROBED_UNIX_SHELLS = listOf("/bin/zsh", "/bin/bash")
 
         /** The marker is only printed when `command -v` succeeded, so parsing needs no exit-code check. */
         private val PROBE_COMMAND =
@@ -100,22 +125,35 @@ class CliSymlinkService(
 
     private val logger = KotlinLogging.logger {}
 
+    /** What the user actually types in a terminal on this platform. */
+    val commandName: String =
+        if (platform.isWindows()) WINDOWS_COMMAND_NAME else COMMAND_NAME
+
     /**
-     * The bundled CLI lives in the JVM payload area, which is exactly what
-     * pasteAppJarPath points at (Contents/Resources on macOS).
+     * Packaged builds bundle the CLI in the JVM payload area, which is
+     * exactly what pasteAppJarPath points at (Contents/Resources on macOS,
+     * lib/app on Linux, app\ on Windows). Dev runs resolve it from
+     * development.properties or the cli/dist convention instead; null when
+     * neither yields a binary.
      */
-    val cliBinaryPath: Path =
-        appPathProvider.pasteAppJarPath
-            .resolve("bin")
-            .resolve("crosspaste-cli")
+    val cliBinaryPath: Path? =
+        if (getAppEnvUtils().isDevelopment()) {
+            resolveDevCliBinary(
+                configuredPath = DevConfig.cliBinaryPath,
+                startDir = Paths.get("").toAbsolutePath(),
+                distTarget = devCliDistTarget(platform),
+                binaryFileName = cliBinaryFileName(platform),
+            )
+        } else {
+            appPathProvider.pasteAppJarPath
+                .resolve("bin")
+                .resolve(cliBinaryFileName(platform))
+        }
 
-    private val supported: Boolean =
-        supportedOverride ?: (platform.isMacos() && getAppEnvUtils().isProduction())
-
-    // Starts pessimistic and is populated by refresh(): computeState() does
+    // Starts at PROBING and is populated by refresh(): computeState() does
     // filesystem probes, which must not run on the main thread where Koin
     // first constructs this service.
-    private val _state = MutableStateFlow(CliSymlinkState.NOT_SUPPORTED)
+    private val _state = MutableStateFlow(CliSymlinkState.PROBING)
     val state: StateFlow<CliSymlinkState> = _state
 
     suspend fun refresh() {
@@ -125,10 +163,14 @@ class CliSymlinkService(
     }
 
     private fun computeState(): CliSymlinkState {
-        if (!supported || !Files.isRegularFile(cliBinaryPath.toNioPath())) {
-            return CliSymlinkState.NOT_SUPPORTED
+        val binary = cliBinaryPath
+        if (binary == null || !Files.isRegularFile(binary.toNioPath())) {
+            return CliSymlinkState.BINARY_MISSING
         }
-        if (cliBinaryPath.toString().contains("/AppTranslocation/")) {
+        if (!platform.isMacos()) {
+            return CliSymlinkState.EXTERNALLY_MANAGED
+        }
+        if (binary.toString().contains("/AppTranslocation/")) {
             return CliSymlinkState.TRANSLOCATED
         }
         val nioLink = linkPath.toNioPath()
@@ -139,7 +181,7 @@ class CliSymlinkService(
             return CliSymlinkState.CONFLICT
         }
         val target = runCatching { Files.readSymbolicLink(nioLink) }.getOrNull()
-        return if (target?.normalize() == cliBinaryPath.toNioPath().normalize()) {
+        return if (target?.normalize() == binary.toNioPath().normalize()) {
             CliSymlinkState.INSTALLED
         } else {
             CliSymlinkState.NEEDS_REPAIR
@@ -162,9 +204,11 @@ class CliSymlinkService(
                 _state.value = current
                 return@withContext CliInstallResult.FAILURE
             }
+            // Actionable states imply the binary resolved
+            val cliBinary = cliBinaryPath ?: return@withContext CliInstallResult.FAILURE
             val result =
                 attemptDirectInstall()
-                    ?: (escalatedInstall ?: ::osascriptInstall)(cliBinaryPath, linkPath)
+                    ?: (escalatedInstall ?: ::osascriptInstall)(cliBinary, linkPath)
             val finalState = computeState()
             _state.value = finalState
             when {
@@ -185,6 +229,7 @@ class CliSymlinkService(
      * permission).
      */
     internal fun attemptDirectInstall(): CliInstallResult? {
+        val cliBinary = cliBinaryPath ?: return CliInstallResult.FAILURE
         val nioLink = linkPath.toNioPath()
         if (Files.exists(nioLink, LinkOption.NOFOLLOW_LINKS) && !Files.isSymbolicLink(nioLink)) {
             logger.warn { "A foreign file appeared at $linkPath; refusing to replace it" }
@@ -194,7 +239,7 @@ class CliSymlinkService(
             if (Files.isSymbolicLink(nioLink)) {
                 Files.deleteIfExists(nioLink)
             }
-            Files.createSymbolicLink(nioLink, cliBinaryPath.toNioPath())
+            Files.createSymbolicLink(nioLink, cliBinary.toNioPath())
             CliInstallResult.SUCCESS
         }.getOrElse { e ->
             logger.info { "Direct symlink install failed (${e.message}); escalating to admin prompt" }
@@ -203,50 +248,101 @@ class CliSymlinkService(
     }
 
     /**
-     * Answers "can the user actually type `crosspaste` in a terminal right
-     * now?" by asking each login shell to resolve the command — this honors
-     * whatever PATH the user's shell profiles set up, not just our default
-     * symlink location.
+     * Answers "can the user actually type [commandName] in a terminal right
+     * now?" On Unix this asks each login shell to resolve the command — which
+     * honors whatever PATH the user's shell profiles set up, not just our
+     * default symlink location. On Windows it asks `where.exe` (the cmd view
+     * of PATH, which includes the WindowsApps alias directory) and Windows
+     * PowerShell's `Get-Command`.
      */
     suspend fun probeShellAvailability(): List<ShellAvailability> =
         withContext(ioDispatcher) {
-            PROBED_SHELLS.map { shell ->
-                ShellAvailability(
-                    shell = shell.substringAfterLast('/'),
-                    resolvedPath = resolveCommandIn(shell),
-                )
+            if (platform.isWindows()) {
+                probeWindowsAvailability()
+            } else {
+                probedUnixShells().map { shell ->
+                    ShellAvailability(
+                        shell = shell.substringAfterLast('/'),
+                        resolvedPath = resolveCommandIn(shell),
+                    )
+                }
             }
         }
+
+    /** zsh/bash where present (Linux often lacks zsh); /bin/sh as a last resort. */
+    private fun probedUnixShells(): List<String> =
+        PROBED_UNIX_SHELLS
+            .filter { Files.isRegularFile(Paths.get(it)) }
+            .ifEmpty { listOf("/bin/sh") }
+
+    private suspend fun probeWindowsAvailability(): List<ShellAvailability> =
+        listOf(
+            ShellAvailability(
+                shell = "cmd",
+                resolvedPath =
+                    resolveViaProcess(
+                        listOf("where.exe", commandName),
+                        ::parseWherePath,
+                    ),
+            ),
+            ShellAvailability(
+                shell = "powershell",
+                resolvedPath =
+                    resolveViaProcess(
+                        listOf(
+                            "powershell.exe",
+                            "-NoProfile",
+                            "-NonInteractive",
+                            "-Command",
+                            // Windows PowerShell 5.1-safe: plain cmdlet + string
+                            // concatenation, no ScriptBlock/thread tricks
+                            "\$p=(Get-Command $commandName -ErrorAction SilentlyContinue).Source; " +
+                                "if(\$p){Write-Output ('$RESOLVED_MARKER' + \$p)}",
+                        ),
+                        ::parseResolvedCommand,
+                    ),
+            ),
+        )
 
     /**
      * -l: login shell, so the user's profile PATH applies — which also means
      * the profile may print banners, spawn background jobs that inherit
      * stdout (keeping the pipe open after the shell exits, so EOF may never
-     * come), or emit arbitrary amounts of text. The probe therefore never
-     * blocks on the stream: it polls available bytes, scans line by line
-     * with a bounded buffer, returns the moment the marker line appears, and
-     * gives up as soon as the shell has exited with nothing left to scan.
-     * Timeout and cancellation ride on cancellable [delay]s; cleanup (closing
-     * our pipe end, killing a still-running shell) happens in finally either
-     * way. A background child of the shell is not ours to kill — we just stop
-     * reading from it.
+     * come), or emit arbitrary amounts of text. See [resolveViaProcess] for
+     * how the probe stays robust against all of that.
      */
     internal suspend fun resolveCommandIn(
         shell: String,
         probeCommand: String = PROBE_COMMAND,
         timeout: Duration = PROBE_TIMEOUT,
+    ): String? = resolveViaProcess(listOf(shell, "-lc", probeCommand), ::parseResolvedCommand, timeout)
+
+    /**
+     * Runs [command] and scans its stdout line by line with [parseLine] until
+     * a line yields a result. The probe never blocks on the stream: it polls
+     * available bytes with a bounded buffer, returns the moment a line
+     * parses, and gives up as soon as the process has exited with nothing
+     * left to scan. Timeout and cancellation ride on cancellable [delay]s;
+     * cleanup (closing our pipe end, killing a still-running process) happens
+     * in finally either way. A background child of the process is not ours to
+     * kill — we just stop reading from it.
+     */
+    internal suspend fun resolveViaProcess(
+        command: List<String>,
+        parseLine: (String) -> String?,
+        timeout: Duration = PROBE_TIMEOUT,
     ): String? {
         val process =
             try {
-                ProcessBuilder(shell, "-lc", probeCommand)
+                ProcessBuilder(command)
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start()
             } catch (e: IOException) {
-                logger.warn(e) { "Failed to probe $shell for $COMMAND_NAME" }
+                logger.warn(e) { "Failed to run ${command.firstOrNull()} to probe for $commandName" }
                 return null
             }
         try {
-            return withTimeoutOrNull(timeout) { awaitMarker(process) }
+            return withTimeoutOrNull(timeout) { awaitParsedLine(process, parseLine) }
         } finally {
             runCatching { process.inputStream.close() }
             if (process.isAlive) {
@@ -255,7 +351,10 @@ class CliSymlinkService(
         }
     }
 
-    private suspend fun awaitMarker(process: Process): String? {
+    private suspend fun awaitParsedLine(
+        process: Process,
+        parseLine: (String) -> String?,
+    ): String? {
         val stream = process.inputStream
         val lineBuffer = ByteArrayOutputStream()
         val chunk = ByteArray(8192)
@@ -270,9 +369,9 @@ class CliSymlinkService(
                     if (byte == '\n'.code.toByte()) {
                         val line = lineBuffer.toString(Charsets.UTF_8.name())
                         lineBuffer.reset()
-                        parseResolvedCommand(line)?.let { return it }
+                        parseLine(line)?.let { return it }
                     } else if (lineBuffer.size() < MAX_PROBE_LINE_BYTES) {
-                        // Longer lines cannot be the marker line (paths are
+                        // Longer lines cannot be a resolved path (paths are
                         // orders of magnitude shorter); cap so a firehose
                         // profile cannot balloon memory
                         lineBuffer.write(byte.toInt())
@@ -284,10 +383,10 @@ class CliSymlinkService(
                 yield()
             }
             if (!process.isAlive && stream.available() == 0) {
-                // Everything the shell wrote has been scanned and no marker
-                // appeared; never wait for EOF — a background child may hold
-                // the pipe open forever
-                return null
+                // Everything the process wrote has been scanned; scan the
+                // final unterminated line, then never wait for EOF — a
+                // background child may hold the pipe open forever
+                return parseLine(lineBuffer.toString(Charsets.UTF_8.name()))
             }
             if (!progressed) {
                 delay(20.milliseconds)
@@ -344,7 +443,7 @@ class CliSymlinkService(
 /** Tags the shell-availability probe's answer so profile banners can never be mistaken for it. */
 internal const val RESOLVED_MARKER = "__CROSSPASTE_RESOLVED__"
 
-/** Extracts the marker-tagged path from a login shell's output, ignoring any profile noise around it. */
+/** Extracts the marker-tagged path from a probe's output, ignoring any profile noise around it. */
 internal fun parseResolvedCommand(output: String): String? =
     output
         .lineSequence()
@@ -352,6 +451,61 @@ internal fun parseResolvedCommand(output: String): String? =
         ?.removePrefix(RESOLVED_MARKER)
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
+
+/** `where.exe` prints one bare path per match; the first non-empty line wins. */
+internal fun parseWherePath(line: String): String? = line.trim().takeIf { it.isNotEmpty() }
+
+/** The packaged (and dev-built) CLI file name for [platform]. */
+internal fun cliBinaryFileName(platform: Platform): String =
+    if (platform.isWindows()) "crosspaste-cli.exe" else "crosspaste-cli"
+
+/** Maps the host platform to `:cli:assembleDist`'s output directory under cli/dist/. */
+internal fun devCliDistTarget(platform: Platform): String {
+    val arm = platform.arch.contains("aarch64") || platform.arch.contains("arm")
+    return when {
+        platform.isWindows() -> "mingwX64"
+        platform.isMacos() -> if (arm) "macosArm64" else "macosX64"
+        else -> if (arm) "linuxArm64" else "linuxX64"
+    }
+}
+
+/**
+ * Dev-run binary resolution: an explicitly configured path wins but must
+ * exist — a stale development.properties entry fails fast instead of
+ * silently degrading. Without configuration, walks up from [startDir] (the
+ * run's working directory, whose depth relative to the repo root varies by
+ * launcher) looking for the conventional `cli/dist/<target>/` build output;
+ * null when the CLI simply hasn't been built, which must not block app
+ * development that never touches it.
+ */
+internal fun resolveDevCliBinary(
+    configuredPath: String?,
+    startDir: NioPath,
+    distTarget: String,
+    binaryFileName: String,
+): Path? {
+    if (configuredPath != null) {
+        val configured = Paths.get(configuredPath)
+        check(Files.isRegularFile(configured)) {
+            "development.properties cliBinaryPath does not point to a file: $configuredPath"
+        }
+        return configured.toOkioPath()
+    }
+    var dir: NioPath? = startDir
+    while (dir != null) {
+        val candidate =
+            dir
+                .resolve("cli")
+                .resolve("dist")
+                .resolve(distTarget)
+                .resolve(binaryFileName)
+        if (Files.isRegularFile(candidate)) {
+            return candidate.toOkioPath()
+        }
+        dir = dir.parent
+    }
+    return null
+}
 
 /**
  * The escalated install command, executed by /bin/sh as root. It re-verifies

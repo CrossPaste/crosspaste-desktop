@@ -21,14 +21,15 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.settings.SettingListItem
+import com.crosspaste.utils.getAppEnvUtils
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 /**
- * Extension-page row for the macOS `crosspaste` terminal command: shows whether the
- * /usr/local/bin symlink is in place and offers install/repair. Only rendered
- * when [CliSymlinkService] reports the feature as supported — the caller
- * gates on [CliSymlinkState.NOT_SUPPORTED].
+ * Status/action row for the terminal command, rendered on every platform:
+ * macOS offers install/repair of the /usr/local/bin symlink; Windows/Linux
+ * report the installer-managed wiring; BINARY_MISSING explains where the
+ * executable should come from (dev build vs packaged payload).
  */
 @Composable
 fun CliToolSettingItem() {
@@ -41,17 +42,34 @@ fun CliToolSettingItem() {
     val state by cliSymlinkService.state.collectAsState()
     var installing by remember { mutableStateOf(false) }
 
+    // The "Install Command Line Tool" framing only fits states where an
+    // in-app install exists (macOS); everywhere else the row is a status line
+    val titleKey =
+        when (state) {
+            CliSymlinkState.PROBING,
+            CliSymlinkState.BINARY_MISSING,
+            CliSymlinkState.EXTERNALLY_MANAGED,
+            -> "command_line"
+            else -> "install_cli_tool"
+        }
     val subtitleKey =
         when (state) {
             CliSymlinkState.TRANSLOCATED -> "cli_tool_translocated_desc"
             CliSymlinkState.CONFLICT -> "cli_tool_conflict_desc"
+            CliSymlinkState.EXTERNALLY_MANAGED -> "cli_tool_external_desc"
+            CliSymlinkState.BINARY_MISSING ->
+                if (getAppEnvUtils().isDevelopment()) {
+                    "cli_binary_missing_dev_desc"
+                } else {
+                    "cli_binary_missing_desc"
+                }
             else -> "install_cli_tool_desc"
         }
     SettingListItem(
-        title = "install_cli_tool",
+        title = titleKey,
         // Raw subtitle content instead of the key parameter: the
-        // translocation/conflict guidance is a full recovery instruction and
-        // must not be ellipsized to a single line
+        // translocation/conflict/missing guidance is a full recovery
+        // instruction and must not be ellipsized to a single line
         subtitleContent = {
             Text(
                 text = copywriter.getText(subtitleKey),
@@ -99,11 +117,19 @@ fun CliToolSettingItem() {
                         Text(copywriter.getText(if (installing) "installing" else actionKey))
                     }
                 }
+                CliSymlinkState.BINARY_MISSING -> {
+                    Text(
+                        text = copywriter.getText("cli_binary_missing"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 // Explained via the state-dependent subtitle; deliberately no
                 // action button — installing would create a doomed or
-                // destructive link
+                // destructive link (translocated/conflict), or there is
+                // simply nothing to act on (external wiring, still probing)
                 CliSymlinkState.TRANSLOCATED, CliSymlinkState.CONFLICT -> Unit
-                CliSymlinkState.NOT_SUPPORTED -> Unit
+                CliSymlinkState.EXTERNALLY_MANAGED, CliSymlinkState.PROBING -> Unit
             }
         },
     )

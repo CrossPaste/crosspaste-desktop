@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,8 +16,6 @@ import com.composables.icons.materialsymbols.rounded.Block
 import com.composables.icons.materialsymbols.rounded.Code
 import com.composables.icons.materialsymbols.rounded.Document_scanner
 import com.composables.icons.materialsymbols.rounded.Terminal
-import com.crosspaste.cli.CliSymlinkService
-import com.crosspaste.cli.CliSymlinkState
 import com.crosspaste.ui.CliTool
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.MCP
@@ -36,13 +33,8 @@ import org.koin.compose.koinInject
 
 @Composable
 fun ExtensionContentView() {
-    val cliSymlinkService = koinInject<CliSymlinkService>()
     val navigateManager = koinInject<NavigationManager>()
     val themeExt = LocalThemeExtState.current
-
-    // Probed once at app startup; NOT_SUPPORTED covers non-macOS platforms
-    // and dev runs without the bundled CLI binary
-    val cliSymlinkState by cliSymlinkService.state.collectAsState()
 
     var isProxyExpanded by remember { mutableStateOf(false) }
 
@@ -101,22 +93,22 @@ fun ExtensionContentView() {
                         navigateManager.navigate(SourceControl)
                     },
                 )
-                // macOS-only `crosspaste` terminal command (D6 PATH integration)
-                if (cliSymlinkState != CliSymlinkState.NOT_SUPPORTED) {
-                    HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                    SettingListItem(
-                        title = "command_line",
-                        subtitle = "install_cli_tool_desc",
-                        icon =
-                            IconData(
-                                imageVector = MaterialSymbols.Rounded.Terminal,
-                                iconColor = themeExt.greenIconColor,
-                            ),
-                        onClick = {
-                            navigateManager.navigate(CliTool)
-                        },
-                    )
-                }
+                // Terminal command page (D6 PATH integration, revised
+                // 2026-08-21): shown on every platform — the sub-page adapts
+                // (macOS install/repair, elsewhere status + availability)
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "command_line",
+                    subtitle = "install_cli_tool_desc",
+                    icon =
+                        IconData(
+                            imageVector = MaterialSymbols.Rounded.Terminal,
+                            iconColor = themeExt.greenIconColor,
+                        ),
+                    onClick = {
+                        navigateManager.navigate(CliTool)
+                    },
+                )
             }
         }
     }

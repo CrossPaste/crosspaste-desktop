@@ -28,9 +28,10 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
 /**
- * Extension sub-page for the `crosspaste` terminal command: install/repair,
- * where the bundled executable lives, and whether each login shell can
- * resolve the command right now.
+ * Extension sub-page for the terminal command, shown on every platform:
+ * a status/action row (install/repair on macOS, installer-managed status
+ * elsewhere), where the executable lives, and whether each shell can resolve
+ * the command right now.
  */
 @Composable
 fun CliToolContentView() {
@@ -71,12 +72,21 @@ fun CliToolContentView() {
                 Column(
                     modifier = Modifier.padding(medium),
                 ) {
-                    SelectionContainer {
+                    val binaryPath = cliSymlinkService.cliBinaryPath
+                    if (binaryPath != null) {
+                        SelectionContainer {
+                            Text(
+                                text = binaryPath.toString(),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
                         Text(
-                            text = cliSymlinkService.cliBinaryPath.toString(),
+                            text = copywriter.getText("cli_binary_missing"),
                             style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 }
