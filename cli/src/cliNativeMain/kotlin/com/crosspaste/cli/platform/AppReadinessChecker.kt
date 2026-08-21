@@ -12,6 +12,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okio.FileSystem
+import okio.Path
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -27,6 +28,10 @@ enum class AppLiveness {
  * GET /cli/status over the declared socket whose appInstanceId matches the
  * file means it is running; otherwise the recorded pid disambiguates an app
  * that is still starting up from a stale crash leftover.
+ *
+ * When the installed app is not live, the checker falls back to the dev
+ * pointer file (see [CliConfigReader.CLI_DEV_ENDPOINT_FILE_NAME]) so a
+ * PATH-installed CLI transparently finds a `./gradlew app:run` instance.
  *
  * [socketProber] and [processAlive] are injectable for tests only.
  */
@@ -48,11 +53,16 @@ class AppReadinessChecker(
         }
 
     suspend fun probe(): AppLiveness {
-        val endpoint = readEndpoint() ?: return AppLiveness.NOT_RUNNING
-        if (socketProber(endpoint)) {
+        configReader.devEndpointActive = false
+        val primary = readEndpoint(configReader.primaryEndpointFilePath())
+        if (primary != null && socketProber(primary)) {
             return AppLiveness.RUNNING
         }
-        return if (processAlive(endpoint.pid)) AppLiveness.STARTING else AppLiveness.NOT_RUNNING
+        if (probeDevEndpoint()) {
+            return AppLiveness.RUNNING
+        }
+        if (primary == null) return AppLiveness.NOT_RUNNING
+        return if (processAlive(primary.pid)) AppLiveness.STARTING else AppLiveness.NOT_RUNNING
     }
 
     /**
@@ -70,14 +80,34 @@ class AppReadinessChecker(
         } ?: false
 
     private suspend fun isEndpointReady(): Boolean {
-        val endpoint = readEndpoint() ?: return false
-        return socketProber(endpoint)
+        configReader.devEndpointActive = false
+        val primary = readEndpoint(configReader.primaryEndpointFilePath())
+        if (primary != null && socketProber(primary)) {
+            return true
+        }
+        return probeDevEndpoint()
     }
 
-    private fun readEndpoint(): CliEndpoint? =
+    /**
+     * Fallback for dev instances (`./gradlew app:run`), whose real endpoint
+     * file lives in the repo's dev user dir: they advertise themselves via a
+     * pointer file in the default directory. Only a live, instance-verified
+     * answer counts — the pointer is written when the dev socket is already
+     * up, so a dead socket means a stale leftover, never a starting app.
+     * On success the configReader is switched over so CliClient connects to
+     * the dev instance.
+     */
+    private suspend fun probeDevEndpoint(): Boolean {
+        val dev = readEndpoint(configReader.devEndpointFilePath()) ?: return false
+        if (!socketProber(dev)) return false
+        configReader.devEndpointActive = true
+        return true
+    }
+
+    private fun readEndpoint(path: Path): CliEndpoint? =
         try {
             val content =
-                FileSystem.SYSTEM.read(configReader.resolveEndpointFilePath()) { readUtf8() }
+                FileSystem.SYSTEM.read(path) { readUtf8() }
             json.decodeFromString<CliEndpoint>(content)
         } catch (_: Exception) {
             null

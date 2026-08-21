@@ -73,7 +73,11 @@ fun CliktCommand.runCli(
         ensureAppRunning(readinessChecker)
         var retriedAfterRestart = false
         var versionWarningShown = false
+        var devNoticeShown = false
         while (true) {
+            if (!devNoticeShown) {
+                devNoticeShown = noteDevEndpointIfActive(configReader)
+            }
             var client: CliClient? = null
             val attemptStart = TimeSource.Monotonic.markNow()
             try {
@@ -220,6 +224,17 @@ private fun CliktCommand.promptStartConfirmation(headless: Boolean): Boolean {
             else -> echo("Please answer y or n.", err = true)
         }
     }
+}
+
+/**
+ * One-line stderr note when the liveness probe fell back to a dev instance
+ * (see AppReadinessChecker), so unexpected-looking output is explainable.
+ * Returns true when the note was emitted, so callers can avoid repeats.
+ */
+internal fun CliktCommand.noteDevEndpointIfActive(configReader: CliConfigReader): Boolean {
+    if (!configReader.devEndpointActive) return false
+    echo("Note: talking to a dev CrossPaste instance (./gradlew app:run).", err = true)
+    return true
 }
 
 /** Returns true when a warning was emitted, so callers can avoid repeats. */

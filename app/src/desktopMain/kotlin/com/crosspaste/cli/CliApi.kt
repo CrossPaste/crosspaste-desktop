@@ -12,6 +12,14 @@ const val CLI_API_VERSION = 1
 const val CLI_ENDPOINT_FILE_NAME = "cli-endpoint.json"
 
 /**
+ * Secondary discovery pointer a DEVELOPMENT app (`./gradlew app:run`) writes
+ * into the installed app's default user-data directory, so a PATH-installed
+ * CLI can find the dev instance whose real endpoint file lives in the repo's
+ * dev user dir. Production and test apps never write it.
+ */
+const val CLI_DEV_ENDPOINT_FILE_NAME = "cli-endpoint.dev.json"
+
+/**
  * Wire DTOs for the /cli API.
  *
  * The CLI binary (Kotlin/Native, :cli module) defines its own mirror of these

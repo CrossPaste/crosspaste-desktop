@@ -4,6 +4,7 @@ import com.crosspaste.app.AppEnv
 import com.crosspaste.cli.CliEndpointFile
 import com.crosspaste.cli.CliPairingService
 import com.crosspaste.cli.CliServer
+import com.crosspaste.cli.devCliEndpointPointerPath
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.FaviconLoader
@@ -89,7 +90,7 @@ fun desktopNetworkModule(
 ): Module =
     module {
         // region CLI
-        single<CliEndpointFile> { CliEndpointFile(get()) }
+        single<CliEndpointFile> { CliEndpointFile(get(), devCliEndpointPointerPath(get())) }
         single<CliPairingService> {
             CliPairingService(
                 nearbyDeviceManager = get(),

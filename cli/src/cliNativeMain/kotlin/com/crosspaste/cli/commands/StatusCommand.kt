@@ -63,7 +63,10 @@ class StatusCommand : CliktCommand(name = "status") {
             val configReader = CliConfigReader(createNativePlatformPathProvider())
             val readinessChecker = AppReadinessChecker(configReader)
             when (readinessChecker.probe()) {
-                AppLiveness.RUNNING -> printRunning(configReader, readinessChecker)
+                AppLiveness.RUNNING -> {
+                    noteDevEndpointIfActive(configReader)
+                    printRunning(configReader, readinessChecker)
+                }
                 AppLiveness.STARTING -> printNotReady("Starting", "starting")
                 AppLiveness.NOT_RUNNING -> printNotReady("Not running", "not_running")
             }

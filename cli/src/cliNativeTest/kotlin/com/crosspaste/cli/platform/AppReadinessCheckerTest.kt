@@ -35,21 +35,34 @@ class AppReadinessCheckerTest {
         pid: Long = 1234,
         socketPath: String = "/tmp/does-not-matter.sock",
         appInstanceId: String = "instance-a",
+        fileName: String = CliConfigReader.CLI_ENDPOINT_FILE_NAME,
     ) {
-        FileSystem.SYSTEM.write(dir.resolve(CliConfigReader.CLI_ENDPOINT_FILE_NAME)) {
+        FileSystem.SYSTEM.write(dir.resolve(fileName)) {
             writeUtf8(
                 """{"pid":$pid,"socketPath":"$socketPath","apiVersion":1,"appInstanceId":"$appInstanceId"}""",
             )
         }
     }
 
+    private fun writeDevEndpoint(
+        dir: Path,
+        pid: Long = 5678,
+        appInstanceId: String = "dev-instance",
+    ) = writeEndpoint(
+        dir,
+        pid = pid,
+        appInstanceId = appInstanceId,
+        fileName = CliConfigReader.CLI_DEV_ENDPOINT_FILE_NAME,
+    )
+
     private fun checker(
         dir: Path,
         socketProber: suspend (CliEndpoint) -> Boolean = { false },
         processAlive: (Long) -> Boolean = { false },
+        configReader: CliConfigReader = CliConfigReader(FakePathProvider(dir)),
     ): AppReadinessChecker =
         AppReadinessChecker(
-            configReader = CliConfigReader(FakePathProvider(dir)),
+            configReader = configReader,
             socketProber = socketProber,
             processAlive = processAlive,
         )
@@ -98,6 +111,103 @@ class AppReadinessCheckerTest {
                 AppLiveness.NOT_RUNNING,
                 checker(dir, socketProber = { false }, processAlive = { false }).probe(),
             )
+        }
+
+    @Test
+    fun probeFallsBackToLiveDevEndpointWhenPrimaryIsMissing() =
+        runTest {
+            val dir = tempDir()
+            writeDevEndpoint(dir)
+            val configReader = CliConfigReader(FakePathProvider(dir))
+            val liveness =
+                checker(
+                    dir,
+                    socketProber = { it.appInstanceId == "dev-instance" },
+                    configReader = configReader,
+                ).probe()
+            assertEquals(AppLiveness.RUNNING, liveness)
+            assertTrue(configReader.devEndpointActive)
+            assertEquals(configReader.devEndpointFilePath(), configReader.resolveEndpointFilePath())
+        }
+
+    @Test
+    fun probePrefersLivePrimaryOverLiveDevEndpoint() =
+        runTest {
+            val dir = tempDir()
+            writeEndpoint(dir, appInstanceId = "installed-instance")
+            writeDevEndpoint(dir)
+            val configReader = CliConfigReader(FakePathProvider(dir))
+            val liveness =
+                checker(dir, socketProber = { true }, configReader = configReader).probe()
+            assertEquals(AppLiveness.RUNNING, liveness)
+            assertFalse(configReader.devEndpointActive)
+        }
+
+    @Test
+    fun probeFallsBackToDevEndpointOverStartingPrimary() =
+        runTest {
+            val dir = tempDir()
+            writeEndpoint(dir, pid = 4321, appInstanceId = "installed-instance")
+            writeDevEndpoint(dir)
+            val configReader = CliConfigReader(FakePathProvider(dir))
+            val liveness =
+                checker(
+                    dir,
+                    socketProber = { it.appInstanceId == "dev-instance" },
+                    processAlive = { true },
+                    configReader = configReader,
+                ).probe()
+            assertEquals(AppLiveness.RUNNING, liveness)
+            assertTrue(configReader.devEndpointActive)
+        }
+
+    @Test
+    fun probeIgnoresStaleDevEndpoint() =
+        runTest {
+            val dir = tempDir()
+            // The dev pointer is only ever written once the dev socket is
+            // live, so a dead socket means a stale leftover, never STARTING
+            writeDevEndpoint(dir)
+            val configReader = CliConfigReader(FakePathProvider(dir))
+            val liveness =
+                checker(
+                    dir,
+                    socketProber = { false },
+                    processAlive = { true },
+                    configReader = configReader,
+                ).probe()
+            assertEquals(AppLiveness.NOT_RUNNING, liveness)
+            assertFalse(configReader.devEndpointActive)
+        }
+
+    @Test
+    fun probeSwitchesBackToPrimaryWhenItComesAlive() =
+        runTest {
+            val dir = tempDir()
+            writeDevEndpoint(dir)
+            val configReader = CliConfigReader(FakePathProvider(dir))
+            val readiness = checker(dir, socketProber = { true }, configReader = configReader)
+            assertEquals(AppLiveness.RUNNING, readiness.probe())
+            assertTrue(configReader.devEndpointActive)
+
+            writeEndpoint(dir, appInstanceId = "installed-instance")
+            assertEquals(AppLiveness.RUNNING, readiness.probe())
+            assertFalse(configReader.devEndpointActive)
+        }
+
+    @Test
+    fun waitForAppReadyPicksUpDevEndpointAppearingMidWait() =
+        runTest {
+            val dir = tempDir()
+            val configReader = CliConfigReader(FakePathProvider(dir))
+            launch {
+                kotlinx.coroutines.delay(2.seconds)
+                writeDevEndpoint(dir)
+            }
+            assertTrue(
+                checker(dir, socketProber = { true }, configReader = configReader).waitForAppReady(),
+            )
+            assertTrue(configReader.devEndpointActive)
         }
 
     @Test
