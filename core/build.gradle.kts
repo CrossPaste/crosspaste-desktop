@@ -83,9 +83,10 @@ kotlin {
         getByName("desktopMain") {
             dependencies {
                 implementation(libs.cryptography.provider.jdk)
-                // Low-level P-256 point/scalar ops for the SPAKE2 provider (ADR D7,
-                // JVM/Android backend). No hand-rolled EC arithmetic in app code.
-                implementation(libs.bouncycastle.prov)
+                // JNA binding to OpenSSL libcrypto for constant-time P-256
+                // point/scalar ops in the SPAKE2 provider (ADR D7, desktop JVM
+                // backend). No hand-rolled EC arithmetic in app code.
+                implementation(libs.jna)
             }
         }
 

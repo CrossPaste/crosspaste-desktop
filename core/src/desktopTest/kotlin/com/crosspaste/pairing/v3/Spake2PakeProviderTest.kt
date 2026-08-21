@@ -14,14 +14,16 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * End-to-end behaviour of the real [Spake2PakeProvider] over the BouncyCastle
+ * End-to-end behaviour of the real [Spake2PakeProvider] over the OpenSSL
  * backend: the same PIN + context yields agreement, and any divergence (wrong PIN,
  * different context, swapped roles, tampered share) fails key agreement — exactly
  * the contract the surrounding pairing protocol relies on.
  */
 class Spake2PakeProviderTest {
 
-    private val provider = Spake2PakeProvider(BouncyCastlePakeEcOps())
+    private val ecOps = OpenSslPakeEcOps.load()
+
+    private val provider = Spake2PakeProvider(ecOps)
 
     private val sessionId = ByteArray(PairingV3.SESSION_ID_SIZE) { 0x0A }
 
@@ -143,7 +145,7 @@ class Spake2PakeProviderTest {
             val uncompressed = acceptor.localShare()
             val compressed =
                 byteArrayOf(0x02) +
-                    uncompressed.copyOfRange(1, 1 + BouncyCastlePakeEcOps().scalarSize)
+                    uncompressed.copyOfRange(1, 1 + ecOps.scalarSize)
             val hybrid = uncompressed.copyOf().also { share -> share[0] = 0x06 }
 
             assertFailsWith<PakeException> { initiator.deriveSharedSecret(compressed) }
@@ -155,7 +157,7 @@ class Spake2PakeProviderTest {
         runTest {
             val w = ByteArray(32) { 0x01 }
             val privateScalar = ByteArray(32) { 0x02 }
-            val ecOps = FailingSharePakeEcOps(BouncyCastlePakeEcOps(), privateScalar)
+            val ecOps = FailingSharePakeEcOps(ecOps, privateScalar)
             val failingProvider =
                 Spake2PakeProvider(
                     ecOps,
@@ -172,7 +174,7 @@ class Spake2PakeProviderTest {
     @Test
     fun sharedSecretDerivationClearsIntermediatePointBuffers() =
         runTest {
-            val trackingOps = TrackingPakeEcOps(BouncyCastlePakeEcOps())
+            val trackingOps = TrackingPakeEcOps(ecOps)
             val trackingProvider = Spake2PakeProvider(trackingOps)
             val ctx = context()
             val initiator =
@@ -203,7 +205,7 @@ class Spake2PakeProviderTest {
     @Test
     fun destroyDuringDerivationDefersSecretClearingUntilDerivationFinishes() =
         runBlocking {
-            val blockingOps = BlockingDerivePakeEcOps(BouncyCastlePakeEcOps())
+            val blockingOps = BlockingDerivePakeEcOps(ecOps)
             val blockingProvider = Spake2PakeProvider(blockingOps)
             val ctx = context()
             val initiator = blockingProvider.createSession(PakeRole.INITIATOR, "620632".toCharArray(), ctx)

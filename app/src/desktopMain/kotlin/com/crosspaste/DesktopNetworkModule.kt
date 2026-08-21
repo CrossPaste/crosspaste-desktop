@@ -48,7 +48,7 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
-import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
+import com.crosspaste.pairing.v3.OpenSslPakeEcOps
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
@@ -76,6 +76,7 @@ import com.crosspaste.sync.SyncResolver
 import com.crosspaste.sync.SyncResolverApi
 import com.crosspaste.ui.devices.DefaultPairingV3UiController
 import com.crosspaste.ui.devices.PairingV3UiController
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.WebSockets
@@ -358,9 +359,16 @@ internal fun createDesktopPakeProvider(
     pairingCapabilityFlag: PairingCapabilityFlag,
 ): PakeProvider =
     if (appEnv == AppEnv.DEVELOPMENT && pairingCapabilityFlag.isPairingV3Enabled) {
-        // DEVELOPMENT interoperability only. BouncyCastle's P-256 point
-        // formulas are not approved for production SPAKE2 operations.
-        Spake2PakeProvider(BouncyCastlePakeEcOps())
+        // DEVELOPMENT interoperability only until the cross-platform security
+        // review and rollout land (#4667). OpenSSL is the constant-time P-256
+        // backend; fail closed if libcrypto cannot be loaded on this machine.
+        runCatching { Spake2PakeProvider(OpenSslPakeEcOps.load()) }
+            .getOrElse { e ->
+                KotlinLogging.logger {}.warn(e) {
+                    "OpenSSL libcrypto unavailable, pairing v3 stays disabled"
+                }
+                UnavailablePakeProvider
+            }
     } else {
         UnavailablePakeProvider
     }

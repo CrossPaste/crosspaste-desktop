@@ -12,7 +12,7 @@ import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ClientDecryptPlugin
 import com.crosspaste.net.plugin.ClientEncryptPlugin
-import com.crosspaste.pairing.v3.BouncyCastlePakeEcOps
+import com.crosspaste.pairing.v3.OpenSslPakeEcOps
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingRateLimiter
@@ -101,7 +101,7 @@ class HeadlessPeer(
                 pairingV3ClientApi = PairingV3ClientApi(pasteClient, exceptionHandler),
                 // Conformance/E2E only. Production intentionally registers
                 // UnavailablePakeProvider pending constant-time EC review.
-                pakeProvider = Spake2PakeProvider(BouncyCastlePakeEcOps()),
+                pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()),
                 receiptCache = PairingReceiptCache(),
                 rateLimiter = PairingRateLimiter(),
                 secureKeyPairSerializer = secureKeyPairSerializer,

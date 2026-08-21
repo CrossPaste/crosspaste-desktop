@@ -6,13 +6,13 @@ import org.khronos.webgl.Uint8Array
 
 /**
  * JS/browser [PakeEcOps] backed by the audited `@noble/curves` P-256
- * implementation (ADR D7: reviewed library per platform — BouncyCastle on
- * JVM/Android, OpenSSL 3 on Kotlin/Native, noble on JS). No hand-rolled EC
+ * implementation (ADR D7: reviewed library per platform — OpenSSL 3 on
+ * desktop JVM and Kotlin/Native, noble on JS). No hand-rolled EC
  * arithmetic; every group operation delegates to `p256.ProjectivePoint`, which
  * validates curve membership on decode and enforces `1 <= scalar < n` on
  * multiplication.
  *
- * Like the BouncyCastle backend, this is NOT constant-time: noble's point
+ * Unlike the desktop OpenSSL backend, this is NOT constant-time: noble's point
  * formulas contain input-dependent branches, and scalars pass through immutable
  * JS `BigInt`s that cannot be zeroed. Accepted for the one-time 30-second PIN
  * threat model; the RFC 9382 §7 constant-time requirement remains the gate for
