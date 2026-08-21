@@ -120,10 +120,13 @@ fun Routing.syncRouting(
             }.onSuccess {
                 successResponse(call, syncApi.VERSION)
             }.onFailure { e ->
-                logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
                 if (exceptionHandler.isDecryptFail(e)) {
+                    // Key mismatch is an expected protocol state: the peer receives
+                    // DECRYPT_FAIL and falls back to re-pairing.
+                    logger.warn { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail: decrypt fail" }
                     failResponse(call, StandardErrorCode.DECRYPT_FAIL.toErrorCode())
                 } else {
+                    logger.error(e) { "$appInstanceId heartbeat to ${appInfo.appInstanceId} fail" }
                     failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
                 }
             }

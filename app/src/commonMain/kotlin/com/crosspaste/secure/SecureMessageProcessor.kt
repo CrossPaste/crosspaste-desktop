@@ -47,7 +47,10 @@ class SecureMessageProcessor(
         try {
             return cipher.decryptBlocking(data)
         } catch (e: Throwable) {
-            logger.error(e) { "Decrypt fail" }
+            // Expected when pairing keys have diverged (peer re-paired / restored old
+            // state); the caller maps it to DECRYPT_FAIL and the peer re-pairs, so a
+            // warn without stack trace is enough.
+            logger.warn { "Decrypt fail: ${e.message}" }
             throw PasteException(StandardErrorCode.DECRYPT_FAIL.toErrorCode(), e)
         }
     }
