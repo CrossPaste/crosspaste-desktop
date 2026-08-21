@@ -221,10 +221,17 @@ class PasteCommand : CliktCommand(name = "paste") {
             note = { echo("  $it") },
             sixelFetch = { index ->
                 // Any failure — including 404 from an app that predates the
-                // endpoint — falls back to the paths printed above
+                // endpoint — falls back to the paths printed above. The one
+                // exception: a 503 with a structured message is the app saying
+                // its decode backend is down (e.g. missing libGL on a headless
+                // server, #4854) — that remedy must reach the user, not vanish
+                // into a silent fallback.
                 try {
                     client.getRawImage(detail.id, index, sixelMaxWidthPx, sixelMaxHeightPx)
-                } catch (_: CliClientException) {
+                } catch (e: CliClientException) {
+                    if (e.statusCode == 503 && e.hasServerMessage) {
+                        throw PreviewUnavailableException(e.message ?: "Image preview unavailable.")
+                    }
                     null
                 } catch (_: AppNotRunningException) {
                     null

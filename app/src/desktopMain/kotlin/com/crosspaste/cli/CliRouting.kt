@@ -377,7 +377,10 @@ private fun readImageBytesBounded(
  * straight-alpha RGBA8888 with the exact dimensions in X-Image-Width /
  * X-Image-Height headers. Every not-servable case — unknown id, no file at
  * the index, unreadable/oversized file, undecodable bytes — is a 404 with a
- * message; the CLI falls back to printing paths on any non-200.
+ * message, except an unavailable native decode backend (missing libGL on a
+ * headless server, #4854), which is a 503 whose message carries the remedy;
+ * the CLI falls back to printing paths on any non-200 and surfaces the 503
+ * message.
  */
 private suspend fun handlePasteImage(
     call: ApplicationCall,
@@ -422,6 +425,11 @@ private suspend fun handlePasteImage(
             // as ExceptionInInitializerError on first use and NoClassDefFoundError
             // on every later call, and stays broken for the process lifetime, so
             // the remedy must include a restart.
+            cliLogger.warn {
+                "CLI image transcode unavailable: native graphics library failed to " +
+                    "load (${e.message ?: e::class.simpleName}). On Debian/Ubuntu " +
+                    "install libgl1 and libegl1, then restart CrossPaste."
+            }
             call.respond(
                 HttpStatusCode.ServiceUnavailable,
                 CliMessageDto(
