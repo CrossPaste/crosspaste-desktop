@@ -36,9 +36,10 @@ enum class CliSymlinkState {
     BINARY_MISSING,
 
     /**
-     * Windows/Linux: the terminal command is wired at install time (MSIX
-     * AppExecutionAlias / deb symlink), which the app can only observe, not
-     * manage. The CLI page shows the executable path and shell availability.
+     * The terminal command is wired at install time (Windows MSIX
+     * AppExecutionAlias / Linux deb symlink), which the app can only observe,
+     * not manage. The CLI page shows the executable path and shell
+     * availability.
      */
     EXTERNALLY_MANAGED,
 
@@ -50,10 +51,17 @@ enum class CliSymlinkState {
      */
     TRANSLOCATED,
 
-    /** The symlink exists and points at this bundle's CLI binary. */
+    /**
+     * The terminal command works: macOS — the symlink exists and points at
+     * this bundle's CLI binary; Windows (non-MSIX) — the CLI's folder is on
+     * the user or machine PATH.
+     */
     INSTALLED,
 
-    /** No file at the link path. */
+    /**
+     * Actionable: macOS — no file at the link path; Windows (non-MSIX) — the
+     * CLI's folder is not on the PATH yet.
+     */
     NOT_INSTALLED,
 
     /** A symlink exists at the link path but points somewhere else (or dangles). */
@@ -87,8 +95,15 @@ data class ShellAvailability(
  *   /usr/local/bin is user-writable, e.g. Homebrew-on-Intel machines) and
  *   falls back to an osascript "with administrator privileges" prompt (the
  *   VS Code model) — /usr/local/bin is root-owned or absent on stock installs.
- * - Windows/Linux: PATH wiring happens at install time (MSIX execution alias
- *   `crosspaste-cli` / deb symlink /usr/bin/crosspaste), so the state is
+ * - Windows: MSIX installs (Store and the Conveyor site installer) get the
+ *   `crosspaste-cli` execution alias at install time and their ACL-protected
+ *   payload path changes on every update, so they are
+ *   [CliSymlinkState.EXTERNALLY_MANAGED]. Portable-zip and dev installs live
+ *   at a stable path with no installer wiring; there the app offers a
+ *   one-click "add the CLI's folder to the user PATH" via
+ *   [WindowsUserPathManager].
+ * - Linux: PATH wiring happens at install time (deb symlink
+ *   /usr/bin/crosspaste), so the state is
  *   [CliSymlinkState.EXTERNALLY_MANAGED] and only observation (executable
  *   path, shell availability) is offered.
  * - Dev runs: the binary is resolved from `cliBinaryPath` in
@@ -103,6 +118,13 @@ class CliSymlinkService(
     private val linkPath: Path = DEFAULT_LINK_PATH.toPath(),
     private val escalatedInstall: ((cliBinary: Path, link: Path) -> CliInstallResult)? = null,
     binaryResolverOverride: (() -> Path?)? = null,
+    private val windowsUserPath: WindowsUserPathManager? = null,
+    /**
+     * Test override for "what full path does `where.exe` resolve the command
+     * to under this PATH?" — the real implementation spawns where.exe, which
+     * tests off Windows cannot do.
+     */
+    private val windowsCommandResolver: (suspend (envPath: String?) -> String?)? = null,
 ) {
 
     companion object {
@@ -200,9 +222,12 @@ class CliSymlinkService(
         }
     }
 
-    private fun computeState(binary: Path?): CliSymlinkState {
+    private suspend fun computeState(binary: Path?): CliSymlinkState {
         if (binary == null || !Files.isRegularFile(binary.toNioPath())) {
             return CliSymlinkState.BINARY_MISSING
+        }
+        if (platform.isWindows()) {
+            return computeWindowsState(binary)
         }
         if (!platform.isMacos()) {
             return CliSymlinkState.EXTERNALLY_MANAGED
@@ -226,13 +251,62 @@ class CliSymlinkService(
     }
 
     /**
-     * Creates or repairs the symlink. Never throws; the outcome is reported
-     * as a [CliInstallResult] and [state] is refreshed either way. Only the
-     * NOT_INSTALLED and NEEDS_REPAIR states are actionable — and because that
-     * pre-check races against other processes, both the direct attempt and
-     * the escalated shell command re-verify at execution time that nothing
-     * but a symlink is ever deleted. SUCCESS is only reported when the link
-     * verifiably points at the bundled CLI afterwards.
+     * MSIX installs already have the execution alias and their payload path
+     * changes on every update — nothing to manage. Everything else (portable
+     * zip, dev runs) lives at a stable path, where the CLI's folder can be
+     * put on the user PATH.
+     *
+     * Being on the PATH is not enough for INSTALLED: an earlier entry (a
+     * moved copy, a `.cmd`/`.bat` shim winning via PATHEXT, a parallel MSIX
+     * install's alias) can shadow ours, so the command must actually resolve
+     * to this binary — anything else is NEEDS_REPAIR, never a false
+     * "installed". Resolution is asked of `where.exe` under the registry
+     * PATH, not re-implemented: it honors PATHEXT and alias reparse points,
+     * and rides the probe's timeout so a broken network-drive PATH entry
+     * cannot hang refresh or repair (an unverifiable resolution degrades to
+     * NEEDS_REPAIR, never to a claimed install).
+     */
+    private suspend fun computeWindowsState(binary: Path): CliSymlinkState {
+        val manager = windowsUserPath ?: return CliSymlinkState.EXTERNALLY_MANAGED
+        if (isMsixPayloadPath(binary.toString())) {
+            return CliSymlinkState.EXTERNALLY_MANAGED
+        }
+        val binDir = binary.parent?.toString() ?: return CliSymlinkState.EXTERNALLY_MANAGED
+        if (!manager.isOnPath(binDir)) {
+            return CliSymlinkState.NOT_INSTALLED
+        }
+        return if (windowsCommandResolvesTo(manager, binary)) {
+            CliSymlinkState.INSTALLED
+        } else {
+            CliSymlinkState.NEEDS_REPAIR
+        }
+    }
+
+    /** Whether `where.exe` under the registry PATH resolves the command to exactly [binary]. */
+    private suspend fun windowsCommandResolvesTo(
+        manager: WindowsUserPathManager,
+        binary: Path,
+    ): Boolean {
+        val resolved = resolveWindowsCommand(manager.newProcessPath()) ?: return false
+        return canonicalPathEntry(resolved) == canonicalPathEntry(binary.toString())
+    }
+
+    private suspend fun resolveWindowsCommand(envPath: String?): String? {
+        // An injected resolver's null means "nothing resolves" — it must not
+        // fall through to the real where.exe
+        windowsCommandResolver?.let { return it(envPath) }
+        return resolveViaProcess(listOf("where.exe", commandName), ::parseWherePath, envPath = envPath)
+    }
+
+    /**
+     * Makes the terminal command available: on macOS creates or repairs the
+     * symlink, on Windows appends the CLI's folder to the user PATH. Never
+     * throws; the outcome is reported as a [CliInstallResult] and [state] is
+     * refreshed either way. Only the NOT_INSTALLED and NEEDS_REPAIR states
+     * are actionable — and because that pre-check races against other
+     * processes, both the direct attempt and the escalated shell command
+     * re-verify at execution time that nothing but a symlink is ever deleted.
+     * SUCCESS is only reported when the wiring verifiably works afterwards.
      */
     suspend fun install(): CliInstallResult =
         withContext(ioDispatcher) {
@@ -248,8 +322,12 @@ class CliSymlinkService(
                 return@withContext CliInstallResult.FAILURE
             }
             val result =
-                attemptDirectInstall(cliBinary)
-                    ?: (escalatedInstall ?: ::osascriptInstall)(cliBinary, linkPath)
+                if (platform.isWindows()) {
+                    windowsPathInstall(cliBinary)
+                } else {
+                    attemptDirectInstall(cliBinary)
+                        ?: (escalatedInstall ?: ::osascriptInstall)(cliBinary, linkPath)
+                }
             val finalState = computeState(cliBinary)
             _state.value = finalState
             when {
@@ -261,6 +339,27 @@ class CliSymlinkService(
                 else -> CliInstallResult.FAILURE
             }
         }
+
+    /**
+     * Ensures the CLI's folder is on the user PATH, then verifies the command
+     * actually resolves to this binary; when an earlier entry shadows it,
+     * moves our folder to the front of the user PATH. A machine-PATH shadow
+     * survives that — the caller's final state check then reports FAILURE
+     * rather than claiming an install that runs someone else's binary.
+     */
+    private suspend fun windowsPathInstall(cliBinary: Path): CliInstallResult {
+        val manager = windowsUserPath ?: return CliInstallResult.FAILURE
+        val binDir = cliBinary.parent?.toString() ?: return CliInstallResult.FAILURE
+        if (!manager.addToUserPath(binDir)) {
+            return CliInstallResult.FAILURE
+        }
+        if (!windowsCommandResolvesTo(manager, cliBinary)) {
+            if (!manager.promoteToUserPathFront(binDir)) {
+                return CliInstallResult.FAILURE
+            }
+        }
+        return CliInstallResult.SUCCESS
+    }
 
     /**
      * Execution-time-guarded direct attempt: deletes only a symlink, fails on
@@ -315,14 +414,19 @@ class CliSymlinkService(
             .filter { Files.isRegularFile(Paths.get(it)) }
             .ifEmpty { listOf("/bin/sh") }
 
-    private suspend fun probeWindowsAvailability(): List<ShellAvailability> =
-        listOf(
+    private suspend fun probeWindowsAvailability(): List<ShellAvailability> {
+        // A new terminal builds its PATH from the registry, while this
+        // process's environment is frozen at launch — probe with the registry
+        // PATH so an install done seconds ago is reflected without restarting
+        val registryPath = windowsUserPath?.newProcessPath()
+        return listOf(
             ShellAvailability(
                 shell = "cmd",
                 resolvedPath =
                     resolveViaProcess(
                         listOf("where.exe", commandName),
                         ::parseWherePath,
+                        envPath = registryPath,
                     ),
             ),
             ShellAvailability(
@@ -340,9 +444,11 @@ class CliSymlinkService(
                                 "if(\$p){Write-Output ('$RESOLVED_MARKER' + \$p)}",
                         ),
                         ::parseResolvedCommand,
+                        envPath = registryPath,
                     ),
             ),
         )
+    }
 
     /**
      * -l: login shell, so the user's profile PATH applies — which also means
@@ -371,12 +477,17 @@ class CliSymlinkService(
         command: List<String>,
         parseLine: (String) -> String?,
         timeout: Duration = PROBE_TIMEOUT,
+        envPath: String? = null,
     ): String? {
         val process =
             try {
-                ProcessBuilder(command)
-                    .redirectError(ProcessBuilder.Redirect.DISCARD)
-                    .start()
+                val builder =
+                    ProcessBuilder(command)
+                        .redirectError(ProcessBuilder.Redirect.DISCARD)
+                // Windows env maps are case-insensitive, so "Path" replaces
+                // the inherited value whatever its original casing
+                envPath?.let { builder.environment()["Path"] = it }
+                builder.start()
             } catch (e: IOException) {
                 logger.warn(e) { "Failed to run ${command.firstOrNull()} to probe for $commandName" }
                 return null
@@ -494,6 +605,14 @@ internal fun parseResolvedCommand(output: String): String? =
 
 /** `where.exe` prints one bare path per match; the first non-empty line wins. */
 internal fun parseWherePath(line: String): String? = line.trim().takeIf { it.isNotEmpty() }
+
+/**
+ * Whether [path] sits inside an installed MSIX package payload. All MSIX
+ * packages — Store or sideloaded — mount under a WindowsApps directory
+ * (system-wide `C:\Program Files\WindowsApps`); nothing else uses that name.
+ */
+internal fun isMsixPayloadPath(path: String): Boolean =
+    path.replace('/', '\\').contains("\\WindowsApps\\", ignoreCase = true)
 
 /** The packaged (and dev-built) CLI file name for [platform]. */
 internal fun cliBinaryFileName(platform: Platform): String =

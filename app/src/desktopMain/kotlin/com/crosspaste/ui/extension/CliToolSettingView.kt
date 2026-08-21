@@ -18,6 +18,7 @@ import com.crosspaste.cli.CliSymlinkState
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.settings.SettingListItem
@@ -27,28 +28,35 @@ import org.koin.compose.koinInject
 
 /**
  * Status/action row for the terminal command, rendered on every platform:
- * macOS offers install/repair of the /usr/local/bin symlink; Windows/Linux
- * report the installer-managed wiring; BINARY_MISSING explains where the
- * executable should come from (dev build vs packaged payload).
+ * macOS offers install/repair of the /usr/local/bin symlink; Windows offers
+ * adding the CLI's folder to the user PATH (except MSIX installs, whose
+ * execution alias is installer-managed); Linux reports the installer-managed
+ * wiring; BINARY_MISSING explains where the executable should come from
+ * (dev build vs packaged payload).
  */
 @Composable
 fun CliToolSettingItem() {
     val cliSymlinkService = koinInject<CliSymlinkService>()
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
+    val platform = koinInject<Platform>()
     val themeExt = LocalThemeExtState.current
 
     val scope = rememberCoroutineScope()
     val state by cliSymlinkService.state.collectAsState()
     var installing by remember { mutableStateOf(false) }
 
+    val isWindows = platform.isWindows()
+
     // The "Install Command Line Tool" framing only fits states where an
-    // in-app install exists (macOS); everywhere else the row is a status line
+    // in-app symlink install exists (macOS); on Windows the action is a PATH
+    // edit and everywhere else the row is a status line
     val titleKey =
-        when (state) {
-            CliSymlinkState.PROBING,
-            CliSymlinkState.BINARY_MISSING,
-            CliSymlinkState.EXTERNALLY_MANAGED,
+        when {
+            isWindows -> "command_line"
+            state == CliSymlinkState.PROBING ||
+                state == CliSymlinkState.BINARY_MISSING ||
+                state == CliSymlinkState.EXTERNALLY_MANAGED
             -> "command_line"
             else -> "install_cli_tool"
         }
@@ -70,6 +78,12 @@ fun CliToolSettingItem() {
                 } else {
                     "cli_binary_missing_desc"
                 }
+            CliSymlinkState.NOT_INSTALLED ->
+                if (isWindows) "cli_tool_windows_path_desc" else "install_cli_tool_desc"
+            CliSymlinkState.NEEDS_REPAIR ->
+                // Windows: our folder is on the PATH but an earlier entry
+                // shadows it with another crosspaste-cli
+                if (isWindows) "cli_tool_windows_shadowed_desc" else "install_cli_tool_desc"
             else -> "install_cli_tool_desc"
         }
     SettingListItem(
@@ -95,7 +109,12 @@ fun CliToolSettingItem() {
                     )
                 }
                 CliSymlinkState.NOT_INSTALLED, CliSymlinkState.NEEDS_REPAIR -> {
-                    val actionKey = if (state == CliSymlinkState.NEEDS_REPAIR) "repair" else "install"
+                    val actionKey =
+                        when {
+                            state == CliSymlinkState.NEEDS_REPAIR -> "repair"
+                            isWindows -> "add_to_path"
+                            else -> "install"
+                        }
                     TextButton(
                         enabled = !installing,
                         onClick = {
@@ -105,7 +124,13 @@ fun CliToolSettingItem() {
                                     CliInstallResult.SUCCESS -> {
                                         notificationManager.sendNotification(
                                             title = { it.getText("cli_tool_installed") },
-                                            message = { CliSymlinkService.DEFAULT_LINK_PATH },
+                                            message = {
+                                                if (isWindows) {
+                                                    it.getText("cli_tool_windows_path_added")
+                                                } else {
+                                                    CliSymlinkService.DEFAULT_LINK_PATH
+                                                }
+                                            },
                                             messageType = MessageType.Success,
                                         )
                                     }

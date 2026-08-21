@@ -70,16 +70,50 @@ class CliSymlinkServiceTest {
 
     private fun macosPlatform() = Platform(name = Platform.MACOS, arch = "arm64", bitMode = 64, version = "14.0")
 
+    private fun windowsPlatform() = Platform(name = Platform.WINDOWS, arch = "amd64", bitMode = 64, version = "10.0")
+
+    /** In-memory stand-in for the registry-backed PATH manager. */
+    private class FakeWindowsUserPathManager(
+        var onPath: Boolean = false,
+        var addResult: Boolean = true,
+    ) : WindowsUserPathManager {
+        var addedDir: String? = null
+        var promotedDir: String? = null
+
+        /** Lets a test model what promoting changes (e.g. clearing a user-PATH shadow). */
+        var onPromote: (() -> Unit)? = null
+
+        override fun isOnPath(dir: String): Boolean = onPath
+
+        override fun addToUserPath(dir: String): Boolean {
+            addedDir = dir
+            if (addResult) onPath = true
+            return addResult
+        }
+
+        override fun promoteToUserPathFront(dir: String): Boolean {
+            promotedDir = dir
+            onPromote?.invoke()
+            return true
+        }
+
+        override fun newProcessPath(): String? = null
+    }
+
     private fun createService(
         platform: Platform = macosPlatform(),
         jarDir: NioPath = tempDir.resolve("Resources"),
         escalatedInstall: ((Path, Path) -> CliInstallResult)? = null,
+        windowsUserPath: WindowsUserPathManager? = null,
+        windowsCommandResolver: (suspend (String?) -> String?)? = null,
     ): CliSymlinkService =
         CliSymlinkService(
             appPathProvider = fakeAppPathProvider(jarDir),
             platform = platform,
             linkPath = linkPath.toOkioPath(),
             escalatedInstall = escalatedInstall,
+            windowsUserPath = windowsUserPath,
+            windowsCommandResolver = windowsCommandResolver,
         )
 
     private suspend fun refreshedState(service: CliSymlinkService): CliSymlinkState {
@@ -100,11 +134,147 @@ class CliSymlinkServiceTest {
         }
 
     @Test
-    fun `externally managed on windows when the packaged exe exists`() =
+    fun `externally managed on windows without a path manager`() =
         runTest {
             Files.write(payloadBinDir.resolve("crosspaste-cli.exe"), byteArrayOf(1))
-            val platform = Platform(name = Platform.WINDOWS, arch = "amd64", bitMode = 64, version = "10.0")
-            assertEquals(CliSymlinkState.EXTERNALLY_MANAGED, refreshedState(createService(platform)))
+            assertEquals(CliSymlinkState.EXTERNALLY_MANAGED, refreshedState(createService(windowsPlatform())))
+        }
+
+    @Test
+    fun `externally managed on windows when running from an MSIX payload`() =
+        runTest {
+            // MSIX installs get the execution alias at install time and their
+            // payload path changes on every update — PATH is not ours there
+            val msixJar =
+                tempDir
+                    .resolve("WindowsApps")
+                    .resolve("crosspaste_2.2.0_x64")
+                    .resolve("app")
+            Files.createDirectories(msixJar.resolve("bin"))
+            Files.write(msixJar.resolve("bin").resolve("crosspaste-cli.exe"), byteArrayOf(1))
+            val service =
+                createService(
+                    platform = windowsPlatform(),
+                    jarDir = msixJar,
+                    windowsUserPath = FakeWindowsUserPathManager(),
+                )
+            assertEquals(CliSymlinkState.EXTERNALLY_MANAGED, refreshedState(service))
+        }
+
+    /** The packaged exe plus its full path, as the injected where.exe stand-in reports it. */
+    private fun writeWindowsExe(): String {
+        val exe = payloadBinDir.resolve("crosspaste-cli.exe")
+        Files.write(exe, byteArrayOf(1))
+        return exe.toString()
+    }
+
+    @Test
+    fun `windows states follow whether the bin dir is on the path`() =
+        runTest {
+            val exePath = writeWindowsExe()
+            val manager = FakeWindowsUserPathManager(onPath = false)
+            val service =
+                createService(
+                    platform = windowsPlatform(),
+                    windowsUserPath = manager,
+                    windowsCommandResolver = { exePath },
+                )
+            assertEquals(CliSymlinkState.NOT_INSTALLED, refreshedState(service))
+            manager.onPath = true
+            assertEquals(CliSymlinkState.INSTALLED, refreshedState(service))
+        }
+
+    @Test
+    fun `windows install adds the bin dir to the user path`() =
+        runTest {
+            val exePath = writeWindowsExe()
+            val manager = FakeWindowsUserPathManager()
+            val service =
+                createService(
+                    platform = windowsPlatform(),
+                    windowsUserPath = manager,
+                    windowsCommandResolver = { exePath.takeIf { manager.onPath } },
+                )
+            assertEquals(CliInstallResult.SUCCESS, service.install())
+            assertEquals(CliSymlinkState.INSTALLED, service.state.value)
+            assertEquals(payloadBinDir.toString(), manager.addedDir)
+        }
+
+    @Test
+    fun `windows shadowed command reports needs repair`() =
+        runTest {
+            writeWindowsExe()
+            // Our folder is on the PATH, but where.exe resolves a PATHEXT
+            // shim from another install first
+            val manager = FakeWindowsUserPathManager(onPath = true)
+            val service =
+                createService(
+                    platform = windowsPlatform(),
+                    windowsUserPath = manager,
+                    windowsCommandResolver = { "C:\\Other\\crosspaste-cli.cmd" },
+                )
+            assertEquals(CliSymlinkState.NEEDS_REPAIR, refreshedState(service))
+        }
+
+    @Test
+    fun `windows unverifiable resolution never claims installed`() =
+        runTest {
+            writeWindowsExe()
+            // where.exe timed out or failed (e.g. a broken network drive on
+            // the PATH): the state must degrade to repair, not to INSTALLED
+            val manager = FakeWindowsUserPathManager(onPath = true)
+            val service =
+                createService(
+                    platform = windowsPlatform(),
+                    windowsUserPath = manager,
+                    windowsCommandResolver = { null },
+                )
+            assertEquals(CliSymlinkState.NEEDS_REPAIR, refreshedState(service))
+        }
+
+    @Test
+    fun `windows install promotes our dir to the front when shadowed`() =
+        runTest {
+            val exePath = writeWindowsExe()
+            var resolved: String? = "C:\\Other\\crosspaste-cli.cmd"
+            val manager = FakeWindowsUserPathManager(onPath = true)
+            // Promoting to the front of the user PATH clears this shadow
+            manager.onPromote = { resolved = exePath }
+            val service =
+                createService(
+                    platform = windowsPlatform(),
+                    windowsUserPath = manager,
+                    windowsCommandResolver = { resolved },
+                )
+            assertEquals(CliInstallResult.SUCCESS, service.install())
+            assertEquals(CliSymlinkState.INSTALLED, service.state.value)
+            assertEquals(payloadBinDir.toString(), manager.promotedDir)
+        }
+
+    @Test
+    fun `windows install fails honestly when a machine path shadow persists`() =
+        runTest {
+            writeWindowsExe()
+            // Promoting within the user PATH cannot beat a machine PATH entry
+            val manager = FakeWindowsUserPathManager(onPath = true)
+            val service =
+                createService(
+                    platform = windowsPlatform(),
+                    windowsUserPath = manager,
+                    windowsCommandResolver = { "C:\\Machine\\crosspaste-cli.exe" },
+                )
+            assertEquals(CliInstallResult.FAILURE, service.install())
+            assertEquals(CliSymlinkState.NEEDS_REPAIR, service.state.value)
+        }
+
+    @Test
+    fun `windows install failure is reported and leaves the state actionable`() =
+        runTest {
+            Files.write(payloadBinDir.resolve("crosspaste-cli.exe"), byteArrayOf(1))
+            val manager = FakeWindowsUserPathManager(addResult = false)
+            val service = createService(platform = windowsPlatform(), windowsUserPath = manager)
+            assertEquals(CliInstallResult.FAILURE, service.install())
+            assertEquals(CliSymlinkState.NOT_INSTALLED, service.state.value)
         }
 
     @Test
