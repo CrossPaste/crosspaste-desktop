@@ -65,6 +65,7 @@ import kotlinx.serialization.json.put
 import okio.Path.Companion.toPath
 import org.jetbrains.skia.Surface
 import java.io.File
+import java.io.RandomAccessFile
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -326,6 +327,38 @@ class CliRoutingTest {
             assertEquals("10", response.headers[CLI_IMAGE_WIDTH_HEADER])
             assertEquals("5", response.headers[CLI_IMAGE_HEIGHT_HEADER])
             assertEquals(10 * 5 * 4, response.readRawBytes().size)
+        }
+    }
+
+    @Test
+    fun `image endpoint clamps oversized box parameters server side`() {
+        val fixture = Fixture()
+        coEvery { fixture.pasteDao.getNoDeletePasteData(9L) } returns
+            imagePasteDataOnDisk(9L, pngBytes(2000, 100, 0xFF00FF00.toInt()))
+        withCliRouting(fixture) {
+            val response = client.get("/cli/paste/9/image?maxWidth=999999&maxHeight=999999")
+            assertEquals(HttpStatusCode.OK, response.status)
+            // Without the 1000 px clamp this would come back at 2000x100
+            assertEquals("1000", response.headers[CLI_IMAGE_WIDTH_HEADER])
+            assertEquals("50", response.headers[CLI_IMAGE_HEIGHT_HEADER])
+        }
+    }
+
+    @Test
+    fun `image endpoint refuses a file over the source byte budget`() {
+        val fixture = Fixture()
+        val pasteData = imagePasteDataOnDisk(11L, pngBytes(4, 2, 0xFFFF0000.toInt()))
+        // Grow the stored file past 64 MiB AFTER creation — the bounded read
+        // must reject it at read time, size checks alone are racy
+        val storedFile =
+            File(
+                (pasteData.pasteAppearItem as com.crosspaste.paste.item.PasteFiles).basePath!!,
+                "shot.png",
+            )
+        RandomAccessFile(storedFile, "rw").use { it.setLength(64L * 1024 * 1024 + 1) }
+        coEvery { fixture.pasteDao.getNoDeletePasteData(11L) } returns pasteData
+        withCliRouting(fixture) {
+            assertEquals(HttpStatusCode.NotFound, client.get("/cli/paste/11/image").status)
         }
     }
 

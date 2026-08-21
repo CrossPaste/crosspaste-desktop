@@ -64,6 +64,82 @@ class CliImageTranscoderTest {
         assertTrue(r >= 0xFD, "red should be un-premultiplied back to ~0xFF, was $r")
     }
 
+    /**
+     * Hand-built 1x1 two-frame animated GIF89a: global palette [red, blue],
+     * frame 1 pixel = color 0 (red), frame 2 pixel = color 1 (blue).
+     */
+    private fun animatedGifBytes(): ByteArray {
+        fun frame(lzwPixelBytes: ByteArray): ByteArray =
+            byteArrayOf(
+                // Graphic Control Extension: 0.1s delay, no transparency
+                0x21,
+                0xF9.toByte(),
+                0x04,
+                0x00,
+                0x0A,
+                0x00,
+                0x00,
+                0x00,
+                // Image descriptor: full 1x1 frame, no local palette
+                0x2C,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+            ) + lzwPixelBytes
+        return byteArrayOf(
+            0x47,
+            0x49,
+            0x46,
+            0x38,
+            0x39,
+            0x61, // "GIF89a"
+            0x01,
+            0x00,
+            0x01,
+            0x00, // logical screen 1x1
+            0x80.toByte(),
+            0x00,
+            0x00, // 2-entry global palette, bg 0
+            0xFF.toByte(),
+            0x00,
+            0x00, // color 0: red
+            0x00,
+            0x00,
+            0xFF.toByte(), // color 1: blue
+        ) +
+            frame(byteArrayOf(0x02, 0x02, 0x44, 0x01, 0x00)) + // clear, 0, end
+            frame(byteArrayOf(0x02, 0x02, 0x4C, 0x01, 0x00)) + // clear, 1, end
+            byteArrayOf(0x3B) // trailer
+    }
+
+    @Test
+    fun animatedGifDecodesToItsFirstFrame() {
+        val raw = CliImageTranscoder.transcode(animatedGifBytes(), 100, 100)
+        assertNotNull(raw)
+        assertEquals(1, raw.width)
+        assertEquals(1, raw.height)
+        // The first frame paints palette color 0 (red); blue would mean a
+        // later frame leaked through
+        assertEquals(0xFF.toByte(), raw.rgba[0])
+        assertEquals(0x00.toByte(), raw.rgba[1])
+        assertEquals(0x00.toByte(), raw.rgba[2])
+        assertEquals(0xFF.toByte(), raw.rgba[3])
+    }
+
+    @Test
+    fun clampsOversizedBoxToServerCeiling() {
+        val raw = CliImageTranscoder.transcode(pngBytes(2000, 100, 0xFF00FF00.toInt()), 999_999, 999_999)
+        assertNotNull(raw)
+        assertEquals(CliImageTranscoder.MAX_BOX_PX, raw.width)
+        assertEquals(50, raw.height)
+    }
+
     @Test
     fun rejectsUndecodableBytes() {
         assertNull(CliImageTranscoder.transcode("not an image".encodeToByteArray(), 100, 100))
