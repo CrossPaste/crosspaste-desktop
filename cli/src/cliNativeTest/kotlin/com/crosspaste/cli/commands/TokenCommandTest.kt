@@ -1,5 +1,6 @@
 package com.crosspaste.cli.commands
 
+import com.crosspaste.cli.api.CliClientException
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -65,6 +66,40 @@ class TokenCommandTest {
             }
             assertEquals(1, calls)
         }
+
+    @Test
+    fun routeMissingDetectionRequiresA404WithoutAServerMessage() {
+        assertEquals(
+            true,
+            isTokenRouteMissing(CliClientException("nf", statusCode = 404, hasServerMessage = false)),
+        )
+        // A 404 WITH a structured message is the endpoint answering, not a missing route
+        assertEquals(
+            false,
+            isTokenRouteMissing(CliClientException("nf", statusCode = 404, hasServerMessage = true)),
+        )
+        assertEquals(
+            false,
+            isTokenRouteMissing(CliClientException("boom", statusCode = 500, hasServerMessage = false)),
+        )
+        assertEquals(
+            false,
+            isTokenRouteMissing(CliClientException("io", statusCode = null, hasServerMessage = false)),
+        )
+    }
+
+    @Test
+    fun noPairingMessageDistinguishesTimeoutFromNoAttempt() {
+        assertEquals(
+            "No pairing request arrived within 30s.",
+            noPairingMessage(waited = true, timeoutSeconds = 30),
+        )
+        assertEquals(
+            "No pairing in progress. Start pairing from the other device " +
+                "(crosspaste pair), or rerun with --wait.",
+            noPairingMessage(waited = false, timeoutSeconds = 30),
+        )
+    }
 
     @Test
     fun describeRequestersPrefersDeviceNamesAndFallsBackToIds() {

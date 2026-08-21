@@ -67,15 +67,14 @@ internal class TokenCommand : CliktCommand(name = "token") {
             var snapshot = fetchSnapshot(client)
             if (!snapshot.active && wait) {
                 echo("Waiting for a pairing request... (Ctrl-C to stop)", err = true)
-                snapshot =
-                    awaitActiveSnapshot(
-                        timeout = timeout.seconds,
-                        fetch = { fetchSnapshot(client) },
-                    ) ?: run {
-                        echo("Error: No pairing request arrived within ${timeout}s.", err = true)
-                        throw ProgramResult(1)
-                    }
+                awaitActiveSnapshot(
+                    timeout = timeout.seconds,
+                    fetch = { fetchSnapshot(client) },
+                )?.let { snapshot = it }
             }
+            // A timed-out --wait falls through with the inactive snapshot, so
+            // the JSON contract is uniform: stdout always carries one snapshot
+            // and the exit code alone reports failure
             if (ctx.json) {
                 echo(cliJson.encodeToString(PairTokenSnapshot.serializer(), snapshot))
                 if (!snapshot.active) {
@@ -85,11 +84,7 @@ internal class TokenCommand : CliktCommand(name = "token") {
             }
             val token = snapshot.token
             if (!snapshot.active || token == null) {
-                echo(
-                    "Error: No pairing in progress. Start pairing from the other device " +
-                        "(crosspaste pair), or rerun with --wait.",
-                    err = true,
-                )
+                echo("Error: ${noPairingMessage(waited = wait, timeoutSeconds = timeout)}", err = true)
                 throw ProgramResult(1)
             }
             describeRequesters(snapshot.requesters)?.let { echo(it, err = true) }
@@ -102,9 +97,7 @@ internal class TokenCommand : CliktCommand(name = "token") {
         try {
             client.getBody("/cli/pair/token", PairTokenSnapshot.serializer())
         } catch (e: CliClientException) {
-            // A 404 without a server message means the route does not exist:
-            // the running app predates this command
-            if (e.statusCode == 404 && !e.hasServerMessage) {
+            if (isTokenRouteMissing(e)) {
                 echo(
                     "Error: The running CrossPaste app is too old for this command; update it first.",
                     err = true,
@@ -114,6 +107,25 @@ internal class TokenCommand : CliktCommand(name = "token") {
             throw e
         }
 }
+
+/**
+ * A 404 without a server message means the route itself does not exist — the
+ * running app predates this command (see [CliClientException.hasServerMessage];
+ * the endpoint's own inactive answer is a 200, never a 404).
+ */
+internal fun isTokenRouteMissing(e: CliClientException): Boolean = e.statusCode == 404 && !e.hasServerMessage
+
+/** Error line for a missing code: timeout wording after --wait, guidance otherwise. */
+internal fun noPairingMessage(
+    waited: Boolean,
+    timeoutSeconds: Int,
+): String =
+    if (waited) {
+        "No pairing request arrived within ${timeoutSeconds}s."
+    } else {
+        "No pairing in progress. Start pairing from the other device " +
+            "(crosspaste pair), or rerun with --wait."
+    }
 
 /**
  * Polls [fetch] every [pollInterval] until it reports an active pairing
