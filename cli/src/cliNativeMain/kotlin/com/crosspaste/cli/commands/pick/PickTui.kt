@@ -17,6 +17,7 @@ import com.crosspaste.cli.platform.isRawModeReadTimeout
 import com.crosspaste.cli.platform.kittyDeleteImages
 import com.crosspaste.cli.platform.parsePngDimensions
 import com.crosspaste.cli.platform.restoreConsoleModes
+import com.crosspaste.cli.platform.sixelPixelBox
 import com.crosspaste.cli.platform.writeItermInlineImage
 import com.crosspaste.cli.platform.writeKittyInlineImage
 import com.crosspaste.cli.platform.writeSixelInlineImage
@@ -228,6 +229,7 @@ internal class PickTui(
         private var imageFailedId: Long? = null
         private var imageDeadline: TimeMark? = null
         private var sixelInFlightId: Long? = null
+        private var sixelJob: Job? = null
         private var lastPanelRow: Int? = null
         private var lastSize: Pair<Int, Int>? = null
         private var lastRefreshAt = timeSource.markNow()
@@ -504,6 +506,9 @@ internal class PickTui(
                         imageProtocol != TerminalImageProtocol.KITTY
                 if (needsDraw) imageDeadline = timeSource.markNow()
             } else {
+                // No image to show anymore (selection moved off an image,
+                // preview closed): stop any fetch still running for the old one
+                cancelSixelFetch()
                 deleteDrawnKittyImage()
                 imageDrawnId = null
                 imageDeadline = null
@@ -540,25 +545,42 @@ internal class PickTui(
             if (sixelInFlightId == id) return
             val display = imageDisplay ?: return
             val (maxColumns, maxRows) = previewImageCellBox()
+            val (maxWidthPx, maxHeightPx) = sixelPixelBox(maxColumns, maxRows, display)
+            // The superseded fetch's reply would be dropped as stale anyway;
+            // cancelling frees the connection instead of letting it run out
+            sixelJob?.cancel()
             sixelInFlightId = id
-            fetchScope.launch(Dispatchers.Default) {
-                val image =
-                    try {
-                        client.getRawImage(
-                            id = id,
-                            index = 0,
-                            maxWidth = maxColumns * display.cellWidthPx,
-                            maxHeight = maxRows * display.cellHeightPx,
-                        )
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        throw e
-                    } catch (_: CliClientException) {
-                        null
-                    } catch (_: AppNotRunningException) {
-                        null
-                    }
-                results.trySend(FetchMsg.SixelPixels(id, maxColumns, maxRows, image))
-            }
+            sixelJob =
+                fetchScope.launch(Dispatchers.Default) {
+                    val image =
+                        try {
+                            client.getRawImage(
+                                id = id,
+                                index = 0,
+                                maxWidth = maxWidthPx,
+                                maxHeight = maxHeightPx,
+                            )
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (_: CliClientException) {
+                            null
+                        } catch (_: AppNotRunningException) {
+                            null
+                        }
+                    results.trySend(FetchMsg.SixelPixels(id, maxColumns, maxRows, image))
+                }
+        }
+
+        /**
+         * Aborts any in-flight sixel fetch. Clearing [sixelInFlightId] with
+         * it is mandatory: a cancelled fetch never posts its reply, and a
+         * stale in-flight marker would block re-fetching the same paste when
+         * the user selects it again.
+         */
+        private fun cancelSixelFetch() {
+            sixelJob?.cancel()
+            sixelJob = null
+            sixelInFlightId = null
         }
 
         /**

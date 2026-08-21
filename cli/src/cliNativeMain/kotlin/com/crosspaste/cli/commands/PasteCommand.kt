@@ -6,6 +6,7 @@ import com.crosspaste.cli.api.CLI_IMAGE_MAX_BOX_PX
 import com.crosspaste.cli.api.CliClient
 import com.crosspaste.cli.api.CliClientException
 import com.crosspaste.cli.platform.resolveTerminalImageDisplay
+import com.crosspaste.cli.platform.sixelPixelBox
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.ProgramResult
@@ -209,8 +210,11 @@ class PasteCommand : CliktCommand(name = "paste") {
         val info = terminal.terminalInfo
         val display =
             resolveTerminalImageDisplay(info.inputInteractive, info.outputInteractive) ?: return
-        val sixelMaxWidthPx =
-            (terminal.size.width * display.cellWidthPx).coerceIn(1, CLI_IMAGE_MAX_BOX_PX)
+        // Rows = the endpoint's box clamp in cells: with any cell height the
+        // pixel height saturates at CLI_IMAGE_MAX_BOX_PX, i.e. "as tall as
+        // the endpoint allows" — paste deliberately has no row limit
+        val (sixelMaxWidthPx, sixelMaxHeightPx) =
+            sixelPixelBox(terminal.size.width, CLI_IMAGE_MAX_BOX_PX, display)
         InlineImageRenderer(
             protocol = display.protocol,
             emit = { print(it) },
@@ -219,7 +223,7 @@ class PasteCommand : CliktCommand(name = "paste") {
                 // Any failure — including 404 from an app that predates the
                 // endpoint — falls back to the paths printed above
                 try {
-                    client.getRawImage(detail.id, index, sixelMaxWidthPx, CLI_IMAGE_MAX_BOX_PX)
+                    client.getRawImage(detail.id, index, sixelMaxWidthPx, sixelMaxHeightPx)
                 } catch (_: CliClientException) {
                     null
                 } catch (_: AppNotRunningException) {

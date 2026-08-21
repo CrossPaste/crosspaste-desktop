@@ -1,5 +1,6 @@
 package com.crosspaste.cli.platform
 
+import com.crosspaste.cli.api.CLI_IMAGE_MAX_BOX_PX
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
 import platform.posix.getenv
@@ -68,6 +69,25 @@ internal fun resolveTerminalImageDisplay(
         cellWidthPx = cellSize?.first ?: DEFAULT_CELL_WIDTH_PX,
         cellHeightPx = cellSize?.second ?: DEFAULT_CELL_HEIGHT_PX,
     )
+}
+
+/**
+ * Converts a display cell box into the pixel box to request from the app's
+ * transcode endpoint: cells times the probed (or default) cell pixel size.
+ * Long intermediates plus the [CLI_IMAGE_MAX_BOX_PX] clamp keep degenerate
+ * inputs — a lying terminal, a huge COLUMNS override — from overflowing Int
+ * or requesting an unbounded transcode; the floor of 1 keeps a zero-sized
+ * terminal report from producing an invalid request.
+ */
+internal fun sixelPixelBox(
+    columns: Int,
+    rows: Int,
+    display: TerminalImageDisplay,
+): Pair<Int, Int> {
+    val maxBox = CLI_IMAGE_MAX_BOX_PX.toLong()
+    val width = (columns.toLong() * display.cellWidthPx).coerceIn(1L, maxBox).toInt()
+    val height = (rows.toLong() * display.cellHeightPx).coerceIn(1L, maxBox).toInt()
+    return width to height
 }
 
 /** True once [buffer] holds a complete DA1 reply (`CSI ? ... c`). */
