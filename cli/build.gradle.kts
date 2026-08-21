@@ -155,13 +155,23 @@ kotlin {
     }
 }
 
+// The host's own K/N target, or null on hosts Kotlin/Native cannot compile
+// from (e.g. linux-arm64): HostManager.host throws there instead of returning
+// null, and letting that escape at configuration time would break every
+// module's build — including :app, whose headless daemon runs fine on such
+// hosts (#4853). hostOrNull tolerates exactly the unsupported-host case, so
+// only the host-only conveniences below degrade to no-ops while any other
+// configuration error still fails the build.
+val hostNativeTarget =
+    HostManager.hostOrNull?.let { host ->
+        kotlin.targets
+            .withType<KotlinNativeTarget>()
+            .firstOrNull { it.konanTarget == host }
+    }
+
 // Runs the CLI test suite for the host's own target — a stable task name for
 // CI and local use that doesn't depend on which machine invokes it.
-val hostTestTaskName =
-    kotlin.targets
-        .withType<KotlinNativeTarget>()
-        .firstOrNull { it.konanTarget == HostManager.host }
-        ?.let { "${it.name}Test" }
+val hostTestTaskName = hostNativeTarget?.let { "${it.name}Test" }
 
 tasks.register("cliNativeTest") {
     group = "verification"
@@ -223,9 +233,7 @@ abstract class CliRunTask : Exec() {
     }
 }
 
-kotlin.targets
-    .withType<KotlinNativeTarget>()
-    .firstOrNull { it.konanTarget == HostManager.host }
+hostNativeTarget
     ?.let { hostTarget ->
         val debugExecutable = hostTarget.binaries.getExecutable(NativeBuildType.DEBUG)
         tasks.register<CliRunTask>("run") {
