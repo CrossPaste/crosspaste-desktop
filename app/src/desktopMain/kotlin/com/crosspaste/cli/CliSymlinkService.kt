@@ -102,6 +102,7 @@ class CliSymlinkService(
     private val platform: Platform,
     private val linkPath: Path = DEFAULT_LINK_PATH.toPath(),
     private val escalatedInstall: ((cliBinary: Path, link: Path) -> CliInstallResult)? = null,
+    binaryResolverOverride: (() -> Path?)? = null,
 ) {
 
     companion object {
@@ -130,40 +131,76 @@ class CliSymlinkService(
         if (platform.isWindows()) WINDOWS_COMMAND_NAME else COMMAND_NAME
 
     /**
+     * AppImage mounts the payload at a new temporary path on every launch,
+     * so "add the executable's folder to PATH" guidance would be wrong there
+     * (documented D6 limitation); the runtime exports APPIMAGE when set.
+     */
+    val runsFromAppImage: Boolean =
+        platform.isLinux() && !System.getenv("APPIMAGE").isNullOrEmpty()
+
+    /**
+     * Yields the current CLI binary location, re-evaluated on every refresh.
      * Packaged builds bundle the CLI in the JVM payload area, which is
      * exactly what pasteAppJarPath points at (Contents/Resources on macOS,
-     * lib/app on Linux, app\ on Windows). Dev runs resolve it from
-     * development.properties or the cli/dist convention instead; null when
-     * neither yields a binary.
+     * lib/app on Linux, app\ on Windows) — a fixed address. Dev runs resolve
+     * it from development.properties when configured (validated once,
+     * failing fast on a stale path), otherwise from the cli/dist convention
+     * — re-walked each time so building the CLI while the app runs is picked
+     * up by the next refresh, without restarting.
      */
-    val cliBinaryPath: Path? =
-        if (getAppEnvUtils().isDevelopment()) {
-            resolveDevCliBinary(
-                configuredPath = DevConfig.cliBinaryPath,
-                startDir = Paths.get("").toAbsolutePath(),
-                distTarget = devCliDistTarget(platform),
-                binaryFileName = cliBinaryFileName(platform),
-            )
-        } else {
-            appPathProvider.pasteAppJarPath
-                .resolve("bin")
-                .resolve(cliBinaryFileName(platform))
-        }
+    private val binaryResolver: () -> Path? =
+        binaryResolverOverride ?: createBinaryResolver(appPathProvider)
 
-    // Starts at PROBING and is populated by refresh(): computeState() does
-    // filesystem probes, which must not run on the main thread where Koin
-    // first constructs this service.
+    private fun createBinaryResolver(appPathProvider: AppPathProvider): () -> Path? {
+        if (!getAppEnvUtils().isDevelopment()) {
+            val packaged =
+                appPathProvider.pasteAppJarPath
+                    .resolve("bin")
+                    .resolve(cliBinaryFileName(platform))
+            return { packaged }
+        }
+        val configured =
+            DevConfig.cliBinaryPath?.let {
+                resolveDevCliBinary(
+                    configuredPath = it,
+                    startDir = Paths.get("").toAbsolutePath(),
+                    distTarget = devCliDistTarget(platform),
+                    binaryFileName = cliBinaryFileName(platform),
+                )
+            }
+        if (configured != null) {
+            return { configured }
+        }
+        val distTarget = devCliDistTarget(platform)
+        val binaryFileName = cliBinaryFileName(platform)
+        return {
+            resolveDevCliBinary(
+                configuredPath = null,
+                startDir = Paths.get("").toAbsolutePath(),
+                distTarget = distTarget,
+                binaryFileName = binaryFileName,
+            )
+        }
+    }
+
+    // Both flows start empty/pessimistic and are populated by refresh():
+    // resolution and computeState() do filesystem probes, which must not run
+    // on the main thread where Koin first constructs this service.
+    private val _cliBinaryPath = MutableStateFlow<Path?>(null)
+    val cliBinaryPath: StateFlow<Path?> = _cliBinaryPath
+
     private val _state = MutableStateFlow(CliSymlinkState.PROBING)
     val state: StateFlow<CliSymlinkState> = _state
 
     suspend fun refresh() {
         withContext(ioDispatcher) {
-            _state.value = computeState()
+            val binary = binaryResolver()
+            _cliBinaryPath.value = binary
+            _state.value = computeState(binary)
         }
     }
 
-    private fun computeState(): CliSymlinkState {
-        val binary = cliBinaryPath
+    private fun computeState(binary: Path?): CliSymlinkState {
         if (binary == null || !Files.isRegularFile(binary.toNioPath())) {
             return CliSymlinkState.BINARY_MISSING
         }
@@ -199,17 +236,21 @@ class CliSymlinkService(
      */
     suspend fun install(): CliInstallResult =
         withContext(ioDispatcher) {
-            val current = computeState()
+            val cliBinary = binaryResolver()
+            _cliBinaryPath.value = cliBinary
+            val current = computeState(cliBinary)
             if (current != CliSymlinkState.NOT_INSTALLED && current != CliSymlinkState.NEEDS_REPAIR) {
                 _state.value = current
                 return@withContext CliInstallResult.FAILURE
             }
             // Actionable states imply the binary resolved
-            val cliBinary = cliBinaryPath ?: return@withContext CliInstallResult.FAILURE
+            if (cliBinary == null) {
+                return@withContext CliInstallResult.FAILURE
+            }
             val result =
-                attemptDirectInstall()
+                attemptDirectInstall(cliBinary)
                     ?: (escalatedInstall ?: ::osascriptInstall)(cliBinary, linkPath)
-            val finalState = computeState()
+            val finalState = computeState(cliBinary)
             _state.value = finalState
             when {
                 result != CliInstallResult.SUCCESS -> result
@@ -228,8 +269,7 @@ class CliSymlinkService(
      * and returns null when escalation should take over (e.g. no write
      * permission).
      */
-    internal fun attemptDirectInstall(): CliInstallResult? {
-        val cliBinary = cliBinaryPath ?: return CliInstallResult.FAILURE
+    internal fun attemptDirectInstall(cliBinary: Path): CliInstallResult? {
         val nioLink = linkPath.toNioPath()
         if (Files.exists(nioLink, LinkOption.NOFOLLOW_LINKS) && !Files.isSymbolicLink(nioLink)) {
             logger.warn { "A foreign file appeared at $linkPath; refusing to replace it" }
@@ -485,13 +525,17 @@ internal fun resolveDevCliBinary(
     binaryFileName: String,
 ): Path? {
     if (configuredPath != null) {
-        val configured = Paths.get(configuredPath)
+        // Absolute + normalized before validating and returning: a relative
+        // configured path would otherwise be written verbatim into the
+        // /usr/local/bin symlink, resolve relative to /usr/local/bin as a
+        // dangling link — and still compare equal as INSTALLED
+        val configured = Paths.get(configuredPath).toAbsolutePath().normalize()
         check(Files.isRegularFile(configured)) {
             "development.properties cliBinaryPath does not point to a file: $configuredPath"
         }
         return configured.toOkioPath()
     }
-    var dir: NioPath? = startDir
+    var dir: NioPath? = startDir.toAbsolutePath().normalize()
     while (dir != null) {
         val candidate =
             dir

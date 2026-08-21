@@ -56,7 +56,14 @@ fun CliToolSettingItem() {
         when (state) {
             CliSymlinkState.TRANSLOCATED -> "cli_tool_translocated_desc"
             CliSymlinkState.CONFLICT -> "cli_tool_conflict_desc"
-            CliSymlinkState.EXTERNALLY_MANAGED -> "cli_tool_external_desc"
+            CliSymlinkState.EXTERNALLY_MANAGED ->
+                // AppImage mounts at a new temporary path every launch, so
+                // "add the folder above to PATH" would be wrong guidance there
+                if (cliSymlinkService.runsFromAppImage) {
+                    "cli_tool_appimage_desc"
+                } else {
+                    "cli_tool_external_desc"
+                }
             CliSymlinkState.BINARY_MISSING ->
                 if (getAppEnvUtils().isDevelopment()) {
                     "cli_binary_missing_dev_desc"

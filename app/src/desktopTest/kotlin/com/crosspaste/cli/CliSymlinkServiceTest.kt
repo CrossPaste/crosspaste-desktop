@@ -322,7 +322,10 @@ class CliSymlinkServiceTest {
         // Calls the internal attempt directly, bypassing install()'s
         // pre-check — modeling a file that appeared after that check
         Files.write(linkPath, byteArrayOf(9))
-        assertEquals(CliInstallResult.FAILURE, createService().attemptDirectInstall())
+        assertEquals(
+            CliInstallResult.FAILURE,
+            createService().attemptDirectInstall(cliBinary.toOkioPath()),
+        )
         assertEquals(9, Files.readAllBytes(linkPath)[0].toInt())
     }
 
@@ -371,6 +374,42 @@ class CliSymlinkServiceTest {
     fun `dev resolution returns null when nothing is built or configured`() {
         assertEquals(null, resolveDevCliBinary(null, tempDir, "macosArm64", "crosspaste-cli"))
     }
+
+    @Test
+    fun `dev resolution absolutizes a relative configured path`() {
+        // A relative path written verbatim into /usr/local/bin/crosspaste
+        // would resolve relative to /usr/local/bin as a dangling link — yet
+        // still compare equal as INSTALLED
+        val configured = tempDir.resolve("custom-cli")
+        Files.write(configured, byteArrayOf(1))
+        val relative = NioPath.of("").toAbsolutePath().relativize(configured)
+        assertTrue(!relative.isAbsolute)
+        val resolved = resolveDevCliBinary(relative.toString(), tempDir, "macosArm64", "crosspaste-cli")
+        assertTrue(resolved!!.isAbsolute)
+        assertEquals(configured.toAbsolutePath().normalize(), resolved.toNioPath())
+    }
+
+    @Test
+    fun `refresh picks up a binary built after startup`() =
+        runTest {
+            // Models the dev convention resolver: nothing at first, then the
+            // user runs :cli:assembleDist while the app is up
+            val lateBinary = tempDir.resolve("late-cli")
+            val service =
+                CliSymlinkService(
+                    appPathProvider = fakeAppPathProvider(tempDir.resolve("Resources")),
+                    platform = macosPlatform(),
+                    linkPath = linkPath.toOkioPath(),
+                    binaryResolverOverride = {
+                        lateBinary.takeIf { Files.isRegularFile(it) }?.toOkioPath()
+                    },
+                )
+            assertEquals(CliSymlinkState.BINARY_MISSING, refreshedState(service))
+            assertEquals(null, service.cliBinaryPath.value)
+            Files.write(lateBinary, byteArrayOf(1))
+            assertEquals(CliSymlinkState.NOT_INSTALLED, refreshedState(service))
+            assertEquals(lateBinary.toOkioPath(), service.cliBinaryPath.value)
+        }
 
     @Test
     fun `dist target and binary name follow the host platform`() {

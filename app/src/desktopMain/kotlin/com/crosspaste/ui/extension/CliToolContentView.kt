@@ -17,6 +17,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import com.crosspaste.cli.CliSymlinkService
+import com.crosspaste.cli.CliSymlinkState
 import com.crosspaste.cli.ShellAvailability
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.SectionHeader
@@ -72,22 +73,35 @@ fun CliToolContentView() {
                 Column(
                     modifier = Modifier.padding(medium),
                 ) {
-                    val binaryPath = cliSymlinkService.cliBinaryPath
-                    if (binaryPath != null) {
-                        SelectionContainer {
+                    // Re-resolved on every refresh, so a CLI built while the
+                    // app runs shows up on the next visit to this page
+                    val binaryPath by cliSymlinkService.cliBinaryPath.collectAsState()
+                    when {
+                        binaryPath != null -> {
+                            SelectionContainer {
+                                Text(
+                                    text = binaryPath.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        symlinkState == CliSymlinkState.PROBING -> {
                             Text(
-                                text = binaryPath.toString(),
+                                text = "…",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontFamily = FontFamily.Monospace,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                    } else {
-                        Text(
-                            text = copywriter.getText("cli_binary_missing"),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
+                        else -> {
+                            Text(
+                                text = copywriter.getText("cli_binary_missing"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 }
             }
