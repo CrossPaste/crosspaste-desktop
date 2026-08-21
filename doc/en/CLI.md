@@ -266,6 +266,8 @@ The `:cli:run` task links the host's debug executable and sets `CROSSPASTE_USER_
 CROSSPASTE_USER_DATA_DIR=app/.user cli/build/bin/macosArm64/debugExecutable/crosspaste-cli.kexe history
 ```
 
+A PATH-installed CLI also finds a dev instance on its own: the dev app writes a `cli-endpoint.dev.json` pointer into the installed app's default user-data directory, and the CLI falls back to it whenever the installed app is not live (a one-line note on stderr tells you a dev instance answered). A live installed app always wins; use `CROSSPASTE_USER_DATA_DIR` to force the dev instance while both are running.
+
 Output through Gradle is not a TTY, so the CLI cannot detect your window size and falls back to 79 columns. Pass the width explicitly via `COLUMNS` (the CLI honors it whenever stdout is not interactive):
 
 ```sh

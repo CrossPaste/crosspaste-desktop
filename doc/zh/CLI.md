@@ -266,6 +266,8 @@ crosspaste --generate-completion fish > ~/.config/fish/completions/crosspaste.fi
 CROSSPASTE_USER_DATA_DIR=app/.user cli/build/bin/macosArm64/debugExecutable/crosspaste-cli.kexe history
 ```
 
+已加入 PATH 的 CLI 也能自动发现 dev 实例：dev 应用会在已安装应用的默认用户数据目录写入一个 `cli-endpoint.dev.json` 指针文件，当已安装应用不在运行时，CLI 会回退探测它（stderr 会提示当前连接的是 dev 实例）。已安装应用在运行时始终优先；两者同时运行时可用 `CROSSPASTE_USER_DATA_DIR` 强制指向 dev 实例。
+
 经 Gradle 转发的输出不是 TTY，CLI 探测不到窗口宽度，会回退到 79 列。可通过 `COLUMNS` 显式传入宽度（stdout 非交互时 CLI 都会遵循它）：
 
 ```sh

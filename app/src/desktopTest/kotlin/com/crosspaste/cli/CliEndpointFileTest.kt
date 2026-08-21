@@ -4,6 +4,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.Platform
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.serialization.json.Json
@@ -16,18 +17,22 @@ import kotlin.io.path.readText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CliEndpointFileTest {
 
-    private fun createEndpointFile(tempDir: java.nio.file.Path): CliEndpointFile {
+    private fun createEndpointFile(
+        tempDir: java.nio.file.Path,
+        devPointerPath: java.nio.file.Path? = null,
+    ): CliEndpointFile {
         val configManager = mockk<CommonConfigManager>()
         every { configManager.getCurrentConfig() } returns DesktopAppConfig(language = "en")
         val platformProvider =
             object : PlatformUserDataPathProvider {
                 override fun getUserDefaultStoragePath() = tempDir.toFile().toOkioPath()
             }
-        return CliEndpointFile(UserDataPathProvider(configManager, platformProvider))
+        return CliEndpointFile(UserDataPathProvider(configManager, platformProvider), devPointerPath)
     }
 
     private val endpoint =
@@ -96,5 +101,57 @@ class CliEndpointFileTest {
 
         // Deleting again must not throw
         endpointFile.delete()
+    }
+
+    @Test
+    fun `write and delete also maintain the dev pointer, creating its directory`() {
+        val tempDir = Files.createTempDirectory("cli-endpoint-test")
+        val pointerDir = Files.createTempDirectory("cli-endpoint-pointer").resolve("not-yet-created")
+        val pointerPath = pointerDir.resolve(CLI_DEV_ENDPOINT_FILE_NAME)
+        val endpointFile = createEndpointFile(tempDir, devPointerPath = pointerPath)
+
+        endpointFile.write(endpoint)
+        assertTrue(endpointFile.getPath().exists())
+        assertEquals(endpoint, Json.decodeFromString<CliEndpoint>(pointerPath.readText()))
+
+        endpointFile.delete()
+        assertFalse(endpointFile.getPath().exists())
+        assertFalse(pointerPath.exists())
+    }
+
+    @Test
+    fun `an unwritable dev pointer does not fail the primary write`() {
+        val tempDir = Files.createTempDirectory("cli-endpoint-test")
+        // A file where the pointer's parent directory should be makes
+        // createDirectories fail; the primary endpoint file must still land
+        val blocker = Files.createTempFile("cli-endpoint-blocker", ".tmp")
+        val pointerPath = blocker.resolve(CLI_DEV_ENDPOINT_FILE_NAME)
+        val endpointFile = createEndpointFile(tempDir, devPointerPath = pointerPath)
+
+        endpointFile.write(endpoint)
+        assertTrue(endpointFile.getPath().exists())
+    }
+
+    @Test
+    fun `installed app default dir mirrors the CLI's per-platform table without side effects`() {
+        val home =
+            java.nio.file.Paths
+                .get("/home/tester")
+
+        fun platform(name: String) = Platform(name = name, arch = "x64", bitMode = 64, version = "1")
+
+        assertEquals(
+            home.resolve(".crosspaste"),
+            installedAppDefaultUserDataDir(platform(Platform.WINDOWS), home),
+        )
+        assertEquals(
+            home.resolve("Library").resolve("Application Support").resolve("CrossPaste"),
+            installedAppDefaultUserDataDir(platform(Platform.MACOS), home),
+        )
+        assertEquals(
+            home.resolve(".local").resolve("share").resolve(".crosspaste"),
+            installedAppDefaultUserDataDir(platform(Platform.LINUX), home),
+        )
+        assertNull(installedAppDefaultUserDataDir(platform(Platform.ANDROID), home))
     }
 }

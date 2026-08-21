@@ -23,7 +23,23 @@ class CliConfigReader(
 
     companion object {
         const val CLI_ENDPOINT_FILE_NAME = "cli-endpoint.json"
+
+        /**
+         * Secondary discovery pointer a dev instance (`./gradlew app:run`)
+         * writes into the installed app's default user-data directory; its
+         * real endpoint file lives in the repo's dev user dir, which this
+         * CLI cannot know. Same record format as the primary file.
+         */
+        const val CLI_DEV_ENDPOINT_FILE_NAME = "cli-endpoint.dev.json"
     }
+
+    /**
+     * When true the CLI targets the dev pointer instead of the installed
+     * app's endpoint file. Set only by AppReadinessChecker after verifying a
+     * live dev instance while no production instance answers; never set on a
+     * release user's machine, where the dev pointer file does not exist.
+     */
+    var devEndpointActive: Boolean = false
 
     private val json =
         Json {
@@ -50,5 +66,14 @@ class CliConfigReader(
         }
     }
 
-    fun resolveEndpointFilePath(): Path = resolveUserDataPath().resolve(CLI_ENDPOINT_FILE_NAME)
+    fun resolveEndpointFilePath(): Path =
+        if (devEndpointActive) {
+            devEndpointFilePath()
+        } else {
+            primaryEndpointFilePath()
+        }
+
+    fun primaryEndpointFilePath(): Path = resolveUserDataPath().resolve(CLI_ENDPOINT_FILE_NAME)
+
+    fun devEndpointFilePath(): Path = platformPathProvider.getDefaultUserDataPath().resolve(CLI_DEV_ENDPOINT_FILE_NAME)
 }
