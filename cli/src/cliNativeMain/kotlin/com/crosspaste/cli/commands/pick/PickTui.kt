@@ -551,7 +551,10 @@ internal class PickTui(
         path: String,
         panelRow: Int,
     ): Boolean {
-        val protocol = imageProtocol ?: return false
+        // SIXEL renders from app-transcoded pixels, not stored files; it is
+        // wired into this preview in #4848 and never selected until then
+        val protocol =
+            imageProtocol?.takeIf { it != TerminalImageProtocol.SIXEL } ?: return false
         val bytes =
             readImageWithinBudget(
                 path = path,
@@ -581,6 +584,7 @@ internal class PickTui(
                     widthCells = box.first,
                     heightCells = box.second,
                 )
+            TerminalImageProtocol.SIXEL -> {} // unreachable: filtered out above
         }
         terminal.rawPrint("${ESC}8")
         return true
