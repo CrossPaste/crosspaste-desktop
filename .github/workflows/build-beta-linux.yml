@@ -126,7 +126,7 @@ jobs:
           CONF
 
       - name: Conveyor build (Linux deb + tarball)
-        uses: hydraulic-software/conveyor/actions/build@v21.0
+        uses: hydraulic-software/conveyor/actions/build@v22.1
         with:
           command: make site
           extra_flags: -f beta.conveyor.conf
