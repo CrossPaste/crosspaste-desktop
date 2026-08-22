@@ -16,7 +16,6 @@ import com.crosspaste.e2e.scenario.ScenarioResult
 import com.crosspaste.e2e.scenario.TargetSpec
 import com.crosspaste.e2e.scenario.TelnetScenario
 import com.crosspaste.e2e.scenario.WrongTokenScenario
-import com.crosspaste.net.SyncApi
 import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.utils.getDateUtils
 import com.github.ajalt.clikt.core.CliktCommand
@@ -109,7 +108,10 @@ class E2eCommand : CliktCommand(name = "crosspaste-e2e") {
             if (scenario.lowercase() in V3_SCENARIOS) {
                 PairingV3.PROTOCOL_VERSION
             } else {
-                SyncApi.PAIRING_VERSION
+                // Legacy scenarios deliberately advertise v2 so e2e keeps
+                // covering the v2 acceptance/downgrade path now that the
+                // production default (SyncApi.PAIRING_VERSION) is 3.
+                PairingV3.PROTOCOL_VERSION - 1
             }
         val advertiseAddresses = advertiseAddress?.let { listOf(parseAdvertiseAddress(it)) }
         val peer =

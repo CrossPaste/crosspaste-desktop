@@ -99,8 +99,8 @@ class HeadlessPeer(
             PairingProtocolV3Service(
                 appInfo = appInfo,
                 pairingV3ClientApi = PairingV3ClientApi(pasteClient, exceptionHandler),
-                // Conformance/E2E only. Production intentionally registers
-                // UnavailablePakeProvider pending constant-time EC review.
+                // E2E resolves the reviewed OpenSSL backend from the environment.
+                // Packaged production builds resolve the pinned bundled library.
                 pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()),
                 receiptCache = PairingReceiptCache(),
                 rateLimiter = PairingRateLimiter(),

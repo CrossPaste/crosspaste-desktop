@@ -8,6 +8,8 @@ import com.crosspaste.pairing.v3.TestPakeProvider
 import com.crosspaste.pairing.v3.UnavailablePakeProvider
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.sync.PairingCredentialType
+import com.crosspaste.sync.selectPairingCredentialType
 import io.mockk.every
 import io.mockk.mockk
 import okio.Path.Companion.toPath
@@ -99,7 +101,7 @@ class DesktopPairingCapabilityTest {
     }
 
     @Test
-    fun bundledBuildsProbeTheBackendButStayClampedToV2() {
+    fun bundledBuildsAdvertiseV3WhenTheBundledBackendLoads() {
         listOf(AppEnv.PRODUCTION, AppEnv.BETA).forEach { appEnv ->
             var probes = 0
             val backend =
@@ -114,17 +116,20 @@ class DesktopPairingCapabilityTest {
                     },
                 )
 
-            // The probe exists for packaging diagnostics only: even a working
-            // backend must not advertise v3 before the rollout PR (#4667).
+            // One probe decides both capability and provider: production v3
+            // is advertised only because this exact backend instance loaded.
             assertEquals(1, probes)
-            assertEquals(2, backend.capabilityFlag.advertisedPairingVersion)
-            assertFalse(backend.capabilityFlag.isPairingV3Enabled)
-            assertSame(UnavailablePakeProvider, backend.pakeProvider)
+            assertEquals(3, backend.capabilityFlag.advertisedPairingVersion)
+            assertTrue(backend.capabilityFlag.isPairingV3Enabled)
+            assertSame(loadedProvider, backend.pakeProvider)
         }
     }
 
     @Test
-    fun bundledProbeFailureIsToleratedAndStaysClamped() {
+    fun bundledLoadFailureDegradesToAdvertisingV2() {
+        // A broken/missing bundled libcrypto must not take pairing down with
+        // it: the device falls back to advertising v2 so peers negotiate SAS,
+        // and the provider stays fail-closed.
         val backend =
             resolveDesktopPairingBackend(
                 appEnv = AppEnv.PRODUCTION,
@@ -134,7 +139,30 @@ class DesktopPairingCapabilityTest {
             )
 
         assertEquals(2, backend.capabilityFlag.advertisedPairingVersion)
+        assertFalse(backend.capabilityFlag.isPairingV3Enabled)
         assertSame(UnavailablePakeProvider, backend.pakeProvider)
+    }
+
+    @Test
+    fun libcryptoLoadFailureComposesIntoSasCredentialSelection() {
+        // The rollout plan's degradation chain end to end: bundled libcrypto
+        // missing -> advertise v2 -> pairing with a v3-capable peer selects
+        // the v2 SAS credential instead of a doomed V3_PIN flow.
+        val backend =
+            resolveDesktopPairingBackend(
+                appEnv = AppEnv.PRODUCTION,
+                developmentV3InteropEnabled = false,
+                libcryptoResolution = LibCryptoResolution.Bundled("/missing/libcrypto.so.3"),
+                loadPakeProvider = failingLoader,
+            )
+
+        assertEquals(
+            PairingCredentialType.SAS_CODE,
+            selectPairingCredentialType(
+                localPairingVersion = backend.capabilityFlag.advertisedPairingVersion,
+                remotePairingVersion = 3,
+            ),
+        )
     }
 
     @Test
