@@ -46,6 +46,7 @@ enum class StandardErrorCode(
     SYNC_PASTE_NOT_FOUND_DATA(3002, ErrorType.EXTERNAL_ERROR),
 
     REMOTE_SHOW_PAIRING_CODE_DISABLED(3100, ErrorType.USER_ERROR),
+    REMOTE_SHOW_PAIRING_CODE_LOCKED(3101, ErrorType.USER_ERROR),
 
     // Pairing v3 wire errors (ai/docs/PAIRING_PROTOCOL_V3.md §15). Responses must not
     // disclose whether a guessed PIN was close or which sub-proof failed: proof-stage

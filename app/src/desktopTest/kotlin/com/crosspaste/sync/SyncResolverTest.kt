@@ -45,7 +45,6 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -1709,31 +1708,35 @@ class SyncResolverTest {
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
             val event = SyncEvent.ShowPairingCode(syncRuntimeInfo)
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.syncDeviceManager.showPairingCode(syncRuntimeInfo) } returns true
+            coEvery {
+                deps.syncDeviceManager.showPairingCode(syncRuntimeInfo)
+            } returns ShowPairingCodeResult.SHOWN
 
             resolver.emitEvent(event)
 
             coVerify(exactly = 1) { deps.syncDeviceManager.showPairingCode(syncRuntimeInfo) }
-            assertTrue(event.completionSignal.await())
+            assertEquals(ShowPairingCodeResult.SHOWN, event.completionSignal.await())
         }
 
     @Test
-    fun showPairingCode_reportsFailureWhenRemoteWindowWasNotOpened() =
+    fun showPairingCode_reportsNotAcceptingWhenRemoteWindowWasNotOpened() =
         runTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
             val event = SyncEvent.ShowPairingCode(syncRuntimeInfo)
             deps.stubDbRead(syncRuntimeInfo)
-            coEvery { deps.syncDeviceManager.showPairingCode(syncRuntimeInfo) } returns false
+            coEvery {
+                deps.syncDeviceManager.showPairingCode(syncRuntimeInfo)
+            } returns ShowPairingCodeResult.NOT_ACCEPTING
 
             resolver.emitEvent(event)
 
-            assertFalse(event.completionSignal.await())
+            assertEquals(ShowPairingCodeResult.NOT_ACCEPTING, event.completionSignal.await())
         }
 
     @Test
-    fun showPairingCode_resolverCancellationCompletesFalseWithoutCancellingCaller() =
+    fun showPairingCode_resolverCancellationCompletesUnavailableWithoutCancellingCaller() =
         runTest {
             val deps = TestDeps()
             val resolver = deps.createResolver()
@@ -1748,7 +1751,7 @@ class SyncResolverTest {
                 resolver.emitEvent(event)
             }
 
-            assertFalse(event.completionSignal.await())
+            assertEquals(ShowPairingCodeResult.UNAVAILABLE, event.completionSignal.await())
         }
 
     @Test
@@ -1765,7 +1768,7 @@ class SyncResolverTest {
             resolver.emitEvent(event)
 
             coVerify(exactly = 0) { deps.syncDeviceManager.showPairingCode(any()) }
-            assertFalse(event.completionSignal.await())
+            assertEquals(ShowPairingCodeResult.UNAVAILABLE, event.completionSignal.await())
         }
 
     private fun extensionPlatform(): Platform =

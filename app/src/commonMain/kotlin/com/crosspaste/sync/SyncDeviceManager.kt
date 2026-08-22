@@ -3,6 +3,8 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
+import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.ws.WsEnvelope
@@ -135,25 +137,34 @@ class SyncDeviceManager(
         }
     }
 
-    suspend fun showPairingCode(syncRuntimeInfo: SyncRuntimeInfo): Boolean {
-        if (syncRuntimeInfo.connectState != SyncState.UNVERIFIED) return false
-        val host = syncRuntimeInfo.connectHostAddress ?: return false
+    suspend fun showPairingCode(syncRuntimeInfo: SyncRuntimeInfo): ShowPairingCodeResult {
+        if (syncRuntimeInfo.connectState != SyncState.UNVERIFIED) return ShowPairingCodeResult.UNAVAILABLE
+        val host = syncRuntimeInfo.connectHostAddress ?: return ShowPairingCodeResult.UNAVAILABLE
         val hostAndPort = HostAndPort(host, syncRuntimeInfo.port)
         val result =
             syncClientApi.showPairingCode {
                 buildUrl(hostAndPort)
             }
-        return if (result is SuccessResult) {
-            logger.info { "showPairingCode success $host ${syncRuntimeInfo.port}" }
-            true
-        } else {
-            syncRuntimeInfoDao.updateConnectInfo(
-                syncRuntimeInfo.copy(
-                    connectState = SyncState.DISCONNECTED,
-                    modifyTime = nowEpochMilliseconds(),
-                ),
-            )
-            false
+        return when {
+            result is SuccessResult -> {
+                logger.info { "showPairingCode success $host ${syncRuntimeInfo.port}" }
+                ShowPairingCodeResult.SHOWN
+            }
+            result is FailureResult &&
+                result.exception.getErrorCode().code in
+                setOf(
+                    StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_DISABLED.getCode(),
+                    StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_LOCKED.getCode(),
+                ) -> ShowPairingCodeResult.NOT_ACCEPTING
+            else -> {
+                syncRuntimeInfoDao.updateConnectInfo(
+                    syncRuntimeInfo.copy(
+                        connectState = SyncState.DISCONNECTED,
+                        modifyTime = nowEpochMilliseconds(),
+                    ),
+                )
+                ShowPairingCodeResult.UNAVAILABLE
+            }
         }
     }
 

@@ -11,6 +11,7 @@ import com.crosspaste.net.routing.pairingV3Routing
 import com.crosspaste.net.routing.syncRouting
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
+import com.crosspaste.pairing.v3.WindowOpenSource
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.MarketingNearbyDeviceManager
@@ -71,7 +72,7 @@ class TestServerModule(
                     { appInstanceId ->
                         pairingProtocolV3Service?.hasActiveSession(appInstanceId) ?: false
                     },
-                    { pairingProtocolV3Service?.acceptanceWindow?.open() },
+                    { pairingProtocolV3Service?.acceptanceWindow?.open(WindowOpenSource.REMOTE) ?: true },
                 )
                 pairingProtocolV3Service?.let { service ->
                     pairingV3Routing(

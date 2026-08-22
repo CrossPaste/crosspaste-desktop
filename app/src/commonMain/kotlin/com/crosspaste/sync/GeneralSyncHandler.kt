@@ -229,16 +229,12 @@ class GeneralSyncHandler(
         emitEvent(SyncEvent.ShowToken(currentSyncRuntimeInfo))
     }
 
-    override suspend fun showPairingCode() {
+    override suspend fun showPairingCode(): ShowPairingCodeResult {
         val event = SyncEvent.ShowPairingCode(currentSyncRuntimeInfo)
         emitEvent(event)
-        val pairingCodeShown =
-            withTimeoutOrNull(5.seconds) {
-                event.completionSignal.await()
-            } ?: false
-        check(pairingCodeShown) {
-            "Unable to process remote pairing-code request for ${currentSyncRuntimeInfo.appInstanceId}"
-        }
+        return withTimeoutOrNull(5.seconds) {
+            event.completionSignal.await()
+        } ?: ShowPairingCodeResult.UNAVAILABLE
     }
 
     override suspend fun notifyExit() {

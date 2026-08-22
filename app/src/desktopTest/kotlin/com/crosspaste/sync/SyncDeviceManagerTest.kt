@@ -3,9 +3,11 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
+import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.ConnectionRefused
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.SyncClientApi
+import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
@@ -18,7 +20,6 @@ import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SyncDeviceManagerTest {
@@ -329,21 +330,21 @@ class SyncDeviceManagerTest {
     // ========== showPairingCode ==========
 
     @Test
-    fun showPairingCode_unverifiedAndSuccess_returnsTrue() =
+    fun showPairingCode_unverifiedAndSuccess_returnsShown() =
         runTest {
             val deps = TestDeps()
             val manager = deps.createManager()
             val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
             coEvery { deps.syncClientApi.showPairingCode(any()) } returns SuccessResult(true)
 
-            assertTrue(manager.showPairingCode(syncRuntimeInfo))
+            assertEquals(ShowPairingCodeResult.SHOWN, manager.showPairingCode(syncRuntimeInfo))
 
             coVerify(exactly = 1) { deps.syncClientApi.showPairingCode(any()) }
             coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
         }
 
     @Test
-    fun showPairingCode_unverifiedAndFails_returnsFalseAndDisconnects() =
+    fun showPairingCode_unverifiedAndFails_returnsUnavailableAndDisconnects() =
         runTest {
             val deps = TestDeps()
             val manager = deps.createManager()
@@ -352,19 +353,34 @@ class SyncDeviceManagerTest {
             val capturedInfo = slot<SyncRuntimeInfo>()
             coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(capturedInfo)) } returns "test-app-1"
 
-            assertFalse(manager.showPairingCode(syncRuntimeInfo))
+            assertEquals(ShowPairingCodeResult.UNAVAILABLE, manager.showPairingCode(syncRuntimeInfo))
 
             assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
         }
 
     @Test
-    fun showPairingCode_notUnverified_returnsFalseWithoutRequest() =
+    fun showPairingCode_policyRejectionDoesNotDisconnect() =
+        runTest {
+            val deps = TestDeps()
+            val manager = deps.createManager()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            coEvery {
+                deps.syncClientApi.showPairingCode(any())
+            } returns createFailureResult(StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_LOCKED, "locked")
+
+            assertEquals(ShowPairingCodeResult.NOT_ACCEPTING, manager.showPairingCode(syncRuntimeInfo))
+
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun showPairingCode_notUnverified_returnsUnavailableWithoutRequest() =
         runTest {
             val deps = TestDeps()
             val manager = deps.createManager()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
 
-            assertFalse(manager.showPairingCode(syncRuntimeInfo))
+            assertEquals(ShowPairingCodeResult.UNAVAILABLE, manager.showPairingCode(syncRuntimeInfo))
 
             coVerify(exactly = 0) { deps.syncClientApi.showPairingCode(any()) }
         }

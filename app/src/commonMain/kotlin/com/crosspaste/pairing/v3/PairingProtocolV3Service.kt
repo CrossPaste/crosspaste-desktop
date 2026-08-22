@@ -319,105 +319,118 @@ class PairingProtocolV3Service(
         if (!rateLimiter.tryAcquire(source)) {
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_RATE_LIMITED)
         }
-        val negotiating =
+        val proofAttempt =
+            acceptanceWindow.tryBeginProofAttempt()
+                ?: return PairingV3ServerResult.Refused(
+                    if (acceptanceWindow.isLocked()) {
+                        PairingV3ErrorCode.PAIRING_DISABLED
+                    } else {
+                        PairingV3ErrorCode.PAIRING_RATE_LIMITED
+                    },
+                )
+        try {
+            val negotiating =
+                when (
+                    val begun =
+                        sessionStore.beginProof(
+                            sessionId,
+                            proof.tokenGeneration,
+                            generationGrace.inWholeMilliseconds,
+                        )
+                ) {
+                    is PairingBeginProofResult.Proceed -> begun.session
+                    PairingBeginProofResult.WrongGeneration,
+                    PairingBeginProofResult.PinExpired,
+                    PairingBeginProofResult.AttemptsExhausted,
+                    PairingBeginProofResult.GenerationNotReady,
+                    ->
+                        return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_PIN_EXPIRED)
+
+                    is PairingBeginProofResult.InvalidState ->
+                        return PairingV3ServerResult.Refused(stateRefusalCode(begun.actual))
+
+                    PairingBeginProofResult.NotFound ->
+                        return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_NOT_FOUND)
+                }
+            val pakeSession =
+                negotiating.pakeSession
+                    ?: return proofFailure(sessionId, proofAttempt)
+            val acceptorShare =
+                negotiating.localPakeShare
+                    ?: return proofFailure(sessionId, proofAttempt)
+            val sharedSecret =
+                runCatching { pakeSession.deriveSharedSecret(proof.initiatorPakeShare) }
+                    .getOrNull()
+                    ?: return proofFailure(sessionId, proofAttempt)
+            val transcriptHash =
+                PairingTranscriptCodec.transcriptHash(
+                    buildTranscript(negotiating, proof.initiatorPakeShare, acceptorShare),
+                )
+            if (!transcriptHash.contentEquals(proof.transcriptHash)) {
+                sharedSecret.fill(0)
+                return proofFailure(sessionId, proofAttempt)
+            }
+            val keys = PairingKeySchedule.deriveSessionKeys(transcriptHash, sharedSecret)
+            sharedSecret.fill(0)
+            val expectedConfirmation = PairingKeySchedule.initiatorConfirmation(keys, transcriptHash)
+            if (!PairingKeySchedule.constantTimeEquals(expectedConfirmation, proof.initiatorKeyConfirmation)) {
+                keys.clear()
+                return proofFailure(sessionId, proofAttempt)
+            }
+            val identityValid =
+                runCatching {
+                    val peerSignKey = secureKeyPairSerializer.decodeSignPublicKey(negotiating.peerSignPublicKey)
+                    CryptographyUtils.verifyData(peerSignKey, proof.initiatorIdentitySignature) {
+                        PairingKeySchedule.identitySignaturePayload(PakeRole.INITIATOR, transcriptHash)
+                    }
+                }.getOrDefault(false)
+            if (!identityValid) {
+                keys.clear()
+                return proofFailure(sessionId, proofAttempt)
+            }
             when (
-                val begun =
-                    sessionStore.beginProof(
+                val confirmed =
+                    sessionStore.completeProof(
                         sessionId,
                         proof.tokenGeneration,
-                        generationGrace.inWholeMilliseconds,
+                        transcriptHash,
+                        keys,
+                        proof.initiatorPakeShare,
                     )
             ) {
-                is PairingBeginProofResult.Proceed -> begun.session
-                PairingBeginProofResult.WrongGeneration,
-                PairingBeginProofResult.PinExpired,
-                PairingBeginProofResult.AttemptsExhausted,
-                PairingBeginProofResult.GenerationNotReady,
-                ->
+                is PairingCompleteProofResult.Confirmed -> Unit
+                PairingCompleteProofResult.WrongGeneration,
+                PairingCompleteProofResult.DeadlineExceeded,
+                -> {
+                    keys.clear()
                     return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_PIN_EXPIRED)
-
-                is PairingBeginProofResult.InvalidState ->
-                    return PairingV3ServerResult.Refused(stateRefusalCode(begun.actual))
-
-                PairingBeginProofResult.NotFound ->
-                    return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_NOT_FOUND)
-            }
-        val pakeSession =
-            negotiating.pakeSession
-                ?: return proofFailure(sessionId)
-        val acceptorShare =
-            negotiating.localPakeShare
-                ?: return proofFailure(sessionId)
-        val sharedSecret =
-            runCatching { pakeSession.deriveSharedSecret(proof.initiatorPakeShare) }
-                .getOrNull()
-                ?: return proofFailure(sessionId)
-        val transcriptHash =
-            PairingTranscriptCodec.transcriptHash(
-                buildTranscript(negotiating, proof.initiatorPakeShare, acceptorShare),
-            )
-        if (!transcriptHash.contentEquals(proof.transcriptHash)) {
-            sharedSecret.fill(0)
-            return proofFailure(sessionId)
-        }
-        val keys = PairingKeySchedule.deriveSessionKeys(transcriptHash, sharedSecret)
-        sharedSecret.fill(0)
-        val expectedConfirmation = PairingKeySchedule.initiatorConfirmation(keys, transcriptHash)
-        if (!PairingKeySchedule.constantTimeEquals(expectedConfirmation, proof.initiatorKeyConfirmation)) {
-            keys.clear()
-            return proofFailure(sessionId)
-        }
-        val identityValid =
-            runCatching {
-                val peerSignKey = secureKeyPairSerializer.decodeSignPublicKey(negotiating.peerSignPublicKey)
-                CryptographyUtils.verifyData(peerSignKey, proof.initiatorIdentitySignature) {
-                    PairingKeySchedule.identitySignaturePayload(PakeRole.INITIATOR, transcriptHash)
                 }
-            }.getOrDefault(false)
-        if (!identityValid) {
-            keys.clear()
-            return proofFailure(sessionId)
-        }
-        when (
-            val confirmed =
-                sessionStore.completeProof(
-                    sessionId,
-                    proof.tokenGeneration,
-                    transcriptHash,
-                    keys,
-                    proof.initiatorPakeShare,
+
+                is PairingCompleteProofResult.InvalidState -> {
+                    keys.clear()
+                    return PairingV3ServerResult.Refused(stateRefusalCode(confirmed.actual))
+                }
+
+                PairingCompleteProofResult.NotFound -> {
+                    keys.clear()
+                    return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_NOT_FOUND)
+                }
+            }
+            val response =
+                PairingProofResponseV3(
+                    sessionId = proof.sessionId,
+                    transcriptHash = transcriptHash,
+                    acceptorKeyConfirmation = PairingKeySchedule.acceptorConfirmation(keys, transcriptHash),
+                    acceptorIdentitySignature =
+                        CryptographyUtils.signData(secureStore.secureKeyPair.signKeyPair.privateKey) {
+                            PairingKeySchedule.identitySignaturePayload(PakeRole.ACCEPTOR, transcriptHash)
+                        },
                 )
-        ) {
-            is PairingCompleteProofResult.Confirmed -> Unit
-            PairingCompleteProofResult.WrongGeneration,
-            PairingCompleteProofResult.DeadlineExceeded,
-            -> {
-                keys.clear()
-                return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_PIN_EXPIRED)
-            }
-
-            is PairingCompleteProofResult.InvalidState -> {
-                keys.clear()
-                return PairingV3ServerResult.Refused(stateRefusalCode(confirmed.actual))
-            }
-
-            PairingCompleteProofResult.NotFound -> {
-                keys.clear()
-                return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_NOT_FOUND)
-            }
+            logger.info { "pairing v3 proof accepted session=${shortId(sessionId)}" }
+            return PairingV3ServerResult.Ok(response)
+        } finally {
+            proofAttempt.release()
         }
-        val response =
-            PairingProofResponseV3(
-                sessionId = proof.sessionId,
-                transcriptHash = transcriptHash,
-                acceptorKeyConfirmation = PairingKeySchedule.acceptorConfirmation(keys, transcriptHash),
-                acceptorIdentitySignature =
-                    CryptographyUtils.signData(secureStore.secureKeyPair.signKeyPair.privateKey) {
-                        PairingKeySchedule.identitySignaturePayload(PakeRole.ACCEPTOR, transcriptHash)
-                    },
-            )
-        logger.info { "pairing v3 proof accepted session=${shortId(sessionId)}" }
-        return PairingV3ServerResult.Ok(response)
     }
 
     suspend fun handleCommit(
@@ -1297,8 +1310,24 @@ class PairingProtocolV3Service(
         initiatorRuntimes.remove(sessionId)
     }
 
-    private suspend fun proofFailure(sessionId: String): PairingV3ServerResult.Refused {
+    // The single funnel for every acceptor-side proof rejection — a wrong PIN, a
+    // transcript/confirmation/identity mismatch, AND a PakeException from
+    // deriveSharedSecret (an attacker's identity-element share for a guessed PIN
+    // surfaces here, not as a distinguishable later failure). Every one of them must
+    // therefore spend the same budgets: the per-generation attempt cap (via
+    // recordProofFailure) AND the window-wide cumulative failure budget, so an
+    // attacker cannot use the identity-element path as a second, unbudgeted guess.
+    private suspend fun proofFailure(
+        sessionId: String,
+        proofAttempt: PairingAcceptanceWindow.ProofAttempt,
+    ): PairingV3ServerResult.Refused {
         sessionStore.recordProofFailure(sessionId)
+        if (proofAttempt.recordFailure()) {
+            logger.warn {
+                "pairing v3 acceptance window locked after ${acceptanceWindow.maxProofFailures} " +
+                    "proof failures; a local Add Device gesture is required to resume"
+            }
+        }
         // The failed proof invalidated the generation; rotate a fresh PIN right away
         // instead of leaving the session unusable until the scheduled wake-up.
         acceptorRuntimes[sessionId]?.rotationNudge?.trySend(Unit)

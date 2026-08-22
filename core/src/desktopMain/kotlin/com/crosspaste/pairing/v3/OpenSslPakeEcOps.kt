@@ -9,8 +9,8 @@ import com.sun.jna.Pointer
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
- * How [OpenSslPakeEcOps.load] resolves the libcrypto to bind (unless an
- * explicit override is set, which always wins for troubleshooting).
+ * How [OpenSslPakeEcOps.load] resolves the libcrypto to bind. Explicit overrides
+ * apply only to [Environment]; [Bundled] always uses its reviewed packaged library.
  *
  * The whole process uses exactly one resolution: the first successful [load]
  * pins it, and a later call with a different resolution throws instead of
@@ -56,10 +56,11 @@ sealed interface LibCryptoResolution {
  * `BN_clear_free`, which zeroes them before freeing — unlike the immutable
  * JVM `BigInteger` copies the BouncyCastle backend left behind for the GC.
  *
- * libcrypto is resolved from the `crosspaste.libcrypto.path` system property
- * or `CROSSPASTE_LIBCRYPTO_PATH` environment variable first; without an
- * override the [LibCryptoResolution] passed to [load] decides the candidates.
- * [load] fails fast with a [PakeException] when no candidate can be loaded.
+ * In [LibCryptoResolution.Environment], libcrypto is resolved from the
+ * `crosspaste.libcrypto.path` system property or `CROSSPASTE_LIBCRYPTO_PATH`
+ * environment variable first. [LibCryptoResolution.Bundled] ignores overrides and
+ * loads only its packaged path. [load] fails fast with a [PakeException] when no
+ * accepted candidate can be loaded.
  */
 class OpenSslPakeEcOps private constructor(
     private val lib: LibCrypto,
@@ -187,7 +188,11 @@ class OpenSslPakeEcOps private constructor(
         try {
             return block(point)
         } finally {
-            lib.EC_POINT_free(point)
+            // clear_free, not free: intermediate points include secret group
+            // elements (w·M, K, peerShare−w·M) whose coordinates would otherwise
+            // survive in freed heap. ADR D5 requires K be non-recoverable; this
+            // matches the BN_clear_free discipline used for secret scalars.
+            lib.EC_POINT_clear_free(point)
         }
     }
 
@@ -320,6 +325,7 @@ class OpenSslPakeEcOps private constructor(
                 "EC_GROUP_get0_order",
                 "EC_POINT_new",
                 "EC_POINT_free",
+                "EC_POINT_clear_free",
                 "EC_POINT_mul",
                 "EC_POINT_add",
                 "EC_POINT_invert",
@@ -376,7 +382,6 @@ class OpenSslPakeEcOps private constructor(
             }
 
         internal fun loadLibCrypto(resolution: LibCryptoResolution): Pair<LibCrypto, String> {
-            val override = overridePath()
             val candidates = libraryCandidates(resolution)
             val failures = mutableListOf<String>()
             for (candidate in candidates) {
@@ -394,36 +399,52 @@ class OpenSslPakeEcOps private constructor(
                 }
             }
             val remedy =
-                when {
-                    override != null ->
-                        "The explicit libcrypto override failed to load; fix it, or remove " +
-                            "crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH to restore the default resolution."
-                    resolution is LibCryptoResolution.Bundled ->
+                when (resolution) {
+                    is LibCryptoResolution.Bundled ->
                         "The bundled libcrypto is missing or unloadable; reinstalling the application should restore it."
-                    else ->
-                        "Install OpenSSL 3 (e.g. brew install openssl@3) or point " +
-                            "crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH at a libcrypto with the full symbol set."
+                    LibCryptoResolution.Environment ->
+                        if (overridePath() != null) {
+                            "The explicit libcrypto override failed to load; fix it, or remove " +
+                                "crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH to restore the default resolution."
+                        } else {
+                            "Install OpenSSL 3 (e.g. brew install openssl@3) or point " +
+                                "crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH at a libcrypto with the full symbol set."
+                        }
                 }
             throw PakeException("OpenSSL 3 libcrypto not found; tried ${failures.joinToString()}. $remedy")
         }
 
-        internal fun libraryCandidates(resolution: LibCryptoResolution): List<String> {
-            overridePath()?.let { return listOf(it) }
-            return when (resolution) {
-                is LibCryptoResolution.Bundled -> listOf(resolution.path)
-                LibCryptoResolution.Environment ->
-                    when {
-                        Platform.isMac() ->
-                            listOf(
-                                "/opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib",
-                                "/usr/local/opt/openssl@3/lib/libcrypto.3.dylib",
-                                "crypto",
-                            )
-                        Platform.isWindows() -> listOf("libcrypto-3-x64", "libcrypto-3", "libcrypto")
-                        else -> listOf("libcrypto.so.3", "crypto")
+        internal fun libraryCandidates(resolution: LibCryptoResolution): List<String> =
+            when (resolution) {
+                // Bundled = production/beta: resolve ONLY the packaged library. An
+                // override is deliberately NOT honoured here — a shipped build binding
+                // an attacker-set libcrypto would void the reviewed constant-time
+                // premise. If one is set (troubleshooting habit, stale env var), warn
+                // that it is ignored rather than silently switching libraries.
+                is LibCryptoResolution.Bundled -> {
+                    overridePath()?.let { override ->
+                        logger.warn {
+                            "ignoring libcrypto override '$override' in a bundled build; " +
+                                "using the packaged library at ${resolution.path}"
+                        }
                     }
+                    listOf(resolution.path)
+                }
+                LibCryptoResolution.Environment ->
+                    overridePath()?.let { listOf(it) } ?: platformEnvironmentCandidates()
             }
-        }
+
+        private fun platformEnvironmentCandidates(): List<String> =
+            when {
+                Platform.isMac() ->
+                    listOf(
+                        "/opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib",
+                        "/usr/local/opt/openssl@3/lib/libcrypto.3.dylib",
+                        "crypto",
+                    )
+                Platform.isWindows() -> listOf("libcrypto-3-x64", "libcrypto-3", "libcrypto")
+                else -> listOf("libcrypto.so.3", "crypto")
+            }
 
         private fun overridePath(): String? =
             System.getProperty("crosspaste.libcrypto.path")
@@ -458,6 +479,8 @@ internal interface LibCrypto : Library {
     fun EC_POINT_new(group: Pointer): Pointer?
 
     fun EC_POINT_free(point: Pointer)
+
+    fun EC_POINT_clear_free(point: Pointer)
 
     fun EC_POINT_mul(
         group: Pointer,

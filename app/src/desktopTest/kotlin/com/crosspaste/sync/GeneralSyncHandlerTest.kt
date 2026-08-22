@@ -602,10 +602,11 @@ class GeneralSyncHandlerTest {
                 val event = emitter.events.filterIsInstance<SyncEvent.ShowPairingCode>().single()
                 assertFalse(request.isCompleted)
 
-                event.completionSignal.complete(true)
+                event.completionSignal.complete(ShowPairingCodeResult.SHOWN)
                 runCurrent()
 
                 assertTrue(request.isCompleted)
+                assertEquals(ShowPairingCodeResult.SHOWN, request.await())
             } finally {
                 childScope.cancel()
             }
@@ -622,7 +623,7 @@ class GeneralSyncHandlerTest {
             emitter.events.clear()
 
             try {
-                val request = async { runCatching { handler.showPairingCode() } }
+                val request = async { handler.showPairingCode() }
                 runCurrent()
 
                 assertFalse(request.isCompleted)
@@ -631,7 +632,7 @@ class GeneralSyncHandlerTest {
                 runCurrent()
 
                 assertTrue(request.isCompleted)
-                assertTrue(request.await().isFailure)
+                assertEquals(ShowPairingCodeResult.UNAVAILABLE, request.await())
             } finally {
                 childScope.cancel()
             }

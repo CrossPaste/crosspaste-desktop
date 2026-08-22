@@ -6,6 +6,7 @@ import com.crosspaste.dto.pairing.v3.PairingIntentV3
 import com.crosspaste.dto.pairing.v3.PairingOfferV3
 import com.crosspaste.dto.pairing.v3.PairingProofV3
 import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
+import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
@@ -27,6 +28,7 @@ import com.crosspaste.pairing.v3.PakeRole
 import com.crosspaste.pairing.v3.PakeSession
 import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.pairing.v3.TestPakeProvider
+import com.crosspaste.pairing.v3.WindowOpenSource
 import com.crosspaste.pairing.v3.pairingV3ErrorCodeOf
 import com.crosspaste.test.IntegrationTest
 import com.crosspaste.utils.CryptographyUtils
@@ -43,6 +45,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -63,6 +66,7 @@ class PairingV3IntegrationTest {
         pairingRateLimiter: PairingRateLimiter = PairingRateLimiter(),
         pakeProvider: PakeProvider = TestPakeProvider(),
         pairingV3Enabled: Boolean = true,
+        acceptanceWindowMaxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
     ): TestInstance =
         TestInstance(
             appInstanceId = id,
@@ -71,6 +75,7 @@ class PairingV3IntegrationTest {
             pairingRateLimiter = pairingRateLimiter,
             pakeProvider = pakeProvider,
             pairingV3Enabled = pairingV3Enabled,
+            acceptanceWindowMaxProofFailures = acceptanceWindowMaxProofFailures,
         ).also { instances.add(it) }
 
     @AfterTest
@@ -146,7 +151,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("pairing-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val started = startPairing(b, a)
             val pin = displayedPin(a, b.appInstanceId)
@@ -195,7 +200,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("real-b", pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()))
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val started = startPairing(b, a)
             val result =
@@ -225,7 +230,7 @@ class PairingV3IntegrationTest {
             val initiator = createInstance("generation-create-initiator")
             acceptor.start()
             initiator.start()
-            acceptor.pairingAcceptanceWindow.open()
+            acceptor.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(initiator, acceptor)
             manual.buildIntent()
@@ -243,7 +248,7 @@ class PairingV3IntegrationTest {
             val initiator = createInstance("generation-share-initiator")
             acceptor.start()
             initiator.start()
-            acceptor.pairingAcceptanceWindow.open()
+            acceptor.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(initiator, acceptor)
             manual.buildIntent()
@@ -277,7 +282,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("disabled-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val result =
                 b.pairingProtocolV3Service.startPairing(a.appInstanceId, a.appInstanceId, urlFor(a))
@@ -292,7 +297,7 @@ class PairingV3IntegrationTest {
         runBlocking {
             val a = createInstance("valid-a")
             val b = createInstance("valid-b")
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(b, a)
             val valid = manual.buildIntent()
@@ -343,7 +348,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("canonical-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(b, a)
             val offer = manual.requestOffer(urlFor(a))
@@ -368,7 +373,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("compatible-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val valid = ManualInitiator(b, a).buildIntent()
             val payload =
@@ -397,7 +402,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("wrong-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val started = startPairing(b, a)
             val pin = displayedPin(a, b.appInstanceId)
@@ -428,6 +433,64 @@ class PairingV3IntegrationTest {
             assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
         }
 
+    @Test
+    fun testCumulativeProofFailuresLockTheAcceptanceWindow() =
+        runBlocking {
+            // A tiny budget so one wrong PIN spends it: proves handleProof's failure
+            // funnel spends the window-wide budget, and that the real OpenSSL provider
+            // (whose deriveSharedSecret can throw on an identity-element share) counts
+            // the same way as any other rejected proof.
+            val a =
+                createInstance(
+                    "lockout-a",
+                    pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()),
+                    acceptanceWindowMaxProofFailures = 1,
+                )
+            val b = createInstance("lockout-b", pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()))
+            val c = createInstance("lockout-c", pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()))
+            a.start()
+            b.start()
+            c.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+            assertFalse(a.pairingAcceptanceWindow.locked.value)
+
+            val started = startPairing(b, a)
+            val prefetched = startPairing(c, a)
+            val prefetchedPin = displayedPin(a, c.appInstanceId)
+            val pin = displayedPin(a, b.appInstanceId)
+            val wrongPin = pin.copyOf()
+            wrongPin[5] = if (wrongPin[5] == '9') '0' else wrongPin[5] + 1
+
+            val failed = b.pairingProtocolV3Service.submitPin(started.sessionId, wrongPin, urlFor(a))
+            assertIs<PairingV3PinResult.Refused>(failed)
+            assertEquals(PairingV3ErrorCode.PAIRING_PROOF_INVALID, failed.code)
+
+            // The failed proof spent the (size-1) budget: the window locks and closes,
+            // and a remote showPairingCode can no longer re-open it.
+            awaitCondition(message = "acceptance window locks after the budget is spent") {
+                a.pairingAcceptanceWindow.locked.value
+            }
+            assertFalse(a.pairingAcceptanceWindow.isOpen())
+            assertFalse(a.pairingAcceptanceWindow.open(WindowOpenSource.REMOTE))
+            val remoteReopen = b.syncClientApi.showPairingCode(urlFor(a))
+            assertIs<FailureResult>(remoteReopen)
+            assertEquals(
+                StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_LOCKED.getCode(),
+                remoteReopen.exception.getErrorCode().code,
+            )
+
+            // C already holds a valid offer from before the lock. The global proof
+            // permit still rejects it, so active sessions cannot overshoot the budget.
+            val blocked = c.pairingProtocolV3Service.submitPin(prefetched.sessionId, prefetchedPin, urlFor(a))
+            assertIs<PairingV3PinResult.Refused>(blocked)
+            assertEquals(PairingV3ErrorCode.PAIRING_DISABLED, blocked.code)
+
+            // A local gesture clears the lock and restores acceptance.
+            assertTrue(a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL))
+            assertFalse(a.pairingAcceptanceWindow.locked.value)
+            assertTrue(a.pairingAcceptanceWindow.isOpen())
+        }
+
     // ---- Concurrency, capacity, and restart ----
 
     @Test
@@ -439,7 +502,7 @@ class PairingV3IntegrationTest {
             a.start()
             b.start()
             c.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val startedB = startPairing(b, a)
             val startedC = startPairing(c, a)
@@ -468,7 +531,7 @@ class PairingV3IntegrationTest {
         runBlocking {
             val a = createInstance("cap-a")
             a.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             repeat(PairingV3.DEFAULT_MAX_ACTIVE_INCOMING_SESSIONS) { index ->
                 val initiator = createInstance("cap-init-$index")
@@ -491,7 +554,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("restart-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val first = startPairing(b, a)
             // The initiator lost its state and starts over with a fresh intent
@@ -534,7 +597,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("guard-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             startPairing(b, a)
 
@@ -553,7 +616,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("guard2-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             // The v2 exchange completes BEFORE any v3 session exists
             val exchange = b.syncClientApi.exchangeKeys(a.appInstanceId, 3000L, urlFor(a))
@@ -584,7 +647,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("guard3-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             startPairing(b, a)
 
@@ -606,7 +669,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("rotate-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val started = startPairing(b, a)
             val firstGeneration = started.tokenGeneration
@@ -641,7 +704,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("cancel-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val started = startPairing(b, a)
             assertTrue(b.pairingProtocolV3Service.cancelSession(started.sessionId, urlFor(a)))
@@ -660,7 +723,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("commit-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(b, a)
             val offer = manual.requestOffer(urlFor(a))
@@ -691,7 +754,7 @@ class PairingV3IntegrationTest {
             a.start()
             b.start()
             attacker.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(b, a)
             val offer = manual.requestOffer(urlFor(a))
@@ -724,7 +787,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("replay-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(b, a)
             val offer = manual.requestOffer(urlFor(a))
@@ -746,7 +809,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("tamper-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(b, a)
             val offer = manual.requestOffer(urlFor(a))
@@ -774,7 +837,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("rate-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             var limited = false
             repeat(11) {
@@ -799,7 +862,7 @@ class PairingV3IntegrationTest {
             val b = createInstance("refresh-b")
             a.start()
             b.start()
-            a.pairingAcceptanceWindow.open()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
 
             val manual = ManualInitiator(b, a)
             val firstOffer = manual.requestOffer(urlFor(a))

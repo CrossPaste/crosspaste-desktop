@@ -67,4 +67,17 @@ object PairingV3 {
 
     /** Hard protocol rule, not tunable: one failed proof invalidates the generation. */
     const val MAX_PROOF_ATTEMPTS_PER_GENERATION: Int = 1
+
+    /**
+     * Cumulative proof-failure budget for one acceptance-window session, across all
+     * peers and generations. `MAX_PROOF_ATTEMPTS_PER_GENERATION` caps guesses per
+     * PIN, but a failed proof rotates a fresh PIN immediately, so on its own it puts
+     * no ceiling on the *total* number of online guesses — the sliding-window rate
+     * limiter only bounds their rate. This budget is that ceiling: once it is spent
+     * the acceptor closes and locks its window, and only a local user gesture
+     * (re-entering the Add Device screen) resets it, so an unattended remote attacker
+     * cannot keep guessing the 6-digit PIN indefinitely. A legitimate user mistypes a
+     * handful of times at most, well under this bound.
+     */
+    const val MAX_ACCEPTOR_PROOF_FAILURES: Int = 10
 }

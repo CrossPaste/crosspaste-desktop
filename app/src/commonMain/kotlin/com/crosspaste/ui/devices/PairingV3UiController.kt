@@ -7,6 +7,8 @@ import com.crosspaste.pairing.v3.PairingSessionUiState
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3RefreshResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
+import com.crosspaste.pairing.v3.WindowOpenSource
+import com.crosspaste.sync.ShowPairingCodeResult
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.V3Pin
 import com.crosspaste.utils.HostAndPort
@@ -24,7 +26,18 @@ interface PairingV3UiController {
 
     val acceptanceOpenUntil: StateFlow<Long>
 
+    /** True once the acceptance window locked itself after too many failed proofs;
+     *  the pairing screen shows a hint, and re-entering it ([openAcceptanceWindow])
+     *  is the only way to clear it. */
+    val acceptanceLocked: StateFlow<Boolean>
+
+    /** A local user gesture entering the Add Device screen: opens the window and
+     *  resets the proof-failure budget / clears any lock. */
     fun openAcceptanceWindow()
+
+    /** Renews an already-open window (the on-screen keep-alive loop) WITHOUT resetting
+     *  the failure budget, so keeping the screen open cannot refill a guess budget. */
+    fun renewAcceptanceWindow()
 
     fun closeAcceptanceWindow()
 
@@ -103,8 +116,15 @@ class DefaultPairingV3UiController(
     override val acceptanceOpenUntil: StateFlow<Long> =
         pairingProtocolV3Service.acceptanceWindow.openUntil
 
+    override val acceptanceLocked: StateFlow<Boolean> =
+        pairingProtocolV3Service.acceptanceWindow.locked
+
     override fun openAcceptanceWindow() {
-        pairingProtocolV3Service.acceptanceWindow.open()
+        pairingProtocolV3Service.acceptanceWindow.open(WindowOpenSource.LOCAL)
+    }
+
+    override fun renewAcceptanceWindow() {
+        pairingProtocolV3Service.acceptanceWindow.extend()
     }
 
     override fun closeAcceptanceWindow() {
@@ -123,7 +143,19 @@ class DefaultPairingV3UiController(
                         PairingV3UiError.NETWORK_FAILURE,
                         PairingV3Recovery.RETRY_START,
                     )
-            target.showPairingCode()
+            when (target.showPairingCode()) {
+                ShowPairingCodeResult.SHOWN -> Unit
+                ShowPairingCodeResult.NOT_ACCEPTING ->
+                    return@withContext PairingV3UiResult.Error(
+                        PairingV3UiError.NOT_ACCEPTING,
+                        PairingV3Recovery.RETRY_START,
+                    )
+                ShowPairingCodeResult.UNAVAILABLE ->
+                    return@withContext PairingV3UiResult.Error(
+                        PairingV3UiError.NETWORK_FAILURE,
+                        PairingV3Recovery.RETRY_START,
+                    )
+            }
             pairingProtocolV3Service
                 .startPairing(
                     targetAppInstanceId = peerAppInstanceId,
@@ -204,7 +236,7 @@ class DefaultPairingV3UiController(
 
     private data class PairingTarget(
         val displayName: String,
-        val showPairingCode: suspend () -> Unit,
+        val showPairingCode: suspend () -> ShowPairingCodeResult,
         val toUrl: io.ktor.http.URLBuilder.() -> Unit,
     )
 }

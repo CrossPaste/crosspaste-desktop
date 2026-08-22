@@ -9,10 +9,12 @@ import com.crosspaste.pairing.v3.PairingSessionUiState
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
 import com.crosspaste.pairing.v3.PakeRole
+import com.crosspaste.sync.ShowPairingCodeResult
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.SyncTestFixtures.createUnverifiedSyncRuntimeInfo
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
@@ -39,7 +41,7 @@ class PairingV3UiControllerTest {
             every { syncManager.getSyncHandler(peerAppInstanceId) } returns syncHandler
             every { syncHandler.currentSyncRuntimeInfo } returns syncRuntimeInfo
             coEvery { syncHandler.getConnectHostAddress() } returns "192.168.1.10"
-            coEvery { syncHandler.showPairingCode() } returns Unit
+            coEvery { syncHandler.showPairingCode() } returns ShowPairingCodeResult.SHOWN
             every { pairingProtocolV3Service.uiSessionsFlow } returns MutableStateFlow(emptyList())
             every { pairingProtocolV3Service.acceptanceWindow } returns PairingAcceptanceWindow()
             coEvery {
@@ -61,6 +63,40 @@ class PairingV3UiControllerTest {
                     toUrl = any(),
                 )
             }
+        }
+
+    @Test
+    fun remotePairingWindowRejectionIsPresentedAsNotAccepting() =
+        runTest {
+            val peerAppInstanceId = "locked-peer"
+            val syncRuntimeInfo =
+                createUnverifiedSyncRuntimeInfo(
+                    appInstanceId = peerAppInstanceId,
+                    hostAddress = "192.168.1.11",
+                )
+            val syncHandler = mockk<SyncHandler>()
+            val syncManager = mockk<SyncManager>()
+            val pairingProtocolV3Service = mockk<PairingProtocolV3Service>()
+
+            every { syncManager.getSyncHandler(peerAppInstanceId) } returns syncHandler
+            every { syncHandler.currentSyncRuntimeInfo } returns syncRuntimeInfo
+            coEvery { syncHandler.getConnectHostAddress() } returns "192.168.1.11"
+            coEvery { syncHandler.showPairingCode() } returns ShowPairingCodeResult.NOT_ACCEPTING
+            every { pairingProtocolV3Service.uiSessionsFlow } returns MutableStateFlow(emptyList())
+            every { pairingProtocolV3Service.acceptanceWindow } returns PairingAcceptanceWindow()
+
+            val result =
+                DefaultPairingV3UiController(pairingProtocolV3Service, syncManager)
+                    .startPairing(peerAppInstanceId)
+
+            assertEquals(
+                PairingV3UiResult.Error(
+                    PairingV3UiError.NOT_ACCEPTING,
+                    PairingV3Recovery.RETRY_START,
+                ),
+                result,
+            )
+            coVerify(exactly = 0) { pairingProtocolV3Service.startPairing(any(), any(), any()) }
         }
 
     @Test

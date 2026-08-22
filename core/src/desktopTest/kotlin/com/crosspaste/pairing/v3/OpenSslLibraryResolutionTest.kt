@@ -58,10 +58,17 @@ class OpenSslLibraryResolutionTest {
     }
 
     @Test
-    fun explicitOverrideWinsOverTheBundledPath() {
+    fun explicitOverrideAppliesToEnvironmentButIsIgnoredWhenBundled() {
         withOverrideProperty("/tmp/custom-libcrypto.so") {
+            // Environment (dev/test): the override is honoured for troubleshooting.
             assertEquals(
                 listOf("/tmp/custom-libcrypto.so"),
+                OpenSslPakeEcOps.libraryCandidates(LibCryptoResolution.Environment),
+            )
+            // Bundled (production/beta): the override is deliberately ignored — a
+            // shipped build must never bind an attacker-set libcrypto.
+            assertEquals(
+                listOf(bundled.path),
                 OpenSslPakeEcOps.libraryCandidates(bundled),
             )
         }
@@ -92,17 +99,32 @@ class OpenSslLibraryResolutionTest {
     }
 
     @Test
-    fun failedOverrideRemedyPointsAtTheOverride() {
+    fun failedOverrideRemedyPointsAtTheOverrideInEnvironment() {
+        withOverrideProperty("/nonexistent/override-libcrypto.so") {
+            val exception =
+                assertFailsWith<PakeException> {
+                    OpenSslPakeEcOps.loadLibCrypto(LibCryptoResolution.Environment)
+                }
+            val message = exception.message.orEmpty()
+            // Environment override failed to load: the remedy points at the override.
+            assertTrue("override" in message, "remedy must call out the override: $message")
+            assertFalse("reinstalling" in message, "remedy must not suggest a reinstall: $message")
+        }
+    }
+
+    @Test
+    fun bundledRemedyIgnoresOverrideAndSuggestsReinstall() {
         withOverrideProperty("/nonexistent/override-libcrypto.so") {
             val exception =
                 assertFailsWith<PakeException> {
                     OpenSslPakeEcOps.loadLibCrypto(bundled)
                 }
             val message = exception.message.orEmpty()
-            // The bundled library was never tried, so the remedy must point at
-            // the override instead of suggesting a reinstall.
-            assertTrue("override" in message, "remedy must call out the override: $message")
-            assertFalse("reinstalling" in message, "remedy must not suggest a reinstall: $message")
+            // A bundled build ignores the override entirely, so its failure must not
+            // steer the user toward fixing an override the build never consulted.
+            assertTrue(bundled.path in message, "failure must name the bundled candidate: $message")
+            assertTrue("reinstalling" in message, "bundled remedy should suggest a reinstall: $message")
+            assertFalse("override" in message, "bundled remedy must not mention the override: $message")
         }
     }
 

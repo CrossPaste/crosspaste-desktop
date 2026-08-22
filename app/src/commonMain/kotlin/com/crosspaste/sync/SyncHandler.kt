@@ -6,6 +6,18 @@ import com.crosspaste.net.VersionRelation
 import com.crosspaste.platform.Platform
 import kotlinx.coroutines.flow.StateFlow
 
+/** Outcome of asking an unverified peer to surface and open its v3 pairing window. */
+enum class ShowPairingCodeResult {
+    /** The peer accepted the request and opened its pairing UI/window. */
+    SHOWN,
+
+    /** The peer is reachable but policy currently forbids opening the window. */
+    NOT_ACCEPTING,
+
+    /** The request could not be delivered or the peer is not in a requestable state. */
+    UNAVAILABLE,
+}
+
 interface SyncHandler {
 
     val syncRuntimeInfoFlow: StateFlow<SyncRuntimeInfo>
@@ -71,7 +83,7 @@ interface SyncHandler {
 
     suspend fun showToken()
 
-    suspend fun showPairingCode()
+    suspend fun showPairingCode(): ShowPairingCodeResult
 
     suspend fun notifyExit()
 
