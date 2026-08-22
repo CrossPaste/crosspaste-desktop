@@ -266,6 +266,17 @@ fun Routing.syncRouting(
 
     post("/sync/trust") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            // Read the body BEFORE taking the per-peer lock (same order as the
+            // pairing v3 routes): receive() suspends on client network I/O, and a
+            // peer that dies mid-request would otherwise park this handler inside
+            // the lock indefinitely, starving every later pairing request for the
+            // peer — including v3 /intent, which shares the lock.
+            val trustRequest =
+                runCatching { call.receive(TrustRequest::class) }.getOrElse { e ->
+                    logger.error(e) { "Trust request failed for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
+                    return@let
+                }
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
                 if (hasActivePairingV3Session(appInstanceId)) {
                     logger.warn { "refusing v1 trust during active pairing v3 session for $appInstanceId" }
@@ -273,7 +284,6 @@ fun Routing.syncRouting(
                     return@withPeerLock
                 }
                 runCatching {
-                    val trustRequest = call.receive(TrustRequest::class)
                     val currentTimestamp = nowEpochMilliseconds()
 
                     val receiveSignPublicKey =
@@ -339,6 +349,13 @@ fun Routing.syncRouting(
 
     post("/sync/trust/v2/exchange") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            // Body read stays outside the per-peer lock — see /sync/trust.
+            val request =
+                runCatching { call.receive(KeyExchangeRequest::class) }.getOrElse { e ->
+                    logger.error(e) { "v2 exchange failed for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.EXCHANGE_FAIL.toErrorCode())
+                    return@let
+                }
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
                 if (hasActivePairingV3Session(appInstanceId)) {
                     logger.warn { "refusing v2 exchange during active pairing v3 session for $appInstanceId" }
@@ -346,8 +363,6 @@ fun Routing.syncRouting(
                     return@withPeerLock
                 }
                 runCatching {
-                    val request = call.receive(KeyExchangeRequest::class)
-
                     val receiveSignPublicKey =
                         secureKeyPairSerializer.decodeSignPublicKey(request.signPublicKey)
 
@@ -424,6 +439,13 @@ fun Routing.syncRouting(
 
     post("/sync/trust/v2/confirm") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            // Body read stays outside the per-peer lock — see /sync/trust.
+            val request =
+                runCatching { call.receive(TrustConfirmRequest::class) }.getOrElse { e ->
+                    logger.error(e) { "v2 confirm failed for $appInstanceId" }
+                    failResponse(call, StandardErrorCode.TRUST_FAIL.toErrorCode())
+                    return@let
+                }
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
                 if (hasActivePairingV3Session(appInstanceId)) {
                     releasePendingKeyExchange(appInstanceId)
@@ -432,8 +454,6 @@ fun Routing.syncRouting(
                     return@withPeerLock
                 }
                 runCatching {
-                    val request = call.receive(TrustConfirmRequest::class)
-
                     val pending =
                         when (val lookup = pendingKeyExchangeStore.lookup(appInstanceId)) {
                             is PendingKeyExchangeLookup.Live -> lookup.exchange
