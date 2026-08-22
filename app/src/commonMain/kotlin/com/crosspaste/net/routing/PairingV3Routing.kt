@@ -53,7 +53,7 @@ fun Routing.pairingV3Routing(
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
                 // origin.remoteAddress, NOT origin.remoteHost: remoteHost triggers a
                 // reverse DNS lookup that stalls ~3.5s on LANs without PTR records,
-                // blowing the initiator's 3s request timeout (#4868).
+                // blowing the initiator's 3s request timeout (#4874).
                 val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
                 when (val result = pairingProtocolV3Service.handleIntent(intent, appInstanceId, remoteAddress)) {
                     is PairingV3ServerResult.Ok -> {
@@ -81,7 +81,7 @@ fun Routing.pairingV3Routing(
                         )
                         return@let
                     }
-            // remoteAddress, not remoteHost — see the intent route (#4868).
+            // remoteAddress, not remoteHost — see the intent route (#4874).
             val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
             when (val result = pairingProtocolV3Service.handleProof(proof, appInstanceId, remoteAddress)) {
                 is PairingV3ServerResult.Ok -> successResponse(call, result.value)
@@ -104,7 +104,7 @@ fun Routing.pairingV3Routing(
                     }
             when (val result = pairingProtocolV3Service.handleCommit(commit, appInstanceId)) {
                 is PairingV3ServerResult.Ok -> {
-                    // remoteAddress, not remoteHost — see the intent route (#4868).
+                    // remoteAddress, not remoteHost — see the intent route (#4874).
                     val host = runCatching { call.request.origin.remoteAddress }.getOrNull()
                     logger.info { "pairing v3 commit accepted, trusting $appInstanceId" }
                     // Non-discoverable initiators (browser extension) self-register via
