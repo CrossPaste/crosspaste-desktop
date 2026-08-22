@@ -29,24 +29,30 @@ abstract class ExceptionHandler {
 
     abstract fun isConnectionRefused(e: Throwable): Boolean
 
+    // Crypto failures rarely surface as the top-level exception: a decrypt that
+    // happens inside a body-transform channel arrives wrapped (e.g. Ktor's
+    // ClosedByteChannelException with the PasteException as its cause), so every
+    // classifier below walks the cause chain instead of matching only `e`.
+    private fun causeChain(e: Throwable): Sequence<Throwable> =
+        generateSequence(e) { current ->
+            current.cause?.takeIf { it !== current }
+        }.take(MAX_CAUSE_DEPTH)
+
     fun isEncryptFail(e: Throwable): Boolean =
-        when (e) {
-            is PasteException -> e.getErrorCode() == StandardErrorCode.ENCRYPT_FAIL.toErrorCode()
-            else -> false
+        causeChain(e).any {
+            it is PasteException && it.getErrorCode() == StandardErrorCode.ENCRYPT_FAIL.toErrorCode()
         }
 
     fun isDecryptFail(e: Throwable): Boolean =
-        when (e) {
-            is PasteException -> {
-                e.getErrorCode() == StandardErrorCode.DECRYPT_FAIL.toErrorCode()
-            }
-
-            is CannotTransformContentToTypeException -> {
-                true
-            }
-
-            else -> {
-                false
+        causeChain(e).any {
+            when (it) {
+                is PasteException -> it.getErrorCode() == StandardErrorCode.DECRYPT_FAIL.toErrorCode()
+                is CannotTransformContentToTypeException -> true
+                else -> false
             }
         }
+
+    companion object {
+        private const val MAX_CAUSE_DEPTH = 10
+    }
 }

@@ -79,4 +79,55 @@ class ExceptionHandlerTest {
     fun `isDecryptFail returns false for null throwable message`() {
         assertFalse(handler.isDecryptFail(RuntimeException()))
     }
+
+    @Test
+    fun `isDecryptFail unwraps DECRYPT_FAIL nested in a transport exception`() {
+        // Server-side decrypt runs inside a Ktor body-transform channel, so the
+        // PasteException surfaces wrapped (ClosedByteChannelException in the field).
+        val wrapped =
+            IllegalStateException(
+                "channel was cancelled",
+                PasteException(StandardErrorCode.DECRYPT_FAIL.toErrorCode(), "bad padding"),
+            )
+        assertTrue(handler.isDecryptFail(wrapped))
+    }
+
+    @Test
+    fun `isDecryptFail unwraps deeply nested CannotTransformContentToTypeException`() {
+        val wrapped =
+            RuntimeException(
+                "outer",
+                IllegalStateException("mid", CannotTransformContentToTypeException(typeOf<String>())),
+            )
+        assertTrue(handler.isDecryptFail(wrapped))
+    }
+
+    @Test
+    fun `isDecryptFail returns false for wrapped unrelated PasteException`() {
+        val wrapped =
+            IllegalStateException(
+                "channel was cancelled",
+                PasteException(StandardErrorCode.UNKNOWN_ERROR.toErrorCode(), "boom"),
+            )
+        assertFalse(handler.isDecryptFail(wrapped))
+    }
+
+    @Test
+    fun `isEncryptFail unwraps ENCRYPT_FAIL nested in a transport exception`() {
+        val wrapped =
+            IllegalStateException(
+                "channel was cancelled",
+                PasteException(StandardErrorCode.ENCRYPT_FAIL.toErrorCode(), "encrypt error"),
+            )
+        assertTrue(handler.isEncryptFail(wrapped))
+    }
+
+    @Test
+    fun `cause chain walk survives cyclic causes`() {
+        val first = RuntimeException("first")
+        val second = RuntimeException("second")
+        first.initCause(second)
+        second.initCause(first)
+        assertFalse(handler.isDecryptFail(first))
+    }
 }
