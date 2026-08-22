@@ -38,7 +38,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeSource
 
 /**
  * Orchestrates both roles of pairing v3 (design doc `ai/docs/PAIRING_PROTOCOL_V3.md`).
@@ -121,8 +120,6 @@ class PairingProtocolV3Service(
         callerAppInstanceId: String,
         remoteAddress: String?,
     ): PairingV3ServerResult<PairingOfferV3> {
-        // Timeout diagnosis (#4868 B4): stage timing to locate a >3s stall.
-        val mark = TimeSource.Monotonic.markNow()
         if (!isPairingV3Enabled()) {
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_VERSION_UNSUPPORTED)
         }
@@ -154,7 +151,6 @@ class PairingProtocolV3Service(
         if (!signatureValid) {
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_IDENTITY_INVALID)
         }
-        logger.info { "pairing v3 intent timing: signature verified elapsed=${mark.elapsedNow()}" }
         val fingerprint = PairingKeyFingerprint.of(intent.initiatorSignPublicKey)
         val intentHash = PairingTranscriptCodec.intentHash(intent)
         val duplicateSession =
@@ -183,7 +179,6 @@ class PairingProtocolV3Service(
         if (!rateLimiter.tryAcquire(source)) {
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_RATE_LIMITED)
         }
-        logger.info { "pairing v3 intent timing: duplicate/rate checks passed elapsed=${mark.elapsedNow()}" }
         return createAcceptorSession(intent, intentHash, fingerprint)
     }
 
@@ -198,7 +193,6 @@ class PairingProtocolV3Service(
             val sessionIdBytes = randomBytes(PairingV3.SESSION_ID_SIZE)
             val sessionId = toHex(sessionIdBytes)
             val acceptorNonce = randomBytes(PairingV3.NONCE_SIZE)
-            logger.info { "pairing v3 intent timing: session id/nonce generated" }
             val material =
                 prepareGeneration(
                     sessionIdBytes = sessionIdBytes,
@@ -1119,8 +1113,6 @@ class PairingProtocolV3Service(
         intentHash: ByteArray,
         acceptorNonce: ByteArray,
     ): GenerationMaterial {
-        // Timeout diagnosis (#4868 B4): stage timing to locate a >3s stall.
-        val mark = TimeSource.Monotonic.markNow()
         val ownSignPublicKey = secureStore.secureKeyPair.getSignPublicKeyBytes(secureKeyPairSerializer)
         val ownCryptPublicKey = secureStore.secureKeyPair.getCryptPublicKeyBytes(secureKeyPairSerializer)
         val pinContext =
@@ -1141,7 +1133,6 @@ class PairingProtocolV3Service(
             } finally {
                 pinSecret.fill(0)
             }
-        logger.info { "pairing v3 generation timing: pin derived elapsed=${mark.elapsedNow()}" }
         var pakeSession: PakeSession? = null
         var localPakeShare: ByteArray? = null
         var ownershipTransferred = false
@@ -1159,10 +1150,8 @@ class PairingProtocolV3Service(
                         ),
                 )
             pakeSession = createdSession
-            logger.info { "pairing v3 generation timing: pake session created elapsed=${mark.elapsedNow()}" }
             val createdShare = createdSession.localShare()
             localPakeShare = createdShare
-            logger.info { "pairing v3 generation timing: pake share computed elapsed=${mark.elapsedNow()}" }
             val pinExpiresAt = nowEpochMillis() + pinLifetime.inWholeMilliseconds
             val unsignedOffer =
                 PairingOfferV3(
@@ -1187,7 +1176,6 @@ class PairingProtocolV3Service(
                             PairingTranscriptCodec.encodeOfferSignaturePayload(unsignedOffer)
                         },
                 )
-            logger.info { "pairing v3 generation timing: offer signed elapsed=${mark.elapsedNow()}" }
             val material =
                 GenerationMaterial(
                     pin = pin,
