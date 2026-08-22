@@ -264,6 +264,9 @@ class PairingV3IntegrationTest {
             } finally {
                 stalledSocket.close()
             }
+            // Keep the lambda's result Unit: assertNotNull returns its argument, and a
+            // non-Unit expression body makes JUnit 5 silently skip the test method.
+            Unit
         }
 
     @Test
