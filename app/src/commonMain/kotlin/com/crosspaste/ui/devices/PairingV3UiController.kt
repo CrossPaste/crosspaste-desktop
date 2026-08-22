@@ -25,6 +25,11 @@ interface PairingV3UiController {
 
     val acceptanceOpenUntil: StateFlow<Long>
 
+    /** True once the acceptance window locked itself after too many failed proofs;
+     *  the pairing screen shows a hint, and re-entering it ([openAcceptanceWindow])
+     *  is the only way to clear it. */
+    val acceptanceLocked: StateFlow<Boolean>
+
     /** A local user gesture entering the Add Device screen: opens the window and
      *  resets the proof-failure budget / clears any lock. */
     fun openAcceptanceWindow()
@@ -109,6 +114,9 @@ class DefaultPairingV3UiController(
 
     override val acceptanceOpenUntil: StateFlow<Long> =
         pairingProtocolV3Service.acceptanceWindow.openUntil
+
+    override val acceptanceLocked: StateFlow<Boolean> =
+        pairingProtocolV3Service.acceptanceWindow.locked
 
     override fun openAcceptanceWindow() {
         pairingProtocolV3Service.acceptanceWindow.open(WindowOpenSource.LOCAL)

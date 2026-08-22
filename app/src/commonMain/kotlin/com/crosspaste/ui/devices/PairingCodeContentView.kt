@@ -142,6 +142,22 @@ fun PairingCodeContentView() {
 
             Spacer(modifier = Modifier.height(medium))
 
+            val acceptanceLocked by pairingV3UiController.acceptanceLocked.collectAsState()
+            if (acceptanceLocked) {
+                Text(
+                    text = copywriter.getText("pairing_v3_window_locked"),
+                    modifier =
+                        Modifier
+                            .clip(mediumRoundedCornerShape)
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(horizontal = medium, vertical = small2X),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(modifier = Modifier.height(medium))
+            }
+
             Text(
                 text = copywriter.getText("qr_scan_title"),
                 style =
