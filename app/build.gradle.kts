@@ -2,6 +2,7 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.reload.gradle.AbstractComposeHotRun
 import org.jetbrains.compose.reload.gradle.ComposeHotRun
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
@@ -745,23 +746,38 @@ tasks.register("prepareOpenSslLibs") {
     }
 }
 
-// Development-run parity with packaged builds: `app:run` (and hot-reload runs)
-// stages the current platform's pinned libcrypto first — JBR-style automatic
-// download — and points the run JVM at it through the crosspaste.libcrypto.path
-// override, so pairing v3 works in development without a system OpenSSL.
-// Bundled (production/beta) resolution ignores the override, and only run
-// tasks receive it, so packaged builds and tests are unaffected. An explicit
-// CROSSPASTE_LIBCRYPTO_PATH in the environment still wins for troubleshooting.
-val devOpenSslTarget: String = currentOpenSslTarget()
-val devOpenSslLibFile: File =
-    project.projectDir
-        .resolve("openssl")
-        .resolve(devOpenSslTarget)
-        .resolve(
-            loadOpenSslReleases(
-                project.projectDir.resolve("openssl.yaml"),
-            ).openssl.targets.getValue(devOpenSslTarget).libName,
-        )
+// Development-run parity with packaged builds: development runs (`app:run`,
+// `desktopRun`, every hot-reload entry point) stage the current platform's
+// pinned libcrypto first — JBR-style automatic download — and point the run
+// JVM at it through the crosspaste.libcrypto.path override, so pairing v3
+// works in development without a system OpenSSL. Only DEVELOPMENT runs are
+// wired: packaged builds and tests are unaffected, and `-PappEnv=PRODUCTION`
+// or BETA runs resolve the bundled library, which ignores overrides. An
+// explicit override — `-Dcrosspaste.libcrypto.path=...` on the Gradle
+// invocation, or CROSSPASTE_LIBCRYPTO_PATH in the environment — wins over the
+// staged library and skips the download entirely, so an offline machine with
+// its own libcrypto still starts.
+val devRunAppEnv: String = project.findProperty("appEnv")?.toString() ?: "DEVELOPMENT"
+val devLibcryptoPropertyOverride: String? = System.getProperty("crosspaste.libcrypto.path")
+val devLibcryptoOverridden: Boolean =
+    devLibcryptoPropertyOverride != null || System.getenv("CROSSPASTE_LIBCRYPTO_PATH") != null
+
+// Lazy so openssl.yaml is only parsed when a development run task is actually
+// configured, never for tests or unrelated builds; null on platforms
+// openssl.yaml defines no binary for.
+val devOpenSslLibFile: File? by lazy {
+    currentOpenSslTarget()?.let { target ->
+        project.projectDir
+            .resolve("openssl")
+            .resolve(target)
+            .resolve(
+                loadOpenSslReleases(project.projectDir.resolve("openssl.yaml"))
+                    .openssl.targets
+                    .getValue(target)
+                    .libName,
+            )
+    }
+}
 
 val prepareDevOpenSslLib =
     tasks.register("prepareDevOpenSslLib") {
@@ -771,32 +787,74 @@ val prepareDevOpenSslLib =
 
         val openSslYamlFile = project.projectDir.resolve("openssl.yaml")
         val openSslDir = project.projectDir.resolve("openssl")
+        val target = currentOpenSslTarget()
 
         inputs.file(openSslYamlFile)
-        inputs.property("openSslTarget", devOpenSslTarget)
-        outputs.dir(openSslDir.resolve(devOpenSslTarget))
+        inputs.property("openSslTarget", target ?: "")
+        if (target != null) {
+            outputs.dir(openSslDir.resolve(target))
+        }
 
         doLast {
+            if (target == null) {
+                throw GradleException(
+                    "openssl.yaml defines no libcrypto binary for this platform " +
+                        "(os.name=${System.getProperty("os.name")}, os.arch=${System.getProperty("os.arch")})",
+                )
+            }
             val details =
-                loadOpenSslReleases(openSslYamlFile).openssl.targets[devOpenSslTarget]
-                    ?: throw GradleException("openssl.yaml does not define target '$devOpenSslTarget'")
-            stageOpenSslTarget(openSslDir, devOpenSslTarget, details)
+                loadOpenSslReleases(openSslYamlFile).openssl.targets[target]
+                    ?: throw GradleException("openssl.yaml does not define target '$target'")
+            stageOpenSslTarget(openSslDir, target, details)
         }
     }
+
+// Wires one development run task: stage-before-launch plus the override
+// property — or, when the developer supplied an explicit override, just
+// forward it to the launched JVM without downloading anything.
+fun JavaExec.wireDevLibcrypto() {
+    if (devRunAppEnv != "DEVELOPMENT") {
+        return
+    }
+    if (devLibcryptoOverridden) {
+        // An environment variable reaches the child process on its own; a
+        // Gradle -D property does not, so forward it (app-side priority stays
+        // property > environment > platform candidates).
+        devLibcryptoPropertyOverride?.let { systemProperty("crosspaste.libcrypto.path", it) }
+        return
+    }
+    val libFile = devOpenSslLibFile
+    if (libFile == null) {
+        logger.warn(
+            "openssl.yaml defines no libcrypto binary for this platform; pairing v3 needs " +
+                "a system OpenSSL 3 or a crosspaste.libcrypto.path override to load.",
+        )
+        return
+    }
+    dependsOn(prepareDevOpenSslLib)
+    systemProperty("crosspaste.libcrypto.path", libFile.absolutePath)
+}
 
 tasks.withType<JavaExec>().configureEach {
     if (name == "run" || name == "desktopRun") {
-        dependsOn(prepareDevOpenSslLib)
-        if (System.getenv("CROSSPASTE_LIBCRYPTO_PATH") == null) {
-            systemProperty("crosspaste.libcrypto.path", devOpenSslLibFile.absolutePath)
-        }
+        wireDevLibcrypto()
     }
 }
 
-tasks.withType<ComposeHotRun>().configureEach {
-    dependsOn(prepareDevOpenSslLib)
-    if (System.getenv("CROSSPASTE_LIBCRYPTO_PATH") == null) {
-        jvmArgs("-Dcrosspaste.libcrypto.path=${devOpenSslLibFile.absolutePath}")
+// Hot-reload entry points: the sync variants are JavaExec subclasses and feed
+// the argfiles the async variants launch from, so wiring them carries the
+// override property into both; the async tasks additionally need the staging
+// dependency themselves because they do not depend on their underlying run
+// task.
+tasks.withType<AbstractComposeHotRun>().configureEach {
+    wireDevLibcrypto()
+}
+
+// ComposeHotAsyncRun is internal to the hot-reload plugin, so the async
+// variants are matched by name instead of type.
+tasks.matching { it.name.startsWith("hot") && it.name.endsWith("Async") }.configureEach {
+    if (devRunAppEnv == "DEVELOPMENT" && !devLibcryptoOverridden && devOpenSslLibFile != null) {
+        dependsOn(prepareDevOpenSslLib)
     }
 }
 
@@ -834,16 +892,22 @@ fun stageOpenSslTarget(
     libFile.copyTo(targetDir.resolve(details.libName), overwrite = true)
 }
 
-// The openssl.yaml target key for the machine running the build; mirrors the
-// os/arch branching used for the JBR download above.
-fun currentOpenSslTarget(): String {
+// The openssl.yaml target key for the machine running the build. Explicit
+// os/arch mapping: combinations openssl.yaml has no binary for (e.g. Windows
+// ARM64) return null instead of silently borrowing another target's library.
+fun currentOpenSslTarget(): String? {
     val os = DefaultNativePlatform.getCurrentOperatingSystem()
-    val arch = System.getProperty("os.arch").lowercase()
-    val isArm64 = arch == "aarch64" || arch == "arm64"
+    val arch =
+        when (System.getProperty("os.arch").lowercase()) {
+            "aarch64", "arm64" -> "arm64"
+            "amd64", "x86_64", "x64" -> "x64"
+            else -> return null
+        }
     return when {
-        os.isMacOsX -> if (isArm64) "macos-arm64" else "macos-x64"
-        os.isWindows -> "windows-x64"
-        else -> if (isArm64) "linux-arm64" else "linux-x64"
+        os.isMacOsX -> "macos-$arch"
+        os.isLinux -> "linux-$arch"
+        os.isWindows && arch == "x64" -> "windows-x64"
+        else -> null
     }
 }
 
