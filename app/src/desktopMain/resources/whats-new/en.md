@@ -4,6 +4,9 @@
 CrossPaste now ships with a command-line tool, crosspaste, bundled in every desktop package (on macOS, the app offers a one-click install on first launch). Copy, paste, search, pick interactively, edit, and watch your clipboard history live — plus pair devices and run headless — all from the terminal and your scripts. See the CLI guide for every command and example:
 https://github.com/CrossPaste/crosspaste-desktop/blob/main/doc/en/CLI.md
 
+## 🔐 Next-generation device pairing
+Pairing two devices now uses a stronger protocol. The accepting device shows a one-time 6-digit PIN that rotates every 30 seconds, and the PIN is verified with a password-authenticated key exchange — so nobody on the network can intercept the pairing or learn anything from a wrong guess, and repeated wrong guesses lock pairing until you reopen the pairing screen. Pairing with devices running an older version automatically uses the previous flow, so nothing breaks while your other devices catch up.
+
 ## 🪟 More reliable clipboard capture on Windows
 Rapid consecutive clipboard changes are now coalesced into a single capture, fixing an issue on Windows 11 where Snipping Tool screenshots taken with PrtScr failed to auto-save while CrossPaste was running. A single copy no longer produces duplicate image records, and sporadic write failures while the database was busy are fixed too.
 

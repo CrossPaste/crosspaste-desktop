@@ -15,8 +15,9 @@ import org.khronos.webgl.Uint8Array
  * Unlike the desktop OpenSSL backend, this is NOT constant-time: noble's point
  * formulas contain input-dependent branches, and scalars pass through immutable
  * JS `BigInt`s that cannot be zeroed. Accepted for the one-time 30-second PIN
- * threat model; the RFC 9382 §7 constant-time requirement remains the gate for
- * flipping production `PAIRING_VERSION` to 3, not for this client backend.
+ * threat model. The Phase C security review explicitly retained this browser
+ * client exception; production desktop pairing uses the constant-time OpenSSL
+ * backend required by RFC 9382 §7.
  */
 class NoblePakeEcOps : PakeEcOps {
 

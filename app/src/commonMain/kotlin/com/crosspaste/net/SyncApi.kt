@@ -7,11 +7,14 @@ object SyncApi {
     const val VERSION: Int = 3
 
     /**
-     * The production rollout version. Still 2: the v3 protocol surface exists,
-     * but production stays unadvertised until every shipping platform has a
-     * reviewed constant-time backend.
+     * The production rollout version. 3 since the desktop OpenSSL backend
+     * passed the independent security review (Phase C). The advertised value
+     * still degrades to 2 at runtime when the bundled libcrypto cannot be
+     * loaded — see resolveDesktopPairingBackend — so capability never outruns
+     * the PAKE backend. Rollback path: clamp this back to 2 in a patch release
+     * (version negotiation makes v3 disappear; established trust is unaffected).
      */
-    const val PAIRING_VERSION: Int = 2
+    const val PAIRING_VERSION: Int = 3
 
     /** Highest pairing protocol implemented by this source revision. */
     const val MAX_IMPLEMENTED_PAIRING_VERSION: Int = PairingV3.PROTOCOL_VERSION

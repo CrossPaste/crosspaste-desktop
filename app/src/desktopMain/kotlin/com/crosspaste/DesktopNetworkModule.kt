@@ -375,44 +375,37 @@ internal fun resolveDesktopPairingBackend(
     libcryptoResolution: LibCryptoResolution = LibCryptoResolution.Environment,
     loadPakeProvider: () -> PakeProvider = { Spake2PakeProvider(OpenSslPakeEcOps.load(libcryptoResolution)) },
 ): DesktopPairingBackend {
-    if (appEnv == AppEnv.DEVELOPMENT && developmentV3InteropEnabled) {
-        // DEVELOPMENT interoperability only until the cross-platform security
-        // review and rollout land (#4667). OpenSSL is the constant-time P-256
-        // backend; when libcrypto cannot be loaded we fail closed AND fall back
-        // to advertising v2, so the capability can never outrun the backend.
+    // Pairing v3 is rolled out (PAIRING_VERSION = 3, Phase C review passed).
+    // Exactly one probe decides BOTH the advertised capability and the
+    // registered provider, so the split-brain state "advertise 3 but the PAKE
+    // backend is unavailable" stays unrepresentable:
+    // - production/beta load only the bundled libcrypto (LibCryptoResolution
+    //   .Bundled, fail-closed, no system fallback — #4865);
+    // - DEVELOPMENT loads from the environment, gated by the interop flag
+    //   (default on; opting out forces the v2 SAS path for testing);
+    // - TEST never loads implicitly — suites that exercise v3 inject their
+    //   provider explicitly.
+    val attemptLoad =
+        libcryptoResolution is LibCryptoResolution.Bundled ||
+            (appEnv == AppEnv.DEVELOPMENT && developmentV3InteropEnabled)
+    if (attemptLoad) {
         runCatching { loadPakeProvider() }
             .onSuccess { pakeProvider ->
                 return DesktopPairingBackend(
-                    PairingCapabilityFlag(SyncApi.MAX_IMPLEMENTED_PAIRING_VERSION),
+                    PairingCapabilityFlag(SyncApi.PAIRING_VERSION),
                     pakeProvider,
                 )
             }.onFailure { e ->
                 KotlinLogging.logger {}.warn(e) {
-                    "OpenSSL libcrypto unavailable, pairing v3 stays disabled"
-                }
-            }
-    } else if (libcryptoResolution is LibCryptoResolution.Bundled) {
-        // Startup probe for bundled builds (production/beta): loads the packaged
-        // libcrypto so real-device verification can confirm from the log which
-        // library resolved, and so a packaging regression surfaces as a warn
-        // instead of at rollout. The result is deliberately discarded — until
-        // PAIRING_VERSION is bumped (#4667) capability stays clamped below and
-        // the provider stays fail-closed.
-        runCatching { loadPakeProvider() }
-            .onFailure { e ->
-                KotlinLogging.logger {}.warn(e) {
-                    "bundled libcrypto probe failed; pairing v3 will be unavailable when rolled out"
+                    "OpenSSL libcrypto unavailable, pairing v3 stays disabled; " +
+                        "advertising v2 so peers negotiate SAS pairing"
                 }
             }
     }
-    // Keep non-development builds fail-closed even if the rollout constant is
-    // changed before a reviewed provider is registered.
-    val clampedVersion =
-        minOf(
-            SyncApi.PAIRING_VERSION,
-            PairingV3.PROTOCOL_VERSION - 1,
-        )
-    return DesktopPairingBackend(PairingCapabilityFlag(clampedVersion), UnavailablePakeProvider)
+    // Fail-closed fallback: no reviewed backend loaded, so advertise the
+    // highest version that works without one (v2 SAS).
+    val fallbackVersion = PairingV3.PROTOCOL_VERSION - 1
+    return DesktopPairingBackend(PairingCapabilityFlag(fallbackVersion), UnavailablePakeProvider)
 }
 
 /**

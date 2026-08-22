@@ -11,6 +11,7 @@ local.properties
 local.conveyor.conf
 local-mac.conveyor.conf
 local-win.conveyor.conf
+local-linux.conveyor.conf
 i18n_key.txt
 package*.json
 selenium-manager
