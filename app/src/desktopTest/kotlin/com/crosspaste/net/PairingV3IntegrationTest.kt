@@ -223,6 +223,50 @@ class PairingV3IntegrationTest {
         }
 
     @Test
+    fun testStalledTrustBodyDoesNotBlockPairingV3Intent() =
+        runBlocking {
+            val a = createInstance("stall-acceptor")
+            val b = createInstance("stall-initiator")
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+
+            // Simulate a peer that died mid-request: a /sync/trust request whose
+            // declared body never arrives. The handler parks in receive(); it must
+            // do so OUTSIDE the per-peer pairing lock, or every later pairing
+            // request from this peer (including v3 /intent) starves behind it.
+            val stalledSocket = java.net.Socket("localhost", a.getPort())
+            stalledSocket.getOutputStream().let { out ->
+                out.write(
+                    (
+                        "POST /sync/trust HTTP/1.1\r\n" +
+                            "Host: localhost\r\n" +
+                            "appInstanceId: ${b.appInstanceId}\r\n" +
+                            "Content-Type: application/json\r\n" +
+                            "Content-Length: 100000\r\n" +
+                            "\r\n"
+                    ).toByteArray(),
+                )
+                out.flush()
+            }
+            // Let the server dispatch the stalled handler into its body read.
+            delay(300)
+
+            try {
+                val started =
+                    kotlinx.coroutines.withTimeoutOrNull(3.seconds) {
+                        startPairing(b, a)
+                    }
+                assertNotNull(
+                    started,
+                    "pairing v3 intent must not be starved by a stalled /sync/trust body read",
+                )
+            } finally {
+                stalledSocket.close()
+            }
+        }
+
+    @Test
     fun testGenerationFailureDuringSessionCreationClearsPin() =
         runBlocking {
             val failingProvider = FailingGenerationPakeProvider(failDuringCreate = true)
