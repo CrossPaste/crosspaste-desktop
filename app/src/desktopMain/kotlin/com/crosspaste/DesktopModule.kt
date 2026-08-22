@@ -81,6 +81,7 @@ class DesktopModule(
             appEnv = appEnv,
             developmentV3InteropEnabled =
                 appEnv == AppEnv.DEVELOPMENT && DevConfig.pairingV3InteropEnabled,
+            libcryptoResolution = desktopLibcryptoResolution(appEnv, platform, appPathProvider),
         )
 
     override fun appModule() =

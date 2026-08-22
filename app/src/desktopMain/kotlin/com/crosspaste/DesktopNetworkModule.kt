@@ -48,6 +48,7 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.LibCryptoResolution
 import com.crosspaste.pairing.v3.OpenSslPakeEcOps
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
@@ -60,6 +61,7 @@ import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.Spake2PakeProvider
 import com.crosspaste.pairing.v3.UnavailablePakeProvider
+import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.FilePushService
 import com.crosspaste.sync.GeneralNearbyDeviceManager
@@ -370,7 +372,8 @@ class DesktopPairingBackend(
 internal fun resolveDesktopPairingBackend(
     appEnv: AppEnv,
     developmentV3InteropEnabled: Boolean,
-    loadPakeProvider: () -> PakeProvider = { Spake2PakeProvider(OpenSslPakeEcOps.load()) },
+    libcryptoResolution: LibCryptoResolution = LibCryptoResolution.Environment,
+    loadPakeProvider: () -> PakeProvider = { Spake2PakeProvider(OpenSslPakeEcOps.load(libcryptoResolution)) },
 ): DesktopPairingBackend {
     if (appEnv == AppEnv.DEVELOPMENT && developmentV3InteropEnabled) {
         // DEVELOPMENT interoperability only until the cross-platform security
@@ -388,6 +391,19 @@ internal fun resolveDesktopPairingBackend(
                     "OpenSSL libcrypto unavailable, pairing v3 stays disabled"
                 }
             }
+    } else if (libcryptoResolution is LibCryptoResolution.Bundled) {
+        // Startup probe for bundled builds (production/beta): loads the packaged
+        // libcrypto so real-device verification can confirm from the log which
+        // library resolved, and so a packaging regression surfaces as a warn
+        // instead of at rollout. The result is deliberately discarded — until
+        // PAIRING_VERSION is bumped (#4667) capability stays clamped below and
+        // the provider stays fail-closed.
+        runCatching { loadPakeProvider() }
+            .onFailure { e ->
+                KotlinLogging.logger {}.warn(e) {
+                    "bundled libcrypto probe failed; pairing v3 will be unavailable when rolled out"
+                }
+            }
     }
     // Keep non-development builds fail-closed even if the rollout constant is
     // changed before a reviewed provider is registered.
@@ -397,4 +413,35 @@ internal fun resolveDesktopPairingBackend(
             PairingV3.PROTOCOL_VERSION - 1,
         )
     return DesktopPairingBackend(PairingCapabilityFlag(clampedVersion), UnavailablePakeProvider)
+}
+
+/**
+ * The libcrypto resolution for this build: [LibCryptoResolution.Bundled] in
+ * PRODUCTION/BETA, [LibCryptoResolution.Environment] in DEVELOPMENT/TEST.
+ *
+ * Conveyor moves the bare library inputs (conveyor.conf, pinned in
+ * app/openssl.yaml) into the packaged JVM's native-library directory — the
+ * same directory `skiko.library.path` points at and [AppPathProvider.pasteAppExePath]
+ * resolves on every platform (macOS `runtime/Contents/Home/lib`, Windows
+ * `bin`, Linux `runtime/lib`).
+ */
+internal fun desktopLibcryptoResolution(
+    appEnv: AppEnv,
+    platform: Platform,
+    appPathProvider: AppPathProvider,
+): LibCryptoResolution {
+    if (appEnv != AppEnv.PRODUCTION && appEnv != AppEnv.BETA) {
+        return LibCryptoResolution.Environment
+    }
+    val libName =
+        when {
+            platform.isMacos() -> "libcrypto.3.dylib"
+            platform.isWindows() -> "libcrypto-3-x64.dll"
+            else -> "libcrypto.so.3"
+        }
+    return LibCryptoResolution.Bundled(
+        appPathProvider.pasteAppExePath
+            .resolve(libName)
+            .toString(),
+    )
 }
