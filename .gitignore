@@ -25,6 +25,7 @@ app/GPUCache/
 app/build/
 app/dylib/
 app/jbr/
+app/openssl/
 logs/
 kotlin-js-store/
 node_modules/

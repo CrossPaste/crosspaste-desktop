@@ -95,6 +95,14 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
+      - name: Cache OpenSSL libcrypto binaries
+        uses: actions/cache@v5
+        with:
+          path: ./app/openssl
+          # Linux-only subset (see prepareOpenSslLibs below), so use a key
+          # distinct from the release workflow's full five-target cache.
+          key: openssl-linux-${{ hashFiles('**/openssl.yaml') }}
+
       - name: Build with Gradle
         run: ./gradlew app:build -PintegrationTests
 
@@ -108,6 +116,9 @@ jobs:
         run: |
           VERSION=$(grep '^version=' app/src/desktopMain/resources/crosspaste-version.properties | cut -d= -f2)
           ./gradlew :cli:assembleDistLinuxX64 :cli:assembleDistLinuxArm64 "-PcliVersion=${VERSION}.${REVISION}"
+
+      - name: Prepare OpenSSL libcrypto jars
+        run: ./gradlew app:prepareOpenSslLibs "-PopenSslTargets=linux-x64,linux-arm64"
 
       - name: Prepare Conveyor config (Linux only)
         run: |

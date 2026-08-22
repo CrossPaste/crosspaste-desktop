@@ -197,6 +197,12 @@ jobs:
           path: ./app/jbr
           key: jbr-${{ hashFiles('**/jbr.yaml') }}
 
+      - name: Cache OpenSSL libcrypto binaries
+        uses: actions/cache@v5
+        with:
+          path: ./app/openssl
+          key: openssl-${{ hashFiles('**/openssl.yaml') }}
+
       - name: Restore dylib cache for x86_64
         uses: actions/cache/restore@v5
         with:
@@ -255,6 +261,9 @@ jobs:
           else
             echo "Directory does not exist!"
           fi
+
+      - name: Prepare OpenSSL libcrypto jars
+        run: ./gradlew app:prepareOpenSslLibs
 
       - name: Prepare Dependency
         run: |
