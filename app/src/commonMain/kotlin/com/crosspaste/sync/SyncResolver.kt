@@ -179,7 +179,7 @@ class SyncResolver(
                 event.callback.onComplete()
             }
             if (event is SyncEvent.ShowPairingCode) {
-                event.completionSignal.complete(false)
+                event.completionSignal.complete(ShowPairingCodeResult.UNAVAILABLE)
             }
         }
     }

@@ -8,6 +8,7 @@ import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3RefreshResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
 import com.crosspaste.pairing.v3.WindowOpenSource
+import com.crosspaste.sync.ShowPairingCodeResult
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.V3Pin
 import com.crosspaste.utils.HostAndPort
@@ -142,7 +143,19 @@ class DefaultPairingV3UiController(
                         PairingV3UiError.NETWORK_FAILURE,
                         PairingV3Recovery.RETRY_START,
                     )
-            target.showPairingCode()
+            when (target.showPairingCode()) {
+                ShowPairingCodeResult.SHOWN -> Unit
+                ShowPairingCodeResult.NOT_ACCEPTING ->
+                    return@withContext PairingV3UiResult.Error(
+                        PairingV3UiError.NOT_ACCEPTING,
+                        PairingV3Recovery.RETRY_START,
+                    )
+                ShowPairingCodeResult.UNAVAILABLE ->
+                    return@withContext PairingV3UiResult.Error(
+                        PairingV3UiError.NETWORK_FAILURE,
+                        PairingV3Recovery.RETRY_START,
+                    )
+            }
             pairingProtocolV3Service
                 .startPairing(
                     targetAppInstanceId = peerAppInstanceId,
@@ -223,7 +236,7 @@ class DefaultPairingV3UiController(
 
     private data class PairingTarget(
         val displayName: String,
-        val showPairingCode: suspend () -> Unit,
+        val showPairingCode: suspend () -> ShowPairingCodeResult,
         val toUrl: io.ktor.http.URLBuilder.() -> Unit,
     )
 }

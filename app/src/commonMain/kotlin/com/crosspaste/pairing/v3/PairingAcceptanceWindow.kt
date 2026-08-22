@@ -36,9 +36,24 @@ enum class WindowOpenSource {
  * clears the lock and resets the budget.
  */
 class PairingAcceptanceWindow(
-    private val maxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
+    internal val maxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
     private val nowEpochMillis: () -> Long = { DateUtils.nowEpochMilliseconds() },
 ) {
+
+    private data class WindowState(
+        val openUntil: Long = 0L,
+        val proofFailures: Int = 0,
+        val inFlightProofs: Int = 0,
+        val locked: Boolean = false,
+    )
+
+    init {
+        require(maxProofFailures > 0) { "maxProofFailures must be positive" }
+    }
+
+    // One atomic state is the security source of truth. The public flows below are
+    // observational projections for Compose; authorization never reads them.
+    private val state = atomic(WindowState())
 
     private val _openUntil = MutableStateFlow(0L)
 
@@ -50,10 +65,6 @@ class PairingAcceptanceWindow(
     /** True once the failure budget is spent; cleared only by a LOCAL open. UI observes this. */
     val locked: StateFlow<Boolean> = _locked.asStateFlow()
 
-    // Accumulates across peers/generations so identity/fingerprint rotation cannot
-    // dodge the ceiling. Atomic because proof handling runs concurrently per session.
-    private val proofFailures = atomic(0)
-
     /**
      * Opens (or renews) the window. A LOCAL open always succeeds and resets the
      * failure budget and lock. A REMOTE open is refused (returns false, no-op) while
@@ -63,18 +74,27 @@ class PairingAcceptanceWindow(
         source: WindowOpenSource,
         duration: Duration = DEFAULT_WINDOW_DURATION,
     ): Boolean {
-        when (source) {
-            WindowOpenSource.LOCAL -> {
-                proofFailures.value = 0
-                _locked.value = false
+        val openUntil = nowEpochMillis() + duration.inWholeMilliseconds
+        while (true) {
+            val current = state.value
+            if (source == WindowOpenSource.REMOTE && current.locked) {
+                return false
             }
-            WindowOpenSource.REMOTE ->
-                if (_locked.value) {
-                    return false
+            val updated =
+                when (source) {
+                    WindowOpenSource.LOCAL ->
+                        current.copy(
+                            openUntil = openUntil,
+                            proofFailures = 0,
+                            locked = false,
+                        )
+                    WindowOpenSource.REMOTE -> current.copy(openUntil = openUntil)
                 }
+            if (state.compareAndSet(current, updated)) {
+                publishState()
+                return true
+            }
         }
-        _openUntil.value = nowEpochMillis() + duration.inWholeMilliseconds
-        return true
     }
 
     /**
@@ -83,31 +103,107 @@ class PairingAcceptanceWindow(
      * open does not silently refill an attacker's guess budget. No-op while locked.
      */
     fun extend(duration: Duration = DEFAULT_WINDOW_DURATION) {
-        if (_locked.value) {
-            return
+        val openUntil = nowEpochMillis() + duration.inWholeMilliseconds
+        while (true) {
+            val current = state.value
+            if (current.locked) {
+                return
+            }
+            if (state.compareAndSet(current, current.copy(openUntil = openUntil))) {
+                publishState()
+                return
+            }
         }
-        _openUntil.value = nowEpochMillis() + duration.inWholeMilliseconds
     }
 
     /**
-     * Records one proof failure against the cumulative budget. When the budget is
-     * spent the window closes and locks until a LOCAL open resets it. Returns true
-     * when this failure triggered the lock.
+     * Reserves one online proof attempt. Failed and in-flight attempts jointly consume
+     * the ceiling, so concurrent sessions cannot overshoot it. A successful proof (or
+     * a request rejected before cryptographic verification) releases its reservation.
      */
-    fun recordProofFailure(): Boolean {
-        if (proofFailures.incrementAndGet() >= maxProofFailures) {
-            _locked.value = true
-            _openUntil.value = 0L
-            return true
+    internal fun tryBeginProofAttempt(): ProofAttempt? {
+        while (true) {
+            val current = state.value
+            if (current.locked || current.proofFailures + current.inFlightProofs >= maxProofFailures) {
+                return null
+            }
+            val updated = current.copy(inFlightProofs = current.inFlightProofs + 1)
+            if (state.compareAndSet(current, updated)) {
+                return ProofAttempt(this)
+            }
         }
-        return false
     }
 
     fun close() {
-        _openUntil.value = 0L
+        updateState { current -> current.copy(openUntil = 0L) }
     }
 
-    fun isOpen(): Boolean = nowEpochMillis() < _openUntil.value
+    fun isOpen(): Boolean {
+        val current = state.value
+        return !current.locked && nowEpochMillis() < current.openUntil
+    }
+
+    fun isLocked(): Boolean = state.value.locked
+
+    private fun completeProofAttempt(failed: Boolean): Boolean {
+        while (true) {
+            val current = state.value
+            check(current.inFlightProofs > 0) { "proof attempt completed without a reservation" }
+            val proofFailures = current.proofFailures + if (failed) 1 else 0
+            val locked = current.locked || proofFailures >= maxProofFailures
+            val updated =
+                current.copy(
+                    openUntil = if (locked) 0L else current.openUntil,
+                    proofFailures = proofFailures,
+                    inFlightProofs = current.inFlightProofs - 1,
+                    locked = locked,
+                )
+            if (state.compareAndSet(current, updated)) {
+                publishState()
+                return !current.locked && locked
+            }
+        }
+    }
+
+    private inline fun updateState(transform: (WindowState) -> WindowState) {
+        while (true) {
+            val current = state.value
+            if (state.compareAndSet(current, transform(current))) {
+                publishState()
+                return
+            }
+        }
+    }
+
+    // A publisher that raced with a newer transition loops until both projections
+    // reflect the latest atomic state, so observers cannot remain permanently stale.
+    private fun publishState() {
+        while (true) {
+            val snapshot = state.value
+            _openUntil.value = snapshot.openUntil
+            _locked.value = snapshot.locked
+            if (state.value === snapshot) {
+                return
+            }
+        }
+    }
+
+    internal class ProofAttempt internal constructor(
+        private val window: PairingAcceptanceWindow,
+    ) {
+        private val active = atomic(true)
+
+        /** Converts this reservation into a failed guess. Returns true when it locks the window. */
+        fun recordFailure(): Boolean =
+            active.compareAndSet(expect = true, update = false) && window.completeProofAttempt(failed = true)
+
+        /** Releases a successful or otherwise unevaluated attempt. Idempotent. */
+        fun release() {
+            if (active.compareAndSet(expect = true, update = false)) {
+                window.completeProofAttempt(failed = false)
+            }
+        }
+    }
 
     companion object {
         val DEFAULT_WINDOW_DURATION: Duration = 5.minutes

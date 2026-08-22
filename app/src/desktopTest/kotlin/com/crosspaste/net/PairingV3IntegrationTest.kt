@@ -6,6 +6,7 @@ import com.crosspaste.dto.pairing.v3.PairingIntentV3
 import com.crosspaste.dto.pairing.v3.PairingOfferV3
 import com.crosspaste.dto.pairing.v3.PairingProofV3
 import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
+import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
@@ -446,12 +447,16 @@ class PairingV3IntegrationTest {
                     acceptanceWindowMaxProofFailures = 1,
                 )
             val b = createInstance("lockout-b", pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()))
+            val c = createInstance("lockout-c", pakeProvider = Spake2PakeProvider(OpenSslPakeEcOps.load()))
             a.start()
             b.start()
+            c.start()
             a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
             assertFalse(a.pairingAcceptanceWindow.locked.value)
 
             val started = startPairing(b, a)
+            val prefetched = startPairing(c, a)
+            val prefetchedPin = displayedPin(a, c.appInstanceId)
             val pin = displayedPin(a, b.appInstanceId)
             val wrongPin = pin.copyOf()
             wrongPin[5] = if (wrongPin[5] == '9') '0' else wrongPin[5] + 1
@@ -467,6 +472,18 @@ class PairingV3IntegrationTest {
             }
             assertFalse(a.pairingAcceptanceWindow.isOpen())
             assertFalse(a.pairingAcceptanceWindow.open(WindowOpenSource.REMOTE))
+            val remoteReopen = b.syncClientApi.showPairingCode(urlFor(a))
+            assertIs<FailureResult>(remoteReopen)
+            assertEquals(
+                StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_LOCKED.getCode(),
+                remoteReopen.exception.getErrorCode().code,
+            )
+
+            // C already holds a valid offer from before the lock. The global proof
+            // permit still rejects it, so active sessions cannot overshoot the budget.
+            val blocked = c.pairingProtocolV3Service.submitPin(prefetched.sessionId, prefetchedPin, urlFor(a))
+            assertIs<PairingV3PinResult.Refused>(blocked)
+            assertEquals(PairingV3ErrorCode.PAIRING_DISABLED, blocked.code)
 
             // A local gesture clears the lock and restores acceptance.
             assertTrue(a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL))

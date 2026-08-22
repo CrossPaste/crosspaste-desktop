@@ -56,8 +56,7 @@ class MarketingSyncHandler(
     override suspend fun showToken() {
     }
 
-    override suspend fun showPairingCode() {
-    }
+    override suspend fun showPairingCode(): ShowPairingCodeResult = ShowPairingCodeResult.UNAVAILABLE
 
     override suspend fun notifyExit() {
     }

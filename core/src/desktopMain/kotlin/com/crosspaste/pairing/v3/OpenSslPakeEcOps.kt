@@ -9,8 +9,8 @@ import com.sun.jna.Pointer
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
- * How [OpenSslPakeEcOps.load] resolves the libcrypto to bind (unless an
- * explicit override is set, which always wins for troubleshooting).
+ * How [OpenSslPakeEcOps.load] resolves the libcrypto to bind. Explicit overrides
+ * apply only to [Environment]; [Bundled] always uses its reviewed packaged library.
  *
  * The whole process uses exactly one resolution: the first successful [load]
  * pins it, and a later call with a different resolution throws instead of
@@ -56,10 +56,11 @@ sealed interface LibCryptoResolution {
  * `BN_clear_free`, which zeroes them before freeing — unlike the immutable
  * JVM `BigInteger` copies the BouncyCastle backend left behind for the GC.
  *
- * libcrypto is resolved from the `crosspaste.libcrypto.path` system property
- * or `CROSSPASTE_LIBCRYPTO_PATH` environment variable first; without an
- * override the [LibCryptoResolution] passed to [load] decides the candidates.
- * [load] fails fast with a [PakeException] when no candidate can be loaded.
+ * In [LibCryptoResolution.Environment], libcrypto is resolved from the
+ * `crosspaste.libcrypto.path` system property or `CROSSPASTE_LIBCRYPTO_PATH`
+ * environment variable first. [LibCryptoResolution.Bundled] ignores overrides and
+ * loads only its packaged path. [load] fails fast with a [PakeException] when no
+ * accepted candidate can be loaded.
  */
 class OpenSslPakeEcOps private constructor(
     private val lib: LibCrypto,
