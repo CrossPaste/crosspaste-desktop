@@ -19,6 +19,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlin.time.TimeSource
 
 private val logger = KotlinLogging.logger {}
 
@@ -41,6 +42,10 @@ fun Routing.pairingV3Routing(
 ) {
     post("/sync/pairing/v3/intent") {
         getAppInstanceId(call)?.let { appInstanceId ->
+            // Timeout diagnosis (#4868 B4): stage timing from request arrival to
+            // response, to locate where a >3s stall happens on the acceptor.
+            val arrivedAt = TimeSource.Monotonic.markNow()
+            logger.info { "pairing v3 intent timing: request arrived from $appInstanceId" }
             val intent =
                 call.receivePairingV3OrNull<PairingIntentV3>()
                     ?: run {
@@ -50,7 +55,9 @@ fun Routing.pairingV3Routing(
                         )
                         return@let
                     }
+            logger.info { "pairing v3 intent timing: payload decoded elapsed=${arrivedAt.elapsedNow()}" }
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
+                logger.info { "pairing v3 intent timing: peer lock acquired elapsed=${arrivedAt.elapsedNow()}" }
                 val remoteAddress = runCatching { call.request.origin.remoteHost }.getOrNull()
                 when (val result = pairingProtocolV3Service.handleIntent(intent, appInstanceId, remoteAddress)) {
                     is PairingV3ServerResult.Ok -> {
@@ -64,6 +71,7 @@ fun Routing.pairingV3Routing(
                         failResponse(call, result.code.toStandardErrorCode().toErrorCode())
                 }
             }
+            logger.info { "pairing v3 intent timing: response completed elapsed=${arrivedAt.elapsedNow()}" }
         }
     }
 
