@@ -740,30 +740,110 @@ tasks.register("prepareOpenSslLibs") {
             }
         }
         selectedTargets.forEach { (target, details) ->
-            val libFile = openSslDir.resolve(details.url.substringAfterLast("/"))
-            if (!libFile.exists() || sha256Hex(libFile) != details.sha256) {
-                download.run {
-                    src { details.url }
-                    dest { openSslDir }
-                    overwrite(true)
-                    tempAndMove(true)
-                }
-            }
-            val actualSha256 = sha256Hex(libFile)
-            if (actualSha256 != details.sha256) {
-                throw GradleException(
-                    "SHA-256 mismatch for ${libFile.name}: expected ${details.sha256}, got $actualSha256",
-                )
-            }
-            val targetDir = openSslDir.resolve(target)
-            targetDir.mkdirs()
-            targetDir.listFiles()?.forEach { staged ->
-                if (staged.name != details.libName) {
-                    staged.delete()
-                }
-            }
-            libFile.copyTo(targetDir.resolve(details.libName), overwrite = true)
+            stageOpenSslTarget(openSslDir, target, details)
         }
+    }
+}
+
+// Development-run parity with packaged builds: `app:run` (and hot-reload runs)
+// stages the current platform's pinned libcrypto first — JBR-style automatic
+// download — and points the run JVM at it through the crosspaste.libcrypto.path
+// override, so pairing v3 works in development without a system OpenSSL.
+// Bundled (production/beta) resolution ignores the override, and only run
+// tasks receive it, so packaged builds and tests are unaffected. An explicit
+// CROSSPASTE_LIBCRYPTO_PATH in the environment still wins for troubleshooting.
+val devOpenSslTarget: String = currentOpenSslTarget()
+val devOpenSslLibFile: File =
+    project.projectDir
+        .resolve("openssl")
+        .resolve(devOpenSslTarget)
+        .resolve(
+            loadOpenSslReleases(
+                project.projectDir.resolve("openssl.yaml"),
+            ).openssl.targets.getValue(devOpenSslTarget).libName,
+        )
+
+val prepareDevOpenSslLib =
+    tasks.register("prepareDevOpenSslLib") {
+        group = "build"
+        description =
+            "Download and stage the pinned libcrypto for the current platform so development runs can load it."
+
+        val openSslYamlFile = project.projectDir.resolve("openssl.yaml")
+        val openSslDir = project.projectDir.resolve("openssl")
+
+        inputs.file(openSslYamlFile)
+        inputs.property("openSslTarget", devOpenSslTarget)
+        outputs.dir(openSslDir.resolve(devOpenSslTarget))
+
+        doLast {
+            val details =
+                loadOpenSslReleases(openSslYamlFile).openssl.targets[devOpenSslTarget]
+                    ?: throw GradleException("openssl.yaml does not define target '$devOpenSslTarget'")
+            stageOpenSslTarget(openSslDir, devOpenSslTarget, details)
+        }
+    }
+
+tasks.withType<JavaExec>().configureEach {
+    if (name == "run" || name == "desktopRun") {
+        dependsOn(prepareDevOpenSslLib)
+        if (System.getenv("CROSSPASTE_LIBCRYPTO_PATH") == null) {
+            systemProperty("crosspaste.libcrypto.path", devOpenSslLibFile.absolutePath)
+        }
+    }
+}
+
+tasks.withType<ComposeHotRun>().configureEach {
+    dependsOn(prepareDevOpenSslLib)
+    if (System.getenv("CROSSPASTE_LIBCRYPTO_PATH") == null) {
+        jvmArgs("-Dcrosspaste.libcrypto.path=${devOpenSslLibFile.absolutePath}")
+    }
+}
+
+// Downloads (with SHA-256 self-healing) and stages one openssl.yaml target at
+// openssl/<target>/<libName>. Shared by the packaging task (all targets) and
+// the development-run task (current platform only).
+fun stageOpenSslTarget(
+    openSslDir: File,
+    target: String,
+    details: OpenSslTarget,
+) {
+    openSslDir.mkdirs()
+    val libFile = openSslDir.resolve(details.url.substringAfterLast("/"))
+    if (!libFile.exists() || sha256Hex(libFile) != details.sha256) {
+        download.run {
+            src { details.url }
+            dest { openSslDir }
+            overwrite(true)
+            tempAndMove(true)
+        }
+    }
+    val actualSha256 = sha256Hex(libFile)
+    if (actualSha256 != details.sha256) {
+        throw GradleException(
+            "SHA-256 mismatch for ${libFile.name}: expected ${details.sha256}, got $actualSha256",
+        )
+    }
+    val targetDir = openSslDir.resolve(target)
+    targetDir.mkdirs()
+    targetDir.listFiles()?.forEach { staged ->
+        if (staged.name != details.libName) {
+            staged.delete()
+        }
+    }
+    libFile.copyTo(targetDir.resolve(details.libName), overwrite = true)
+}
+
+// The openssl.yaml target key for the machine running the build; mirrors the
+// os/arch branching used for the JBR download above.
+fun currentOpenSslTarget(): String {
+    val os = DefaultNativePlatform.getCurrentOperatingSystem()
+    val arch = System.getProperty("os.arch").lowercase()
+    val isArm64 = arch == "aarch64" || arch == "arm64"
+    return when {
+        os.isMacOsX -> if (isArm64) "macos-arm64" else "macos-x64"
+        os.isWindows -> "windows-x64"
+        else -> if (isArm64) "linux-arm64" else "linux-x64"
     }
 }
 
