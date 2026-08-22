@@ -48,6 +48,7 @@ import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.pairing.v3.LibCryptoResolution
 import com.crosspaste.pairing.v3.OpenSslPakeEcOps
 import com.crosspaste.pairing.v3.PairingAcceptanceWindow
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
@@ -371,8 +372,8 @@ class DesktopPairingBackend(
 internal fun resolveDesktopPairingBackend(
     appEnv: AppEnv,
     developmentV3InteropEnabled: Boolean,
-    bundledLibcryptoPath: String? = null,
-    loadPakeProvider: () -> PakeProvider = { Spake2PakeProvider(OpenSslPakeEcOps.load(bundledLibcryptoPath)) },
+    libcryptoResolution: LibCryptoResolution = LibCryptoResolution.Environment,
+    loadPakeProvider: () -> PakeProvider = { Spake2PakeProvider(OpenSslPakeEcOps.load(libcryptoResolution)) },
 ): DesktopPairingBackend {
     if (appEnv == AppEnv.DEVELOPMENT && developmentV3InteropEnabled) {
         // DEVELOPMENT interoperability only until the cross-platform security
@@ -390,7 +391,7 @@ internal fun resolveDesktopPairingBackend(
                     "OpenSSL libcrypto unavailable, pairing v3 stays disabled"
                 }
             }
-    } else if (bundledLibcryptoPath != null) {
+    } else if (libcryptoResolution is LibCryptoResolution.Bundled) {
         // Startup probe for bundled builds (production/beta): loads the packaged
         // libcrypto so real-device verification can confirm from the log which
         // library resolved, and so a packaging regression surfaces as a warn
@@ -415,8 +416,8 @@ internal fun resolveDesktopPairingBackend(
 }
 
 /**
- * Absolute path of the libcrypto shipped inside the installed package, or null
- * in DEVELOPMENT/TEST, which keep resolving libcrypto from the environment.
+ * The libcrypto resolution for this build: [LibCryptoResolution.Bundled] in
+ * PRODUCTION/BETA, [LibCryptoResolution.Environment] in DEVELOPMENT/TEST.
  *
  * Conveyor moves the bare library inputs (conveyor.conf, pinned in
  * app/openssl.yaml) into the packaged JVM's native-library directory — the
@@ -424,13 +425,13 @@ internal fun resolveDesktopPairingBackend(
  * resolves on every platform (macOS `runtime/Contents/Home/lib`, Windows
  * `bin`, Linux `runtime/lib`).
  */
-internal fun bundledLibcryptoPath(
+internal fun desktopLibcryptoResolution(
     appEnv: AppEnv,
     platform: Platform,
     appPathProvider: AppPathProvider,
-): String? {
+): LibCryptoResolution {
     if (appEnv != AppEnv.PRODUCTION && appEnv != AppEnv.BETA) {
-        return null
+        return LibCryptoResolution.Environment
     }
     val libName =
         when {
@@ -438,5 +439,9 @@ internal fun bundledLibcryptoPath(
             platform.isWindows() -> "libcrypto-3-x64.dll"
             else -> "libcrypto.so.3"
         }
-    return appPathProvider.pasteAppExePath.resolve(libName).toString()
+    return LibCryptoResolution.Bundled(
+        appPathProvider.pasteAppExePath
+            .resolve(libName)
+            .toString(),
+    )
 }

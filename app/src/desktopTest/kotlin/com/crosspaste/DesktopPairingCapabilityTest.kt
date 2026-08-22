@@ -2,6 +2,7 @@ package com.crosspaste
 
 import com.crosspaste.app.AppEnv
 import com.crosspaste.config.developmentPairingV3InteropEnabled
+import com.crosspaste.pairing.v3.LibCryptoResolution
 import com.crosspaste.pairing.v3.PakeException
 import com.crosspaste.pairing.v3.TestPakeProvider
 import com.crosspaste.pairing.v3.UnavailablePakeProvider
@@ -13,7 +14,6 @@ import okio.Path.Companion.toPath
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -106,7 +106,8 @@ class DesktopPairingCapabilityTest {
                 resolveDesktopPairingBackend(
                     appEnv = appEnv,
                     developmentV3InteropEnabled = false,
-                    bundledLibcryptoPath = "/opt/crosspaste/runtime/lib/libcrypto.so.3",
+                    libcryptoResolution =
+                        LibCryptoResolution.Bundled("/opt/crosspaste/runtime/lib/libcrypto.so.3"),
                     loadPakeProvider = {
                         probes++
                         loadedProvider
@@ -128,7 +129,7 @@ class DesktopPairingCapabilityTest {
             resolveDesktopPairingBackend(
                 appEnv = AppEnv.PRODUCTION,
                 developmentV3InteropEnabled = false,
-                bundledLibcryptoPath = "/missing/libcrypto.so.3",
+                libcryptoResolution = LibCryptoResolution.Bundled("/missing/libcrypto.so.3"),
                 loadPakeProvider = failingLoader,
             )
 
@@ -137,7 +138,23 @@ class DesktopPairingCapabilityTest {
     }
 
     @Test
-    fun bundledLibcryptoPathResolvesPerPlatformUnderTheJvmLibDirectory() {
+    fun environmentResolutionDoesNotProbeOutsideDevelopmentInterop() {
+        listOf(AppEnv.PRODUCTION, AppEnv.BETA, AppEnv.TEST).forEach { appEnv ->
+            val backend =
+                resolveDesktopPairingBackend(
+                    appEnv = appEnv,
+                    developmentV3InteropEnabled = false,
+                    libcryptoResolution = LibCryptoResolution.Environment,
+                    loadPakeProvider = forbiddenLoader,
+                )
+
+            assertEquals(2, backend.capabilityFlag.advertisedPairingVersion)
+            assertSame(UnavailablePakeProvider, backend.pakeProvider)
+        }
+    }
+
+    @Test
+    fun bundledResolutionResolvesPerPlatformUnderTheJvmLibDirectory() {
         val appPathProvider =
             mockk<AppPathProvider> {
                 every { pasteAppExePath } returns "/opt/crosspaste/runtime/lib".toPath()
@@ -148,25 +165,26 @@ class DesktopPairingCapabilityTest {
             Platform(Platform.WINDOWS, "x86_64", 64, "11") to "libcrypto-3-x64.dll",
             Platform(Platform.LINUX, "x86_64", 64, "6") to "libcrypto.so.3",
         ).forEach { (platform, libName) ->
-            assertEquals(
-                "/opt/crosspaste/runtime/lib/$libName",
-                bundledLibcryptoPath(AppEnv.PRODUCTION, platform, appPathProvider),
-            )
-            assertEquals(
-                "/opt/crosspaste/runtime/lib/$libName",
-                bundledLibcryptoPath(AppEnv.BETA, platform, appPathProvider),
-            )
+            listOf(AppEnv.PRODUCTION, AppEnv.BETA).forEach { appEnv ->
+                assertEquals(
+                    LibCryptoResolution.Bundled("/opt/crosspaste/runtime/lib/$libName"),
+                    desktopLibcryptoResolution(appEnv, platform, appPathProvider),
+                )
+            }
         }
     }
 
     @Test
-    fun developmentAndTestBuildsHaveNoBundledLibcryptoPath() {
+    fun developmentAndTestBuildsResolveFromTheEnvironment() {
         // Unstubbed mock: resolving any path in DEVELOPMENT/TEST would throw.
         val untouchedPathProvider = mockk<AppPathProvider>()
         val platform = Platform(Platform.MACOS, "aarch64", 64, "15")
 
         listOf(AppEnv.DEVELOPMENT, AppEnv.TEST).forEach { appEnv ->
-            assertNull(bundledLibcryptoPath(appEnv, platform, untouchedPathProvider))
+            assertEquals(
+                LibCryptoResolution.Environment,
+                desktopLibcryptoResolution(appEnv, platform, untouchedPathProvider),
+            )
         }
     }
 }
