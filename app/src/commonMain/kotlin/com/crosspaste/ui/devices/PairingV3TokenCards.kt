@@ -31,9 +31,14 @@ fun PairingV3AcceptanceWindowEffect(controller: PairingV3UiController = koinInje
     // is renewed well before expiry; otherwise incoming intents would be silently
     // refused after the window lapsed while the screen was still on screen.
     LaunchedEffect(controller) {
+        // First arm is a genuine local gesture (screen entered): it resets the
+        // proof-failure budget and clears any lock. Subsequent arms only renew the
+        // window; renewing must NOT reset the budget, or keeping this screen open
+        // would let an attacker's guess budget refill every half-window.
+        controller.openAcceptanceWindow()
         while (true) {
-            controller.openAcceptanceWindow()
             delay(PairingAcceptanceWindow.DEFAULT_WINDOW_DURATION / 2)
+            controller.renewAcceptanceWindow()
         }
     }
     DisposableEffect(controller) {

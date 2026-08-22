@@ -7,6 +7,7 @@ import com.crosspaste.pairing.v3.PairingSessionUiState
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3RefreshResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
+import com.crosspaste.pairing.v3.WindowOpenSource
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.sync.V3Pin
 import com.crosspaste.utils.HostAndPort
@@ -24,7 +25,13 @@ interface PairingV3UiController {
 
     val acceptanceOpenUntil: StateFlow<Long>
 
+    /** A local user gesture entering the Add Device screen: opens the window and
+     *  resets the proof-failure budget / clears any lock. */
     fun openAcceptanceWindow()
+
+    /** Renews an already-open window (the on-screen keep-alive loop) WITHOUT resetting
+     *  the failure budget, so keeping the screen open cannot refill a guess budget. */
+    fun renewAcceptanceWindow()
 
     fun closeAcceptanceWindow()
 
@@ -104,7 +111,11 @@ class DefaultPairingV3UiController(
         pairingProtocolV3Service.acceptanceWindow.openUntil
 
     override fun openAcceptanceWindow() {
-        pairingProtocolV3Service.acceptanceWindow.open()
+        pairingProtocolV3Service.acceptanceWindow.open(WindowOpenSource.LOCAL)
+    }
+
+    override fun renewAcceptanceWindow() {
+        pairingProtocolV3Service.acceptanceWindow.extend()
     }
 
     override fun closeAcceptanceWindow() {

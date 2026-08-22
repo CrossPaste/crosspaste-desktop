@@ -22,6 +22,7 @@ import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingProtocolV3Service
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
+import com.crosspaste.pairing.v3.WindowOpenSource
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
@@ -125,7 +126,7 @@ open class DefaultServerModule(
                     ::releasePendingKeyExchange,
                     pairingVersionCoordinator,
                     pairingProtocolV3Service::hasActiveSession,
-                    pairingProtocolV3Service.acceptanceWindow::open,
+                    { pairingProtocolV3Service.acceptanceWindow.open(WindowOpenSource.REMOTE) },
                 )
                 pairingV3Routing(
                     pairingProtocolV3Service,

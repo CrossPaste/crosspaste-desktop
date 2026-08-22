@@ -57,7 +57,9 @@ fun Routing.syncRouting(
     // No-downgrade rule (pairing v3 design §17.2): while a v3 pairing session is
     // active for a peer, that peer must not be able to fall back to v2 trust.
     hasActivePairingV3Session: (String) -> Boolean = { false },
-    openPairingV3AcceptanceWindow: () -> Unit = {},
+    // Returns false when the acceptance window is locked (its proof-failure budget is
+    // spent) — a remote request cannot re-open it; a local Add Device gesture must.
+    openPairingV3AcceptanceWindow: () -> Boolean = { true },
     controlChallengeStore: ControlChallengeStore = ControlChallengeStore(),
 ) {
     val logger = KotlinLogging.logger {}
@@ -216,8 +218,12 @@ fun Routing.syncRouting(
             failResponse(call, StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_DISABLED.toErrorCode())
             return@get
         }
+        if (!openPairingV3AcceptanceWindow()) {
+            logger.info { "show pairing code rejected (window locked) from $host" }
+            failResponse(call, StandardErrorCode.REMOTE_SHOW_PAIRING_CODE_LOCKED.toErrorCode())
+            return@get
+        }
         appTokenApi.showPairingCode()
-        openPairingV3AcceptanceWindow()
         logger.info { "show pairing code requested from $host" }
         successResponse(call)
     }

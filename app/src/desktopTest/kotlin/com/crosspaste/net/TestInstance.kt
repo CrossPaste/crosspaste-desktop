@@ -46,6 +46,7 @@ class TestInstance(
     pairingRateLimiter: PairingRateLimiter = PairingRateLimiter(),
     pakeProvider: PakeProvider = TestPakeProvider(),
     pairingV3Enabled: Boolean = true,
+    acceptanceWindowMaxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
 ) {
     companion object {
         val platform: Platform = getPlatformUtils().platform
@@ -90,7 +91,7 @@ class TestInstance(
 
     val pairingSessionStore = PairingSessionStore()
 
-    val pairingAcceptanceWindow = PairingAcceptanceWindow()
+    val pairingAcceptanceWindow = PairingAcceptanceWindow(maxProofFailures = acceptanceWindowMaxProofFailures)
 
     val pairingReceiptCache = PairingReceiptCache()
 

@@ -1297,8 +1297,21 @@ class PairingProtocolV3Service(
         initiatorRuntimes.remove(sessionId)
     }
 
+    // The single funnel for every acceptor-side proof rejection — a wrong PIN, a
+    // transcript/confirmation/identity mismatch, AND a PakeException from
+    // deriveSharedSecret (an attacker's identity-element share for a guessed PIN
+    // surfaces here, not as a distinguishable later failure). Every one of them must
+    // therefore spend the same budgets: the per-generation attempt cap (via
+    // recordProofFailure) AND the window-wide cumulative failure budget, so an
+    // attacker cannot use the identity-element path as a second, unbudgeted guess.
     private suspend fun proofFailure(sessionId: String): PairingV3ServerResult.Refused {
         sessionStore.recordProofFailure(sessionId)
+        if (acceptanceWindow.recordProofFailure()) {
+            logger.warn {
+                "pairing v3 acceptance window locked after ${PairingV3.MAX_ACCEPTOR_PROOF_FAILURES} " +
+                    "proof failures; a local Add Device gesture is required to resume"
+            }
+        }
         // The failed proof invalidated the generation; rotate a fresh PIN right away
         // instead of leaving the session unusable until the scheduled wake-up.
         acceptorRuntimes[sessionId]?.rotationNudge?.trySend(Unit)
