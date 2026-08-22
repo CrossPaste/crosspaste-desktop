@@ -58,7 +58,10 @@ fun Routing.pairingV3Routing(
             logger.info { "pairing v3 intent timing: payload decoded elapsed=${arrivedAt.elapsedNow()}" }
             pairingVersionCoordinator.withPeerLock(appInstanceId) {
                 logger.info { "pairing v3 intent timing: peer lock acquired elapsed=${arrivedAt.elapsedNow()}" }
-                val remoteAddress = runCatching { call.request.origin.remoteHost }.getOrNull()
+                // origin.remoteAddress, NOT origin.remoteHost: remoteHost triggers a
+                // reverse DNS lookup that stalls ~3.5s on LANs without PTR records,
+                // blowing the initiator's 3s request timeout (#4868).
+                val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
                 when (val result = pairingProtocolV3Service.handleIntent(intent, appInstanceId, remoteAddress)) {
                     is PairingV3ServerResult.Ok -> {
                         // The v3 takeover consumes the peer's v2 pending exchange;
@@ -86,7 +89,8 @@ fun Routing.pairingV3Routing(
                         )
                         return@let
                     }
-            val remoteAddress = runCatching { call.request.origin.remoteHost }.getOrNull()
+            // remoteAddress, not remoteHost — see the intent route (#4868).
+            val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
             when (val result = pairingProtocolV3Service.handleProof(proof, appInstanceId, remoteAddress)) {
                 is PairingV3ServerResult.Ok -> successResponse(call, result.value)
                 is PairingV3ServerResult.Refused ->
@@ -108,7 +112,8 @@ fun Routing.pairingV3Routing(
                     }
             when (val result = pairingProtocolV3Service.handleCommit(commit, appInstanceId)) {
                 is PairingV3ServerResult.Ok -> {
-                    val host = runCatching { call.request.origin.remoteHost }.getOrNull()
+                    // remoteAddress, not remoteHost — see the intent route (#4868).
+                    val host = runCatching { call.request.origin.remoteAddress }.getOrNull()
                     logger.info { "pairing v3 commit accepted, trusting $appInstanceId" }
                     // Non-discoverable initiators (browser extension) self-register via
                     // the crosspaste-sync-info header, mirroring the v2 confirm route;
