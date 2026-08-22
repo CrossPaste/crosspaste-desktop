@@ -6,6 +6,7 @@ import com.sun.jna.Native
 import com.sun.jna.NativeLibrary
 import com.sun.jna.Platform
 import com.sun.jna.Pointer
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
  * JVM [PakeEcOps] backed by OpenSSL 3 libcrypto's low-level P-256 ops via JNA.
@@ -27,9 +28,11 @@ import com.sun.jna.Pointer
  * JVM `BigInteger` copies the BouncyCastle backend left behind for the GC.
  *
  * libcrypto is resolved from the `crosspaste.libcrypto.path` system property
- * or `CROSSPASTE_LIBCRYPTO_PATH` environment variable first, then from
- * per-platform well-known library names. [load] fails fast with a
- * [PakeException] when no candidate can be loaded.
+ * or `CROSSPASTE_LIBCRYPTO_PATH` environment variable first. Without an
+ * override, bundled builds (a non-null `bundledLibraryPath` passed to [load])
+ * resolve ONLY the libcrypto shipped inside the application package, while
+ * development/test builds fall back to per-platform well-known library names.
+ * [load] fails fast with a [PakeException] when no candidate can be loaded.
  */
 class OpenSslPakeEcOps private constructor(
     private val lib: LibCrypto,
@@ -309,19 +312,36 @@ class OpenSslPakeEcOps private constructor(
                 "BN_priv_rand_range",
             )
 
-        // A failed lazy initializer is not cached, so load() retries after e.g.
-        // the user installs OpenSSL or sets the override.
-        private val instance: OpenSslPakeEcOps by lazy { OpenSslPakeEcOps(loadLibCrypto()) }
+        private val logger = KotlinLogging.logger {}
+
+        private val lock = Any()
+
+        // A failed load is not cached, so load() retries after e.g. the user
+        // installs OpenSSL or sets the override. The first successful load pins
+        // the process-wide instance; later calls return it regardless of their
+        // bundledLibraryPath (each real process only ever uses one policy).
+        private var instance: OpenSslPakeEcOps? = null
 
         /**
          * Returns the process-wide ops instance (libcrypto loaded once), throwing
          * [PakeException] when no library candidate provides the full symbol set.
+         *
+         * [bundledLibraryPath] is the absolute path of the libcrypto shipped
+         * inside the application package. Passing it (production/beta builds)
+         * restricts resolution to explicit override → bundled library, with no
+         * fallback to system paths; null (development/test) keeps the
+         * environment's well-known candidates.
          */
-        fun load(): OpenSslPakeEcOps = instance
+        fun load(bundledLibraryPath: String? = null): OpenSslPakeEcOps =
+            synchronized(lock) {
+                instance
+                    ?: OpenSslPakeEcOps(loadLibCrypto(bundledLibraryPath)).also { instance = it }
+            }
 
-        private fun loadLibCrypto(): LibCrypto {
+        internal fun loadLibCrypto(bundledLibraryPath: String?): LibCrypto {
+            val candidates = libraryCandidates(bundledLibraryPath)
             val failures = mutableListOf<String>()
-            for (candidate in libraryCandidates()) {
+            for (candidate in candidates) {
                 try {
                     // Reject libraries missing any required symbol up front (e.g.
                     // Apple's system LibreSSL lacks parts of the OpenSSL 1.1.1+
@@ -329,25 +349,38 @@ class OpenSslPakeEcOps private constructor(
                     // of an UnsatisfiedLinkError in the middle of an operation.
                     val library = NativeLibrary.getInstance(candidate)
                     REQUIRED_SYMBOLS.forEach(library::getFunction)
+                    // Startup diagnostic for release verification: confirms the
+                    // bundled library (not a system one) is what actually loaded.
+                    logger.info { "pairing v3 libcrypto loaded from ${library.file?.absolutePath ?: candidate}" }
                     return Native.load(candidate, LibCrypto::class.java)
                 } catch (ignored: UnsatisfiedLinkError) {
                     failures += candidate
                 }
             }
-            throw PakeException(
-                "OpenSSL 3 libcrypto not found; tried ${failures.joinToString()}. " +
+            val remedy =
+                if (candidates == listOf(bundledLibraryPath)) {
+                    "The bundled libcrypto is missing or unloadable; reinstalling the application should restore it, " +
+                        "or point crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH at a reviewed libcrypto."
+                } else {
                     "Install OpenSSL 3 (e.g. brew install openssl@3) or point " +
-                    "crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH at a libcrypto with the full symbol set.",
-            )
+                        "crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH at a libcrypto with the full symbol set."
+                }
+            throw PakeException("OpenSSL 3 libcrypto not found; tried ${failures.joinToString()}. $remedy")
         }
 
-        private fun libraryCandidates(): List<String> {
+        internal fun libraryCandidates(bundledLibraryPath: String?): List<String> {
             val override =
                 System.getProperty("crosspaste.libcrypto.path")
                     ?: System.getenv("CROSSPASTE_LIBCRYPTO_PATH")
             if (override != null) {
                 return listOf(override)
             }
+            // Bundled builds resolve ONLY the packaged library: falling back to
+            // an unreviewed system libcrypto would silently void the
+            // constant-time premise this backend is reviewed under, so a
+            // missing bundled library fails closed (pairing v3 unavailable,
+            // v2 unaffected) instead.
+            bundledLibraryPath?.let { return listOf(it) }
             return when {
                 Platform.isMac() ->
                     listOf(
