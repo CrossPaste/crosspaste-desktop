@@ -1,5 +1,6 @@
 package com.crosspaste.pairing.v3
 
+import org.junit.Assume.assumeTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -11,8 +12,8 @@ import kotlin.test.assertTrue
  * [OpenSslPakeEcOps.load]: bundled builds must resolve only the packaged
  * library (no silent fallback to an unreviewed system libcrypto), while
  * development/test environments keep the well-known candidates. Tests that
- * depend on the absence of an override skip themselves when the ambient
- * environment sets CROSSPASTE_LIBCRYPTO_PATH.
+ * depend on the absence of an override report themselves as skipped (visibly,
+ * via JUnit assumptions) when the ambient environment sets one.
  */
 class OpenSslLibraryResolutionTest {
 
@@ -20,11 +21,17 @@ class OpenSslLibraryResolutionTest {
 
     private val bundledPath = "/opt/crosspaste/runtime/lib/libcrypto.so.3"
 
-    private fun hasEnvOverride(): Boolean = System.getenv("CROSSPASTE_LIBCRYPTO_PATH") != null
+    private fun assumeNoAmbientOverride() {
+        assumeTrue(
+            "ambient libcrypto override set; candidate-order assertions do not apply",
+            System.getProperty(overrideProperty) == null &&
+                System.getenv("CROSSPASTE_LIBCRYPTO_PATH") == null,
+        )
+    }
 
     @Test
     fun bundledPathIsTheOnlyCandidate() {
-        if (hasEnvOverride()) return
+        assumeNoAmbientOverride()
         assertEquals(
             listOf(bundledPath),
             OpenSslPakeEcOps.libraryCandidates(bundledPath),
@@ -46,7 +53,7 @@ class OpenSslLibraryResolutionTest {
 
     @Test
     fun environmentCandidatesApplyOnlyWithoutABundledPath() {
-        if (hasEnvOverride()) return
+        assumeNoAmbientOverride()
         val candidates = OpenSslPakeEcOps.libraryCandidates(null)
         // Every platform probes more than one well-known location in
         // development/test; none of them is an application-bundled path.
@@ -55,7 +62,7 @@ class OpenSslLibraryResolutionTest {
 
     @Test
     fun missingBundledLibraryFailsClosedWithoutSystemFallback() {
-        if (hasEnvOverride()) return
+        assumeNoAmbientOverride()
         val missing = "/nonexistent/crosspaste/libcrypto.so.3"
         val exception =
             assertFailsWith<PakeException> {

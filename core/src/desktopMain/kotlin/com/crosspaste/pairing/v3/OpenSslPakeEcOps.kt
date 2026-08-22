@@ -357,8 +357,11 @@ class OpenSslPakeEcOps private constructor(
                     failures += candidate
                 }
             }
+            // Keyed on the build flavor, not on which candidate list was tried:
+            // even when an explicit override fails, a bundled build must never
+            // steer users toward installing a system OpenSSL it won't load.
             val remedy =
-                if (candidates == listOf(bundledLibraryPath)) {
+                if (bundledLibraryPath != null) {
                     "The bundled libcrypto is missing or unloadable; reinstalling the application should restore it, " +
                         "or point crosspaste.libcrypto.path / CROSSPASTE_LIBCRYPTO_PATH at a reviewed libcrypto."
                 } else {
