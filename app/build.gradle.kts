@@ -9,8 +9,6 @@ import org.yaml.snakeyaml.constructor.Constructor
 import java.io.FileReader
 import java.security.MessageDigest
 import java.util.Properties
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 val versionProperties = Properties()
 versionProperties.load(
@@ -695,17 +693,16 @@ data class JbrDetails(
     var sha512: String = "",
 )
 
-// Downloads the pinned libcrypto binaries (openssl.yaml) and wraps each into a
-// thin jar whose only entry is the library under its runtime file name.
-// conveyor.conf feeds these jars to Conveyor as per-machine inputs, so its
-// extract-native-libraries step lands the library in the JVM lib directory
-// (= skiko.library.path) and signs it — the same pipeline as the skiko and
-// tesseract platform jars. Packaging-only: dev/test resolve libcrypto from the
-// environment and never run this task. The checksum chain ends at the
-// downloaded library file; the jar step is a local lossless copy.
+// Downloads the pinned libcrypto binaries (openssl.yaml) and stages each at
+// openssl/<target>/<runtime lib name>. conveyor.conf adds those files as bare
+// per-machine inputs; Conveyor moves shared libraries from inputs into the JVM
+// lib directory (= skiko.library.path) and signs them — the same directory the
+// skiko/tesseract natives land in. Packaging-only: dev/test resolve libcrypto
+// from the environment and never run this task. The checksum chain ends at the
+// downloaded file; the staging step is a local lossless copy.
 tasks.register("prepareOpenSslLibs") {
     group = "build"
-    description = "Download pinned libcrypto binaries and wrap them into per-platform jars for Conveyor bundling."
+    description = "Download pinned libcrypto binaries and stage them per platform for Conveyor bundling."
 
     val openSslYamlFile = project.projectDir.resolve("openssl.yaml")
     val openSslDir = project.projectDir.resolve("openssl")
@@ -731,16 +728,15 @@ tasks.register("prepareOpenSslLibs") {
                 allTargets.filterKeys(names::contains)
             } ?: allTargets
         openSslDir.mkdirs()
-        // Drop leftovers from earlier versions (stale files keyed by the full
+        // Drop leftovers from earlier versions (stale entries keyed by the full
         // target set, so a filtered run never deletes other targets' files).
-        val expectedFiles =
-            allTargets
-                .flatMap { (target, details) ->
-                    listOf(details.url.substringAfterLast("/"), "crosspaste-libcrypto-$target.jar")
-                }.toSet()
-        openSslDir.listFiles()?.forEach { file ->
-            if (file.isFile && file.name !in expectedFiles) {
-                file.delete()
+        val expectedDownloads = allTargets.map { (_, details) -> details.url.substringAfterLast("/") }.toSet()
+        openSslDir.listFiles()?.forEach { entry ->
+            if (entry.isFile && entry.name !in expectedDownloads) {
+                entry.delete()
+            }
+            if (entry.isDirectory && entry.name !in allTargets) {
+                entry.deleteRecursively()
             }
         }
         selectedTargets.forEach { (target, details) ->
@@ -759,12 +755,14 @@ tasks.register("prepareOpenSslLibs") {
                     "SHA-256 mismatch for ${libFile.name}: expected ${details.sha256}, got $actualSha256",
                 )
             }
-            val jarFile = openSslDir.resolve("crosspaste-libcrypto-$target.jar")
-            ZipOutputStream(jarFile.outputStream().buffered()).use { zip ->
-                zip.putNextEntry(ZipEntry(details.libName))
-                libFile.inputStream().use { it.copyTo(zip) }
-                zip.closeEntry()
+            val targetDir = openSslDir.resolve(target)
+            targetDir.mkdirs()
+            targetDir.listFiles()?.forEach { staged ->
+                if (staged.name != details.libName) {
+                    staged.delete()
+                }
             }
+            libFile.copyTo(targetDir.resolve(details.libName), overwrite = true)
         }
     }
 }

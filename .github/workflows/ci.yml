@@ -20,6 +20,7 @@ jobs:
       app: ${{ steps.filter.outputs.app }}
       cli: ${{ steps.filter.outputs.cli }}
       web: ${{ steps.filter.outputs.web }}
+      openssl: ${{ steps.filter.outputs.openssl }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -59,6 +60,13 @@ jobs:
               - 'settings.gradle.kts'
               - 'build.gradle.kts'
               - 'gradle.properties'
+              - '.github/workflows/ci.yml'
+            # Bundled libcrypto pin: verify the download chain on the PR
+            # instead of discovering a bad URL/SHA at release packaging time.
+            openssl:
+              - 'app/openssl.yaml'
+              - 'conveyor.conf'
+              - 'app/build.gradle.kts'
               - '.github/workflows/ci.yml'
 
   app-build:
@@ -206,8 +214,43 @@ jobs:
         working-directory: web
         run: npm test
 
+  # Verifies the pinned libcrypto download chain (URL reachable, SHA-256
+  # matching, staged paths lining up with conveyor.conf) whenever the pin or
+  # packaging config changes, so a bad pin fails on the PR instead of at
+  # release packaging time. No package is built here.
+  openssl-verify:
+    needs: changes
+    if: needs.changes.outputs.openssl == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          check-latest: true
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Download and verify pinned libcrypto binaries
+        run: ./gradlew app:prepareOpenSslLibs
+
+      - name: Check staged files match conveyor.conf inputs
+        run: |
+          missing=0
+          for path in $(grep -o '"app/openssl/[^"]*"' conveyor.conf | tr -d '"'); do
+            if [ ! -f "$path" ]; then
+              echo "conveyor.conf references missing file: $path"
+              missing=1
+            fi
+          done
+          exit $missing
+
   ci:
-    needs: [app-build, cli-build, web-build]
+    needs: [app-build, cli-build, web-build, openssl-verify]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -217,10 +260,12 @@ jobs:
           app_result="${{ needs.app-build.result }}"
           cli_result="${{ needs.cli-build.result }}"
           web_result="${{ needs.web-build.result }}"
+          openssl_result="${{ needs.openssl-verify.result }}"
           echo "app-build: $app_result"
           echo "cli-build: $cli_result"
           echo "web-build: $web_result"
-          for result in "$app_result" "$cli_result" "$web_result"; do
+          echo "openssl-verify: $openssl_result"
+          for result in "$app_result" "$cli_result" "$web_result" "$openssl_result"; do
             if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
               echo "CI failed"
               exit 1
