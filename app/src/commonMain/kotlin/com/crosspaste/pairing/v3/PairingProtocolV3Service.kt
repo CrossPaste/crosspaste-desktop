@@ -24,6 +24,7 @@ import dev.whyoleg.cryptography.random.CryptographyRandom
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.URLBuilder
 import io.ktor.util.collections.ConcurrentMap
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -67,6 +68,7 @@ class PairingProtocolV3Service(
     private val pinLifetime: Duration = PairingV3.DEFAULT_PIN_LIFETIME,
     private val generationGrace: Duration = PairingV3.DEFAULT_GENERATION_GRACE,
     private val sessionTtl: Duration = PairingV3.DEFAULT_SESSION_TTL,
+    private val telemetryObserver: PairingV3TelemetryObserver = PairingV3TelemetryObserver.NOOP,
     private val scope: CoroutineScope = namedScope(ioDispatcher, "PairingProtocolV3Service"),
     private val nowEpochMillis: () -> Long = { DateUtils.nowEpochMilliseconds() },
 ) {
@@ -116,6 +118,14 @@ class PairingProtocolV3Service(
     // region Acceptor role
 
     suspend fun handleIntent(
+        intent: PairingIntentV3,
+        callerAppInstanceId: String,
+        remoteAddress: String?,
+    ): PairingV3ServerResult<PairingOfferV3> =
+        doHandleIntent(intent, callerAppInstanceId, remoteAddress)
+            .also { result -> record(PairingV3TelemetryStage.INTENT, result) }
+
+    private suspend fun doHandleIntent(
         intent: PairingIntentV3,
         callerAppInstanceId: String,
         remoteAddress: String?,
@@ -303,6 +313,14 @@ class PairingProtocolV3Service(
         proof: PairingProofV3,
         callerAppInstanceId: String,
         remoteAddress: String?,
+    ): PairingV3ServerResult<PairingProofResponseV3> =
+        doHandleProof(proof, callerAppInstanceId, remoteAddress)
+            .also { result -> record(PairingV3TelemetryStage.PROOF, result) }
+
+    private suspend fun doHandleProof(
+        proof: PairingProofV3,
+        callerAppInstanceId: String,
+        remoteAddress: String?,
     ): PairingV3ServerResult<PairingProofResponseV3> {
         validateProofShape(proof)?.let { code -> return PairingV3ServerResult.Refused(code) }
         val sessionId = toHex(proof.sessionId)
@@ -434,6 +452,13 @@ class PairingProtocolV3Service(
     }
 
     suspend fun handleCommit(
+        commit: PairingCommitV3,
+        callerAppInstanceId: String,
+    ): PairingV3ServerResult<PairingCommitAckV3> =
+        doHandleCommit(commit, callerAppInstanceId)
+            .also { result -> record(PairingV3TelemetryStage.COMMIT, result) }
+
+    private suspend fun doHandleCommit(
         commit: PairingCommitV3,
         callerAppInstanceId: String,
     ): PairingV3ServerResult<PairingCommitAckV3> {
@@ -585,20 +610,30 @@ class PairingProtocolV3Service(
         val session = sessionStore.get(sessionId)
         // Advisory and idempotent: only the exact session of the calling peer is affected.
         if (session != null && session.peerAppInstanceId == callerAppInstanceId && session.isActive) {
-            sessionStore.cancel(sessionId)
-            cleanupRuntime(sessionId)
-            logger.info { "pairing v3 session cancelled by peer session=${shortId(sessionId)}" }
+            // Gate on the atomic transition, not the racy read above: the session
+            // may reach a terminal state (commit/reject/expiry) in between, and
+            // those paths already cleaned up and reported their own outcome.
+            val cancelled = sessionStore.cancel(sessionId)
+            if (cancelled is PairingSessionTransitionResult.Success) {
+                cleanupRuntime(sessionId)
+                logger.info { "pairing v3 session cancelled by peer session=${shortId(sessionId)}" }
+                emit(
+                    telemetryRole(cancelled.session.role),
+                    PairingV3TelemetryStage.CANCEL,
+                    PairingV3ErrorCode.PAIRING_CANCELLED,
+                )
+            }
         }
         return PairingV3ServerResult.Ok(Unit)
     }
 
     /** Local reject wins any active session that has not entered serialized trust finalization. */
     suspend fun rejectSession(sessionId: String): Boolean {
-        val rejected = sessionStore.reject(sessionId) is PairingSessionTransitionResult.Success
-        if (rejected) {
-            cleanupRuntime(sessionId)
-        }
-        return rejected
+        val result = sessionStore.reject(sessionId)
+        if (result !is PairingSessionTransitionResult.Success) return false
+        cleanupRuntime(sessionId)
+        emit(telemetryRole(result.session.role), PairingV3TelemetryStage.REJECTED, PairingV3ErrorCode.PAIRING_REJECTED)
+        return true
     }
 
     /** Removes a terminal session card (UI dismiss). */
@@ -609,6 +644,14 @@ class PairingProtocolV3Service(
     // region Initiator role
 
     suspend fun startPairing(
+        targetAppInstanceId: String,
+        targetDisplayName: String,
+        toUrl: URLBuilder.() -> Unit,
+    ): PairingV3StartResult =
+        doStartPairing(targetAppInstanceId, targetDisplayName, toUrl)
+            .also { result -> record(PairingV3TelemetryStage.START, result) }
+
+    private suspend fun doStartPairing(
         targetAppInstanceId: String,
         targetDisplayName: String,
         toUrl: URLBuilder.() -> Unit,
@@ -713,6 +756,14 @@ class PairingProtocolV3Service(
      * acceptor's proof, and commits. The caller keeps ownership of [pin] clearing.
      */
     suspend fun submitPin(
+        sessionId: String,
+        pin: CharArray,
+        toUrl: URLBuilder.() -> Unit,
+    ): PairingV3PinResult =
+        doSubmitPin(sessionId, pin, toUrl)
+            .also { result -> record(PairingV3TelemetryStage.PIN, result) }
+
+    private suspend fun doSubmitPin(
         sessionId: String,
         pin: CharArray,
         toUrl: URLBuilder.() -> Unit,
@@ -877,7 +928,9 @@ class PairingProtocolV3Service(
     suspend fun retryCommit(
         sessionId: String,
         toUrl: URLBuilder.() -> Unit,
-    ): PairingV3PinResult = performCommit(sessionId, toUrl)
+    ): PairingV3PinResult =
+        performCommit(sessionId, toUrl)
+            .also { result -> record(PairingV3TelemetryStage.RETRY_COMMIT, result) }
 
     private suspend fun performCommit(
         sessionId: String,
@@ -990,6 +1043,13 @@ class PairingProtocolV3Service(
     suspend fun refreshOffer(
         sessionId: String,
         toUrl: URLBuilder.() -> Unit,
+    ): PairingV3RefreshResult =
+        doRefreshOffer(sessionId, toUrl)
+            .also { result -> record(PairingV3TelemetryStage.REFRESH, result) }
+
+    private suspend fun doRefreshOffer(
+        sessionId: String,
+        toUrl: URLBuilder.() -> Unit,
     ): PairingV3RefreshResult {
         val runtime =
             initiatorRuntimes[sessionId]
@@ -1082,6 +1142,9 @@ class PairingProtocolV3Service(
                     pairingV3ClientApi.sendCancel(PairingCancelV3(session.sessionIdBytes), toUrl)
                 }
             }
+            // Telemetry last: protocol cleanup and the peer notification must
+            // not depend on the observer.
+            emit(telemetryRole(session.role), PairingV3TelemetryStage.CANCEL, PairingV3ErrorCode.PAIRING_CANCELLED)
         }
         return cancelled
     }
@@ -1283,6 +1346,11 @@ class PairingProtocolV3Service(
             delay(MAINTENANCE_INTERVAL)
             sessionStore.expireDueSessions().forEach { expired ->
                 cleanupRuntime(expired.sessionId)
+                emit(
+                    telemetryRole(expired.role),
+                    PairingV3TelemetryStage.EXPIRED,
+                    PairingV3ErrorCode.PAIRING_SESSION_EXPIRED,
+                )
             }
             sessionStore.pruneTerminal(TERMINAL_RETENTION.inWholeMilliseconds)
             if (sessionStore.uiSessionsFlow.value.isEmpty()) {
@@ -1526,6 +1594,87 @@ class PairingProtocolV3Service(
         bytes.joinToString("") { byte -> (byte.toInt() and 0xFF).toString(16).padStart(2, '0') }
 
     private fun shortId(sessionId: String): String = sessionId.take(8)
+
+    // endregion
+
+    // region telemetry
+
+    // Exhaustive `when` mappings: adding a subtype to any of these sealed
+    // results must force this file to say how it is reported.
+
+    private fun record(
+        stage: PairingV3TelemetryStage,
+        result: PairingV3ServerResult<*>,
+    ) = when (result) {
+        is PairingV3ServerResult.Ok -> emit(PairingV3TelemetryRole.ACCEPTOR, stage, code = null)
+        is PairingV3ServerResult.Refused -> emit(PairingV3TelemetryRole.ACCEPTOR, stage, result.code)
+    }
+
+    private fun record(
+        stage: PairingV3TelemetryStage,
+        result: PairingV3StartResult,
+    ) = when (result) {
+        is PairingV3StartResult.Started -> emit(PairingV3TelemetryRole.INITIATOR, stage, code = null)
+        is PairingV3StartResult.Refused -> emit(PairingV3TelemetryRole.INITIATOR, stage, result.code)
+        is PairingV3StartResult.NetworkError ->
+            emit(PairingV3TelemetryRole.INITIATOR, stage, code = null, transportFailure = true)
+    }
+
+    private fun record(
+        stage: PairingV3TelemetryStage,
+        result: PairingV3PinResult,
+    ) = when (result) {
+        is PairingV3PinResult.Paired -> emit(PairingV3TelemetryRole.INITIATOR, stage, code = null)
+        is PairingV3PinResult.Refused -> emit(PairingV3TelemetryRole.INITIATOR, stage, result.code)
+        is PairingV3PinResult.NetworkError ->
+            emit(PairingV3TelemetryRole.INITIATOR, stage, code = null, transportFailure = true)
+    }
+
+    private fun record(
+        stage: PairingV3TelemetryStage,
+        result: PairingV3RefreshResult,
+    ) = when (result) {
+        is PairingV3RefreshResult.Refreshed -> emit(PairingV3TelemetryRole.INITIATOR, stage, code = null)
+        is PairingV3RefreshResult.Refused -> emit(PairingV3TelemetryRole.INITIATOR, stage, result.code)
+        is PairingV3RefreshResult.NetworkError ->
+            emit(PairingV3TelemetryRole.INITIATOR, stage, code = null, transportFailure = true)
+    }
+
+    private fun telemetryRole(role: PakeRole): PairingV3TelemetryRole =
+        when (role) {
+            PakeRole.INITIATOR -> PairingV3TelemetryRole.INITIATOR
+            PakeRole.ACCEPTOR -> PairingV3TelemetryRole.ACCEPTOR
+        }
+
+    private val telemetryObserverFailureWarned = atomic(false)
+
+    private fun emit(
+        role: PairingV3TelemetryRole,
+        stage: PairingV3TelemetryStage,
+        code: PairingV3ErrorCode?,
+        transportFailure: Boolean = false,
+    ) {
+        // Telemetry must never affect the protocol: the observer is a plain
+        // synchronous callback, so anything it throws — including a
+        // CancellationException, which cannot represent a real cancellation of
+        // the caller here — is an observer bug, never a pairing failure.
+        runCatching {
+            telemetryObserver.onOutcome(
+                PairingV3TelemetryOutcome(role, stage, code, transportFailure),
+            )
+        }.onFailure { e ->
+            // Warn once so a broken observer cannot flood the log (e.g. via
+            // unauthenticated requests that generate outcomes).
+            if (telemetryObserverFailureWarned.compareAndSet(expect = false, update = true)) {
+                logger.warn(e) {
+                    "pairing v3 telemetry observer failed; outcome dropped " +
+                        "(further failures logged at debug)"
+                }
+            } else {
+                logger.debug(e) { "pairing v3 telemetry observer failed; outcome dropped" }
+            }
+        }
+    }
 
     // endregion
 
