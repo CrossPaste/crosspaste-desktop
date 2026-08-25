@@ -24,6 +24,7 @@ import dev.whyoleg.cryptography.random.CryptographyRandom
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.URLBuilder
 import io.ktor.util.collections.ConcurrentMap
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -601,13 +602,6 @@ class PairingProtocolV3Service(
     suspend fun handleCancel(
         cancel: PairingCancelV3,
         callerAppInstanceId: String,
-    ): PairingV3ServerResult<Unit> =
-        doHandleCancel(cancel, callerAppInstanceId)
-            .also { result -> record(PairingV3TelemetryStage.CANCEL, result) }
-
-    private suspend fun doHandleCancel(
-        cancel: PairingCancelV3,
-        callerAppInstanceId: String,
     ): PairingV3ServerResult<Unit> {
         if (cancel.sessionId.size != PairingV3.SESSION_ID_SIZE) {
             return PairingV3ServerResult.Refused(PairingV3ErrorCode.PAIRING_SESSION_NOT_FOUND)
@@ -616,20 +610,30 @@ class PairingProtocolV3Service(
         val session = sessionStore.get(sessionId)
         // Advisory and idempotent: only the exact session of the calling peer is affected.
         if (session != null && session.peerAppInstanceId == callerAppInstanceId && session.isActive) {
-            sessionStore.cancel(sessionId)
-            cleanupRuntime(sessionId)
-            logger.info { "pairing v3 session cancelled by peer session=${shortId(sessionId)}" }
+            // Gate on the atomic transition, not the racy read above: the session
+            // may reach a terminal state (commit/reject/expiry) in between, and
+            // those paths already cleaned up and reported their own outcome.
+            val cancelled = sessionStore.cancel(sessionId)
+            if (cancelled is PairingSessionTransitionResult.Success) {
+                cleanupRuntime(sessionId)
+                logger.info { "pairing v3 session cancelled by peer session=${shortId(sessionId)}" }
+                emit(
+                    telemetryRole(cancelled.session.role),
+                    PairingV3TelemetryStage.CANCEL,
+                    PairingV3ErrorCode.PAIRING_CANCELLED,
+                )
+            }
         }
         return PairingV3ServerResult.Ok(Unit)
     }
 
     /** Local reject wins any active session that has not entered serialized trust finalization. */
     suspend fun rejectSession(sessionId: String): Boolean {
-        val rejected = sessionStore.reject(sessionId) is PairingSessionTransitionResult.Success
-        if (rejected) {
-            cleanupRuntime(sessionId)
-        }
-        return rejected
+        val result = sessionStore.reject(sessionId)
+        if (result !is PairingSessionTransitionResult.Success) return false
+        cleanupRuntime(sessionId)
+        emit(telemetryRole(result.session.role), PairingV3TelemetryStage.REJECTED, PairingV3ErrorCode.PAIRING_REJECTED)
+        return true
     }
 
     /** Removes a terminal session card (UI dismiss). */
@@ -1138,6 +1142,9 @@ class PairingProtocolV3Service(
                     pairingV3ClientApi.sendCancel(PairingCancelV3(session.sessionIdBytes), toUrl)
                 }
             }
+            // Telemetry last: protocol cleanup and the peer notification must
+            // not depend on the observer.
+            emit(telemetryRole(session.role), PairingV3TelemetryStage.CANCEL, PairingV3ErrorCode.PAIRING_CANCELLED)
         }
         return cancelled
     }
@@ -1339,6 +1346,11 @@ class PairingProtocolV3Service(
             delay(MAINTENANCE_INTERVAL)
             sessionStore.expireDueSessions().forEach { expired ->
                 cleanupRuntime(expired.sessionId)
+                emit(
+                    telemetryRole(expired.role),
+                    PairingV3TelemetryStage.EXPIRED,
+                    PairingV3ErrorCode.PAIRING_SESSION_EXPIRED,
+                )
             }
             sessionStore.pruneTerminal(TERMINAL_RETENTION.inWholeMilliseconds)
             if (sessionStore.uiSessionsFlow.value.isEmpty()) {
@@ -1587,44 +1599,54 @@ class PairingProtocolV3Service(
 
     // region telemetry
 
+    // Exhaustive `when` mappings: adding a subtype to any of these sealed
+    // results must force this file to say how it is reported.
+
     private fun record(
         stage: PairingV3TelemetryStage,
         result: PairingV3ServerResult<*>,
-    ) = emit(
-        PairingV3TelemetryRole.ACCEPTOR,
-        stage,
-        (result as? PairingV3ServerResult.Refused)?.code,
-    )
+    ) = when (result) {
+        is PairingV3ServerResult.Ok -> emit(PairingV3TelemetryRole.ACCEPTOR, stage, code = null)
+        is PairingV3ServerResult.Refused -> emit(PairingV3TelemetryRole.ACCEPTOR, stage, result.code)
+    }
 
     private fun record(
         stage: PairingV3TelemetryStage,
         result: PairingV3StartResult,
-    ) = emit(
-        PairingV3TelemetryRole.INITIATOR,
-        stage,
-        (result as? PairingV3StartResult.Refused)?.code,
-        transportFailure = result is PairingV3StartResult.NetworkError,
-    )
+    ) = when (result) {
+        is PairingV3StartResult.Started -> emit(PairingV3TelemetryRole.INITIATOR, stage, code = null)
+        is PairingV3StartResult.Refused -> emit(PairingV3TelemetryRole.INITIATOR, stage, result.code)
+        is PairingV3StartResult.NetworkError ->
+            emit(PairingV3TelemetryRole.INITIATOR, stage, code = null, transportFailure = true)
+    }
 
     private fun record(
         stage: PairingV3TelemetryStage,
         result: PairingV3PinResult,
-    ) = emit(
-        PairingV3TelemetryRole.INITIATOR,
-        stage,
-        (result as? PairingV3PinResult.Refused)?.code,
-        transportFailure = result is PairingV3PinResult.NetworkError,
-    )
+    ) = when (result) {
+        is PairingV3PinResult.Paired -> emit(PairingV3TelemetryRole.INITIATOR, stage, code = null)
+        is PairingV3PinResult.Refused -> emit(PairingV3TelemetryRole.INITIATOR, stage, result.code)
+        is PairingV3PinResult.NetworkError ->
+            emit(PairingV3TelemetryRole.INITIATOR, stage, code = null, transportFailure = true)
+    }
 
     private fun record(
         stage: PairingV3TelemetryStage,
         result: PairingV3RefreshResult,
-    ) = emit(
-        PairingV3TelemetryRole.INITIATOR,
-        stage,
-        (result as? PairingV3RefreshResult.Refused)?.code,
-        transportFailure = result is PairingV3RefreshResult.NetworkError,
-    )
+    ) = when (result) {
+        is PairingV3RefreshResult.Refreshed -> emit(PairingV3TelemetryRole.INITIATOR, stage, code = null)
+        is PairingV3RefreshResult.Refused -> emit(PairingV3TelemetryRole.INITIATOR, stage, result.code)
+        is PairingV3RefreshResult.NetworkError ->
+            emit(PairingV3TelemetryRole.INITIATOR, stage, code = null, transportFailure = true)
+    }
+
+    private fun telemetryRole(role: PakeRole): PairingV3TelemetryRole =
+        when (role) {
+            PakeRole.INITIATOR -> PairingV3TelemetryRole.INITIATOR
+            PakeRole.ACCEPTOR -> PairingV3TelemetryRole.ACCEPTOR
+        }
+
+    private val telemetryObserverFailureWarned = atomic(false)
 
     private fun emit(
         role: PairingV3TelemetryRole,
@@ -1632,14 +1654,25 @@ class PairingProtocolV3Service(
         code: PairingV3ErrorCode?,
         transportFailure: Boolean = false,
     ) {
-        // Telemetry must never affect the protocol: a throwing observer is a
-        // bug in the observer, not a pairing failure.
+        // Telemetry must never affect the protocol: the observer is a plain
+        // synchronous callback, so anything it throws — including a
+        // CancellationException, which cannot represent a real cancellation of
+        // the caller here — is an observer bug, never a pairing failure.
         runCatching {
             telemetryObserver.onOutcome(
                 PairingV3TelemetryOutcome(role, stage, code, transportFailure),
             )
         }.onFailure { e ->
-            logger.warn(e) { "pairing v3 telemetry observer failed; outcome dropped" }
+            // Warn once so a broken observer cannot flood the log (e.g. via
+            // unauthenticated requests that generate outcomes).
+            if (telemetryObserverFailureWarned.compareAndSet(expect = false, update = true)) {
+                logger.warn(e) {
+                    "pairing v3 telemetry observer failed; outcome dropped " +
+                        "(further failures logged at debug)"
+                }
+            } else {
+                logger.debug(e) { "pairing v3 telemetry observer failed; outcome dropped" }
+            }
         }
     }
 

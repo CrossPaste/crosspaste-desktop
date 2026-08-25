@@ -44,6 +44,7 @@ class TestInstance(
     userName: String = appInstanceId,
     pairingPinLifetime: Duration = PairingV3.DEFAULT_PIN_LIFETIME,
     pairingGenerationGrace: Duration = PairingV3.DEFAULT_GENERATION_GRACE,
+    pairingSessionTtl: Duration = PairingV3.DEFAULT_SESSION_TTL,
     pairingRateLimiter: PairingRateLimiter = PairingRateLimiter(),
     pakeProvider: PakeProvider = TestPakeProvider(),
     pairingV3Enabled: Boolean = true,
@@ -115,6 +116,7 @@ class TestInstance(
             isPairingV3Enabled = { pairingV3Enabled },
             pinLifetime = pairingPinLifetime,
             generationGrace = pairingGenerationGrace,
+            sessionTtl = pairingSessionTtl,
             telemetryObserver = pairingTelemetryObserver,
         )
 

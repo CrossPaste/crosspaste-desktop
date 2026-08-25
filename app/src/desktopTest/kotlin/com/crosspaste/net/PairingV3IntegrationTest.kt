@@ -1,5 +1,6 @@
 package com.crosspaste.net
 
+import com.crosspaste.dto.pairing.v3.PairingCancelV3
 import com.crosspaste.dto.pairing.v3.PairingCommitAckV3
 import com.crosspaste.dto.pairing.v3.PairingCommitV3
 import com.crosspaste.dto.pairing.v3.PairingIntentV3
@@ -41,9 +42,11 @@ import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getJsonUtils
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -67,6 +70,7 @@ class PairingV3IntegrationTest {
         id: String,
         pinLifetime: kotlin.time.Duration = PairingV3.DEFAULT_PIN_LIFETIME,
         generationGrace: kotlin.time.Duration = PairingV3.DEFAULT_GENERATION_GRACE,
+        sessionTtl: kotlin.time.Duration = PairingV3.DEFAULT_SESSION_TTL,
         pairingRateLimiter: PairingRateLimiter = PairingRateLimiter(),
         pakeProvider: PakeProvider = TestPakeProvider(),
         pairingV3Enabled: Boolean = true,
@@ -77,6 +81,7 @@ class PairingV3IntegrationTest {
             appInstanceId = id,
             pairingPinLifetime = pinLifetime,
             pairingGenerationGrace = generationGrace,
+            pairingSessionTtl = sessionTtl,
             pairingRateLimiter = pairingRateLimiter,
             pakeProvider = pakeProvider,
             pairingV3Enabled = pairingV3Enabled,
@@ -489,8 +494,9 @@ class PairingV3IntegrationTest {
     @Test
     fun testTelemetryObserverReceivesRedactedOutcomesPerEntryPoint() =
         runBlocking {
-            val acceptorOutcomes = mutableListOf<PairingV3TelemetryOutcome>()
-            val initiatorOutcomes = mutableListOf<PairingV3TelemetryOutcome>()
+            // Outcomes arrive on server/client coroutines; keep the sinks thread-safe.
+            val acceptorOutcomes = CopyOnWriteArrayList<PairingV3TelemetryOutcome>()
+            val initiatorOutcomes = CopyOnWriteArrayList<PairingV3TelemetryOutcome>()
             val a = createInstance("telemetry-a", pairingTelemetryObserver = { acceptorOutcomes.add(it) })
             val b = createInstance("telemetry-b", pairingTelemetryObserver = { initiatorOutcomes.add(it) })
             a.start()
@@ -608,7 +614,143 @@ class PairingV3IntegrationTest {
             val started = startPairing(b, a)
             val pin = displayedPin(a, b.appInstanceId)
             val result = b.pairingProtocolV3Service.submitPin(started.sessionId, pin, urlFor(a))
+            // The trailing Unit-returning assertion matters: ending on assertIs
+            // makes the test method non-void and JUnit 5 silently skips it.
             assertIs<PairingV3PinResult.Paired>(result)
+            assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
+        }
+
+    @Test
+    fun testTelemetryObserverCancellationExceptionDoesNotAffectPairing() =
+        runBlocking {
+            // A CancellationException from the synchronous observer is an observer
+            // bug like any other: it must not replace a successful protocol result
+            // or leak into the caller's coroutine.
+            val observer =
+                PairingV3TelemetryObserver { throw CancellationException("observer bug") }
+            val a = createInstance("telemetry-ce-a", pairingTelemetryObserver = observer)
+            val b = createInstance("telemetry-ce-b", pairingTelemetryObserver = observer)
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+
+            val started = startPairing(b, a)
+            val pin = displayedPin(a, b.appInstanceId)
+            val result = b.pairingProtocolV3Service.submitPin(started.sessionId, pin, urlFor(a))
+            assertIs<PairingV3PinResult.Paired>(result)
+            assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
+        }
+
+    @Test
+    fun testTelemetryObserverRecordsCancelAndReject() =
+        runBlocking {
+            val acceptorOutcomes = CopyOnWriteArrayList<PairingV3TelemetryOutcome>()
+            val initiatorOutcomes = CopyOnWriteArrayList<PairingV3TelemetryOutcome>()
+            val a = createInstance("telemetry-cancel-a", pairingTelemetryObserver = { acceptorOutcomes.add(it) })
+            val b = createInstance("telemetry-cancel-b", pairingTelemetryObserver = { initiatorOutcomes.add(it) })
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+
+            // Initiator abandons: recorded locally as CANCEL, and the best-effort
+            // notification surfaces as an acceptor-side CANCEL as well.
+            val started = startPairing(b, a)
+            assertTrue(b.pairingProtocolV3Service.cancelSession(started.sessionId, urlFor(a)))
+            assertEquals(
+                PairingV3TelemetryOutcome(
+                    PairingV3TelemetryRole.INITIATOR,
+                    PairingV3TelemetryStage.CANCEL,
+                    code = PairingV3ErrorCode.PAIRING_CANCELLED,
+                ),
+                initiatorOutcomes.last(),
+            )
+            awaitCondition(message = "acceptor records the peer-sent cancel") {
+                acceptorOutcomes.contains(
+                    PairingV3TelemetryOutcome(
+                        PairingV3TelemetryRole.ACCEPTOR,
+                        PairingV3TelemetryStage.CANCEL,
+                        code = PairingV3ErrorCode.PAIRING_CANCELLED,
+                    ),
+                )
+            }
+
+            // Cancels for unknown sessions must not generate acceptor telemetry.
+            val outcomesBeforeSpray = acceptorOutcomes.size
+            val sprayPayload =
+                getJsonUtils().JSON.encodeToString(
+                    PairingCancelV3(Random.nextBytes(PairingV3.SESSION_ID_SIZE)),
+                )
+            val sprayResponse =
+                b.pasteClient.postBinary(
+                    sprayPayload.encodeToByteArray(),
+                    contentType = ContentType.Application.Json,
+                    urlBuilder = {
+                        buildUrl(HostAndPort("localhost", a.getPort()))
+                        buildUrl("sync", "pairing", "v3", "cancel")
+                    },
+                )
+            assertEquals(HttpStatusCode.OK, sprayResponse.status)
+            assertEquals(outcomesBeforeSpray, acceptorOutcomes.size)
+
+            // Acceptor user rejects the next attempt: recorded as REJECTED.
+            startPairing(b, a)
+            val card =
+                a.pairingSessionStore.uiSessionsFlow.value.first { candidate ->
+                    candidate.role == PakeRole.ACCEPTOR &&
+                        candidate.peerAppInstanceId == b.appInstanceId &&
+                        candidate.state == PairingSessionState.PIN_AVAILABLE
+                }
+            assertTrue(a.pairingProtocolV3Service.rejectSession(card.sessionId))
+            assertEquals(
+                PairingV3TelemetryOutcome(
+                    PairingV3TelemetryRole.ACCEPTOR,
+                    PairingV3TelemetryStage.REJECTED,
+                    code = PairingV3ErrorCode.PAIRING_REJECTED,
+                ),
+                acceptorOutcomes.last(),
+            )
+        }
+
+    @Test
+    fun testTelemetryObserverRecordsSessionExpiry() =
+        runBlocking {
+            val acceptorOutcomes = CopyOnWriteArrayList<PairingV3TelemetryOutcome>()
+            val initiatorOutcomes = CopyOnWriteArrayList<PairingV3TelemetryOutcome>()
+            val a =
+                createInstance(
+                    "telemetry-expiry-a",
+                    sessionTtl = 2.seconds,
+                    pairingTelemetryObserver = { acceptorOutcomes.add(it) },
+                )
+            val b =
+                createInstance(
+                    "telemetry-expiry-b",
+                    sessionTtl = 2.seconds,
+                    pairingTelemetryObserver = { initiatorOutcomes.add(it) },
+                )
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+
+            // Neither side ever submits a PIN: the maintenance loop must time both
+            // sessions out and report one EXPIRED outcome per role.
+            startPairing(b, a)
+            awaitCondition(timeout = 10.seconds, message = "both roles record session expiry") {
+                initiatorOutcomes.contains(
+                    PairingV3TelemetryOutcome(
+                        PairingV3TelemetryRole.INITIATOR,
+                        PairingV3TelemetryStage.EXPIRED,
+                        code = PairingV3ErrorCode.PAIRING_SESSION_EXPIRED,
+                    ),
+                ) &&
+                    acceptorOutcomes.contains(
+                        PairingV3TelemetryOutcome(
+                            PairingV3TelemetryRole.ACCEPTOR,
+                            PairingV3TelemetryStage.EXPIRED,
+                            code = PairingV3ErrorCode.PAIRING_SESSION_EXPIRED,
+                        ),
+                    )
+            }
         }
 
     @Test
