@@ -22,6 +22,7 @@ import com.crosspaste.pairing.v3.PairingRateLimiter
 import com.crosspaste.pairing.v3.PairingReceiptCache
 import com.crosspaste.pairing.v3.PairingSessionStore
 import com.crosspaste.pairing.v3.PairingV3
+import com.crosspaste.pairing.v3.PairingV3TelemetryObserver
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.pairing.v3.PakeProvider
 import com.crosspaste.pairing.v3.TestPakeProvider
@@ -47,6 +48,7 @@ class TestInstance(
     pakeProvider: PakeProvider = TestPakeProvider(),
     pairingV3Enabled: Boolean = true,
     acceptanceWindowMaxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
+    pairingTelemetryObserver: PairingV3TelemetryObserver = PairingV3TelemetryObserver.NOOP,
 ) {
     companion object {
         val platform: Platform = getPlatformUtils().platform
@@ -113,6 +115,7 @@ class TestInstance(
             isPairingV3Enabled = { pairingV3Enabled },
             pinLifetime = pairingPinLifetime,
             generationGrace = pairingGenerationGrace,
+            telemetryObserver = pairingTelemetryObserver,
         )
 
     private val serverFactory =

@@ -21,6 +21,10 @@ import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.pairing.v3.PairingV3PinResult
 import com.crosspaste.pairing.v3.PairingV3RefreshResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
+import com.crosspaste.pairing.v3.PairingV3TelemetryObserver
+import com.crosspaste.pairing.v3.PairingV3TelemetryOutcome
+import com.crosspaste.pairing.v3.PairingV3TelemetryRole
+import com.crosspaste.pairing.v3.PairingV3TelemetryStage
 import com.crosspaste.pairing.v3.PakeContext
 import com.crosspaste.pairing.v3.PakeException
 import com.crosspaste.pairing.v3.PakeProvider
@@ -67,6 +71,7 @@ class PairingV3IntegrationTest {
         pakeProvider: PakeProvider = TestPakeProvider(),
         pairingV3Enabled: Boolean = true,
         acceptanceWindowMaxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
+        pairingTelemetryObserver: PairingV3TelemetryObserver = PairingV3TelemetryObserver.NOOP,
     ): TestInstance =
         TestInstance(
             appInstanceId = id,
@@ -76,6 +81,7 @@ class PairingV3IntegrationTest {
             pakeProvider = pakeProvider,
             pairingV3Enabled = pairingV3Enabled,
             acceptanceWindowMaxProofFailures = acceptanceWindowMaxProofFailures,
+            pairingTelemetryObserver = pairingTelemetryObserver,
         ).also { instances.add(it) }
 
     @AfterTest
@@ -478,6 +484,131 @@ class PairingV3IntegrationTest {
             val paired = b.pairingProtocolV3Service.submitPin(started.sessionId, freshPin, urlFor(a))
             assertIs<PairingV3PinResult.Paired>(paired)
             assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
+        }
+
+    @Test
+    fun testTelemetryObserverReceivesRedactedOutcomesPerEntryPoint() =
+        runBlocking {
+            val acceptorOutcomes = mutableListOf<PairingV3TelemetryOutcome>()
+            val initiatorOutcomes = mutableListOf<PairingV3TelemetryOutcome>()
+            val a = createInstance("telemetry-a", pairingTelemetryObserver = { acceptorOutcomes.add(it) })
+            val b = createInstance("telemetry-b", pairingTelemetryObserver = { initiatorOutcomes.add(it) })
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+
+            val started = startPairing(b, a)
+            assertEquals(
+                listOf(
+                    PairingV3TelemetryOutcome(
+                        PairingV3TelemetryRole.INITIATOR,
+                        PairingV3TelemetryStage.START,
+                        code = null,
+                    ),
+                ),
+                initiatorOutcomes.toList(),
+            )
+            assertEquals(
+                listOf(
+                    PairingV3TelemetryOutcome(
+                        PairingV3TelemetryRole.ACCEPTOR,
+                        PairingV3TelemetryStage.INTENT,
+                        code = null,
+                    ),
+                ),
+                acceptorOutcomes.toList(),
+            )
+
+            // Wrong PIN: both roles record the refusal with the exact code —
+            // the metric the mobile enablement plan watches for drift.
+            val pin = displayedPin(a, b.appInstanceId)
+            val wrongPin = pin.copyOf()
+            wrongPin[5] = if (wrongPin[5] == '9') '0' else wrongPin[5] + 1
+            val failed = b.pairingProtocolV3Service.submitPin(started.sessionId, wrongPin, urlFor(a))
+            assertIs<PairingV3PinResult.Refused>(failed)
+            assertEquals(
+                PairingV3TelemetryOutcome(
+                    PairingV3TelemetryRole.INITIATOR,
+                    PairingV3TelemetryStage.PIN,
+                    code = PairingV3ErrorCode.PAIRING_PROOF_INVALID,
+                ),
+                initiatorOutcomes.last(),
+            )
+            assertEquals(
+                PairingV3TelemetryOutcome(
+                    PairingV3TelemetryRole.ACCEPTOR,
+                    PairingV3TelemetryStage.PROOF,
+                    code = PairingV3ErrorCode.PAIRING_PROOF_INVALID,
+                ),
+                acceptorOutcomes.last(),
+            )
+
+            // Recovery to a successful pairing: refresh + correct PIN outcomes.
+            awaitCondition(message = "acceptor rotates a fresh generation after failed proof") {
+                val card = acceptorCardFor(a, b.appInstanceId)
+                card != null &&
+                    card.state == PairingSessionState.PIN_AVAILABLE &&
+                    card.tokenGeneration >= started.tokenGeneration + 1 &&
+                    card.pin != null
+            }
+            val refreshed = b.pairingProtocolV3Service.refreshOffer(started.sessionId, urlFor(a))
+            assertIs<PairingV3RefreshResult.Refreshed>(refreshed)
+            assertEquals(
+                PairingV3TelemetryOutcome(
+                    PairingV3TelemetryRole.INITIATOR,
+                    PairingV3TelemetryStage.REFRESH,
+                    code = null,
+                ),
+                initiatorOutcomes.last(),
+            )
+
+            val freshPin = displayedPin(a, b.appInstanceId)
+            val paired = b.pairingProtocolV3Service.submitPin(started.sessionId, freshPin, urlFor(a))
+            assertIs<PairingV3PinResult.Paired>(paired)
+            assertEquals(
+                PairingV3TelemetryOutcome(
+                    PairingV3TelemetryRole.INITIATOR,
+                    PairingV3TelemetryStage.PIN,
+                    code = null,
+                ),
+                initiatorOutcomes.last(),
+            )
+            assertTrue(
+                acceptorOutcomes.contains(
+                    PairingV3TelemetryOutcome(
+                        PairingV3TelemetryRole.ACCEPTOR,
+                        PairingV3TelemetryStage.PROOF,
+                        code = null,
+                    ),
+                ),
+                "acceptor should record the successful proof",
+            )
+            assertEquals(
+                PairingV3TelemetryOutcome(
+                    PairingV3TelemetryRole.ACCEPTOR,
+                    PairingV3TelemetryStage.COMMIT,
+                    code = null,
+                ),
+                acceptorOutcomes.last(),
+            )
+
+            // Redaction invariant: outcomes carry enums only, so nothing above
+            // could have captured a session id, PIN, or peer identifier.
+        }
+
+    @Test
+    fun testTelemetryObserverFailureDoesNotAffectPairing() =
+        runBlocking {
+            val a = createInstance("telemetry-throw-a", pairingTelemetryObserver = { error("observer bug") })
+            val b = createInstance("telemetry-throw-b", pairingTelemetryObserver = { error("observer bug") })
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+
+            val started = startPairing(b, a)
+            val pin = displayedPin(a, b.appInstanceId)
+            val result = b.pairingProtocolV3Service.submitPin(started.sessionId, pin, urlFor(a))
+            assertIs<PairingV3PinResult.Paired>(result)
         }
 
     @Test
