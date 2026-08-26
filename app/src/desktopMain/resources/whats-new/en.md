@@ -1,7 +1,7 @@
-# [2.2.0] - 2026-08-20
+# [2.2.0] - 2026-08-26
 
 ## ⌨️ Brand-new command-line tool
-CrossPaste now ships with a command-line tool, crosspaste, bundled in every desktop package (on macOS, the app offers a one-click install on first launch). Copy, paste, search, pick interactively, edit, and watch your clipboard history live — plus pair devices and run headless — all from the terminal and your scripts. See the CLI guide for every command and example:
+CrossPaste now ships with a command-line tool, crosspaste, bundled in every desktop package (on macOS, the app offers a one-click install on first launch; on Windows, one click adds it to PATH). Copy, paste, search, pick interactively, edit, and watch your clipboard history live — plus pair devices and run headless — all from the terminal and your scripts. In sixel-capable terminals, images even preview inline as real pixels. See the CLI guide for every command and example:
 https://github.com/CrossPaste/crosspaste-desktop/blob/main/doc/en/CLI.md
 
 ## 🔐 Next-generation device pairing
@@ -15,6 +15,9 @@ Fixed an issue where the main window could be taller than the screen, cutting of
 
 ## ✨ Pairing polish
 The pairing dialog now focuses the first input box when it opens; the countdown bar on older-style pairing cards matches the newer look; and cards close automatically when pairing is cancelled.
+
+## 🎨 UI polish
+Fixed the font dropdown in settings needing two clicks: clicking outside the dropdown now closes it and reaches your target in a single click. The underlying UI framework was upgraded to its latest version, and following the system light/dark mode is now consistent from the very first frame after launch.
 
 ## ⚙️ Sturdier background tasks
 A single corrupted task record no longer stalls background task processing, and task failures are now recorded more accurately.

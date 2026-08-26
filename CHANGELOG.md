@@ -2,32 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.2.0] - 2026-08-20
+# [2.2.0] - 2026-08-26
 # Highlights 🌟
 
 - ⌨️ **CrossPaste CLI**
   CrossPaste now ships a native command-line tool, `crosspaste`, in
   every desktop package (macOS offers a one-click terminal command
-  install on first launch). Pipe into it to copy
+  install on first launch, and Windows offers one-click add-to-PATH).
+  Pipe into it to copy
   (`echo hello | crosspaste`), pull entries out with `paste`, search
   history with the same filters as the search window, select entries
   interactively with the full-screen fuzzy `pick`, edit an entry in
   `$EDITOR` and update it in place, stream new pastes as NDJSON with
-  `watch`, and export or inline-preview images in capable terminals.
+  `watch`, and export images — or preview them inline as real pixels
+  in sixel-capable terminals.
   The CLI is a pure HTTP thin client over a local unix domain socket,
   with script-friendly output formats, well-defined exit codes, and
   cell-accurate width-aware rendering. See the
   [CLI guide](https://github.com/CrossPaste/crosspaste-desktop/blob/main/doc/en/CLI.md)
   for every command and example (#243 #3828 #4769 #4776 #4778 #4780
-  #4790 #4809 #4812 #4815 #4817 #4822 #4824 #4826 #4828).
+  #4790 #4809 #4812 #4815 #4817 #4822 #4824 #4826 #4828 #4836 #4841
+  #4849 #4850 #4851 #4852).
+
+- 🔐 **Next-generation device pairing**
+  Device pairing now verifies a one-time 6-digit PIN — rotating every
+  30 seconds on the accepting device — through a SPAKE2 (RFC 9382)
+  password-authenticated key exchange, so nothing on the network can
+  intercept the pairing or learn anything from a wrong guess, and
+  cumulative online PIN guesses are capped. The elliptic-curve
+  arithmetic runs on a constant-time OpenSSL libcrypto pinned and
+  bundled with the app, with a fail-closed startup probe. Devices on
+  older versions keep pairing through the previous flow (#4859 #4861
+  #4863 #4865 #4867 #4869 #4875 #4877 #4881).
 
 - 🤝 **Pair and manage devices from the terminal**
   `crosspaste pair` completes device pairing entirely in the terminal,
-  and `devices`, `status`, and `config` cover day-to-day management.
-  The CLI probes app liveness and auto-starts the desktop app when
-  needed, and the app's headless mode is hardened for daemon use on
-  servers and other display-less environments (#4771 #4782 #4786
-  #4788).
+  `crosspaste token` shows the rotating pairing code on headless
+  acceptors, and `devices`, `status`, and `config` cover day-to-day
+  management. The CLI probes app liveness and auto-starts the desktop
+  app when needed, and the app's headless mode is hardened for daemon
+  use on servers and other display-less environments (#4771 #4782
+  #4786 #4788 #4859).
 
 - 🪟 **More reliable Windows clipboard capture**
   Rapid clipboard bursts are coalesced into one snapshot through a
@@ -44,6 +59,13 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Drain sessions in WsSessionManager.closeAll to fix concurrent iteration flake (#4890)
+- :bug: Use origin.remoteAddress instead of remoteHost in pairing v3 routes to avoid a blocking reverse DNS lookup (#4875)
+- :bug: Read trust request bodies before taking the per-peer pairing lock (#4871 #4873)
+- :bug: Unwrap wrapped crypto failures so key mismatch surfaces as DECRYPT_FAIL (#4870 #4872)
+- :bug: Cap cumulative pairing v3 online PIN guesses and harden OpenSSL secret hygiene (#4867)
+- :bug: Map missing native graphics library to actionable 503 in CLI image route (#4857)
+- :bug: Guard cli build script host lookups on unsupported K/N hosts (#4856)
 - :bug: Survive mordant's native-Windows raw-mode timeout and restore console modes on exit (#4826)
 - :bug: Harden TaskExecutor: tolerate corrupt extraInfo, rethrow cancellation, no-throw submit after shutdown (#4806)
 - :bug: Apply sqlite pragmas via connection properties so busy_timeout takes effect (#4799)
@@ -57,6 +79,17 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
+- :sparkles: Let clicks outside the font dropdown pass through instead of being swallowed (#4887)
+- :sparkles: Add a redacted telemetry observer seam to PairingProtocolV3Service (#4881)
+- :sparkles: Roll out pairing v3 by advertising PAIRING_VERSION 3 gated on the bundled backend (#4877)
+- :sparkles: Add crosspaste token command for acceptor-side pairing code display (#4859)
+- :sparkles: Wire sixel rendering into paste inline previews and the pick panel (#4852)
+- :sparkles: Add sixel terminal capability probe with DA1 confirmation (#4851)
+- :sparkles: Add raw RGBA transcode endpoint for CLI image previews (#4850)
+- :sparkles: Add pure-Kotlin sixel encoder with median-cut quantization (#4845 #4849)
+- :sparkles: Let a PATH-installed CLI auto-discover a dev app instance (#4843)
+- :sparkles: One-click add-to-PATH for the Windows CLI on non-MSIX installs (#4841)
+- :sparkles: Show the command line extension entry on every platform and in dev runs (#4836)
 - :sparkles: Make edit update the paste in place instead of copying a new entry (#4828)
 - :sparkles: Add a watch command streaming new pastes over an NDJSON feed (#4824)
 - :sparkles: Add an interactive pick command with a full-screen fuzzy picker (#4822)
@@ -75,6 +108,11 @@ All notable changes to this project will be documented in this file.
 
 # Multiplatform · Refactor · Code Style 🔨
 
+- :hammer: Resolve system dark theme directly in composition via dynamic isSystemInDarkTheme (#4886)
+- :hammer: Restrict production libcrypto loading to the bundled library with fail-closed startup probe (#4865)
+- :hammer: Replace BouncyCastle SPAKE2 EC backend with constant-time OpenSSL via JNA (#4861)
+- :art: Downgrade expected heartbeat decrypt-failure logs to warn without stack trace (#4838)
+- :art: Clean up Gradle 9 deprecation warnings and Kotlin compiler warnings (#4833)
 - :hammer: Derive CLI version at build time and add a cli compile gate to CI (#4767)
 - :art: Focus the first token input box when the pairing dialog opens (#4758)
 - :art: Auto-close the v3 pairing card when the session is cancelled (#4756)
@@ -82,6 +120,9 @@ All notable changes to this project will be documented in this file.
 
 # Build & CI 👷
 
+- :construction_worker: Auto-download the pinned libcrypto for development runs so pairing v3 loads without a system OpenSSL (#4869)
+- :construction_worker: Bundle pinned OpenSSL libcrypto into desktop packages via Conveyor (#4863)
+- :construction_worker: Bump Conveyor CLI in CI packaging workflows from v21.0 to v22.1 (#4839)
 - :construction_worker: Split the CLI native build into a parallel path-gated CI job (#4803)
 - :construction_worker: Tier the test suite so PRs run fast tests and releases run integration suites (#4801)
 - :construction_worker: Suppress expected Kotlin/Native disabled-target and cinterop commonization warnings (#4784)
@@ -90,6 +131,8 @@ All notable changes to this project will be documented in this file.
 
 # Dependencies ⬆️
 
+- :arrow_up: Bump gradle-wrapper from 9.7.0 to 9.7.1 (#4889)
+- :arrow_up: Upgrade Compose Multiplatform to 1.12.0 (#4885)
 - :arrow_up: Bump io.github.vinceglb:filekit-dialogs from 0.14.2 to 0.15.0 (#4819)
 - :arrow_up: Bump ch.qos.logback:logback-classic from 1.6.1 to 1.6.3 (#4818)
 - :arrow_up: Bump org.bouncycastle:bcprov-jdk18on from 1.85 to 1.85.2 (#4765)
