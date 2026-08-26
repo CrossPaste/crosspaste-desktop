@@ -80,7 +80,10 @@ class WsSessionManager {
     }
 
     suspend fun closeAll() {
-        sessions.keys.toList().forEach { appInstanceId ->
+        // Drain instead of snapshot-then-iterate: toList() races with concurrent
+        // session registration/removal (NoSuchElementException, see #4884).
+        while (true) {
+            val appInstanceId = sessions.keys.firstOrNull() ?: break
             sessions.remove(appInstanceId)?.let { session ->
                 runCatching { session.close("App shutting down") }
                     .onFailure { e -> logger.warn(e) { "Error closing WS session for $appInstanceId" } }
