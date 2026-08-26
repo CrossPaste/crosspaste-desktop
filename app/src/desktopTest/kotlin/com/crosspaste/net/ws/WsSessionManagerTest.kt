@@ -185,6 +185,29 @@ class WsSessionManagerTest {
         }
 
     @Test
+    fun closeAll_closesAndUnregistersAllSessions() =
+        runTest {
+            val mgr = WsSessionManager()
+            val innerA: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            val innerB: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            mgr.registerSession("A", WsSession(innerA, "remote"))
+            mgr.registerSession("B", WsSession(innerB, "remote"))
+
+            mgr.closeAll()
+
+            assertFalse(mgr.isConnected("A"))
+            assertFalse(mgr.isConnected("B"))
+            coVerify(exactly = 1) { innerA.send(any<Frame.Close>()) }
+            coVerify(exactly = 1) { innerB.send(any<Frame.Close>()) }
+        }
+
+    @Test
     fun sendWithPayloadLimits_legacySessionRejectsAboveSingleFrameLimit() =
         runTest {
             val mgr = WsSessionManager()
