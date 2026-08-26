@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FontSettingItemView() {
     val fontManager = koinInject<FontManager>()
@@ -89,7 +91,13 @@ fun FontSettingItemView() {
                         Popup(
                             alignment = Alignment.TopEnd,
                             onDismissRequest = { expanded = false },
-                            properties = PopupProperties(focusable = true),
+                            properties =
+                                PopupProperties(
+                                    focusable = true,
+                                    // A click outside both dismisses the dropdown and reaches its
+                                    // target, instead of being swallowed by the focusable popup.
+                                    consumePointerInputOutside = false,
+                                ),
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(tiny3X),
