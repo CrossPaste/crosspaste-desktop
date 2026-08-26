@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -50,7 +51,8 @@ fun SearchWindow(windowIcon: Painter?) {
 
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
 
-    val themeState by themeDetector.themeState.collectAsState()
+    val themeConfig by themeDetector.themeConfig.collectAsState()
+    val isDarkTheme = themeConfig.resolveIsDark(isSystemInDarkTheme())
 
     val isMac = remember { platform.isMacos() }
     val isWindowsAndSupportBlurEffect =
@@ -130,12 +132,12 @@ fun SearchWindow(windowIcon: Painter?) {
         if (isMac) {
             MacAcrylicEffect(
                 window = this.window,
-                isDark = themeState.isCurrentThemeDark,
+                isDark = isDarkTheme,
             )
         } else if (isWindowsAndSupportBlurEffect) {
             WindowsBlurEffect(
                 window = this.window,
-                isDark = themeState.isCurrentThemeDark,
+                isDark = isDarkTheme,
             )
         }
 

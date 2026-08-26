@@ -5,23 +5,16 @@ import com.crosspaste.config.CommonConfigManager
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class DesktopThemeDetectorTest {
 
     private fun createDetector(
         isFollowSystemTheme: Boolean = true,
         isDarkTheme: Boolean = false,
-        testScope: TestScope,
     ): Pair<DesktopThemeDetector, CommonConfigManager> {
         val appConfig = mockk<AppConfig>()
         every { appConfig.isFollowSystemTheme } returns isFollowSystemTheme
@@ -31,130 +24,111 @@ class DesktopThemeDetectorTest {
         every { configManager.getCurrentConfig() } returns appConfig
         every { configManager.updateConfig(any<List<String>>(), any<List<Any>>()) } returns Unit
 
-        // Use backgroundScope so the Eagerly-started combine coroutine gets cancelled
-        // automatically when the test finishes, preventing UncompletedCoroutinesError.
-        val detector = DesktopThemeDetector(configManager, testScope.backgroundScope)
+        val detector = DesktopThemeDetector(configManager)
         return detector to configManager
     }
 
     @Test
-    fun `initial state follows config values`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val (detector, _) =
-                createDetector(
-                    isFollowSystemTheme = false,
-                    isDarkTheme = true,
-                    testScope = this,
-                )
-            advanceUntilIdle()
+    fun `initial config follows persisted values`() {
+        val (detector, _) =
+            createDetector(
+                isFollowSystemTheme = false,
+                isDarkTheme = true,
+            )
 
-            val state = detector.themeState.value
-            assertFalse(state.isFollowSystem)
-            assertTrue(state.isUserInDark)
-            // Since followSystem=false and userInDark=true → dark theme
-            assertTrue(state.isCurrentThemeDark)
-            assertEquals(CrossPasteColor.darkColorScheme, state.colorScheme)
-        }
+        val config = detector.themeConfig.value
+        assertFalse(config.isFollowSystem)
+        assertTrue(config.isUserInDark)
+        assertEquals(CrossPasteColor, config.themeColor)
+    }
 
     @Test
-    fun `setSystemInDark updates theme when following system`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val (detector, _) =
-                createDetector(
-                    isFollowSystemTheme = true,
-                    isDarkTheme = false,
-                    testScope = this,
-                )
-            advanceUntilIdle()
+    fun `resolveIsDark uses system value when following system`() {
+        val (detector, _) =
+            createDetector(
+                isFollowSystemTheme = true,
+                isDarkTheme = false,
+            )
 
-            // Initially system dark is false
-            assertFalse(detector.themeState.value.isCurrentThemeDark)
-
-            // System switches to dark
-            detector.setSystemInDark(true)
-            advanceUntilIdle()
-
-            assertTrue(detector.themeState.value.isCurrentThemeDark)
-            assertEquals(CrossPasteColor.darkColorScheme, detector.themeState.value.colorScheme)
-        }
+        val config = detector.themeConfig.value
+        assertFalse(config.resolveIsDark(isSystemInDark = false))
+        assertTrue(config.resolveIsDark(isSystemInDark = true))
+    }
 
     @Test
-    fun `setSystemInDark has no effect when not following system`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val (detector, _) =
-                createDetector(
-                    isFollowSystemTheme = false,
-                    isDarkTheme = false,
-                    testScope = this,
-                )
-            advanceUntilIdle()
+    fun `resolveIsDark ignores system value when not following system`() {
+        val (detector, _) =
+            createDetector(
+                isFollowSystemTheme = false,
+                isDarkTheme = false,
+            )
 
-            detector.setSystemInDark(true)
-            advanceUntilIdle()
-
-            // Still light because user preference is false and not following system
-            assertFalse(detector.themeState.value.isCurrentThemeDark)
-        }
+        val config = detector.themeConfig.value
+        assertFalse(config.resolveIsDark(isSystemInDark = true))
+    }
 
     @Test
-    fun `setThemeConfig persists to config manager`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val (detector, configManager) =
-                createDetector(testScope = this)
-            advanceUntilIdle()
+    fun `setThemeConfig persists to config manager`() {
+        val (detector, configManager) = createDetector()
 
-            detector.setThemeConfig(isFollowSystem = false, isUserInDark = true)
+        detector.setThemeConfig(isFollowSystem = false, isUserInDark = true)
 
-            verify {
-                configManager.updateConfig(
-                    listOf("isFollowSystemTheme", "isDarkTheme"),
-                    listOf(false, true),
-                )
-            }
+        verify {
+            configManager.updateConfig(
+                listOf("isFollowSystemTheme", "isDarkTheme"),
+                listOf(false, true),
+            )
         }
+    }
 
     @Test
-    fun `setThemeConfig updates theme state atomically`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val (detector, _) =
-                createDetector(
-                    isFollowSystemTheme = true,
-                    isDarkTheme = false,
-                    testScope = this,
-                )
-            advanceUntilIdle()
+    fun `setThemeConfig updates config atomically`() {
+        val (detector, _) =
+            createDetector(
+                isFollowSystemTheme = true,
+                isDarkTheme = false,
+            )
 
-            // Switch from follow-system to manual dark mode
-            detector.setThemeConfig(isFollowSystem = false, isUserInDark = true)
-            advanceUntilIdle()
+        detector.setThemeConfig(isFollowSystem = false, isUserInDark = true)
 
-            val state = detector.themeState.value
-            assertFalse(state.isFollowSystem)
-            assertTrue(state.isUserInDark)
-            assertTrue(state.isCurrentThemeDark)
-        }
+        val config = detector.themeConfig.value
+        assertFalse(config.isFollowSystem)
+        assertTrue(config.isUserInDark)
+        assertTrue(config.resolveIsDark(isSystemInDark = false))
+    }
 
     @Test
-    fun `switching from follow-system to manual preserves correct theme`() =
-        runTest(UnconfinedTestDispatcher()) {
-            val (detector, _) =
-                createDetector(
-                    isFollowSystemTheme = true,
-                    isDarkTheme = false,
-                    testScope = this,
-                )
-            advanceUntilIdle()
+    fun `switching from follow-system to manual preserves correct theme`() {
+        val (detector, _) =
+            createDetector(
+                isFollowSystemTheme = true,
+                isDarkTheme = false,
+            )
 
-            // System is in dark mode
-            detector.setSystemInDark(true)
-            advanceUntilIdle()
-            assertTrue(detector.themeState.value.isCurrentThemeDark)
+        // Following system while system is dark → dark
+        assertTrue(detector.themeConfig.value.resolveIsDark(isSystemInDark = true))
 
-            // Switch to manual light mode - should become light despite system being dark
-            detector.setThemeConfig(isFollowSystem = false, isUserInDark = false)
-            advanceUntilIdle()
+        // Switch to manual light mode - should be light despite system being dark
+        detector.setThemeConfig(isFollowSystem = false, isUserInDark = false)
+        assertFalse(detector.themeConfig.value.resolveIsDark(isSystemInDark = true))
+    }
 
-            assertFalse(detector.themeState.value.isCurrentThemeDark)
-            assertEquals(CrossPasteColor.lightColorScheme, detector.themeState.value.colorScheme)
-        }
+    @Test
+    fun `createThemeState resolves color scheme from config and system value`() {
+        val (detector, _) =
+            createDetector(
+                isFollowSystemTheme = true,
+                isDarkTheme = false,
+            )
+
+        val config = detector.themeConfig.value
+
+        val darkState = ThemeState.createThemeState(config, isSystemInDark = true)
+        assertTrue(darkState.isCurrentThemeDark)
+        assertEquals(CrossPasteColor.darkColorScheme, darkState.colorScheme)
+
+        val lightState = ThemeState.createThemeState(config, isSystemInDark = false)
+        assertFalse(lightState.isCurrentThemeDark)
+        assertEquals(CrossPasteColor.lightColorScheme, lightState.colorScheme)
+    }
 }
