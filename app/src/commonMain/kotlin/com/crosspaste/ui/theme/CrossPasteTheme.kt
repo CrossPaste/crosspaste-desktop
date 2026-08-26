@@ -4,7 +4,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -21,42 +20,29 @@ object CrossPasteTheme {
     fun Theme(content: @Composable () -> Unit) {
         val themeDetector = koinInject<ThemeDetector>()
 
-        val isSystemInDark = isSystemInDarkTheme()
+        val themeConfig by themeDetector.themeConfig.collectAsState()
 
-        val themeState by themeDetector.themeState.collectAsState()
+        // Dynamic since Compose Multiplatform 1.12: recomposes when the OS theme
+        // changes, and is already correct on the first frame — so the resolved
+        // theme never needs an async correction step.
+        val isSystemInDark = isSystemInDarkTheme()
 
         val userSelectedFont by rememberUserSelectedFont()
 
-        LaunchedEffect(isSystemInDark) {
-            themeDetector.setSystemInDark(isSystemInDark)
-        }
-
-        // Use Compose-detected isSystemInDark directly to avoid theme flash on startup.
-        // DesktopThemeDetector initializes isSystemInDark to false, and the LaunchedEffect
-        // above corrects it asynchronously — but that causes one frame of wrong theme.
-        val effectiveThemeState =
-            remember(themeState, isSystemInDark) {
-                if (themeState.isSystemInDark != isSystemInDark) {
-                    createThemeState(
-                        themeColor = themeState.themeColor,
-                        isFollowSystem = themeState.isFollowSystem,
-                        isUserInDark = themeState.isUserInDark,
-                        isSystemInDark = isSystemInDark,
-                    )
-                } else {
-                    themeState
-                }
+        val themeState =
+            remember(themeConfig, isSystemInDark) {
+                createThemeState(themeConfig, isSystemInDark)
             }
 
-        val themeExt = ThemeExt.buildThemeExt(effectiveThemeState.isCurrentThemeDark)
+        val themeExt = ThemeExt.buildThemeExt(themeState.isCurrentThemeDark)
 
         CompositionLocalProvider(LocalThemeExtState provides themeExt) {
             MaterialTheme(
-                colorScheme = effectiveThemeState.colorScheme,
+                colorScheme = themeState.colorScheme,
                 typography = MaterialTheme.typography.withCustomFonts(userSelectedFont),
             ) {
                 CompositionLocalProvider(
-                    LocalThemeState provides effectiveThemeState,
+                    LocalThemeState provides themeState,
                 ) {
                     content()
                 }
