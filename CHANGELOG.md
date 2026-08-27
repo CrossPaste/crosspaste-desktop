@@ -131,6 +131,7 @@ All notable changes to this project will be documented in this file.
 
 # Dependencies ⬆️
 
+- :arrow_up: Bump io.coil-kt.coil3 from 3.5.0 to 3.6.0 for Compose 1.12 support and GIF/AsyncImage rendering fixes
 - :arrow_up: Bump com.mohamedrejeb.richeditor:richeditor-compose from 1.0.0 to 1.1.0 for Compose 1.12 support and a clipboard fix (#4891)
 - :arrow_up: Bump gradle-wrapper from 9.7.0 to 9.7.1 (#4889)
 - :arrow_up: Upgrade Compose Multiplatform to 1.12.0 (#4885)
