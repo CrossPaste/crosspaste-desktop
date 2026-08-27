@@ -131,6 +131,7 @@ All notable changes to this project will be documented in this file.
 
 # Dependencies ⬆️
 
+- :arrow_up: Bump com.mohamedrejeb.richeditor:richeditor-compose from 1.0.0 to 1.1.0 for Compose 1.12 support and a clipboard fix (#4891)
 - :arrow_up: Bump gradle-wrapper from 9.7.0 to 9.7.1 (#4889)
 - :arrow_up: Upgrade Compose Multiplatform to 1.12.0 (#4885)
 - :arrow_up: Bump io.github.vinceglb:filekit-dialogs from 0.14.2 to 0.15.0 (#4819)
