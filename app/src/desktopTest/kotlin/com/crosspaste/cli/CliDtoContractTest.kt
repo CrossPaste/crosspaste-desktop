@@ -271,7 +271,7 @@ class CliDtoContractTest {
             )
         assertEquals(setOf("requests"), fieldsOf(tokenEncoded))
         assertEquals(
-            setOf("appInstanceId", "deviceName", "token"),
+            setOf("appInstanceId", "deviceName", "token", "credentialType", "pinExpiresAt", "tokenGeneration"),
             fieldsOf(
                 json.encodeToString(
                     CliPairRequestDto.serializer(),

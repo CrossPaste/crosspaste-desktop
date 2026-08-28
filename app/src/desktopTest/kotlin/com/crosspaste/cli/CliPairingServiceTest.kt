@@ -9,6 +9,9 @@ import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
+import com.crosspaste.pairing.v3.PairingSessionState
+import com.crosspaste.pairing.v3.PairingSessionUiState
+import com.crosspaste.pairing.v3.PakeRole
 import com.crosspaste.platform.Platform
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PairingCredentialRefreshResult
@@ -73,7 +76,11 @@ class CliPairingServiceTest {
                 every { nearbySyncInfos } returns this@Fixture.nearbySyncInfos
                 every { searching } returns this@Fixture.searching
             }
-        val pairingV3UiController = mockk<PairingV3UiController>()
+        val v3Sessions = MutableStateFlow<List<PairingSessionUiState>>(listOf())
+        val pairingV3UiController =
+            mockk<PairingV3UiController> {
+                every { sessions } returns v3Sessions
+            }
         val pasteBonjourService =
             mockk<PasteBonjourService> {
                 every { refreshAll() } just Runs
@@ -211,6 +218,110 @@ class CliPairingServiceTest {
         val dto = fixture.service.pairingToken()
 
         assertEquals(PEER_NAME, dto.requests.single().deviceName)
+    }
+
+    private fun v3Session(
+        peerAppInstanceId: String = PEER_ID,
+        role: PakeRole = PakeRole.ACCEPTOR,
+        state: PairingSessionState = PairingSessionState.PIN_AVAILABLE,
+        pin: String? = "654321",
+        peerDisplayName: String = PEER_NAME,
+    ): PairingSessionUiState =
+        PairingSessionUiState(
+            sessionId = "session-$peerAppInstanceId",
+            role = role,
+            peerDisplayName = peerDisplayName,
+            peerAppInstanceId = peerAppInstanceId,
+            peerKeyFingerprintDisplay = "abcd1234",
+            pin = pin,
+            pinExpiresAt = 1_000L,
+            tokenGeneration = 3L,
+            state = state,
+            createdAt = 0L,
+        )
+
+    @Test
+    fun `pairingToken includes v3 acceptor sessions showing a PIN`() {
+        val fixture = Fixture()
+        fixture.v3Sessions.value = listOf(v3Session())
+
+        val request =
+            fixture.service
+                .pairingToken()
+                .requests
+                .single()
+
+        assertEquals(PEER_ID, request.appInstanceId)
+        assertEquals(PEER_NAME, request.deviceName)
+        assertEquals("654321", request.token)
+        assertEquals(CliPairCredential.V3_PIN, request.credentialType)
+        assertEquals(1_000L, request.pinExpiresAt)
+        assertEquals(3L, request.tokenGeneration)
+    }
+
+    @Test
+    fun `pairingToken merges v2 exchanges with v3 sessions`() {
+        val fixture = Fixture()
+        fixture.pendingVerifiersFlow.value = setOf("v2-peer")
+        fixture.storeExchange("v2-peer", sas = 42420)
+        fixture.v3Sessions.value = listOf(v3Session())
+
+        val requests =
+            fixture.service
+                .pairingToken()
+                .requests
+                .associateBy { it.appInstanceId }
+
+        assertEquals(setOf("v2-peer", PEER_ID), requests.keys)
+        assertEquals(CliPairCredential.V2_SAS, requests.getValue("v2-peer").credentialType)
+        assertEquals(CliPairCredential.V3_PIN, requests.getValue(PEER_ID).credentialType)
+    }
+
+    @Test
+    fun `pairingToken excludes v3 sessions without a visible PIN`() {
+        val fixture = Fixture()
+        fixture.v3Sessions.value =
+            listOf(
+                v3Session(peerAppInstanceId = "initiator-role", role = PakeRole.INITIATOR),
+                v3Session(peerAppInstanceId = "negotiating", state = PairingSessionState.PAKE_NEGOTIATING),
+                v3Session(peerAppInstanceId = "no-pin", pin = null),
+            )
+
+        assertTrue(
+            fixture.service
+                .pairingToken()
+                .requests
+                .isEmpty(),
+        )
+    }
+
+    @Test
+    fun `pairingToken falls back to the runtime display name for a blank v3 peer name`() {
+        val fixture = Fixture()
+        fixture.runtimeInfos.value = listOf(runtimeInfo(SyncState.UNVERIFIED))
+        fixture.v3Sessions.value = listOf(v3Session(peerDisplayName = ""))
+
+        assertEquals(
+            PEER_NAME,
+            fixture.service
+                .pairingToken()
+                .requests
+                .single()
+                .deviceName,
+        )
+    }
+
+    @Test
+    fun `armAcceptanceWindow maps START to open and RENEW to renew`() {
+        val fixture = Fixture()
+        every { fixture.pairingV3UiController.openAcceptanceWindow() } just Runs
+        every { fixture.pairingV3UiController.renewAcceptanceWindow() } just Runs
+
+        fixture.service.armAcceptanceWindow(CliTokenArm.START)
+        fixture.service.armAcceptanceWindow(CliTokenArm.RENEW)
+
+        verify(exactly = 1) { fixture.pairingV3UiController.openAcceptanceWindow() }
+        verify(exactly = 1) { fixture.pairingV3UiController.renewAcceptanceWindow() }
     }
 
     // endregion

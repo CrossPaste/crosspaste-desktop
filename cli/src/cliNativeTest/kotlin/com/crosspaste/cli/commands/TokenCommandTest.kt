@@ -291,6 +291,123 @@ class TokenCommandTest {
         }
 
     @Test
+    fun waitArmsStartOnTheFirstFetchAndRenewOnPolls() =
+        runTest {
+            val timeSource = TestTimeSource()
+            val recording = RecordingIo()
+            val arms = mutableListOf<TokenFetchArm>()
+            executeToken(
+                wait = true,
+                timeoutSeconds = 600,
+                deadline = timeSource.markNow() + 600.seconds,
+                json = false,
+                io = recording.io,
+                pollInterval = 500.milliseconds,
+                sleep = { timeSource += it },
+            ) { arm ->
+                arms.add(arm)
+                if (arms.size >= 3) PairTokenSnapshot(listOf(request())) else PairTokenSnapshot()
+            }
+            assertEquals(
+                listOf(TokenFetchArm.START, TokenFetchArm.RENEW, TokenFetchArm.RENEW),
+                arms,
+            )
+        }
+
+    @Test
+    fun plainReadNeverArms() =
+        runTest {
+            val recording = RecordingIo()
+            val arms = mutableListOf<TokenFetchArm>()
+            executeToken(
+                wait = false,
+                timeoutSeconds = 600,
+                deadline = farDeadline(),
+                json = false,
+                io = recording.io,
+            ) { arm ->
+                arms.add(arm)
+                PairTokenSnapshot(listOf(request()))
+            }
+            assertEquals(listOf(TokenFetchArm.NONE), arms)
+        }
+
+    @Test
+    fun v3PinPrintsTheCodeWithARotationHint() =
+        runTest {
+            val recording = RecordingIo()
+            val exit =
+                executeToken(
+                    wait = false,
+                    timeoutSeconds = 600,
+                    deadline = farDeadline(),
+                    json = false,
+                    io = recording.io,
+                ) {
+                    PairTokenSnapshot(
+                        listOf(
+                            PairRequestSummary(
+                                appInstanceId = "peer-1",
+                                deviceName = "Laptop",
+                                token = "654321",
+                                credentialType = CREDENTIAL_V3_PIN,
+                                pinExpiresAt = 1_000L,
+                                tokenGeneration = 3L,
+                            ),
+                        ),
+                    )
+                }
+            assertEquals(0, exit)
+            assertEquals(listOf("654321"), recording.out)
+            assertContains(recording.err.last(), "rotate every 30 seconds")
+        }
+
+    @Test
+    fun v2OnlySnapshotPrintsNoRotationHint() =
+        runTest {
+            val recording = RecordingIo()
+            executeToken(
+                wait = false,
+                timeoutSeconds = 600,
+                deadline = farDeadline(),
+                json = false,
+                io = recording.io,
+            ) { PairTokenSnapshot(listOf(request())) }
+            assertTrue(recording.err.none { it.contains("rotate") })
+        }
+
+    @Test
+    fun jsonCarriesTheV3Fields() =
+        runTest {
+            val recording = RecordingIo()
+            val exit =
+                executeToken(
+                    wait = false,
+                    timeoutSeconds = 600,
+                    deadline = farDeadline(),
+                    json = true,
+                    io = recording.io,
+                ) {
+                    PairTokenSnapshot(
+                        listOf(
+                            PairRequestSummary(
+                                appInstanceId = "peer-1",
+                                token = "654321",
+                                credentialType = CREDENTIAL_V3_PIN,
+                                pinExpiresAt = 1_000L,
+                                tokenGeneration = 3L,
+                            ),
+                        ),
+                    )
+                }
+            assertEquals(0, exit)
+            val body = recording.out.single()
+            assertContains(body, "\"credentialType\": \"v3-pin\"")
+            assertContains(body, "\"pinExpiresAt\": 1000")
+            assertContains(body, "\"tokenGeneration\": 3")
+        }
+
+    @Test
     fun requesterLabelSanitizesUntrustedNamesAtTheTerminalBoundary() {
         // Explicit char codes: no literal control bytes in source (project rule)
         val esc = 27.toChar()

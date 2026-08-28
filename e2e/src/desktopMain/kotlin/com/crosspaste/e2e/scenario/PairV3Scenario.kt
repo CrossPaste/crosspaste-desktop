@@ -1,12 +1,14 @@
 package com.crosspaste.e2e.scenario
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.e2e.net.NetworkUtils
 import com.crosspaste.e2e.peer.BonjourAdvertiser
 import com.crosspaste.e2e.peer.buildPeerSyncInfo
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.pairing.v3.PairingV3PinResult
+import com.crosspaste.pairing.v3.PairingV3RefreshResult
 import com.crosspaste.pairing.v3.PairingV3StartResult
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
@@ -19,6 +21,11 @@ import io.ktor.http.URLBuilder
  */
 class PairV3Scenario : Scenario {
     override val name: String = "pair-v3"
+
+    companion object {
+        /** Total PIN submissions per run; only budget-free expired refusals retry. */
+        private const val MAX_PIN_ATTEMPTS = 3
+    }
 
     override suspend fun run(ctx: ScenarioContext): ScenarioResult {
         val target = resolveOrDiscover(ctx) ?: return ScenarioResult.Fail("Could not resolve target.")
@@ -59,31 +66,68 @@ class PairV3Scenario : Scenario {
             "[pair-v3] Session ready; target signing-key fingerprint " +
                 started.peerKeyFingerprintDisplay,
         )
-        val pin =
-            try {
-                ctx.pinProvider()
-            } catch (e: Exception) {
-                service.cancelSession(started.sessionId, toTarget)
-                throw e
+        // The session's PAKE material binds the generation adopted at start (or
+        // at the last refreshOffer). Prompt latency easily spans the 30s PIN
+        // rotation, so an expired refusal — which the acceptor rejects BEFORE
+        // cryptographic verification, spending no guess budget — is recovered by
+        // adopting the rotated generation and prompting for the fresh PIN, the
+        // same recovery the GUI initiator's REFRESH_OFFER path uses. Wrong-PIN
+        // proof failures DO spend acceptor budget and are never retried.
+        var attempt = 0
+        while (true) {
+            attempt++
+            if (attempt > 1) {
+                when (val refreshed = service.refreshOffer(started.sessionId, toTarget)) {
+                    is PairingV3RefreshResult.Refreshed ->
+                        println(
+                            "[pair-v3] Adopted rotated generation ${refreshed.tokenGeneration}; " +
+                                "enter the PIN currently shown on the target.",
+                        )
+                    is PairingV3RefreshResult.Refused -> {
+                        service.cancelSession(started.sessionId, toTarget)
+                        return ScenarioResult.Fail("Pairing v3 offer refresh refused: ${refreshed.code}")
+                    }
+                    is PairingV3RefreshResult.NetworkError -> {
+                        service.cancelSession(started.sessionId, toTarget)
+                        return ScenarioResult.Fail(
+                            "Pairing v3 offer refresh failed: ${describeFailure(refreshed.failure)}",
+                        )
+                    }
+                }
             }
-        val paired =
-            try {
-                service.submitPin(started.sessionId, pin, toTarget)
-            } finally {
-                pin.fill('\u0000')
-            }
-        when (paired) {
-            is PairingV3PinResult.Paired -> Unit
-            is PairingV3PinResult.Refused -> {
-                service.cancelSession(started.sessionId, toTarget)
-                return ScenarioResult.Fail("Pairing v3 proof/commit refused: ${paired.code}")
-            }
-            is PairingV3PinResult.NetworkError -> {
-                service.cancelSession(started.sessionId, toTarget)
-                return ScenarioResult.Fail(
-                    "Pairing v3 proof/commit failed " +
-                        "(commitPending=${paired.commitPending}): ${describeFailure(paired.failure)}",
-                )
+            val pin =
+                try {
+                    ctx.pinProvider()
+                } catch (e: Exception) {
+                    service.cancelSession(started.sessionId, toTarget)
+                    throw e
+                }
+            val paired =
+                try {
+                    service.submitPin(started.sessionId, pin, toTarget)
+                } finally {
+                    pin.fill('\u0000')
+                }
+            when (paired) {
+                is PairingV3PinResult.Paired -> break
+                is PairingV3PinResult.Refused -> {
+                    if (paired.code == PairingV3ErrorCode.PAIRING_PIN_EXPIRED && attempt < MAX_PIN_ATTEMPTS) {
+                        println(
+                            "[pair-v3] PIN generation expired before the proof landed; " +
+                                "refreshing (attempt ${attempt + 1}/$MAX_PIN_ATTEMPTS).",
+                        )
+                        continue
+                    }
+                    service.cancelSession(started.sessionId, toTarget)
+                    return ScenarioResult.Fail("Pairing v3 proof/commit refused: ${paired.code}")
+                }
+                is PairingV3PinResult.NetworkError -> {
+                    service.cancelSession(started.sessionId, toTarget)
+                    return ScenarioResult.Fail(
+                        "Pairing v3 proof/commit failed " +
+                            "(commitPending=${paired.commitPending}): ${describeFailure(paired.failure)}",
+                    )
+                }
             }
         }
 

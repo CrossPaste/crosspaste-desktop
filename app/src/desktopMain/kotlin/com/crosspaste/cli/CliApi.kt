@@ -190,16 +190,55 @@ data class CliPairRequestDto(
     val appInstanceId: String,
     /** Best-effort display name; null when the peer is not known locally. */
     val deviceName: String?,
-    /** The 6-digit SAS of THIS peer's key exchange, zero-padded. */
+    /**
+     * The 6-digit pairing code for THIS request: a v2 SAS (zero-padded) or a
+     * v3 PIN, per [credentialType].
+     */
     val token: String,
+    /**
+     * [CliPairCredential.V2_SAS] or [CliPairCredential.V3_PIN]. Defaults keep
+     * both directions of version skew safe: an older CLI ignores the field, an
+     * older app omits it and the newer CLI assumes v2.
+     */
+    val credentialType: String = CliPairCredential.V2_SAS,
+    /** v3 only: epoch millis when the current PIN generation expires. */
+    val pinExpiresAt: Long? = null,
+    /** v3 only: the rotation generation the PIN belongs to. */
+    val tokenGeneration: Long? = null,
 )
+
+object CliPairCredential {
+    const val V2_SAS = "v2-sas"
+    const val V3_PIN = "v3-pin"
+}
+
+/** How a GET /cli/pair/token request asks to arm the v3 acceptance window. */
+enum class CliTokenArm {
+    /** First fetch of a CLI invocation: opens the window, resets the guess budget. */
+    START,
+
+    /** Poll of the same invocation: extends an open window, never resets the budget. */
+    RENEW,
+    ;
+
+    companion object {
+        /** Parses the `arm` query parameter; null for absent or unknown values. */
+        fun fromQuery(value: String?): CliTokenArm? =
+            when (value) {
+                "start" -> START
+                "renew" -> RENEW
+                else -> null
+            }
+    }
+}
 
 @Serializable
 data class CliPairTokenDto(
     /**
-     * One entry per pending v2 key exchange, each carrying its own code —
-     * never a single global token, which under concurrent pairings could
-     * pair one requester's name with another requester's code.
+     * One entry per pending v2 key exchange and per active v3 acceptor session
+     * showing a PIN, each carrying its own code — never a single global token,
+     * which under concurrent pairings could pair one requester's name with
+     * another requester's code.
      */
     val requests: List<CliPairRequestDto>,
 )
