@@ -26,12 +26,35 @@ internal data class PairRequestSummary(
     val appInstanceId: String,
     val deviceName: String? = null,
     val token: String = "",
+    // "v2-sas" or "v3-pin"; an older app omits it, which means v2.
+    val credentialType: String = CREDENTIAL_V2_SAS,
+    // v3 only: epoch millis when the current PIN generation expires.
+    val pinExpiresAt: Long? = null,
+    // v3 only: the rotation generation the PIN belongs to.
+    val tokenGeneration: Long? = null,
 )
 
 @Serializable
 internal data class PairTokenSnapshot(
     val requests: List<PairRequestSummary> = listOf(),
 )
+
+internal const val CREDENTIAL_V2_SAS = "v2-sas"
+internal const val CREDENTIAL_V3_PIN = "v3-pin"
+
+/** Which acceptance-window arming a token fetch carries (the `arm` query param). */
+internal enum class TokenFetchArm(
+    val query: String?,
+) {
+    /** Plain read: no arming (one-shot `token` without --wait). */
+    NONE(null),
+
+    /** First fetch of a --wait invocation: opens the v3 acceptance window. */
+    START("start"),
+
+    /** Subsequent --wait polls: extends the window without resetting budgets. */
+    RENEW("renew"),
+}
 
 /** How the terminal-facing token flow reports back; injectable for tests. */
 internal class TokenIo(
@@ -48,10 +71,17 @@ internal val TOKEN_POLL_INTERVAL = 500.milliseconds
  * the daemon log). Codes go to stdout alone — `CODE=$(crosspaste token)`
  * works — and all context lines go to stderr.
  *
- * Each request carries its own code (the SAS of that peer's key exchange), so
- * concurrent pairings can never caption one device's name with another's
- * code. A SAS is deterministic for a given device pair, so print-once-and-exit
- * is the whole contract; there is nothing to live-update.
+ * Each request carries its own code (the SAS of that peer's key exchange or
+ * the current v3 PIN of that peer's session), so concurrent pairings can never
+ * caption one device's name with another's code. Print-once-and-exit stays the
+ * contract for both: a SAS is deterministic for a given device pair, and a v3
+ * PIN is read live per invocation — it rotates every 30 seconds, so rerun (or
+ * poll with --json) for the current code.
+ *
+ * `--wait` additionally arms the v3 acceptance window while it runs: invoking
+ * the command is a local operator gesture, the headless equivalent of opening
+ * the Add Device screen. Without it a headless acceptor refuses v3 intents
+ * (PAIRING_DISABLED).
  */
 internal class TokenCommand : CliktCommand(name = "token") {
 
@@ -61,7 +91,9 @@ internal class TokenCommand : CliktCommand(name = "token") {
 
     private val wait by option(
         "--wait",
-        help = "Wait for a pairing request to arrive instead of failing when there is none",
+        help =
+            "Wait for a pairing request to arrive instead of failing when there is none, " +
+                "and accept v3 pairing while waiting",
     ).flag()
 
     private val timeout by option(
@@ -82,7 +114,10 @@ internal class TokenCommand : CliktCommand(name = "token") {
                     deadline = deadline,
                     json = ctx.json,
                     io = TokenIo(stdout = { echo(it) }, stderr = { echo(it, err = true) }),
-                    fetch = { client.getBody("/cli/pair/token", PairTokenSnapshot.serializer()) },
+                    fetch = { arm ->
+                        val query = arm.query?.let { "?arm=$it" } ?: ""
+                        client.getBody("/cli/pair/token$query", PairTokenSnapshot.serializer())
+                    },
                 )
             if (exitCode != 0) {
                 throw ProgramResult(exitCode)
@@ -104,7 +139,7 @@ internal suspend fun executeToken(
     io: TokenIo,
     pollInterval: Duration = TOKEN_POLL_INTERVAL,
     sleep: suspend (Duration) -> Unit = { delay(it) },
-    fetch: suspend () -> PairTokenSnapshot,
+    fetch: suspend (TokenFetchArm) -> PairTokenSnapshot,
 ): Int =
     try {
         executeTokenInner(wait, timeoutSeconds, deadline, json, io, pollInterval, sleep, fetch)
@@ -125,7 +160,7 @@ private suspend fun executeTokenInner(
     io: TokenIo,
     pollInterval: Duration,
     sleep: suspend (Duration) -> Unit,
-    fetch: suspend () -> PairTokenSnapshot,
+    fetch: suspend (TokenFetchArm) -> PairTokenSnapshot,
 ): Int {
     // With --wait the FIRST fetch already counts against the wall-clock
     // budget: it can block for its own HTTP timeout, and a runCli retry can
@@ -133,15 +168,19 @@ private suspend fun executeTokenInner(
     // budget must hold (a late active answer past the deadline is discarded,
     // not reported as success). Without --wait there is no time contract and
     // the single fetch runs unbounded as before.
+    //
+    // Arming follows the invocation shape: the first --wait fetch is the
+    // operator's gesture (opens the v3 acceptance window), the poll loop only
+    // renews it, and a plain read never arms.
     var snapshot =
         if (wait) {
-            fetchWithinDeadline(deadline, fetch) ?: PairTokenSnapshot()
+            fetchWithinDeadline(deadline) { fetch(TokenFetchArm.START) } ?: PairTokenSnapshot()
         } else {
-            fetch()
+            fetch(TokenFetchArm.NONE)
         }
     if (wait && snapshot.requests.isEmpty() && deadline.hasNotPassedNow()) {
         io.stderr("Waiting for a pairing request... (Ctrl-C to stop)")
-        awaitPairingRequests(deadline, pollInterval, sleep, fetch)?.let { snapshot = it }
+        awaitPairingRequests(deadline, pollInterval, sleep) { fetch(TokenFetchArm.RENEW) }?.let { snapshot = it }
     }
     // A timed-out --wait falls through with the empty snapshot, so the JSON
     // contract is uniform: stdout always carries one snapshot and the exit
@@ -165,6 +204,9 @@ private suspend fun executeTokenInner(
             "Enter each code on its initiating device."
         },
     )
+    if (snapshot.requests.any { it.credentialType == CREDENTIAL_V3_PIN }) {
+        io.stderr("Codes rotate every 30 seconds; rerun token for the current code.")
+    }
     return 0
 }
 

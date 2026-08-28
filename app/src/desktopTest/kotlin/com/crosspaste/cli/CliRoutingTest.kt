@@ -954,6 +954,24 @@ class CliRoutingTest {
     }
 
     @Test
+    fun `pair token arms the acceptance window only for known arm values`() {
+        val fixture = Fixture()
+        every { fixture.cliPairingService.pairingToken() } returns CliPairTokenDto(requests = listOf())
+        every { fixture.cliPairingService.armAcceptanceWindow(any()) } just Runs
+
+        withCliRouting(fixture) {
+            assertEquals(HttpStatusCode.OK, client.get("/cli/pair/token?arm=start").status)
+            assertEquals(HttpStatusCode.OK, client.get("/cli/pair/token?arm=renew").status)
+            assertEquals(HttpStatusCode.OK, client.get("/cli/pair/token").status)
+            assertEquals(HttpStatusCode.OK, client.get("/cli/pair/token?arm=bogus").status)
+
+            verify(exactly = 1) { fixture.cliPairingService.armAcceptanceWindow(CliTokenArm.START) }
+            verify(exactly = 1) { fixture.cliPairingService.armAcceptanceWindow(CliTokenArm.RENEW) }
+            verify(exactly = 2) { fixture.cliPairingService.armAcceptanceWindow(any()) }
+        }
+    }
+
+    @Test
     fun `pair nearby forwards the refresh flag and returns the device list`() {
         val fixture = Fixture()
         val device =

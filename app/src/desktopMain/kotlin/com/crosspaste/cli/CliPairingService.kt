@@ -6,6 +6,8 @@ import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
+import com.crosspaste.pairing.v3.PairingSessionState
+import com.crosspaste.pairing.v3.PakeRole
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.PairingCredentialRefreshResult
 import com.crosspaste.sync.PairingCredentialType
@@ -161,10 +163,58 @@ class CliPairingService(
                             appInstanceId = appInstanceId,
                             deviceName = resolveDeviceName(appInstanceId),
                             token = exchange.sas.toString().padStart(6, '0'),
+                            credentialType = CliPairCredential.V2_SAS,
                         )
                     }
-                },
+                } + v3AcceptorRequests(),
         )
+
+    /**
+     * Active v3 acceptor sessions currently showing a PIN — the same predicate
+     * the on-screen token cards use. Exposing the PIN over the same-user local
+     * CLI socket is the headless equivalent of rendering it on screen: the
+     * socket is unreachable from the network and from other users, and every
+     * server-side defence (acceptance window, rotation, guess budget) is
+     * unchanged.
+     */
+    private fun v3AcceptorRequests(): List<CliPairRequestDto> =
+        pairingV3UiController.sessions.value.mapNotNull { session ->
+            val pin = session.pin
+            if (session.role != PakeRole.ACCEPTOR ||
+                session.state != PairingSessionState.PIN_AVAILABLE ||
+                pin == null
+            ) {
+                return@mapNotNull null
+            }
+            CliPairRequestDto(
+                appInstanceId = session.peerAppInstanceId,
+                deviceName =
+                    session.peerDisplayName.takeIf { it.isNotBlank() }
+                        ?: resolveDeviceName(session.peerAppInstanceId),
+                token = pin,
+                credentialType = CliPairCredential.V3_PIN,
+                pinExpiresAt = session.pinExpiresAt,
+                tokenGeneration = session.tokenGeneration,
+            )
+        }
+
+    /**
+     * Arms the v3 acceptance window on behalf of `crosspaste token --wait`.
+     *
+     * [CliTokenArm.START] is the first fetch of a CLI invocation — a genuine
+     * local gesture (the operator ran a command on this machine), equivalent to
+     * entering the Add Device screen: it opens the window and resets the
+     * proof-failure budget / clears a lock. [CliTokenArm.RENEW] is the poll
+     * loop of the SAME invocation and only extends an open window, so a
+     * long-running `--wait` cannot silently refill an attacker's guess budget
+     * (mirrors the UI renewal loop).
+     */
+    fun armAcceptanceWindow(arm: CliTokenArm) {
+        when (arm) {
+            CliTokenArm.START -> pairingV3UiController.openAcceptanceWindow()
+            CliTokenArm.RENEW -> pairingV3UiController.renewAcceptanceWindow()
+        }
+    }
 
     private fun resolveDeviceName(appInstanceId: String): String? =
         nearbyDeviceManager.nearbySyncInfos.value

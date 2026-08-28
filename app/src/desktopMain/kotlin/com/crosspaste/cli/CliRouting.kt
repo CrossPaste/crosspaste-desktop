@@ -201,6 +201,12 @@ fun Routing.cliRouting(
             }
 
             get("/token") {
+                // `?arm=start|renew` lets `crosspaste token --wait` open/extend the
+                // v3 acceptance window (see CliPairingService.armAcceptanceWindow);
+                // a plain GET stays a pure read.
+                CliTokenArm.fromQuery(call.request.queryParameters["arm"])?.let { arm ->
+                    cliPairingService.armAcceptanceWindow(arm)
+                }
                 call.respond(cliPairingService.pairingToken())
             }
 
