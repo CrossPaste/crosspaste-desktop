@@ -7,6 +7,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.db.task.PasteTask
+import com.crosspaste.db.task.PasteTaskExtraInfo
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.PasteException
@@ -39,6 +40,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SyncPasteTaskExecutorTest {
@@ -420,6 +422,79 @@ class SyncPasteTaskExecutorTest {
 
             val failResult = result as FailurePasteTaskResult
             assertTrue(failResult.needRetry)
+        }
+
+    @Test
+    fun doExecuteTask_mismatchAndTransientFailure_retriesOnlyTransientTarget() =
+        runTest {
+            // A stale target's NOT_MATCH_APP_INSTANCE_ID must not cancel the retry
+            // of another target that failed transiently (#4894 review follow-up)
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task = createPasteTask()
+            val pasteData = createMockPasteData()
+
+            val staleHandler = createMockSyncHandler("stale-target")
+            val transientHandler = createMockSyncHandler("transient-target")
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns
+                mapOf("stale-target" to staleHandler, "transient-target" to transientHandler)
+            coEvery { deps.pasteClientApi.sendPaste(any(), eq("stale-target"), any()) } returns
+                FailureResult(
+                    PasteException(
+                        StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode(),
+                        "stale identity",
+                    ),
+                )
+            coEvery { deps.pasteClientApi.sendPaste(any(), eq("transient-target"), any()) } returns
+                FailureResult(
+                    PasteException(
+                        StandardErrorCode.UNKNOWN_ERROR.toErrorCode(),
+                        "transient error",
+                    ),
+                )
+
+            val result = executor.doExecuteTask(task)
+
+            val failResult = result as FailurePasteTaskResult
+            assertTrue(failResult.needRetry)
+            val newExtraInfo =
+                jsonUtils.JSON.decodeFromString<PasteTaskExtraInfo>(
+                    failResult.newExtraInfo,
+                ) as SyncExtraInfo
+            assertEquals(setOf("transient-target"), newExtraInfo.syncFails)
+        }
+
+    @Test
+    fun doExecuteTask_allFailuresNonRetriable_noRetryAndEmptySyncFails() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task = createPasteTask()
+            val pasteData = createMockPasteData()
+
+            val staleHandler = createMockSyncHandler("stale-target")
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("stale-target" to staleHandler)
+            coEvery { deps.pasteClientApi.sendPaste(any(), eq("stale-target"), any()) } returns
+                FailureResult(
+                    PasteException(
+                        StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode(),
+                        "stale identity",
+                    ),
+                )
+
+            val result = executor.doExecuteTask(task)
+
+            val failResult = result as FailurePasteTaskResult
+            assertTrue(!failResult.needRetry)
+            val newExtraInfo =
+                jsonUtils.JSON.decodeFromString<PasteTaskExtraInfo>(
+                    failResult.newExtraInfo,
+                ) as SyncExtraInfo
+            assertTrue(newExtraInfo.syncFails.isEmpty())
         }
 
     @Test
