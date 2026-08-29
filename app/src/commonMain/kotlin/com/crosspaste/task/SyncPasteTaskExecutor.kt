@@ -5,6 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.sync.SyncState
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -122,10 +123,15 @@ class SyncPasteTaskExecutor(
         return deferredResults.associate { it.await() }
     }
 
+    // Only CONNECTED handlers are eligible: a stale row left behind by a peer whose
+    // appInstanceId changed keeps the last known address, so pushing to DISCONNECTED
+    // handlers delivers duplicates to whoever now owns that address (#4894). A peer
+    // that reconnects catches up via the pull cursor.
     private suspend fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> =
         if (syncExtraInfo.appInstanceId == appInfo.appInstanceId) {
             syncManager.getSyncHandlers().filter { (key, handler) ->
                 handler.currentSyncRuntimeInfo.allowSend &&
+                    handler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                     (
                         syncExtraInfo.targetAppInstanceIds?.contains(key) != false
@@ -139,6 +145,7 @@ class SyncPasteTaskExecutor(
                         if (key != syncExtraInfo.appInstanceId) {
                             val isEligible =
                                 handler.currentSyncRuntimeInfo.allowSend &&
+                                    handler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
                                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                                     (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
                             if (!isEligible) {
@@ -380,7 +387,8 @@ class SyncPasteTaskExecutor(
                 fails.values.any {
                     it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP) ||
                         it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP) ||
-                        it.exception.match(StandardErrorCode.DECRYPT_FAIL)
+                        it.exception.match(StandardErrorCode.DECRYPT_FAIL) ||
+                        it.exception.match(StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID)
                 }
 
             syncExtraInfo.syncFails.addAll(fails.keys)

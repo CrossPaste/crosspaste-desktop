@@ -5,6 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.sync.SyncState
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -137,13 +138,14 @@ class SyncPasteTaskExecutorTest {
         allowSend: Boolean = true,
         versionRelation: VersionRelation = VersionRelation.EQUAL_TO,
         connectHostAddress: String? = "192.168.1.100",
+        connectState: Int = SyncState.CONNECTED,
     ): SyncHandler {
         val handler = mockk<SyncHandler>(relaxed = true)
         val syncRuntimeInfo =
             createConnectedSyncRuntimeInfo(
                 appInstanceId = appInstanceId,
                 hostAddress = connectHostAddress ?: "192.168.1.100",
-            ).copy(allowSend = allowSend)
+            ).copy(allowSend = allowSend, connectState = connectState)
         every { handler.currentSyncRuntimeInfo } returns syncRuntimeInfo
         every { handler.currentVersionRelation } returns versionRelation
         coEvery { handler.getConnectHostAddress() } returns connectHostAddress
@@ -259,6 +261,31 @@ class SyncPasteTaskExecutorTest {
 
             assertTrue(result is SuccessPasteTaskResult)
             coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
+        }
+
+    @Test
+    fun doExecuteTask_localPaste_filtersDisconnectedHandler() =
+        runTest {
+            // #4894: a stale row left by a reinstalled peer keeps the last known
+            // address but stays DISCONNECTED — it must not receive pushes
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task = createPasteTask()
+            val pasteData = createMockPasteData()
+
+            val handlerConnected = createMockSyncHandler("remote-1")
+            val handlerStale = createMockSyncHandler("remote-2", connectState = SyncState.DISCONNECTED)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
+            coEvery { deps.syncManager.getSyncHandlers() } returns
+                mapOf("remote-1" to handlerConnected, "remote-2" to handlerStale)
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+
+            val result = executor.doExecuteTask(task)
+
+            assertTrue(result is SuccessPasteTaskResult)
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-2"), any()) }
         }
 
     // ========== C. Sync execution ==========
