@@ -22,6 +22,7 @@ import com.crosspaste.utils.getHtmlUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.isVideoFile
 import com.crosspaste.utils.namedScope
+import com.crosspaste.utils.normalizeUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -58,7 +59,16 @@ class DesktopUISupport(
 
     override fun openUrlInBrowser(url: String) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            Desktop.getDesktop().browse(URI(url))
+            runCatching {
+                Desktop.getDesktop().browse(URI(normalizeUrl(url)))
+            }.onFailure { e ->
+                logger.warn(e) { "Failed to open url: $url" }
+                notificationManager.sendNotification(
+                    title = { it.getText("error_open_link_failed") },
+                    message = { url },
+                    messageType = MessageType.Error,
+                )
+            }
         } else {
             notificationManager.sendNotification(
                 title = { it.getText("failed_to_open_browser") },

@@ -8,6 +8,12 @@ interface UISupport {
 
     val crossPasteWebService: CrossPasteWebService
 
+    /**
+     * Must never throw: the URL may come from pasteboard data (malformed,
+     * whitespace-padded) or the device may have no handler for it.
+     * Implementations normalize the URL, catch open failures, and notify
+     * the user instead of propagating.
+     */
     fun openUrlInBrowser(url: String)
 
     fun getCrossPasteWebUrl(path: String = ""): String
