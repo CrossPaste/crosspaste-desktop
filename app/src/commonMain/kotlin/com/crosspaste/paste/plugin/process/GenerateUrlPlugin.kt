@@ -6,6 +6,7 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.utils.getUrlUtils
+import com.crosspaste.utils.normalizeUrl
 
 object GenerateUrlPlugin : PasteProcessPlugin {
 
@@ -18,11 +19,12 @@ object GenerateUrlPlugin : PasteProcessPlugin {
     ): List<PasteItem> {
         if (pasteItems.all { it !is UrlPasteItem }) {
             pasteItems.filterIsInstance<TextPasteItem>().firstOrNull()?.let {
-                if (urlUtils.isValidUrl(it.text)) {
+                val text = normalizeUrl(it.text)
+                if (urlUtils.isValidUrl(text)) {
                     return pasteItems +
                         createUrlPasteItem(
                             identifiers = it.identifiers,
-                            url = it.text,
+                            url = text,
                         )
                 }
             }

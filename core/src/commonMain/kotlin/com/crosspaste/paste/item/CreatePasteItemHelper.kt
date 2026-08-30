@@ -2,6 +2,7 @@ package com.crosspaste.paste.item
 
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.utils.getCodecsUtils
+import com.crosspaste.utils.normalizeUrl
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -169,7 +170,8 @@ object CreatePasteItemHelper {
         url: String,
         extraInfo: JsonObject? = null,
     ): UrlPasteItem {
-        val urlBytes = url.encodeToByteArray()
+        val trimmedUrl = normalizeUrl(url)
+        val urlBytes = trimmedUrl.encodeToByteArray()
         val hash = codecsUtils.hash(urlBytes)
         var size = urlBytes.size.toLong()
         extraInfo?.let {
@@ -181,7 +183,7 @@ object CreatePasteItemHelper {
             identifiers = identifiers,
             hash = hash,
             size = size,
-            url = url,
+            url = trimmedUrl,
             extraInfo = extraInfo,
         )
     }
