@@ -1,6 +1,7 @@
 package com.crosspaste.net.routing
 
 import com.crosspaste.app.AppControl
+import com.crosspaste.app.AppInfo
 import com.crosspaste.dto.push.PushHeaders
 import com.crosspaste.dto.push.PushPrepareResponse
 import com.crosspaste.exception.PasteException
@@ -13,6 +14,7 @@ import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.requireSyncHandler
+import com.crosspaste.utils.requireTargetAppInstance
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -26,6 +28,7 @@ private val logger: KLogger = KotlinLogging.logger("PasteRouting")
 
 fun Routing.pasteRouting(
     appControl: AppControl,
+    appInfo: AppInfo,
     pasteboardService: PasteboardService,
     pasteReleaseService: PasteReleaseService,
     pastePullService: PastePullService,
@@ -37,6 +40,7 @@ fun Routing.pasteRouting(
         handleSyncPaste(
             call,
             appControl,
+            appInfo,
             pasteboardService,
             pasteReleaseService,
             pastePullService,
@@ -50,6 +54,7 @@ fun Routing.pasteRouting(
 private suspend fun handleSyncPaste(
     call: ApplicationCall,
     appControl: AppControl,
+    appInfo: AppInfo,
     pasteboardService: PasteboardService,
     pasteReleaseService: PasteReleaseService,
     pastePullService: PastePullService,
@@ -58,6 +63,13 @@ private suspend fun handleSyncPaste(
     syncRoutingApi: SyncRoutingApi,
 ) {
     val appInstanceId = getAppInstanceId(call) ?: return
+
+    // Reject pastes addressed to a different identity. A sender pushing through a
+    // stale SyncRuntimeInfo row (peer reinstalled and changed appInstanceId, same
+    // address — #4894) targets the old id; storing it would duplicate every paste
+    // once per stale row.
+    if (!requireTargetAppInstance(call, appInfo)) return
+
     val syncHandler = requireSyncHandler(call, syncRoutingApi, appInstanceId) ?: return
 
     if (!syncHandler.currentSyncRuntimeInfo.allowReceive) {

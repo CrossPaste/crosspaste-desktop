@@ -136,6 +136,7 @@ open class DefaultServerModule(
                 )
                 pasteRouting(
                     appControl,
+                    appInfo,
                     pasteboardService,
                     pasteReleaseService,
                     pastePullService,

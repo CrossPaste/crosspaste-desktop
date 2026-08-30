@@ -5,6 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.sync.SyncState
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.SyncExtraInfo
 import com.crosspaste.db.task.TaskType
@@ -122,10 +123,15 @@ class SyncPasteTaskExecutor(
         return deferredResults.associate { it.await() }
     }
 
+    // Only CONNECTED handlers are eligible: a stale row left behind by a peer whose
+    // appInstanceId changed keeps the last known address, so pushing to DISCONNECTED
+    // handlers delivers duplicates to whoever now owns that address (#4894). A peer
+    // that reconnects catches up via the pull cursor.
     private suspend fun getEligibleSyncHandlers(syncExtraInfo: SyncExtraInfo): Map<String, SyncHandler> =
         if (syncExtraInfo.appInstanceId == appInfo.appInstanceId) {
             syncManager.getSyncHandlers().filter { (key, handler) ->
                 handler.currentSyncRuntimeInfo.allowSend &&
+                    handler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                     (
                         syncExtraInfo.targetAppInstanceIds?.contains(key) != false
@@ -139,6 +145,7 @@ class SyncPasteTaskExecutor(
                         if (key != syncExtraInfo.appInstanceId) {
                             val isEligible =
                                 handler.currentSyncRuntimeInfo.allowSend &&
+                                    handler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
                                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                                     (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
                             if (!isEligible) {
@@ -375,22 +382,25 @@ class SyncPasteTaskExecutor(
         return if (fails.isEmpty()) {
             SuccessPasteTaskResult(jsonUtils.JSON.encodeToString(syncExtraInfo))
         } else {
-            // If any of the failures is due to non-retriable errors, do not retry
-            val noNeedRetry =
-                fails.values.any {
-                    it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP) ||
-                        it.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP) ||
-                        it.exception.match(StandardErrorCode.DECRYPT_FAIL)
-                }
+            // Retry decisions are per target: a non-retriable failure (e.g. a stale
+            // row's NOT_MATCH_APP_INSTANCE_ID) only drops its own target from
+            // syncFails, so transient failures on other targets still get retried.
+            val retriableFails = fails.filterValues { !isNonRetriable(it) }
 
-            syncExtraInfo.syncFails.addAll(fails.keys)
+            syncExtraInfo.syncFails.addAll(retriableFails.keys)
             TaskUtils.createFailurePasteTaskResult(
                 logger = logger,
-                retryHandler = { !noNeedRetry && syncExtraInfo.executionHistories.size < 3 },
+                retryHandler = { retriableFails.isNotEmpty() && syncExtraInfo.executionHistories.size < 3 },
                 startTime = startTime,
                 fails = fails.values,
                 extraInfo = syncExtraInfo,
             )
         }
     }
+
+    private fun isNonRetriable(failure: FailureResult): Boolean =
+        failure.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP) ||
+            failure.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP) ||
+            failure.exception.match(StandardErrorCode.DECRYPT_FAIL) ||
+            failure.exception.match(StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID)
 }
