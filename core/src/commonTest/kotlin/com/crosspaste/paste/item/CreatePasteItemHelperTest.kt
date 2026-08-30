@@ -152,6 +152,13 @@ class CreatePasteItemHelperTest {
     }
 
     @Test
+    fun `createUrlPasteItem trims surrounding whitespace from url`() {
+        val item = createUrlPasteItem(url = " \nhttps://example.com ")
+        assertEquals("https://example.com", item.url)
+        assertEquals("https://example.com".encodeToByteArray().size.toLong(), item.size)
+    }
+
+    @Test
     fun `createUrlPasteItem computes hash from url bytes`() {
         val item = createUrlPasteItem(url = "https://example.com")
         assertTrue(item.hash.isNotEmpty())

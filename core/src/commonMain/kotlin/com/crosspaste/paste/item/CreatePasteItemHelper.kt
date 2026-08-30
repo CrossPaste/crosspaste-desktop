@@ -169,7 +169,10 @@ object CreatePasteItemHelper {
         url: String,
         extraInfo: JsonObject? = null,
     ): UrlPasteItem {
-        val urlBytes = url.encodeToByteArray()
+        // Surrounding whitespace makes the URL unopenable (ActivityNotFoundException on
+        // Android, URISyntaxException on desktop) even though URL validation tolerates it
+        val trimmedUrl = url.trim()
+        val urlBytes = trimmedUrl.encodeToByteArray()
         val hash = codecsUtils.hash(urlBytes)
         var size = urlBytes.size.toLong()
         extraInfo?.let {
@@ -181,7 +184,7 @@ object CreatePasteItemHelper {
             identifiers = identifiers,
             hash = hash,
             size = size,
-            url = url,
+            url = trimmedUrl,
             extraInfo = extraInfo,
         )
     }

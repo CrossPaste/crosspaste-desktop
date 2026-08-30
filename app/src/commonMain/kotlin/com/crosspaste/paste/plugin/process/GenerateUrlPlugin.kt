@@ -18,11 +18,12 @@ object GenerateUrlPlugin : PasteProcessPlugin {
     ): List<PasteItem> {
         if (pasteItems.all { it !is UrlPasteItem }) {
             pasteItems.filterIsInstance<TextPasteItem>().firstOrNull()?.let {
-                if (urlUtils.isValidUrl(it.text)) {
+                val text = it.text.trim()
+                if (urlUtils.isValidUrl(text)) {
                     return pasteItems +
                         createUrlPasteItem(
                             identifiers = it.identifiers,
-                            url = it.text,
+                            url = text,
                         )
                 }
             }
