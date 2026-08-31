@@ -60,7 +60,6 @@ import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.ColorAccessibility.getBestTextColor
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.RelativeTime
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -178,9 +177,19 @@ fun PasteDataScope.SidePasteTitleView() {
 
                         var hadFocus by remember { mutableStateOf(false) }
 
+                        val committer =
+                            remember {
+                                TitleEditCommitter(scope) { name ->
+                                    updatePasteItemHelper
+                                        .updateName(pasteData, name, pasteItem)
+                                        .map { }
+                                }
+                            }
+
                         val completeEditing: () -> Unit = {
-                            if (isEditing) {
-                                if (editedTextValue.text.isBlank()) {
+                            committer.commit(
+                                text = editedTextValue.text,
+                                onRevert = {
                                     // Revert to the original name if empty
                                     editedTextValue =
                                         TextFieldValue(
@@ -188,26 +197,23 @@ fun PasteDataScope.SidePasteTitleView() {
                                             selection = TextRange(pasteboardName.length),
                                         )
                                     isEditing = false
-                                } else {
-                                    // Proceed with update if not empty
-                                    scope.launch {
-                                        updatePasteItemHelper
-                                            .updateName(
-                                                pasteData,
-                                                editedTextValue.text,
-                                                pasteItem,
-                                            ).onSuccess {
-                                                pasteboardName = editedTextValue.text
-                                                isEditing = false
-                                            }.onFailure {
-                                                notificationManager.sendNotification(
-                                                    title = { copywriter.getText("save_failed") },
-                                                    messageType = MessageType.Error,
-                                                )
-                                            }
-                                    }
-                                }
-                            }
+                                },
+                                onSaved = { savedName ->
+                                    pasteboardName = savedName
+                                    editedTextValue =
+                                        TextFieldValue(
+                                            text = savedName,
+                                            selection = TextRange(savedName.length),
+                                        )
+                                    isEditing = false
+                                },
+                                onFailure = {
+                                    notificationManager.sendNotification(
+                                        title = { copywriter.getText("save_failed") },
+                                        messageType = MessageType.Error,
+                                    )
+                                },
+                            )
                         }
 
                         CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
@@ -221,6 +227,7 @@ fun PasteDataScope.SidePasteTitleView() {
                                             if (state.isFocused) {
                                                 hadFocus = true
                                             } else if (hadFocus) {
+                                                hadFocus = false
                                                 // Losing focus (e.g. clicking elsewhere) commits the edit
                                                 completeEditing()
                                             }

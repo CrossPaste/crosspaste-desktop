@@ -37,12 +37,17 @@ fun PasteTooltipAreaView(
     },
     content: @Composable () -> Unit,
 ) {
+    if (!enabled) {
+        Box(modifier = modifier) {
+            content()
+        }
+        return
+    }
     TooltipArea(
         modifier = modifier,
         delayMillis = delayMillis,
         tooltipPlacement = computeTooltipPlacement(),
         tooltip = {
-            if (!enabled) return@TooltipArea
             Box(
                 modifier =
                     Modifier
