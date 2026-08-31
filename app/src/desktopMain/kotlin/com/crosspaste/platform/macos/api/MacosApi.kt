@@ -113,31 +113,6 @@ interface MacosApi : Library {
         thumbnailPath: String,
     ): Boolean
 
-    fun trayInit(
-        iconData: ByteArray,
-        iconDataLength: Int,
-        tooltip: String,
-        leftClickCallback: LeftClickCallback,
-    ): Boolean
-
-    fun trayAddMenuItem(
-        itemId: Int,
-        title: String,
-        enabled: Boolean,
-    )
-
-    fun trayAddSeparator()
-
-    fun traySetCallback(callback: MenuCallback)
-
-    fun trayUpdateMenuItem(
-        itemId: Int,
-        title: String,
-        enabled: Boolean,
-    )
-
-    fun trayCleanup()
-
     fun startNetworkStateMonitor(callback: NetworkChangeCallback)
 
     fun stopNetworkStateMonitor()
@@ -154,14 +129,6 @@ interface MacosApi : Library {
             }
         }
     }
-}
-
-fun interface MenuCallback : Callback {
-    fun invoke(itemId: Int)
-}
-
-fun interface LeftClickCallback : Callback {
-    fun invoke()
 }
 
 fun interface FileResolverCallback : Callback {

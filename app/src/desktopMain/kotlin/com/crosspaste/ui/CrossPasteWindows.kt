@@ -15,8 +15,7 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.platform.Platform
-import com.crosspaste.ui.tray.MacTrayView
-import com.crosspaste.ui.tray.NonMacTrayView
+import com.crosspaste.ui.tray.TrayView
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
@@ -48,12 +47,8 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
             null
         }
 
-    if (!exiting) {
-        if (isMacos) {
-            MacTrayView.Tray()
-        } else if (windowIcon != null) {
-            NonMacTrayView(windowIcon)
-        }
+    if (!exiting && windowIcon != null) {
+        TrayView(windowIcon)
     }
 
     val appLaunch = koinInject<DesktopAppLaunch>()

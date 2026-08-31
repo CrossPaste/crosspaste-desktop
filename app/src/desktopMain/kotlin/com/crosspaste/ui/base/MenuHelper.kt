@@ -2,7 +2,6 @@ package com.crosspaste.ui.base
 
 import com.crosspaste.app.AppUpdateService
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.app.ExitMode
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.app.WindowsZipUpdater
 import com.crosspaste.i18n.Copywriter
@@ -17,7 +16,6 @@ import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.Route
 import com.crosspaste.ui.Settings
 import com.crosspaste.ui.ShortcutKeys
-import com.crosspaste.ui.tray.NativeTrayManager
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.launch
@@ -146,41 +144,6 @@ class MenuHelper(
     private fun trayMenuAction(route: Route) {
         navigationManager.navigateAndClearStack(route)
         appWindowManager.showMainWindow(WindowTrigger.MENU)
-    }
-
-    fun createMacTrayMenu(
-        trayManager: NativeTrayManager,
-        applicationExit: (ExitMode) -> Unit,
-        update: Boolean = false,
-    ) {
-        if (!update) {
-            for ((index, item) in menuItems.withIndex()) {
-                trayManager.addMenuItem(
-                    itemId = index,
-                    title = item.title(copywriter),
-                ) {
-                    item.action()
-                }
-            }
-            trayManager.addSeparator()
-            trayManager.addMenuItem(
-                itemId = menuItems.size + 1,
-                title = copywriter.getText("quit"),
-            ) {
-                applicationExit(ExitMode.EXIT)
-            }
-        } else {
-            for ((index, item) in menuItems.withIndex()) {
-                trayManager.updateMenuItem(
-                    itemId = index,
-                    title = item.title(copywriter),
-                )
-            }
-            trayManager.updateMenuItem(
-                itemId = menuItems.size + 1,
-                title = copywriter.getText("quit"),
-            )
-        }
     }
 }
 
