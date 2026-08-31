@@ -1,12 +1,14 @@
 package com.crosspaste.ui.paste.side.preview
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TitleEditCommitterTest {
 
     @Test
@@ -81,6 +83,43 @@ class TitleEditCommitterTest {
 
             assertEquals(1, reverts)
             assertEquals(0, updateCalls)
+        }
+
+    @Test
+    fun thrownExceptionReportsFailureAndUnlocksSessionForRetry() =
+        runTest {
+            var updateCalls = 0
+            var shouldThrow = true
+            val committer =
+                TitleEditCommitter(backgroundScope) {
+                    updateCalls++
+                    if (shouldThrow) {
+                        throw IllegalStateException("db exploded")
+                    }
+                    Result.success(Unit)
+                }
+
+            var savedName: String? = null
+            var failures = 0
+            val commit = {
+                committer.commit(
+                    text = "name",
+                    onRevert = {},
+                    onSaved = { savedName = it },
+                    onFailure = { failures++ },
+                )
+            }
+
+            commit()
+            runCurrent()
+            assertEquals(1, failures)
+            assertNull(savedName)
+
+            shouldThrow = false
+            commit()
+            runCurrent()
+            assertEquals(2, updateCalls)
+            assertEquals("name", savedName)
         }
 
     @Test

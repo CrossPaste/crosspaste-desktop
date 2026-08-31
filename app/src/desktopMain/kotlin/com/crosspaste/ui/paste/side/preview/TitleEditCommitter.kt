@@ -1,5 +1,6 @@
 package com.crosspaste.ui.paste.side.preview
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -28,7 +29,15 @@ class TitleEditCommitter(
             return
         }
         scope.launch {
-            updateName(text)
+            val result =
+                try {
+                    updateName(text)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+            result
                 .onSuccess {
                     onSaved(text)
                 }.onFailure {
