@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.2.0] - 2026-08-26
+# [2.2.0] - 2026-08-31
 # Highlights 🌟
 
 - ⌨️ **CrossPaste CLI**
@@ -42,7 +42,7 @@ All notable changes to this project will be documented in this file.
   management. The CLI probes app liveness and auto-starts the desktop
   app when needed, and the app's headless mode is hardened for daemon
   use on servers and other display-less environments (#4771 #4782
-  #4786 #4788 #4859).
+  #4786 #4788 #4859 #4893).
 
 - 🪟 **More reliable Windows clipboard capture**
   Rapid clipboard bursts are coalesced into one snapshot through a
@@ -59,6 +59,8 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Trim surrounding whitespace when creating UrlPasteItem (#4899)
+- :bug: Stop pushing pastes to stale disconnected sync rows (#4895)
 - :bug: Drain sessions in WsSessionManager.closeAll to fix concurrent iteration flake (#4890)
 - :bug: Use origin.remoteAddress instead of remoteHost in pairing v3 routes to avoid a blocking reverse DNS lookup (#4875)
 - :bug: Read trust request bodies before taking the per-peer pairing lock (#4871 #4873)
@@ -79,6 +81,7 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
+- :sparkles: Surface v3 PINs via crosspaste token with acceptance-window arming (#4893)
 - :sparkles: Let clicks outside the font dropdown pass through instead of being swallowed (#4887)
 - :sparkles: Add a redacted telemetry observer seam to PairingProtocolV3Service (#4881)
 - :sparkles: Roll out pairing v3 by advertising PAIRING_VERSION 3 gated on the bundled backend (#4877)

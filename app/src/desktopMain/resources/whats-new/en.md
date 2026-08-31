@@ -1,4 +1,4 @@
-# [2.2.0] - 2026-08-26
+# [2.2.0] - 2026-08-31
 
 ## ⌨️ Brand-new command-line tool
 CrossPaste now ships with a command-line tool, crosspaste, bundled in every desktop package (on macOS, the app offers a one-click install on first launch; on Windows, one click adds it to PATH). Copy, paste, search, pick interactively, edit, and watch your clipboard history live — plus pair devices and run headless — all from the terminal and your scripts. In sixel-capable terminals, images even preview inline as real pixels. See the CLI guide for every command and example:
@@ -21,6 +21,9 @@ Fixed the font dropdown in settings needing two clicks: clicking outside the dro
 
 ## ⚙️ Sturdier background tasks
 A single corrupted task record no longer stalls background task processing, and task failures are now recorded more accurately.
+
+## 🔄 Sync and link fixes
+Fixed an issue where a paste could be pushed to the same device more than once when stale entries of that device lingered in the device list; links copied with surrounding whitespace are now trimmed before being recognized.
 
 # [2.1.7] - 2026-08-09
 
