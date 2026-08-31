@@ -18,7 +18,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
-import com.kdroid.composetray.tray.api.Tray
+import dev.nucleusframework.composenativetray.tray.api.Tray
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
