@@ -17,7 +17,7 @@ Fixed an issue where the main window could be taller than the screen, cutting of
 The pairing dialog now focuses the first input box when it opens; the countdown bar on older-style pairing cards matches the newer look; and cards close automatically when pairing is cancelled.
 
 ## 🎨 UI polish
-Fixed the font dropdown in settings needing two clicks: clicking outside the dropdown now closes it and reaches your target in a single click. The underlying UI framework was upgraded to its latest version, and following the system light/dark mode is now consistent from the very first frame after launch.
+Fixed the font dropdown in settings needing two clicks: clicking outside the dropdown now closes it and reaches your target in a single click. Long paste titles clipped in the side panel now show the full text on hover, and title edits are saved when you click elsewhere. The underlying UI framework was upgraded to its latest version, and following the system light/dark mode is now consistent from the very first frame after launch.
 
 ## ⚙️ Sturdier background tasks
 A single corrupted task record no longer stalls background task processing, and task failures are now recorded more accurately.

@@ -59,6 +59,7 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Show tooltip for clipped paste title and commit title edit on focus loss (#4903)
 - :bug: Trim surrounding whitespace when creating UrlPasteItem (#4899)
 - :bug: Stop pushing pastes to stale disconnected sync rows (#4895)
 - :bug: Drain sessions in WsSessionManager.closeAll to fix concurrent iteration flake (#4890)
@@ -111,6 +112,8 @@ All notable changes to this project will be documented in this file.
 
 # Multiplatform · Refactor · Code Style 🔨
 
+- :hammer: Unify the system tray across all three platforms on ComposeNativeTray (#4902)
+- :hammer: Make TokenInputRow expect/actual so mobile can provide a flicker-free input (#4900)
 - :hammer: Resolve system dark theme directly in composition via dynamic isSystemInDarkTheme (#4886)
 - :hammer: Restrict production libcrypto loading to the bundled library with fail-closed startup probe (#4865)
 - :hammer: Replace BouncyCastle SPAKE2 EC backend with constant-time OpenSSL via JNA (#4861)
@@ -134,6 +137,7 @@ All notable changes to this project will be documented in this file.
 
 # Dependencies ⬆️
 
+- :arrow_up: Bump ComposeNativeTray from 1.3.3 to 2.1.3 for Compose 1.12 support (#4901)
 - :arrow_up: Bump io.coil-kt.coil3 from 3.5.0 to 3.6.0 for Compose 1.12 support and GIF/AsyncImage rendering fixes
 - :arrow_up: Bump com.mohamedrejeb.richeditor:richeditor-compose from 1.0.0 to 1.1.0 for Compose 1.12 support and a clipboard fix (#4891)
 - :arrow_up: Bump gradle-wrapper from 9.7.0 to 9.7.1 (#4889)
