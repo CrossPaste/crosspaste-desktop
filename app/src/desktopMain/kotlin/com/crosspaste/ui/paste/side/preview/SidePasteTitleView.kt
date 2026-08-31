@@ -1,5 +1,6 @@
 package com.crosspaste.ui.paste.side.preview
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -47,6 +49,7 @@ import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.LocalThemeState
+import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
 import com.crosspaste.ui.base.lightSideBarColors
@@ -57,9 +60,9 @@ import com.crosspaste.ui.theme.DesktopAppUIFont
 import com.crosspaste.utils.ColorAccessibility.getBestTextColor
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.RelativeTime
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PasteDataScope.SidePasteTitleView() {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -116,6 +119,8 @@ fun PasteDataScope.SidePasteTitleView() {
 
     var isEditing by remember { mutableStateOf(false) }
 
+    var titleOverflowed by remember(pasteData.id) { mutableStateOf(false) }
+
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(isCurrentThemeDark, pasteData.source) {
@@ -135,105 +140,144 @@ fun PasteDataScope.SidePasteTitleView() {
             }
     }
 
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(sideTitleHeight)
-                .background(background)
-                .padding(start = medium),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+    PasteTooltipAreaView(
+        text = editedTextValue.text,
+        enabled = titleOverflowed && !isEditing,
     ) {
-        Column(
+        Row(
             modifier =
                 Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            verticalArrangement = Arrangement.Center,
+                    .fillMaxWidth()
+                    .height(sideTitleHeight)
+                    .background(background)
+                    .padding(start = medium),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.wrapContentSize().width(IntrinsicSize.Min),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                verticalArrangement = Arrangement.Center,
             ) {
-                if (isEditing) {
-                    val customTextSelectionColors =
-                        remember(onBackground) {
-                            TextSelectionColors(
-                                handleColor = onBackground,
-                                backgroundColor = onBackground.copy(alpha = 0.3f),
+                Row(
+                    modifier = Modifier.wrapContentSize().width(IntrinsicSize.Min),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                ) {
+                    if (isEditing) {
+                        val customTextSelectionColors =
+                            remember(onBackground) {
+                                TextSelectionColors(
+                                    handleColor = onBackground,
+                                    backgroundColor = onBackground.copy(alpha = 0.3f),
+                                )
+                            }
+
+                        var hadFocus by remember { mutableStateOf(false) }
+
+                        val committer =
+                            remember {
+                                TitleEditCommitter(scope) { name ->
+                                    updatePasteItemHelper
+                                        .updateName(pasteData, name, pasteItem)
+                                        .map { }
+                                }
+                            }
+
+                        val completeEditing: () -> Unit = {
+                            committer.commit(
+                                text = editedTextValue.text,
+                                onRevert = {
+                                    // Revert to the original name if empty
+                                    editedTextValue =
+                                        TextFieldValue(
+                                            text = pasteboardName,
+                                            selection = TextRange(pasteboardName.length),
+                                        )
+                                    isEditing = false
+                                },
+                                onSaved = { savedName ->
+                                    pasteboardName = savedName
+                                    editedTextValue =
+                                        TextFieldValue(
+                                            text = savedName,
+                                            selection = TextRange(savedName.length),
+                                        )
+                                    isEditing = false
+                                },
+                                onFailure = {
+                                    notificationManager.sendNotification(
+                                        title = { copywriter.getText("save_failed") },
+                                        messageType = MessageType.Error,
+                                    )
+                                },
                             )
                         }
 
-                    CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
-                        BasicTextField(
-                            value = editedTextValue,
-                            onValueChange = { editedTextValue = it },
+                        CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
+                            BasicTextField(
+                                value = editedTextValue,
+                                onValueChange = { editedTextValue = it },
+                                modifier =
+                                    Modifier
+                                        .focusRequester(focusRequester)
+                                        .onFocusChanged { state ->
+                                            if (state.isFocused) {
+                                                hadFocus = true
+                                            } else if (hadFocus) {
+                                                hadFocus = false
+                                                // Losing focus (e.g. clicking elsewhere) commits the edit
+                                                completeEditing()
+                                            }
+                                        }.weight(1f, fill = false),
+                                textStyle =
+                                    DesktopAppUIFont.sidePasteTitleTextStyle.copy(
+                                        color = onBackground,
+                                    ),
+                                cursorBrush = SolidColor(onBackground),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions =
+                                    KeyboardActions(
+                                        onDone = { completeEditing() },
+                                    ),
+                            )
+                        }
+
+                        // Autofocus and select all when entering edit mode
+                        LaunchedEffect(Unit) {
+                            focusRequester.requestFocus()
+                            // Set selection to cover the entire text length
+                            editedTextValue =
+                                editedTextValue.copy(
+                                    selection = TextRange(0, editedTextValue.text.length),
+                                )
+                        }
+                    } else {
+                        Text(
                             modifier =
-                                Modifier
-                                    .focusRequester(focusRequester)
-                                    .weight(1f, fill = false),
-                            textStyle =
+                                Modifier.clickable {
+                                    isEditing = true
+                                },
+                            text = editedTextValue.text,
+                            style =
                                 DesktopAppUIFont.sidePasteTitleTextStyle.copy(
                                     color = onBackground,
                                 ),
-                            cursorBrush = SolidColor(onBackground),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions =
-                                KeyboardActions(
-                                    onDone = {
-                                        if (editedTextValue.text.isBlank()) {
-                                            // Revert to the original name if empty
-                                            editedTextValue =
-                                                TextFieldValue(
-                                                    text = pasteboardName,
-                                                    selection = TextRange(pasteboardName.length),
-                                                )
-                                            isEditing = false
-                                        } else {
-                                            // Proceed with update if not empty
-                                            scope.launch {
-                                                updatePasteItemHelper
-                                                    .updateName(
-                                                        pasteData,
-                                                        editedTextValue.text,
-                                                        pasteItem,
-                                                    ).onSuccess {
-                                                        pasteboardName = editedTextValue.text
-                                                        isEditing = false
-                                                    }.onFailure {
-                                                        notificationManager.sendNotification(
-                                                            title = { copywriter.getText("save_failed") },
-                                                            messageType = MessageType.Error,
-                                                        )
-                                                    }
-                                            }
-                                        }
-                                    },
-                                ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            onTextLayout = { titleOverflowed = it.hasVisualOverflow },
                         )
                     }
+                }
 
-                    // Autofocus and select all when entering edit mode
-                    LaunchedEffect(Unit) {
-                        focusRequester.requestFocus()
-                        // Set selection to cover the entire text length
-                        editedTextValue =
-                            editedTextValue.copy(
-                                selection = TextRange(0, editedTextValue.text.length),
-                            )
-                    }
-                } else {
+                relativeTime?.let {
                     Text(
-                        modifier =
-                            Modifier.clickable {
-                                isEditing = true
-                            },
-                        text = editedTextValue.text,
+                        text = copywriter.getText(it.unit, it.value?.toString() ?: ""),
                         style =
-                            DesktopAppUIFont.sidePasteTitleTextStyle.copy(
+                            DesktopAppUIFont.sidePasteTimeTextStyle.copy(
                                 color = onBackground,
                             ),
                         maxLines = 1,
@@ -241,21 +285,9 @@ fun PasteDataScope.SidePasteTitleView() {
                     )
                 }
             }
-
-            relativeTime?.let {
-                Text(
-                    text = copywriter.getText(it.unit, it.value?.toString() ?: ""),
-                    style =
-                        DesktopAppUIFont.sidePasteTimeTextStyle.copy(
-                            color = onBackground,
-                        ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            SidePasteTypeIconView(
+                modifier = Modifier.fillMaxHeight().wrapContentWidth(),
+            )
         }
-        SidePasteTypeIconView(
-            modifier = Modifier.fillMaxHeight().wrapContentWidth(),
-        )
     }
 }

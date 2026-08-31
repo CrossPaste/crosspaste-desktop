@@ -28,6 +28,7 @@ import com.crosspaste.ui.theme.AppUISize.zero
 fun PasteTooltipAreaView(
     modifier: Modifier = Modifier,
     text: String,
+    enabled: Boolean = true,
     delayMillis: Int = 500,
     computeTooltipPlacement: @Composable () -> TooltipPlacement = {
         TooltipPlacement.CursorPoint(
@@ -36,6 +37,12 @@ fun PasteTooltipAreaView(
     },
     content: @Composable () -> Unit,
 ) {
+    if (!enabled) {
+        Box(modifier = modifier) {
+            content()
+        }
+        return
+    }
     TooltipArea(
         modifier = modifier,
         delayMillis = delayMillis,
