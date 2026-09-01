@@ -6,23 +6,20 @@ All notable changes to this project will be documented in this file.
 # Highlights 🌟
 
 - ⌨️ **CrossPaste CLI**
-  CrossPaste now ships a native command-line tool, `crosspaste`, in
-  every desktop package (macOS offers a one-click terminal command
-  install on first launch, and Windows offers one-click add-to-PATH).
-  Pipe into it to copy
-  (`echo hello | crosspaste`), pull entries out with `paste`, search
-  history with the same filters as the search window, select entries
-  interactively with the full-screen fuzzy `pick`, edit an entry in
-  `$EDITOR` and update it in place, stream new pastes as NDJSON with
-  `watch`, and export images — or preview them inline as real pixels
-  in sixel-capable terminals.
-  The CLI is a pure HTTP thin client over a local unix domain socket,
-  with script-friendly output formats, well-defined exit codes, and
-  cell-accurate width-aware rendering. See the
+  Every desktop package now ships a native command-line tool,
+  `crosspaste` (macOS offers a one-click terminal command install on
+  first launch, and Windows offers one-click add-to-PATH). Copy with a
+  pipe (`echo hello | crosspaste`), paste, search history with the
+  same filters as the search window, pick entries in a full-screen
+  fuzzy picker, edit an entry in `$EDITOR`, and stream new pastes live
+  with `watch` — plus pair devices and run the app headless on
+  servers, all from the terminal and your scripts. In sixel-capable
+  terminals, clipboard images even preview inline as real pixels. See
+  the
   [CLI guide](https://github.com/CrossPaste/crosspaste-desktop/blob/main/doc/en/CLI.md)
-  for every command and example (#243 #3828 #4769 #4776 #4778 #4780
-  #4790 #4809 #4812 #4815 #4817 #4822 #4824 #4826 #4828 #4836 #4841
-  #4849 #4850 #4851 #4852).
+  for every command and example (#243 #3828 #4769 #4771 #4776 #4778
+  #4780 #4782 #4786 #4788 #4790 #4809 #4812 #4815 #4817 #4822 #4824
+  #4826 #4828 #4836 #4841 #4849 #4850 #4851 #4852 #4859 #4893).
 
 - 🔐 **Next-generation device pairing**
   Device pairing now verifies a one-time 6-digit PIN — rotating every
@@ -35,15 +32,6 @@ All notable changes to this project will be documented in this file.
   older versions keep pairing through the previous flow (#4859 #4861
   #4863 #4865 #4867 #4869 #4875 #4877 #4881).
 
-- 🤝 **Pair and manage devices from the terminal**
-  `crosspaste pair` completes device pairing entirely in the terminal,
-  `crosspaste token` shows the rotating pairing code on headless
-  acceptors, and `devices`, `status`, and `config` cover day-to-day
-  management. The CLI probes app liveness and auto-starts the desktop
-  app when needed, and the app's headless mode is hardened for daemon
-  use on servers and other display-less environments (#4771 #4782
-  #4786 #4788 #4859 #4893).
-
 - 🪟 **More reliable Windows clipboard capture**
   Rapid clipboard bursts are coalesced into one snapshot through a
   single-consumer pipeline, fixing interference with Snipping Tool's
@@ -52,10 +40,17 @@ All notable changes to this project will be documented in this file.
   effect, fixing sporadic write failures under contention (#4737
   #4791 #4793 #4796 #4798 #4799).
 
-- 🖥️ **The main window now stays on screen**
-  The main window height is clamped to the usable screen area, so the
-  bottom of the UI can no longer end up below the screen edge
-  (#4759 #4761).
+- 🎨 **UI improvements**
+  The UI framework is upgraded to Compose Multiplatform 1.12, and
+  following the system light/dark mode is now correct from the very
+  first frame — no more flash at launch. The system tray now shares a
+  single implementation across macOS, Windows, and Linux; the main
+  window height is clamped to the usable screen area so the bottom of
+  the UI can no longer end up below the screen edge; long paste titles
+  clipped in the side panel show a tooltip on hover and title edits
+  are committed when focus moves away; and the settings font dropdown
+  now closes in a single click (#4759 #4761 #4885 #4886 #4887 #4901
+  #4902 #4903).
 
 # Bug Fixes 🐛
 
