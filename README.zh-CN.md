@@ -17,6 +17,9 @@
       <br />
    </p>
 
+   <a href="https://trendshift.io/repositories/15491?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-15491" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/15491" alt="CrossPaste%2Fcrosspaste-desktop | Trendshift" width="250" height="55"/></a>
+   <a href="https://trendshift.io/repositories/15491?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-15491" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/15491/weekly?language=Kotlin" alt="CrossPaste%2Fcrosspaste-desktop | Trendshift" width="250" height="55"/></a>
+
    [![Main CI Test](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/ci.yml)
    [![Build Release](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml/badge.svg)](https://github.com/CrossPaste/crosspaste-desktop/actions/workflows/build-release.yml)
    ![Dependabot](https://img.shields.io/badge/Dependabot-enabled-2cbe4e.svg?logo=dependabot&logoColor=white)
