@@ -47,7 +47,7 @@ native-tray = "2.1.3"
 tesseract-platform = "5.5.1-1.5.12"
 turbine = "1.2.1"
 webp-imageio = "0.11.0"
-yaml = "2.6"
+yaml = "2.7"
 zxing = "3.5.4"
 
 [libraries]
