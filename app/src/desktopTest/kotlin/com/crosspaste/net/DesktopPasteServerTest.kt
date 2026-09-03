@@ -2,7 +2,7 @@ package com.crosspaste.net
 
 import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.net.exception.ExceptionHandler
-import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.cio.CIOApplicationEngine
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -24,8 +24,8 @@ class DesktopPasteServerTest {
             val serverFactory =
                 mockk<
                     ServerFactory<
-                        NettyApplicationEngine,
-                        NettyApplicationEngine.Configuration,
+                        CIOApplicationEngine,
+                        CIOApplicationEngine.Configuration,
                     >,
                 > {
                     every { getFactory() } throws startupFailure

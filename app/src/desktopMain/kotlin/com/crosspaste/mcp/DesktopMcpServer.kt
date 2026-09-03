@@ -2,8 +2,10 @@ package com.crosspaste.mcp
 
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.server.cio.CIO
+import io.ktor.server.cio.CIOApplicationEngine
+import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.engine.embeddedServer
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
@@ -19,7 +21,7 @@ class DesktopMcpServer(
 
     private val logger = KotlinLogging.logger {}
 
-    private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
+    private var server: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>? = null
     private var actualPort: Int = 0
 
     override suspend fun start() {
@@ -51,7 +53,7 @@ class DesktopMcpServer(
                 mcpResourceProvider.registerResources(mcpServer)
 
                 server =
-                    embeddedServer(Netty, host = "127.0.0.1", port = port) {
+                    embeddedServer(CIO, host = "127.0.0.1", port = port) {
                         mcp {
                             mcpServer
                         }

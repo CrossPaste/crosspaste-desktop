@@ -207,8 +207,8 @@ class SyncIntegrationTest {
             a.start()
             b.start()
             c.start()
-            // Allow Netty event loops to stabilize after starting 3 servers
-            // in the same JVM to avoid ClosedReadChannelException from resource contention
+            // Let the 3 servers in the same JVM finish binding before pairing
+            // to avoid ClosedReadChannelException from resource contention
             kotlinx.coroutines.delay(200.milliseconds)
 
             // B trusts A

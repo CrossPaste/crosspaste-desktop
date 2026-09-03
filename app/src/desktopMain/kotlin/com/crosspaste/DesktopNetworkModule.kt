@@ -83,7 +83,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.cio.CIOApplicationEngine
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -174,11 +174,11 @@ fun desktopNetworkModule(
             DesktopPasteServer(
                 get(named("readWritePort")),
                 get(),
-                get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
+                get<ServerFactory<CIOApplicationEngine, CIOApplicationEngine.Configuration>>(),
                 get(),
             )
         }
-        single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
+        single<ServerFactory<CIOApplicationEngine, CIOApplicationEngine.Configuration>> {
             DesktopServerFactory()
         }
         single<ServerModule> {

@@ -1,18 +1,11 @@
 package com.crosspaste.net
 
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.netty.channel.ChannelOption
+import io.ktor.server.cio.CIO
+import io.ktor.server.cio.CIOApplicationEngine
+import io.ktor.server.engine.ApplicationEngineFactory
 
-class DesktopServerFactory : ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration> {
-    override fun getFactory(): ApplicationEngineFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration> =
-        Netty
+class DesktopServerFactory : ServerFactory<CIOApplicationEngine, CIOApplicationEngine.Configuration> {
+    override fun getFactory(): ApplicationEngineFactory<CIOApplicationEngine, CIOApplicationEngine.Configuration> = CIO
 
-    override fun getConfigure(): NettyApplicationEngine.Configuration.() -> Unit =
-        {
-            configureBootstrap = {
-                childOption(ChannelOption.TCP_NODELAY, true)
-                childOption(ChannelOption.SO_KEEPALIVE, true)
-            }
-        }
+    override fun getConfigure(): CIOApplicationEngine.Configuration.() -> Unit = {}
 }
