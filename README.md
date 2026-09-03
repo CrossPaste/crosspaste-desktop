@@ -107,9 +107,8 @@ The Chrome extension lives in [`web/`](./web) and is built via Gradle. Node.js (
 The extension auto-discovers a CrossPaste desktop app running on the same machine and syncs clipboard content with it. To iterate on extension code, run `npm run dev` inside `web/` for a fast Vite dev loop, then reload the extension in Chrome. The extension imports a Kotlin/JS `core` library produced by `./gradlew :core:jsBrowserProductionLibraryDistribution` (also run as part of `:web:build`) — re-run that task whenever you change `core/` sources.
 
 ## 🗺️ Roadmap
-CrossPaste is continuously evolving! **v2.0** brings the Chrome extension into the sync mesh as a first-class platform. Here's what we're working on next:
+CrossPaste is continuously evolving! **v2.2** brings a full command-line mode — copy, paste, and search your history straight from the terminal. Here's what we're working on next:
 
-- [ ] **Command-line mode** — drive CrossPaste from your terminal and shell scripts
 - [ ] **Plugin system** — let the community extend CrossPaste with custom paste types and integrations
 
 This is just a small part of our plans. Want to learn more details and long-term plans? Check out our [full roadmap](doc/en/Roadmap.md).

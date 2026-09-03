@@ -107,9 +107,8 @@ Chrome 扩展位于 [`web/`](./web) 目录下，通过 Gradle 构建。需要本
 扩展会自动发现同一台机器上运行的 CrossPaste 桌面端，并与之同步粘贴板内容。如果想快速迭代扩展代码，可以在 `web/` 目录下执行 `npm run dev` 进入 Vite 开发模式，然后在 Chrome 中点击重新加载扩展即可。扩展依赖由 `./gradlew :core:jsBrowserProductionLibraryDistribution` 生成的 Kotlin/JS `core` 库（`:web:build` 任务也会自动构建一次），修改 `core/` 源码后需要重跑这个任务，`npm run dev` 才能拿到最新产物。
 
 ## 🗺️ 路线图
-CrossPaste 正在持续发展中！**v2.0** 把 Chrome 扩展作为一等公民接入了同步网络。接下来我们正在筹备：
+CrossPaste 正在持续发展中！**v2.2** 带来了完整的命令行模式——直接在终端里复制、粘贴、搜索历史。接下来我们正在筹备：
 
-- [ ] **命令行模式**：让 CrossPaste 可以在终端和 Shell 脚本中被驱动
 - [ ] **插件系统**：让社区可以为 CrossPaste 扩展自定义粘贴类型与集成能力
 
 这只是我们计划的一小部分。想了解更多细节和长期规划？查看我们的[完整路线图](doc/zh/Roadmap.md)。
