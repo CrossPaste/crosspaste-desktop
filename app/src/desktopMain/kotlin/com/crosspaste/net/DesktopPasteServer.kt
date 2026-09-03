@@ -4,7 +4,7 @@ import com.crosspaste.config.ReadWriteConfig
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.server.netty.NettyApplicationEngine
+import io.ktor.server.cio.CIOApplicationEngine
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
@@ -12,9 +12,9 @@ import kotlin.coroutines.CoroutineContext
 class DesktopPasteServer(
     private val readWritePort: ReadWriteConfig<Int>,
     private val exceptionHandler: ExceptionHandler,
-    serverFactory: ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>,
+    serverFactory: ServerFactory<CIOApplicationEngine, CIOApplicationEngine.Configuration>,
     serverModule: ServerModule,
-) : PasteServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>(
+) : PasteServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>(
         serverFactory,
         serverModule,
     ) {

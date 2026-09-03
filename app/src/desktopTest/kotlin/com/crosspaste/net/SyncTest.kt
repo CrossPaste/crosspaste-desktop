@@ -36,7 +36,7 @@ import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.getPlatformUtils
-import io.ktor.server.netty.*
+import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.util.reflect.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -127,14 +127,14 @@ class SyncTest : KoinTest {
                     DesktopPasteServer(
                         get(named("readWritePort")),
                         get(),
-                        get<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>>(),
+                        get<ServerFactory<CIOApplicationEngine, CIOApplicationEngine.Configuration>>(),
                         get(),
                     )
                 }
                 single<CommonConfigManager> { TestConfigManager(TestAppConfig()) }
                 single<PendingKeyExchangeStore> { PendingKeyExchangeStore() }
                 single<SyncApi> { SyncApi }
-                single<ServerFactory<NettyApplicationEngine, NettyApplicationEngine.Configuration>> {
+                single<ServerFactory<CIOApplicationEngine, CIOApplicationEngine.Configuration>> {
                     DesktopServerFactory()
                 }
                 single<SyncInfoFactory> { SyncInfoFactory(get(named("serverAppInfo")), get()) }

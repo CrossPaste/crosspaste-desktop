@@ -46,7 +46,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * processes are inside the trust boundary — they can already read the
  * database files directly.
  *
- * Runs as an independent CIO server so the Netty sync server stays untouched.
+ * Runs as an independent CIO server so the sync server stays untouched.
  * On successful start it publishes [CliEndpoint] via [CliEndpointFile]; the
  * CLI discovers the socket exclusively through that file.
  */

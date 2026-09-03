@@ -135,7 +135,6 @@ kotlin {
             implementation(libs.jna.platform)
             implementation(libs.jnativehook)
             implementation(libs.ktor.server.cio)
-            implementation(libs.ktor.server.netty)
             implementation(libs.logback.classic)
             implementation(libs.mcp.server)
             implementation(libs.metadata.extractor)
@@ -303,7 +302,6 @@ private fun initJvmArgs(
             "-Djava.net.preferIPv4Stack=true",
             "-Djava.net.preferIPv6Addresses=false",
             "-DglobalListener=$globalListener",
-            "-Dio.netty.maxDirectMemory=268435456",
         ),
     )
 
