@@ -184,7 +184,6 @@ fun desktopAppModule(
                 .strongReferencesEnabled(true)
                 .weakReferencesEnabled(true)
                 .maxSizeBytes(256L * 1024L * 1024L)
-                .maxSizePercent(get<PlatformContext>(), 0.85)
                 .build()
         }
         single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
