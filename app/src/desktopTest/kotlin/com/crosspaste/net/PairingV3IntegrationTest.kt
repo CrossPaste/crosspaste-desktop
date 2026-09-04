@@ -10,7 +10,9 @@ import com.crosspaste.dto.pairing.v3.PairingV3ErrorCode
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
+import com.crosspaste.net.clientapi.PairingV3Transport
 import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.net.clientapi.UnknownError
 import com.crosspaste.pairing.v3.OpenSslPakeEcOps
 import com.crosspaste.pairing.v3.PairingKeySchedule
 import com.crosspaste.pairing.v3.PairingRateLimiter
@@ -47,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -76,6 +79,7 @@ class PairingV3IntegrationTest {
         pairingV3Enabled: Boolean = true,
         acceptanceWindowMaxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
         pairingTelemetryObserver: PairingV3TelemetryObserver = PairingV3TelemetryObserver.NOOP,
+        pairingV3Transport: (PairingV3Transport) -> PairingV3Transport = { it },
     ): TestInstance =
         TestInstance(
             appInstanceId = id,
@@ -87,6 +91,7 @@ class PairingV3IntegrationTest {
             pairingV3Enabled = pairingV3Enabled,
             acceptanceWindowMaxProofFailures = acceptanceWindowMaxProofFailures,
             pairingTelemetryObserver = pairingTelemetryObserver,
+            pairingV3Transport = pairingV3Transport,
         ).also { instances.add(it) }
 
     @AfterTest
@@ -489,6 +494,57 @@ class PairingV3IntegrationTest {
             val paired = b.pairingProtocolV3Service.submitPin(started.sessionId, freshPin, urlFor(a))
             assertIs<PairingV3PinResult.Paired>(paired)
             assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
+        }
+
+    @Test
+    fun testLostProofResponseIsRecoveredByRestartingTheSession() =
+        runBlocking {
+            val dropProofResponse = AtomicBoolean(false)
+            val a = createInstance("lost-proof-a")
+            val b =
+                createInstance("lost-proof-b") { delegate ->
+                    object : PairingV3Transport by delegate {
+                        override suspend fun sendProof(
+                            proof: PairingProofV3,
+                            toUrl: io.ktor.http.URLBuilder.() -> Unit,
+                        ): ClientApiResult {
+                            // The proof reaches the acceptor; only the response is lost.
+                            val sent = delegate.sendProof(proof, toUrl)
+                            return if (dropProofResponse.get()) UnknownError else sent
+                        }
+                    }
+                }
+            a.start()
+            b.start()
+            a.pairingAcceptanceWindow.open(WindowOpenSource.LOCAL)
+
+            val first = startPairing(b, a)
+            val pin = displayedPin(a, b.appInstanceId)
+            dropProofResponse.set(true)
+            val lost = b.pairingProtocolV3Service.submitPin(first.sessionId, pin, urlFor(a))
+            dropProofResponse.set(false)
+            assertIs<PairingV3PinResult.NetworkError>(lost)
+            assertFalse(lost.commitPending)
+
+            // The acceptor verified the proof and left the PIN step behind
+            awaitCondition(message = "acceptor reaches PEER_CONFIRMED") {
+                acceptorCardFor(a, b.appInstanceId)?.state == PairingSessionState.PEER_CONFIRMED
+            }
+
+            // Refreshing the offer replays the same session, so no further proof can succeed on it
+            b.pairingProtocolV3Service.refreshOffer(first.sessionId, urlFor(a))
+            val replayed = b.pairingProtocolV3Service.submitPin(first.sessionId, pin, urlFor(a))
+            assertIs<PairingV3PinResult.Refused>(replayed)
+
+            // Restart: cancel the dead session and open a fresh one with a new PIN
+            assertTrue(b.pairingProtocolV3Service.cancelSession(first.sessionId, urlFor(a)))
+            val second = startPairing(b, a)
+            assertNotEquals(first.sessionId, second.sessionId)
+            val freshPin = displayedPin(a, b.appInstanceId)
+            val paired = b.pairingProtocolV3Service.submitPin(second.sessionId, freshPin, urlFor(a))
+            assertIs<PairingV3PinResult.Paired>(paired)
+            assertTrue(a.secureIO.existCryptPublicKey(b.appInstanceId))
+            assertTrue(b.secureIO.existCryptPublicKey(a.appInstanceId))
         }
 
     @Test

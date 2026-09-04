@@ -46,7 +46,7 @@ import kotlin.time.Duration.Companion.seconds
  *   for the resolver to reach UNVERIFIED with a resolved host, warm up via
  *   [SyncManager.exchangeKeysForPairing] (makes the peer display its SAS), then
  *   confirm with [SyncManager.trustBySasCode].
- * - v3 PIN: [PairingV3UiController.startPairing] / submitPin / recover, which
+ * - v3 PIN: [PairingV3UiController.startPairing] / submitPin / recover / restart, which
  *   also makes the peer surface its pairing UI (showPairingCode) so a closed
  *   acceptance window opens the same way it does for a GUI initiator.
  *
@@ -91,6 +91,7 @@ class CliPairingService(
     private enum class V3Action {
         SUBMIT_PIN,
         RECOVER,
+        RESTART,
     }
 
     private val sessions = ConcurrentHashMap<String, PairSession>()
@@ -418,17 +419,21 @@ class CliPairingService(
         // COMMITTING. Recover on a fresh timeout scope before claiming the CLI
         // session is retryable; if recovery also hangs, the next submit must
         // retry recovery rather than feed another PIN into an unknown state.
-        if (!setNextV3Action(session, V3Action.RECOVER)) {
+        // A restart that timed out is simply restarted again (it is idempotent).
+        // Re-read the entry: the timed-out steps may have updated it.
+        val current = sessions[session.sessionId] ?: return SubmitOutcome.SessionNotFound
+        val action = if (current.nextV3Action == V3Action.RESTART) V3Action.RESTART else V3Action.RECOVER
+        if (!setNextV3Action(session, action)) {
             return SubmitOutcome.SessionNotFound
         }
         val recovered =
             withTimeoutOrNull(RECOVERY_TIMEOUT) {
-                pairingV3UiController.recover(checkNotNull(session.v3SessionId))
+                runV3Action(current, action, checkNotNull(current.v3SessionId), code)
             }
         return when (recovered) {
             PairingV3UiResult.Paired -> completeV3Pairing(session)
             is PairingV3UiResult.SessionReady -> {
-                if (setNextV3Action(session, V3Action.SUBMIT_PIN)) {
+                if (adoptV3Session(session, recovered.sessionId)) {
                     retryableV3Failure(session, "Pairing timed out; check the connection and try again.")
                 } else {
                     SubmitOutcome.SessionNotFound
@@ -460,32 +465,31 @@ class CliPairingService(
         session: PairSession,
         code: String,
     ): SubmitOutcome {
-        val v3SessionId = checkNotNull(session.v3SessionId)
+        var v3SessionId = checkNotNull(session.v3SessionId)
         var submittedPin = session.nextV3Action == V3Action.SUBMIT_PIN
-        var result =
-            if (submittedPin) {
-                pairingV3UiController.submitPin(v3SessionId, V3Pin(code))
-            } else {
-                pairingV3UiController.recover(v3SessionId)
-            }
+        var result = runV3Action(session, session.nextV3Action, v3SessionId, code)
         if (result is PairingV3UiResult.SessionReady) {
-            if (!setNextV3Action(session, V3Action.SUBMIT_PIN)) {
+            v3SessionId = result.sessionId
+            if (!adoptV3Session(session, v3SessionId)) {
                 return SubmitOutcome.SessionNotFound
             }
             result = pairingV3UiController.submitPin(v3SessionId, V3Pin(code))
             submittedPin = true
         }
-        if (submittedPin && result is PairingV3UiResult.Error && result.recovery.requiresRecovery()) {
-            val originalError = result
-            if (!setNextV3Action(session, V3Action.RECOVER)) {
-                return SubmitOutcome.SessionNotFound
-            }
-            result = pairingV3UiController.recover(v3SessionId)
-            if (result is PairingV3UiResult.SessionReady) {
-                if (!setNextV3Action(session, V3Action.SUBMIT_PIN)) {
+        if (submittedPin && result is PairingV3UiResult.Error) {
+            val recovery = result.recovery.toV3Action()
+            if (recovery != null) {
+                val originalError = result
+                if (!setNextV3Action(session, recovery)) {
                     return SubmitOutcome.SessionNotFound
                 }
-                return retryableV3Failure(session, describeV3Error(originalError.reason))
+                result = runV3Action(session, recovery, v3SessionId, code)
+                if (result is PairingV3UiResult.SessionReady) {
+                    if (!adoptV3Session(session, result.sessionId)) {
+                        return SubmitOutcome.SessionNotFound
+                    }
+                    return retryableV3Failure(session, describeV3Recovery(originalError.reason, recovery))
+                }
             }
         }
         return when (result) {
@@ -503,6 +507,40 @@ class CliPairingService(
                 )
         }
     }
+
+    private suspend fun runV3Action(
+        session: PairSession,
+        action: V3Action,
+        v3SessionId: String,
+        code: String,
+    ): PairingV3UiResult =
+        when (action) {
+            V3Action.SUBMIT_PIN -> pairingV3UiController.submitPin(v3SessionId, V3Pin(code))
+            V3Action.RECOVER -> pairingV3UiController.recover(v3SessionId)
+            V3Action.RESTART -> pairingV3UiController.restart(v3SessionId, session.appInstanceId)
+        }
+
+    /** The next PIN goes to a session that recovery just made ready — possibly a new one after a restart. */
+    private fun adoptV3Session(
+        session: PairSession,
+        v3SessionId: String,
+    ): Boolean =
+        updateSession(session) { current ->
+            current.copy(v3SessionId = v3SessionId, nextV3Action = V3Action.SUBMIT_PIN)
+        }
+
+    private fun describeV3Recovery(
+        reason: PairingV3UiError,
+        action: V3Action,
+    ): String =
+        when (action) {
+            V3Action.RESTART ->
+                "${describeV3Error(reason)} The device now shows a new PIN; enter that one."
+
+            V3Action.SUBMIT_PIN,
+            V3Action.RECOVER,
+            -> describeV3Error(reason)
+        }
 
     private fun completeV3Pairing(session: PairSession): SubmitOutcome {
         sessions.remove(session.sessionId)
@@ -522,9 +560,9 @@ class CliPairingService(
         session: PairSession,
         error: PairingV3UiResult.Error,
     ): SubmitOutcome {
-        val retryable = error.recovery.requiresRecovery()
-        if (retryable) {
-            if (!setNextV3Action(session, V3Action.RECOVER)) {
+        val recovery = error.recovery.toV3Action()
+        if (recovery != null) {
+            if (!setNextV3Action(session, recovery)) {
                 return SubmitOutcome.SessionNotFound
             }
         } else {
@@ -533,14 +571,24 @@ class CliPairingService(
         return SubmitOutcome.Completed(
             CliPairSubmitResultDto(
                 paired = false,
-                retryable = retryable,
+                retryable = recovery != null,
                 message = describeV3Error(error.reason),
             ),
         )
     }
 
-    private fun PairingV3Recovery.requiresRecovery(): Boolean =
-        this == PairingV3Recovery.REFRESH_OFFER || this == PairingV3Recovery.RETRY_COMMIT
+    /** The action the next submit must run before it may feed another PIN, or null if the session is dead. */
+    private fun PairingV3Recovery.toV3Action(): V3Action? =
+        when (this) {
+            PairingV3Recovery.REFRESH_OFFER,
+            PairingV3Recovery.RETRY_COMMIT,
+            -> V3Action.RECOVER
+
+            PairingV3Recovery.RESTART -> V3Action.RESTART
+            PairingV3Recovery.NONE,
+            PairingV3Recovery.RETRY_START,
+            -> null
+        }
 
     private suspend fun awaitPairableState(appInstanceId: String): SyncRuntimeInfo? =
         withTimeoutOrNull(RESOLVE_TIMEOUT) {
@@ -565,16 +613,21 @@ class CliPairingService(
     private fun findRuntimeInfo(appInstanceId: String): SyncRuntimeInfo? =
         syncManager.realTimeSyncRuntimeInfos.value.firstOrNull { it.appInstanceId == appInstanceId }
 
-    // Always writes through to the map: the caller's PairSession is a snapshot
-    // from submit entry and may be stale after an earlier update in the same call.
     private fun setNextV3Action(
         session: PairSession,
         action: V3Action,
+    ): Boolean = updateSession(session) { current -> current.copy(nextV3Action = action) }
+
+    // Always writes through to the map: the caller's PairSession is a snapshot
+    // from submit entry and may be stale after an earlier update in the same call.
+    private fun updateSession(
+        session: PairSession,
+        transform: (PairSession) -> PairSession,
     ): Boolean {
         var updated = false
         sessions.computeIfPresent(session.sessionId) { _, current ->
             updated = true
-            current.copy(nextV3Action = action)
+            transform(current)
         }
         return updated
     }

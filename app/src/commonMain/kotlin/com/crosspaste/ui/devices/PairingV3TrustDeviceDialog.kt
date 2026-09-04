@@ -442,6 +442,7 @@ internal class PairingV3DialogState(
             PairingV3Recovery.RETRY_COMMIT,
             -> sessionId?.let { launchAction { controller.recover(it) } }
 
+            PairingV3Recovery.RESTART -> sessionId?.let { launchAction { controller.restart(it, appInstanceId) } }
             PairingV3Recovery.NONE -> Unit
         }
     }

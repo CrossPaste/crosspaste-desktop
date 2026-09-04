@@ -120,4 +120,43 @@ class PairingV3DialogStateTest {
             assertEquals(PairingV3Recovery.REFRESH_OFFER, state.recovery)
             assertTrue(state.recovery != PairingV3Recovery.NONE)
         }
+
+    @Test
+    fun restartRecovery_retryRestartsInsteadOfRefreshing() =
+        runTest {
+            val controller = mockk<PairingV3UiController>()
+            val state =
+                PairingV3DialogState(
+                    appInstanceId = "peer",
+                    controller = controller,
+                    syncManager = mockk<SyncManager>(relaxed = true),
+                    coroutineScope = this,
+                )
+            coEvery { controller.submitPin("session", any()) } returns
+                PairingV3UiResult.Error(
+                    PairingV3UiError.NETWORK_FAILURE,
+                    PairingV3Recovery.RESTART,
+                )
+            coEvery { controller.restart("session", "peer") } returns
+                PairingV3UiResult.SessionReady(
+                    sessionId = "session-2",
+                    tokenGeneration = 1,
+                    pinExpiresAt = 60_000,
+                    peerKeyFingerprintDisplay = "aabbccdd",
+                )
+
+            state.submitPin("session", "123456")
+            runCurrent()
+            assertEquals(PairingV3UiError.NETWORK_FAILURE, state.uiError)
+            assertEquals(PairingV3Recovery.RESTART, state.recovery)
+
+            state.retry("session")
+            runCurrent()
+
+            coVerify(exactly = 1) { controller.restart("session", "peer") }
+            coVerify(exactly = 0) { controller.recover(any()) }
+            assertEquals(null, state.uiError)
+            assertEquals(PairingV3Recovery.NONE, state.recovery)
+            assertFalse(state.isLoading)
+        }
 }

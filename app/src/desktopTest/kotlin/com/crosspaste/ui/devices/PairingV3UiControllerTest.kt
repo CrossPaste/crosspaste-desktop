@@ -132,7 +132,9 @@ class PairingV3UiControllerTest {
     }
 
     @Test
-    fun proofNetworkFailureRefreshesOffer() {
+    fun proofNetworkFailureRestartsTheSession() {
+        // The acceptor may already have verified the proof, so the old session
+        // can never be proven again: only a fresh session converges both sides.
         val result =
             PairingV3PinResult
                 .NetworkError(UnknownError, commitPending = false)
@@ -141,11 +143,56 @@ class PairingV3UiControllerTest {
         assertEquals(
             PairingV3UiResult.Error(
                 PairingV3UiError.NETWORK_FAILURE,
-                PairingV3Recovery.REFRESH_OFFER,
+                PairingV3Recovery.RESTART,
             ),
             result,
         )
     }
+
+    @Test
+    fun restartCancelsTheDeadSessionBeforeOpeningAFreshOne() =
+        runTest {
+            val peerAppInstanceId = "dead-app"
+            val syncRuntimeInfo =
+                createUnverifiedSyncRuntimeInfo(
+                    appInstanceId = peerAppInstanceId,
+                    hostAddress = "192.168.1.12",
+                )
+            val syncHandler = mockk<SyncHandler>()
+            val syncManager = mockk<SyncManager>()
+            val pairingProtocolV3Service = mockk<PairingProtocolV3Service>()
+
+            every { syncManager.getSyncHandler(peerAppInstanceId) } returns syncHandler
+            every { syncHandler.currentSyncRuntimeInfo } returns syncRuntimeInfo
+            coEvery { syncHandler.getConnectHostAddress() } returns "192.168.1.12"
+            coEvery { syncHandler.showPairingCode() } returns ShowPairingCodeResult.SHOWN
+            every { pairingProtocolV3Service.uiSessionsFlow } returns
+                MutableStateFlow(listOf(pairingSession("dead", PakeRole.INITIATOR, pin = null)))
+            every { pairingProtocolV3Service.acceptanceWindow } returns PairingAcceptanceWindow()
+            coEvery { pairingProtocolV3Service.cancelSession("dead", any()) } returns true
+            coEvery {
+                pairingProtocolV3Service.startPairing(
+                    targetAppInstanceId = peerAppInstanceId,
+                    targetDisplayName = any(),
+                    toUrl = any(),
+                )
+            } returns PairingV3StartResult.Started("fresh", 1L, 60_000L, "aabbccdd")
+
+            val result =
+                DefaultPairingV3UiController(pairingProtocolV3Service, syncManager)
+                    .restart("dead", peerAppInstanceId)
+
+            assertEquals(PairingV3UiResult.SessionReady("fresh", 1L, 60_000L, "aabbccdd"), result)
+            coVerifyOrder {
+                pairingProtocolV3Service.cancelSession("dead", any())
+                syncHandler.showPairingCode()
+                pairingProtocolV3Service.startPairing(
+                    targetAppInstanceId = peerAppInstanceId,
+                    targetDisplayName = any(),
+                    toUrl = any(),
+                )
+            }
+        }
 
     @Test
     fun commitNetworkFailureRetriesCommitWithoutNewPin() {

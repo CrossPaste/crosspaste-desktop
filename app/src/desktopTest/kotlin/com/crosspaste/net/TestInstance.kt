@@ -8,6 +8,7 @@ import com.crosspaste.config.TestConfigManager
 import com.crosspaste.config.TestReadWritePort
 import com.crosspaste.db.secure.MemorySecureIO
 import com.crosspaste.net.clientapi.PairingV3ClientApi
+import com.crosspaste.net.clientapi.PairingV3Transport
 import com.crosspaste.net.clientapi.SyncClientApi
 import com.crosspaste.net.exception.DesktopExceptionHandler
 import com.crosspaste.net.exception.ExceptionHandler
@@ -50,6 +51,8 @@ class TestInstance(
     pairingV3Enabled: Boolean = true,
     acceptanceWindowMaxProofFailures: Int = PairingV3.MAX_ACCEPTOR_PROOF_FAILURES,
     pairingTelemetryObserver: PairingV3TelemetryObserver = PairingV3TelemetryObserver.NOOP,
+    // Wraps the real HTTP transport so a test can lose or alter individual calls.
+    pairingV3Transport: (PairingV3Transport) -> PairingV3Transport = { it },
 ) {
     companion object {
         val platform: Platform = getPlatformUtils().platform
@@ -105,7 +108,7 @@ class TestInstance(
     val pairingProtocolV3Service =
         PairingProtocolV3Service(
             appInfo = appInfo,
-            pairingV3ClientApi = pairingV3ClientApi,
+            pairingV3ClientApi = pairingV3Transport(pairingV3ClientApi),
             pakeProvider = pakeProvider,
             receiptCache = pairingReceiptCache,
             rateLimiter = pairingRateLimiter,
