@@ -14,6 +14,11 @@ sealed interface WsPayloadSendResult {
 
     data object Failed : WsPayloadSendResult
 
+    /** The peer received the payload and explicitly refused it; retrying cannot help. */
+    data class Rejected(
+        val detail: String,
+    ) : WsPayloadSendResult
+
     data class PayloadTooLarge(
         val payloadSize: Int,
         val payloadLimit: Long,
@@ -40,6 +45,7 @@ class WsSession(
     val remoteAppInstanceId: String,
     private val authenticationContext: WsAuthenticationContext? = null,
     val peerSupportsChunkedPayload: Boolean = false,
+    val peerCapabilities: Set<String> = emptySet(),
 ) {
     private val json = getJsonUtils().JSON
     private val sendMutex = Mutex()

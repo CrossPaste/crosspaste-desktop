@@ -10,6 +10,7 @@ import {
   type WsAuthProofMessage,
   WS_AUTH_VERSION,
   WsAuthContext,
+  WS_SUPPORTED_CAPABILITIES,
   clientProofCode,
   verifyServerProof,
 } from "./ws-auth";
@@ -268,6 +269,7 @@ export class WsClient {
         challenge,
       ),
       pairingVersion: this.config.pairingVersion,
+      capabilities: [...WS_SUPPORTED_CAPABILITIES],
     };
     this.ensureCurrentHandshake(ws, connectionGeneration);
     await this.sendRawEnvelope({

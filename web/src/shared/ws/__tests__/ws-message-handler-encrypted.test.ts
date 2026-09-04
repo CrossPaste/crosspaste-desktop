@@ -58,7 +58,8 @@ function makeDeps(overrides: Partial<WsMessageHandlerDeps> = {}): WsMessageHandl
 
 describe("encrypted WS envelope handling", () => {
   beforeEach(() => {
-    vi.mocked(ingestPaste).mockClear();
+    vi.mocked(ingestPaste).mockReset();
+    vi.mocked(ingestPaste).mockResolvedValue(1);
   });
 
   it("decrypts an encrypted paste_push before parsing", async () => {
@@ -75,6 +76,7 @@ describe("encrypted WS envelope handling", () => {
       type: WsMessageType.PASTE_PUSH,
       payload: ciphertext,
       encrypted: true,
+      requestId: "request-1",
     };
 
     await handler.handleMessage("device-1", envelope);
@@ -84,6 +86,12 @@ describe("encrypted WS envelope handling", () => {
     expect(vi.mocked(ingestPaste).mock.calls[0][0]).toMatchObject({ id: 1, hash: "abc" });
     expect(deps.updateDeviceStatus).toHaveBeenCalledWith("device-1", "synced");
     expect(deps.onDecryptFailure).not.toHaveBeenCalled();
+    expect(deps.sendToDevice).toHaveBeenCalledWith("device-1", {
+      type: WsMessageType.PASTE_PUSH_ACK,
+      payload: new Uint8Array(0),
+      encrypted: false,
+      requestId: "request-1",
+    });
   });
 
   it("passes plaintext paste_push through without calling the decryptor", async () => {
@@ -100,6 +108,7 @@ describe("encrypted WS envelope handling", () => {
     expect(deps.decryptFromDevice).not.toHaveBeenCalled();
     expect(ingestPaste).toHaveBeenCalledTimes(1);
     expect(deps.onDecryptFailure).not.toHaveBeenCalled();
+    expect(deps.sendToDevice).not.toHaveBeenCalled();
   });
 
   it("marks the peer for re-pairing and drops the message when decryption fails", async () => {
@@ -121,5 +130,45 @@ describe("encrypted WS envelope handling", () => {
     expect(deps.updateDeviceStatus).not.toHaveBeenCalled();
     expect(deps.onDecryptFailure).toHaveBeenCalledOnce();
     expect(deps.onDecryptFailure).toHaveBeenCalledWith("device-1");
+  });
+
+  it("still marks the peer for re-pairing when the correlated error cannot be sent", async () => {
+    const deps = makeDeps({
+      decryptFromDevice: vi.fn(async () => {
+        throw new Error("no key material");
+      }),
+      sendToDevice: vi.fn(async () => {
+        throw new Error("connection closed");
+      }),
+    });
+    const handler = createWsMessageHandler(deps);
+
+    await handler.handleMessage("device-1", {
+      type: WsMessageType.PASTE_PUSH,
+      payload: new Uint8Array([1, 2, 3]),
+      encrypted: true,
+      requestId: "request-1",
+    });
+
+    expect(deps.onDecryptFailure).toHaveBeenCalledWith("device-1");
+  });
+
+  it("returns a correlated error when paste ingestion is rejected", async () => {
+    vi.mocked(ingestPaste).mockResolvedValueOnce(null);
+    const deps = makeDeps();
+    const handler = createWsMessageHandler(deps);
+
+    await handler.handleMessage("device-1", {
+      type: WsMessageType.PASTE_PUSH,
+      payload: new TextEncoder().encode(PASTE_JSON),
+      encrypted: false,
+      requestId: "request-1",
+    });
+
+    expect(deps.sendToDevice).toHaveBeenCalledTimes(1);
+    const response = vi.mocked(deps.sendToDevice).mock.calls[0][1];
+    expect(response.type).toBe(WsMessageType.ERROR);
+    expect(response.requestId).toBe("request-1");
+    expect(deps.updateDeviceStatus).not.toHaveBeenCalled();
   });
 });

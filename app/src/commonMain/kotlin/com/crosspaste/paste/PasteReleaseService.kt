@@ -418,10 +418,10 @@ class PasteReleaseService(
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         tryWritePasteboard: (PasteData) -> Unit,
-    ): Result<Unit> {
+    ): Result<Unit?> {
         return runCatching {
             if (discardOversizedRemoteNonFilePaste(pasteData)) {
-                return@runCatching
+                return@runCatching null
             }
             val remotePasteDataId = pasteData.id
             val isFileType = pasteData.isFileType()
@@ -430,7 +430,7 @@ class PasteReleaseService(
                     validateFileTransferMetadata(pasteData)
                 } catch (e: IllegalArgumentException) {
                     discardInvalidRemoteFilePaste(pasteData, e)
-                    return@runCatching
+                    return@runCatching null
                 }
             }
             val existIconFile: Boolean? =
@@ -463,6 +463,7 @@ class PasteReleaseService(
                     addPullIconTask(id, it)
                 }
             }
+            Unit
         }.onFailure { e ->
             logger.error(e) { "Release remote paste data failed" }
         }

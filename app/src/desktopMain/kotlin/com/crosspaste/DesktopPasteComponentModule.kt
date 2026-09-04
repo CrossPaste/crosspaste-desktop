@@ -214,7 +214,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         // endregion
 
         // region Sync pull
-        single<FilePullService> { FilePullService(get(), get(), get(), get(), get(), get()) }
+        single<FilePullService> { FilePullService(get(), get(), get(), get(), get()) }
         single<PastePullCursorManager> { PastePullCursorManager(get(), get()) }
         single<PastePullService> { PastePullService(get(), get(), get(), get()) }
         // endregion

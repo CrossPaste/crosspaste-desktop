@@ -103,6 +103,7 @@ object WsMessageType {
     const val HEARTBEAT = "heartbeat"
     const val HEARTBEAT_ACK = "heartbeat_ack"
     const val PASTE_PUSH = "paste_push"
+    const val PASTE_PUSH_ACK = "paste_push_ack"
     const val SYNC_INFO = "sync_info"
     const val NOTIFY_EXIT = "notify_exit"
     const val NOTIFY_REMOVE = "notify_remove"

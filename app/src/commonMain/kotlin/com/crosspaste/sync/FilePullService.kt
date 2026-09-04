@@ -10,7 +10,6 @@ import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.net.ws.WsEnvelope
 import com.crosspaste.net.ws.WsMessageType
-import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.item.PasteFiles
@@ -71,7 +70,6 @@ class FilePullService(
     private val userDataPathProvider: UserDataPathProvider,
     private val pasteSyncProcessManager: PasteSyncProcessManager<Long>,
     private val syncManager: SyncManager,
-    private val wsPendingRequests: WsPendingRequests,
     private val wsSessionManager: WsSessionManager,
 ) {
 
@@ -224,12 +222,7 @@ class FilePullService(
                         payload = json.encodeToString(request).encodeToByteArray(),
                     )
 
-                val response =
-                    wsPendingRequests.request(
-                        wsSessionManager,
-                        appInstanceId,
-                        requestEnvelope,
-                    )
+                val response = wsSessionManager.request(appInstanceId, requestEnvelope)
 
                 if (response.type == WsMessageType.ERROR) {
                     val errorMsg = response.payload.decodeToString()

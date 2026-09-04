@@ -9,7 +9,7 @@ import {
   bytesToBase64,
   handshakePayload,
 } from "../ws-auth";
-import { WsMessageType, type WsEnvelope, type WsEnvelopeHeader } from "../ws-types";
+import { WsCapability, WsMessageType, type WsEnvelope, type WsEnvelopeHeader } from "../ws-types";
 
 /** Deterministic fake MAC shared by "extension" and "desktop" in these tests. */
 function fakeProcessor(): WsAuthProcessor {
@@ -169,6 +169,7 @@ async function completeHandshake(
   expect(header.type).toBe(WsMessageType.AUTH_PROOF);
   const proof = JSON.parse(new TextDecoder().decode(payload)) as WsAuthProofMessage;
   expect(proof.pairingVersion).toBe(3);
+  expect(proof.capabilities).toContain(WsCapability.PASTE_PUSH_ACK);
   expect(
     await processor.verifyAuthentication(
       new Int8Array(handshakePayload("client-proof", "ext-id", "desktop-id", CHALLENGE).buffer),

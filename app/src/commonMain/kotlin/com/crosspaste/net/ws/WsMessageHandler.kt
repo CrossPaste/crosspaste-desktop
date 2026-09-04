@@ -14,11 +14,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
-import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 class WsMessageHandler(
     private val lazyAppControl: Lazy<AppControl>,
@@ -28,9 +25,7 @@ class WsMessageHandler(
     private val lazySyncRoutingApi: Lazy<SyncRoutingApi>,
     private val secureStore: SecureStore,
     private val userDataPathProvider: UserDataPathProvider,
-    private val wsPendingRequests: WsPendingRequests,
     private val wsSessionManager: WsSessionManager,
-    private val scope: CoroutineScope = namedScope(ioDispatcher, "WsMessageHandler"),
 ) {
     private val appControl: AppControl get() = lazyAppControl.value
     private val cacheManager: CacheManager get() = lazyCacheManager.value
@@ -64,6 +59,10 @@ class WsMessageHandler(
                 handlePastePush(appInstanceId, envelope)
             }
 
+            WsMessageType.PASTE_PUSH_ACK -> {
+                handleResponse(appInstanceId, envelope)
+            }
+
             WsMessageType.NOTIFY_EXIT -> {
                 logger.info { "WS notify exit from $appInstanceId" }
                 syncRoutingApi.markExit(appInstanceId)
@@ -79,7 +78,7 @@ class WsMessageHandler(
             }
 
             WsMessageType.FILE_PULL_RESPONSE -> {
-                handleFilePullResponse(envelope)
+                handleResponse(appInstanceId, envelope)
             }
 
             WsMessageType.ERROR -> {
@@ -99,45 +98,82 @@ class WsMessageHandler(
         val syncHandler =
             syncRoutingApi.getSyncHandler(appInstanceId) ?: run {
                 logger.error { "WS paste_push: no sync handler for $appInstanceId" }
+                sendPastePushError(appInstanceId, envelope.requestId, "No sync handler")
                 return
             }
 
         if (!syncHandler.currentSyncRuntimeInfo.allowReceive) {
             logger.debug { "WS paste_push from $appInstanceId: user not allow receive" }
+            sendPastePushError(appInstanceId, envelope.requestId, "Receiving disabled for device")
             return
         }
 
         if (!appControl.isReceiveEnabled()) {
             logger.debug { "WS paste_push from $appInstanceId: app not allow receive" }
+            sendPastePushError(appInstanceId, envelope.requestId, "Receiving disabled by app")
             return
         }
 
-        runCatching {
-            val payloadBytes =
-                if (envelope.encrypted) {
-                    secureStore.getMessageProcessor(appInstanceId).decrypt(envelope.payload)
-                } else {
-                    envelope.payload
-                }
-            val pasteData =
-                json
-                    .decodeFromString<PasteData>(payloadBytes.decodeToString())
-                    .also { pasteData ->
-                        if (pasteData.appInstanceId != appInstanceId) {
-                            logger.warn {
-                                "Ignoring mismatched PasteData identity from authenticated WS peer $appInstanceId"
+        val ingestResult =
+            try {
+                val payloadBytes =
+                    if (envelope.encrypted) {
+                        secureStore.getMessageProcessor(appInstanceId).decrypt(envelope.payload)
+                    } else {
+                        envelope.payload
+                    }
+                val pasteData =
+                    json
+                        .decodeFromString<PasteData>(payloadBytes.decodeToString())
+                        .also { pasteData ->
+                            if (pasteData.appInstanceId != appInstanceId) {
+                                logger.warn {
+                                    "Ignoring mismatched PasteData identity from authenticated WS peer $appInstanceId"
+                                }
                             }
-                        }
-                    }.bindAuthenticatedRemoteIdentity(appInstanceId)
+                        }.bindAuthenticatedRemoteIdentity(appInstanceId)
 
-            scope.launch {
-                pasteboardService.tryWriteRemotePasteboard(pasteData)
+                val accepted = pasteboardService.tryWriteRemotePasteboard(pasteData).getOrThrow()
+                if (accepted == null) {
+                    sendPastePushError(appInstanceId, envelope.requestId, "Paste ingestion rejected")
+                    return
+                }
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.error(e) { "WS paste_push from $appInstanceId failed" }
+                sendPastePushError(appInstanceId, envelope.requestId, "Paste ingestion failed")
+                false
             }
-            appControl.completeReceiveOperation()
-            logger.debug { "WS paste_push from $appInstanceId processed successfully" }
-        }.onFailure { e ->
-            logger.error(e) { "WS paste_push from $appInstanceId failed" }
+        if (!ingestResult) return
+
+        logger.debug { "WS paste_push from $appInstanceId ingested successfully" }
+        envelope.requestId?.let { requestId ->
+            wsSessionManager.send(
+                appInstanceId,
+                WsEnvelope(
+                    type = WsMessageType.PASTE_PUSH_ACK,
+                    requestId = requestId,
+                ),
+            )
         }
+
+        try {
+            appControl.completeReceiveOperation()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to record completed WS receive operation from $appInstanceId" }
+        }
+    }
+
+    private suspend fun sendPastePushError(
+        appInstanceId: String,
+        requestId: String?,
+        message: String,
+    ) {
+        requestId?.let { sendErrorResponse(appInstanceId, it, message) }
     }
 
     private suspend fun handleFilePullRequest(
@@ -265,7 +301,7 @@ class WsMessageHandler(
         envelope: WsEnvelope,
     ) {
         val requestId = envelope.requestId
-        if (requestId != null && wsPendingRequests.complete(requestId, envelope)) {
+        if (requestId != null && wsSessionManager.completePendingRequest(requestId, envelope)) {
             logger.debug { "Error response from $appInstanceId routed to pending request $requestId" }
         } else {
             val msg = if (envelope.payload.isNotEmpty()) envelope.payload.decodeToString() else "(no detail)"
@@ -273,14 +309,17 @@ class WsMessageHandler(
         }
     }
 
-    private fun handleFilePullResponse(envelope: WsEnvelope) {
+    private fun handleResponse(
+        appInstanceId: String,
+        envelope: WsEnvelope,
+    ) {
         val requestId = envelope.requestId
         if (requestId == null) {
-            logger.warn { "FILE_PULL_RESPONSE missing requestId" }
+            logger.warn { "${envelope.type} from $appInstanceId missing requestId" }
             return
         }
-        if (!wsPendingRequests.complete(requestId, envelope)) {
-            logger.warn { "FILE_PULL_RESPONSE: no pending request for requestId=$requestId" }
+        if (!wsSessionManager.completePendingRequest(requestId, envelope)) {
+            logger.warn { "${envelope.type} from $appInstanceId has no pending request: $requestId" }
         }
     }
 

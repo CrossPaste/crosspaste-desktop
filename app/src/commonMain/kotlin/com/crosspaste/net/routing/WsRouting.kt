@@ -7,6 +7,7 @@ import com.crosspaste.net.ws.WsAuthChallenge
 import com.crosspaste.net.ws.WsAuthProof
 import com.crosspaste.net.ws.WsAuthenticationCodec
 import com.crosspaste.net.ws.WsAuthenticationContext
+import com.crosspaste.net.ws.WsCapability
 import com.crosspaste.net.ws.WsEnvelope
 import com.crosspaste.net.ws.WsMessageHandler
 import com.crosspaste.net.ws.WsMessageType
@@ -86,6 +87,7 @@ fun Routing.wsRouting(
                 authenticationContext,
                 peerSupportsChunkedPayload =
                     SyncApi.supportsPairingV3(serverAuthentication?.remotePairingVersion),
+                peerCapabilities = serverAuthentication?.remoteCapabilities.orEmpty(),
             )
         wsSessionManager.registerSession(appInstanceId, wsSession)
 
@@ -115,6 +117,7 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
             sessionId = getCodecsUtils().base64Encode(CryptographyRandom.nextBytes(16)),
             nonce = CryptographyRandom.nextBytes(32),
             pairingVersion = appInfo.pairingVersion,
+            capabilities = WsCapability.supported,
         )
     rawSession.sendEnvelope(
         WsEnvelope(
@@ -163,6 +166,7 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
                 processor = processor,
             ),
         remotePairingVersion = proof.pairingVersion,
+        remoteCapabilities = proof.capabilities,
     )
 }
 

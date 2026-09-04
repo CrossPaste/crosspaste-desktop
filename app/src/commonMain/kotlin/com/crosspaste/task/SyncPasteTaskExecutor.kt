@@ -297,7 +297,7 @@ class SyncPasteTaskExecutor(
                 if (isExtensionTarget) wsChunkedPayloadLimit else wsSingleFramePayloadLimit
             when (
                 val sendResult =
-                    wsSessionManager.sendWithPayloadLimits(
+                    wsSessionManager.sendPastePush(
                         appInstanceId = targetAppInstanceId,
                         envelope = envelope,
                         singleFramePayloadLimit = singleFramePayloadLimit,
@@ -306,6 +306,11 @@ class SyncPasteTaskExecutor(
             ) {
                 WsPayloadSendResult.Sent -> SuccessResult()
                 WsPayloadSendResult.Failed -> null // WebSocket send failed, fall back to HTTP
+                is WsPayloadSendResult.Rejected ->
+                    createFailureResult(
+                        StandardErrorCode.SYNC_PASTE_REJECTED_BY_PEER,
+                        "Paste rejected by $targetAppInstanceId: ${sendResult.detail}",
+                    )
                 is WsPayloadSendResult.PayloadTooLarge -> {
                     logger.warn {
                         "WS paste push to $targetAppInstanceId rejected: " +
@@ -402,5 +407,6 @@ class SyncPasteTaskExecutor(
         failure.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP) ||
             failure.exception.match(StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_APP) ||
             failure.exception.match(StandardErrorCode.DECRYPT_FAIL) ||
+            failure.exception.match(StandardErrorCode.SYNC_PASTE_REJECTED_BY_PEER) ||
             failure.exception.match(StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID)
 }

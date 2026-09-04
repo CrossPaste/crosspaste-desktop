@@ -90,9 +90,6 @@ class WsModuleDependencyTest : KoinTest {
                 single<WsSessionManager> {
                     WsSessionManager()
                 }
-                single<WsPendingRequests> {
-                    WsPendingRequests()
-                }
                 single<WsMessageHandler> {
                     WsMessageHandler(
                         lazyAppControl = lazy { get() },
@@ -102,7 +99,6 @@ class WsModuleDependencyTest : KoinTest {
                         lazySyncRoutingApi = lazy { get() },
                         secureStore = get(),
                         userDataPathProvider = get(),
-                        wsPendingRequests = get(),
                         wsSessionManager = get(),
                     )
                 }

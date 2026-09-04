@@ -141,5 +141,7 @@ class WsChunkedPayloadTest {
 
             assertEquals(null, challenge.pairingVersion)
             assertEquals(null, proof.pairingVersion)
+            assertEquals(emptySet(), challenge.capabilities)
+            assertEquals(emptySet(), proof.capabilities)
         }
 }
