@@ -87,6 +87,20 @@ class PairingV3DialogModelTest {
     }
 
     @Test
+    fun restartRecoveryWithSessionOffersRetry() {
+        val m =
+            model(
+                uiError = PairingV3UiError.NETWORK_FAILURE,
+                recovery = PairingV3Recovery.RESTART,
+                pinComplete = true,
+            )
+        assertTrue(m.canRetry)
+        assertFalse(m.showConfirm)
+        assertFalse(m.canSubmit)
+        assertTrue(m.inputLocked)
+    }
+
+    @Test
     fun unrecoverableErrorLeavesOnlyCancel() {
         val m =
             model(

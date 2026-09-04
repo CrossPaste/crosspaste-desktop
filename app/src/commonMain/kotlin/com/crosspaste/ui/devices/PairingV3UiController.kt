@@ -50,6 +50,19 @@ interface PairingV3UiController {
 
     suspend fun recover(sessionId: String): PairingV3UiResult
 
+    /**
+     * Abandons [sessionId] (notifying the peer best-effort) and opens a fresh
+     * session with [peerAppInstanceId]. Used when the current session can no
+     * longer be proven — e.g. the proof was accepted by the acceptor but its
+     * response was lost — so re-fetching the old offer could never succeed.
+     * Idempotent: a retried restart still opens a fresh session after the old
+     * one is gone, which is why the peer is passed explicitly.
+     */
+    suspend fun restart(
+        sessionId: String,
+        peerAppInstanceId: String,
+    ): PairingV3UiResult
+
     suspend fun reject(sessionId: String): Boolean
 
     suspend fun cancel(sessionId: String): Boolean
@@ -85,6 +98,7 @@ enum class PairingV3Recovery {
     RETRY_START,
     REFRESH_OFFER,
     RETRY_COMMIT,
+    RESTART,
 }
 
 sealed interface PairingV3UiResult {
@@ -204,6 +218,14 @@ class DefaultPairingV3UiController(
             }
         }
 
+    override suspend fun restart(
+        sessionId: String,
+        peerAppInstanceId: String,
+    ): PairingV3UiResult {
+        cancel(sessionId)
+        return startPairing(peerAppInstanceId)
+    }
+
     override suspend fun reject(sessionId: String): Boolean =
         withContext(ioDispatcher) { pairingProtocolV3Service.rejectSession(sessionId) }
 
@@ -273,6 +295,10 @@ internal fun PairingV3PinResult.toUiResult(): PairingV3UiResult =
                 recovery = code.pinRecovery(),
             )
 
+        // A lost proof response is ambiguous: the acceptor may already have
+        // verified the proof and moved past the PIN step, in which case a
+        // refreshed offer would only replay the old session and every further
+        // proof against it is refused. Only a fresh session converges both sides.
         is PairingV3PinResult.NetworkError ->
             PairingV3UiResult.Error(
                 reason = PairingV3UiError.NETWORK_FAILURE,
@@ -280,7 +306,7 @@ internal fun PairingV3PinResult.toUiResult(): PairingV3UiResult =
                     if (commitPending) {
                         PairingV3Recovery.RETRY_COMMIT
                     } else {
-                        PairingV3Recovery.REFRESH_OFFER
+                        PairingV3Recovery.RESTART
                     },
             )
     }

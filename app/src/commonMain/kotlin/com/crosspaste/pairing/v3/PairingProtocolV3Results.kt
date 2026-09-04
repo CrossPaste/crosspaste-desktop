@@ -55,8 +55,9 @@ sealed interface PairingV3PinResult {
     /**
      * Transport failure. When [commitPending] is true the local session holds a
      * verified transcript in COMMITTING state and `retryCommit` can complete the
-     * pairing without a new PIN; otherwise the generation was invalidated and the
-     * caller should refresh the offer and ask for the (possibly rotated) PIN again.
+     * pairing without a new PIN. Otherwise the proof response was lost: the
+     * acceptor may or may not have verified the proof, so the session cannot be
+     * proven again and the caller must cancel it and start a fresh one.
      */
     data class NetworkError(
         val failure: ClientApiResult,

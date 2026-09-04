@@ -868,6 +868,10 @@ class PairingProtocolV3Service(
                         PairingKeySchedule.identitySignaturePayload(PakeRole.INITIATOR, transcriptHash)
                     },
             )
+        // Any failure here retires this generation locally. Without a v3 error
+        // code the outcome is ambiguous (the acceptor may have verified the proof
+        // before the response was lost), and the caller restarts with a fresh
+        // session instead of refreshing this one.
         val response =
             when (val sent = pairingV3ClientApi.sendProof(proof, toUrl)) {
                 is SuccessResult -> sent.getResult<PairingProofResponseV3>()
@@ -1038,7 +1042,10 @@ class PairingProtocolV3Service(
     /**
      * Re-fetches the acceptor's current offer by resending the byte-identical
      * intent and adopts its generation (rotated PIN, fresh PAKE share). Used after
-     * `PAIRING_PIN_EXPIRED` or a transport failure during the proof step.
+     * `PAIRING_PIN_EXPIRED` / `PAIRING_PROOF_INVALID`, where the acceptor is known
+     * to have invalidated the generation. Not for a lost proof response: the
+     * acceptor may have accepted that proof, and the byte-identical intent would
+     * then return the same session with no provable generation left.
      */
     suspend fun refreshOffer(
         sessionId: String,

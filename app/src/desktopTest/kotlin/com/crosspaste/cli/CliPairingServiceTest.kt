@@ -775,6 +775,68 @@ class CliPairingServiceTest {
         }
 
     @Test
+    fun `submit v3 restarts after a lost proof response and adopts the fresh session`() =
+        runTest {
+            val fixture = Fixture(localPairingVersion = 3)
+            val session = startedV3Session(fixture)
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session", V3Pin("123456")) } returns
+                PairingV3UiResult.Error(PairingV3UiError.NETWORK_FAILURE, PairingV3Recovery.RESTART)
+            coEvery { fixture.pairingV3UiController.restart("v3-session", PEER_ID) } returns
+                PairingV3UiResult.SessionReady("v3-session-2", 1L, 789L, "AB:CD")
+
+            val first =
+                assertIs<CliPairingService.SubmitOutcome.Completed>(
+                    fixture.service.submit(session.sessionId, "123456"),
+                )
+            assertFalse(first.result.paired)
+            assertTrue(first.result.retryable)
+            assertContains(first.result.message, "new PIN")
+
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session-2", V3Pin("654321")) } returns
+                PairingV3UiResult.Paired
+
+            val second =
+                assertIs<CliPairingService.SubmitOutcome.Completed>(
+                    fixture.service.submit(session.sessionId, "654321"),
+                )
+            assertTrue(second.result.paired)
+            coVerify(exactly = 1) { fixture.pairingV3UiController.restart("v3-session", PEER_ID) }
+            coVerify(exactly = 0) { fixture.pairingV3UiController.recover(any()) }
+        }
+
+    @Test
+    fun `submit v3 retries the restart before accepting another pin when it failed`() =
+        runTest {
+            val fixture = Fixture(localPairingVersion = 3)
+            val session = startedV3Session(fixture)
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session", V3Pin("111111")) } returns
+                PairingV3UiResult.Error(PairingV3UiError.NETWORK_FAILURE, PairingV3Recovery.RESTART)
+            coEvery { fixture.pairingV3UiController.restart("v3-session", PEER_ID) } coAnswers {
+                awaitCancellation()
+            }
+
+            val first =
+                assertIs<CliPairingService.SubmitOutcome.Completed>(
+                    fixture.service.submit(session.sessionId, "111111"),
+                )
+            assertFalse(first.result.paired)
+            assertTrue(first.result.retryable)
+
+            coEvery { fixture.pairingV3UiController.restart("v3-session", PEER_ID) } returns
+                PairingV3UiResult.SessionReady("v3-session-2", 1L, 789L, "AB:CD")
+            coEvery { fixture.pairingV3UiController.submitPin("v3-session-2", V3Pin("123456")) } returns
+                PairingV3UiResult.Paired
+
+            val second =
+                assertIs<CliPairingService.SubmitOutcome.Completed>(
+                    fixture.service.submit(session.sessionId, "123456"),
+                )
+            assertTrue(second.result.paired)
+            // In-flight, once more on the timeout path, once on the next submit.
+            coVerify(exactly = 3) { fixture.pairingV3UiController.restart("v3-session", PEER_ID) }
+        }
+
+    @Test
     fun `concurrent v3 submits are serialized per session`() =
         runTest {
             val fixture = Fixture(localPairingVersion = 3)
