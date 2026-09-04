@@ -62,6 +62,7 @@ class WsClientConnector(
                             ),
                         ),
                         pairingVersion = appInfo.pairingVersion,
+                        capabilities = WsCapability.supported,
                     )
                 rawSession.sendEnvelope(
                     WsEnvelope(
@@ -102,6 +103,7 @@ class WsClientConnector(
                         targetAppInstanceId,
                         authenticationContext,
                         peerSupportsChunkedPayload = SyncApi.supportsPairingV3(challenge.pairingVersion),
+                        peerCapabilities = challenge.capabilities,
                     )
                 wsSessionManager.registerSession(targetAppInstanceId, wsSession)
 

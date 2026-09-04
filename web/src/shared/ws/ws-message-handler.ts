@@ -133,6 +133,13 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
             `[WsHandler] Failed to decrypt ${envelope.type} from ${appInstanceId}:`,
             e,
           );
+          if (envelope.type === WsMessageType.PASTE_PUSH && envelope.requestId) {
+            try {
+              await sendErrorResponse(appInstanceId, envelope.requestId, "Paste decryption failed");
+            } catch {
+              // Connection failure will make the sender time out and retry.
+            }
+          }
           await deps.onDecryptFailure(appInstanceId);
           return;
         }
@@ -175,11 +182,15 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
   };
 
   async function handlePastePush(appInstanceId: string, envelope: WsEnvelope): Promise<void> {
+    let ingested = false;
     try {
       const jsonString = new TextDecoder().decode(envelope.payload);
       const pasteData = parsePasteData(jsonString);
       if (!pasteData) {
         console.error(`[WsHandler] Failed to parse paste_push from ${appInstanceId}`);
+        if (envelope.requestId) {
+          await sendErrorResponse(appInstanceId, envelope.requestId, "Invalid paste payload");
+        }
         return;
       }
 
@@ -188,31 +199,53 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
       const priorReceivedAt = await PasteStore.latestReceivedAtByHash(pasteData.hash);
 
       const newId = await ingestPaste(pasteData, deps.broadcastToSidePanel);
-      if (newId !== null) {
-        await pullFilesIfNeeded(appInstanceId, pasteData);
+      if (newId === null) {
+        if (envelope.requestId) {
+          await sendErrorResponse(appInstanceId, envelope.requestId, "Paste ingestion rejected");
+        }
+        return;
+      }
+      ingested = true;
 
-        const writeAllowed = shouldWriteRemotePaste({
-          hash: pasteData.hash,
-          lastHash: await deps.getLastHash(),
-          priorReceivedAt,
-          now: Date.now(),
+      if (envelope.requestId) {
+        await deps.sendToDevice(appInstanceId, {
+          type: WsMessageType.PASTE_PUSH_ACK,
+          payload: new Uint8Array(0),
+          encrypted: false,
+          requestId: envelope.requestId,
         });
-        if (writeAllowed) {
-          await deps.armClipboardWriteSuppress();
-          const written = await writeRemotePasteToClipboard(pasteData);
-          if (written) {
-            await deps.setLastHash(pasteData.hash);
-          } else {
-            // Nothing hit the clipboard, so leaving the window armed would
-            // absorb (and silently drop) the user's next real copy.
-            await deps.disarmClipboardWriteSuppress();
-          }
+      }
+
+      await pullFilesIfNeeded(appInstanceId, pasteData);
+
+      const writeAllowed = shouldWriteRemotePaste({
+        hash: pasteData.hash,
+        lastHash: await deps.getLastHash(),
+        priorReceivedAt,
+        now: Date.now(),
+      });
+      if (writeAllowed) {
+        await deps.armClipboardWriteSuppress();
+        const written = await writeRemotePasteToClipboard(pasteData);
+        if (written) {
+          await deps.setLastHash(pasteData.hash);
+        } else {
+          // Nothing hit the clipboard, so leaving the window armed would
+          // absorb (and silently drop) the user's next real copy.
+          await deps.disarmClipboardWriteSuppress();
         }
       }
 
       deps.updateDeviceStatus(appInstanceId, "synced");
     } catch (e) {
       console.error(`[WS-PASTE-PUSH] Failed from ${appInstanceId}:`, e);
+      if (!ingested && envelope.requestId) {
+        try {
+          await sendErrorResponse(appInstanceId, envelope.requestId, "Paste ingestion failed");
+        } catch {
+          // Connection failure will make the sender time out and retry.
+        }
+      }
     }
   }
 

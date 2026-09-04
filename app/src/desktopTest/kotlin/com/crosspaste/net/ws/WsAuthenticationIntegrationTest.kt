@@ -249,6 +249,14 @@ class WsAuthenticationIntegrationTest {
 
                 assertTrue(clientSessions.supportsChunkedPayload(serverInfo.appInstanceId))
                 assertTrue(serverSessions.supportsChunkedPayload(clientInfo.appInstanceId))
+                assertTrue(
+                    WsCapability.PASTE_PUSH_ACK in
+                        requireNotNull(clientSessions.getSession(serverInfo.appInstanceId)).peerCapabilities,
+                )
+                assertTrue(
+                    WsCapability.PASTE_PUSH_ACK in
+                        requireNotNull(serverSessions.getSession(clientInfo.appInstanceId)).peerCapabilities,
+                )
 
                 // Larger than the server's 1 MiB receive frame limit — only
                 // deliverable when actually split into chunked frames

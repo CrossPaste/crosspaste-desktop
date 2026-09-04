@@ -21,6 +21,8 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PasteReleaseServiceRemoteDiscardTest {
@@ -105,6 +107,7 @@ class PasteReleaseServiceRemoteDiscardTest {
                 }
 
             assertTrue(result.isSuccess)
+            assertNull(result.getOrThrow())
             assertTrue(!wrotePasteboard)
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
             coVerify(exactly = 1) {
@@ -131,6 +134,7 @@ class PasteReleaseServiceRemoteDiscardTest {
                 service.releaseRemotePasteData(remotePasteData(createTextPasteItem(text = "small"))) {}
 
             assertTrue(result.isSuccess)
+            assertNotNull(result.getOrThrow())
             coVerify(exactly = 1) { taskSubmitter.submit(any()) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
         }
@@ -150,6 +154,7 @@ class PasteReleaseServiceRemoteDiscardTest {
             val result = service.releaseRemotePasteData(remotePasteData(oversizedTextItem())) {}
 
             assertTrue(result.isSuccess)
+            assertNotNull(result.getOrThrow())
             coVerify(exactly = 1) { taskSubmitter.submit(any()) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
         }

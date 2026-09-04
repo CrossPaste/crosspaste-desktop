@@ -46,7 +46,6 @@ import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.ws.WS_MAX_PAYLOAD_SIZE
 import com.crosspaste.net.ws.WsClientConnector
 import com.crosspaste.net.ws.WsMessageHandler
-import com.crosspaste.net.ws.WsPendingRequests
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.LibCryptoResolution
 import com.crosspaste.pairing.v3.OpenSslPakeEcOps
@@ -274,12 +273,8 @@ fun desktopNetworkModule(
                 lazySyncRoutingApi = lazy { get() },
                 secureStore = get(),
                 userDataPathProvider = get(),
-                wsPendingRequests = get(),
                 wsSessionManager = get(),
             )
-        }
-        single<WsPendingRequests> {
-            WsPendingRequests()
         }
         single<WsSessionManager> {
             WsSessionManager()

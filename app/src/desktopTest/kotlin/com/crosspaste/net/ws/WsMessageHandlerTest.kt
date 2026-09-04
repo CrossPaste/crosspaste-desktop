@@ -15,36 +15,41 @@ import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class WsMessageHandlerTest {
 
-    @Test
-    fun `paste push binds body identity to websocket peer`() =
-        runTest {
-            val authenticatedPeer = "authenticated-peer"
-            val appControl = mockk<AppControl>(relaxed = true)
-            val pasteboardService = mockk<PasteboardService>(relaxed = true)
-            val syncHandler = mockk<SyncHandler>()
-            val syncRoutingApi = mockk<SyncRoutingApi>()
-            val receivedPaste = slot<PasteData>()
+    private class Fixture(
+        authenticatedPeer: String,
+        allowReceive: Boolean = true,
+        appReceiveEnabled: Boolean = true,
+        writeResult: Result<Unit?> = Result.success(Unit),
+    ) {
+        val appControl = mockk<AppControl>(relaxed = true)
+        val pasteboardService = mockk<PasteboardService>(relaxed = true)
+        val syncHandler = mockk<SyncHandler>()
+        val syncRoutingApi = mockk<SyncRoutingApi>()
+        val wsSessionManager = mockk<WsSessionManager>(relaxed = true)
+        val receivedPastes = mutableListOf<PasteData>()
+        val responses = mutableListOf<WsEnvelope>()
 
+        val handler: WsMessageHandler
+
+        init {
             every { syncHandler.currentSyncRuntimeInfo } returns
-                createConnectedSyncRuntimeInfo(authenticatedPeer).copy(allowReceive = true)
+                createConnectedSyncRuntimeInfo(authenticatedPeer).copy(allowReceive = allowReceive)
             every { syncRoutingApi.getSyncHandler(authenticatedPeer) } returns syncHandler
-            coEvery { appControl.isReceiveEnabled() } returns true
-            coEvery { pasteboardService.tryWriteRemotePasteboard(capture(receivedPaste)) } returns Result.success(Unit)
+            coEvery { appControl.isReceiveEnabled() } returns appReceiveEnabled
+            coEvery { pasteboardService.tryWriteRemotePasteboard(capture(receivedPastes)) } returns writeResult
+            coEvery { wsSessionManager.send(authenticatedPeer, capture(responses)) } returns true
 
-            val handler =
+            handler =
                 WsMessageHandler(
                     lazyAppControl = lazyOf(appControl),
                     lazyCacheManager = lazyOf(mockk<CacheManager>(relaxed = true)),
@@ -53,30 +58,108 @@ class WsMessageHandlerTest {
                     lazySyncRoutingApi = lazyOf(syncRoutingApi),
                     secureStore = mockk<SecureStore>(relaxed = true),
                     userDataPathProvider = mockk<UserDataPathProvider>(relaxed = true),
-                    wsPendingRequests = mockk<WsPendingRequests>(relaxed = true),
-                    wsSessionManager = mockk<WsSessionManager>(relaxed = true),
-                    scope = this,
+                    wsSessionManager = wsSessionManager,
                 )
-            val body =
-                PasteData(
-                    appInstanceId = "spoofed-peer",
-                    pasteCollection = PasteCollection(emptyList()),
-                    pasteType = PasteType.TEXT_TYPE.type,
-                    size = 4,
-                    hash = "hash",
-                )
+        }
+    }
 
-            handler.handleMessage(
-                authenticatedPeer,
-                WsEnvelope(
-                    type = WsMessageType.PASTE_PUSH,
-                    payload = getJsonUtils().JSON.encodeToString(body).encodeToByteArray(),
-                ),
+    private fun pastePush(
+        bodyAppInstanceId: String = "spoofed-peer",
+        requestId: String? = null,
+    ): WsEnvelope {
+        val body =
+            PasteData(
+                appInstanceId = bodyAppInstanceId,
+                pasteCollection = PasteCollection(emptyList()),
+                pasteType = PasteType.TEXT_TYPE.type,
+                size = 4,
+                hash = "hash",
             )
-            advanceUntilIdle()
+        return WsEnvelope(
+            type = WsMessageType.PASTE_PUSH,
+            payload = getJsonUtils().JSON.encodeToString(body).encodeToByteArray(),
+            requestId = requestId,
+        )
+    }
 
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboard(any()) }
-            assertEquals(authenticatedPeer, receivedPaste.captured.appInstanceId)
-            assertTrue(receivedPaste.captured.remote)
+    @Test
+    fun pastePush_successBindsPeerAndAcknowledgesAfterIngestion() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val fixture = Fixture(authenticatedPeer)
+
+            fixture.handler.handleMessage(authenticatedPeer, pastePush(requestId = "request-1"))
+
+            assertEquals(1, fixture.receivedPastes.size)
+            assertEquals(authenticatedPeer, fixture.receivedPastes.single().appInstanceId)
+            assertTrue(fixture.receivedPastes.single().remote)
+            assertEquals(
+                WsEnvelope(WsMessageType.PASTE_PUSH_ACK, requestId = "request-1"),
+                fixture.responses.single(),
+            )
+            coVerifyOrder {
+                fixture.pasteboardService.tryWriteRemotePasteboard(any())
+                fixture.wsSessionManager.send(authenticatedPeer, any())
+                fixture.appControl.completeReceiveOperation()
+            }
+        }
+
+    @Test
+    fun pastePush_ingestionFailureReturnsCorrelatedError() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val fixture =
+                Fixture(
+                    authenticatedPeer = authenticatedPeer,
+                    writeResult = Result.failure(IllegalStateException("database unavailable")),
+                )
+
+            fixture.handler.handleMessage(authenticatedPeer, pastePush(requestId = "request-1"))
+
+            assertEquals(WsMessageType.ERROR, fixture.responses.single().type)
+            assertEquals("request-1", fixture.responses.single().requestId)
+            coVerify(exactly = 0) { fixture.appControl.completeReceiveOperation() }
+        }
+
+    @Test
+    fun pastePush_ingestionRejectionReturnsCorrelatedError() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val fixture =
+                Fixture(
+                    authenticatedPeer = authenticatedPeer,
+                    writeResult = Result.success(null),
+                )
+
+            fixture.handler.handleMessage(authenticatedPeer, pastePush(requestId = "request-1"))
+
+            assertEquals(WsMessageType.ERROR, fixture.responses.single().type)
+            assertEquals("request-1", fixture.responses.single().requestId)
+            coVerify(exactly = 0) { fixture.appControl.completeReceiveOperation() }
+        }
+
+    @Test
+    fun pastePush_receivingDisabledReturnsCorrelatedErrorWithoutIngestion() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val fixture = Fixture(authenticatedPeer, allowReceive = false)
+
+            fixture.handler.handleMessage(authenticatedPeer, pastePush(requestId = "request-1"))
+
+            assertTrue(fixture.receivedPastes.isEmpty())
+            assertEquals(WsMessageType.ERROR, fixture.responses.single().type)
+            assertEquals("request-1", fixture.responses.single().requestId)
+        }
+
+    @Test
+    fun pastePush_legacyRequestDoesNotSendResponse() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val fixture = Fixture(authenticatedPeer)
+
+            fixture.handler.handleMessage(authenticatedPeer, pastePush())
+
+            assertEquals(1, fixture.receivedPastes.size)
+            assertTrue(fixture.responses.isEmpty())
         }
 }

@@ -7,6 +7,7 @@ export const WsMessageType = {
   HEARTBEAT: "heartbeat",
   HEARTBEAT_ACK: "heartbeat_ack",
   PASTE_PUSH: "paste_push",
+  PASTE_PUSH_ACK: "paste_push_ack",
   SYNC_INFO: "sync_info",
   NOTIFY_EXIT: "notify_exit",
   NOTIFY_REMOVE: "notify_remove",
@@ -17,6 +18,10 @@ export const WsMessageType = {
   AUTH_CHALLENGE: "auth_challenge",
   AUTH_PROOF: "auth_proof",
   AUTH_ACK: "auth_ack",
+} as const;
+
+export const WsCapability = {
+  PASTE_PUSH_ACK: "paste_push_ack",
 } as const;
 
 export type WsMessageTypeValue = (typeof WsMessageType)[keyof typeof WsMessageType];

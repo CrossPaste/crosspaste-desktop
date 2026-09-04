@@ -1,5 +1,5 @@
 import type { WsEnvelope, WsEnvelopeHeader } from "./ws-types";
-import { toHeader } from "./ws-types";
+import { toHeader, WsCapability } from "./ws-types";
 
 /**
  * WebSocket authentication for the extension, byte-compatible with desktop's
@@ -20,6 +20,8 @@ export const WS_AUTH_VERSION = 1;
 export const WS_AUTH_ROLE_CLIENT_PROOF = "client-proof";
 export const WS_AUTH_ROLE_SERVER_PROOF = "server-proof";
 
+export const WS_SUPPORTED_CAPABILITIES = [WsCapability.PASTE_PUSH_ACK] as const;
+
 const HANDSHAKE_DOMAIN = "crosspaste-ws-handshake-v1";
 const ENVELOPE_DOMAIN = "crosspaste-ws-envelope-v1";
 
@@ -35,6 +37,7 @@ export interface WsAuthChallenge {
   /** base64 (Kotlin Base64ByteArraySerializer) */
   nonce: string;
   pairingVersion?: number | null;
+  capabilities?: string[];
 }
 
 /** `WsAuthProof` JSON payload of AUTH_PROOF / AUTH_ACK envelopes. */
@@ -42,6 +45,7 @@ export interface WsAuthProofMessage {
   /** base64 (Kotlin Base64ByteArraySerializer) */
   authenticationCode: string;
   pairingVersion?: number | null;
+  capabilities?: string[];
 }
 
 export function base64ToBytes(b64: string): Uint8Array {

@@ -136,6 +136,7 @@ class PasteReleaseServicePushTest {
             val result = service.releaseRemotePasteData(pasteData) {}
 
             assertTrue(result.isSuccess, "invalid paste is discarded, not failed")
+            assertNull(result.getOrThrow(), "discarded paste must not be reported as accepted")
             coVerify(exactly = 0) { pasteDao.createPasteData(any(), any()) }
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
         }

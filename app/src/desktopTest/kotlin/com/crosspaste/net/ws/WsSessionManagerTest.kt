@@ -2,13 +2,19 @@ package com.crosspaste.net.ws
 
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
+import io.ktor.websocket.readText
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 import kotlin.test.Test
@@ -16,6 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class WsSessionManagerTest {
 
     private fun fakeSession(active: Boolean = true): WsSession {
@@ -208,7 +215,7 @@ class WsSessionManagerTest {
         }
 
     @Test
-    fun sendWithPayloadLimits_legacySessionRejectsAboveSingleFrameLimit() =
+    fun sendPastePush_legacySessionRejectsAboveSingleFrameLimit() =
         runTest {
             val mgr = WsSessionManager()
             val activeJob = Job()
@@ -217,10 +224,10 @@ class WsSessionManagerTest {
                     every { coroutineContext } returns activeJob
                 }
             mgr.registerSession("A", WsSession(inner, "remote"))
-            val envelope = WsEnvelope(type = "test", payload = ByteArray(65))
+            val envelope = WsEnvelope(type = WsMessageType.PASTE_PUSH, payload = ByteArray(65))
 
             val result =
-                mgr.sendWithPayloadLimits(
+                mgr.sendPastePush(
                     appInstanceId = "A",
                     envelope = envelope,
                     singleFramePayloadLimit = 64,
@@ -232,7 +239,7 @@ class WsSessionManagerTest {
         }
 
     @Test
-    fun sendWithPayloadLimits_chunkCapableSessionUsesChunkedLimitAndSends() =
+    fun sendPastePush_chunkCapableSessionUsesChunkedLimitAndSends() =
         runTest {
             val mgr = WsSessionManager()
             val activeJob = Job()
@@ -244,10 +251,10 @@ class WsSessionManagerTest {
                 "A",
                 WsSession(inner, "remote", peerSupportsChunkedPayload = true),
             )
-            val envelope = WsEnvelope(type = "test", payload = ByteArray(65))
+            val envelope = WsEnvelope(type = WsMessageType.PASTE_PUSH, payload = ByteArray(65))
 
             val result =
-                mgr.sendWithPayloadLimits(
+                mgr.sendPastePush(
                     appInstanceId = "A",
                     envelope = envelope,
                     singleFramePayloadLimit = 64,
@@ -260,7 +267,7 @@ class WsSessionManagerTest {
         }
 
     @Test
-    fun sendWithPayloadLimits_chunkCapableSessionRejectsAboveChunkedLimit() =
+    fun sendPastePush_chunkCapableSessionRejectsAboveChunkedLimit() =
         runTest {
             val mgr = WsSessionManager()
             val activeJob = Job()
@@ -272,10 +279,10 @@ class WsSessionManagerTest {
                 "A",
                 WsSession(inner, "remote", peerSupportsChunkedPayload = true),
             )
-            val envelope = WsEnvelope(type = "test", payload = ByteArray(129))
+            val envelope = WsEnvelope(type = WsMessageType.PASTE_PUSH, payload = ByteArray(129))
 
             val result =
-                mgr.sendWithPayloadLimits(
+                mgr.sendPastePush(
                     appInstanceId = "A",
                     envelope = envelope,
                     singleFramePayloadLimit = 64,
@@ -283,6 +290,192 @@ class WsSessionManagerTest {
                 )
 
             assertEquals(WsPayloadSendResult.PayloadTooLarge(129, 128), result)
+            coVerify(exactly = 0) { inner.send(any<Frame>()) }
+        }
+
+    @Test
+    fun sendPastePush_legacyPeerReturnsAfterSendWithoutRequestId() =
+        runTest {
+            val mgr = WsSessionManager()
+            val sentHeader = slot<Frame.Text>()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(capture(sentHeader)) } just Runs
+                }
+            mgr.registerSession("A", WsSession(inner, "remote"))
+
+            val result =
+                mgr.sendPastePush(
+                    appInstanceId = "A",
+                    envelope = WsEnvelope(WsMessageType.PASTE_PUSH, byteArrayOf(1)),
+                    singleFramePayloadLimit = 64,
+                    chunkedPayloadLimit = 128,
+                )
+
+            assertEquals(WsPayloadSendResult.Sent, result)
+            val header =
+                com.crosspaste.utils
+                    .getJsonUtils()
+                    .JSON
+                    .decodeFromString<WsEnvelopeHeader>(sentHeader.captured.readText())
+            assertEquals(null, header.requestId)
+        }
+
+    @Test
+    fun sendPastePush_ackCapablePeerWaitsForMatchingAck() =
+        runTest {
+            val mgr = WsSessionManager()
+            val sentFrames = mutableListOf<Frame>()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(capture(sentFrames)) } just Runs
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.PASTE_PUSH_ACK),
+                ),
+            )
+
+            val result =
+                async {
+                    mgr.sendPastePush(
+                        appInstanceId = "A",
+                        envelope = WsEnvelope(WsMessageType.PASTE_PUSH, byteArrayOf(1)),
+                        singleFramePayloadLimit = 64,
+                        chunkedPayloadLimit = 128,
+                    )
+                }
+            runCurrent()
+
+            val requestId =
+                com.crosspaste.utils
+                    .getJsonUtils()
+                    .JSON
+                    .decodeFromString<WsEnvelopeHeader>(sentFrames.filterIsInstance<Frame.Text>().single().readText())
+                    .requestId
+            requireNotNull(requestId)
+            assertTrue(
+                mgr.completePendingRequest(
+                    requestId,
+                    WsEnvelope(WsMessageType.PASTE_PUSH_ACK, requestId = requestId),
+                ),
+            )
+            assertEquals(WsPayloadSendResult.Sent, result.await())
+        }
+
+    @Test
+    fun sendPastePush_ackCapablePeerReportsReceiverErrorAsRejected() =
+        runTest {
+            val mgr = WsSessionManager()
+            val sentFrames = mutableListOf<Frame>()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(capture(sentFrames)) } just Runs
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.PASTE_PUSH_ACK),
+                ),
+            )
+
+            val result =
+                async {
+                    mgr.sendPastePush(
+                        appInstanceId = "A",
+                        envelope = WsEnvelope(WsMessageType.PASTE_PUSH, byteArrayOf(1)),
+                        singleFramePayloadLimit = 64,
+                        chunkedPayloadLimit = 128,
+                    )
+                }
+            runCurrent()
+
+            val requestId =
+                com.crosspaste.utils
+                    .getJsonUtils()
+                    .JSON
+                    .decodeFromString<WsEnvelopeHeader>(sentFrames.filterIsInstance<Frame.Text>().single().readText())
+                    .requestId
+            requireNotNull(requestId)
+            mgr.completePendingRequest(
+                requestId,
+                WsEnvelope(
+                    type = WsMessageType.ERROR,
+                    payload = "rejected".encodeToByteArray(),
+                    requestId = requestId,
+                ),
+            )
+            assertEquals(WsPayloadSendResult.Rejected("rejected"), result.await())
+        }
+
+    @Test
+    fun sendPastePush_ackCapablePeerReportsAckTimeoutAsFailure() =
+        runTest {
+            val mgr = WsSessionManager()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.PASTE_PUSH_ACK),
+                ),
+            )
+
+            val result =
+                async {
+                    mgr.sendPastePush(
+                        appInstanceId = "A",
+                        envelope = WsEnvelope(WsMessageType.PASTE_PUSH, byteArrayOf(1)),
+                        singleFramePayloadLimit = 64,
+                        chunkedPayloadLimit = 128,
+                        ackTimeoutMs = 100,
+                    )
+                }
+            runCurrent()
+            advanceTimeBy(101)
+            runCurrent()
+
+            assertEquals(WsPayloadSendResult.Failed, result.await())
+        }
+
+    @Test
+    fun sendPastePush_ackCapablePeerRejectsOversizeBeforeWaitingForAck() =
+        runTest {
+            val mgr = WsSessionManager()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.PASTE_PUSH_ACK),
+                ),
+            )
+
+            val result =
+                mgr.sendPastePush(
+                    appInstanceId = "A",
+                    envelope = WsEnvelope(WsMessageType.PASTE_PUSH, ByteArray(65)),
+                    singleFramePayloadLimit = 64,
+                    chunkedPayloadLimit = 64,
+                )
+
+            assertEquals(WsPayloadSendResult.PayloadTooLarge(65, 64), result)
             coVerify(exactly = 0) { inner.send(any<Frame>()) }
         }
 }
