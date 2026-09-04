@@ -29,7 +29,6 @@ kotlinx-serialization = "1.11.0"
 kotlinx-uuid = "0.1.7"
 ksoup = "0.2.6"
 ktlint = "14.2.0"
-kotter = "1.4.0"
 ktor = "3.5.2"
 lifecycle = "2.11.0"
 logback = "1.6.3"
@@ -89,7 +88,6 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
-kotter = { module = "com.varabyte.kotter:kotter", version.ref = "kotter" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
