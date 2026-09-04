@@ -305,6 +305,17 @@ private fun initJvmArgs(
         ),
     )
 
+    // Skiko's FrameWatcher calls System.gc() every 30 s while the UI is
+    // rendering (>1000 frames per interval) to release native Skia peers.
+    // Under G1 that is a stop-the-world full collection, measured at
+    // 60-200 ms (one outlier of 2.3 s) on a 2-core VM, i.e. a visible
+    // stutter twice a minute whenever a window is animating. This flag turns
+    // explicit GCs into a concurrent cycle: the cleaners still run at remark,
+    // but the pause shrinks to a few milliseconds (see PR for the A/B data).
+    // Ignored by collectors other than G1, so single-core machines that
+    // default to Serial GC are unaffected.
+    jvmArgs(arrayOf("-XX:+ExplicitGCInvokesConcurrent"))
+
     // Open modules required for all platforms
     jvmArgs(arrayOf("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED"))
     jvmArgs(arrayOf("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED"))
