@@ -63,6 +63,7 @@ import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.vinceglb.filekit.FileKit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
@@ -238,7 +239,13 @@ class CrossPaste {
                     val mcpServer = getManagedService<McpServer>(ManagedService.MCP_SERVER)
                     if (configManager.getCurrentConfig().enableMcpServer) {
                         ioCoroutineDispatcher.launch {
-                            mcpServer.start()
+                            try {
+                                mcpServer.start()
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Throwable) {
+                                logger.warn(e) { "MCP server unavailable for this session" }
+                            }
                         }
                     }
                     getManagedService<PasteClient>(ManagedService.PASTE_CLIENT)

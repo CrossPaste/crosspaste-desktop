@@ -13,7 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import com.composables.icons.materialsymbols.MaterialSymbols
@@ -34,10 +37,15 @@ import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
+import com.crosspaste.utils.mainDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
+import java.util.concurrent.atomic.AtomicLong
 
 @Composable
 fun McpContentView() {
@@ -48,7 +56,8 @@ fun McpContentView() {
     val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
-    val scope = rememberCoroutineScope()
+    val operationVersion = remember { AtomicLong() }
+    var counterResetKey by remember { mutableIntStateOf(0) }
 
     val displayPort =
         if (config.mcpServerPort > 0) {
@@ -74,12 +83,33 @@ fun McpContentView() {
                         ),
                     checked = config.enableMcpServer,
                 ) { enabled ->
+                    val requestVersion = operationVersion.incrementAndGet()
+                    val previousEnabled = config.enableMcpServer
                     configManager.updateConfig("enableMcpServer", enabled)
-                    scope.launch {
-                        if (enabled) {
-                            mcpServer.restart(displayPort)
-                        } else {
-                            mcpServer.stop()
+                    if (configManager.getCurrentConfig().enableMcpServer != enabled) {
+                        return@SettingListSwitchItem
+                    }
+                    ioCoroutineDispatcher.launch {
+                        if (
+                            requestVersion != operationVersion.get() ||
+                            configManager.getCurrentConfig().enableMcpServer != enabled
+                        ) {
+                            return@launch
+                        }
+                        val succeeded =
+                            runMcpServerOperation(notificationManager) {
+                                if (enabled) {
+                                    mcpServer.restart(displayPort)
+                                } else {
+                                    mcpServer.stop()
+                                }
+                            }
+                        if (
+                            !succeeded &&
+                            requestVersion == operationVersion.get() &&
+                            configManager.getCurrentConfig().enableMcpServer == enabled
+                        ) {
+                            configManager.updateConfig("enableMcpServer", previousEnabled)
                         }
                     }
                 }
@@ -92,14 +122,48 @@ fun McpContentView() {
                             iconColor = themeExt.indigoIconColor,
                         ),
                     trailingContent = {
-                        Counter(
-                            defaultValue = displayPort.toLong(),
-                            rule = { it in 1024..65535 },
-                        ) { newPort ->
-                            configManager.updateConfig("mcpServerPort", newPort.toInt())
-                            if (config.enableMcpServer) {
-                                scope.launch {
-                                    mcpServer.restart(newPort.toInt())
+                        key(counterResetKey) {
+                            Counter(
+                                defaultValue = displayPort.toLong(),
+                                rule = { it in 1024..65535 },
+                            ) { newPort ->
+                                val requestVersion = operationVersion.incrementAndGet()
+                                val requestedPort = newPort.toInt()
+                                configManager.updateConfig("mcpServerPort", requestedPort)
+                                val currentConfig = configManager.getCurrentConfig()
+                                if (currentConfig.mcpServerPort != requestedPort || !currentConfig.enableMcpServer) {
+                                    return@Counter
+                                }
+                                ioCoroutineDispatcher.launch {
+                                    val latestConfig = configManager.getCurrentConfig()
+                                    if (
+                                        requestVersion != operationVersion.get() ||
+                                        !latestConfig.enableMcpServer ||
+                                        latestConfig.mcpServerPort != requestedPort
+                                    ) {
+                                        return@launch
+                                    }
+                                    val succeeded =
+                                        runMcpServerOperation(notificationManager) {
+                                            mcpServer.restart(requestedPort)
+                                        }
+                                    if (
+                                        !succeeded &&
+                                        requestVersion == operationVersion.get() &&
+                                        configManager.getCurrentConfig().enableMcpServer &&
+                                        configManager.getCurrentConfig().mcpServerPort == requestedPort
+                                    ) {
+                                        val actualPort = mcpServer.port()
+                                        withContext(mainDispatcher) {
+                                            if (
+                                                requestVersion == operationVersion.get() &&
+                                                configManager.getCurrentConfig().mcpServerPort == requestedPort
+                                            ) {
+                                                configManager.updateConfig("mcpServerPort", actualPort)
+                                                counterResetKey++
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -143,3 +207,20 @@ fun McpContentView() {
         }
     }
 }
+
+private suspend fun runMcpServerOperation(
+    notificationManager: NotificationManager,
+    operation: suspend () -> Unit,
+): Boolean =
+    try {
+        operation()
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Throwable) {
+        notificationManager.sendNotification(
+            title = { it.getText("mcp_server_update_failed") },
+            messageType = MessageType.Error,
+        )
+        false
+    }
