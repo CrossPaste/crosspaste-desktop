@@ -229,17 +229,13 @@ class CrossPaste {
                         getManagedService<CliServer>(ManagedService.CLI_SERVER).start()
                     } else {
                         // The GUI tolerates a degraded CLI and keeps running.
-                        ioCoroutineDispatcher.launch {
-                            runCatching {
-                                getManagedService<CliServer>(ManagedService.CLI_SERVER).start()
-                            }.onFailure { logger.warn { "CLI unavailable for this session" } }
+                        startOptionalServiceInBackground("CLI") {
+                            getManagedService<CliServer>(ManagedService.CLI_SERVER).start()
                         }
                     }
                     val mcpServer = getManagedService<McpServer>(ManagedService.MCP_SERVER)
                     if (configManager.getCurrentConfig().enableMcpServer) {
-                        ioCoroutineDispatcher.launch {
-                            mcpServer.start()
-                        }
+                        startOptionalServiceInBackground("MCP server") { mcpServer.start() }
                     }
                     getManagedService<PasteClient>(ManagedService.PASTE_CLIENT)
                     getManagedService<PasteBonjourService>(ManagedService.PASTE_BONJOUR)
@@ -311,6 +307,20 @@ class CrossPaste {
                     exitProcess(1)
                 }
                 exitProcess(0)
+            }
+        }
+
+        /**
+         * Starts a service the GUI can live without. A failure is logged and the
+         * session continues in degraded mode.
+         */
+        private fun startOptionalServiceInBackground(
+            serviceName: String,
+            start: suspend () -> Unit,
+        ) {
+            ioCoroutineDispatcher.launch {
+                runCatching { start() }
+                    .onFailure { e -> logger.warn(e) { "$serviceName unavailable for this session" } }
             }
         }
 
