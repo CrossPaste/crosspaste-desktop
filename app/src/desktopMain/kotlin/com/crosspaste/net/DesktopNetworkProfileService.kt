@@ -20,9 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +32,7 @@ class DesktopNetworkProfileService(
     private val platform: Platform,
     private val userAttentionService: UserAttentionService,
     private val scope: CoroutineScope = namedScope(ioDispatcher, "DesktopNetworkProfileService"),
+    private val detect: () -> NetworkDiagnosis = ::queryWindowsDiagnosis,
 ) : NetworkProfileService {
 
     private val logger = KotlinLogging.logger {}
@@ -68,27 +67,6 @@ class DesktopNetworkProfileService(
                 ) { runDetection() }
             }
         }
-
-        // When the diagnosis fingerprint diverges from the stored dismissed fingerprint
-        // (e.g. user fixed the network, or moved to a different blocking state), forget
-        // the dismissal so the next blocking event surfaces a fresh warning.
-        _diagnosis
-            .onEach { current ->
-                val stored = configManager.getCurrentConfig().networkBlockingDismissedFingerprint
-                if (stored.isNotEmpty() && stored != current.fingerprint()) {
-                    configManager.updateConfig("networkBlockingDismissedFingerprint", "")
-                }
-            }.launchIn(scope)
-
-        // Auto-surface the dialog the first time a new blocking state is detected.
-        combine(_diagnosis, isWarningDismissed) { current, dismissed ->
-            current.isLikelyBlocking() && !dismissed
-        }.distinctUntilChanged()
-            .onEach { shouldShow ->
-                if (shouldShow) {
-                    _isWarningDialogVisible.value = true
-                }
-            }.launchIn(scope)
     }
 
     override suspend fun refresh() {
@@ -111,14 +89,46 @@ class DesktopNetworkProfileService(
     }
 
     private fun runDetection() {
-        runCatching {
-            val snapshot = WindowsNetworkApi.query()
-            val diagnosis = NetworkDiagnosis(snapshot.profile, snapshot.mDnsAllowed)
-            logger.info { "Network diagnosis: $diagnosis" }
-            _diagnosis.value = diagnosis
-        }.onFailure { e ->
-            logger.warn(e) { "Failed to run Windows network diagnosis" }
-            _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = null)
+        runCatching { detect() }
+            .onSuccess { diagnosis ->
+                logger.info { "Network diagnosis: $diagnosis" }
+                publishDetected(diagnosis)
+            }.onFailure { e ->
+                logger.warn(e) { "Failed to run Windows network diagnosis" }
+                _diagnosis.value = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = null)
+            }
+    }
+
+    /**
+     * Publishes a real detection result and reconciles it with the persisted dismissal.
+     *
+     * Only a detected state may invalidate the stored fingerprint: the `NOT_APPLICABLE`
+     * placeholder the flow starts with and the `UNKNOWN` of a failed probe are not
+     * network states the user could have dismissed, so comparing against them would
+     * wipe every dismissal on startup and re-open the dialog for the same blocking
+     * state after each restart.
+     *
+     * The dialog is surfaced synchronously here rather than from a `combine` over
+     * `_diagnosis` and [isWarningDismissed]: those two flows update independently, so
+     * the combine could observe the new blocking diagnosis together with a stale
+     * `dismissed = false` and pop the dialog for a state the user already dismissed.
+     */
+    private fun publishDetected(diagnosis: NetworkDiagnosis) {
+        val fingerprint = diagnosis.fingerprint()
+        val stored = configManager.getCurrentConfig().networkBlockingDismissedFingerprint
+        // The user fixed the network or moved to a different blocking state: forget the
+        // dismissal so the next blocking event surfaces a fresh warning.
+        if (stored.isNotEmpty() && stored != fingerprint) {
+            configManager.updateConfig("networkBlockingDismissedFingerprint", "")
+        }
+
+        val previous = _diagnosis.value
+        _diagnosis.value = diagnosis
+
+        // Auto-surface the dialog the first time a new blocking state is detected.
+        val isNewState = previous.fingerprint() != fingerprint
+        if (diagnosis.isLikelyBlocking() && isNewState && stored != fingerprint) {
+            _isWarningDialogVisible.value = true
         }
     }
 
@@ -151,6 +161,11 @@ class DesktopNetworkProfileService(
     }
 
     companion object {
+        private fun queryWindowsDiagnosis(): NetworkDiagnosis {
+            val snapshot = WindowsNetworkApi.query()
+            return NetworkDiagnosis(snapshot.profile, snapshot.mDnsAllowed)
+        }
+
         private const val OPEN_NETWORK_SETTINGS_COMMAND =
             "control.exe /name Microsoft.NetworkAndSharingCenter /page Advanced"
 
