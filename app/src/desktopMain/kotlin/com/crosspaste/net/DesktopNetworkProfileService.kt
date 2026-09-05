@@ -102,11 +102,12 @@ class DesktopNetworkProfileService(
     /**
      * Publishes a real detection result and reconciles it with the persisted dismissal.
      *
-     * Only a detected state may invalidate the stored fingerprint: the `NOT_APPLICABLE`
-     * placeholder the flow starts with and the `UNKNOWN` of a failed probe are not
-     * network states the user could have dismissed, so comparing against them would
-     * wipe every dismissal on startup and re-open the dialog for the same blocking
-     * state after each restart.
+     * Only a conclusive detection may invalidate the stored fingerprint. The
+     * `NOT_APPLICABLE` placeholder the flow starts with, and the `UNKNOWN` / `null`
+     * that `WindowsNetworkApi.query()` returns when a COM, profile or firewall query
+     * fails, are not network states the user could have dismissed. Treating them as a
+     * change would wipe the dismissal on startup or on a transient firewall read
+     * failure and re-open the dialog once the same blocking state is read back.
      *
      * The dialog is surfaced synchronously here rather than from a `combine` over
      * `_diagnosis` and [isWarningDismissed]: those two flows update independently, so
@@ -118,7 +119,7 @@ class DesktopNetworkProfileService(
         val stored = configManager.getCurrentConfig().networkBlockingDismissedFingerprint
         // The user fixed the network or moved to a different blocking state: forget the
         // dismissal so the next blocking event surfaces a fresh warning.
-        if (stored.isNotEmpty() && stored != fingerprint) {
+        if (diagnosis.isConclusive() && stored.isNotEmpty() && stored != fingerprint) {
             configManager.updateConfig("networkBlockingDismissedFingerprint", "")
         }
 

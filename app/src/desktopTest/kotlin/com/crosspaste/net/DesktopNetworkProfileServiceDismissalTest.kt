@@ -121,6 +121,48 @@ class DesktopNetworkProfileServiceDismissalTest {
         }
 
     @Test
+    fun `absorbed probe failure returning UNKNOWN does not clear the dismissal`() =
+        runTest {
+            // WindowsNetworkApi.query() never throws; a COM failure comes back as UNKNOWN|null.
+            val unknown = NetworkDiagnosis(NetworkProfile.UNKNOWN, mDnsAllowed = null)
+            val configManager = newConfigManager(storedFingerprint = publicBlocking.fingerprint())
+            val job = Job()
+            val service = newService(configManager, CoroutineScope(coroutineContext + job)) { unknown }
+
+            service.refresh()
+            advanceUntilIdle()
+
+            assertEquals(unknown, service.diagnosis.value)
+            assertEquals(publicBlocking.fingerprint(), storedFingerprint(configManager))
+            assertFalse(service.isWarningDialogVisible.value)
+            job.cancel()
+        }
+
+    @Test
+    fun `transient firewall read failure keeps the dismissal until the same state is read back`() =
+        runTest {
+            val configManager = newConfigManager(storedFingerprint = publicBlocking.fingerprint())
+            var next = NetworkDiagnosis(NetworkProfile.PUBLIC, mDnsAllowed = null)
+            val job = Job()
+            val service = newService(configManager, CoroutineScope(coroutineContext + job)) { next }
+
+            // Profile resolved but the firewall rules could not be enumerated.
+            service.refresh()
+            advanceUntilIdle()
+            assertEquals(publicBlocking.fingerprint(), storedFingerprint(configManager))
+            assertFalse(service.isWarningDialogVisible.value)
+
+            // Firewall query recovers and reports the very state the user dismissed.
+            next = publicBlocking
+            service.refresh()
+            advanceUntilIdle()
+            assertEquals(publicBlocking.fingerprint(), storedFingerprint(configManager))
+            assertTrue(service.isWarningDismissed.value)
+            assertFalse(service.isWarningDialogVisible.value)
+            job.cancel()
+        }
+
+    @Test
     fun `dismissing persists the fingerprint and repeated detections stay quiet`() =
         runTest {
             val configManager = newConfigManager()
