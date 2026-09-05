@@ -5,6 +5,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.net.ClientResponse
+import com.crosspaste.net.ResourceRequestLimits
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.UpdatePasteItemHelper
@@ -49,7 +50,7 @@ class OpenGraphService<Image>(
             if (fileUtils.existFile(openGraphImage)) {
                 logger.info { "Open graph image file exists" }
             } else {
-                resourcesClient.request(urlPasteItem.url).onSuccess { response ->
+                resourcesClient.request(urlPasteItem.url, ResourceRequestLimits.HTML).onSuccess { response ->
                     response.getContentType()?.let { contentType ->
                         if (contentType.match(ContentType.Text.Html) ||
                             contentType.match(ContentType.Application.Xml)
@@ -138,7 +139,7 @@ class OpenGraphService<Image>(
             ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
 
         ogImage?.let { imageUrl ->
-            resourcesClient.request(imageUrl).onSuccess { imageResponse ->
+            resourcesClient.request(imageUrl, ResourceRequestLimits.IMAGE).onSuccess { imageResponse ->
                 imageHandler.readImage(imageResponse.getBody())?.also { image ->
                     if (imageHandler.writeImage(image, "png", openGraphImage)) {
                         val currentUrlItem =

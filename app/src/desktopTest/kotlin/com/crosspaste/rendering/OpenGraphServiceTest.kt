@@ -6,6 +6,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.net.ClientResponse
+import com.crosspaste.net.ResourceRequestLimits
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
@@ -111,8 +112,12 @@ class OpenGraphServiceTest {
             coEvery { pageResponse.getBody() } returns
                 ByteReadChannel("""<meta property="og:image" content="$imageUrl">""")
             coEvery { imageResponse.getBody() } returns ByteReadChannel(byteArrayOf(1, 2, 3))
-            coEvery { resourcesClient.request(oldItem.url) } returns Result.success(pageResponse)
-            coEvery { resourcesClient.request(imageUrl) } returns Result.success(imageResponse)
+            coEvery {
+                resourcesClient.request(oldItem.url, ResourceRequestLimits.HTML)
+            } returns Result.success(pageResponse)
+            coEvery {
+                resourcesClient.request(imageUrl, ResourceRequestLimits.IMAGE)
+            } returns Result.success(imageResponse)
             coEvery { imageHandler.readImage(any<ByteReadChannel>()) } returns Any()
             coEvery { imageHandler.writeImage(any(), "png", capture(writtenPath)) } returns true
             coEvery { pasteDao.getNoDeletePasteData(oldPasteData.id) } returns currentPasteData

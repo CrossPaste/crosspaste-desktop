@@ -8,16 +8,17 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.logging.*
-import io.ktor.client.request.request
-import io.ktor.client.statement.*
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.headers
 import io.ktor.util.collections.*
 
 class DesktopResourcesClient(
     val configManager: DesktopConfigManager,
     userDataPathProvider: UserDataPathProvider,
+    private val clientFactory: (KLogger, Proxy?) -> HttpClient = ::createClient,
 ) : AbstractResourcesClient(userDataPathProvider) {
 
     companion object {
@@ -29,32 +30,40 @@ class DesktopResourcesClient(
             clientLogger: KLogger,
             proxyConfig: Proxy? = null,
         ): HttpClient =
-            HttpClient(CIO) {
-                followRedirects = true
-                engine {
-                    proxyConfig?.let {
-                        proxy =
-                            if (proxyConfig.type == ProxyType.HTTP) {
-                                ProxyBuilder.http("http://${proxyConfig.host}:${proxyConfig.port}")
-                            } else {
-                                ProxyBuilder.socks(proxyConfig.host, proxyConfig.port)
-                            }
+            if (proxyConfig?.type == ProxyType.SOCKS) {
+                HttpClient(OkHttp) {
+                    configureClient(clientLogger)
+                    engine {
+                        proxy = ProxyBuilder.socks(proxyConfig.host, proxyConfig.port)
                     }
                 }
-                install(Logging, configure = {
-                    logger =
-                        object : Logger {
-                            override fun log(message: String) {
-                                clientLogger.info { message }
-                            }
+            } else {
+                HttpClient(CIO) {
+                    configureClient(clientLogger)
+                    engine {
+                        proxyConfig?.let {
+                            proxy = ProxyBuilder.http("http://${proxyConfig.host}:${proxyConfig.port}")
                         }
-                })
+                    }
+                }
             }
+
+        private fun HttpClientConfig<*>.configureClient(clientLogger: KLogger) {
+            followRedirects = true
+            install(Logging) {
+                logger =
+                    object : Logger {
+                        override fun log(message: String) {
+                            clientLogger.info { message }
+                        }
+                    }
+            }
+        }
     }
 
     override val logger = KotlinLogging.logger {}
 
-    private val noProxyClient = createClient(logger)
+    private val noProxyClient = clientFactory(logger, null)
 
     private val proxyClientMap: ConcurrentMap<Proxy, HttpClient> = ConcurrentMap()
 
@@ -72,17 +81,14 @@ class DesktopResourcesClient(
     override fun getHttpClient(): HttpClient {
         val proxy = getProxy()
         return proxy?.let {
-            proxyClientMap.getOrPut(proxy) {
-                createClient(logger, proxy)
+            proxyClientMap.computeIfAbsent(proxy) {
+                clientFactory(logger, proxy)
             }
         } ?: noProxyClient
     }
 
-    override suspend fun clientRequest(
-        url: String,
-        client: HttpClient,
-    ): HttpResponse =
-        client.request(url) {
+    override fun configureRequest(builder: HttpRequestBuilder) {
+        builder.apply {
             headers {
                 append("User-Agent", DEFAULT_USER_AGENT)
                 append("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
@@ -93,6 +99,7 @@ class DesktopResourcesClient(
                 requestTimeoutMillis = 5000L
             }
         }
+    }
 
     override fun close() {
         noProxyClient.close()
