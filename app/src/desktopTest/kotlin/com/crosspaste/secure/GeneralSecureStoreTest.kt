@@ -61,9 +61,12 @@ class GeneralSecureStoreTest {
 
             store.saveCryptPublicKey("instance-1", publicKeyBytes)
             assertTrue(store.existCryptPublicKey("instance-1"))
+            store.getMessageProcessor("instance-1")
+            assertEquals(1, store.cachedProcessorCount)
 
             store.deleteCryptPublicKey("instance-1")
             assertFalse(store.existCryptPublicKey("instance-1"))
+            assertEquals(0, store.cachedProcessorCount)
         }
 
     @Test
@@ -90,6 +93,22 @@ class GeneralSecureStoreTest {
         }
 
     @Test
+    fun `unknown instances do not populate processor cache`() =
+        runBlocking {
+            val (store, _) = createStore()
+
+            repeat(1_000) { index ->
+                val appInstanceId = "unknown-$index"
+                assertFalse(store.existCryptPublicKey(appInstanceId))
+                assertFailsWith<PasteException> {
+                    store.getMessageProcessor(appInstanceId)
+                }
+            }
+
+            assertEquals(0, store.cachedProcessorCount)
+        }
+
+    @Test
     fun `getMessageProcessor caches processor on second call`() =
         runBlocking {
             val (store, _) = createStore()
@@ -104,6 +123,24 @@ class GeneralSecureStoreTest {
         }
 
     @Test
+    fun `concurrent first access builds one processor`() =
+        runBlocking {
+            val (store, _) = createStore()
+            val otherKeyPair = generateSecureKeyPair()
+            val publicKeyBytes = serializer.encodeCryptPublicKey(otherKeyPair.cryptKeyPair.publicKey)
+            store.saveCryptPublicKey("instance-1", publicKeyBytes)
+
+            val processors =
+                (1..20)
+                    .map {
+                        async { store.getMessageProcessor("instance-1") }
+                    }.awaitAll()
+
+            assertTrue(processors.all { it === processors.first() })
+            assertEquals(1, store.cachedProcessorCount)
+        }
+
+    @Test
     fun `saveCryptPublicKey invalidates cached processor`() =
         runBlocking {
             val (store, _) = createStore()
@@ -112,9 +149,11 @@ class GeneralSecureStoreTest {
 
             store.saveCryptPublicKey("instance-1", publicKeyBytes)
             val processor1 = store.getMessageProcessor("instance-1")
+            assertEquals(1, store.cachedProcessorCount)
 
             // Save again invalidates
             store.saveCryptPublicKey("instance-1", publicKeyBytes)
+            assertEquals(0, store.cachedProcessorCount)
             val processor2 = store.getMessageProcessor("instance-1")
             assertFalse(processor1 === processor2, "Processor should be re-created after save")
         }

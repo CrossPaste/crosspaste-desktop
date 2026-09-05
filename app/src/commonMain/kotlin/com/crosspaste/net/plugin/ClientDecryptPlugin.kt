@@ -10,9 +10,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
-import kotlinx.io.IOException
-import kotlinx.io.readByteArray
 
 class ClientDecryptPlugin(
     private val secureStore: SecureStore,
@@ -46,10 +43,7 @@ class ClientDecryptPlugin(
                     val processor = secureStore.getMessageProcessor(appInstanceId)
 
                     if (contentType?.match(ContentType.Application.Json) == true) {
-                        // Note: reads entire JSON response into memory. Acceptable for LAN sync
-                        // where JSON payloads (metadata, device info) are bounded and small.
-                        val bytes = byteReadChannel.readRemaining().readByteArray()
-                        val decrypt = processor.decrypt(bytes)
+                        val decrypt = decryptJsonResponse(byteReadChannel, decrypt = processor::decrypt)
 
                         // Create a new ByteReadChannel to contain the decrypted content
                         val newChannel = ByteReadChannel(decrypt)
@@ -64,25 +58,8 @@ class ClientDecryptPlugin(
                             )
                         proceedWith(DefaultHttpResponse(it.call, responseData))
                     } else if (contentType?.match(ContentType.Application.OctetStream) == true) {
-                        val result =
-                            buildPacket {
-                                while (!byteReadChannel.isClosedForRead) {
-                                    val size =
-                                        try {
-                                            byteReadChannel.readInt()
-                                        } catch (_: IOException) {
-                                            // Channel closed between isClosedForRead check and readInt().
-                                            // All encrypted chunks were already read and decrypted.
-                                            break
-                                        }
-                                    val byteArray = ByteArray(size)
-                                    byteReadChannel.readFully(byteArray, 0, size)
-                                    val decryptByteArray = processor.decrypt(byteArray)
-                                    writeFully(decryptByteArray)
-                                }
-                            }
-
-                        val byteArray = result.readByteArray()
+                        val byteArray =
+                            decryptChunkedResponse(byteReadChannel, decrypt = processor::decrypt)
                         val contentLength = byteArray.size.toString()
                         val newChannel = ByteReadChannel(byteArray)
                         val responseData =

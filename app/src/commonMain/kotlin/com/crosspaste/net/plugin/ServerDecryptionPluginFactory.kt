@@ -5,8 +5,8 @@ import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
 import io.ktor.server.application.hooks.*
+import io.ktor.server.request.*
 import io.ktor.utils.io.*
-import kotlinx.io.readByteArray
 
 class ServerDecryptionPluginFactory(
     private val secureStore: SecureStore,
@@ -28,8 +28,15 @@ class ServerDecryptionPluginFactory(
                         logger.debug { "server decrypt $appInstanceId" }
                         return@on application
                             .writer {
+                                val maxBytes = EncryptedHttpResourceLimits.requestCiphertextLimit(call.request.path())
+                                validateEncryptedContentLength(
+                                    call.request.contentLength(),
+                                    maxBytes,
+                                    "encrypted request",
+                                )
                                 val processor = secureStore.getMessageProcessor(appInstanceId)
-                                val encryptedContent = body.readRemaining().readByteArray()
+                                val encryptedContent =
+                                    body.readLimitedByteArray(maxBytes, "encrypted request")
                                 val decrypted = processor.decrypt(encryptedContent)
                                 channel.writeFully(decrypted, 0, decrypted.size)
                             }.channel
