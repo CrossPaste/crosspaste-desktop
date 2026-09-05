@@ -51,6 +51,31 @@ class DesktopResourcesClientTest {
     }
 
     @Test
+    fun `manual HTTP client sends the absolute request target to the proxy`() {
+        FakeHttpProxyServer().use { proxy ->
+            val client =
+                DesktopResourcesClient.createClient(
+                    KotlinLogging.logger {},
+                    Proxy(ProxyType.HTTP, "127.0.0.1", proxy.port),
+                )
+            try {
+                val body =
+                    runBlocking {
+                        client.get("http://crosspaste-http-proxy-test.invalid/resource").bodyAsText()
+                    }
+
+                assertEquals("ok", body)
+                assertEquals(
+                    "GET http://crosspaste-http-proxy-test.invalid/resource HTTP/1.1",
+                    proxy.awaitRequestLine(),
+                )
+            } finally {
+                client.close()
+            }
+        }
+    }
+
+    @Test
     fun `concurrent first requests create one client per proxy`() =
         runBlocking {
             val configManager = mockk<DesktopConfigManager>()
@@ -86,6 +111,47 @@ class DesktopResourcesClientTest {
             assertEquals(1, clients.toSet().size)
             client.close()
         }
+
+    private class FakeHttpProxyServer : AutoCloseable {
+
+        private val server = ServerSocket(0, 1, InetAddress.getLoopbackAddress())
+        private val requestLine = AtomicReference<String>()
+        private val failure = AtomicReference<Throwable>()
+
+        val port: Int = server.localPort
+
+        private val worker =
+            thread(name = "fake-http-proxy-server", isDaemon = true) {
+                try {
+                    server.accept().use { socket ->
+                        val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
+                        val output = BufferedOutputStream(socket.getOutputStream())
+                        val headers = readHttpHeaders(input)
+                        requestLine.set(headers.lineSequence().first())
+                        output.write(
+                            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok"
+                                .toByteArray(StandardCharsets.US_ASCII),
+                        )
+                        output.flush()
+                    }
+                } catch (e: SocketException) {
+                    if (!server.isClosed) failure.set(e)
+                } catch (e: Throwable) {
+                    failure.set(e)
+                }
+            }
+
+        fun awaitRequestLine(): String {
+            failure.get()?.let { throw AssertionError("Fake HTTP proxy server failed", it) }
+            return assertNotNull(requestLine.get())
+        }
+
+        override fun close() {
+            server.close()
+            worker.join(5_000)
+            failure.get()?.let { throw AssertionError("Fake HTTP proxy server failed", it) }
+        }
+    }
 
     private class FakeSocksServer : AutoCloseable {
 
@@ -147,21 +213,26 @@ class DesktopResourcesClientTest {
                 else -> error("Unsupported SOCKS address type: $addressType")
             }
 
-        private fun readHttpHeaders(input: DataInputStream) {
-            var matched = 0
-            var count = 0
-            val terminator = byteArrayOf('\r'.code.toByte(), '\n'.code.toByte(), '\r'.code.toByte(), '\n'.code.toByte())
-            while (matched < terminator.size) {
-                check(count++ < 16 * 1024) { "HTTP headers exceed test limit" }
-                val byte = input.readByte()
-                matched = if (byte == terminator[matched]) matched + 1 else 0
-            }
-        }
-
         override fun close() {
             server.close()
             worker.join(5_000)
             failure.get()?.let { throw AssertionError("Fake SOCKS server failed", it) }
+        }
+    }
+
+    private companion object {
+
+        fun readHttpHeaders(input: DataInputStream): String {
+            val bytes = java.io.ByteArrayOutputStream()
+            var matched = 0
+            val terminator = byteArrayOf('\r'.code.toByte(), '\n'.code.toByte(), '\r'.code.toByte(), '\n'.code.toByte())
+            while (matched < terminator.size) {
+                check(bytes.size() < 16 * 1024) { "HTTP headers exceed test limit" }
+                val byte = input.readByte()
+                bytes.write(byte.toInt())
+                matched = if (byte == terminator[matched]) matched + 1 else 0
+            }
+            return bytes.toString(StandardCharsets.US_ASCII)
         }
     }
 }

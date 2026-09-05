@@ -5,12 +5,13 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.extension.ProxyType
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.*
-import io.ktor.client.engine.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.logging.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.ProxyBuilder
+import io.ktor.client.engine.http
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.headers
 import io.ktor.util.collections.*
@@ -30,35 +31,27 @@ class DesktopResourcesClient(
             clientLogger: KLogger,
             proxyConfig: Proxy? = null,
         ): HttpClient =
-            if (proxyConfig?.type == ProxyType.SOCKS) {
-                HttpClient(OkHttp) {
-                    configureClient(clientLogger)
-                    engine {
-                        proxy = ProxyBuilder.socks(proxyConfig.host, proxyConfig.port)
-                    }
-                }
-            } else {
-                HttpClient(CIO) {
-                    configureClient(clientLogger)
-                    engine {
-                        proxyConfig?.let {
-                            proxy = ProxyBuilder.http("http://${proxyConfig.host}:${proxyConfig.port}")
+            HttpClient(OkHttp) {
+                followRedirects = true
+                install(Logging) {
+                    logger =
+                        object : Logger {
+                            override fun log(message: String) {
+                                clientLogger.info { message }
+                            }
                         }
+                }
+                engine {
+                    proxyConfig?.let {
+                        proxy =
+                            if (it.type == ProxyType.SOCKS) {
+                                ProxyBuilder.socks(it.host, it.port)
+                            } else {
+                                ProxyBuilder.http("http://${it.host}:${it.port}")
+                            }
                     }
                 }
             }
-
-        private fun HttpClientConfig<*>.configureClient(clientLogger: KLogger) {
-            followRedirects = true
-            install(Logging) {
-                logger =
-                    object : Logger {
-                        override fun log(message: String) {
-                            clientLogger.info { message }
-                        }
-                    }
-            }
-        }
     }
 
     override val logger = KotlinLogging.logger {}
