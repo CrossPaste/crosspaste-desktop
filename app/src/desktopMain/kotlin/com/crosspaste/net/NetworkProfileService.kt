@@ -38,6 +38,14 @@ data class NetworkDiagnosis(
             -> false
         }
 
+    // A detection that actually established the network state. `WindowsNetworkApi.query()`
+    // never throws: a COM, profile or firewall failure is absorbed into UNKNOWN / null, so
+    // an inconclusive result is a failed probe, not a network change.
+    fun isConclusive(): Boolean =
+        profile != NetworkProfile.UNKNOWN &&
+            profile != NetworkProfile.NOT_APPLICABLE &&
+            mDnsAllowed != null
+
     fun fingerprint(): String = "${profile.name}|$mDnsAllowed"
 
     companion object {
