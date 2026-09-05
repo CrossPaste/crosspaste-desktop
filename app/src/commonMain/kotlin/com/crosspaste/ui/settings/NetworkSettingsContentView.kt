@@ -95,18 +95,19 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 SettingListSwitchItem(
                     title = "allow_discovery_by_new_devices",
                     icon = IconData(MaterialSymbols.Rounded.Visibility, themeExt.blueIconColor),
-                    checked = useNetworkInterfaces.isNotEmpty(),
+                    checked = config.enableDiscovery,
                 ) { enableDiscovery ->
                     if (enableDiscovery) {
-                        networkInterfaceService.getPreferredNetworkInterface()?.let {
-                            val newUseNetworkInterfaces = listOf(it.name)
-                            val newUseNetworkInterfacesJson =
-                                jsonUtils.JSON.encodeToString(newUseNetworkInterfaces)
-                            configManager.updateConfig(
-                                listOf("useNetworkInterfaces", "enableDiscovery"),
-                                listOf(newUseNetworkInterfacesJson, true),
-                            )
-                        }
+                        // Offline right now: persist the intent with an empty selection and
+                        // let the resolver auto-select once the network comes back.
+                        val newUseNetworkInterfaces =
+                            listOfNotNull(networkInterfaceService.getPreferredNetworkInterface()?.name)
+                        val newUseNetworkInterfacesJson =
+                            jsonUtils.JSON.encodeToString(newUseNetworkInterfaces)
+                        configManager.updateConfig(
+                            listOf("useNetworkInterfaces", "enableDiscovery"),
+                            listOf(newUseNetworkInterfacesJson, true),
+                        )
                     } else {
                         configManager.updateConfig(
                             listOf("useNetworkInterfaces", "enableDiscovery"),
@@ -118,10 +119,10 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 SettingCheckboxView(
                     count = networkInterfaces.size,
                     getCurrentCheckboxValue = { index ->
-                        config.useNetworkInterfaces.contains(networkInterfaces.map { it.name }[index])
+                        networkInterfaces[index].name in useNetworkInterfaces
                     },
                     onChange = { index, isChecked ->
-                        val currentInterface = networkInterfaces.map { it.name }[index]
+                        val currentInterface = networkInterfaces[index].name
                         val newUseNetworkInterfaces =
                             if (isChecked) {
                                 useNetworkInterfaces + currentInterface

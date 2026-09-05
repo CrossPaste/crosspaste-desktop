@@ -210,4 +210,92 @@ class DesktopNetworkInterfaceServiceSelfHealingTest {
 
             job.cancel()
         }
+
+    @Test
+    fun `discovery switched off binds nothing even while the machine is online`() =
+        runTest {
+            val configManager = newConfigManager()
+            // What the settings toggle writes when the user turns discovery off.
+            configManager.updateConfig(
+                listOf("useNetworkInterfaces", "enableDiscovery"),
+                listOf("[]", false),
+            )
+
+            setLiveSnapshot(listOf(en0, en5))
+            val monitor = FakeNetworkStateMonitor()
+            val job = Job()
+            val service = TestableService(configManager, monitor, CoroutineScope(coroutineContext + job))
+            advanceUntilIdle()
+            assertEquals(emptyList(), service.networkInterfaces.value)
+
+            // The offline fallback must not resurrect discovery on a network event...
+            monitor.fireNetworkChange()
+            advanceUntilIdle()
+            assertEquals(emptyList(), service.networkInterfaces.value)
+            // ...nor persist an auto-selected interface behind the user's back.
+            assertEquals("[]", configManager.getCurrentConfig().useNetworkInterfaces)
+
+            job.cancel()
+        }
+
+    @Test
+    fun `toggling only enableDiscovery re-resolves without an interface list change`() =
+        runTest {
+            val configManager = newConfigManager()
+            configManager.updateConfig(
+                "useNetworkInterfaces",
+                jsonUtils.JSON.encodeToString(listOf("en0")),
+            )
+
+            setLiveSnapshot(listOf(en0))
+            val monitor = FakeNetworkStateMonitor()
+            val job = Job()
+            val service = TestableService(configManager, monitor, CoroutineScope(coroutineContext + job))
+            advanceUntilIdle()
+            assertEquals(listOf(en0), service.networkInterfaces.value)
+
+            // CLI-style write: only the boolean changes, the list stays ["en0"].
+            configManager.updateConfig("enableDiscovery", false)
+            advanceUntilIdle()
+            assertEquals(emptyList(), service.networkInterfaces.value)
+
+            configManager.updateConfig("enableDiscovery", true)
+            advanceUntilIdle()
+            assertEquals(listOf(en0), service.networkInterfaces.value)
+
+            job.cancel()
+        }
+
+    @Test
+    fun `discovery enabled while offline auto-selects once the network returns`() =
+        runTest {
+            val configManager = newConfigManager()
+            // Toggle switched on with no interface available: intent persisted, list empty.
+            configManager.updateConfig(
+                listOf("useNetworkInterfaces", "enableDiscovery"),
+                listOf("[]", true),
+            )
+
+            setLiveSnapshot(emptyList())
+            val monitor = FakeNetworkStateMonitor()
+            val job = Job()
+            val service = TestableService(configManager, monitor, CoroutineScope(coroutineContext + job))
+            advanceUntilIdle()
+            assertEquals(emptyList(), service.networkInterfaces.value)
+
+            setLiveSnapshot(listOf(en0))
+            monitor.fireNetworkChange()
+            advanceUntilIdle()
+
+            assertEquals(listOf(en0), service.networkInterfaces.value)
+            // Bootstrap default is persisted so the choice survives the next restart.
+            assertEquals(
+                listOf("en0"),
+                jsonUtils.JSON.decodeFromString<List<String>>(
+                    configManager.getCurrentConfig().useNetworkInterfaces,
+                ),
+            )
+
+            job.cancel()
+        }
 }

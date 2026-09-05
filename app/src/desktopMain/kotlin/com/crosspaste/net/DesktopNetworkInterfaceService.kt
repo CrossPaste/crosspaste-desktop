@@ -1,5 +1,6 @@
 package com.crosspaste.net
 
+import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
@@ -29,18 +30,19 @@ open class DesktopNetworkInterfaceService(
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     override val networkInterfaces: StateFlow<List<NetworkInterfaceInfo>> =
         combine(
-            // Re-resolve when the user changes the configured interfaces...
+            // Re-resolve when the user changes the discovery toggle or the
+            // configured interfaces...
             configManager.config
-                .map { it.useNetworkInterfaces }
+                .map { it.toDiscoverySelection() }
                 .distinctUntilChanged(),
             // ...or when the OS reports a real network state change. The leading
             // emit drives the initial resolution; debounce collapses flap bursts.
             networkStateMonitor.networkChanges
                 .onStart { emit(Unit) }
                 .debounce(NETWORK_CHANGE_DEBOUNCE),
-        ) { useNetworkInterfacesJson, _ -> useNetworkInterfacesJson }
-            .mapLatest { useNetworkInterfacesJson ->
-                resolveNetworkInterfaceInfos(useNetworkInterfacesJson)
+        ) { selection, _ -> selection }
+            .mapLatest { selection ->
+                resolveNetworkInterfaceInfos(selection)
             }
             // Content-based: only rebuild mDNS when the interface set actually changes.
             .distinctUntilChanged()
@@ -55,7 +57,20 @@ open class DesktopNetworkInterfaceService(
     }
 
     private fun initNetworkInterfaceInfos(): List<NetworkInterfaceInfo> =
-        resolveNetworkInterfaceInfos(configManager.getCurrentConfig().useNetworkInterfaces)
+        resolveNetworkInterfaceInfos(configManager.getCurrentConfig().toDiscoverySelection())
+
+    /**
+     * The two config fields that drive interface resolution, captured together so a
+     * change to either one re-resolves (a CLI `enableDiscovery=false` never touches the
+     * interface list, for example).
+     */
+    private data class DiscoverySelection(
+        val enableDiscovery: Boolean,
+        val useNetworkInterfacesJson: String,
+    )
+
+    private fun DesktopAppConfig.toDiscoverySelection(): DiscoverySelection =
+        DiscoverySelection(enableDiscovery, useNetworkInterfaces)
 
     /**
      * Reads a fresh snapshot of the live interfaces and resolves them against the
@@ -71,16 +86,21 @@ open class DesktopNetworkInterfaceService(
      *    interface: bind to it in-memory so discovery keeps working, but do NOT
      *    persist — the preference must survive the outage so we heal back to it once
      *    it returns (which a later network event re-resolves).
+     *  - Discovery switched off: nothing is bound, regardless of what is online. The
+     *    offline fallback above must never resurrect a discovery the user turned off.
      */
-    private fun resolveNetworkInterfaceInfos(useNetworkInterfacesJson: String): List<NetworkInterfaceInfo> {
+    private fun resolveNetworkInterfaceInfos(selection: DiscoverySelection): List<NetworkInterfaceInfo> {
         // Drop cached provider values so auto-select reflects the current network.
         clearProviderCache()
 
-        val config = configManager.getCurrentConfig()
-        val useNetworkInterfaces =
-            jsonUtils.JSON.decodeFromString<List<String>>(useNetworkInterfacesJson)
+        if (!selection.enableDiscovery) {
+            return emptyList()
+        }
 
-        if (config.enableDiscovery && useNetworkInterfaces.isEmpty()) {
+        val useNetworkInterfaces =
+            jsonUtils.JSON.decodeFromString<List<String>>(selection.useNetworkInterfacesJson)
+
+        if (useNetworkInterfaces.isEmpty()) {
             autoSelectPreferredInterface(persist = true)?.let { return it }
         }
 
