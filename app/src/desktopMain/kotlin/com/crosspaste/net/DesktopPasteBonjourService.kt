@@ -3,6 +3,7 @@ package com.crosspaste.net
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.utils.DesktopControlUtils.ensureMinExecutionTime
@@ -11,64 +12,112 @@ import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.*
+import io.ktor.util.collections.ConcurrentMap
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
 import java.net.InetAddress
-import javax.jmdns.JmDNS
-import javax.jmdns.ServiceEvent
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import javax.jmdns.ServiceInfo
-import javax.jmdns.ServiceListener
-import javax.jmdns.impl.util.ByteWrangler
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
-class DesktopPasteBonjourService(
+class DesktopPasteBonjourService internal constructor(
     private val appInfo: AppInfo,
     private val endpointInfoFactory: EndpointInfoFactory,
     private val nearbyDeviceManager: NearbyDeviceManager,
     private val networkInterfaceService: NetworkInterfaceService,
-    private val scope: CoroutineScope = namedScope(ioDispatcher, "DesktopPasteBonjourService"),
+    private val scope: CoroutineScope,
+    private val jmdnsFactory: JmDnsFactory,
+    private val cleanupDispatcher: CoroutineDispatcher = ioDispatcher,
 ) : PasteBonjourService {
 
+    constructor(
+        appInfo: AppInfo,
+        endpointInfoFactory: EndpointInfoFactory,
+        nearbyDeviceManager: NearbyDeviceManager,
+        networkInterfaceService: NetworkInterfaceService,
+    ) : this(
+        appInfo,
+        endpointInfoFactory,
+        nearbyDeviceManager,
+        networkInterfaceService,
+        namedScope(ioDispatcher, "DesktopPasteBonjourService"),
+        DefaultJmDnsFactory,
+    )
+
+    constructor(
+        appInfo: AppInfo,
+        endpointInfoFactory: EndpointInfoFactory,
+        nearbyDeviceManager: NearbyDeviceManager,
+        networkInterfaceService: NetworkInterfaceService,
+        scope: CoroutineScope,
+    ) : this(
+        appInfo,
+        endpointInfoFactory,
+        nearbyDeviceManager,
+        networkInterfaceService,
+        scope,
+        DefaultJmDnsFactory,
+    )
+
     companion object {
-        private const val SERVICE_TYPE = "_crosspasteService._tcp.local."
+        internal const val SERVICE_TYPE = "_crosspasteService._tcp.local."
 
-        private const val ACTIVE_SCAN_TIMEOUT = 3000L // jmdns.list blocking time
-        private const val INTERFACE_SCAN_INTERVAL = 5000L // Throttle for heavy scan per interface
-        private const val DEVICE_RESOLVE_INTERVAL = 2000L // Throttle for specific device resolution
-        private const val MIN_SEARCH_DURATION = 2000L // Minimum duration for searching
-        private const val CLOSE_TIMEOUT = 10000L // Maximum time to wait for close
-        private const val LIFECYCLE_CLOSE_TIMEOUT = 4000L // Must stay below the app's 5s shutdown budget
+        private const val ACTIVE_SCAN_TIMEOUT = 3000L
+        private const val INTERFACE_SCAN_INTERVAL = 5000L
+        private const val DEVICE_RESOLVE_INTERVAL = 2000L
+        private const val MIN_SEARCH_DURATION = 2000L
+        private const val CLOSE_TIMEOUT = 10000L
+        private const val LIFECYCLE_CLOSE_TIMEOUT = 4000L
+        private const val MAX_SETUP_RETRIES = 3
 
+        private val SETUP_RETRY_DELAY = 2.seconds
         private val dateUtils = getDateUtils()
     }
 
+    private data class ActiveJmDns(
+        val id: Long,
+        val generation: Long,
+        val hostAddress: String,
+        val instance: JmDnsInstance,
+        val listener: DesktopServiceListener,
+    )
+
+    private data class DiscoverySource(
+        val registrationId: Long,
+        val serviceName: String,
+    )
+
     private val logger = KotlinLogging.logger {}
 
-    // CONFLATED, not UNLIMITED: a single close()+setup() rebuild can take seconds
-    // (jmDNS teardown + re-registration), and the event-driven NetworkStateMonitor
-    // can emit several interface snapshots while one rebuild is in flight. We only
-    // ever need to converge on the *latest* snapshot, so collapse intermediate
-    // bursts instead of replaying every transient state (#4509 phase 2 debounce).
+    // A rebuild can take seconds. We only need to converge on the latest snapshot,
+    // so collapse intermediate network-interface changes.
     private val actionChannel = Channel<List<NetworkInterfaceInfo>>(Channel.CONFLATED)
 
-    private val serviceListener = DesktopServiceListener(nearbyDeviceManager)
-
-    private val jmdnsMap: MutableMap<String, JmDNS> = ConcurrentMap()
+    private val stateLock = Any()
+    private val registrations = mutableMapOf<String, ActiveJmDns>()
+    private val presenceBySource = mutableMapOf<DiscoverySource, SyncInfo>()
+    private val generation = AtomicLong(0)
+    private val registrationId = AtomicLong(0)
+    private val refreshAllRunning = AtomicBoolean(false)
 
     private val interfaceScanThrottle: MutableMap<String, Long> = ConcurrentMap()
-
     private val deviceResolveThrottle: MutableMap<String, Long> = ConcurrentMap()
+
+    private var setupRetryJob: Job? = null
 
     init {
         scope.launch {
@@ -79,85 +128,200 @@ class DesktopPasteBonjourService(
 
         scope.launch {
             for (interfaces in actionChannel) {
-                processNetworkChange(interfaces)
+                try {
+                    processNetworkChange(interfaces)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    // Keep the sole rebuild consumer alive so a later network snapshot
+                    // can recover from an unexpected setup failure.
+                    logger.error(e) { "Failed to rebuild Bonjour services" }
+                }
             }
         }
     }
 
     suspend fun processNetworkChange(interfaces: List<NetworkInterfaceInfo>) {
-        // Suspending teardown: the network-change consumer is a single coroutine, so
-        // a blocking close() (runBlocking) here would freeze the consumer's thread for
-        // the whole jmDNS shutdown. Drive it through the suspend path instead so the
-        // dispatcher stays free while interfaces tear down (#4509 phase 2).
-        closeServices()
+        setupRetryJob?.cancel()
+        val currentGeneration = generation.incrementAndGet()
+        closeServices(detachServices())
 
-        setup(interfaces)
-    }
-
-    suspend fun setup(interfaces: List<NetworkInterfaceInfo>) {
-        val hostInfoList = interfaces.map { info -> info.toHostInfo() }
-        val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
-        val syncInfo = SyncInfo(appInfo, endpointInfo)
-
-        logger.debug { "Registering service: $syncInfo" }
-
-        val txtRecordDict = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
-
-        coroutineScope {
-            hostInfoList
-                .map { hostInfo ->
-                    async {
-                        val hostAddress = hostInfo.hostAddress
-                        jmdnsMap.computeIfAbsent(hostAddress) {
-                            val jmDNS = JmDNS.create(InetAddress.getByName(hostAddress))
-                            val serviceInfo =
-                                ServiceInfo.create(
-                                    SERVICE_TYPE,
-                                    "crosspaste@${appInfo.appInstanceId}@${hostAddress.replace(".", "_")}",
-                                    endpointInfo.port,
-                                    0,
-                                    0,
-                                    txtRecordDict,
-                                )
-                            jmDNS.addServiceListener(SERVICE_TYPE, serviceListener)
-                            jmDNS.registerService(serviceInfo)
-                            jmDNS
-                        }
-                    }
-                }.awaitAll()
+        if (interfaces.isNotEmpty()) {
+            setup(interfaces, currentGeneration)
         }
     }
 
-    override fun refreshAll() {
-        scope.launch {
-            nearbyDeviceManager.startSearching()
-            ensureMinExecutionTime(MIN_SEARCH_DURATION) {
-                logger.info { "Manual refresh started..." }
+    private suspend fun setup(
+        interfaces: List<NetworkInterfaceInfo>,
+        currentGeneration: Long,
+    ) {
+        val hostInfoList = interfaces.map { info -> info.toHostInfo() }
+        val endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList)
+        val syncInfo = SyncInfo(appInfo, endpointInfo)
+        val txtRecordDict = TxtRecordUtils.encodeToTxtRecordDict(syncInfo)
 
-                coroutineScope {
-                    jmdnsMap
-                        .map { (hostAddress, jmdns) ->
-                            async {
-                                // Force fresh multicast PTR queries by re-registering the listener.
-                                // This resets JmDNS's internal state machine, triggering real
-                                // network broadcasts instead of just searching the local cache.
-                                jmdns.removeServiceListener(SERVICE_TYPE, serviceListener)
-                                jmdns.addServiceListener(SERVICE_TYPE, serviceListener)
+        logger.debug { "Registering service: $syncInfo" }
 
-                                val services = jmdns.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
-                                logger.debug { "Interface $hostAddress found ${services.size} services" }
+        val failed = setupInterfaces(interfaces, currentGeneration, endpointInfo, txtRecordDict)
+        scheduleSetupRetry(failed, currentGeneration, endpointInfo, txtRecordDict)
+    }
 
-                                services.forEach { serviceInfo ->
-                                    jmdns.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
-                                }
-                            }
-                        }.awaitAll()
+    private suspend fun setupInterfaces(
+        interfaces: List<NetworkInterfaceInfo>,
+        currentGeneration: Long,
+        endpointInfo: EndpointInfo,
+        txtRecordDict: Map<String, String>,
+    ): List<NetworkInterfaceInfo> =
+        supervisorScope {
+            interfaces
+                .map { networkInterface ->
+                    async {
+                        networkInterface.takeUnless {
+                            setupInterface(it, currentGeneration, endpointInfo, txtRecordDict)
+                        }
+                    }
+                }.awaitAll()
+                .filterNotNull()
+        }
+
+    private fun setupInterface(
+        networkInterface: NetworkInterfaceInfo,
+        currentGeneration: Long,
+        endpointInfo: EndpointInfo,
+        txtRecordDict: Map<String, String>,
+    ): Boolean {
+        if (generation.get() != currentGeneration) return true
+
+        val hostAddress = networkInterface.hostAddress
+        var instance: JmDnsInstance? = null
+        return try {
+            instance = jmdnsFactory.create(InetAddress.getByName(hostAddress))
+            instance.registerService(
+                ServiceInfo.create(
+                    SERVICE_TYPE,
+                    "crosspaste@${appInfo.appInstanceId}@${hostAddress.replace(".", "_")}",
+                    endpointInfo.port,
+                    0,
+                    0,
+                    txtRecordDict,
+                ),
+            )
+
+            val id = registrationId.incrementAndGet()
+            val listener =
+                DesktopServiceListener(
+                    isActive = { isRegistrationActive(hostAddress, id, currentGeneration) },
+                    onResolved = { serviceName, syncInfo ->
+                        recordResolved(hostAddress, id, currentGeneration, serviceName, syncInfo)
+                    },
+                    onRemoved = { serviceName, appInstanceId ->
+                        recordRemoved(hostAddress, id, currentGeneration, serviceName, appInstanceId)
+                    },
+                )
+            val registration =
+                ActiveJmDns(
+                    id = id,
+                    generation = currentGeneration,
+                    hostAddress = hostAddress,
+                    instance = instance,
+                    listener = listener,
+                )
+
+            val activated =
+                synchronized(stateLock) {
+                    if (generation.get() != currentGeneration || registrations.containsKey(hostAddress)) {
+                        false
+                    } else {
+                        registrations[hostAddress] = registration
+                        try {
+                            instance.addServiceListener(SERVICE_TYPE, listener)
+                            true
+                        } catch (e: Throwable) {
+                            registrations.remove(hostAddress, registration)
+                            throw e
+                        }
+                    }
                 }
-            }.onFailure { e ->
-                logger.error(e) { "Error during manual refreshAll" }
+
+            if (!activated) {
+                closeFailedInstance(instance)
             }
-            nearbyDeviceManager.stopSearching()
-            logger.info { "Manual refresh completed." }
+            true
+        } catch (e: Throwable) {
+            instance?.let(::closeFailedInstance)
+            logger.warn(e) { "Failed to register Bonjour service on $hostAddress" }
+            false
+        }
+    }
+
+    private fun scheduleSetupRetry(
+        initialFailures: List<NetworkInterfaceInfo>,
+        currentGeneration: Long,
+        endpointInfo: EndpointInfo,
+        txtRecordDict: Map<String, String>,
+    ) {
+        if (initialFailures.isEmpty() || generation.get() != currentGeneration) return
+
+        setupRetryJob =
+            scope.launch {
+                var failures = initialFailures
+                repeat(MAX_SETUP_RETRIES) {
+                    delay(SETUP_RETRY_DELAY)
+                    if (generation.get() != currentGeneration) return@launch
+                    failures = setupInterfaces(failures, currentGeneration, endpointInfo, txtRecordDict)
+                    if (failures.isEmpty()) return@launch
+                }
+                logger.warn {
+                    "Bonjour setup still failing on: ${failures.joinToString { it.hostAddress }}"
+                }
+            }
+    }
+
+    override fun refreshAll() {
+        if (!refreshAllRunning.compareAndSet(false, true)) return
+
+        scope.launch {
+            try {
+                nearbyDeviceManager.startSearching()
+                ensureMinExecutionTime(MIN_SEARCH_DURATION) {
+                    logger.info { "Manual refresh started..." }
+                    supervisorScope {
+                        activeRegistrations()
+                            .map { registration ->
+                                async { refreshAllOnInterface(registration) }
+                            }.awaitAll()
+                    }
+                }.getOrThrow()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                logger.error(e) { "Error during manual refreshAll" }
+            } finally {
+                nearbyDeviceManager.stopSearching()
+                refreshAllRunning.set(false)
+                logger.info { "Manual refresh completed." }
+            }
+        }
+    }
+
+    private fun refreshAllOnInterface(registration: ActiveJmDns) {
+        if (!isRegistrationActive(registration)) return
+
+        try {
+            registration.instance.removeServiceListener(SERVICE_TYPE, registration.listener)
+            registration.instance.addServiceListener(SERVICE_TYPE, registration.listener)
+
+            val services = registration.instance.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
+            logger.debug {
+                "Interface ${registration.hostAddress} found ${services.size} services"
+            }
+            services.forEach { serviceInfo ->
+                registration.instance.requestServiceInfo(SERVICE_TYPE, serviceInfo.name)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            logger.warn(e) { "Failed to refresh Bonjour interface ${registration.hostAddress}" }
         }
     }
 
@@ -165,117 +329,238 @@ class DesktopPasteBonjourService(
         appInstanceId: String,
         hostInfoList: List<HostInfo>,
     ) {
-        // Use the existing scope to avoid blocking the caller
+        // mDNS visibility is determined by active local interfaces. hostInfoList remains
+        // part of the shared API for discovery backends that can target remote addresses.
         scope.launch {
             val currentTime = dateUtils.nowEpochMilliseconds()
-
-            // Run scans in parallel across all interfaces
-            jmdnsMap
-                .map { (hostAddress, jmdns) ->
+            activeRegistrations()
+                .map { registration ->
                     async {
-                        refreshTargetOnInterface(hostAddress, jmdns, appInstanceId, currentTime)
+                        try {
+                            refreshTargetOnInterface(registration, appInstanceId, currentTime)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Throwable) {
+                            logger.warn(e) {
+                                "Failed to refresh $appInstanceId on ${registration.hostAddress}"
+                            }
+                        }
                     }
                 }.awaitAll()
         }
     }
 
     private fun refreshTargetOnInterface(
-        hostAddress: String,
-        jmdns: JmDNS,
+        registration: ActiveJmDns,
         appInstanceId: String,
         currentTime: Long,
     ) {
+        if (!isRegistrationActive(registration)) return
+
         val servicePrefix = "crosspaste@$appInstanceId@"
+        var targetServiceName = cachedServiceName(registration.id, appInstanceId)
 
-        // 1. Try to find from local cache first
-        var targetService = jmdns.list(SERVICE_TYPE).find { it.name.startsWith(servicePrefix) }
-
-        // 2. Atomic check for heavy scan (Interface-level)
-        if (targetService == null) {
-            var performedScan = false
-            interfaceScanThrottle.compute(hostAddress) { _, lastTime ->
-                if (lastTime == null || currentTime - lastTime > INTERFACE_SCAN_INTERVAL) {
-                    performedScan = true
-                    currentTime // Update with current time
-                } else {
-                    lastTime // Keep the old timestamp
-                }
+        if (targetServiceName == null &&
+            tryAcquire(
+                interfaceScanThrottle,
+                registration.hostAddress,
+                currentTime,
+                INTERFACE_SCAN_INTERVAL,
+            )
+        ) {
+            logger.info {
+                "Performing active scan for $appInstanceId on ${registration.hostAddress}"
             }
-
-            if (performedScan) {
-                logger.info { "Performing active scan for $appInstanceId on $hostAddress" }
-                // list(type, timeout) is blocking
-                val freshServices = jmdns.list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
-                targetService = freshServices.find { it.name.startsWith(servicePrefix) }
-            }
+            targetServiceName =
+                registration.instance
+                    .list(SERVICE_TYPE, ACTIVE_SCAN_TIMEOUT)
+                    .find { it.name.startsWith(servicePrefix) }
+                    ?.name
         }
 
-        // 3. Atomic check for device resolution (Device-level)
-        if (targetService != null) {
-            val deviceKey = "${hostAddress}_$appInstanceId"
-            var shouldResolve = false
-            deviceResolveThrottle.compute(deviceKey) { _, lastTime ->
-                if (lastTime == null || currentTime - lastTime > DEVICE_RESOLVE_INTERVAL) {
-                    shouldResolve = true
-                    currentTime
-                } else {
-                    lastTime
-                }
+        val deviceKey = "${registration.hostAddress}_$appInstanceId"
+        if (targetServiceName != null &&
+            tryAcquire(deviceResolveThrottle, deviceKey, currentTime, DEVICE_RESOLVE_INTERVAL)
+        ) {
+            logger.info {
+                "Requesting service info for $appInstanceId via ${registration.hostAddress}"
             }
+            registration.instance.requestServiceInfo(SERVICE_TYPE, targetServiceName)
+        }
+    }
 
-            if (shouldResolve) {
-                logger.info { "Requesting service info for $appInstanceId via $hostAddress" }
-                jmdns.requestServiceInfo(SERVICE_TYPE, targetService.name)
+    private fun tryAcquire(
+        throttle: MutableMap<String, Long>,
+        key: String,
+        currentTime: Long,
+        interval: Long,
+    ): Boolean {
+        var acquired = false
+        throttle.compute(key) { _, lastTime ->
+            if (lastTime == null || currentTime - lastTime > interval) {
+                acquired = true
+                currentTime
+            } else {
+                lastTime
+            }
+        }
+        return acquired
+    }
+
+    private fun recordResolved(
+        hostAddress: String,
+        id: Long,
+        currentGeneration: Long,
+        serviceName: String,
+        syncInfo: SyncInfo,
+    ) {
+        synchronized(stateLock) {
+            if (!isRegistrationActiveLocked(hostAddress, id, currentGeneration)) return
+
+            val source = DiscoverySource(id, serviceName)
+            val previous = presenceBySource.put(source, syncInfo)
+            if (previous != null &&
+                previous.appInfo.appInstanceId != syncInfo.appInfo.appInstanceId &&
+                presenceBySource.values.none {
+                    it.appInfo.appInstanceId == previous.appInfo.appInstanceId
+                }
+            ) {
+                nearbyDeviceManager.removeDevice(previous.appInfo.appInstanceId)
+            }
+            nearbyDeviceManager.addDevice(syncInfo)
+        }
+    }
+
+    private fun recordRemoved(
+        hostAddress: String,
+        id: Long,
+        currentGeneration: Long,
+        serviceName: String,
+        appInstanceId: String,
+    ) {
+        synchronized(stateLock) {
+            if (!isRegistrationActiveLocked(hostAddress, id, currentGeneration)) return
+
+            val removed = presenceBySource.remove(DiscoverySource(id, serviceName))
+            val removedAppInstanceId = removed?.appInfo?.appInstanceId ?: appInstanceId
+            if (presenceBySource.values.none {
+                    it.appInfo.appInstanceId == removedAppInstanceId
+                }
+            ) {
+                nearbyDeviceManager.removeDevice(removedAppInstanceId)
             }
         }
     }
 
-    /**
-     * Suspending teardown of all registered jmDNS instances. Used on the network-change
-     * hot path ([processNetworkChange]) so a rebuild never blocks the consumer coroutine.
-     * jmDNS unregister/close are themselves blocking calls. [withTimeout] bounds
-     * cooperative work, but cannot interrupt a native/blocking jmDNS call; lifecycle
-     * shutdown therefore also has a hard wait bound in [close].
-     */
-    private suspend fun closeServices() {
-        runCatching {
-            withTimeout(CLOSE_TIMEOUT) {
-                coroutineScope {
-                    jmdnsMap.values
-                        .map { jmDNS ->
-                            async {
-                                jmDNS.unregisterAllServices()
-                                jmDNS.close()
-                            }
-                        }.awaitAll()
-                }
-            }
-            jmdnsMap.clear()
+    private fun cachedServiceName(
+        id: Long,
+        appInstanceId: String,
+    ): String? =
+        synchronized(stateLock) {
+            presenceBySource.entries
+                .firstOrNull { (source, syncInfo) ->
+                    source.registrationId == id &&
+                        syncInfo.appInfo.appInstanceId == appInstanceId
+                }?.key
+                ?.serviceName
+        }
+
+    private fun isRegistrationActive(
+        hostAddress: String,
+        id: Long,
+        currentGeneration: Long,
+    ): Boolean =
+        synchronized(stateLock) {
+            isRegistrationActiveLocked(hostAddress, id, currentGeneration)
+        }
+
+    private fun isRegistrationActive(registration: ActiveJmDns): Boolean =
+        isRegistrationActive(
+            registration.hostAddress,
+            registration.id,
+            registration.generation,
+        )
+
+    private fun isRegistrationActiveLocked(
+        hostAddress: String,
+        id: Long,
+        currentGeneration: Long,
+    ): Boolean = generation.get() == currentGeneration && registrations[hostAddress]?.id == id
+
+    private fun activeRegistrations(): List<ActiveJmDns> =
+        synchronized(stateLock) {
+            registrations.values.toList()
+        }
+
+    private fun detachServices(): List<ActiveJmDns> =
+        synchronized(stateLock) {
+            val detached = registrations.values.toList()
+            registrations.clear()
             interfaceScanThrottle.clear()
             deviceResolveThrottle.clear()
-        }.onFailure { e ->
-            logger.warn(e) { "Error closing Bonjour service" }
+
+            val appInstanceIds =
+                presenceBySource.values
+                    .map { it.appInfo.appInstanceId }
+                    .distinct()
+            presenceBySource.clear()
+            appInstanceIds.forEach(nearbyDeviceManager::removeDevice)
+            detached
+        }
+
+    private suspend fun closeServices(services: List<ActiveJmDns>) {
+        if (services.isEmpty()) return
+
+        // JmDNS close is blocking and ignores coroutine cancellation. Keep it in a
+        // detached cleanup scope so the timeout bounds the rebuild caller's wait;
+        // inactive instances that time out continue closing in the background.
+        val cleanupScope = CoroutineScope(cleanupDispatcher + SupervisorJob())
+        val cleanupJob =
+            cleanupScope.launch {
+                services
+                    .map { registration ->
+                        async {
+                            runCatching { registration.instance.close() }
+                                .onFailure { e ->
+                                    logger.warn(e) {
+                                        "Failed to close Bonjour service on ${registration.hostAddress}"
+                                    }
+                                }
+                        }
+                    }.awaitAll()
+            }
+        cleanupJob.invokeOnCompletion { cleanupScope.cancel() }
+
+        val completed =
+            withTimeoutOrNull(CLOSE_TIMEOUT.milliseconds) {
+                cleanupJob.join()
+                true
+            } ?: false
+        if (!completed) {
+            logger.warn { "Bonjour service close exceeded ${CLOSE_TIMEOUT}ms" }
         }
     }
 
-    /**
-     * Lifecycle teardown (interface contract). The cleanup job is deliberately detached
-     * from the synchronous caller: jmDNS scans and close calls may ignore coroutine
-     * cancellation, so application shutdown waits at most [LIFECYCLE_CLOSE_TIMEOUT] and
-     * then proceeds while the daemon-backed IO cleanup is allowed to finish.
-     */
+    private fun closeFailedInstance(instance: JmDnsInstance) {
+        runCatching { instance.close() }
+            .onFailure { e -> logger.warn(e) { "Failed to close incomplete Bonjour service" } }
+    }
+
     override fun close() {
-        val cleanupScope = CoroutineScope(ioDispatcher + SupervisorJob())
+        scope.cancel()
+        generation.incrementAndGet()
+        val services = detachServices()
+
+        val cleanupScope = CoroutineScope(cleanupDispatcher + SupervisorJob())
         val cleanupJob =
             cleanupScope.launch {
-                scope.coroutineContext.job.cancelAndJoin()
-                closeServices()
+                closeServices(services)
             }
         cleanupJob.invokeOnCompletion { cleanupScope.cancel() }
 
         runBlocking {
             val completed =
-                withTimeoutOrNull(LIFECYCLE_CLOSE_TIMEOUT) {
+                withTimeoutOrNull(LIFECYCLE_CLOSE_TIMEOUT.milliseconds) {
                     cleanupJob.join()
                     true
                 } ?: false
@@ -284,53 +569,6 @@ class DesktopPasteBonjourService(
                     "Bonjour lifecycle cleanup exceeded ${LIFECYCLE_CLOSE_TIMEOUT}ms; continuing shutdown"
                 }
             }
-        }
-    }
-}
-
-class DesktopServiceListener(
-    private val nearbyDeviceManager: NearbyDeviceManager,
-) : ServiceListener {
-
-    private val logger = KotlinLogging.logger {}
-
-    override fun serviceAdded(event: ServiceEvent) {
-        logger.debug { "Service added: " + event.info }
-    }
-
-    override fun serviceRemoved(event: ServiceEvent) {
-        val textBytes = event.info.textBytes
-        if (textBytes == null || textBytes.isEmpty()) {
-            logger.debug { "Service removed with empty textBytes: ${event.info.name}" }
-            return
-        }
-        runCatching {
-            val serviceName = event.info.name
-            if (serviceName.startsWith("crosspaste@")) {
-                logger.debug { "Processing service removed: $serviceName" }
-                serviceName.split("@").takeIf { it.size == 3 }?.let { parts ->
-                    val appInstanceId = parts[1]
-                    nearbyDeviceManager.removeDevice(appInstanceId)
-                }
-            }
-        }.onFailure { e ->
-            logger.debug(e) { "Failed to decode service removed event: ${event.info}" }
-        }
-    }
-
-    override fun serviceResolved(event: ServiceEvent) {
-        val textBytes = event.info.textBytes
-        if (textBytes == null || textBytes.isEmpty()) {
-            logger.debug { "Service resolved with empty textBytes: ${event.info.name}" }
-            return
-        }
-        runCatching {
-            val map: Map<String, ByteArray> = mutableMapOf()
-            ByteWrangler.readProperties(map, textBytes)
-            val syncInfo = TxtRecordUtils.decodeFromTxtRecordDict<SyncInfo>(map)
-            nearbyDeviceManager.addDevice(syncInfo)
-        }.onFailure { e ->
-            logger.debug(e) { "Failed to decode service resolved event: ${event.info}" }
         }
     }
 }
