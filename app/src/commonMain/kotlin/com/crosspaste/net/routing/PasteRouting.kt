@@ -6,6 +6,7 @@ import com.crosspaste.dto.push.PushHeaders
 import com.crosspaste.dto.push.PushPrepareResponse
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.plugin.isEncryptedPayloadException
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
@@ -18,6 +19,7 @@ import com.crosspaste.utils.requireTargetAppInstance
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
@@ -121,14 +123,24 @@ private suspend fun receiveRemotePasteData(
             pasteData.bindAuthenticatedRemoteIdentity(appInstanceId)
         }
     }.onFailure { e ->
-        logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }
-        val code =
-            if (e is PasteException && e.match(StandardErrorCode.DECRYPT_FAIL)) {
-                StandardErrorCode.DECRYPT_FAIL
-            } else {
-                StandardErrorCode.UNKNOWN_ERROR
-            }
-        failResponse(call, code.toErrorCode())
+        if (e.isEncryptedPayloadException()) {
+            logger.warn { "Rejected oversized paste payload from $appInstanceId" }
+            failResponse(
+                call,
+                StandardErrorCode.INVALID_PARAMETER.toErrorCode(),
+                "Encrypted payload exceeds route limit",
+                statusOverride = HttpStatusCode.PayloadTooLarge,
+            )
+        } else {
+            logger.error(e) { "sync handler ($appInstanceId) receive pasteData error" }
+            val code =
+                if (e is PasteException && e.match(StandardErrorCode.DECRYPT_FAIL)) {
+                    StandardErrorCode.DECRYPT_FAIL
+                } else {
+                    StandardErrorCode.UNKNOWN_ERROR
+                }
+            failResponse(call, code.toErrorCode())
+        }
     }.getOrNull()
 
 internal fun PasteData.bindAuthenticatedRemoteIdentity(appInstanceId: String): PasteData =

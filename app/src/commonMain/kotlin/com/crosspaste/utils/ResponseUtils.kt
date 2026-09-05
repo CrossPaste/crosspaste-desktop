@@ -50,11 +50,12 @@ suspend inline fun failResponse(
     call: ApplicationCall,
     errorCode: ErrorCode,
     message: String? = null,
+    statusOverride: HttpStatusCode? = null,
 ) {
     val code = errorCode.code
     val type = errorCode.type
     val status =
-        when (type) {
+        statusOverride ?: when (type) {
             ErrorType.EXTERNAL_ERROR -> HttpStatusCode.BadRequest
             ErrorType.INTERNAL_ERROR -> HttpStatusCode.InternalServerError
             ErrorType.USER_ERROR -> HttpStatusCode.UnprocessableEntity

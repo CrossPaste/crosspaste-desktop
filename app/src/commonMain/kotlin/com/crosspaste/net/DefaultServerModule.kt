@@ -10,6 +10,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.net.plugin.ServerDecryptionPluginFactory
 import com.crosspaste.net.plugin.ServerEncryptPluginFactory
+import com.crosspaste.net.plugin.isEncryptedPayloadException
 import com.crosspaste.net.routing.SyncRoutingApi
 import com.crosspaste.net.routing.pairingV3Routing
 import com.crosspaste.net.routing.pasteRouting
@@ -38,6 +39,7 @@ import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
@@ -85,8 +87,18 @@ open class DefaultServerModule(
             }
             install(StatusPages) {
                 exception(Exception::class) { call, cause ->
-                    logger.error(cause) { "Unhandled exception" }
-                    failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+                    if (cause.isEncryptedPayloadException()) {
+                        logger.warn { "Rejected oversized encrypted request" }
+                        failResponse(
+                            call,
+                            StandardErrorCode.INVALID_PARAMETER.toErrorCode(),
+                            "Encrypted payload exceeds route limit",
+                            statusOverride = HttpStatusCode.PayloadTooLarge,
+                        )
+                    } else {
+                        logger.error(cause) { "Unhandled exception" }
+                        failResponse(call, StandardErrorCode.UNKNOWN_ERROR.toErrorCode())
+                    }
                 }
                 exceptionHandler.handler()()
             }
