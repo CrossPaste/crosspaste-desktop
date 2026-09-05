@@ -10,10 +10,6 @@ import java.util.Collections
 abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
 
     companion object {
-        private const val INVALID_END_OCTET_0 = ".0"
-        private const val INVALID_END_OCTET_1 = ".1"
-        private const val INVALID_END_OCTET_255 = ".255"
-
         // Legacy interface names: letters followed by a trailing numeric index (eth0, wlan0,
         // en1). The captured digits are the interface index. systemd predictable names
         // (enp0s3) have digits embedded mid-name and intentionally do NOT match.
@@ -123,12 +119,6 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
 
     protected val preferredNetworkInterfaceInfo = ValueProvider<NetworkInterfaceInfo?>()
 
-    protected fun isValidLocalAddress(hostAddress: String): Boolean =
-        hostAddress.isNotEmpty() &&
-            !hostAddress.endsWith(INVALID_END_OCTET_0) &&
-            !hostAddress.endsWith(INVALID_END_OCTET_1) &&
-            !hostAddress.endsWith(INVALID_END_OCTET_255)
-
     override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> =
         Collections
             .list(NetworkInterface.getNetworkInterfaces())
@@ -163,16 +153,13 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
             return null
         }
 
+        // Every IPv4 address enumerated on an up, non-loopback interface is a unicast
+        // address this host owns and can bind; no last-octet heuristics. A `.1` host is
+        // the norm when this machine shares a hotspot (192.168.137.1 on Windows,
+        // 192.168.2.1 on macOS), and `.0`/`.255` are ordinary hosts in anything wider
+        // than /24.
         val hostAddress = address.hostAddress ?: return null
         val networkPrefixLength = addr.networkPrefixLength
-
-        if (!isValidLocalAddress(hostAddress)) {
-            logger.debug {
-                "Not a local address, Network interface: $nicName " +
-                    "address: $hostAddress networkPrefixLength: $networkPrefixLength"
-            }
-            return null
-        }
 
         val likelyVirtual = isLikelyVirtual(nicName, macAddress)
 
