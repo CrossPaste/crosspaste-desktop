@@ -48,9 +48,14 @@ fun DeviceScope.DeviceActionButton(
 
     val scope = rememberCoroutineScope()
 
-    when (syncRuntimeInfo.connectState) {
+    val connectState = syncRuntimeInfo.connectState
+
+    when (connectState) {
         SyncState.CONNECTING, SyncState.DISCONNECTED,
         -> {
+            // Spin for the automatic reconnect too, not only the manual one, so a
+            // re-probing device does not look identical to a plainly offline one.
+            val spinning = refreshing || connectState == SyncState.CONNECTING
             val infiniteTransition = rememberInfiniteTransition(label = "RefreshRotation")
 
             val rotation by infiniteTransition.animateFloat(
@@ -74,7 +79,7 @@ fun DeviceScope.DeviceActionButton(
                     ),
                 iconModifier =
                     Modifier.graphicsLayer {
-                        rotationZ = if (refreshing) rotation else 0f
+                        rotationZ = if (spinning) rotation else 0f
                     },
             ) {
                 scope.launch {

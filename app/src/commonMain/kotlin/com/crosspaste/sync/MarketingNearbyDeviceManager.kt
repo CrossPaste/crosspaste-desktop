@@ -52,6 +52,12 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
     override fun removeDevice(appInstanceId: String) {
     }
 
+    override fun blockDevice(syncInfo: SyncInfo) {
+    }
+
+    override fun unblockDevice(appInstanceId: String) {
+    }
+
     override fun startSearching() {
         searching.value = true
     }

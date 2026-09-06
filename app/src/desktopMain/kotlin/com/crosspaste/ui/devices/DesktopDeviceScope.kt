@@ -27,25 +27,29 @@ class DesktopDeviceScope(
     override fun DeviceConnectView() {
         val navigationManager = koinInject<NavigationManager>()
 
-        var refreshing by remember { mutableStateOf(false) }
-
         DeviceRowContent(
             onClick = {
                 navigationManager.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
             },
             style = myDeviceStyle,
-            trailingContent = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(tiny),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SyncStateTag(refreshing)
-                    DeviceActionButton(refreshing) {
-                        refreshing = it
-                    }
-                    MyDeviceMenuButton()
-                }
-            },
+            trailingContent = { DeviceActions() },
         )
+    }
+}
+
+/** Status tag + refresh/pair/upgrade + menu, shared by the list row and the detail header. */
+@Composable
+fun DeviceScope.DeviceActions() {
+    var refreshing by remember { mutableStateOf(false) }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(tiny),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SyncStateTag(refreshing)
+        DeviceActionButton(refreshing) {
+            refreshing = it
+        }
+        MyDeviceMenuButton()
     }
 }

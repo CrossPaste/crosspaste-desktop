@@ -1,5 +1,11 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Devices
@@ -183,28 +190,17 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                             zero
                         },
                     trailingContent = {
-                        IconButton(
-                            onClick = {
-                                pasteBonjourService.refreshAll()
-                            },
-                            modifier = Modifier.size(xxLarge),
-                        ) {
-                            Icon(
-                                imageVector = MaterialSymbols.Rounded.Refresh,
-                                contentDescription = "refresh",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(large2X),
-                            )
+                        NearbyRefreshButton(searching) {
+                            pasteBonjourService.refreshAll()
                         }
                     },
                 )
             }
 
-            if (searching) {
-                item {
-                    SearchingNearbyDevices()
-                }
-            } else if (nearbyDevicesList.isNotEmpty()) {
+            // A manual refresh must not blank out devices that are already on screen:
+            // the searching placeholder only stands in for an empty list, otherwise the
+            // spinning header icon is the only feedback.
+            if (nearbyDevicesList.isNotEmpty()) {
                 items(nearbyDevicesList, key = { item -> "nearby-${item.appInfo.appInstanceId}" }) { syncInfo ->
                     val currentSyncInfo by rememberUpdatedState(syncInfo)
                     val scope =
@@ -213,11 +209,48 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                         }
                     scope.NearbyDeviceView()
                 }
+            } else if (searching) {
+                item(key = "searching_nearby_devices") {
+                    SearchingNearbyDevices()
+                }
             } else {
                 item(key = "empty_nearby_devices") {
                     NotFoundNearByDevices(guideContent = guideContent)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NearbyRefreshButton(
+    searching: Boolean,
+    onClick: () -> Unit,
+) {
+    val rotation by rememberInfiniteTransition(label = "NearbyRefreshRotation").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "NearbyRefreshAngle",
+    )
+
+    IconButton(
+        onClick = onClick,
+        enabled = !searching,
+        modifier = Modifier.size(xxLarge),
+    ) {
+        Icon(
+            imageVector = MaterialSymbols.Rounded.Refresh,
+            contentDescription = "refresh",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier =
+                Modifier
+                    .size(large2X)
+                    .graphicsLayer { rotationZ = if (searching) rotation else 0f },
+        )
     }
 }

@@ -9,8 +9,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.crosspaste.ui.theme.AppUISize.xLarge
 
+/**
+ * [headerActions] fills the trailing slot of the header row. Platforms pass the
+ * same refresh / menu controls they show on the list row so the detail page is
+ * not view-only; the default shows just the status tag.
+ */
 @Composable
-fun DeviceScope.DeviceDetailContentView() {
+fun DeviceScope.DeviceDetailContentView(
+    headerActions: @Composable DeviceScope.() -> Unit = { SyncStateTag(refreshing = false) },
+) {
     val scrollState = rememberScrollState()
 
     Column(
@@ -20,7 +27,7 @@ fun DeviceScope.DeviceDetailContentView() {
                 .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(xLarge),
     ) {
-        DeviceDetailHeaderView()
+        DeviceDetailHeaderView(headerActions)
         IncompatibleSection()
         SyncControlSection()
         DeviceInfoSection()

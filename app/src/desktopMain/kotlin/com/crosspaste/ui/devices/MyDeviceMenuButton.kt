@@ -23,7 +23,6 @@ import com.composables.icons.materialsymbols.rounded.Backspace
 import com.composables.icons.materialsymbols.rounded.Edit
 import com.composables.icons.materialsymbols.rounded.More_vert
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -33,15 +32,22 @@ import org.koin.compose.koinInject
 @Composable
 fun DeviceScope.MyDeviceMenuButton() {
     val copywriter = koinInject<GlobalCopywriter>()
-    val syncManager = koinInject<SyncManager>()
 
     var expanded by remember { mutableStateOf(false) }
 
     var showEditDeviceDialog by remember { mutableStateOf(false) }
 
+    var showRemoveDeviceDialog by remember { mutableStateOf(false) }
+
     if (showEditDeviceDialog) {
         EditNoteDialog {
             showEditDeviceDialog = false
+        }
+    }
+
+    if (showRemoveDeviceDialog) {
+        RemoveDeviceDialog {
+            showRemoveDeviceDialog = false
         }
     }
 
@@ -91,8 +97,7 @@ fun DeviceScope.MyDeviceMenuButton() {
                 },
                 onClick = {
                     expanded = false
-                    val id = syncRuntimeInfo.appInstanceId
-                    syncManager.removeSyncHandler(id)
+                    showRemoveDeviceDialog = true
                 },
                 leadingIcon = {
                     Icon(

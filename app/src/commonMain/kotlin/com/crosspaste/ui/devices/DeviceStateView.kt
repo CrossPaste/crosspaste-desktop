@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Arrow_back
 import com.composables.icons.materialsymbols.rounded.Arrow_forward
+import com.composables.icons.materialsymbols.rounded.Autorenew
 import com.composables.icons.materialsymbols.rounded.Close
 import com.composables.icons.materialsymbols.rounded.Link_off
 import com.composables.icons.materialsymbols.rounded.Pause
@@ -59,6 +60,16 @@ val pauseSyncStateStyle
             icon = MaterialSymbols.Rounded.Pause,
         )
 
+val connectingStateStyle
+    @Composable @ReadOnlyComposable
+    get() =
+        StateTagStyle(
+            label = "sync_status_connecting",
+            containerColor = LocalThemeExtState.current.neutral.container,
+            contentColor = LocalThemeExtState.current.neutral.onContainer,
+            icon = MaterialSymbols.Rounded.Autorenew,
+        )
+
 val disconnectedStateStyle
     @Composable @ReadOnlyComposable
     get() =
@@ -109,57 +120,50 @@ val refreshingStateStyle
             icon = MaterialSymbols.Rounded.Refresh,
         )
 
+/**
+ * Everything the list row and the detail header derive from a device's connect
+ * state: the platform icon tint and the status tag. Kept in one mapping so the
+ * two never disagree on a state.
+ */
+class SyncStateVisual(
+    val iconColor: Color,
+    val tag: StateTagStyle,
+)
+
 @Composable
+@ReadOnlyComposable
+fun DeviceScope.syncStateVisual(): SyncStateVisual {
+    val themeExt = LocalThemeExtState.current
+    return when (syncRuntimeInfo.connectState) {
+        SyncState.CONNECTED ->
+            when {
+                syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive ->
+                    SyncStateVisual(themeExt.success.color, syncedStateStyle)
+                syncRuntimeInfo.allowSend ->
+                    SyncStateVisual(themeExt.info.color, outgoingOnlyStateStyle)
+                syncRuntimeInfo.allowReceive ->
+                    SyncStateVisual(themeExt.info.color, incomingOnlyStateStyle)
+                else ->
+                    SyncStateVisual(themeExt.neutral.color, pauseSyncStateStyle)
+            }
+        SyncState.DISCONNECTED -> SyncStateVisual(MaterialTheme.colorScheme.error, disconnectedStateStyle)
+        SyncState.UNMATCHED -> SyncStateVisual(themeExt.warning.color, unmatchedStateStyle)
+        SyncState.UNVERIFIED -> SyncStateVisual(themeExt.info.color, unverifiedStateStyle)
+        SyncState.INCOMPATIBLE -> SyncStateVisual(MaterialTheme.colorScheme.error, incompatibleStateStyle)
+        else -> SyncStateVisual(themeExt.warning.color, connectingStateStyle)
+    }
+}
+
+@Composable
+@ReadOnlyComposable
 fun PlatformScope.SyncStateColor(): Color =
     if (this is DeviceScope) {
-        val state = syncRuntimeInfo.connectState
-        if (state == SyncState.CONNECTED) {
-            if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
-                LocalThemeExtState.current.success.color
-            } else if (syncRuntimeInfo.allowSend) {
-                LocalThemeExtState.current.info.color
-            } else if (syncRuntimeInfo.allowReceive) {
-                LocalThemeExtState.current.info.color
-            } else {
-                LocalThemeExtState.current.neutral.color
-            }
-        } else if (state == SyncState.DISCONNECTED) {
-            MaterialTheme.colorScheme.error
-        } else if (state == SyncState.UNMATCHED) {
-            LocalThemeExtState.current.warning.color
-        } else if (state == SyncState.UNVERIFIED) {
-            LocalThemeExtState.current.info.color
-        } else if (state == SyncState.INCOMPATIBLE) {
-            MaterialTheme.colorScheme.error
-        } else {
-            LocalThemeExtState.current.warning.color
-        }
+        syncStateVisual().iconColor
     } else {
         LocalThemeExtState.current.info.color
     }
 
 @Composable
 fun DeviceScope.SyncStateTag(refreshing: Boolean) {
-    val state = syncRuntimeInfo.connectState
-    if (refreshing) {
-        StateTagView(refreshingStateStyle)
-    } else if (state == SyncState.CONNECTED) {
-        if (syncRuntimeInfo.allowSend && syncRuntimeInfo.allowReceive) {
-            StateTagView(syncedStateStyle)
-        } else if (syncRuntimeInfo.allowSend) {
-            StateTagView(outgoingOnlyStateStyle)
-        } else if (syncRuntimeInfo.allowReceive) {
-            StateTagView(incomingOnlyStateStyle)
-        } else {
-            StateTagView(pauseSyncStateStyle)
-        }
-    } else if (state == SyncState.DISCONNECTED) {
-        StateTagView(disconnectedStateStyle)
-    } else if (state == SyncState.UNMATCHED) {
-        StateTagView(unmatchedStateStyle)
-    } else if (state == SyncState.UNVERIFIED) {
-        StateTagView(unverifiedStateStyle)
-    } else if (state == SyncState.INCOMPATIBLE) {
-        StateTagView(incompatibleStateStyle)
-    }
+    StateTagView(if (refreshing) refreshingStateStyle else syncStateVisual().tag)
 }

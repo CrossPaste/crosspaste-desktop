@@ -6,5 +6,6 @@ import androidx.compose.runtime.Composable
 fun SyncScope.NearbyDeviceDetailHeaderView() {
     DeviceRowContent(
         style = nearbyDeviceStyle,
+        trailingContent = { NearbyDeviceActions() },
     )
 }

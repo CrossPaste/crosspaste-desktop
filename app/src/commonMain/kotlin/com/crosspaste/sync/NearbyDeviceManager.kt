@@ -16,6 +16,11 @@ interface NearbyDeviceManager {
 
     fun removeDevice(appInstanceId: String)
 
+    /** Hides the device from nearby results until [unblockDevice] is called. */
+    fun blockDevice(syncInfo: SyncInfo)
+
+    fun unblockDevice(appInstanceId: String)
+
     fun startSearching()
 
     fun stopSearching()
