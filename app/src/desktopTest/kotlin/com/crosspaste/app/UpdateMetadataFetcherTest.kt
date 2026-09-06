@@ -7,8 +7,11 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.utils.io.toByteArray
 import kotlinx.coroutines.runBlocking
 import okio.Path
 import kotlin.test.Test
@@ -138,10 +141,15 @@ private class RoutingResourcesClient(
     private val client: HttpClient,
 ) : ResourcesClient {
 
-    override suspend fun request(url: String): Result<ClientResponse> {
+    override suspend fun request(
+        url: String,
+        maxBytes: Long,
+    ): Result<ClientResponse> {
         val response = client.get(url)
         return if (response.status.isSuccess()) {
-            Result.success(ClientResponse(response))
+            val body = response.bodyAsChannel().toByteArray()
+            require(body.size.toLong() <= maxBytes)
+            Result.success(ClientResponse(body, response.contentType()))
         } else {
             Result.failure(IllegalStateException("HTTP ${response.status.value}"))
         }

@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import com.crosspaste.net.ResourceRequestLimits
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -56,7 +57,7 @@ class UpdateMetadataFetcher(
             ?: versionApiUrl?.let { fetchFromVersionApi(it) }
 
     private suspend fun fetchFromMetadataProperties(url: String): ReleaseMetadata? =
-        resourcesClient.request(url).getOrNull()?.let { response ->
+        resourcesClient.request(url, ResourceRequestLimits.METADATA).getOrNull()?.let { response ->
             runCatching {
                 val properties = Properties()
                 properties.load(StringReader(response.getBodyAsText()))
@@ -68,7 +69,7 @@ class UpdateMetadataFetcher(
         }
 
     private suspend fun fetchFromVersionApi(url: String): ReleaseMetadata? =
-        resourcesClient.request(url).getOrNull()?.let { response ->
+        resourcesClient.request(url, ResourceRequestLimits.METADATA).getOrNull()?.let { response ->
             runCatching {
                 val api =
                     getJsonUtils().JSON.decodeFromString<DesktopVersionApi>(response.getBodyAsText())

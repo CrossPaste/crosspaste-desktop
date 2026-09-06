@@ -134,6 +134,7 @@ kotlin {
             implementation(libs.jna)
             implementation(libs.jna.platform)
             implementation(libs.jnativehook)
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.server.cio)
             implementation(libs.logback.classic)
             implementation(libs.mcp.server)

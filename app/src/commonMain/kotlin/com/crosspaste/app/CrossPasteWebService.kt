@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import com.crosspaste.net.ResourceRequestLimits
 import com.crosspaste.net.ResourcesClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.ConcurrentMap
@@ -36,7 +37,7 @@ class CrossPasteWebService(
         runCatching {
             val metaUrl = "${appUrls.homeUrl}/api/meta.json"
             resourcesClient
-                .request(metaUrl)
+                .request(metaUrl, ResourceRequestLimits.METADATA)
                 .getOrNull()
                 ?.let { response ->
                     val text = response.getBodyAsText()

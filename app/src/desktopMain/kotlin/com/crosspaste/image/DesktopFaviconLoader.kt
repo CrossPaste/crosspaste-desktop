@@ -1,6 +1,7 @@
 package com.crosspaste.image
 
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.net.ResourceRequestLimits
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.path.UserDataPathProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -20,7 +21,7 @@ class DesktopFaviconLoader(
         url: String,
         path: Path,
     ): Path? =
-        resourcesClient.request(url).getOrNull()?.let { response ->
+        resourcesClient.request(url, ResourceRequestLimits.IMAGE).getOrNull()?.let { response ->
             FileOutputStream(path.toFile()).use { output ->
                 response.getBody().toInputStream().use { input ->
                     input.copyTo(output)

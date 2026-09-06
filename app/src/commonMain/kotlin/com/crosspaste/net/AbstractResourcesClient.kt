@@ -2,28 +2,32 @@ package com.crosspaste.net
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.onDownload
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.prepareRequest
-import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.contentLength
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.utils.io.readRemaining
+import kotlinx.io.readByteArray
 import okio.Path
 import kotlin.coroutines.cancellation.CancellationException
 
 abstract class AbstractResourcesClient(
     val userDataPathProvider: UserDataPathProvider,
+    protected val fileUtils: FileUtils = getFileUtils(),
 ) : ResourcesClient {
-
-    companion object {
-        val fileUtils = getFileUtils()
-    }
 
     abstract val logger: KLogger
 
     abstract fun getHttpClient(): HttpClient
+
+    protected open fun configureRequest(builder: HttpRequestBuilder) {}
 
     private fun getTempFilePath(): Path =
         userDataPathProvider.resolve(
@@ -48,44 +52,65 @@ abstract class AbstractResourcesClient(
                 if (response.status.isSuccess()) {
                     shouldShowProgress = true
                     val tempFilePath = getTempFilePath()
-                    runCatching {
-                        val channel = response.bodyAsChannel()
-                        fileUtils.writeFile(tempFilePath, channel)
-                        fileUtils.moveFile(tempFilePath, path)
-                    }.onSuccess {
-                        listener.onSuccess()
-                    }.onFailure { error ->
+                    val downloadResult =
                         runCatching {
-                            if (fileUtils.existFile(tempFilePath)) {
-                                fileUtils.deleteFile(tempFilePath)
-                            }
-                        }.onFailure { e ->
-                            logger.warn(e) { "Failed to delete temp file: $tempFilePath" }
+                            val channel = response.bodyAsChannel()
+                            fileUtils.writeFile(tempFilePath, channel)
+                            fileUtils.moveFile(tempFilePath, path).getOrThrow()
                         }
-                        runCatching {
-                            if (fileUtils.existFile(path)) {
-                                fileUtils.deleteFile(path)
-                            }
-                        }.onFailure { e ->
-                            logger.warn(e) { "Failed to delete target file: $path" }
+                    downloadResult
+                        .onSuccess {
+                            listener.onSuccess()
+                        }.onFailure { error ->
+                            deleteTempFile(tempFilePath)
+                            listener.onFailure(response.status, error)
+                            if (error is CancellationException) throw error
                         }
-                        listener.onFailure(response.status, error)
-                    }
                 } else {
                     listener.onFailure(response.status, null)
                 }
             }
     }
 
-    override suspend fun request(url: String): Result<ClientResponse> =
+    private fun deleteTempFile(tempFilePath: Path) {
+        if (!fileUtils.existFile(tempFilePath)) return
+        fileUtils.deleteFile(tempFilePath).onFailure { error ->
+            logger.warn(error) { "Failed to delete temp file: $tempFilePath" }
+        }
+    }
+
+    override suspend fun request(
+        url: String,
+        maxBytes: Long,
+    ): Result<ClientResponse> =
         runCatching {
-            val response = clientRequest(url, getHttpClient())
-            if (response.status.isSuccess()) {
-                ClientResponse(response)
-            } else {
-                logger.warn { "Failed to fetch data from $url, status code: ${response.status.value}" }
-                throw kotlin.Exception("HTTP error: ${response.status.value}")
+            require(maxBytes in 0 until Int.MAX_VALUE) {
+                "maxBytes must be non-negative and fit in a ByteArray"
             }
+            getHttpClient()
+                .prepareRequest(url) {
+                    configureRequest(this)
+                }.execute { response ->
+                    if (!response.status.isSuccess()) {
+                        logger.warn { "Failed to fetch data from $url, status code: ${response.status.value}" }
+                        throw kotlin.Exception("HTTP error: ${response.status.value}")
+                    }
+
+                    val contentLength = response.contentLength()
+                    if (contentLength != null && contentLength > maxBytes) {
+                        throw ResourceResponseTooLargeException(maxBytes)
+                    }
+
+                    val body =
+                        response
+                            .bodyAsChannel()
+                            .readRemaining(maxBytes + 1)
+                            .readByteArray()
+                    if (body.size.toLong() > maxBytes) {
+                        throw ResourceResponseTooLargeException(maxBytes)
+                    }
+                    ClientResponse(body, response.contentType())
+                }
         }.onFailure { e ->
             // Network/TLS failures (e.g. SunCertPathBuilderException behind a
             // TLS-intercepting proxy) must surface as Result.failure, not propagate:
@@ -94,9 +119,4 @@ abstract class AbstractResourcesClient(
             if (e is CancellationException) throw e
             logger.warn(e) { "Failed to request $url" }
         }
-
-    abstract suspend fun clientRequest(
-        url: String,
-        client: HttpClient,
-    ): HttpResponse
 }

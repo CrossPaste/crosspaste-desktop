@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import com.crosspaste.net.DownloadProgressListener
+import com.crosspaste.net.ResourceRequestLimits
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.path.AppPathProvider
 import com.crosspaste.platform.Platform
@@ -398,7 +399,7 @@ class WindowsZipUpdater(
                         runCatching {
                             val text =
                                 resourcesClient
-                                    .request(base + "checksum.txt")
+                                    .request(base + "checksum.txt", ResourceRequestLimits.METADATA)
                                     .getOrThrow()
                                     .getBodyAsText()
                             base to text
