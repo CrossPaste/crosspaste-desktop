@@ -36,8 +36,6 @@ import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getJsonUtils
-import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.namedScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -46,8 +44,6 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 
 open class DefaultServerModule(
     private val appControl: AppControl,
@@ -114,12 +110,6 @@ open class DefaultServerModule(
                     "Received request: ${call.request.httpMethod.value} ${call.request.uri} ${call.request.contentType()}"
                 }
             }
-            val pasteRoutingScope =
-                namedScope(
-                    ioDispatcher,
-                    "DefaultServerModule.pasteRoutingScope",
-                    SupervisorJob(coroutineContext[Job]),
-                )
             routing {
                 syncRouting(
                     appInfo,
@@ -152,7 +142,6 @@ open class DefaultServerModule(
                     pasteboardService,
                     pasteReleaseService,
                     pastePullService,
-                    pasteRoutingScope,
                     pushSessionManager,
                     syncRoutingApi,
                 )

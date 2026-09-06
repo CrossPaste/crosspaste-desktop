@@ -27,6 +27,7 @@ class PasteClientApi(
             pasteClient.post(
                 message = pasteData,
                 messageType = typeInfo<PasteData>(),
+                timeout = SEND_PASTE_TIMEOUT_MS,
                 headersBuilder = {
                     append("targetAppInstanceId", targetAppInstanceId)
                     if (configManager.getCurrentConfig().enableEncryptSync) {
@@ -63,5 +64,11 @@ class PasteClientApi(
         } else {
             SuccessResult()
         }
+    }
+
+    private companion object {
+        // The receiver persists the paste before ACK, so this must cover its
+        // database and file-metadata preparation rather than only LAN latency.
+        const val SEND_PASTE_TIMEOUT_MS = 10_000L
     }
 }

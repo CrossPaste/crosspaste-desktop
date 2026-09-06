@@ -490,15 +490,18 @@ class PasteReleaseService(
         withContext(ioDispatcher) {
             runCatching {
                 taskSubmitter.submit {
-                    database
-                        .transactionWithResult {
-                            database.pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
-                            pasteDao.getNoDeletePasteDataBlock(id)
-                        }?.let {
-                            markDeleteSameHash(id, it.pasteType, it.hash)
-                            addRelaySyncTask(id, it.appInstanceId)
-                            tryWritePasteboard(it)
-                        }
+                    val pasteData =
+                        database
+                            .transactionWithResult {
+                                val storedPasteData =
+                                    pasteDao.getNoDeletePasteDataBlock(id)
+                                        ?: error("Unable to finalize missing pasteId=$id")
+                                database.pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
+                                storedPasteData.copy(pasteState = PasteState.LOADED)
+                            }
+                    markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
+                    addRelaySyncTask(id, pasteData.appInstanceId)
+                    tryWritePasteboard(pasteData)
                 }
             }.onFailure { e ->
                 logger.error(e) { "Release remote paste data with file failed" }

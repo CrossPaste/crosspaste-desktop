@@ -23,8 +23,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 private val logger: KLogger = KotlinLogging.logger("PasteRouting")
 
@@ -34,7 +33,6 @@ fun Routing.pasteRouting(
     pasteboardService: PasteboardService,
     pasteReleaseService: PasteReleaseService,
     pastePullService: PastePullService,
-    pasteRoutingScope: CoroutineScope,
     pushSessionManager: PushSessionManager,
     syncRoutingApi: SyncRoutingApi,
 ) {
@@ -46,7 +44,6 @@ fun Routing.pasteRouting(
             pasteboardService,
             pasteReleaseService,
             pastePullService,
-            pasteRoutingScope,
             pushSessionManager,
             syncRoutingApi,
         )
@@ -60,7 +57,6 @@ private suspend fun handleSyncPaste(
     pasteboardService: PasteboardService,
     pasteReleaseService: PasteReleaseService,
     pastePullService: PastePullService,
-    pasteRoutingScope: CoroutineScope,
     pushSessionManager: PushSessionManager,
     syncRoutingApi: SyncRoutingApi,
 ) {
@@ -106,7 +102,6 @@ private suspend fun handleSyncPaste(
             appControl,
             pasteboardService,
             pastePullService,
-            pasteRoutingScope,
         )
     }
 }
@@ -232,15 +227,23 @@ private suspend fun handlePullSync(
     appControl: AppControl,
     pasteboardService: PasteboardService,
     pastePullService: PastePullService,
-    pasteRoutingScope: CoroutineScope,
 ) {
-    pasteRoutingScope.launch {
-        pasteboardService
-            .tryWriteRemotePasteboard(pasteData)
-            .onSuccess {
-                pastePullService.updateMaxCreateTime(appInstanceId, pasteData.createTime)
-            }
+    val ingestResult = pasteboardService.tryWriteRemotePasteboard(pasteData)
+    if (ingestResult.isFailure) {
+        val cause = ingestResult.exceptionOrNull()
+        if (cause is CancellationException) throw cause
+        logger.warn(cause) { "sync handler ($appInstanceId) failed to persist received paste" }
+        failResponse(
+            call,
+            StandardErrorCode.SYNC_PASTE_ERROR.toErrorCode(),
+        )
+        return
     }
+
+    // ACK only after the paste is durable (or deliberately discarded by the
+    // receiver's size/metadata policy). Cursor and operation accounting must
+    // not advance for an actual ingest failure.
+    pastePullService.updateMaxCreateTime(appInstanceId, pasteData.createTime)
     logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
     appControl.completeReceiveOperation()
     successResponse(call)

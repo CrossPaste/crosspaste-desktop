@@ -15,6 +15,17 @@ class PullRoutingTest {
     private val pasteDataListSerializer = ListSerializer(PasteData.serializer())
 
     @Test
+    fun `paste batch limit defaults and stays within protocol bounds`() {
+        assertEquals(10L, normalizePasteBatchLimit(null))
+        assertEquals(10L, normalizePasteBatchLimit("invalid"))
+        assertEquals(1L, normalizePasteBatchLimit("-1"))
+        assertEquals(1L, normalizePasteBatchLimit("0"))
+        assertEquals(1L, normalizePasteBatchLimit("1"))
+        assertEquals(50L, normalizePasteBatchLimit("50"))
+        assertEquals(50L, normalizePasteBatchLimit("51"))
+    }
+
+    @Test
     fun `paste batch keeps newest prefix within encoded byte limit`() {
         val pastes = listOf(pasteData("first"), pasteData("second"), pasteData("third"))
         val firstTwoSize = encodedSize(pastes.take(2))
