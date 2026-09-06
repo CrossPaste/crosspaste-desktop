@@ -6,6 +6,7 @@ import com.crosspaste.dto.push.PushHeaders
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FileTransferResourceLimits
+import com.crosspaste.sync.PushCompletionResult
 import com.crosspaste.sync.PushSession
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.utils.FileUtils
@@ -101,7 +102,7 @@ private suspend fun handleFilePushChunk(
     // Fast-path idempotency: drain the body and ack without writing.
     if (session.isReceived(headers.chunkIndex)) {
         call.receiveChannel().discard()
-        successResponse(call)
+        finishReceivedChunk(call, pushSessionManager, session)
         return
     }
 
@@ -137,16 +138,10 @@ private suspend fun finishChunkPush(
     headers: PushChunkHeaders,
 ) {
     val markResult = session.markReceived(headers.chunkIndex)
-    if (markResult == PushSession.MarkResult.Accepted) {
-        // Auto-finalize the moment the last chunk lands — don't wait for
-        // /complete (the client may never send it, e.g. Share Extension
-        // crash) or for the sweep poll (90s of latency).
-        pushSessionManager.tryFinalizeIfComplete(headers.pasteId)
-    }
     when (markResult) {
         PushSession.MarkResult.Accepted,
         PushSession.MarkResult.AlreadyReceived,
-        -> successResponse(call)
+        -> finishReceivedChunk(call, pushSessionManager, session)
 
         PushSession.MarkResult.OutOfRange ->
             failResponse(
@@ -154,6 +149,31 @@ private suspend fun finishChunkPush(
                 StandardErrorCode.OUT_RANGE_CHUNK_INDEX.toErrorCode(),
                 "chunk index ${headers.chunkIndex} out of range",
             )
+    }
+}
+
+private suspend fun finishReceivedChunk(
+    call: ApplicationCall,
+    pushSessionManager: PushSessionManager,
+    session: PushSession,
+) {
+    if (!session.isComplete) {
+        successResponse(call)
+        return
+    }
+
+    // The last chunk is not acknowledged until LOADING -> LOADED and its
+    // follow-up tasks have been persisted. A retry of the same chunk waits on
+    // the same per-session finalize lock.
+    when (val result = pushSessionManager.finalizeIfComplete(session)) {
+        PushCompletionResult.Complete -> successResponse(call)
+        is PushCompletionResult.Incomplete -> successResponse(call)
+        PushCompletionResult.NotFound ->
+            failResponse(call, StandardErrorCode.NOT_FOUND_PUSH_SESSION.toErrorCode())
+        is PushCompletionResult.Failed -> {
+            logger.warn(result.cause) { "push chunk: finalization failed pasteId=${session.pasteId}" }
+            failResponse(call, StandardErrorCode.PUSH_COMPLETE_FAIL.toErrorCode())
+        }
     }
 }
 
@@ -172,34 +192,24 @@ private suspend fun handleCompletePush(
         return
     }
 
-    val session = pushSessionManager.get(pasteId, token, fromAppInstanceId)
-    if (session == null) {
-        // Session is gone — almost always because auto-finalize on the last
-        // chunk already ran. Return success so the client doesn't retry.
-        // Wrong pasteId/token leaks nothing exploitable (the peer is already
-        // authenticated via secureStore; pasteIds are not secret).
-        logger.debug { "push complete: pasteId=$pasteId session absent (likely auto-finalized)" }
-        successResponse(call, PushCompleteResponse(emptyList()))
-        return
-    }
-
-    val missing = session.missingChunks()
-    if (missing.isNotEmpty()) {
-        logger.debug {
-            "push complete: pasteId=$pasteId missing ${missing.size}/${session.chunkCount} chunks"
+    when (val result = pushSessionManager.complete(pasteId, token, fromAppInstanceId)) {
+        PushCompletionResult.Complete -> {
+            logger.info { "push complete: pasteId=$pasteId durably finalized" }
+            successResponse(call, PushCompleteResponse(emptyList()))
         }
-        successResponse(call, PushCompleteResponse(missing))
-        return
+        is PushCompletionResult.Incomplete -> {
+            logger.debug { "push complete: pasteId=$pasteId missing ${result.missingChunks.size} chunks" }
+            successResponse(call, PushCompleteResponse(result.missingChunks))
+        }
+        PushCompletionResult.NotFound -> {
+            logger.debug { "push complete: session not found pasteId=$pasteId from=$fromAppInstanceId" }
+            failResponse(call, StandardErrorCode.NOT_FOUND_PUSH_SESSION.toErrorCode())
+        }
+        is PushCompletionResult.Failed -> {
+            logger.warn(result.cause) { "push complete: finalization failed pasteId=$pasteId" }
+            failResponse(call, StandardErrorCode.PUSH_COMPLETE_FAIL.toErrorCode())
+        }
     }
-
-    // Defensive: auto-finalize should have caught this already, but races
-    // happen. tryFinalize is idempotent — returns false if someone got here first.
-    if (pushSessionManager.tryFinalize(pasteId)) {
-        logger.info { "push complete: pasteId=$pasteId finalized via /complete" }
-    } else {
-        logger.info { "push complete: pasteId=$pasteId already finalized" }
-    }
-    successResponse(call, PushCompleteResponse(emptyList()))
 }
 
 private suspend fun handleIconPush(

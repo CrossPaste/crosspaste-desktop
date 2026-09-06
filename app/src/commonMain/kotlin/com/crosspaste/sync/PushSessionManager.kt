@@ -1,6 +1,7 @@
 package com.crosspaste.sync
 
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.concurrent.Volatile
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.ExperimentalUuidApi
@@ -66,6 +68,9 @@ class PushSession(
 
     @Volatile private var lastActivityBacking: Long = createdAt
     private val lock = Mutex()
+    private val finalizeLock = Mutex()
+
+    @Volatile private var finalized = false
 
     val receivedCount: Int get() = receivedCountBacking
     val lastActivity: Long get() = lastActivityBacking
@@ -93,11 +98,35 @@ class PushSession(
     // Lockless read — snapshot may include a chunk that's about to be marked received.
     fun missingChunks(): List<Int> = (0 until chunkCount).filter { !received[it] }
 
+    internal suspend fun finalize(block: suspend () -> Result<Unit?>): Result<Unit?> =
+        finalizeLock.withLock {
+            if (finalized) {
+                return@withLock Result.success(Unit)
+            }
+            block().onSuccess {
+                finalized = true
+            }
+        }
+
     enum class MarkResult {
         Accepted,
         AlreadyReceived,
         OutOfRange,
     }
+}
+
+internal sealed interface PushCompletionResult {
+    data object Complete : PushCompletionResult
+
+    data class Incomplete(
+        val missingChunks: List<Int>,
+    ) : PushCompletionResult
+
+    data object NotFound : PushCompletionResult
+
+    data class Failed(
+        val cause: Throwable,
+    ) : PushCompletionResult
 }
 
 class PushSessionManager(
@@ -221,45 +250,80 @@ class PushSessionManager(
 
     fun peek(pasteId: Long): PushSession? = sessions[pasteId]
 
-    /**
-     * Atomically claims and finalizes the session. Returns true when this caller
-     * owned the claim — caller can treat the finalize as scheduled. Returns
-     * false when the session is already gone (auto-finalize on last chunk, a
-     * concurrent /complete, or sweep). Idempotent across paths.
-     *
-     * Finalize is fire-and-forget on the manager's [scope]: file state flips
-     * LOADING → LOADED and a write to the local pasteboard is queued.
-     */
-    fun tryFinalize(pasteId: Long): Boolean {
-        if (sessions.remove(pasteId) == null) return false
-        releaseSlot()
-        scope.launch {
-            runCatching {
-                pasteboardService.tryWriteRemotePasteboardWithFile(pasteId)
-            }.onFailure { e ->
-                logger.warn(e) { "PushSession finalize failed: pasteId=$pasteId" }
-            }
+    /** Finalizes one complete session exactly once and only then releases its slot. */
+    internal suspend fun finalizeIfComplete(session: PushSession): PushCompletionResult {
+        if (!session.isComplete) {
+            return PushCompletionResult.Incomplete(session.missingChunks())
         }
-        return true
+
+        if (sessions[session.pasteId] !== session) {
+            return durableCompletionResult(session.pasteId, session.fromAppInstanceId)
+        }
+
+        val result =
+            session.finalize {
+                pasteboardService.tryWriteRemotePasteboardWithFile(session.pasteId)
+            }
+        result.exceptionOrNull()?.let { cause ->
+            if (cause is CancellationException) throw cause
+            logger.warn(cause) { "PushSession finalize failed: pasteId=${session.pasteId}" }
+            return PushCompletionResult.Failed(cause)
+        }
+
+        if (sessions.remove(session.pasteId, session)) {
+            releaseSlot()
+        }
+        return PushCompletionResult.Complete
     }
 
     /**
-     * Primary finalization trigger — called by the chunk handler right after
-     * [PushSession.markReceived]. When the chunk just landed completes the set,
-     * the file is ready for the pasteboard NOW, not 90s later when sweep runs.
+     * Returns the authoritative completion state for `/complete`. An active
+     * session still requires its token; once it is gone, only a durable LOADED
+     * row belonging to the authenticated sender qualifies as idempotent success.
      */
-    fun tryFinalizeIfComplete(pasteId: Long): Boolean {
-        val session = sessions[pasteId] ?: return false
-        if (!session.isComplete) return false
-        return tryFinalize(pasteId)
+    internal suspend fun complete(
+        pasteId: Long,
+        token: String,
+        fromAppInstanceId: String,
+    ): PushCompletionResult {
+        val session = sessions[pasteId] ?: return durableCompletionResult(pasteId, fromAppInstanceId)
+        if (session.token != token || session.fromAppInstanceId != fromAppInstanceId) {
+            return PushCompletionResult.NotFound
+        }
+        val missing = session.missingChunks()
+        if (missing.isNotEmpty()) {
+            return PushCompletionResult.Incomplete(missing)
+        }
+        return finalizeIfComplete(session)
     }
+
+    private suspend fun durableCompletionResult(
+        pasteId: Long,
+        fromAppInstanceId: String,
+    ): PushCompletionResult =
+        try {
+            val pasteData = pasteDao.getNoDeletePasteData(pasteId)
+            if (
+                pasteData?.pasteState == PasteState.LOADED &&
+                pasteData.appInstanceId == fromAppInstanceId
+            ) {
+                PushCompletionResult.Complete
+            } else {
+                PushCompletionResult.NotFound
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn(e) { "PushSession durable completion lookup failed: pasteId=$pasteId" }
+            PushCompletionResult.Failed(e)
+        }
 
     /**
      * Visible for testing. Last-resort cleanup for sessions that timed out.
      * The orphan-complete branch (all chunks arrived but no finalize ran) is a
-     * safety net — [tryFinalizeIfComplete] normally handles it the moment the
-     * last chunk arrives. Sweep only catches it if that path failed (e.g.
-     * scope cancelled during shutdown, finalize launch dropped).
+     * safety net — [finalizeIfComplete] normally handles it when the last
+     * chunk arrives. Sweep retries finalization once, then discards a session
+     * whose failure would otherwise hold capacity forever.
      */
     suspend fun sweepExpired() {
         val now = nowEpochMilliseconds()
@@ -271,22 +335,37 @@ class PushSessionManager(
         for (id in expiredIds) {
             val session = sessions[id] ?: continue
             if (session.isComplete) {
-                if (tryFinalize(id)) {
-                    logger.info { "PushSession sweep salvaged orphan-complete: pasteId=$id" }
+                when (finalizeIfComplete(session)) {
+                    PushCompletionResult.Complete ->
+                        logger.info { "PushSession sweep finalized orphan-complete: pasteId=$id" }
+                    is PushCompletionResult.Failed ->
+                        discardExpiredSession(session, "finalization failed")
+                    is PushCompletionResult.Incomplete ->
+                        discardExpiredSession(session, "incomplete finalization state")
+                    PushCompletionResult.NotFound -> Unit
                 }
             } else {
-                val removed = sessions.remove(id) ?: continue
-                releaseSlot()
-                runCatching {
-                    pasteDao.markDeletePasteData(id)
-                }.onFailure { e ->
-                    logger.warn(e) { "PushSession expire: markDeletePasteData($id) failed" }
-                }
-                logger.info {
-                    "PushSession expired and discarded: pasteId=$id " +
-                        "(${removed.receivedCount}/${removed.chunkCount} chunks received)"
-                }
+                discardExpiredSession(session, "incomplete upload")
             }
+        }
+    }
+
+    private suspend fun discardExpiredSession(
+        session: PushSession,
+        reason: String,
+    ) {
+        if (!sessions.remove(session.pasteId, session)) return
+        releaseSlot()
+        try {
+            pasteDao.markDeletePasteData(session.pasteId).getOrThrow()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn(e) { "PushSession expire: markDeletePasteData(${session.pasteId}) failed" }
+        }
+        logger.info {
+            "PushSession expired and discarded: pasteId=${session.pasteId} reason=$reason " +
+                "(${session.receivedCount}/${session.chunkCount} chunks received)"
         }
     }
 

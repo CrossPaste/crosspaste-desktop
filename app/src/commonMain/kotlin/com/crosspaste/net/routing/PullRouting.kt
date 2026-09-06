@@ -119,7 +119,7 @@ fun Routing.pullRouting(
             }
 
             val createTime = call.request.queryParameters["createTime"]?.toLongOrNull()
-            val limit = (call.request.queryParameters["limit"]?.toLongOrNull() ?: 10L).coerceAtMost(50L)
+            val limit = normalizePasteBatchLimit(call.request.queryParameters["limit"])
 
             val recentPasteData =
                 if (createTime != null) {
@@ -160,6 +160,12 @@ fun Routing.pullRouting(
         }
     }
 }
+
+internal fun normalizePasteBatchLimit(rawLimit: String?): Long =
+    (rawLimit?.toLongOrNull() ?: DEFAULT_PASTE_BATCH_LIMIT).coerceIn(1L, MAX_PASTE_BATCH_LIMIT)
+
+private const val DEFAULT_PASTE_BATCH_LIMIT = 10L
+private const val MAX_PASTE_BATCH_LIMIT = 50L
 
 internal class EncodedPasteBatch(
     val json: String,
