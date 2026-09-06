@@ -2,6 +2,7 @@ package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalSmallSettingItemState
@@ -152,10 +154,25 @@ actual fun SettingListSwitchItem(
     val isSmallItem = LocalSmallSettingItemState.current
     ListItem(
         modifier =
-            Modifier.heightIn(
-                min = if (isSmallItem) xxxxLarge else huge,
-            ),
-        headlineContent = { Text(copywriter.getText(title), style = MaterialTheme.typography.bodyMedium) },
+            Modifier
+                .heightIn(
+                    min = if (isSmallItem) xxxxLarge else huge,
+                )
+                // The whole row toggles the setting: the scaled-down Switch alone is a
+                // tiny hit target, and this is how every other settings row behaves.
+                .toggleable(
+                    value = checked,
+                    role = Role.Switch,
+                    onValueChange = onCheckedChange,
+                ),
+        headlineContent = {
+            Text(
+                text = copywriter.getText(title),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
         supportingContent =
             subtitle?.let {
                 {
@@ -178,7 +195,9 @@ actual fun SettingListSwitchItem(
                         if (isSmallItem) 0.7f else 0.8f,
                     ),
                 checked = checked,
-                onCheckedChange = onCheckedChange,
+                // Row-level toggleable owns the interaction; a null callback keeps the
+                // Switch purely visual so the two never double-fire.
+                onCheckedChange = null,
             )
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),

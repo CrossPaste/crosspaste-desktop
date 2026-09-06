@@ -1,6 +1,13 @@
 package com.crosspaste.ui.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,7 +15,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
@@ -78,20 +84,19 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                 ) {
                     configManager.updateConfig("enableExpirationCleanup", it)
                 }
-                if (config.enableExpirationCleanup) {
+                DependentSettings(visible = config.enableExpirationCleanup) {
+                    val cleanTimeMenuTexts =
+                        remember(copywriter.language()) {
+                            CleanTime.entries.map { cleanTime ->
+                                "${cleanTime.quantity} ${copywriter.getText(cleanTime.unit)}"
+                            }
+                        }
+
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "image_retention_period",
                         icon = IconData(MaterialSymbols.Rounded.Image, themeExt.greenIconColor),
                         trailingContent = {
-                            val cleanTimeMenuTexts by remember(copywriter.language()) {
-                                mutableStateOf(
-                                    CleanTime.entries.map { cleanTime ->
-                                        "${cleanTime.quantity} ${copywriter.getText(cleanTime.unit)}"
-                                    },
-                                )
-                            }
-
                             FilledDropdown(
                                 selectedIndex = config.imageCleanTimeIndex,
                                 options = cleanTimeMenuTexts,
@@ -106,14 +111,6 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                         title = "file_retention_period",
                         icon = IconData(MaterialSymbols.Rounded.Docs, themeExt.purpleIconColor),
                         trailingContent = {
-                            val cleanTimeMenuTexts by remember(copywriter.language()) {
-                                mutableStateOf(
-                                    CleanTime.entries.map { cleanTime ->
-                                        "${cleanTime.quantity} ${copywriter.getText(cleanTime.unit)}"
-                                    },
-                                )
-                            }
-
                             FilledDropdown(
                                 selectedIndex = config.fileCleanTimeIndex,
                                 options = cleanTimeMenuTexts,
@@ -132,7 +129,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                 ) {
                     configManager.updateConfig("enableThresholdCleanup", it)
                 }
-                if (config.enableThresholdCleanup) {
+                DependentSettings(visible = config.enableThresholdCleanup) {
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                     SettingListItem(
                         title = "maximum_storage",
@@ -160,5 +157,24 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
                 }
             }
         }
+    }
+}
+
+/**
+ * Rows that only make sense while their parent switch is on. Expanding and
+ * collapsing them smoothly keeps the card from jumping in height the moment
+ * the switch is flipped.
+ */
+@Composable
+private fun DependentSettings(
+    visible: Boolean,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut(),
+    ) {
+        Column(content = content)
     }
 }

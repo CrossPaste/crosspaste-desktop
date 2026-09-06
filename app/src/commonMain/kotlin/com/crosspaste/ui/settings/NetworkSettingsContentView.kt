@@ -3,10 +3,12 @@ package com.crosspaste.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,10 +24,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Docs
 import com.composables.icons.materialsymbols.rounded.Power
@@ -37,11 +38,13 @@ import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.ui.LocalSmallSettingItemState
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.devices.SyncScopeFactory
+import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -61,13 +64,16 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
 
     val jsonUtils = getJsonUtils()
 
-    var port by remember { mutableStateOf<String?>(null) }
-
     val config by configManager.config.collectAsState()
 
-    var networkInterfaces by remember { mutableStateOf(listOf<NetworkInterfaceInfo>()) }
+    // null while the interfaces are still being enumerated, so the list can show
+    // a loading row instead of briefly looking like there is nothing to pick
+    var networkInterfaces by remember { mutableStateOf<List<NetworkInterfaceInfo>?>(null) }
 
-    val useNetworkInterfaces: List<String> = jsonUtils.JSON.decodeFromString(config.useNetworkInterfaces)
+    val useNetworkInterfaces: List<String> =
+        remember(config.useNetworkInterfaces) {
+            jsonUtils.JSON.decodeFromString<List<String>>(config.useNetworkInterfaces)
+        }
 
     val blacklist =
         remember(config) {
@@ -75,15 +81,17 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             mutableStateListOf(*list.toTypedArray())
         }
 
+    // Derived straight from config so the row tracks port changes instead of
+    // freezing the value read on first composition
+    val portText =
+        if (config.port <= 0) {
+            copywriter.getText("unknown")
+        } else {
+            config.port.toString()
+        }
+
     LaunchedEffect(Unit) {
         networkInterfaces = networkInterfaceService.getSortedNetworkInterfaceInfo()
-        val currentPort = config.port
-        port =
-            if (currentPort <= 0) {
-                copywriter.getText("unknown")
-            } else {
-                currentPort.toString()
-            }
     }
 
     LazyColumn(
@@ -116,55 +124,68 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingCheckboxView(
-                    count = networkInterfaces.size,
-                    getCurrentCheckboxValue = { index ->
-                        networkInterfaces[index].name in useNetworkInterfaces
-                    },
-                    onChange = { index, isChecked ->
-                        val currentInterface = networkInterfaces[index].name
-                        val newUseNetworkInterfaces =
-                            if (isChecked) {
-                                useNetworkInterfaces + currentInterface
-                            } else {
-                                useNetworkInterfaces - currentInterface
-                            }
-                        val newUseNetworkInterfacesJson = jsonUtils.JSON.encodeToString(newUseNetworkInterfaces)
-                        configManager.updateConfig(
-                            listOf("useNetworkInterfaces", "enableDiscovery"),
-                            listOf(newUseNetworkInterfacesJson, newUseNetworkInterfaces.isNotEmpty()),
-                        )
-                    },
-                    content = { index ->
-                        val info = networkInterfaces[index]
-                        Text(
-                            text = info.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        if (info.isLikelyVirtual) {
-                            VirtualBadge(copywriter.getText("virtual"))
+                when (val interfaces = networkInterfaces) {
+                    null -> NetworkInterfacesLoadingRow()
+                    else ->
+                        if (interfaces.isEmpty()) {
+                            SettingListItem(
+                                title = "no_network_interface_available",
+                                icon = null,
+                                trailingContent = null,
+                            )
+                        } else {
+                            SettingCheckboxView(
+                                count = interfaces.size,
+                                getCurrentCheckboxValue = { index ->
+                                    interfaces[index].name in useNetworkInterfaces
+                                },
+                                onChange = { index, isChecked ->
+                                    val currentInterface = interfaces[index].name
+                                    val newUseNetworkInterfaces =
+                                        if (isChecked) {
+                                            useNetworkInterfaces + currentInterface
+                                        } else {
+                                            useNetworkInterfaces - currentInterface
+                                        }
+                                    val newUseNetworkInterfacesJson =
+                                        jsonUtils.JSON.encodeToString(newUseNetworkInterfaces)
+                                    configManager.updateConfig(
+                                        listOf("useNetworkInterfaces", "enableDiscovery"),
+                                        listOf(newUseNetworkInterfacesJson, newUseNetworkInterfaces.isNotEmpty()),
+                                    )
+                                },
+                                content = { index ->
+                                    val info = interfaces[index]
+                                    Text(
+                                        text = info.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    if (info.isLikelyVirtual) {
+                                        VirtualBadge(copywriter.getText("virtual"))
+                                    }
+                                },
+                                trailingContent = { index ->
+                                    val info = interfaces[index]
+                                    Text(
+                                        text = "${info.hostAddress}/${info.networkPrefixLength}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                },
+                            )
                         }
-                    },
-                    trailingContent = { index ->
-                        val info = networkInterfaces[index]
-                        Text(
-                            text = "${info.hostAddress}/${info.networkPrefixLength}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
-                )
+                }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "port",
                     icon = IconData(MaterialSymbols.Rounded.Power, themeExt.purpleIconColor),
                     trailingContent = {
-                        port?.let {
-                            Text(text = it)
-                        } ?: run {
-                            CircularProgressIndicator()
-                        }
+                        Text(
+                            text = portText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     },
                 )
             }
@@ -306,21 +327,39 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
 }
 
 @Composable
+private fun NetworkInterfacesLoadingRow() {
+    val isSmallItem = LocalSmallSettingItemState.current
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(if (isSmallItem) xxxxLarge else huge)
+                .padding(horizontal = medium),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(medium),
+            strokeWidth = tiny4X,
+        )
+    }
+}
+
+@Composable
 private fun VirtualBadge(text: String) {
-    val badgeBackground = Color(0x1A60A5FA)
-    val badgeBorder = Color(0x3060A5FA)
+    // Theme tokens instead of a fixed light-blue tint so the badge stays legible
+    // on the dark color scheme as well
+    val colorScheme = MaterialTheme.colorScheme
     Text(
         text = text,
         style =
             MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
             ),
-        color = MaterialTheme.colorScheme.primary,
+        color = colorScheme.onSecondaryContainer,
         modifier =
             Modifier
-                .background(badgeBackground, mediumRoundedCornerShape)
-                .border(tiny5X, badgeBorder, mediumRoundedCornerShape)
+                .background(colorScheme.secondaryContainer, mediumRoundedCornerShape)
+                .border(tiny5X, colorScheme.outlineVariant, mediumRoundedCornerShape)
                 .padding(horizontal = tiny, vertical = tiny4X),
     )
 }
