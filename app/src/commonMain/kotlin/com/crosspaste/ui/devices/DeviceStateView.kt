@@ -68,13 +68,19 @@ val pauseSyncStateStyle
             icon = MaterialSymbols.Rounded.Pause,
         )
 
+/**
+ * Solid primary, like the nearby-search progress ring and the header refresh
+ * icon: "in progress" reads as active. The neutral container is the same value
+ * as the row background (surfaceVariant) in both themes, so a neutral tag and
+ * button would vanish into the row and look disabled while connecting.
+ */
 val connectingStateStyle
     @Composable @ReadOnlyComposable
     get() =
         StateTagStyle(
             label = "sync_status_connecting",
-            containerColor = LocalThemeExtState.current.neutral.container,
-            contentColor = LocalThemeExtState.current.neutral.onContainer,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             icon = MaterialSymbols.Rounded.Autorenew,
         )
 
@@ -134,7 +140,7 @@ class SyncStateVisual(
 fun DeviceScope.syncStateVisual(connecting: Boolean = false): SyncStateVisual {
     val themeExt = LocalThemeExtState.current
     if (connecting) {
-        return SyncStateVisual(themeExt.neutral.color, connectingStateStyle)
+        return SyncStateVisual(MaterialTheme.colorScheme.primary, connectingStateStyle)
     }
     return when (syncRuntimeInfo.connectState) {
         SyncState.CONNECTED ->
@@ -152,7 +158,7 @@ fun DeviceScope.syncStateVisual(connecting: Boolean = false): SyncStateVisual {
         SyncState.UNMATCHED -> SyncStateVisual(themeExt.warning.color, unmatchedStateStyle)
         SyncState.UNVERIFIED -> SyncStateVisual(themeExt.info.color, unverifiedStateStyle)
         SyncState.INCOMPATIBLE -> SyncStateVisual(MaterialTheme.colorScheme.error, incompatibleStateStyle)
-        else -> SyncStateVisual(themeExt.neutral.color, connectingStateStyle)
+        else -> SyncStateVisual(MaterialTheme.colorScheme.primary, connectingStateStyle)
     }
 }
 
