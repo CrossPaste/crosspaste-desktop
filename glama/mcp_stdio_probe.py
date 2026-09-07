@@ -30,7 +30,8 @@ def send(obj):
     p.stdin.flush()
 
 
-def recv(timeout=120):
+def recv(expected_id, timeout=120):
+    """Return the response whose id matches; notifications and other messages are skipped."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         line = p.stdout.readline()
@@ -43,10 +44,14 @@ def recv(timeout=120):
         if not line:
             continue
         try:
-            return json.loads(line)
+            msg = json.loads(line)
         except json.JSONDecodeError:
             sys.stderr.write("[stdout-noise] " + line + "\n")
-    raise SystemExit("timeout waiting for response")
+            continue
+        if msg.get("id") == expected_id:
+            return msg
+        sys.stderr.write("[skipped] " + line + "\n")
+    raise SystemExit(f"timeout waiting for response id={expected_id}")
 
 
 send({
@@ -59,15 +64,15 @@ send({
         "clientInfo": {"name": "probe", "version": "0"},
     },
 })
-init = recv()
+init = recv(1)
 print("initialize ->", json.dumps(init.get("result", init))[:400])
 send({"jsonrpc": "2.0", "method": "notifications/initialized"})
 send({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
-tools = recv()
+tools = recv(2)
 names = [t["name"] for t in tools.get("result", {}).get("tools", [])]
 print("tools/list ->", names)
 send({"jsonrpc": "2.0", "id": 3, "method": "resources/list"})
-res = recv()
+res = recv(3)
 print("resources/list ->", [r["name"] for r in res.get("result", {}).get("resources", [])])
 p.stdin.close()
 try:
