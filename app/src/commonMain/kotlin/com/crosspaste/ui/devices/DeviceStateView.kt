@@ -2,7 +2,12 @@ package com.crosspaste.ui.devices
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Arrow_back
@@ -11,7 +16,6 @@ import com.composables.icons.materialsymbols.rounded.Autorenew
 import com.composables.icons.materialsymbols.rounded.Close
 import com.composables.icons.materialsymbols.rounded.Link_off
 import com.composables.icons.materialsymbols.rounded.Pause
-import com.composables.icons.materialsymbols.rounded.Refresh
 import com.composables.icons.materialsymbols.rounded.Shield
 import com.composables.icons.materialsymbols.rounded.Sync_alt
 import com.composables.icons.materialsymbols.rounded.Warning
@@ -19,6 +23,10 @@ import com.crosspaste.db.sync.SyncState
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.StateTagStyle
 import com.crosspaste.ui.base.StateTagView
+import com.crosspaste.utils.DateUtils
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 val syncedStateStyle
     @Composable @ReadOnlyComposable
@@ -110,20 +118,11 @@ val incompatibleStateStyle
             icon = MaterialSymbols.Rounded.Close,
         )
 
-val refreshingStateStyle
-    @Composable @ReadOnlyComposable
-    get() =
-        StateTagStyle(
-            label = "refresh",
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            icon = MaterialSymbols.Rounded.Refresh,
-        )
-
 /**
  * Everything the list row and the detail header derive from a device's connect
- * state: the platform icon tint and the status tag. Kept in one mapping so the
- * two never disagree on a state.
+ * state: the platform icon tint, the status tag, and the action button colors.
+ * Kept in one mapping so the three never disagree on a state. A manual refresh
+ * is shown exactly like an automatic reconnect: both are "connecting".
  */
 class SyncStateVisual(
     val iconColor: Color,
@@ -132,8 +131,11 @@ class SyncStateVisual(
 
 @Composable
 @ReadOnlyComposable
-fun DeviceScope.syncStateVisual(): SyncStateVisual {
+fun DeviceScope.syncStateVisual(connecting: Boolean = false): SyncStateVisual {
     val themeExt = LocalThemeExtState.current
+    if (connecting) {
+        return SyncStateVisual(themeExt.neutral.color, connectingStateStyle)
+    }
     return when (syncRuntimeInfo.connectState) {
         SyncState.CONNECTED ->
             when {
@@ -150,7 +152,7 @@ fun DeviceScope.syncStateVisual(): SyncStateVisual {
         SyncState.UNMATCHED -> SyncStateVisual(themeExt.warning.color, unmatchedStateStyle)
         SyncState.UNVERIFIED -> SyncStateVisual(themeExt.info.color, unverifiedStateStyle)
         SyncState.INCOMPATIBLE -> SyncStateVisual(MaterialTheme.colorScheme.error, incompatibleStateStyle)
-        else -> SyncStateVisual(themeExt.warning.color, connectingStateStyle)
+        else -> SyncStateVisual(themeExt.neutral.color, connectingStateStyle)
     }
 }
 
@@ -164,6 +166,44 @@ fun PlatformScope.SyncStateColor(): Color =
     }
 
 @Composable
-fun DeviceScope.SyncStateTag(refreshing: Boolean) {
-    StateTagView(if (refreshing) refreshingStateStyle else syncStateVisual().tag)
+fun DeviceScope.SyncStateTag(connecting: Boolean) {
+    StateTagView(syncStateVisual(connecting).tag)
 }
+
+/**
+ * The single "connecting" flag a device row shows: true while a manual refresh
+ * runs or the sync layer is in CONNECTING, held for at least
+ * [MIN_CONNECTING_VISIBLE] once entered. A reconnect against an unreachable
+ * peer fails within milliseconds, and without the hold every automatic attempt
+ * flickers the tag, the icon tint and the spinner.
+ */
+class ConnectingIndicator(
+    val visible: Boolean,
+    val onRefreshingChange: (Boolean) -> Unit,
+)
+
+@Composable
+fun DeviceScope.rememberConnectingIndicator(): ConnectingIndicator {
+    var refreshing by remember { mutableStateOf(false) }
+    val connecting = refreshing || syncRuntimeInfo.connectState == SyncState.CONNECTING
+    var visible by remember { mutableStateOf(connecting) }
+    var since by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(connecting) {
+        if (connecting) {
+            since = DateUtils.nowEpochMilliseconds()
+            visible = true
+        } else if (visible) {
+            val elapsed = (DateUtils.nowEpochMilliseconds() - since).milliseconds
+            val remaining = MIN_CONNECTING_VISIBLE - elapsed
+            if (remaining.isPositive()) {
+                delay(remaining)
+            }
+            visible = false
+        }
+    }
+
+    return ConnectingIndicator(visible) { refreshing = it }
+}
+
+private val MIN_CONNECTING_VISIBLE = 1.seconds

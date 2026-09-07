@@ -287,7 +287,7 @@ class DesktopScreenProvider(
                     deviceScopeFactory.createDeviceScope(currentSyncRuntimeInfo)
                 }
             DesktopScreenLayout {
-                scope.DeviceDetailContentView(headerActions = { DeviceActions() })
+                scope.DeviceDetailContentView(headerActions = { DeviceActions(it) })
             }
         }
     }

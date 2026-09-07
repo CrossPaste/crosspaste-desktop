@@ -12,13 +12,16 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 /**
  * [headerActions] fills the trailing slot of the header row. Platforms pass the
  * same refresh / menu controls they show on the list row so the detail page is
- * not view-only; the default shows just the status tag.
+ * not view-only; the default shows just the status tag. The connecting
+ * indicator is owned here so the header's platform icon recolors together with
+ * the actions.
  */
 @Composable
 fun DeviceScope.DeviceDetailContentView(
-    headerActions: @Composable DeviceScope.() -> Unit = { SyncStateTag(refreshing = false) },
+    headerActions: @Composable DeviceScope.(ConnectingIndicator) -> Unit = { SyncStateTag(it.visible) },
 ) {
     val scrollState = rememberScrollState()
+    val indicator = rememberConnectingIndicator()
 
     Column(
         modifier =
@@ -27,7 +30,7 @@ fun DeviceScope.DeviceDetailContentView(
                 .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(xLarge),
     ) {
-        DeviceDetailHeaderView(headerActions)
+        DeviceDetailHeaderView(indicator.visible) { headerActions(indicator) }
         IncompatibleSection()
         SyncControlSection()
         DeviceInfoSection()

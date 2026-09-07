@@ -3,10 +3,6 @@ package com.crosspaste.ui.devices
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.ui.DeviceDetail
@@ -27,29 +23,32 @@ class DesktopDeviceScope(
     override fun DeviceConnectView() {
         val navigationManager = koinInject<NavigationManager>()
 
+        val indicator = rememberConnectingIndicator()
+
         DeviceRowContent(
             onClick = {
                 navigationManager.navigate(DeviceDetail(syncRuntimeInfo.appInstanceId))
             },
             style = myDeviceStyle,
-            trailingContent = { DeviceActions() },
+            iconTint = syncStateVisual(indicator.visible).iconColor,
+            trailingContent = { DeviceActions(indicator) },
         )
     }
 }
 
-/** Status tag + refresh/pair/upgrade + menu, shared by the list row and the detail header. */
+/**
+ * Status tag + refresh/pair/upgrade + menu, shared by the list row and the detail
+ * header. The [indicator] is owned by the caller so the row's platform icon is
+ * recolored from the same flag.
+ */
 @Composable
-fun DeviceScope.DeviceActions() {
-    var refreshing by remember { mutableStateOf(false) }
-
+fun DeviceScope.DeviceActions(indicator: ConnectingIndicator) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(tiny),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SyncStateTag(refreshing)
-        DeviceActionButton(refreshing) {
-            refreshing = it
-        }
+        SyncStateTag(indicator.visible)
+        DeviceActionButton(indicator.visible, indicator.onRefreshingChange)
         MyDeviceMenuButton()
     }
 }
