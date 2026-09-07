@@ -38,6 +38,7 @@ import com.crosspaste.utils.getFileUtils
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.ToolAnnotations
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.buildJsonObject
@@ -68,28 +69,59 @@ class McpToolProvider(
     private fun registerSearchClipboard(server: Server) {
         server.addTool(
             name = "search_clipboard",
-            description = "Search clipboard history. Returns a list of paste items matching the query.",
+            description =
+                "Search or browse the local clipboard history. Read-only. " +
+                    "Returns up to 'limit' items (default 20, max 100), newest first, each with its numeric ID, " +
+                    "type, source app, favorite flag, size, creation time and a one-line summary; " +
+                    "pass an ID to get_paste_item for the full content. " +
+                    "Omit 'query' to list the most recent items; otherwise every keyword must match " +
+                    "as a prefix of a word in the item's searchable text. " +
+                    "'type' and 'tag' narrow the results and can be combined; tag names come from list_tags. " +
+                    "An unknown 'type' or 'tag' returns an error rather than an empty list. " +
+                    "Use get_clipboard_stats for counts only and add_to_clipboard to create items.",
             inputSchema =
                 ToolSchema(
                     properties =
                         buildJsonObject {
                             putJsonObject("query") {
                                 put("type", "string")
-                                put("description", "Search keywords (optional, empty returns recent items)")
+                                put(
+                                    "description",
+                                    "Space-separated keywords, prefix-matched (e.g. 'invoice 2026'). " +
+                                        "Omit or leave empty to list recent items.",
+                                )
                             }
                             putJsonObject("type") {
                                 put("type", "string")
-                                put("description", "Filter by paste type: text, link, image, rtf, html, color, file")
+                                put(
+                                    "description",
+                                    "Only return items of this type: text, link, image, rtf, html, color, file " +
+                                        "(case-insensitive; note that URLs are type 'link').",
+                                )
                             }
                             putJsonObject("tag") {
                                 put("type", "string")
-                                put("description", "Filter by tag name (e.g. 'Favorite')")
+                                put(
+                                    "description",
+                                    "Only return items carrying this tag, by exact tag name as shown by list_tags " +
+                                        "(e.g. 'Favorite').",
+                                )
                             }
                             putJsonObject("limit") {
                                 put("type", "integer")
-                                put("description", "Maximum number of results (default: 20, max: 100)")
+                                put(
+                                    "description",
+                                    "Maximum number of results, 1-100 (default 20; out-of-range values are clamped)",
+                                )
                             }
                         },
+                ),
+            toolAnnotations =
+                ToolAnnotations(
+                    readOnlyHint = true,
+                    destructiveHint = false,
+                    idempotentHint = true,
+                    openWorldHint = false,
                 ),
         ) { request ->
             val query =
@@ -111,6 +143,15 @@ class McpToolProvider(
                 tagName?.let { name ->
                     pasteTagDao.getAllTagsBlock().firstOrNull { it.name == name }?.id
                 }
+            if (tagName != null && tagId == null) {
+                return@addTool CallToolResult(
+                    content =
+                        listOf(
+                            TextContent("Error: no tag named '$tagName'. Use list_tags to see available tags."),
+                        ),
+                    isError = true,
+                )
+            }
             val limit =
                 request.arguments
                     ?.get("limit")
@@ -127,6 +168,18 @@ class McpToolProvider(
                 }
 
             val pasteType = typeStr?.let { findPasteType(it) }
+            if (typeStr != null && pasteType == null) {
+                return@addTool CallToolResult(
+                    content =
+                        listOf(
+                            TextContent(
+                                "Error: unknown type '$typeStr'. " +
+                                    "Supported types: ${PasteType.TYPES.joinToString(", ") { it.name }}.",
+                            ),
+                        ),
+                    isError = true,
+                )
+            }
 
             val results =
                 pasteDao.searchPasteData(
@@ -164,17 +217,35 @@ class McpToolProvider(
     private fun registerGetPasteItem(server: Server) {
         server.addTool(
             name = "get_paste_item",
-            description = "Get the full content of a specific clipboard item by its ID.",
+            description =
+                "Return the full content and metadata of one clipboard history item by its numeric ID. " +
+                    "Read-only. IDs come from search_clipboard results or from add_to_clipboard. " +
+                    "Output is plain text: a header (ID, type, source app, favorite flag, size, creation time, " +
+                    "whether it came from a remote device) followed by the content: the text of text/html/rtf items, " +
+                    "the URL and page title of links, hex and RGBA values of colors, or the file names of " +
+                    "file/image items (binary data is not returned). " +
+                    "Returns an error if 'id' is missing, not a number, or matches no existing item. " +
+                    "Use search_clipboard first when the ID is not known.",
             inputSchema =
                 ToolSchema(
                     properties =
                         buildJsonObject {
                             putJsonObject("id") {
                                 put("type", "integer")
-                                put("description", "The paste item ID")
+                                put(
+                                    "description",
+                                    "Numeric ID of the clipboard item, as reported by search_clipboard or add_to_clipboard",
+                                )
                             }
                         },
                     required = listOf("id"),
+                ),
+            toolAnnotations =
+                ToolAnnotations(
+                    readOnlyHint = true,
+                    destructiveHint = false,
+                    idempotentHint = true,
+                    openWorldHint = false,
                 ),
         ) { request ->
             val id =
@@ -218,7 +289,20 @@ class McpToolProvider(
     private fun registerGetClipboardStats(server: Server) {
         server.addTool(
             name = "get_clipboard_stats",
-            description = "Get clipboard statistics: total count and size by type.",
+            description =
+                "Report how much is stored in the local clipboard history. Read-only, no parameters. " +
+                    "Returns plain text with the total item count and total size, then the count and size " +
+                    "for each type (text, URL, HTML, RTF, image, file, color); " +
+                    "sizes are human-readable (e.g. 1.2 MB). " +
+                    "Use it for an overview only: use search_clipboard to see the items themselves " +
+                    "and list_tags to see tags.",
+            toolAnnotations =
+                ToolAnnotations(
+                    readOnlyHint = true,
+                    destructiveHint = false,
+                    idempotentHint = true,
+                    openWorldHint = false,
+                ),
         ) { _ ->
             val stats = pasteDao.getPasteResourceInfo()
             val text =
@@ -242,7 +326,20 @@ class McpToolProvider(
     private fun registerListTags(server: Server) {
         server.addTool(
             name = "list_tags",
-            description = "List all clipboard tags for organizing paste items.",
+            description =
+                "List every tag defined in the local clipboard history. Read-only, no parameters. " +
+                    "Tags are user-created labels (e.g. 'Favorite') attached to clipboard items. " +
+                    "Returns plain text with the tag count followed by one line per tag, in the user's " +
+                    "configured order, showing its numeric ID and name, or 'No tags found.' when there are none. " +
+                    "Pass a tag name to the 'tag' parameter of search_clipboard to find the items carrying it. " +
+                    "This tool cannot create, rename or delete tags.",
+            toolAnnotations =
+                ToolAnnotations(
+                    readOnlyHint = true,
+                    destructiveHint = false,
+                    idempotentHint = true,
+                    openWorldHint = false,
+                ),
         ) { _ ->
             val tags = pasteTagDao.getAllTagsFlow().first()
             val text =
@@ -265,10 +362,17 @@ class McpToolProvider(
         server.addTool(
             name = "add_to_clipboard",
             description =
-                "Add content to the clipboard history. " +
-                    "Supported types: text, url, html, rtf, color, file, image. " +
-                    "For file/image, content should be the absolute file path. " +
-                    "For color, content can be hex (#FF0000), rgb(), rgba(), hsl(), hsla(), or CSS color name.",
+                "Create a new item in the local clipboard history. " +
+                    "This only appends to CrossPaste's history: it does not change the system clipboard " +
+                    "and the item is not sent to other devices. Every call creates a new item, even for " +
+                    "duplicate content, recorded with source 'MCP'. " +
+                    "'type' defaults to 'text'; supported types: text, url, html, rtf, color, file, image. " +
+                    "For file/image, 'content' must be the absolute path of an existing file on this machine " +
+                    "(images: png, jpg, jpeg, gif, bmp, webp, heic, heif, tiff, svg); the file is referenced " +
+                    "by path, not copied. For color, 'content' may be #RGB, #RRGGBB, #RRGGBBAA, rgb(), rgba(), " +
+                    "hsl(), hsla() or a CSS color name. html must contain extractable text and rtf must start " +
+                    "with '{\\rtf'. On success returns the new item's ID (usable with get_paste_item); " +
+                    "on invalid input returns an error and nothing is stored.",
             inputSchema =
                 ToolSchema(
                     properties =
@@ -277,19 +381,28 @@ class McpToolProvider(
                                 put("type", "string")
                                 put(
                                     "description",
-                                    "The content to add. Text/URL/HTML/RTF as string, " +
-                                        "color as color value (e.g. #FF0000), file/image as absolute file path",
+                                    "The content to store, interpreted according to 'type': plain text, a URL, " +
+                                        "an HTML or RTF document, a color value (e.g. #FF0000), " +
+                                        "or the absolute path of a file/image. Must not be blank.",
                                 )
                             }
                             putJsonObject("type") {
                                 put("type", "string")
                                 put(
                                     "description",
-                                    "Content type: 'text' (default), 'url', 'html', 'rtf', 'color', 'file', 'image'",
+                                    "Content type: 'text' (default), 'url', 'html', 'rtf', 'color', 'file', 'image'. " +
+                                        "Unrecognized values are treated as 'text'.",
                                 )
                             }
                         },
                     required = listOf("content"),
+                ),
+            toolAnnotations =
+                ToolAnnotations(
+                    readOnlyHint = false,
+                    destructiveHint = false,
+                    idempotentHint = false,
+                    openWorldHint = false,
                 ),
         ) { request ->
             val content =
