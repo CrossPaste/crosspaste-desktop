@@ -28,8 +28,8 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import org.koin.compose.koinInject
 
 /**
- * Removing a device tears down the pairing on both sides, so a misclick costs a
- * full re-pair. Confirm before calling [SyncManager.removeSyncHandler].
+ * Removing a device drops the pairing, so a misclick costs a full re-pair.
+ * Confirm before calling [SyncManager.removeSyncHandler].
  */
 @Composable
 fun DeviceScope.RemoveDeviceDialog(onDismiss: () -> Unit) {
