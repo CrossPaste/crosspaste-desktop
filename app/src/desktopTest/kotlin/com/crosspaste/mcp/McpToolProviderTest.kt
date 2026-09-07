@@ -208,6 +208,25 @@ class McpToolProviderTest {
             assertTrue(result.contains("Found 1 clipboard item"))
         }
 
+    @Test
+    fun `search_clipboard returns error for unknown tag`() =
+        runTest {
+            val server = createServer()
+            insertTestPasteData("some item")
+            val result = callTool(server, "search_clipboard", mapOf("tag" to "Nope"))
+            assertTrue(result.contains("Error: no tag named 'Nope'"))
+        }
+
+    @Test
+    fun `search_clipboard returns error for unknown type`() =
+        runTest {
+            val server = createServer()
+            insertTestPasteData("some item")
+            val result = callTool(server, "search_clipboard", mapOf("type" to "video"))
+            assertTrue(result.contains("Error: unknown type 'video'"))
+            assertTrue(result.contains("link"))
+        }
+
     // ========== get_paste_item ==========
 
     @Test
