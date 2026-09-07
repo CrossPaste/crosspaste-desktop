@@ -5,10 +5,13 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncState
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.sync.SyncTestFixtures.createSyncInfo
 import com.crosspaste.sync.SyncTestFixtures.createSyncRuntimeInfo
+import com.crosspaste.utils.getJsonUtils
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -349,7 +352,61 @@ class GeneralNearbyDeviceManagerTest {
             }
         }
 
+    @Test
+    fun blockDevice_appendsToBlacklist() =
+        runTest {
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val deps = TestDeps(childScope)
+            val manager = deps.createManager(childScope)
+            val syncInfo = createSyncInfo(appInstanceId = "peer-1")
+
+            manager.blockDevice(syncInfo)
+
+            val written = slot<Any>()
+            verify(exactly = 1) { deps.configManager.updateConfig("blacklist", capture(written)) }
+            val blacklist = jsonUtils.JSON.decodeFromString<List<SyncInfo>>(written.captured as String)
+            assertEquals(listOf("peer-1"), blacklist.map { it.appInfo.appInstanceId })
+            childScope.cancel()
+        }
+
+    @Test
+    fun blockDevice_alreadyBlocked_doesNotRewriteConfig() =
+        runTest {
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val deps = TestDeps(childScope)
+            val syncInfo = createSyncInfo(appInstanceId = "peer-1")
+            val blacklist = jsonUtils.JSON.encodeToString(listOf(syncInfo))
+            every { deps.configManager.getCurrentConfig() } returns createMockConfig(blacklist)
+            val manager = deps.createManager(childScope)
+
+            manager.blockDevice(syncInfo)
+
+            verify(exactly = 0) { deps.configManager.updateConfig("blacklist", any()) }
+            childScope.cancel()
+        }
+
+    @Test
+    fun unblockDevice_removesOnlyThatDevice() =
+        runTest {
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val deps = TestDeps(childScope)
+            val blocked = listOf(createSyncInfo(appInstanceId = "peer-1"), createSyncInfo(appInstanceId = "peer-2"))
+            every { deps.configManager.getCurrentConfig() } returns
+                createMockConfig(jsonUtils.JSON.encodeToString(blocked))
+            val manager = deps.createManager(childScope)
+
+            manager.unblockDevice("peer-1")
+
+            val written = slot<Any>()
+            verify(exactly = 1) { deps.configManager.updateConfig("blacklist", capture(written)) }
+            val remaining = jsonUtils.JSON.decodeFromString<List<SyncInfo>>(written.captured as String)
+            assertEquals(listOf("peer-2"), remaining.map { it.appInfo.appInstanceId })
+            childScope.cancel()
+        }
+
     companion object {
+        private val jsonUtils = getJsonUtils()
+
         private fun createMockConfig(blacklist: String): com.crosspaste.config.AppConfig {
             val config = mockk<com.crosspaste.config.AppConfig>(relaxed = true)
             every { config.blacklist } returns blacklist

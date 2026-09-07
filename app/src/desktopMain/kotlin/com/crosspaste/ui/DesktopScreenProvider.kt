@@ -15,7 +15,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
@@ -31,6 +30,7 @@ import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.ShareContentView
 import com.crosspaste.ui.devices.DesktopPromoteGuide
+import com.crosspaste.ui.devices.DeviceActions
 import com.crosspaste.ui.devices.DeviceDetailContentView
 import com.crosspaste.ui.devices.DeviceScopeFactory
 import com.crosspaste.ui.devices.DevicesContentView
@@ -265,10 +265,15 @@ class DesktopScreenProvider(
     private fun NavBackStackEntry.DeviceDetailScreen() {
         val deviceDetail = toRoute<DeviceDetail>()
 
-        val syncRuntimeInfo by syncManager
-            .getSyncHandlers()[deviceDetail.appInstanceId]
-            ?.syncRuntimeInfoFlow
-            ?.collectAsState() ?: remember { mutableStateOf(null) }
+        // Observe the shared list rather than the handler's own flow: the handler
+        // is dropped when the device is removed (from this page or by the peer),
+        // and only the list observably goes to null so we can leave the page.
+        val syncRuntimeInfos by syncManager.realTimeSyncRuntimeInfos.collectAsState()
+
+        val syncRuntimeInfo =
+            syncRuntimeInfos.find {
+                it.appInstanceId == deviceDetail.appInstanceId
+            }
 
         LaunchedEffect(syncRuntimeInfo) {
             if (syncRuntimeInfo == null) {
@@ -282,7 +287,7 @@ class DesktopScreenProvider(
                     deviceScopeFactory.createDeviceScope(currentSyncRuntimeInfo)
                 }
             DesktopScreenLayout {
-                scope.DeviceDetailContentView()
+                scope.DeviceDetailContentView(headerActions = { DeviceActions(it) })
             }
         }
     }
@@ -364,8 +369,8 @@ class DesktopScreenProvider(
 
         nearbyDeviceInfo?.let {
             val scope =
-                remember(nearbyDeviceDetail) {
-                    syncScopeFactory.createSyncScope(nearbyDeviceInfo)
+                remember(it) {
+                    syncScopeFactory.createSyncScope(it)
                 }
             DesktopScreenLayout {
                 scope.NearbyDeviceDetailContentView()

@@ -39,7 +39,7 @@ private val logger = KotlinLogging.logger {}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceScope.DeviceActionButton(
-    refreshing: Boolean,
+    connecting: Boolean,
     updateRefreshing: (Boolean) -> Unit,
 ) {
     val appUpdateService = koinInject<AppUpdateService>()
@@ -48,9 +48,14 @@ fun DeviceScope.DeviceActionButton(
 
     val scope = rememberCoroutineScope()
 
-    when (syncRuntimeInfo.connectState) {
+    val connectState = syncRuntimeInfo.connectState
+
+    when (connectState) {
         SyncState.CONNECTING, SyncState.DISCONNECTED,
         -> {
+            // [connecting] already covers both the manual refresh and the automatic
+            // reconnect, so a re-probing device does not look plainly offline.
+            val tag = syncStateVisual(connecting).tag
             val infiniteTransition = rememberInfiniteTransition(label = "RefreshRotation")
 
             val rotation by infiniteTransition.animateFloat(
@@ -69,12 +74,12 @@ fun DeviceScope.DeviceActionButton(
                 desc = "refresh",
                 colors =
                     IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        containerColor = tag.containerColor,
+                        contentColor = tag.contentColor,
                     ),
                 iconModifier =
                     Modifier.graphicsLayer {
-                        rotationZ = if (refreshing) rotation else 0f
+                        rotationZ = if (connecting) rotation else 0f
                     },
             ) {
                 scope.launch {

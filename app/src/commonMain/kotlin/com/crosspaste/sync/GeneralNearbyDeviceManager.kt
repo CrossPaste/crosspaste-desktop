@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.update
 
 class GeneralNearbyDeviceManager(
     private val appInfo: AppInfo,
-    configManager: CommonConfigManager,
+    private val configManager: CommonConfigManager,
     private val ratingPromptManager: RatingPromptManager,
     private val syncManager: SyncManager,
     override val nearbyDeviceScope: CoroutineScope = namedScope(ioDispatcher, "GeneralNearbyDeviceManager"),
@@ -83,6 +83,25 @@ class GeneralNearbyDeviceManager(
         jsonUtils.JSON
             .decodeFromString<List<SyncInfo>>(blacklist)
             .associateBy { it.appInfo.appInstanceId }
+
+    override fun blockDevice(syncInfo: SyncInfo) {
+        val appInstanceId = syncInfo.appInfo.appInstanceId
+        val current = buildBlackSyncInfoMap(configManager.getCurrentConfig().blacklist)
+        if (current.containsKey(appInstanceId)) return
+        logger.info { "Blocking nearby device: $appInstanceId" }
+        writeBlacklist(current.values + syncInfo)
+    }
+
+    override fun unblockDevice(appInstanceId: String) {
+        val current = buildBlackSyncInfoMap(configManager.getCurrentConfig().blacklist)
+        if (!current.containsKey(appInstanceId)) return
+        logger.info { "Unblocking device: $appInstanceId" }
+        writeBlacklist((current - appInstanceId).values)
+    }
+
+    private fun writeBlacklist(blacklist: Collection<SyncInfo>) {
+        configManager.updateConfig("blacklist", jsonUtils.JSON.encodeToString(blacklist.toList()))
+    }
 
     override fun addDevice(syncInfo: SyncInfo) {
         val appInstanceId = syncInfo.appInfo.appInstanceId

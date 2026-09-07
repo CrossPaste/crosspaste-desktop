@@ -292,6 +292,10 @@ class DesktopPasteBonjourServiceTest {
             _nearbySyncInfos.value = devices.values.toList()
         }
 
+        override fun blockDevice(syncInfo: SyncInfo) = Unit
+
+        override fun unblockDevice(appInstanceId: String) = Unit
+
         override fun startSearching() {
             searchStarts++
             _searching.value = true

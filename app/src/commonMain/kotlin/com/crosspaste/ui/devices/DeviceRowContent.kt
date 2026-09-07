@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
@@ -31,6 +32,7 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 fun PlatformScope.DeviceRowContent(
     style: DeviceStyle,
     onClick: (() -> Unit)? = null,
+    iconTint: Color? = null,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -78,7 +80,7 @@ fun PlatformScope.DeviceRowContent(
                     painter = PlatformIcon(platform),
                     contentDescription = null,
                     modifier = Modifier.size(xLarge),
-                    tint = SyncStateColor(),
+                    tint = iconTint ?: SyncStateColor(),
                 )
             }
 
