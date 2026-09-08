@@ -12,13 +12,16 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -421,6 +424,99 @@ class PushSessionManagerTest {
             assertEquals(0, mgr.activeCount())
             coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(78L) }
             coVerify(exactly = 1) { pasteDao.markDeletePasteData(78L) }
+            mgr.close()
+        }
+
+    @Test
+    fun sweepExpired_doesNotDeleteRowCommittedByConcurrentFinalizeRetry() =
+        runBlocking {
+            // Sweep's finalize attempt fails while a request retry is already
+            // waiting on the terminal lock. The retry wins the lock next (the
+            // mutex is fair), commits LOADED, and sweep's discard must then be
+            // a no-op instead of deleting the durable row.
+            val sweepFinalizeGate = CompletableDeferred<Unit>()
+            val finalizeCalls =
+                java.util.concurrent.atomic
+                    .AtomicInteger(0)
+            val pasteDao = mockk<PasteDao>()
+            coEvery { pasteDao.markDeletePasteData(79L) } returns Result.success(Unit)
+            val pasteboardService = mockk<PasteboardService>()
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(79L) } coAnswers {
+                if (finalizeCalls.incrementAndGet() == 1) {
+                    sweepFinalizeGate.await()
+                    Result.failure(IllegalStateException("transient finalize failure"))
+                } else {
+                    Result.success(Unit)
+                }
+            }
+            val (mgr) =
+                newManager(
+                    maxActive = 1,
+                    sessionTtl = 10.milliseconds,
+                    pasteDao = pasteDao,
+                    pasteboardService = pasteboardService,
+                )
+            val session = mgr.create(79L, "mobile", fakeFilesIndex(1))!!
+            session.markReceived(0)
+            delay(50.milliseconds)
+
+            val sweep = launch { mgr.sweepExpired() }
+            yield() // sweep now holds the terminal lock inside its finalize attempt
+            val retry = async { mgr.complete(79L, session.token, "mobile") }
+            yield() // retry passed the session lookup and is queued on the lock
+            sweepFinalizeGate.complete(Unit)
+            sweep.join()
+
+            assertEquals(PushCompletionResult.Complete, retry.await())
+            assertNull(mgr.peek(79L))
+            assertEquals(0, mgr.activeCount())
+            coVerify(exactly = 2) { pasteboardService.tryWriteRemotePasteboardWithFile(79L) }
+            coVerify(exactly = 0) { pasteDao.markDeletePasteData(any()) }
+            assertNotNull(mgr.create(80L, "mobile", fakeFilesIndex(1)), "slot must be released exactly once")
+            mgr.close()
+        }
+
+    @Test
+    fun sweepExpired_discardOwnsTerminalStateBeforeWaitingRetry() =
+        runBlocking {
+            // Sweep's finalize fails and its discard takes the terminal lock
+            // first. A request that resolved the session before the discard
+            // finished must observe NotFound, not retry finalization and
+            // report a success the deletion would immediately undo.
+            val discardGate = CompletableDeferred<Unit>()
+            val pasteDao = mockk<PasteDao>()
+            coEvery { pasteDao.markDeletePasteData(81L) } coAnswers {
+                discardGate.await()
+                Result.success(Unit)
+            }
+            val pasteboardService = mockk<PasteboardService>()
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(81L) } returns
+                Result.failure(IllegalStateException("permanent finalize failure"))
+            val (mgr) =
+                newManager(
+                    maxActive = 1,
+                    sessionTtl = 10.milliseconds,
+                    pasteDao = pasteDao,
+                    pasteboardService = pasteboardService,
+                )
+            val session = mgr.create(81L, "mobile", fakeFilesIndex(1))!!
+            session.markReceived(0)
+            delay(50.milliseconds)
+
+            val sweep = launch { mgr.sweepExpired() }
+            yield() // finalize failed; discard holds the terminal lock and is marking the row deleted
+            assertNotNull(mgr.peek(81L), "session stays visible until the row is marked deleted")
+            val retry = async { mgr.complete(81L, session.token, "mobile") }
+            yield() // retry resolved the live session and is queued on the terminal lock
+            discardGate.complete(Unit)
+            sweep.join()
+
+            assertEquals(PushCompletionResult.NotFound, retry.await())
+            assertNull(mgr.peek(81L))
+            assertEquals(0, mgr.activeCount())
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(81L) }
+            coVerify(exactly = 1) { pasteDao.markDeletePasteData(81L) }
+            assertNotNull(mgr.create(82L, "mobile", fakeFilesIndex(1)), "slot must be released exactly once")
             mgr.close()
         }
 
