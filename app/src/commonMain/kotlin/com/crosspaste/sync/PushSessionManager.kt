@@ -68,9 +68,15 @@ class PushSession(
 
     @Volatile private var lastActivityBacking: Long = createdAt
     private val lock = Mutex()
-    private val finalizeLock = Mutex()
+
+    // Terminal state ([finalized] / [discarded]) is decided under [terminalLock]
+    // so a finalize retry and an expiry discard can never both "win": whichever
+    // acquires the lock first settles the session and the other observes it.
+    private val terminalLock = Mutex()
 
     @Volatile private var finalized = false
+
+    @Volatile private var discarded = false
 
     val receivedCount: Int get() = receivedCountBacking
     val lastActivity: Long get() = lastActivityBacking
@@ -98,14 +104,43 @@ class PushSession(
     // Lockless read — snapshot may include a chunk that's about to be marked received.
     fun missingChunks(): List<Int> = (0 until chunkCount).filter { !received[it] }
 
-    internal suspend fun finalize(block: suspend () -> Result<Unit?>): Result<Unit?> =
-        finalizeLock.withLock {
+    /**
+     * Runs [block] at most once to durably finalize the session. Returns
+     * [PushCompletionResult.Complete] once finalized, [PushCompletionResult.NotFound]
+     * if the session was discarded before finalization succeeded, and
+     * [PushCompletionResult.Failed] when [block] fails (the caller may retry).
+     */
+    internal suspend fun finalize(block: suspend () -> Result<Unit?>): PushCompletionResult =
+        terminalLock.withLock {
             if (finalized) {
-                return@withLock Result.success(Unit)
+                return@withLock PushCompletionResult.Complete
             }
-            block().onSuccess {
-                finalized = true
+            if (discarded) {
+                return@withLock PushCompletionResult.NotFound
             }
+            block().fold(
+                onSuccess = {
+                    finalized = true
+                    PushCompletionResult.Complete
+                },
+                onFailure = { PushCompletionResult.Failed(it) },
+            )
+        }
+
+    /**
+     * Marks the session discarded and runs [block] under the same lock as
+     * [finalize]. Returns false without running [block] when the session was
+     * already finalized or discarded, so a durably committed paste is never
+     * deleted by expiry cleanup.
+     */
+    internal suspend fun discard(block: suspend () -> Unit): Boolean =
+        terminalLock.withLock {
+            if (finalized || discarded) {
+                return@withLock false
+            }
+            discarded = true
+            block()
+            true
         }
 
     enum class MarkResult {
@@ -264,16 +299,21 @@ class PushSessionManager(
             session.finalize {
                 pasteboardService.tryWriteRemotePasteboardWithFile(session.pasteId)
             }
-        result.exceptionOrNull()?.let { cause ->
-            if (cause is CancellationException) throw cause
-            logger.warn(cause) { "PushSession finalize failed: pasteId=${session.pasteId}" }
-            return PushCompletionResult.Failed(cause)
+        when (result) {
+            is PushCompletionResult.Failed -> {
+                if (result.cause is CancellationException) throw result.cause
+                logger.warn(result.cause) { "PushSession finalize failed: pasteId=${session.pasteId}" }
+            }
+            PushCompletionResult.Complete -> {
+                if (sessions.remove(session.pasteId, session)) {
+                    releaseSlot()
+                }
+            }
+            // Discarded while this caller waited for the terminal lock; its row
+            // is already marked deleted, so the sender must not see success.
+            PushCompletionResult.NotFound, is PushCompletionResult.Incomplete -> Unit
         }
-
-        if (sessions.remove(session.pasteId, session)) {
-            releaseSlot()
-        }
-        return PushCompletionResult.Complete
+        return result
     }
 
     /**
@@ -323,7 +363,9 @@ class PushSessionManager(
      * The orphan-complete branch (all chunks arrived but no finalize ran) is a
      * safety net — [finalizeIfComplete] normally handles it when the last
      * chunk arrives. Sweep retries finalization once, then discards a session
-     * whose failure would otherwise hold capacity forever.
+     * whose failure would otherwise hold capacity forever. Discard and
+     * finalize share the session's terminal lock, so a concurrent request
+     * retry that commits LOADED can never be deleted by this cleanup.
      */
     suspend fun sweepExpired() {
         val now = nowEpochMilliseconds()
@@ -354,15 +396,25 @@ class PushSessionManager(
         session: PushSession,
         reason: String,
     ) {
-        if (!sessions.remove(session.pasteId, session)) return
-        releaseSlot()
-        try {
-            pasteDao.markDeletePasteData(session.pasteId).getOrThrow()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logger.warn(e) { "PushSession expire: markDeletePasteData(${session.pasteId}) failed" }
-        }
+        val discarded =
+            session.discard {
+                // The row is marked deleted while the session is still visible
+                // and its slot still held, so an in-flight request that already
+                // resolved this session waits on the terminal lock and then
+                // observes the discard instead of a stale success.
+                try {
+                    pasteDao.markDeletePasteData(session.pasteId).getOrThrow()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.warn(e) { "PushSession expire: markDeletePasteData(${session.pasteId}) failed" }
+                } finally {
+                    if (sessions.remove(session.pasteId, session)) {
+                        releaseSlot()
+                    }
+                }
+            }
+        if (!discarded) return
         logger.info {
             "PushSession expired and discarded: pasteId=${session.pasteId} reason=$reason " +
                 "(${session.receivedCount}/${session.chunkCount} chunks received)"
