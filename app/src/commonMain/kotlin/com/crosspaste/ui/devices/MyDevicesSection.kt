@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -49,6 +50,7 @@ fun LazyListScope.myDevicesSection(
     onOfflineExpandedChange: (Boolean) -> Unit,
     deviceScopeFactory: DeviceScopeFactory,
     headerTopPadding: Dp = zero,
+    headerTitleColor: Color = Color.Unspecified,
 ) {
     val onlineDevices = deviceGroups.online
     val offlineDevices = deviceGroups.offline
@@ -58,6 +60,7 @@ fun LazyListScope.myDevicesSection(
             SectionHeader(
                 text = "my_devices",
                 topPadding = headerTopPadding,
+                titleColor = headerTitleColor,
                 trailingContent =
                     if (offlineDevices.isNotEmpty()) {
                         {
