@@ -41,7 +41,7 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
         item {
             SettingSectionCard {
                 SettingListSwitchItem(
-                    title = "pasteboard_listening",
+                    title = "clipboard_monitoring",
                     icon = IconData(MaterialSymbols.Rounded.Content_paste, themeExt.blueIconColor),
                     checked = config.enablePasteboardListening,
                 ) {
