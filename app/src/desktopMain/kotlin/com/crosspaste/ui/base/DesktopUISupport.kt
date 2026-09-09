@@ -91,7 +91,7 @@ class DesktopUISupport(
             }
         } else {
             notificationManager.sendNotification(
-                title = { it.getText("cant_open_email_client") },
+                title = { it.getText("failed_to_open_email_client") },
                 message = email?.let { email -> { email } },
                 messageType = MessageType.Error,
             )

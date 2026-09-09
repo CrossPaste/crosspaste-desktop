@@ -41,7 +41,7 @@ class DesktopGlobalListener(
                     } else {
                         notificationManager.sendNotification(
                             title = { it.getText("failed_to_register_keyboard_listener") },
-                            message = { "${it.getText("error_Code")} ${e.code}" },
+                            message = { "${it.getText("error_code")} ${e.code}" },
                             messageType = MessageType.Error,
                         )
                     }
