@@ -15,6 +15,10 @@ document is the reference for that judgment.
   English UI, which is why the test blocks on it.
 - `Properties` silently keeps the last value of a duplicated key and ignores order.
   The test reads the raw lines so duplicates and ordering are caught.
+- A value ending in a backslash makes `Properties` treat the next line as a
+  continuation, so that line's key vanishes at runtime while still looking like a
+  normal entry in the file. The test loads each file with `Properties` exactly as the
+  app does and checks that view against the raw lines.
 
 ## Mechanical rules (enforced by `I18nConsistencyTest`)
 
@@ -24,8 +28,10 @@ document is the reference for that judgment.
 - Keys match `[a-z0-9_?]+`. (`?` is tolerated only for the legacy
   `do_you_trust_this_device?` until it is renamed.)
 - Files are sorted by key using plain string order.
-- Every value formats with `String.format`, and every locale uses the same number of
-  format arguments for a given key.
+- Every value formats with `String.format` (loaded values, so escapes are already
+  interpreted), and every locale references the same highest argument slot for a
+  given key. Reusing a slot (`%1$s` twice, or `%<s`) and reordering slots are fine;
+  adding or dropping one is not.
 - Every `getText("literal")` in `commonMain` and `desktopMain` resolves to a key in
   `en.properties`. Missing keys fail the build.
 - Keys with no literal reference are printed, not failed. A key may be used by the

@@ -2,10 +2,14 @@ package com.crosspaste.i18n
 
 import com.crosspaste.i18n.SupportedLanguages.EN
 import com.crosspaste.i18n.SupportedLanguages.LANGUAGE_LIST
+import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.Properties
 import kotlin.io.path.extension
+import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.readText
@@ -21,8 +25,11 @@ import kotlin.test.fail
  * an empty value renders as nothing, and a stray `%` throws from `String.format`
  * the first time the text is shown.
  *
- * Every check reads the raw file lines rather than a loaded [java.util.Properties],
- * because `Properties` is exactly what hides duplicates and ordering.
+ * Duplicate and ordering checks read the raw file lines, because a loaded
+ * [Properties] is exactly what hides both. Every other check runs against the
+ * same [Properties] load the app performs, so continuation lines and escapes are
+ * interpreted the way they will be at runtime, and the two views are checked
+ * against each other so a stray trailing backslash cannot swallow a key unseen.
  *
  * Unused keys are reported to stdout but never fail the build: a key may be used
  * by the mobile apps that share `commonMain`, or built dynamically (see
@@ -38,10 +45,13 @@ class I18nConsistencyTest {
 
     private data class LocaleFile(
         val language: String,
+        /** Raw `key=value` lines in file order, for duplicate and ordering checks. */
         val entries: List<Entry>,
+        /** What the app actually sees after `Properties.load`. */
+        val loaded: Map<String, String>,
     ) {
-        val keys: List<String> get() = entries.map { it.key }
-        val byKey: Map<String, String> get() = entries.associate { it.key to it.value }
+        val rawKeys: List<String> get() = entries.map { it.key }
+        val lineOf: Map<String, Int> get() = entries.associate { it.key to it.line }
     }
 
     companion object {
@@ -58,7 +68,8 @@ class I18nConsistencyTest {
         private val ANY_LITERAL = Regex(""""([a-z][a-z0-9_?]*)"""")
 
         // Matches every conversion java.util.Formatter accepts, including %% and %n.
-        private val FORMAT_SPECIFIER = Regex("""%(\d+\$)?[-#+ 0,(<]*\d*(\.\d+)?([tT][a-zA-Z]|[a-zA-Z%])""")
+        // Groups: 1 = explicit index ("2$"), 2 = flags, 3 = conversion.
+        private val FORMAT_SPECIFIER = Regex("""%(\d+\$)?([-#+ 0,(<]*)\d*(?:\.\d+)?([tT][a-zA-Z]|[a-zA-Z%])""")
     }
 
     private val moduleDir: Path = findModuleDir()
@@ -97,26 +108,88 @@ class I18nConsistencyTest {
                 assertTrue(separator > 0, "$language.properties:${index + 1} is not key=value: $line")
                 Entry(line.substring(0, separator), line.substring(separator + 1), index + 1)
             }
-        return LocaleFile(language, entries)
+        val properties = Properties()
+        InputStreamReader(file.inputStream(), StandardCharsets.UTF_8).use { properties.load(it) }
+        val loaded = properties.entries.associate { it.key.toString() to it.value.toString() }
+        return LocaleFile(language, entries, loaded)
     }
 
-    private fun formatArity(value: String): Int =
-        FORMAT_SPECIFIER.findAll(value).count {
-            it.groupValues[3] !in
-                setOf("%", "n")
+    private data class Spec(
+        val index: Int,
+        val conversion: Char,
+    )
+
+    /**
+     * The argument slots a value actually references, following java.util.Formatter:
+     * `%2$s` names slot 2, `%<s` reuses the previous slot, and a plain `%s` takes the
+     * next ordinary slot regardless of any explicit indices seen before it.
+     */
+    private fun specs(value: String): List<Spec> {
+        var ordinary = 0
+        var previous = 0
+        return FORMAT_SPECIFIER
+            .findAll(value)
+            .mapNotNull { match ->
+                val conversion = match.groupValues[3].last()
+                if (conversion == '%' || conversion == 'n') return@mapNotNull null
+                val explicit = match.groupValues[1].dropLast(1).toIntOrNull()
+                val index =
+                    when {
+                        explicit != null -> explicit
+                        '<' in match.groupValues[2] -> previous
+                        else -> ++ordinary
+                    }
+                previous = index
+                Spec(index, conversion)
+            }.toList()
+    }
+
+    private fun argumentCount(value: String): Int = specs(value).maxOfOrNull { it.index } ?: 0
+
+    private fun sampleArgs(value: String): Array<Any?> {
+        val samples = arrayOfNulls<Any?>(argumentCount(value))
+        specs(value).forEach { spec ->
+            if (spec.index in 1..samples.size && samples[spec.index - 1] == null) {
+                samples[spec.index - 1] =
+                    when (spec.conversion.lowercaseChar()) {
+                        'd', 'o', 'x' -> 1
+                        'e', 'f', 'g', 'a' -> 1.0
+                        'c' -> 'x'
+                        else -> "x"
+                    }
+            }
         }
+        return samples
+    }
 
     @Test
     fun `every locale has the same key set as English`() {
-        val en = locales.getValue(EN).keys.toSet()
+        val en = locales.getValue(EN).loaded.keys
         val problems =
             locales.values
                 .filter { it.language != EN }
                 .flatMap { locale ->
-                    val keys = locale.keys.toSet()
+                    val keys = locale.loaded.keys
                     (en - keys).map { "${locale.language}: missing $it" } +
                         (keys - en).map { "${locale.language}: extra $it (not in en)" }
                 }
+        assertTrue(problems.isEmpty(), problems.joinToString("\n"))
+    }
+
+    @Test
+    fun `raw lines and the loaded Properties agree on the key set`() {
+        // A value ending in a backslash makes Properties treat the next line as a
+        // continuation, so that line's key disappears at runtime while still
+        // looking like a normal entry in the file.
+        val problems =
+            locales.values.flatMap { locale ->
+                val raw = locale.rawKeys.toSet()
+                val loaded = locale.loaded.keys
+                (raw - loaded).map {
+                    "${locale.language}.properties:${locale.lineOf[it]} '$it' is not loaded by Properties (continuation or escape on the previous line?)"
+                } +
+                    (loaded - raw).map { "${locale.language}: Properties loaded '$it' which no raw line defines" }
+            }
         assertTrue(problems.isEmpty(), problems.joinToString("\n"))
     }
 
@@ -136,12 +209,11 @@ class I18nConsistencyTest {
     fun `no locale has an empty value or a malformed key`() {
         val problems =
             locales.values.flatMap { locale ->
-                locale.entries.mapNotNull { entry ->
+                locale.loaded.mapNotNull { (key, value) ->
+                    val line = locale.lineOf[key]
                     when {
-                        entry.value.isBlank() -> "${locale.language}:${entry.line} ${entry.key} has an empty value"
-                        !KEY_PATTERN.matches(
-                            entry.key,
-                        ) -> "${locale.language}:${entry.line} malformed key '${entry.key}'"
+                        value.isBlank() -> "${locale.language}:$line $key has an empty value"
+                        !KEY_PATTERN.matches(key) -> "${locale.language}:$line malformed key '$key'"
                         else -> null
                     }
                 }
@@ -153,7 +225,7 @@ class I18nConsistencyTest {
     fun `every locale is sorted by key`() {
         val problems =
             locales.values.mapNotNull { locale ->
-                val keys = locale.keys
+                val keys = locale.rawKeys
                 val sorted = keys.sorted()
                 val firstOutOfOrder = keys.indices.firstOrNull { keys[it] != sorted[it] }
                 firstOutOfOrder?.let {
@@ -166,19 +238,21 @@ class I18nConsistencyTest {
     @Test
     fun `every value formats without throwing and locales agree on argument count`() {
         // DesktopCopywriter always calls value.format(*args), even with no args, so a
-        // stray '%' in any locale throws the first time that text is displayed.
-        val enArity = locales.getValue(EN).byKey.mapValues { formatArity(it.value) }
+        // stray '%' in any locale throws the first time that text is displayed. The
+        // contract with the caller is the highest argument slot referenced, so a
+        // translation may reuse a slot (%1$s twice) or reorder slots freely.
+        val enCount = locales.getValue(EN).loaded.mapValues { argumentCount(it.value) }
         val problems =
             locales.values.flatMap { locale ->
-                locale.entries.mapNotNull { entry ->
-                    val arity = formatArity(entry.value)
-                    val args = Array<Any?>(arity) { "x" }
-                    val formatError = runCatching { entry.value.format(*args) }.exceptionOrNull()
+                locale.loaded.mapNotNull { (key, value) ->
+                    val line = locale.lineOf[key]
+                    val count = argumentCount(value)
+                    val formatError = runCatching { value.format(*sampleArgs(value)) }.exceptionOrNull()
                     when {
                         formatError != null ->
-                            "${locale.language}:${entry.line} ${entry.key} does not format: ${formatError.message}"
-                        enArity[entry.key]?.let { it != arity } == true ->
-                            "${locale.language}:${entry.line} ${entry.key} expects $arity args, en expects ${enArity[entry.key]}"
+                            "${locale.language}:$line $key does not format: ${formatError.message}"
+                        enCount[key]?.let { it != count } == true ->
+                            "${locale.language}:$line $key uses $count argument(s), en uses ${enCount[key]}"
                         else -> null
                     }
                 }
@@ -188,7 +262,7 @@ class I18nConsistencyTest {
 
     @Test
     fun `every key referenced by getText in source exists in English`() {
-        val en = locales.getValue(EN).keys.toSet()
+        val en = locales.getValue(EN).loaded.keys
         val problems =
             kotlinSources()
                 .flatMap { file ->
@@ -213,6 +287,7 @@ class I18nConsistencyTest {
         val unreferenced =
             locales
                 .getValue(EN)
+                .loaded
                 .keys
                 .filter { key -> key !in referenced }
                 .filterNot { key -> DYNAMIC_KEY_PREFIXES.any { key.startsWith(it) } }
