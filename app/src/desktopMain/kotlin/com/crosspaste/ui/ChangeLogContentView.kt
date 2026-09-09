@@ -216,7 +216,7 @@ private fun UpdateAvailableBanner(
                         color = MaterialTheme.colorScheme.error,
                     )
                     Button(onClick = { windowsZipUpdater.startDownload() }) {
-                        Text(copywriter.getText("update_retry"))
+                        Text(copywriter.getText("retry"))
                     }
                 }
             }

@@ -108,7 +108,7 @@ fun CliToolContentView() {
         }
 
         item {
-            SectionHeader("terminal_availability", topPadding = medium)
+            SectionHeader("shell_availability", topPadding = medium)
         }
 
         item {

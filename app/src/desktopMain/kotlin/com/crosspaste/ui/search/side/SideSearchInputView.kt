@@ -258,7 +258,7 @@ fun SideSearchInputView() {
             placeholder = {
                 Text(
                     modifier = Modifier.wrapContentSize(),
-                    text = copywriter.getText("search_pasteboard"),
+                    text = copywriter.getText("search_clipboard"),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,

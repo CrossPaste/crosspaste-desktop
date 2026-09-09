@@ -43,7 +43,7 @@ fun TutorialButton() {
     ) {
         Text(
             modifier = Modifier.scale(scale),
-            text = copywriter.getText("newbie_tutorial"),
+            text = copywriter.getText("getting_started"),
             color = MaterialTheme.colorScheme.primary,
             style =
                 MaterialTheme.typography.labelSmall.copy(

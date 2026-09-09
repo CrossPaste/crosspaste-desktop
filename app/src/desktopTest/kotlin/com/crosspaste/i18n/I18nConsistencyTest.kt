@@ -60,7 +60,7 @@ class I18nConsistencyTest {
         private val KEY_PATTERN = Regex("^[a-z0-9_?]+$")
 
         /** Keys built at runtime by prefix + suffix; no literal reference exists. */
-        private val DYNAMIC_KEY_PREFIXES = listOf("desktop_guide_", "relative_")
+        private val DYNAMIC_KEY_PREFIXES = listOf("desktop_guide_")
 
         /** Keys referenced only by the mobile apps, which reuse `commonMain`. */
         private val MOBILE_ONLY_KEYS = emptySet<String>()
@@ -78,11 +78,16 @@ class I18nConsistencyTest {
 
     private val i18nDir: Path = moduleDir.resolve("src/desktopMain/resources/i18n")
 
+    // core, shared and shared-ui are consumed by app and reference keys too
+    // (e.g. RelativeTime in core), so their commonMain counts as a reference.
     private val sourceRoots: List<Path> =
         listOf(
             moduleDir.resolve("src/commonMain/kotlin"),
             moduleDir.resolve("src/desktopMain/kotlin"),
-        )
+            moduleDir.resolveSibling("core/src/commonMain/kotlin"),
+            moduleDir.resolveSibling("shared/src/commonMain/kotlin"),
+            moduleDir.resolveSibling("shared-ui/src/commonMain/kotlin"),
+        ).filter { Files.isDirectory(it) }
 
     private val locales: Map<String, LocaleFile> by lazy {
         LANGUAGE_LIST.associateWith { parse(it) }

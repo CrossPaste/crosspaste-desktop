@@ -24,7 +24,7 @@ fun WindowsPasteboardSettingsContentView() {
     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
 
     SettingListSwitchItem(
-        title = "legacy_software_compatibility",
+        title = "legacy_app_compatibility",
         icon = IconData(MaterialSymbols.Rounded.Desktop_windows, themeExt.indigoIconColor),
         checked = config.legacySoftwareCompatibility,
     ) { newLegacySoftwareCompatibility ->

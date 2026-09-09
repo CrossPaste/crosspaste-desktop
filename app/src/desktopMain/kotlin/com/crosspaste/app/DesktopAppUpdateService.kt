@@ -89,7 +89,7 @@ class DesktopAppUpdateService(
             // Store-installed apps can only be updated by the Store; deep-link there.
             WindowsUpdateChannel.STORE -> {
                 notificationManager.sendNotification(
-                    title = { it.getText("new_version_available") },
+                    title = { it.getText("update_available") },
                     messageType = MessageType.Info,
                 )
                 openMicrosoftStore()

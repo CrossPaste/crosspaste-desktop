@@ -157,8 +157,8 @@ fun AboutContentView() {
                 }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
-                    title = "newbie_tutorial",
-                    subtitle = "newbie_tutorial_desc",
+                    title = "getting_started",
+                    subtitle = "getting_started_desc",
                     icon = IconData(MaterialSymbols.Rounded.School, themeExt.greenIconColor),
                 ) {
                     uiSupport.openCrossPasteWebInBrowser("tutorial/pasteboard")

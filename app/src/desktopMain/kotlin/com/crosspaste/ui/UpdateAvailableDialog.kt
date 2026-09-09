@@ -113,12 +113,12 @@ private fun UpdateAvailableDialog(
         },
         confirmButton = {
             Button(onClick = onUpdateNow) {
-                Text(copywriter.getText(if (failedReasonKey != null) "update_retry" else "update_now"))
+                Text(copywriter.getText(if (failedReasonKey != null) "retry" else "update_now"))
             }
         },
         dismissButton = {
             TextButton(onClick = onLater) {
-                Text(copywriter.getText("update_later"))
+                Text(copywriter.getText("later"))
             }
         },
     )
