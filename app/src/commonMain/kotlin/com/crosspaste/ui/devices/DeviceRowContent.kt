@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,10 +30,10 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
 /**
- * [nameTrailing] sits right after the device name on the title line; the name
- * wraps or ellipsizes first, so the marker keeps its full width. Use it for a
- * short inline marker (e.g. "this device") that should not compete with
- * [trailingContent] for the row's end.
+ * [nameTrailing] sits right after the device name on the title line when both
+ * fit, and moves to the line below the name otherwise, so it never narrows the
+ * name. Use it for a short inline marker (e.g. "this device") that should not
+ * compete with [trailingContent] for the row's end.
  */
 @Composable
 fun PlatformScope.DeviceRowContent(
@@ -96,12 +97,15 @@ fun PlatformScope.DeviceRowContent(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center,
             ) {
-                Row(
+                // A FlowRow so the name always gets the full line: a short name
+                // shares its line with [nameTrailing], a long one wraps or
+                // ellipsizes on its own and the marker drops to the next line
+                // instead of squeezing the name to nothing.
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(tiny),
-                    verticalAlignment = Alignment.CenterVertically,
+                    itemVerticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        modifier = Modifier.weight(1f, fill = false),
                         text = getDeviceDisplayName(),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
