@@ -28,6 +28,7 @@ class PlatformTest {
 
             val platform = getPlatformUtils().platform
             assertEquals("Windows", platform.name)
+            assertEquals("Windows", platform.displayName())
             assertEquals("amd64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals("10", platform.version)
@@ -46,6 +47,7 @@ class PlatformTest {
 
             val platform = getPlatformUtils().platform
             assertEquals("Macos", platform.name)
+            assertEquals("macOS", platform.displayName())
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals("10.15.7", platform.version)
@@ -82,6 +84,7 @@ class PlatformTest {
 
             val platform = getPlatformUtils().platform
             assertEquals("Linux", platform.name)
+            assertEquals("Linux", platform.displayName())
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals(LinuxPlatform.getOsVersion(), platform.version)

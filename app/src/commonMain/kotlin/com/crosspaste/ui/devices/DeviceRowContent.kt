@@ -105,7 +105,7 @@ fun PlatformScope.DeviceRowContent(
                 }
 
                 Text(
-                    text = "${platform.name} ${platform.version}",
+                    text = "${platform.displayName()} ${platform.version}",
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
