@@ -40,7 +40,8 @@ fun rememberDeviceGroups(): DeviceGroups {
 }
 
 /**
- * The shared "my devices" list: a header with the offline toggle, the online
+ * The shared "my devices" list: a header with the offline toggle, an optional
+ * [leadingItem] (e.g. the local device) right under the header, the online
  * devices, and (when expanded) the offline devices. Platform screens supply their
  * own scaffold, top bar and nearby-devices section around this.
  */
@@ -51,11 +52,12 @@ fun LazyListScope.myDevicesSection(
     deviceScopeFactory: DeviceScopeFactory,
     headerTopPadding: Dp = zero,
     headerTitleColor: Color = Color.Unspecified,
+    leadingItem: (@Composable () -> Unit)? = null,
 ) {
     val onlineDevices = deviceGroups.online
     val offlineDevices = deviceGroups.offline
 
-    if (deviceGroups.hasDevices) {
+    if (deviceGroups.hasDevices || leadingItem != null) {
         stickyHeader {
             SectionHeader(
                 text = "my_devices",
@@ -75,6 +77,10 @@ fun LazyListScope.myDevicesSection(
                     },
             )
         }
+    }
+
+    leadingItem?.let {
+        item(key = "my_devices_leading") { it() }
     }
 
     items(onlineDevices, key = { it.appInstanceId }) { syncRuntimeInfo ->
