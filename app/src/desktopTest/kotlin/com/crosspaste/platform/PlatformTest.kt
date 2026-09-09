@@ -19,6 +19,17 @@ class PlatformTest {
     }
 
     @Test
+    fun testDisplayName() {
+        fun platform(name: String) = Platform(name = name, arch = "arm64", bitMode = 64, version = "1")
+
+        assertEquals("macOS", platform(Platform.MACOS).displayName())
+        assertEquals("Windows", platform(Platform.WINDOWS).displayName())
+        assertEquals("Linux", platform(Platform.LINUX).displayName())
+        assertEquals("iPhone", platform(Platform.IPHONE).displayName())
+        assertEquals("Unknown", platform(Platform.UNKNOWN_OS).displayName())
+    }
+
+    @Test
     fun testWindowsPlatform() {
         runCatching {
             mockkObject(DesktopSystemProperty)
@@ -28,7 +39,6 @@ class PlatformTest {
 
             val platform = getPlatformUtils().platform
             assertEquals("Windows", platform.name)
-            assertEquals("Windows", platform.displayName())
             assertEquals("amd64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals("10", platform.version)
@@ -47,7 +57,6 @@ class PlatformTest {
 
             val platform = getPlatformUtils().platform
             assertEquals("Macos", platform.name)
-            assertEquals("macOS", platform.displayName())
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals("10.15.7", platform.version)
@@ -84,7 +93,6 @@ class PlatformTest {
 
             val platform = getPlatformUtils().platform
             assertEquals("Linux", platform.name)
-            assertEquals("Linux", platform.displayName())
             assertEquals("x86_64", platform.arch)
             assertEquals(64, platform.bitMode)
             assertEquals(LinuxPlatform.getOsVersion(), platform.version)
