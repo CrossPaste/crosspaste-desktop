@@ -28,10 +28,10 @@ document is the reference for that judgment.
 - Keys match `[a-z0-9_?]+`. (`?` is tolerated only for the legacy
   `do_you_trust_this_device?` until it is renamed.)
 - Files are sorted by key using plain string order.
-- Every value formats with `String.format` (loaded values, so escapes are already
-  interpreted), and every locale references the same highest argument slot for a
-  given key. Reusing a slot (`%1$s` twice, or `%<s`) and reordering slots are fine;
-  adding or dropping one is not.
+- Every value formats with `String.format` using the arguments the English value
+  implies: the same count and the same types (`%s` gets a string, `%d` an integer).
+  Reusing a slot (`%1$s` twice, or `%<s`) and reordering slots are fine; adding or
+  dropping one, or changing `%s` to `%d`, is not.
 - Every `getText("literal")` in `commonMain` and `desktopMain` resolves to a key in
   `en.properties`. Missing keys fail the build.
 - Keys with no literal reference are printed, not failed. A key may be used by the

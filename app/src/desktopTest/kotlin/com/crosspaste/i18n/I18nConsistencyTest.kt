@@ -15,6 +15,8 @@ import kotlin.io.path.name
 import kotlin.io.path.readText
 import kotlin.streams.asSequence
 import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -146,9 +148,14 @@ class I18nConsistencyTest {
 
     private fun argumentCount(value: String): Int = specs(value).maxOfOrNull { it.index } ?: 0
 
-    private fun sampleArgs(value: String): Array<Any?> {
-        val samples = arrayOfNulls<Any?>(argumentCount(value))
-        specs(value).forEach { spec ->
+    /**
+     * Sample arguments derived from the English value only. English defines what the
+     * caller passes, so every locale is formatted with the same arguments; a
+     * translation that turns `%s` into `%d` fails here instead of at runtime.
+     */
+    private fun sampleArgs(enValue: String): Array<Any?> {
+        val samples = arrayOfNulls<Any?>(argumentCount(enValue))
+        specs(enValue).forEach { spec ->
             if (spec.index in 1..samples.size && samples[spec.index - 1] == null) {
                 samples[spec.index - 1] =
                     when (spec.conversion.lowercaseChar()) {
@@ -160,6 +167,19 @@ class I18nConsistencyTest {
             }
         }
         return samples
+    }
+
+    /** Null when [value] is compatible with the arguments the caller passes for [enValue]. */
+    private fun formatProblem(
+        enValue: String,
+        value: String,
+    ): String? {
+        val expected = argumentCount(enValue)
+        val actual = argumentCount(value)
+        if (actual != expected) return "uses $actual argument(s), en uses $expected"
+        return runCatching { value.format(*sampleArgs(enValue)) }
+            .exceptionOrNull()
+            ?.let { "does not format with en's arguments: ${it.message}" }
     }
 
     @Test
@@ -236,28 +256,35 @@ class I18nConsistencyTest {
     }
 
     @Test
-    fun `every value formats without throwing and locales agree on argument count`() {
+    fun `every value formats with English's arguments`() {
         // DesktopCopywriter always calls value.format(*args), even with no args, so a
         // stray '%' in any locale throws the first time that text is displayed. The
-        // contract with the caller is the highest argument slot referenced, so a
-        // translation may reuse a slot (%1$s twice) or reorder slots freely.
-        val enCount = locales.getValue(EN).loaded.mapValues { argumentCount(it.value) }
+        // caller's arguments are defined by the English value: the same count and the
+        // same types must work for every locale, though a translation may reuse a
+        // slot (%1$s twice, %<s) or reorder slots.
+        val en = locales.getValue(EN).loaded
         val problems =
             locales.values.flatMap { locale ->
                 locale.loaded.mapNotNull { (key, value) ->
-                    val line = locale.lineOf[key]
-                    val count = argumentCount(value)
-                    val formatError = runCatching { value.format(*sampleArgs(value)) }.exceptionOrNull()
-                    when {
-                        formatError != null ->
-                            "${locale.language}:$line $key does not format: ${formatError.message}"
-                        enCount[key]?.let { it != count } == true ->
-                            "${locale.language}:$line $key uses $count argument(s), en uses ${enCount[key]}"
-                        else -> null
-                    }
+                    formatProblem(en[key] ?: value, value)?.let { "${locale.language}:${locale.lineOf[key]} $key $it" }
                 }
             }
         assertTrue(problems.isEmpty(), problems.joinToString("\n"))
+    }
+
+    @Test
+    fun `format check rejects a translation that changes the argument type or count`() {
+        assertNotNull(formatProblem("Key %s", "Clé %d"))
+        assertNotNull(formatProblem("%s characters", "%s 个字符，共 %s"))
+        assertNotNull(formatProblem("Count", "Count (%)"))
+    }
+
+    @Test
+    fun `format check accepts reused and reordered slots`() {
+        assertNull(formatProblem("%s characters", "%1\$s 个字符（共 %1\$s 个）"))
+        assertNull(formatProblem("%s characters", "%s 个字符（%<s）"))
+        assertNull(formatProblem("%s on %s", "%2\$s の %1\$s"))
+        assertNull(formatProblem("%d items", "%d 件"))
     }
 
     @Test
