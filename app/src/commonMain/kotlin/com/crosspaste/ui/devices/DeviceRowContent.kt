@@ -28,11 +28,18 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
+/**
+ * [nameTrailing] sits right after the device name on the title line; the name
+ * wraps or ellipsizes first, so the marker keeps its full width. Use it for a
+ * short inline marker (e.g. "this device") that should not compete with
+ * [trailingContent] for the row's end.
+ */
 @Composable
 fun PlatformScope.DeviceRowContent(
     style: DeviceStyle,
     onClick: (() -> Unit)? = null,
     iconTint: Color? = null,
+    nameTrailing: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -102,6 +109,7 @@ fun PlatformScope.DeviceRowContent(
                         overflow = TextOverflow.Ellipsis,
                         color = style.titleColor,
                     )
+                    nameTrailing?.invoke()
                 }
 
                 Text(
