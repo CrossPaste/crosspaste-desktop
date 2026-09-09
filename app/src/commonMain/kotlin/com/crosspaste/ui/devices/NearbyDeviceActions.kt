@@ -44,15 +44,7 @@ fun SyncScope.NearbyDeviceActions() {
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
                 ),
         ) {
-            nearbyDeviceManager.blockDevice(syncInfo)
-            // The row vanishes on block; say where it went so the blacklist is findable.
-            val deviceName = getDeviceDisplayName()
-            notificationManager.sendNotification(
-                title = { "${it.getText("device_blocked")}: $deviceName" },
-                message = { it.getText("device_blocked_desc") },
-                messageType = MessageType.Info,
-                duration = 5000,
-            )
+            blockNearbyDevice(nearbyDeviceManager, notificationManager)
         }
 
         GeneralIconButton(
@@ -64,9 +56,39 @@ fun SyncScope.NearbyDeviceActions() {
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ),
         ) {
-            if (appControl.isDeviceConnectionEnabled(syncManager.getSyncHandlers().size + 1)) {
-                syncManager.updateSyncInfo(syncInfo)
-            }
+            pairNearbyDevice(appControl, syncManager)
         }
+    }
+}
+
+/**
+ * Block the nearby device and tell the user where it went, since the row
+ * vanishes on block and the blacklist should stay findable. Plain function so
+ * non-button entry points (e.g. a swipe menu) can trigger the same action.
+ */
+fun SyncScope.blockNearbyDevice(
+    nearbyDeviceManager: NearbyDeviceManager,
+    notificationManager: NotificationManager,
+) {
+    nearbyDeviceManager.blockDevice(syncInfo)
+    val deviceName = getDeviceDisplayName()
+    notificationManager.sendNotification(
+        title = { "${it.getText("device_blocked")}: $deviceName" },
+        message = { it.getText("device_blocked_desc") },
+        messageType = MessageType.Info,
+        duration = 5000,
+    )
+}
+
+/**
+ * Pair with the nearby device if the device-connection limit allows one more
+ * connection. Plain function so non-button entry points can trigger it.
+ */
+fun SyncScope.pairNearbyDevice(
+    appControl: AppControl,
+    syncManager: SyncManager,
+) {
+    if (appControl.isDeviceConnectionEnabled(syncManager.getSyncHandlers().size + 1)) {
+        syncManager.updateSyncInfo(syncInfo)
     }
 }
