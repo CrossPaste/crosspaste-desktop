@@ -7,7 +7,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,12 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
-import com.composables.icons.materialsymbols.rounded.Devices
 import com.composables.icons.materialsymbols.rounded.Refresh
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.PasteBonjourService
@@ -54,7 +51,6 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.titanic
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
 @Composable
@@ -71,7 +67,6 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
     val searching by nearbyDeviceManager.searching.collectAsState()
 
     val deviceGroups = rememberDeviceGroups()
-    val hasDevices = deviceGroups.hasDevices
 
     val unverifiedSyncRuntimeInfo by syncManager.unverifiedSyncRuntimeInfo.collectAsState()
 
@@ -93,60 +88,32 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
 
     InnerScaffold(
         floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(tiny),
+            FilledTonalButton(
+                onClick = { showAddDeviceDialog = true },
+                contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
+                colors =
+                    ButtonDefaults.filledTonalButtonColors(
+                        containerColor = LocalThemeExtState.current.success.surface,
+                        contentColor = LocalThemeExtState.current.success.onContainer,
+                    ),
+                elevation =
+                    ButtonDefaults.filledTonalButtonElevation(
+                        defaultElevation = tiny3X,
+                        pressedElevation = tiny5X,
+                        hoveredElevation = tiny2X,
+                        focusedElevation = tiny3X,
+                    ),
             ) {
-                FilledTonalButton(
-                    onClick = { showCurrentDeviceDialog = true },
-                    contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
-                    elevation =
-                        ButtonDefaults.filledTonalButtonElevation(
-                            defaultElevation = tiny3X,
-                            pressedElevation = tiny5X,
-                            hoveredElevation = tiny2X,
-                            focusedElevation = tiny3X,
-                        ),
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Devices,
-                        contentDescription = null,
-                        modifier = Modifier.size(small),
-                    )
-                    Spacer(modifier = Modifier.width(tiny3X))
-                    Text(
-                        text = copywriter.getText("current_device"),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
-
-                FilledTonalButton(
-                    onClick = { showAddDeviceDialog = true },
-                    contentPadding = PaddingValues(horizontal = medium, vertical = tiny),
-                    colors =
-                        ButtonDefaults.filledTonalButtonColors(
-                            containerColor = LocalThemeExtState.current.success.surface,
-                            contentColor = LocalThemeExtState.current.success.onContainer,
-                        ),
-                    elevation =
-                        ButtonDefaults.filledTonalButtonElevation(
-                            defaultElevation = tiny3X,
-                            pressedElevation = tiny5X,
-                            hoveredElevation = tiny2X,
-                            focusedElevation = tiny3X,
-                        ),
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(small),
-                    )
-                    Spacer(modifier = Modifier.width(tiny3X))
-                    Text(
-                        text = copywriter.getText("add_device_manually"),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(small),
+                )
+                Spacer(modifier = Modifier.width(tiny3X))
+                Text(
+                    text = copywriter.getText("add_device_manually"),
+                    style = MaterialTheme.typography.labelLarge,
+                )
             }
         },
     ) { innerPadding ->
@@ -177,18 +144,16 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
                 offlineExpanded = offlineExpanded,
                 onOfflineExpandedChange = { offlineExpanded = it },
                 deviceScopeFactory = deviceScopeFactory,
+                leadingItem = {
+                    LocalDeviceRow { showCurrentDeviceDialog = true }
+                },
             )
 
             stickyHeader {
                 SectionHeader(
                     text = "nearby_devices",
                     backgroundColor = MaterialTheme.colorScheme.surface,
-                    topPadding =
-                        if (hasDevices) {
-                            medium
-                        } else {
-                            zero
-                        },
+                    topPadding = medium,
                     trailingContent = {
                         NearbyRefreshButton(searching) {
                             pasteBonjourService.refreshAll()
