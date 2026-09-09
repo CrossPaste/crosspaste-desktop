@@ -17,7 +17,7 @@ private class LocalDeviceScope(
 
 /**
  * The local device as the first row of "my devices": same card as a paired
- * device, marked with a plain "current" caption after the name (see
+ * device, marked with a plain "this device" caption after the name (see
  * [DeviceNameMarker]). It has no sync state or actions; tapping it opens the
  * device info via [onClick].
  */
@@ -36,6 +36,6 @@ fun LocalDeviceRow(onClick: () -> Unit) {
         style = myDeviceStyle,
         onClick = onClick,
         iconTint = MaterialTheme.colorScheme.primary,
-        nameTrailing = { DeviceNameMarker(copywriter.getText("current")) },
+        nameTrailing = { DeviceNameMarker(copywriter.getText("this_device")) },
     )
 }
