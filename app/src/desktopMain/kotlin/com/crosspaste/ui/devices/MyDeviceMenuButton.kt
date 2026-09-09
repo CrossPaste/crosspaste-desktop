@@ -73,7 +73,7 @@ fun DeviceScope.MyDeviceMenuButton() {
         ) {
             DropdownMenuItem(
                 modifier = Modifier.height(xxxLarge),
-                text = { Text(copywriter.getText("add_note")) },
+                text = { Text(copywriter.getText("add_nickname")) },
                 onClick = {
                     expanded = false
                     showEditDeviceDialog = true

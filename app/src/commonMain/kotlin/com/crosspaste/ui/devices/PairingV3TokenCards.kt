@@ -116,7 +116,7 @@ private fun PairingV3SessionTokenCard(
         }
 
     TokenPopupCard(
-        title = copywriter.getText("token"),
+        title = copywriter.getText("pairing_code"),
         token = session.pin?.map(Char::toString).takeIf { hasVisiblePin },
         progress = progress,
         onClose = onClose,

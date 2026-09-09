@@ -158,7 +158,7 @@ fun DeviceScope.TrustDeviceDialog() {
                 )
                 Spacer(modifier = Modifier.width(medium))
                 Text(
-                    text = copywriter.getText("do_you_trust_this_device?"),
+                    text = copywriter.getText("trust_device_title"),
                     style = MaterialTheme.typography.headlineSmall,
                 )
             }

@@ -269,7 +269,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
                             ),
                     ) {
                         Text(
-                            copywriter.getText("manual_clear"),
+                            copywriter.getText("clear_now"),
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }
