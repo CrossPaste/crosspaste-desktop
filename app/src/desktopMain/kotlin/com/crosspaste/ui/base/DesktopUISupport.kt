@@ -64,7 +64,7 @@ class DesktopUISupport(
             }.onFailure { e ->
                 logger.warn(e) { "Failed to open url: $url" }
                 notificationManager.sendNotification(
-                    title = { it.getText("error_open_link_failed") },
+                    title = { it.getText("failed_to_open_link") },
                     message = { url },
                     messageType = MessageType.Error,
                 )

@@ -253,11 +253,11 @@ class DesktopPasteMenuService(
         }
 
     private fun createPinTagMenuItem(pasteData: PasteData): ContextMenuItem =
-        ContextMenuGroup(copywriter.getText("pin")) {
+        ContextMenuGroup(copywriter.getText("tags")) {
             val tagList = pasteSearchViewModel.tagList.value
             if (tagList.isEmpty()) {
                 listOf(
-                    ContextMenuItem(copywriter.getText("empty")) {
+                    ContextMenuItem(copywriter.getText("no_tags")) {
                     },
                 )
             } else {
