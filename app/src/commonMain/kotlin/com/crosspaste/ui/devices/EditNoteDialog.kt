@@ -63,7 +63,7 @@ fun DeviceScope.EditNoteDialog(onDismiss: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(medium))
                 Text(
-                    text = copywriter.getText("input_note_name"),
+                    text = copywriter.getText("nickname_hint"),
                     style = MaterialTheme.typography.headlineSmall,
                 )
             }
@@ -77,7 +77,7 @@ fun DeviceScope.EditNoteDialog(onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(xLarge),
             ) {
                 Text(
-                    text = copywriter.getText("edit_note_desc"),
+                    text = copywriter.getText("nickname_desc"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
@@ -87,7 +87,7 @@ fun DeviceScope.EditNoteDialog(onDismiss: () -> Unit) {
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    label = { Text(copywriter.getText("note")) },
+                    label = { Text(copywriter.getText("nickname")) },
                     placeholder = { Text(syncRuntimeInfo.noteName ?: syncRuntimeInfo.deviceName) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,

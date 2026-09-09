@@ -103,7 +103,7 @@ fun TokenView(intOffset: IntOffset) {
         TokenPopupStack(intOffset = intOffset) {
             if (showToken) {
                 TokenPopupCard(
-                    title = copywriter.getText("token"),
+                    title = copywriter.getText("pairing_code"),
                     token = token.map(Char::toString),
                     progress = 1f - refreshProgress,
                     onClose = {

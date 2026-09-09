@@ -279,7 +279,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
             item {
                 SettingSectionCard {
                     SettingListItem(
-                        title = "empty",
+                        title = "no_blocked_devices",
                         icon = null,
                         trailingContent = null,
                     )

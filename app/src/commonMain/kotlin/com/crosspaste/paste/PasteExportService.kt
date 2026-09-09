@@ -116,7 +116,7 @@ class PasteExportService(
                 }
             } else {
                 notificationManager.sendNotification(
-                    title = { it.getText("no_data_found") },
+                    title = { it.getText("nothing_to_export") },
                     messageType = MessageType.Warning,
                 )
             }

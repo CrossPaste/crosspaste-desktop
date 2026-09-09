@@ -165,11 +165,11 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                         // the network does not look blocking.
                         if (!isDiscoveryBlocked.value) {
                             notificationManager.sendNotification(
-                                title = { it.getText("addition_failed") },
+                                title = { it.getText("add_device_failed") },
                                 message = {
-                                    "1. ${it.getText("please_check_if_the_ip_and_port_are_correct")}\n" +
+                                    "1. ${it.getText("add_device_check_address")}\n" +
                                         "2. ${it.getText(
-                                            "check_if_there_is_a_firewall_or_antivirus_software_blocking_the_connection",
+                                            "add_device_check_firewall",
                                         )}"
                                 },
                                 messageType = MessageType.Error,

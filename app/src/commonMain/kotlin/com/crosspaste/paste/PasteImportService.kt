@@ -113,7 +113,7 @@ class PasteImportService(
                 )
             } else {
                 notificationManager.sendNotification(
-                    title = { it.getText("no_data_import") },
+                    title = { it.getText("nothing_to_import") },
                     messageType = MessageType.Warning,
                 )
             }

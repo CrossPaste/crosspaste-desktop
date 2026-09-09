@@ -33,7 +33,7 @@ fun DeviceScope.DeviceInfoSection() {
         }
 
     Column(verticalArrangement = Arrangement.spacedBy(small2X)) {
-        SectionHeader("base_info")
+        SectionHeader("device_info")
 
         Card(
             modifier = Modifier.fillMaxWidth(),
