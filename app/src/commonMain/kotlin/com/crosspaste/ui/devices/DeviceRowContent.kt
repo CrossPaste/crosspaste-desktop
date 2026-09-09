@@ -98,7 +98,7 @@ fun PlatformScope.DeviceRowContent(
                         text = getDeviceDisplayName(),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
+                        maxLines = style.nameMaxLines,
                         overflow = TextOverflow.Ellipsis,
                         color = style.titleColor,
                     )
