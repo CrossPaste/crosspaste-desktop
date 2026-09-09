@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -25,6 +26,7 @@ fun SectionHeader(
     text: String,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     topPadding: Dp = 0.dp,
+    titleColor: Color = Color.Unspecified,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -43,7 +45,7 @@ fun SectionHeader(
             Text(
                 text = copywriter.getText(text),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = titleColor.takeOrElse { MaterialTheme.colorScheme.primary },
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = TextUnit.Unspecified,
             )

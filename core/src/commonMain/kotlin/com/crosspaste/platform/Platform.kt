@@ -28,7 +28,16 @@ data class Platform(
         const val CHROME_EXTENSION = "ChromeExtension"
 
         const val UNKNOWN_OS = "Unknown"
+
+        private const val MACOS_DISPLAY_NAME = "macOS"
     }
+
+    /**
+     * Human-readable platform name for the UI. [name] is a wire value serialized into
+     * SyncInfo/EndpointInfo and compared across versions, so it stays as is; only the
+     * presentation differs (e.g. "Macos" -> "macOS").
+     */
+    fun displayName(): String = if (isMacos()) MACOS_DISPLAY_NAME else name
 
     fun isWindows(): Boolean = name == WINDOWS
 

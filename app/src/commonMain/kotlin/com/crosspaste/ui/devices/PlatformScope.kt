@@ -28,6 +28,7 @@ data class DeviceStyle(
     val paddingValues: PaddingValues = PaddingValues(medium),
     val shape: Shape = mediumRoundedCornerShape,
     val isClickable: Boolean = true,
+    val nameMaxLines: Int = 1,
 )
 
 val myDeviceStyle: DeviceStyle

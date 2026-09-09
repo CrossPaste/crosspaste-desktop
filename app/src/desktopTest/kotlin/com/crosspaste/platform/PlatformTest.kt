@@ -19,6 +19,17 @@ class PlatformTest {
     }
 
     @Test
+    fun testDisplayName() {
+        fun platform(name: String) = Platform(name = name, arch = "arm64", bitMode = 64, version = "1")
+
+        assertEquals("macOS", platform(Platform.MACOS).displayName())
+        assertEquals("Windows", platform(Platform.WINDOWS).displayName())
+        assertEquals("Linux", platform(Platform.LINUX).displayName())
+        assertEquals("iPhone", platform(Platform.IPHONE).displayName())
+        assertEquals("Unknown", platform(Platform.UNKNOWN_OS).displayName())
+    }
+
+    @Test
     fun testWindowsPlatform() {
         runCatching {
             mockkObject(DesktopSystemProperty)

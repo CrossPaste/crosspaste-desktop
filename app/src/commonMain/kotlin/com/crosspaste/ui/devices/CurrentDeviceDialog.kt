@@ -58,7 +58,7 @@ fun CurrentDeviceDialog(onDismiss: () -> Unit) {
             "user_name" to appInfo.userName,
             "app_version" to appInfo.displayVersion(),
             "device_id" to deviceUtils.getDeviceId(),
-            "os" to "${platform.name} ${platform.version}",
+            "os" to "${platform.displayName()} ${platform.version}",
             "arch" to platform.arch,
             "port" to if (port <= 0) copywriter.getText("unknown") else port.toString(),
         )
