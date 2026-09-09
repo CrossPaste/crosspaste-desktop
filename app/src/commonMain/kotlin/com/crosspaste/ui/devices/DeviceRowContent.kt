@@ -133,15 +133,19 @@ fun PlatformScope.DeviceRowContent(
 }
 
 /**
- * A short plain-text marker for [DeviceRowContent]'s `nameTrailing` slot, e.g.
- * "current device": the same words as the name, just smaller and in the primary
- * color, so it reads as part of the title rather than as a status tag.
+ * A one-word plain-text marker for [DeviceRowContent]'s `nameTrailing` slot,
+ * e.g. "current": upper-cased, bold and tracked in the primary color, so it
+ * reads as a small caption on the title rather than as a status tag.
  */
 @Composable
 fun DeviceNameMarker(text: String) {
     Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
+        text = text.uppercase(),
+        style =
+            MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+            ),
         color = MaterialTheme.colorScheme.primary,
         maxLines = 1,
         softWrap = false,
