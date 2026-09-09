@@ -157,7 +157,7 @@ export function DeviceDetailView({
           {/* Base Info */}
           <div className="flex flex-col gap-1">
             <span className="text-xs font-semibold text-m3-on-surface-variant uppercase tracking-wide px-1">
-              {t("base_info")}
+              {t("device_info")}
             </span>
             <div className="flex flex-col rounded-[14px] bg-m3-surface-container overflow-hidden divide-y divide-m3-outline-variant/30">
               <InfoRow
@@ -210,7 +210,7 @@ export function DeviceDetailView({
               className="flex items-center gap-3 w-full px-4 py-3 rounded-[14px] bg-m3-surface-container text-sm text-m3-on-surface hover:bg-m3-surface-container-high transition-colors"
             >
               <Edit size={18} className="text-m3-on-surface-variant" />
-              <span className="font-medium">{t("add_note")}</span>
+              <span className="font-medium">{t("add_nickname")}</span>
             </button>
             <button
               onClick={onRemove}

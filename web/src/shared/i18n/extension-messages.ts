@@ -7,6 +7,7 @@
 export const extensionMessages: Record<string, Record<string, string>> = {
   en: {
     clipboard: "Clipboard",
+    file_drag_not_supported: "File drag is not supported",
     desktop_app_active: "Desktop app is running — extension paused",
     sync_status_paused: "Paused",
     sync_status_connecting: "Connecting",
@@ -54,6 +55,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   de: {
     clipboard: "Zwischenablage",
+    file_drag_not_supported: "Datei-Ziehen wird nicht unterstützt",
     desktop_app_active: "Desktop-App läuft — Erweiterung pausiert",
     sync_status_paused: "Pausiert",
     sync_status_connecting: "Verbindung läuft",
@@ -103,6 +105,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   es: {
     clipboard: "Portapapeles",
+    file_drag_not_supported: "No se admite arrastrar archivos",
     desktop_app_active: "La app de escritorio está activa — extensión en pausa",
     sync_status_paused: "Pausado",
     sync_status_connecting: "Conectando",
@@ -152,6 +155,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   fa: {
     clipboard: "کلیپ‌بورد",
+    file_drag_not_supported: "کشیدن فایل پشتیبانی نمی‌شود",
     desktop_app_active: "اپ دسکتاپ در حال اجراست — افزونه متوقف شد",
     sync_status_paused: "متوقف",
     sync_status_connecting: "در حال اتصال",
@@ -201,6 +205,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   fr: {
     clipboard: "Presse-papiers",
+    file_drag_not_supported: "Le glisser-déposer de fichiers n'est pas pris en charge",
     desktop_app_active: "L'application de bureau est active — extension en pause",
     sync_status_paused: "En pause",
     sync_status_connecting: "Connexion",
@@ -250,6 +255,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   ja: {
     clipboard: "クリップボード",
+    file_drag_not_supported: "ファイルのドラッグはサポートされていません",
     desktop_app_active: "デスクトップアプリが実行中 — 拡張機能は一時停止",
     sync_status_paused: "一時停止",
     sync_status_connecting: "接続中",
@@ -298,6 +304,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   ko: {
     clipboard: "클립보드",
+    file_drag_not_supported: "파일 드래그는 지원되지 않습니다",
     desktop_app_active: "데스크톱 앱 실행 중 — 확장 프로그램 일시 중지",
     sync_status_paused: "일시 중지",
     sync_status_connecting: "연결 중",
@@ -345,6 +352,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   pt: {
     clipboard: "Área de transferência",
+    file_drag_not_supported: "Arrastar arquivos não é suportado",
     desktop_app_active: "App de desktop em execução — extensão pausada",
     sync_status_paused: "Pausado",
     sync_status_connecting: "Conectando",
@@ -394,6 +402,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   zh: {
     clipboard: "剪贴板",
+    file_drag_not_supported: "不支持拖拽文件",
     desktop_app_active: "桌面应用已启动 — 扩展已暂停",
     sync_status_paused: "已暂停",
     sync_status_connecting: "连接中",
@@ -435,6 +444,7 @@ export const extensionMessages: Record<string, Record<string, string>> = {
   },
   zh_hant: {
     clipboard: "剪貼簿",
+    file_drag_not_supported: "不支援拖曳檔案",
     desktop_app_active: "桌面應用已啟動 — 擴充功能已暫停",
     sync_status_paused: "已暫停",
     sync_status_connecting: "連線中",

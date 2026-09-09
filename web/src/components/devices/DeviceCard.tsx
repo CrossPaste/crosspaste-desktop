@@ -212,7 +212,7 @@ function DeviceContextMenu({
           className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-m3-on-surface hover:bg-m3-surface-container transition-colors"
         >
           <Edit size={16} className="text-m3-on-surface-variant" />
-          <span>{t("add_note")}</span>
+          <span>{t("add_nickname")}</span>
         </button>
       )}
       {onRemove && (

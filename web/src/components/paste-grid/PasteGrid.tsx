@@ -120,7 +120,7 @@ export function PasteGrid() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t("search_pasteboard")}
+            placeholder={t("search_clipboard")}
             className="w-full h-8 pl-8 pr-8 text-sm rounded-lg
               bg-m3-surface-container-highest text-m3-on-surface
               placeholder:text-m3-on-surface-variant/50
@@ -188,7 +188,7 @@ export function PasteGrid() {
       {!loading && items.length === 0 ? (
         isFiltering ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm text-m3-on-surface-variant">{t("empty")}</p>
+            <p className="text-sm text-m3-on-surface-variant">{t("no_pasteboard_activity_detected_yet")}</p>
           </div>
         ) : (
           <EmptyState />
