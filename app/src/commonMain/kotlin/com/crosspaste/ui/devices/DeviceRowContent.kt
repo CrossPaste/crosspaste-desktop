@@ -4,11 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -30,10 +32,12 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
 /**
- * [nameTrailing] sits right after the device name on the title line; the name
- * wraps or ellipsizes first, so the marker keeps its full width. Use it for a
- * short inline marker (e.g. "this device") that should not compete with
- * [trailingContent] for the row's end.
+ * [nameTrailing] sits right after the device name on the title line. The
+ * marker is capped at half the line, so the name always keeps at least the
+ * other half: a short marker leaves the name all the room it needs, a long
+ * translation at a large font size ellipsizes instead of squeezing the name
+ * to nothing. Use it for a short inline marker (e.g. "this device") that
+ * should not compete with [trailingContent] for the row's end.
  */
 @Composable
 fun PlatformScope.DeviceRowContent(
@@ -97,20 +101,30 @@ fun PlatformScope.DeviceRowContent(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center,
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(tiny),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1f, fill = false),
-                        text = getDeviceDisplayName(),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = style.nameMaxLines,
-                        overflow = TextOverflow.Ellipsis,
-                        color = style.titleColor,
-                    )
-                    nameTrailing?.invoke()
+                // The Row measures the unweighted marker before the weighted
+                // name, so cap the marker at half the line to keep the name
+                // from being starved on narrow rows with large fonts.
+                BoxWithConstraints {
+                    val markerMaxWidth = maxWidth / 2
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(tiny),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f, fill = false),
+                            text = getDeviceDisplayName(),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = style.nameMaxLines,
+                            overflow = TextOverflow.Ellipsis,
+                            color = style.titleColor,
+                        )
+                        nameTrailing?.let {
+                            Box(modifier = Modifier.widthIn(max = markerMaxWidth)) {
+                                it()
+                            }
+                        }
+                    }
                 }
 
                 Text(
@@ -145,6 +159,6 @@ fun DeviceNameMarker(text: String) {
         color = MaterialTheme.colorScheme.primary,
         maxLines = 1,
         softWrap = false,
-        overflow = TextOverflow.Clip,
+        overflow = TextOverflow.Ellipsis,
     )
 }
