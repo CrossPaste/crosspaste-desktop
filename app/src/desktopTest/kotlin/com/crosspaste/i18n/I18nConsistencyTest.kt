@@ -67,6 +67,8 @@ class I18nConsistencyTest {
 
         // Literals with `$` are interpolated at runtime (e.g. "$guideKey$index"); see DYNAMIC_KEY_PREFIXES.
         private val GET_TEXT_LITERAL = Regex("""getText\(\s*"([^"$]+)"""")
+        private val WEB_T_LITERAL = Regex("""\bt\(\s*["']([a-z0-9_?]+)["']""")
+        private val EXTENSION_MESSAGE_KEY = Regex("""^ {4}([a-z0-9_]+):""", RegexOption.MULTILINE)
         private val ANY_LITERAL = Regex(""""([a-z][a-z0-9_?]*)"""")
 
         // Matches every conversion java.util.Formatter accepts, including %% and %n.
@@ -88,6 +90,12 @@ class I18nConsistencyTest {
             moduleDir.resolveSibling("shared/src/commonMain/kotlin"),
             moduleDir.resolveSibling("shared-ui/src/commonMain/kotlin"),
         ).filter { Files.isDirectory(it) }
+
+    // The browser extension consumes translations.generated.ts, which is built
+    // from these same property files, so its t("key") calls are references too.
+    private val webSourceRoot: Path = moduleDir.resolveSibling("web/src")
+
+    private val extensionMessagesFile: Path = webSourceRoot.resolve("shared/i18n/extension-messages.ts")
 
     private val locales: Map<String, LocaleFile> by lazy {
         LANGUAGE_LIST.associateWith { parse(it) }
@@ -309,11 +317,33 @@ class I18nConsistencyTest {
     }
 
     @Test
+    fun `every key the browser extension translates exists in English or in its own messages`() {
+        if (!Files.isDirectory(webSourceRoot)) return
+        val known =
+            locales.getValue(EN).loaded.keys +
+                EXTENSION_MESSAGE_KEY.findAll(extensionMessagesFile.readText()).map { it.groupValues[1] }
+        val problems =
+            webSources()
+                .flatMap { file ->
+                    WEB_T_LITERAL
+                        .findAll(file.readText())
+                        .map { it.groupValues[1] }
+                        .filter { it !in known }
+                        .map {
+                            "${moduleDir.parent.relativize(
+                                file,
+                            )}: t(\"$it\") is in neither en.properties nor extension-messages.ts"
+                        }.toList()
+                }.toList()
+        assertTrue(problems.isEmpty(), problems.joinToString("\n"))
+    }
+
+    @Test
     fun `report keys with no literal reference in desktop or common source`() {
         // Report only. A key here may be used by mobile or built dynamically; verify
         // both before deleting it, then update MOBILE_ONLY_KEYS / DYNAMIC_KEY_PREFIXES.
         val referenced =
-            kotlinSources()
+            (kotlinSources() + webSources())
                 .flatMap { file -> ANY_LITERAL.findAll(file.readText()).map { it.groupValues[1] }.toList() }
                 .toSet()
         val unreferenced =
@@ -329,6 +359,17 @@ class I18nConsistencyTest {
             unreferenced.forEach { println("  $it") }
         }
     }
+
+    private fun webSources(): Sequence<Path> =
+        if (Files.isDirectory(webSourceRoot)) {
+            Files.walk(webSourceRoot).asSequence().filter {
+                it.isRegularFile() &&
+                    (it.extension == "ts" || it.extension == "tsx") &&
+                    !it.name.endsWith(".generated.ts")
+            }
+        } else {
+            emptySequence()
+        }
 
     private fun kotlinSources(): Sequence<Path> =
         sourceRoots.asSequence().flatMap { root ->

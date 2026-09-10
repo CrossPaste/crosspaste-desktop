@@ -136,8 +136,8 @@ export function AboutView({ onBack }: Props) {
                 icon={BookOpen}
                 iconBg="bg-settings-green-bg"
                 iconColor="text-settings-green"
-                label={t("newbie_tutorial")}
-                desc={t("newbie_tutorial_desc")}
+                label={t("getting_started")}
+                desc={t("getting_started_desc")}
                 url={LINKS.tutorial}
               />
               <LinkItem
