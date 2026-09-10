@@ -1,25 +1,20 @@
 package com.crosspaste.ui.settings
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Archive
+import com.composables.icons.materialsymbols.rounded.Folder
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.FileSelectionMode
 import com.crosspaste.config.CommonConfigManager
@@ -31,10 +26,9 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
-import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.medium
-import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
-import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import okio.Path
 import org.koin.compose.koinInject
 
@@ -44,6 +38,14 @@ class DesktopStoragePathManager : StoragePathManager {
         SectionHeader("storage_directory", topPadding = medium)
     }
 
+    /**
+     * Shows where user data currently lives and offers an explicit "Change"
+     * action that picks a new directory and hands it to [MigrationStorageDialog].
+     *
+     * Migration is one-way (the old directory keeps non-user files, so it can
+     * never be selected again as an empty target), which is why this is an
+     * action button rather than a switch that pretends the choice is reversible.
+     */
     @Composable
     override fun StoragePathContentView() {
         val appFileChooser = koinInject<AppFileChooser>()
@@ -58,87 +60,64 @@ class DesktopStoragePathManager : StoragePathManager {
 
         var migrationPath by remember { mutableStateOf<Path?>(null) }
 
-        var showMigrateStorageDialog by remember { mutableStateOf(false) }
+        val currentStoragePath =
+            remember(config) {
+                userDataPathProvider.getUserDataPath()
+            }
 
-        var useDefaultStoragePath by remember { mutableStateOf(config.useDefaultStoragePath) }
-
-        val currentStoragePath by remember(config) {
-            mutableStateOf(
-                userDataPathProvider.getUserDataPath(),
-            )
+        migrationPath?.let { path ->
+            MigrationStorageDialog(path) {
+                migrationPath = null
+            }
         }
 
-        if (showMigrateStorageDialog) {
-            migrationPath?.let {
-                MigrationStorageDialog(it) {
-                    showMigrateStorageDialog = false
+        val chooseMigrationPath = {
+            appFileChooser.openFileChooser(
+                FileSelectionMode.DIRECTORY_ONLY,
+                currentStoragePath,
+            ) { path ->
+                desktopMigration.checkMigrationPath(path as Path)?.let { errorMessage ->
+                    notificationManager.sendNotification(
+                        title = { it.getText(errorMessage) },
+                        messageType = MessageType.Error,
+                        duration = null,
+                    )
+                } ?: run {
+                    migrationPath = path
                 }
             }
         }
 
         SettingSectionCard {
-            if (useDefaultStoragePath) {
-                SettingListSwitchItem(
-                    title = "use_default_storage_path",
-                    icon = IconData(MaterialSymbols.Rounded.Archive, themeExt.amberIconColor),
-                    checked = useDefaultStoragePath,
-                ) {
-                    useDefaultStoragePath = !useDefaultStoragePath
-                }
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-            }
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(giant)
-                        .padding(horizontal = medium),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .clip(small2XRoundedCornerShape)
-                            .clickable {
-                                val action: (Path) -> Unit = { path ->
-                                    migrationPath = path
-                                    showMigrateStorageDialog = true
-                                }
-                                val errorAction: (String) -> Unit = { message ->
-                                    notificationManager.sendNotification(
-                                        title = { it.getText(message) },
-                                        messageType = MessageType.Error,
-                                        duration = null,
-                                    )
-                                }
-                                appFileChooser.openFileChooser(
-                                    FileSelectionMode.DIRECTORY_ONLY,
-                                    currentStoragePath,
-                                ) { path ->
-
-                                    desktopMigration.checkMigrationPath(path as Path)?.let { errorMessage ->
-                                        errorAction(errorMessage)
-                                    } ?: run {
-                                        action(path)
-                                    }
-                                }
-                            },
-                    value = currentStoragePath.toString(),
-                    onValueChange = {},
-                    enabled = useDefaultStoragePath,
-                    readOnly = useDefaultStoragePath,
-                    textStyle =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.primary,
-                        ),
-                    singleLine = false,
-                    minLines = 1,
-                    maxLines = 5,
-                    shape = MaterialTheme.shapes.medium,
-                )
-            }
+            SettingListItem(
+                titleContent = {
+                    Text(
+                        text = currentStoragePath.toString(),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                },
+                subtitle =
+                    if (config.useDefaultStoragePath) {
+                        "storage_path_default"
+                    } else {
+                        "storage_path_custom"
+                    },
+                icon = IconData(MaterialSymbols.Rounded.Folder, themeExt.amberIconColor),
+                trailingContent = {
+                    FilledTonalButton(
+                        onClick = chooseMigrationPath,
+                        modifier = Modifier.height(xxLarge),
+                        contentPadding = PaddingValues(horizontal = small2X),
+                    ) {
+                        Text(
+                            text = copywriter.getText("change"),
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                },
+            )
         }
     }
 }

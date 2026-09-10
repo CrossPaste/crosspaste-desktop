@@ -126,7 +126,17 @@ fun SetShortcutKeysDialog(
                             tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(modifier = Modifier.weight(1f))
-                        ShortcutKeyItemView(shortcutKeysListener.currentKeys)
+                        if (shortcutKeysListener.currentKeys.isEmpty()) {
+                            // An empty capture box gives no feedback that the dialog is
+                            // listening; say so until the first key arrives.
+                            Text(
+                                text = copywriter.getText("press_shortcut_keys"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            ShortcutKeyItemView(shortcutKeysListener.currentKeys)
+                        }
                     }
                 }
             }
@@ -140,11 +150,26 @@ fun SetShortcutKeysDialog(
                 // simulates it to perform a paste. Binding any other action to the same
                 // combination makes the simulated keystroke re-trigger that action,
                 // causing an infinite paste loop (issue #4500). Reject such a binding.
-                val pasteKeys = shortcutKeys.shortcutKeysCore.value.keys[PASTE] ?: emptyList()
+                val allKeys = shortcutKeys.shortcutKeysCore.value.keys
+                val pasteKeys = allKeys[PASTE] ?: emptyList()
                 val newKeys = shortcutKeysListener.currentKeys
                 if (name != PASTE && newKeys.isNotEmpty() && newKeys.sameShortcutAs(pasteKeys)) {
                     notificationManager.sendNotification(
                         title = { it.getText("shortcut_reserved_for_paste") },
+                        messageType = MessageType.Error,
+                    )
+                    return@DialogActionButton
+                }
+                // Two actions bound to one combination would race on every press;
+                // refuse the binding and name the action that already owns it.
+                val conflictingName =
+                    allKeys.entries
+                        .firstOrNull { (otherName, otherKeys) ->
+                            otherName != name && newKeys.isNotEmpty() && newKeys.sameShortcutAs(otherKeys)
+                        }?.key
+                if (conflictingName != null) {
+                    notificationManager.sendNotification(
+                        title = { it.getText("shortcut_already_assigned", it.getText(conflictingName)) },
                         messageType = MessageType.Error,
                     )
                     return@DialogActionButton

@@ -20,6 +20,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +39,8 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalAppSizeValueState
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AnimatedSegmentedControl
+import com.crosspaste.ui.base.DialogActionButton
+import com.crosspaste.ui.base.DialogButtonType
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.base.measureTextWidth
@@ -95,7 +98,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
         }
     }
 
-    var nameMaxWidth by remember { mutableStateOf(massive) }
+    var showClearConfirmDialog by remember { mutableStateOf(false) }
 
     val pasteboard = IconData(MaterialSymbols.Rounded.Tag, themeExt.blueIconColor)
 
@@ -116,6 +119,9 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
             fontWeight = FontWeight.Medium,
         )
 
+    // Plain derived value: assigning a remembered state during composition would
+    // schedule a redundant recomposition on every pass.
+    var nameMaxWidth = massive
     for (property in pasteTypes) {
         nameMaxWidth =
             maxOf(
@@ -248,17 +254,7 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
                 icon = IconData(MaterialSymbols.Rounded.Delete, themeExt.redIconColor),
                 trailingContent = {
                     Button(
-                        onClick = {
-                            cleaning = true
-                            scope.launch {
-                                try {
-                                    pasteDao.markAllDeleteExceptTagged()
-                                } finally {
-                                    cleaning = false
-                                    refresh()
-                                }
-                            }
-                        },
+                        onClick = { showClearConfirmDialog = true },
                         enabled = !cleaning,
                         modifier = Modifier.height(xxLarge),
                         contentPadding = PaddingValues(horizontal = small2X),
@@ -278,9 +274,97 @@ fun StorageStatisticsScope.StorageStatisticsContentView() {
         }
     }
 
+    if (showClearConfirmDialog) {
+        ClearUntaggedConfirmDialog(
+            copywriter = copywriter,
+            onDismiss = { showClearConfirmDialog = false },
+            onConfirm = {
+                showClearConfirmDialog = false
+                cleaning = true
+                scope.launch {
+                    try {
+                        pasteDao.markAllDeleteExceptTagged()
+                    } finally {
+                        cleaning = false
+                        refresh()
+                    }
+                }
+            },
+        )
+    }
+
     if (cleaning) {
         CleaningProgressDialog(copywriter)
     }
+}
+
+/**
+ * Clearing every untagged pasteboard is irreversible and was previously a
+ * single click away; ask first so a stray click on the red button cannot wipe
+ * the history.
+ */
+@Composable
+private fun ClearUntaggedConfirmDialog(
+    copywriter: GlobalCopywriter,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val appSizeValue = LocalAppSizeValueState.current
+
+    AlertDialog(
+        modifier = Modifier.width(appSizeValue.dialogWidth),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = tiny),
+            ) {
+                Icon(
+                    imageVector = MaterialSymbols.Rounded.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(xLarge),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+                Spacer(modifier = Modifier.width(medium))
+                Text(
+                    text = copywriter.getText("clear_untagged_pasteboards"),
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = tiny),
+                verticalArrangement = Arrangement.spacedBy(xLarge),
+            ) {
+                Text(
+                    text = copywriter.getText("clear_untagged_pasteboards_confirm_desc"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
+                )
+            }
+        },
+        confirmButton = {
+            DialogActionButton(
+                text = copywriter.getText("delete"),
+                type = DialogButtonType.ERROR,
+                onClick = onConfirm,
+            )
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(copywriter.getText("cancel"))
+            }
+        },
+    )
 }
 
 @Composable

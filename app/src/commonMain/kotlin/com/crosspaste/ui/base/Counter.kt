@@ -49,7 +49,9 @@ fun Counter(
     rule: (Long) -> Boolean,
     onChange: (Long) -> Unit,
 ) {
-    var count by remember { mutableStateOf(defaultValue) }
+    // Keyed on the persisted value so an update from elsewhere (another screen,
+    // the CLI) is reflected instead of showing the value captured on first show
+    var count by remember(defaultValue) { mutableStateOf(defaultValue) }
     val colorScheme = MaterialTheme.colorScheme
 
     Surface(
