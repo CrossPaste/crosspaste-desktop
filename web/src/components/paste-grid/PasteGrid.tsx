@@ -188,7 +188,7 @@ export function PasteGrid() {
       {!loading && items.length === 0 ? (
         isFiltering ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm text-m3-on-surface-variant">{t("no_pasteboard_activity_detected_yet")}</p>
+            <p className="text-sm text-m3-on-surface-variant">{t("no_matching_items")}</p>
           </div>
         ) : (
           <EmptyState />
