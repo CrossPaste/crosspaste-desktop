@@ -39,6 +39,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import com.crosspaste.utils.mainDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,6 +47,8 @@ import org.koin.compose.koinInject
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.util.concurrent.atomic.AtomicLong
+
+private val logger = KotlinLogging.logger {}
 
 @Composable
 fun McpContentView() {
@@ -132,11 +135,20 @@ fun McpContentView() {
                     }
                     Button(
                         onClick = {
-                            val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-                            clipboard.setContents(StringSelection(mcpCommand), null)
+                            // Another process can hold the system clipboard lock, so the write
+                            // must neither escape into the click handler nor report success.
+                            val copied =
+                                runCatching {
+                                    Toolkit
+                                        .getDefaultToolkit()
+                                        .systemClipboard
+                                        .setContents(StringSelection(mcpCommand), null)
+                                }.onFailure { e ->
+                                    logger.error(e) { "copy mcp config to clipboard failed" }
+                                }.isSuccess
                             notificationManager.sendNotification(
-                                title = { it.getText("mcp_config_copied") },
-                                messageType = MessageType.Success,
+                                title = { it.getText(if (copied) "mcp_config_copied" else "copy_failed") },
+                                messageType = if (copied) MessageType.Success else MessageType.Error,
                             )
                         },
                         modifier = Modifier.padding(top = tiny),
