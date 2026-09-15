@@ -18,6 +18,7 @@ import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.SyncApi
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.SyncInfoHeaderCodec
+import com.crosspaste.net.advertiseHostInfo
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.pairing.v3.PairingVersionCoordinator
 import com.crosspaste.secure.SecureKeyPairSerializer
@@ -230,11 +231,7 @@ fun Routing.syncRouting(
 
     get("/sync/syncInfo") {
         val host = call.request.host()
-        val hostInfoList =
-            networkInterfaceService
-                .getCurrentUseNetworkInterfaces()
-                .map { it.toHostInfo() }
-                .filter { it.hostAddress == host }
+        val hostInfoList = networkInterfaceService.advertiseHostInfo(host)
         if (hostInfoList.isEmpty()) {
             logger.debug { "syncInfo request from $host matched no local network interfaces" }
         }

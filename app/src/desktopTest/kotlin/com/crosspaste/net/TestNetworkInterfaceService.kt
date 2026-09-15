@@ -7,9 +7,12 @@ import java.net.InterfaceAddress
 class TestNetworkInterfaceService(
     private val testNetworkInterfaces: List<NetworkInterfaceInfo> = emptyList(),
     private val testPreferredInterface: NetworkInterfaceInfo? = null,
+    // The subset discovery is actually bound to. Defaults to every interface; pass a
+    // narrower list to model a multi-homed host where auto-select bound only one.
+    testSelectedInterfaces: List<NetworkInterfaceInfo> = testNetworkInterfaces,
 ) : AbstractNetworkInterfaceService() {
 
-    private val _networkInterfaces = MutableStateFlow(testNetworkInterfaces)
+    private val _networkInterfaces = MutableStateFlow(testSelectedInterfaces)
     override val networkInterfaces: StateFlow<List<NetworkInterfaceInfo>> = _networkInterfaces
 
     override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> = testNetworkInterfaces
