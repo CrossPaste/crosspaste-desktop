@@ -154,26 +154,44 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
                     val hostAndPort = HostAndPort(ip, port.toInt())
                     val result = syncClientApi.syncInfo { buildUrl(hostAndPort) }
 
-                    if (result is SuccessResult) {
-                        val syncInfo = result.getResult<SyncInfo>()
-                        syncManager.updateSyncInfo(syncInfo)
-                        onDismiss() // Close dialog after success
-                    } else {
-                        isLoading = false
-                        // The proactive banner shown above already explains a likely-blocking
-                        // network. Only fall back to the generic firewall/IP notification when
-                        // the network does not look blocking.
-                        if (!isDiscoveryBlocked.value) {
+                    val syncInfo = (result as? SuccessResult)?.getResult<SyncInfo>()
+
+                    when {
+                        syncInfo != null && syncInfo.endpointInfo.hostInfoList.isNotEmpty() -> {
+                            syncManager.updateSyncInfo(syncInfo)
+                            onDismiss() // Close dialog after success
+                        }
+                        // Reached the device, but it named no address we could reach it at.
+                        // Adding it would store a device row with nothing to connect to —
+                        // exactly what made #4996 look like a successful add. The cause is on
+                        // the far side (discovery switched off, or an older build reporting
+                        // only the interface its own auto-select bound), so the address and
+                        // firewall hints below would send the user hunting in the wrong place.
+                        syncInfo != null -> {
+                            isLoading = false
                             notificationManager.sendNotification(
                                 title = { it.getText("add_device_failed") },
-                                message = {
-                                    "1. ${it.getText("add_device_check_address")}\n" +
-                                        "2. ${it.getText(
-                                            "add_device_check_firewall",
-                                        )}"
-                                },
+                                message = { it.getText("add_device_check_discoverable") },
                                 messageType = MessageType.Error,
                             )
+                        }
+                        else -> {
+                            isLoading = false
+                            // The proactive banner shown above already explains a likely-blocking
+                            // network. Only fall back to the generic firewall/IP notification when
+                            // the network does not look blocking.
+                            if (!isDiscoveryBlocked.value) {
+                                notificationManager.sendNotification(
+                                    title = { it.getText("add_device_failed") },
+                                    message = {
+                                        "1. ${it.getText("add_device_check_address")}\n" +
+                                            "2. ${it.getText(
+                                                "add_device_check_firewall",
+                                            )}"
+                                    },
+                                    messageType = MessageType.Error,
+                                )
+                            }
                         }
                     }
                 }
