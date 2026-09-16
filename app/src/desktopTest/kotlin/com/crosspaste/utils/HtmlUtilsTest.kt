@@ -44,4 +44,10 @@ class HtmlUtilsTest {
 
         assertEquals("Pro 高级功能免费试用。", htmlUtils.getHtmlText(stored))
     }
+
+    @Test
+    fun `getHtmlText returns plain text without HTML entities`() {
+        assertEquals("a < b & c > d", htmlUtils.getHtmlText("a &lt; b &amp; c &gt; <b>d</b>"))
+        assertEquals("if (a < b) {}", htmlUtils.getHtmlText("<pre>if (a < b) {}</pre>"))
+    }
 }

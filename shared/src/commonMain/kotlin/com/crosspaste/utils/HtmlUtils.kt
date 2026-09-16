@@ -3,6 +3,7 @@ package com.crosspaste.utils
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
+import com.fleeksoft.ksoup.nodes.Entities
 import com.fleeksoft.ksoup.safety.Safelist
 
 fun getHtmlUtils(): HtmlUtils = HtmlUtils
@@ -69,6 +70,10 @@ object HtmlUtils {
      * five or six blank lines before the first character, and any `<title>`
      * leaks into the text. The result is trimmed so a summary starts at the
      * first visible character.
+     *
+     * [Ksoup.clean] returns serialized HTML, so `<`, `>` and `&` come back as
+     * entities; they are unescaped again because callers treat the result as
+     * plain text (summaries, search content, the text/plain paste fallback).
      */
     fun getHtmlText(html: String): String? =
         runCatching {
@@ -79,7 +84,7 @@ object HtmlUtils {
             ksoupDoc.select("br").before("\\n")
             ksoupDoc.select("p").before("\\n")
             val bodyHtml = ksoupDoc.body().html().replace("\\\\n".toRegex(), "\n")
-            Ksoup.clean(bodyHtml, Safelist.none(), "", outputSettings).trim()
+            Entities.unescape(Ksoup.clean(bodyHtml, Safelist.none(), "", outputSettings)).trim()
         }.getOrNull()
 
     /**
