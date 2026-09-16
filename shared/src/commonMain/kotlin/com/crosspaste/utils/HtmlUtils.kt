@@ -3,6 +3,7 @@ package com.crosspaste.utils
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
+import com.fleeksoft.ksoup.nodes.Entities
 import com.fleeksoft.ksoup.safety.Safelist
 
 fun getHtmlUtils(): HtmlUtils = HtmlUtils
@@ -59,6 +60,21 @@ object HtmlUtils {
         return "data:text/html;charset=UTF-8;base64,$encodedContent"
     }
 
+    /**
+     * Extract plain text from [html], keeping `<br>` and `<p>` as line breaks.
+     *
+     * Only the `<body>` is cleaned. Cleaning the whole serialized document
+     * re-parses it as a body fragment, which turns the pretty-print
+     * whitespace between `<html>`, `<head>` and `<meta>` into leading text
+     * nodes: a document stored through [ensureHtmlCharsetUtf8] then yields
+     * five or six blank lines before the first character, and any `<title>`
+     * leaks into the text. The result is trimmed so a summary starts at the
+     * first visible character.
+     *
+     * [Ksoup.clean] returns serialized HTML, so `<`, `>` and `&` come back as
+     * entities; they are unescaped again because callers treat the result as
+     * plain text (summaries, search content, the text/plain paste fallback).
+     */
     fun getHtmlText(html: String): String? =
         runCatching {
             val ksoupDoc: Document = Ksoup.parse(html)
@@ -67,8 +83,8 @@ object HtmlUtils {
             ksoupDoc.outputSettings(outputSettings)
             ksoupDoc.select("br").before("\\n")
             ksoupDoc.select("p").before("\\n")
-            val str = ksoupDoc.html().replace("\\\\n".toRegex(), "\n")
-            Ksoup.clean(str, Safelist.none(), "", outputSettings)
+            val bodyHtml = ksoupDoc.body().html().replace("\\\\n".toRegex(), "\n")
+            Entities.unescape(Ksoup.clean(bodyHtml, Safelist.none(), "", outputSettings)).trim()
         }.getOrNull()
 
     /**
