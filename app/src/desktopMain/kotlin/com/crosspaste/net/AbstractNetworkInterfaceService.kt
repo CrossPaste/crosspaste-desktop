@@ -131,7 +131,18 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
         }.getOrDefault(emptyList())
             .mapNotNull { nic ->
                 runCatching {
-                    if (!nic.isUp || nic.isLoopback || nic.isVirtual) {
+                    val up = nic.isUp
+                    val loopback = nic.isLoopback
+                    val virtual = nic.isVirtual
+                    if (!up || loopback || virtual) {
+                        // Multi-homed reports hinge on which interfaces the JVM offers at
+                        // all, so say what was dropped and why. Without this an interface
+                        // filtered out here is indistinguishable in the log from one the
+                        // platform never enumerated (#4996).
+                        logger.info {
+                            "Skip network interface: ${nic.name} (${nic.displayName}) " +
+                                "mac: ${getMacAddress(nic)} up: $up loopback: $loopback virtual: $virtual"
+                        }
                         null
                     } else {
                         nic
