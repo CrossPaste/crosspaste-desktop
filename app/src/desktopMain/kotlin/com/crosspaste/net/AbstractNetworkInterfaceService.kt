@@ -119,38 +119,62 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
 
     protected val preferredNetworkInterfaceInfo = ValueProvider<NetworkInterfaceInfo?>()
 
-    override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> =
-        runCatching {
-            Collections.list(NetworkInterface.getNetworkInterfaces())
-        }.onFailure { e ->
-            // The platform enumeration itself failed (a Windows IP Helper error, a
-            // machine with no interfaces at all). Reporting "offline" is the honest
-            // answer and the one the resolver already handles: the preference is left
-            // untouched and the next network event re-reads.
-            logger.warn(e) { "Failed to enumerate network interfaces" }
-        }.getOrDefault(emptyList())
-            .mapNotNull { nic ->
-                runCatching {
-                    val up = nic.isUp
-                    val loopback = nic.isLoopback
-                    val virtual = nic.isVirtual
-                    if (!up || loopback || virtual) {
-                        // Multi-homed reports hinge on which interfaces the JVM offers at
-                        // all, so say what was dropped and why. Without this an interface
-                        // filtered out here is indistinguishable in the log from one the
-                        // platform never enumerated (#4996).
-                        logger.info {
-                            "Skip network interface: ${nic.name} (${nic.displayName}) " +
-                                "mac: ${getMacAddress(nic)} up: $up loopback: $loopback virtual: $virtual"
+    override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> {
+        val allNics =
+            runCatching {
+                Collections.list(NetworkInterface.getNetworkInterfaces())
+            }.onFailure { e ->
+                // The platform enumeration itself failed (a Windows IP Helper error, a
+                // machine with no interfaces at all). Reporting "offline" is the honest
+                // answer and the one the resolver already handles: the preference is left
+                // untouched and the next network event re-reads.
+                logger.warn(e) { "Failed to enumerate network interfaces" }
+            }.getOrDefault(emptyList())
+
+        // Multi-homed reports hinge on which interfaces the JVM offers at all, so record
+        // what the filter dropped: without it, an interface rejected here is
+        // indistinguishable in the log from one the platform never enumerated (#4996).
+        // Collected into a single line because every Windows machine carries a handful of
+        // permanently down tunnel adapters.
+        val skipped = mutableListOf<String>()
+
+        val usableNics =
+            allNics
+                .mapNotNull { nic ->
+                    runCatching {
+                        val up = nic.isUp
+                        val loopback = nic.isLoopback
+                        val virtual = nic.isVirtual
+                        if (!up || loopback || virtual) {
+                            skipped +=
+                                "${nic.name}[${nic.displayName}] mac: ${getMacAddress(nic)} " +
+                                "up: $up loopback: $loopback virtual: $virtual"
+                            null
+                        } else {
+                            nic
                         }
-                        null
-                    } else {
-                        nic
-                    }
-                }.onFailure { e ->
-                    logger.warn(e) { "Failed to check network interface status: ${nic.name}" }
-                }.getOrNull()
-            }.flatMap { nic ->
+                    }.onFailure { e ->
+                        logger.warn(e) { "Failed to check network interface status: ${nic.name}" }
+                    }.getOrNull()
+                }
+
+        if (skipped.isNotEmpty()) {
+            logger.info { "Skipped ${skipped.size} network interfaces: ${skipped.joinToString(", ")}" }
+        }
+
+        // The other half of the accounting: an interface we keep but that carries no IPv4
+        // address contributes nothing below, just as silently. Windows always has a few
+        // (filter/QoS pseudo-adapters), but a real adapter landing here is a finding.
+        val withoutIpv4 = usableNics.filter { nic -> nic.interfaceAddresses.none { it.address is Inet4Address } }
+        if (withoutIpv4.isNotEmpty()) {
+            logger.info {
+                "No IPv4 address on ${withoutIpv4.size} network interfaces: " +
+                    withoutIpv4.joinToString(", ") { "${it.name}[${it.displayName}]" }
+            }
+        }
+
+        return usableNics
+            .flatMap { nic ->
                 val macAddress = getMacAddress(nic)
                 nic.interfaceAddresses.asSequence().map { Triple(it, nic.name, macAddress) }
             }.mapNotNull { (addr, nicName, macAddress) ->
@@ -160,6 +184,7 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
                     logger.warn(e) { "Failed to process address for interface: $nicName" }
                 }.getOrNull()
             }
+    }
 
     protected fun processAddress(
         addr: InterfaceAddress,
