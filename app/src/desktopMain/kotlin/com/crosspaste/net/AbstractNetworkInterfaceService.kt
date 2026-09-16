@@ -120,8 +120,15 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
     protected val preferredNetworkInterfaceInfo = ValueProvider<NetworkInterfaceInfo?>()
 
     override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> =
-        Collections
-            .list(NetworkInterface.getNetworkInterfaces())
+        runCatching {
+            Collections.list(NetworkInterface.getNetworkInterfaces())
+        }.onFailure { e ->
+            // The platform enumeration itself failed (a Windows IP Helper error, a
+            // machine with no interfaces at all). Reporting "offline" is the honest
+            // answer and the one the resolver already handles: the preference is left
+            // untouched and the next network event re-reads.
+            logger.warn(e) { "Failed to enumerate network interfaces" }
+        }.getOrDefault(emptyList())
             .mapNotNull { nic ->
                 runCatching {
                     if (!nic.isUp || nic.isLoopback || nic.isVirtual) {
