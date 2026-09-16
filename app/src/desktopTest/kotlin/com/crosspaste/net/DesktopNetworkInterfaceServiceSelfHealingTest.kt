@@ -45,6 +45,7 @@ class DesktopNetworkInterfaceServiceSelfHealingTest {
     private val en0 = NetworkInterfaceInfo("en0", 24, "192.168.1.5")
     private val en0NewIp = NetworkInterfaceInfo("en0", 24, "192.168.1.9")
     private val en5 = NetworkInterfaceInfo("en5", 24, "10.0.0.5")
+    private val ics = NetworkInterfaceInfo("eth3", 24, "192.168.137.1")
 
     /** Pushes network-change signals on demand, like the native monitor would. */
     private class FakeNetworkStateMonitor : NetworkStateMonitor {
@@ -170,6 +171,46 @@ class DesktopNetworkInterfaceServiceSelfHealingTest {
             job.cancel()
 
             assertEquals(listOf(listOf(en0)), emissions)
+        }
+
+    @Test
+    fun `the settings picker lists every interface and re-reads while it is open`() =
+        runTest {
+            val configManager = newConfigManager()
+            configManager.updateConfig(
+                "useNetworkInterfaces",
+                jsonUtils.JSON.encodeToString(listOf("en0")),
+            )
+
+            setLiveSnapshot(listOf(en0))
+            val monitor = FakeNetworkStateMonitor()
+            val job = Job()
+            val service = TestableService(configManager, monitor, CoroutineScope(coroutineContext + job))
+            advanceUntilIdle()
+
+            val emissions = mutableListOf<List<NetworkInterfaceInfo>>()
+            var collectJob = launch { service.allNetworkInterfaces.collect { emissions.add(it) } }
+            advanceUntilIdle()
+            assertEquals(listOf(listOf(en0)), emissions)
+
+            // A hotspot / Windows ICS interface comes up after the page was opened (#4996):
+            // the picker must offer it even though discovery stays bound to en0 alone.
+            setLiveSnapshot(listOf(en0, ics))
+            monitor.fireNetworkChange()
+            advanceUntilIdle()
+            assertEquals(listOf(en0, ics), emissions.last())
+            assertEquals(listOf(en0), service.networkInterfaces.value)
+
+            // Reopening the page reads the live snapshot again, with no network event.
+            collectJob.cancel()
+            setLiveSnapshot(listOf(en0))
+            emissions.clear()
+            collectJob = launch { service.allNetworkInterfaces.collect { emissions.add(it) } }
+            advanceUntilIdle()
+            assertEquals(listOf(en0), emissions.last())
+
+            collectJob.cancel()
+            job.cancel()
         }
 
     @Test
