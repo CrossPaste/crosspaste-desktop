@@ -1,11 +1,28 @@
 package com.crosspaste.net
 
 import com.crosspaste.db.sync.HostInfo
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 
 interface NetworkInterfaceService {
 
     val networkInterfaces: StateFlow<List<NetworkInterfaceInfo>>
+
+    /**
+     * Every interface on the machine, sorted — what the settings picker lists,
+     * as opposed to [networkInterfaces], which carries only the bound selection.
+     *
+     * A flow rather than a one-shot read so the picker keeps up with interfaces that
+     * appear while the app is running (plugging in a cable, switching on a hotspot or
+     * Windows ICS). The default emits a single snapshot; platforms wire it to their
+     * network monitor. Enumerating interfaces blocks, so it never runs on the
+     * collector's dispatcher.
+     */
+    val allNetworkInterfaces: Flow<List<NetworkInterfaceInfo>>
+        get() = flow { emit(getSortedNetworkInterfaceInfo()) }.flowOn(ioDispatcher)
 
     fun getCurrentUseNetworkInterfaces(): List<NetworkInterfaceInfo> = networkInterfaces.value
 

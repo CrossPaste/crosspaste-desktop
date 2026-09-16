@@ -16,14 +16,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -36,7 +33,6 @@ import com.composables.icons.materialsymbols.rounded.Visibility
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.ui.LocalSmallSettingItemState
 import com.crosspaste.ui.LocalThemeExtState
@@ -66,9 +62,13 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
 
     val config by configManager.config.collectAsState()
 
-    // null while the interfaces are still being enumerated, so the list can show
-    // a loading row instead of briefly looking like there is nothing to pick
-    var networkInterfaces by remember { mutableStateOf<List<NetworkInterfaceInfo>?>(null) }
+    // Re-read whenever the OS reports a network change, so an interface brought up
+    // after this page was first opened (a cable, a hotspot, Windows ICS) still shows
+    // up. null while the first enumeration is in flight, so the list can show a
+    // loading row instead of briefly looking like there is nothing to pick.
+    val networkInterfaces by remember(networkInterfaceService) {
+        networkInterfaceService.allNetworkInterfaces
+    }.collectAsState(initial = null)
 
     val useNetworkInterfaces: List<String> =
         remember(config.useNetworkInterfaces) {
@@ -89,10 +89,6 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
         } else {
             config.port.toString()
         }
-
-    LaunchedEffect(Unit) {
-        networkInterfaces = networkInterfaceService.getSortedNetworkInterfaceInfo()
-    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),

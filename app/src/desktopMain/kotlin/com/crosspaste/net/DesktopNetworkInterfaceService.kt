@@ -8,6 +8,7 @@ import com.crosspaste.utils.namedScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -50,6 +52,26 @@ open class DesktopNetworkInterfaceService(
                 scope = networkRefreshScope,
                 started = SharingStarted.Eagerly,
                 initialValue = initNetworkInterfaceInfos(),
+            )
+
+    /**
+     * Re-read on every OS network change, and once more whenever the settings picker
+     * subscribes, so a hotspot/ICS interface brought up after the page was first
+     * opened still shows up. Shared on the service scope to keep the blocking
+     * enumeration off the UI thread.
+     */
+    @OptIn(FlowPreview::class)
+    override val allNetworkInterfaces: Flow<List<NetworkInterfaceInfo>> =
+        networkStateMonitor.networkChanges
+            .debounce(NETWORK_CHANGE_DEBOUNCE)
+            // After the debounce so the first read is immediate, not delayed by it.
+            .onStart { emit(Unit) }
+            .map { getSortedNetworkInterfaceInfo() }
+            .distinctUntilChanged()
+            .shareIn(
+                scope = networkRefreshScope,
+                started = SharingStarted.WhileSubscribed(),
+                replay = 1,
             )
 
     init {
