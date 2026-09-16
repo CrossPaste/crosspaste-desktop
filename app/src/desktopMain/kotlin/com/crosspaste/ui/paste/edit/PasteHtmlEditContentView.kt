@@ -101,12 +101,14 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     val colorScheme = MaterialTheme.colorScheme
 
     val initialHtmlBackground =
-        remember(htmlPasteItem) {
+        remember(pasteData.id, pasteData.hash) {
             val rawBgColor = Color(htmlPasteItem.getBackgroundColor())
             if (rawBgColor == Color.Transparent) Color.Transparent else rawBgColor
         }
 
-    var currentBackgroundColor by remember { mutableStateOf(initialHtmlBackground) }
+    var currentBackgroundColor by remember(pasteData.id, pasteData.hash) {
+        mutableStateOf(initialHtmlBackground)
+    }
 
     val (effectiveBackgroundColor, richTextColor) =
         remember(
@@ -135,7 +137,7 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     // Undo/Redo stacks
     val undoStack = remember(pasteData.id, pasteData.hash) { mutableStateListOf<String>() }
     val redoStack = remember(pasteData.id, pasteData.hash) { mutableStateListOf<String>() }
-    var isUndoRedoAction by remember { mutableStateOf(false) }
+    var isUndoRedoAction by remember(pasteData.id, pasteData.hash) { mutableStateOf(false) }
     var currentHtml by remember(pasteData.id, pasteData.hash) { mutableStateOf(originalHtml) }
 
     // Track the annotated string at the last save point for robust change detection

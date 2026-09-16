@@ -26,8 +26,8 @@ import com.crosspaste.app.UserAttentionService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.coil.ImageLoaderQualifiers
+import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
-import com.crosspaste.paste.item.PasteImages
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
@@ -57,13 +57,22 @@ fun PasteDataScope.ImageSidePreviewView() {
     val fileUtils = remember { getFileUtils() }
     val smartImageDisplayStrategy = remember { SmartImageDisplayStrategy() }
 
-    val imagePasteItem = getPasteItem(PasteImages::class)
-    val imageCount = remember(pasteData.id) { imagePasteItem.getDirectChildrenCount() }
-    val isInDownloads = remember(imagePasteItem) { imagePasteItem.isInDownloads() }
+    val imagePasteItem = getPasteItem(ImagesPasteItem::class)
+
+    // These three read the file layout (basePath + relativePathList), not the content.
+    // A download conflict rename rewrites relativePathList while deliberately keeping
+    // the same hash, so hash is not a valid freshness key here.
+    val fileLayout = imagePasteItem.basePath to imagePasteItem.relativePathList
+
+    val imageCount = remember(pasteData.id, fileLayout) { imagePasteItem.getDirectChildrenCount() }
+    val isInDownloads = remember(pasteData.id, fileLayout) { imagePasteItem.isInDownloads() }
 
     var index by remember(pasteData.id) { mutableStateOf(0) }
 
-    val filePaths = remember(imagePasteItem) { imagePasteItem.getFilePaths(userDataPathProvider) }
+    val filePaths =
+        remember(pasteData.id, fileLayout) {
+            imagePasteItem.getFilePaths(userDataPathProvider)
+        }
     if (filePaths.isEmpty()) return
 
     val safeIndex = index.coerceIn(filePaths.indices)

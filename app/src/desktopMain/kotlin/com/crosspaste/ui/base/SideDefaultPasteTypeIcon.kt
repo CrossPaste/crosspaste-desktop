@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +21,7 @@ import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
 @Composable
 fun PasteDataScope.SideDefaultPasteTypeIcon(modifier: Modifier = Modifier) {
-    val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
+    val type = remember(pasteData.id) { pasteData.getType() }
 
     val iconData = type.getIconData()
 

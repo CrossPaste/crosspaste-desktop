@@ -23,11 +23,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +39,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
-import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.DesktopIconColorExtractor
 import com.crosspaste.notification.MessageType
@@ -53,7 +52,6 @@ import com.crosspaste.ui.base.PasteTooltipAreaView
 import com.crosspaste.ui.base.SidePasteTypeIconView
 import com.crosspaste.ui.base.darkSideBarColors
 import com.crosspaste.ui.base.lightSideBarColors
-import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.DesktopAppUIFont
@@ -67,11 +65,17 @@ import org.koin.compose.koinInject
 fun PasteDataScope.SidePasteTitleView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val desktopIconColorExtractor = koinInject<DesktopIconColorExtractor>()
-    val pasteTagDao = koinInject<PasteTagDao>()
     val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
     val notificationManager = koinInject<NotificationManager>()
 
     val pasteItem = getPasteItem(PasteItem::class)
+
+    // updateName CAS-compares the complete stored item (extraInfo included), and
+    // same-hash metadata writes do happen behind the editor — OpenGraphService writes
+    // extraInfo[TITLE] on URL pastes. The committer must therefore read the latest
+    // data at commit time instead of closing over a snapshot.
+    val currentPasteData by rememberUpdatedState(pasteData)
+    val currentPasteItem by rememberUpdatedState(pasteItem)
 
     val sideTitleHeight = LocalDesktopAppSizeValueState.current.sideTitleHeight
     val showWindow = LocalSearchWindowInfoState.current.show
@@ -79,7 +83,7 @@ fun PasteDataScope.SidePasteTitleView() {
 
     val scope = rememberCoroutineScope()
 
-    val type by remember(pasteData.id) { mutableStateOf(pasteData.getType()) }
+    val type = remember(pasteData.id) { pasteData.getType() }
     var background by remember(type, isCurrentThemeDark) {
         mutableStateOf(
             if (isCurrentThemeDark) {
@@ -90,34 +94,38 @@ fun PasteDataScope.SidePasteTitleView() {
         )
     }
 
-    val tagList by koinInject<PasteSearchViewModel>().tagList.collectAsState()
-    val favoriteTag =
-        remember(tagList) {
-            tagList.firstOrNull { it.name == "Favorite" }
+    val onBackground =
+        remember(background) {
+            background.getBestTextColor()
         }
-    var hasFavoriteTag by remember(pasteData.id) {
-        mutableStateOf(
-            favoriteTag?.let { tag ->
-                pasteTagDao.getPasteTagsBlock(pasteData.id).contains(tag.id)
-            } ?: false,
-        )
-    }
-
-    val onBackground by remember(background) {
-        mutableStateOf(background.getBestTextColor())
-    }
 
     var relativeTime by remember(pasteData.id) {
         mutableStateOf<RelativeTime?>(null)
     }
 
-    var pasteboardName by remember(pasteData.id) {
-        mutableStateOf(pasteItem.getUserEditName() ?: copywriter.getText(pasteData.getTypeName()))
+    val initialName = pasteItem.getUserEditName() ?: copywriter.getText(pasteData.getTypeName())
+    var pasteboardName by remember(pasteData.id, initialName) {
+        mutableStateOf(initialName)
     }
 
-    var editedTextValue by remember { mutableStateOf(TextFieldValue(pasteboardName)) }
+    var isEditing by remember(pasteData.id) { mutableStateOf(false) }
 
-    var isEditing by remember { mutableStateOf(false) }
+    var editedTextValue by remember(pasteData.id) {
+        mutableStateOf(TextFieldValue(pasteboardName))
+    }
+
+    // While not editing, the field mirrors the stored name so a rename elsewhere or a
+    // locale change shows through. Once editing starts the user's typing owns the field
+    // until the edit commits or reverts.
+    LaunchedEffect(pasteboardName, isEditing) {
+        if (!isEditing) {
+            editedTextValue =
+                TextFieldValue(
+                    text = pasteboardName,
+                    selection = TextRange(pasteboardName.length),
+                )
+        }
+    }
 
     var titleOverflowed by remember(pasteData.id) { mutableStateOf(false) }
 
@@ -175,13 +183,13 @@ fun PasteDataScope.SidePasteTitleView() {
                                 )
                             }
 
-                        var hadFocus by remember { mutableStateOf(false) }
+                        var hadFocus by remember(pasteData.id) { mutableStateOf(false) }
 
                         val committer =
-                            remember {
+                            remember(pasteData.id) {
                                 TitleEditCommitter(scope) { name ->
                                     updatePasteItemHelper
-                                        .updateName(pasteData, name, pasteItem)
+                                        .updateName(currentPasteData, name, currentPasteItem)
                                         .map { }
                                 }
                             }
