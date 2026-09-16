@@ -12,6 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
@@ -54,6 +55,9 @@ fun PasteDataScope.SidePasteItemView(
     val pasteProducer = koinInject<TransferableProducer>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
+
+    val currentOnPress by rememberUpdatedState(onPress)
+    val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
 
     val graphicsLayer = rememberGraphicsLayer()
     val placeholderColor = AppUIColors.pasteBackground
@@ -101,11 +105,11 @@ fun PasteDataScope.SidePasteItemView(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onPress = {
-                            onPress()
+                            currentOnPress()
                             tryAwaitRelease()
                         },
                         onDoubleTap = {
-                            onDoubleTap()
+                            currentOnDoubleTap()
                         },
                     )
                 }.border(

@@ -344,6 +344,7 @@ fun SidePasteboardContentView() {
                             currentPasteData.id,
                             currentPasteData.pasteState,
                             currentPasteData.pasteSearchContent,
+                            currentPasteData.hash,
                         ) {
                             createPasteDataScope(currentPasteData)
                         }

@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,9 +29,10 @@ fun PasteDataScope.RtfSidePreviewView() {
     val pasteItemReader = koinInject<PasteItemReader>()
     val rtfPasteItem = getPasteItem(RtfPasteItem::class)
 
-    val backgroundColor by remember(pasteData.id) {
-        mutableStateOf(Color(rtfPasteItem.getBackgroundColor()))
-    }
+    val backgroundColor =
+        remember(pasteData.id, rtfPasteItem.hash) {
+            Color(rtfPasteItem.getBackgroundColor())
+        }
 
     val themeBackground = MaterialTheme.colorScheme.background
     val rtfBackground =
@@ -42,7 +41,10 @@ fun PasteDataScope.RtfSidePreviewView() {
         } else {
             backgroundColor.compositeOver(themeBackground)
         }
-    val isDark by remember(pasteData.id) { mutableStateOf(ColorAccessibility.isDarkColor(rtfBackground)) }
+    val isDark =
+        remember(rtfBackground) {
+            ColorAccessibility.isDarkColor(rtfBackground)
+        }
     val richTextColor =
         if (isDark == LocalThemeState.current.isCurrentThemeDark) {
             MaterialTheme.colorScheme.onBackground
@@ -50,7 +52,10 @@ fun PasteDataScope.RtfSidePreviewView() {
             MaterialTheme.colorScheme.background
         }
 
-    val charCount by remember(pasteData.id) { mutableStateOf(pasteItemReader.getText(rtfPasteItem).length) }
+    val charCount =
+        remember(pasteData.id, rtfPasteItem.hash) {
+            pasteItemReader.getText(rtfPasteItem).length
+        }
 
     SidePasteLayoutView(
         pasteBottomContent = {
@@ -60,9 +65,9 @@ fun PasteDataScope.RtfSidePreviewView() {
             )
         },
     ) {
-        val state = remember { RichTextState() }
+        val state = remember(pasteData.id) { RichTextState() }
 
-        LaunchedEffect(rtfPasteItem.hash) {
+        LaunchedEffect(pasteData.id, rtfPasteItem.hash) {
             pasteItemReader.getPreviewHtml(rtfPasteItem)?.let { state.setHtml(it) }
         }
 

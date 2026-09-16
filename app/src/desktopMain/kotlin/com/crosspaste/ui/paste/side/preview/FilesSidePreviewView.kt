@@ -44,14 +44,22 @@ fun PasteDataScope.FilesSidePreviewView() {
 
     val filesPasteItem = getPasteItem(FilesPasteItem::class)
 
-    val fileCount = remember(pasteData.id) { filesPasteItem.getDirectChildrenCount() }
+    // These three read the file layout (basePath + relativePathList), not the content.
+    // A download conflict rename rewrites relativePathList while deliberately keeping
+    // the same hash, so hash is not a valid freshness key here.
+    val fileLayout = filesPasteItem.basePath to filesPasteItem.relativePathList
 
-    val filePaths = remember(filesPasteItem) { filesPasteItem.getFilePaths(userDataPathProvider) }
+    val fileCount = remember(pasteData.id, fileLayout) { filesPasteItem.getDirectChildrenCount() }
+
+    val filePaths =
+        remember(pasteData.id, fileLayout) {
+            filesPasteItem.getFilePaths(userDataPathProvider)
+        }
     if (filePaths.isEmpty()) {
         return
     }
 
-    val isInDownloads = remember(filesPasteItem) { filesPasteItem.isInDownloads() }
+    val isInDownloads = remember(pasteData.id, fileLayout) { filesPasteItem.isInDownloads() }
     val singleVideoPath = rememberSingleVideoPath(filePaths, fileCount)
 
     val fileDisplayInfo by produceState<FileDisplayInfo?>(

@@ -50,7 +50,7 @@ fun PasteDataScope.UrlSidePreviewView() {
     val urlPasteItem = getPasteItem(UrlPasteItem::class)
 
     val openGraphPath =
-        remember(urlPasteItem, pasteData.id) {
+        remember(pasteData.id, urlPasteItem.hash) {
             urlPasteItem.getRenderingFilePath(
                 pasteData.getPasteCoordinate(),
                 userDataPathProvider,
