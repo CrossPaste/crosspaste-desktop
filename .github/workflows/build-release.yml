@@ -350,13 +350,16 @@ jobs:
       # Release is published (build is build, publish is publish). The
       # packages/meta split is preserved so the publish step can copy packages
       # first and flip metadata last, and Cache-Control is stamped per group
-      # here: packages are version-named and immutable, metadata must
-      # revalidate quickly through the CDN.
+      # here: packages are version-named and immutable, everything with a
+      # fixed name (update metadata, but also download.html, the exe stub,
+      # the cert and the icon, all rewritten per release) must revalidate
+      # quickly through the CDN and browser caches.
       - name: Stage update site to OSS staging
         run: |
           mkdir update-site-meta
           for f in metadata.properties appcast-*.rss crosspaste.appinstaller \
-                   InRelease Release Packages Packages.xz install.ps1; do
+                   InRelease Release Packages Packages.xz install.ps1 \
+                   download.html icon.svg crosspaste.exe crosspaste.crt; do
             if compgen -G "update-site/$f" > /dev/null; then
               mv update-site/$f update-site-meta/
             fi

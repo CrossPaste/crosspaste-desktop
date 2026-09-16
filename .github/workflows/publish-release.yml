@@ -20,7 +20,8 @@ on:
         description: "Full version whose staged site to publish (e.g. 2.1.6.2400)"
         required: true
 
-# This workflow only talks to OSS via ossutil; it never uses GITHUB_TOKEN.
+# This workflow only talks to Alibaba Cloud (OSS via ossutil, DCDN via the
+# aliyun CLI); it never uses GITHUB_TOKEN.
 permissions: {}
 
 # Never let two publishes interleave (e.g. a release-triggered run racing a
@@ -92,3 +93,22 @@ jobs:
           grep -q "^app.version=${{ env.VERSION }}$" published-metadata.properties
           grep -q "^app.revision=${{ env.REVISION }}$" published-metadata.properties
           echo "site/ now serves ${{ env.VERSION }}.${{ env.REVISION }} (CDN edge caches converge within max-age=300)."
+
+      # oss.crosspaste.com is served through Alibaba Cloud DCDN. Edges honor
+      # the origin Cache-Control, so they converge on their own within
+      # max-age=300; the directory refresh just makes the flip immediate.
+      # Best effort: a failed refresh must not mark a completed publish as
+      # failed (the site is already correct at the origin).
+      - name: Refresh DCDN cache for site/
+        continue-on-error: true
+        env:
+          ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESSKEY_ID }}
+          ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESSKEY_SECRET }}
+        run: |
+          curl -sL https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz | tar xz
+          ./aliyun dcdn RefreshDcdnObjectCaches \
+            --region cn-hangzhou --mode AK \
+            --access-key-id "$ALIYUN_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIYUN_ACCESS_KEY_SECRET" \
+            --ObjectType Directory \
+            --ObjectPath "https://oss.crosspaste.com/site/"
