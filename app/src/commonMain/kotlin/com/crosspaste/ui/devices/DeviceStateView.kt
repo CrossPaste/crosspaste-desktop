@@ -70,9 +70,9 @@ val pauseSyncStateStyle
 
 /**
  * Solid primary, like the nearby-search progress ring and the header refresh
- * icon: "in progress" reads as active. The neutral container is the same value
- * as the row background (surfaceVariant) in both themes, so a neutral tag and
- * button would vanish into the row and look disabled while connecting.
+ * icon: "in progress" reads as active. A neutral container sits too close to
+ * the row background in both themes, so a neutral tag and button would vanish
+ * into the row and look disabled while connecting.
  */
 val connectingStateStyle
     @Composable @ReadOnlyComposable

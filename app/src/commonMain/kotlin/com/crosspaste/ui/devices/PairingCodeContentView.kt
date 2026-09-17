@@ -56,6 +56,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.settings.SettingListSwitchItem
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.mediumRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -108,7 +109,8 @@ fun PairingCodeContentView() {
             Modifier
                 .fillMaxSize()
                 .clip(xLargeRoundedCornerShape)
-                .background(MaterialTheme.colorScheme.surfaceContainer),
+                .background(AppUIColors.sectionCardBackground)
+                .border(tiny5X, AppUIColors.sectionCardBorder, xLargeRoundedCornerShape),
     ) {
         // QR code ~65% of available width, capped for readability
         val qrDisplaySize = (maxWidth * 0.65f).coerceIn(120.dp, 320.dp)

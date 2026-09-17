@@ -1,5 +1,6 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,11 +27,13 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Wifi_find
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import org.koin.compose.koinInject
@@ -42,8 +45,9 @@ fun NotFoundNearByDevices(guideContent: (@Composable () -> Unit)? = null) {
         modifier =
             Modifier
                 .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = AppUIColors.sectionCardBackground,
         shape = xLargeRoundedCornerShape,
+        border = BorderStroke(tiny5X, AppUIColors.sectionCardBorder),
     ) {
         Column(
             modifier = Modifier.padding(xLarge),

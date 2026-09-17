@@ -21,28 +21,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Chevron_right
 import com.crosspaste.ui.LocalSmallSettingItemState
 import com.crosspaste.ui.base.IconData
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 
 @Composable
 fun SettingSectionCard(
     modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    border: BorderStroke? = null,
+    containerColor: Color = AppUIColors.sectionCardBackground,
+    border: BorderStroke? = BorderStroke(tiny5X, AppUIColors.sectionCardBorder),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = containerColor,
-        tonalElevation = 1.dp,
         border = border,
         content = { Column(content = content) },
     )

@@ -152,7 +152,6 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
             stickyHeader {
                 SectionHeader(
                     text = "nearby_devices",
-                    backgroundColor = MaterialTheme.colorScheme.surface,
                     topPadding = medium,
                     trailingContent = {
                         NearbyRefreshButton(searching) {

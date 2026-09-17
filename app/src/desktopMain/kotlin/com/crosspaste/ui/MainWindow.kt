@@ -140,7 +140,7 @@ fun MainWindow(windowIcon: Painter?) {
                 Modifier
                     .fillMaxWidth()
                     .height(appSizeValue.windowDecorationHeight)
-                    .background(AppUIColors.appBackground)
+                    .background(AppUIColors.contentBackground)
 
             // Single Row layout for all platforms.
             //   - macOS: pin only; padding(start) reserves space for the traffic lights.

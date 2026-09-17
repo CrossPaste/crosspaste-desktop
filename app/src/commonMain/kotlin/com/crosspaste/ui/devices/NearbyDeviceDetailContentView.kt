@@ -17,7 +17,7 @@ fun SyncScope.NearbyDeviceDetailContentView() {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(AppUIColors.appBackground)
+                .background(AppUIColors.contentBackground)
                 .clip(tinyRoundedCornerShape),
         verticalArrangement = Arrangement.spacedBy(xLarge),
     ) {

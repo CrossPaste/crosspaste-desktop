@@ -133,7 +133,7 @@ fun WindowDecoration() {
                         text = copywriter.getText(routeName),
                         color =
                             MaterialTheme.colorScheme.contentColorFor(
-                                AppUIColors.appBackground,
+                                AppUIColors.contentBackground,
                             ),
                         style =
                             MaterialTheme.typography.headlineSmall.copy(
