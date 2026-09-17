@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +36,6 @@ import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
-import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.titanic
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
@@ -76,7 +74,6 @@ fun SearchingNearbyDevices() {
                 .fillMaxWidth(),
         color = AppUIColors.sectionCardBackground,
         shape = xLargeRoundedCornerShape,
-        border = BorderStroke(tiny5X, AppUIColors.sectionCardBorder),
     ) {
         Column(
             modifier = Modifier.padding(xLarge),

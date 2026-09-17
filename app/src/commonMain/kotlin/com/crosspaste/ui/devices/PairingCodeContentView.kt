@@ -109,8 +109,7 @@ fun PairingCodeContentView() {
             Modifier
                 .fillMaxSize()
                 .clip(xLargeRoundedCornerShape)
-                .background(AppUIColors.sectionCardBackground)
-                .border(tiny5X, AppUIColors.sectionCardBorder, xLargeRoundedCornerShape),
+                .background(AppUIColors.sectionCardBackground),
     ) {
         // QR code ~65% of available width, capped for readability
         val qrDisplaySize = (maxWidth * 0.65f).coerceIn(120.dp, 320.dp)
