@@ -60,8 +60,10 @@ fun SourceExclusionPatternsSection(
 
     var input by remember { mutableStateOf("") }
     val canSubmit = input.isNotBlank()
+    // A duplicate is not added but the intent is already met, so clear either way.
     val submit = {
-        if (canSubmit && onAdd(input)) {
+        if (canSubmit) {
+            onAdd(input)
             input = ""
         }
     }
