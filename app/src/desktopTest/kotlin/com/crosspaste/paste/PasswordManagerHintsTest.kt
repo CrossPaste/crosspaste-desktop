@@ -48,9 +48,9 @@ class PasswordManagerHintsTest {
     }
 
     @Test
-    fun `windows unreadable history flag does not conceal`() {
+    fun `windows history flag present but unreadable conceals (fail safe)`() {
         val probe = FakeProbe(available = setOf(PasswordManagerHints.WINDOWS_CAN_INCLUDE_IN_HISTORY))
-        assertFalse(PasswordManagerHints.isConcealedOnWindows(probe))
+        assertTrue(PasswordManagerHints.isConcealedOnWindows(probe))
     }
 
     @Test

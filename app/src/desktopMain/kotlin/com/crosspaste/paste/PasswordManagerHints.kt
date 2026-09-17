@@ -28,7 +28,11 @@ object PasswordManagerHints {
         if (!probe.isFormatAvailable(WINDOWS_CAN_INCLUDE_IN_HISTORY)) {
             return false
         }
-        return probe.readDword(WINDOWS_CAN_INCLUDE_IN_HISTORY) == 0
+        // Fail safe: whoever writes this format wants to steer history, and
+        // nearly always to opt out. If the value cannot be read right now
+        // (clipboard held by another process), skipping one item is cheaper
+        // than recording a secret.
+        return (probe.readDword(WINDOWS_CAN_INCLUDE_IN_HISTORY) ?: 0) == 0
     }
 
     fun isConcealedOnLinux(targets: List<String>): Boolean = LINUX_PASSWORD_MANAGER_HINT in targets
