@@ -12,6 +12,7 @@ interface MacosApi : Library {
         currentChangeCount: Int,
         remote: IntByReference,
         isCrossPaste: IntByReference,
+        isConcealed: IntByReference,
     ): Int
 
     fun writeFilesToPasteboard(

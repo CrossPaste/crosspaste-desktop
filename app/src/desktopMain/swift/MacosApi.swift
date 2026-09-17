@@ -10,12 +10,14 @@ import Security
 @_cdecl("getPasteboardChangeCount")
 public func getPasteboardChangeCount(currentChangeCount: Int,
                                      isRemote: UnsafeMutablePointer<Bool>,
-                                     isCrossPaste: UnsafeMutablePointer<Bool>) -> Int {
+                                     isCrossPaste: UnsafeMutablePointer<Bool>,
+                                     isConcealed: UnsafeMutablePointer<Bool>) -> Int {
     let pasteboard = NSPasteboard.general
     let newChangeCount = pasteboard.changeCount
 
     isRemote.pointee = false
     isCrossPaste.pointee = false
+    isConcealed.pointee = false
 
     if newChangeCount != currentChangeCount, let items = pasteboard.pasteboardItems {
         for item in items {
@@ -24,6 +26,10 @@ public func getPasteboardChangeCount(currentChangeCount: Int,
                     isRemote.pointee = true
                 } else if type.rawValue == "com.crosspaste" {
                     isCrossPaste.pointee = true
+                } else if type.rawValue == "org.nspasteboard.ConcealedType" {
+                    // Password managers mark secrets with this type (nspasteboard.org);
+                    // such content must never be recorded or synced.
+                    isConcealed.pointee = true
                 }
             }
         }

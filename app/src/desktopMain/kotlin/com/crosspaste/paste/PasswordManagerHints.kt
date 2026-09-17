@@ -1,0 +1,44 @@
+package com.crosspaste.paste
+
+/**
+ * Clipboard hints password managers attach to secrets so clipboard managers
+ * skip them (Bitwarden, 1Password, KeePassXC and others all follow these
+ * conventions). Content carrying a hint must not be recorded or synced.
+ *
+ * Per platform:
+ *  - Windows: the registered format `ExcludeClipboardContentFromMonitorProcessing`
+ *    (presence alone is the signal) or `CanIncludeInClipboardHistory` holding a
+ *    DWORD `0`. Bitwarden writes only the latter, so the value must be read.
+ *  - macOS: the pasteboard type `org.nspasteboard.ConcealedType`, checked
+ *    natively in `MacosApi.swift`.
+ *  - Linux: the X11 selection target `x-kde-passwordManagerHint`.
+ */
+object PasswordManagerHints {
+
+    const val WINDOWS_EXCLUDE_FROM_MONITORING = "ExcludeClipboardContentFromMonitorProcessing"
+
+    const val WINDOWS_CAN_INCLUDE_IN_HISTORY = "CanIncludeInClipboardHistory"
+
+    const val LINUX_PASSWORD_MANAGER_HINT = "x-kde-passwordManagerHint"
+
+    fun isConcealedOnWindows(probe: WindowsClipboardFormatProbe): Boolean {
+        if (probe.isFormatAvailable(WINDOWS_EXCLUDE_FROM_MONITORING)) {
+            return true
+        }
+        if (!probe.isFormatAvailable(WINDOWS_CAN_INCLUDE_IN_HISTORY)) {
+            return false
+        }
+        return probe.readDword(WINDOWS_CAN_INCLUDE_IN_HISTORY) == 0
+    }
+
+    fun isConcealedOnLinux(targets: List<String>): Boolean = LINUX_PASSWORD_MANAGER_HINT in targets
+}
+
+/** Minimal view of the Windows clipboard needed to evaluate the hints. */
+interface WindowsClipboardFormatProbe {
+
+    fun isFormatAvailable(name: String): Boolean
+
+    /** Reads a DWORD-valued format; null when it is absent or cannot be read right now. */
+    fun readDword(name: String): Int?
+}

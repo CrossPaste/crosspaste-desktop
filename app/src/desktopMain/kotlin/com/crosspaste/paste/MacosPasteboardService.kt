@@ -60,8 +60,9 @@ class MacosPasteboardService(
                 runCatching {
                     val remote = IntByReference()
                     val isCrossPaste = IntByReference()
+                    val isConcealed = IntByReference()
                     MacosApi.INSTANCE
-                        .getPasteboardChangeCount(changeCount, remote, isCrossPaste)
+                        .getPasteboardChangeCount(changeCount, remote, isCrossPaste, isConcealed)
                         .let { currentChangeCount ->
                             if (changeCount != currentChangeCount) {
                                 logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
@@ -85,6 +86,8 @@ class MacosPasteboardService(
 
                                 if (isCrossPaste.value != 0) {
                                     logger.debug { "Ignoring crosspaste change" }
+                                } else if (isConcealed.value != 0) {
+                                    logger.debug { "Ignoring concealed pasteboard content" }
                                 } else {
                                     var source: String? =
                                         controlUtils

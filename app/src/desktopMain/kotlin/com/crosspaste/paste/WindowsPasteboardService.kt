@@ -7,6 +7,7 @@ import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.windows.Win32ClipboardFormatProbe
 import com.crosspaste.platform.windows.WindowClipboard
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
@@ -62,6 +63,8 @@ class WindowsPasteboardService(
 
     private val serviceConsumerScope = namedScope(cpuDispatcher, "WindowsPasteboardService")
 
+    private val clipboardFormatProbe = Win32ClipboardFormatProbe()
+
     // Single-consumer pipeline (#4793): the message-thread callback only records events;
     // this worker coalesces bursts, takes one snapshot per burst, and consumes serially.
     private val pipeline =
@@ -72,15 +75,21 @@ class WindowsPasteboardService(
                     logger.debug { "Ignoring excluded source: ${event.source}" }
                     null
                 } else {
-                    // The AWT snapshot is a blocking native read (retried on failure);
-                    // keep it off the CPU worker pool.
+                    // Both the hint probe and the AWT snapshot are blocking native reads
+                    // (the latter retried on failure); keep them off the CPU worker pool.
+                    // The hint check must run before AWT opens the clipboard.
                     withContext(ioDispatcher) {
-                        controlUtils.exponentialBackoffUntilValid(
-                            initTime = 20L,
-                            maxTime = 1000L,
-                            isValidResult = ::isValidContents,
-                        ) {
-                            getPasteboardContentsBySafe()
+                        if (PasswordManagerHints.isConcealedOnWindows(clipboardFormatProbe)) {
+                            logger.debug { "Ignoring concealed clipboard content" }
+                            null
+                        } else {
+                            controlUtils.exponentialBackoffUntilValid(
+                                initTime = 20L,
+                                maxTime = 1000L,
+                                isValidResult = ::isValidContents,
+                            ) {
+                                getPasteboardContentsBySafe()
+                            }
                         }
                     }
                 }

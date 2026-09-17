@@ -172,9 +172,11 @@ class MacosNativePasteboardTest {
 
             val remote = IntByReference()
             val isCrossPaste = IntByReference()
+            val isConcealed = IntByReference()
             // Pass a stale changeCount so getPasteboardChangeCount inspects the items
-            MacosApi.INSTANCE.getPasteboardChangeCount(writeChangeCount - 1, remote, isCrossPaste)
+            MacosApi.INSTANCE.getPasteboardChangeCount(writeChangeCount - 1, remote, isCrossPaste, isConcealed)
             assertTrue(isCrossPaste.value != 0, "isCrossPaste marker should be set")
+            assertEquals(0, isConcealed.value, "own writes must not look concealed")
         } finally {
             tempFile.delete()
             cleanupClipboard()
