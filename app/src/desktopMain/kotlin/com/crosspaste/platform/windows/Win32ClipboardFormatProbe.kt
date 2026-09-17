@@ -49,13 +49,14 @@ internal class Win32ClipboardFormatProbe(
     }
 
     private fun openClipboardWithRetry(): Boolean {
-        val deadline = System.currentTimeMillis() + OPEN_TIMEOUT_MS
+        // Monotonic clock: a wall-clock (NTP) jump must not stretch or cut the wait.
+        val deadlineNanos = System.nanoTime() + OPEN_TIMEOUT_MS * 1_000_000
         var delayMs = OPEN_INIT_RETRY_INTERVAL_MS
         while (true) {
             if (user32.OpenClipboard(null)) return true
-            val remaining = deadline - System.currentTimeMillis()
-            if (remaining <= 0) break
-            Thread.sleep(minOf(delayMs, remaining))
+            val remainingMs = (deadlineNanos - System.nanoTime()) / 1_000_000
+            if (remainingMs <= 0) break
+            Thread.sleep(minOf(delayMs, remainingMs))
             delayMs = minOf(delayMs * 2, OPEN_MAX_RETRY_INTERVAL_MS)
         }
         return false

@@ -2,6 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.platform.macos.api.FileResolverCallback
 import com.crosspaste.platform.macos.api.MacosApi
+import com.crosspaste.test.IntegrationTest
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
 import org.junit.jupiter.api.AfterAll
@@ -20,6 +21,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+// Drives the real general pasteboard and spawns osascript to plant foreign
+// pasteboard types, so it belongs in the integration tier.
+@IntegrationTest
 @EnabledOnOs(OS.MAC)
 @EnabledIf("isNotHeadless")
 class MacosNativePasteboardTest {
