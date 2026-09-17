@@ -1,5 +1,6 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
@@ -52,6 +54,7 @@ fun DeviceScope.SyncControlSection() {
                 CardDefaults.elevatedCardColors(
                     containerColor = AppUIColors.sectionCardBackground,
                 ),
+            border = BorderStroke(tiny5X, AppUIColors.sectionCardBorder),
         ) {
             Column(modifier = Modifier.padding(horizontal = medium, vertical = small2X)) {
                 SyncSwitchRow(

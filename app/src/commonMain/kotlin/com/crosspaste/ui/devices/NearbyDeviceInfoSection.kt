@@ -1,5 +1,6 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import org.koin.compose.koinInject
 
 @Composable
@@ -43,6 +45,7 @@ fun SyncScope.NearbyDeviceInfoSection() {
                 CardDefaults.elevatedCardColors(
                     containerColor = AppUIColors.sectionCardBackground,
                 ),
+            border = BorderStroke(tiny5X, AppUIColors.sectionCardBorder),
         ) {
             val data = tableData.getData()
 

@@ -84,6 +84,7 @@ fun PlatformScope.DeviceRowContent(
             modifier = Modifier.fillMaxWidth(),
             shape = style.shape,
             colors = colors,
+            border = style.border,
             elevation =
                 CardDefaults.cardElevation(
                     defaultElevation = zero,
