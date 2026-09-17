@@ -21,8 +21,6 @@ object PasswordManagerHints {
 
     const val WINDOWS_CAN_INCLUDE_IN_HISTORY = "CanIncludeInClipboardHistory"
 
-    const val WINDOWS_CAN_UPLOAD_TO_CLOUD = "CanUploadToCloudClipboard"
-
     const val LINUX_PASSWORD_MANAGER_HINT = "x-kde-passwordManagerHint"
 
     fun isConcealedOnWindows(probe: WindowsClipboardFormatProbe): Boolean {
@@ -37,12 +35,6 @@ object PasswordManagerHints {
             // (clipboard held by another process), skipping one item is cheaper
             // than recording a secret.
             if ((probe.readDword(WINDOWS_CAN_INCLUDE_IN_HISTORY) ?: 0) == 0) {
-                return true
-            }
-        }
-        if (probe.isFormatAvailable(WINDOWS_CAN_UPLOAD_TO_CLOUD)) {
-            // Fail safe: CanUploadToCloudClipboard = 0 means do not upload/sync.
-            if ((probe.readDword(WINDOWS_CAN_UPLOAD_TO_CLOUD) ?: 0) == 0) {
                 return true
             }
         }

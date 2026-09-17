@@ -62,32 +62,6 @@ class PasswordManagerHintsTest {
     }
 
     @Test
-    fun `windows cloud upload flag zero conceals`() {
-        val probe =
-            FakeProbe(
-                available = setOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD),
-                dwords = mapOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD to 0),
-            )
-        assertTrue(PasswordManagerHints.isConcealedOnWindows(probe))
-    }
-
-    @Test
-    fun `windows cloud upload flag one does not conceal`() {
-        val probe =
-            FakeProbe(
-                available = setOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD),
-                dwords = mapOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD to 1),
-            )
-        assertFalse(PasswordManagerHints.isConcealedOnWindows(probe))
-    }
-
-    @Test
-    fun `windows cloud upload flag present but unreadable conceals (fail safe)`() {
-        val probe = FakeProbe(available = setOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD))
-        assertTrue(PasswordManagerHints.isConcealedOnWindows(probe))
-    }
-
-    @Test
     fun `windows plain clipboard does not conceal and never opens the clipboard`() {
         val probe = FakeProbe(available = setOf("CF_UNICODETEXT"))
         assertFalse(PasswordManagerHints.isConcealedOnWindows(probe))
