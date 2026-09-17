@@ -4,6 +4,7 @@ import com.crosspaste.utils.GlobalCoroutineScope.ioCoroutineDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +59,36 @@ class DesktopAppFileChooser(
                     } catch (e: Exception) {
                         logger.error(e) { "Exception when open file chooser dialog" }
                         cancel?.let { cancelAction -> cancelAction() }
+                    } finally {
+                        _showFileDialog.value = false
+                    }
+                }
+        }
+    }
+
+    /**
+     * Picks an application on disk (filtered to [extensions]) for the clipboard
+     * source list. [action] runs on the IO dispatcher with the chosen path.
+     */
+    fun openAppChooser(
+        extensions: Set<String>,
+        initPath: Path?,
+        action: (Path) -> Unit,
+    ) {
+        desktopAppWindowManager.mainComposeWindow?.let {
+            _showFileDialog.value = true
+            ioCoroutineDispatcher
+                .launch {
+                    try {
+                        FileKit
+                            .openFilePicker(
+                                type = FileKitType.File(extensions),
+                                directory = initPath?.let { path -> PlatformFile(path.toFile()) },
+                            )?.let { platformFile ->
+                                action(platformFile.file.toOkioPath(true))
+                            }
+                    } catch (e: Exception) {
+                        logger.error(e) { "Exception when open app chooser dialog" }
                     } finally {
                         _showFileDialog.value = false
                     }

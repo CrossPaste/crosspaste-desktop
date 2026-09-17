@@ -17,6 +17,7 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import okio.Path
 import kotlin.time.Duration.Companion.milliseconds
 
 class WinAppWindowManager(
@@ -81,6 +82,15 @@ class WinAppWindowManager(
 
     private fun getForegroundAppName(): String? =
         WinAppInfo(INSTANCE.GetForegroundWindow()).getAppName(winAppInfoCaches)
+
+    override val appPickerExtensions: Set<String> = setOf("exe")
+
+    override fun resolveAppSource(appPath: Path): String? {
+        if (!appPath.name.endsWith(".exe", ignoreCase = true)) return null
+        return runCatching { winAppInfoCaches.registerPickedApp(appPath) }
+            .onFailure { e -> logger.warn(e) { "Failed to resolve app source for $appPath" } }
+            .getOrNull()
+    }
 
     override fun getRunningAppNames(): List<String> {
         val appNames = mutableSetOf<String>()

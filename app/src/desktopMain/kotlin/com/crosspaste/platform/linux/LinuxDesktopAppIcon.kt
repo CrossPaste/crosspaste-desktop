@@ -51,11 +51,39 @@ object LinuxDesktopAppIcon {
             .map(Path::of)
     }
 
+    /**
+     * Copies the icon named by [desktopFile]'s `Icon=` key to [iconPath]. Used
+     * for apps picked on disk, whose entry file name need not match their app id.
+     */
+    fun saveAppIconFromDesktopFile(
+        desktopFile: Path,
+        iconPath: Path,
+        env: (String) -> String? = System::getenv,
+    ): Boolean {
+        val iconName =
+            runCatching { Files.readString(desktopFile) }
+                .getOrNull()
+                ?.let { parseDesktopIconName(it) }
+                ?: return false
+        val source = findIconPngByName(iconName, dataDirs(env)) ?: return false
+        return runCatching {
+            Files.copy(source, iconPath, StandardCopyOption.REPLACE_EXISTING)
+            true
+        }.getOrElse { e ->
+            logger.warn(e) { "Failed to copy icon $source from $desktopFile" }
+            false
+        }
+    }
+
     fun findIconPng(
         appId: String,
         dataDirs: List<Path>,
+    ): Path? = findIconPngByName(desktopEntryIconName(appId, dataDirs) ?: appId, dataDirs)
+
+    fun findIconPngByName(
+        iconName: String,
+        dataDirs: List<Path>,
     ): Path? {
-        val iconName = desktopEntryIconName(appId, dataDirs) ?: appId
         if (iconName.startsWith('/')) {
             return Path.of(iconName).takeIf { it.toString().endsWith(".png") && Files.isRegularFile(it) }
         }
@@ -95,18 +123,5 @@ object LinuxDesktopAppIcon {
     }
 
     /** Reads the `Icon=` key of the `[Desktop Entry]` section. */
-    fun parseDesktopIconName(content: String): String? {
-        var inDesktopEntry = false
-        for (rawLine in content.lineSequence()) {
-            val line = rawLine.trim()
-            if (line.startsWith("[")) {
-                inDesktopEntry = line == "[Desktop Entry]"
-                continue
-            }
-            if (inDesktopEntry && line.startsWith("Icon=")) {
-                return line.removePrefix("Icon=").trim().takeIf { it.isNotEmpty() }
-            }
-        }
-        return null
-    }
+    fun parseDesktopIconName(content: String): String? = LinuxDesktopEntry.value(content, "Icon")
 }

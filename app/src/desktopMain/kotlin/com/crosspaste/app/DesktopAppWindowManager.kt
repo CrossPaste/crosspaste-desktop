@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okio.Path
 import java.awt.Frame
 
 fun getDesktopAppWindowManager(
@@ -280,6 +281,20 @@ abstract class DesktopAppWindowManager(
     abstract fun getCurrentActiveAppName(): String?
 
     abstract fun getRunningAppNames(): List<String>
+
+    /** File extensions (lower case, no dot) the "add app" picker offers on this platform. */
+    abstract val appPickerExtensions: Set<String>
+
+    /** Directory the "add app" picker opens in; null for the platform default. */
+    open val appPickerDirectory: Path? = null
+
+    /**
+     * Names the application at [appPath] exactly as clipboard changes from it
+     * are attributed, so the name can be matched against later, and caches its
+     * icon. Returns null when the file is not an application this platform
+     * recognises. Performs file I/O; call off the UI thread.
+     */
+    abstract fun resolveAppSource(appPath: Path): String?
 
     abstract suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean = { false })
 

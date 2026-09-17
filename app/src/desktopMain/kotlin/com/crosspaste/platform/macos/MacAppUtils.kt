@@ -13,6 +13,14 @@ object MacAppUtils {
         INSTANCE.saveAppIcon(bundleIdentifier, path)
     }
 
+    /** "bundleIdentifier\nlocalizedName" for the app bundle at [path], or null if it is not one. */
+    fun getAppInfoAtPath(path: String): String? = MacosApi.getString(INSTANCE.getAppInfoAtPath(path))
+
+    fun saveAppIconAtPath(
+        appPath: String,
+        iconPath: String,
+    ): Boolean = INSTANCE.saveAppIconAtPath(appPath, iconPath)
+
     fun mainToBack(appName: String) {
         INSTANCE.mainToBack(appName)
     }

@@ -241,6 +241,55 @@ private func IOPlatformUUID() -> String? {
     return serialNumberAsCFString
 }
 
+// Names an app bundle on disk the way NSRunningApplication.localizedName names it
+// once running, so a picked app matches later clipboard attributions.
+// Returns "bundleIdentifier\nlocalizedName" or nil when the path is not a bundle.
+@_cdecl("getAppInfoAtPath")
+public func getAppInfoAtPath(path: UnsafePointer<CChar>) -> UnsafePointer<CChar>? {
+    let url = URL(fileURLWithPath: String(cString: path))
+    guard let bundle = Bundle(url: url), let bundleId = bundle.bundleIdentifier else { return nil }
+    let name = (bundle.localizedInfoDictionary?["CFBundleDisplayName"] as? String)
+        ?? (bundle.infoDictionary?["CFBundleDisplayName"] as? String)
+        ?? (bundle.localizedInfoDictionary?["CFBundleName"] as? String)
+        ?? (bundle.infoDictionary?["CFBundleName"] as? String)
+        ?? url.deletingPathExtension().lastPathComponent
+    return UnsafePointer<CChar>(strdup("\(bundleId)\n\(name)"))
+}
+
+// Renders the Finder icon of the app at appPath to a 256 px PNG. Works for apps
+// that are not running, unlike saveAppIcon below.
+@_cdecl("saveAppIconAtPath")
+public func saveAppIconAtPath(appPath: UnsafePointer<CChar>, iconPath: UnsafePointer<CChar>) -> Bool {
+    let icon = NSWorkspace.shared.icon(forFile: String(cString: appPath))
+    let side = 256
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: side,
+        pixelsHigh: side,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ) else { return false }
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    icon.draw(in: NSRect(x: 0, y: 0, width: side, height: side),
+              from: .zero,
+              operation: .copy,
+              fraction: 1.0)
+    NSGraphicsContext.restoreGraphicsState()
+    guard let data = rep.representation(using: .png, properties: [:]) else { return false }
+    do {
+        try data.write(to: URL(fileURLWithPath: String(cString: iconPath)))
+        return true
+    } catch {
+        return false
+    }
+}
+
 @_cdecl("saveAppIcon")
 public func saveAppIcon(bundleIdentifier: UnsafePointer<CChar>, path: UnsafePointer<CChar>) {
     let bundleIdentifierString = String(cString: bundleIdentifier)

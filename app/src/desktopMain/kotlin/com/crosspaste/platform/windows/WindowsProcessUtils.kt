@@ -52,6 +52,19 @@ object WindowsProcessUtils {
             }.getOrNull()
         }
 
+    /**
+     * The source name a clipboard change from [exePath] is attributed to: the
+     * version resource's `FileDescription`, or the exe file name when the
+     * binary carries none. Every consumer (runtime attribution, the running-app
+     * list, the "add app" picker) must go through this so names line up.
+     */
+    fun getAppName(exePath: Path): String =
+        runCatching { getFileDescription(exePath) }
+            .getOrNull()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: WindowsAppNames.fallbackAppName(exePath)
+
     fun getFileDescription(path: Path): String? {
         val filePath = path.normalized().toString()
         val intByReference = IntByReference()

@@ -3,6 +3,7 @@ package com.crosspaste.app
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import okio.Path
 import kotlin.time.Duration.Companion.milliseconds
 
 class TestWindowManager(
@@ -19,6 +20,10 @@ class TestWindowManager(
     override fun getCurrentActiveAppName(): String? = mockOS.currentApp
 
     override fun getRunningAppNames(): List<String> = emptyList()
+
+    override val appPickerExtensions: Set<String> = emptySet()
+
+    override fun resolveAppSource(appPath: Path): String? = null
 
     override fun startWindowService() {}
 

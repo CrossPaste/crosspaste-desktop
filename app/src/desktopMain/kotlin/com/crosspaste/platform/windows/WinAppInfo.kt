@@ -63,15 +63,24 @@ class WinAppInfoCaches(
             .build { hwnd ->
                 runCatching {
                     exeFilePathCache.get(hwnd)?.let { path ->
-                        WindowsProcessUtils.getFileDescription(path)?.let { appName ->
-                            scope.launch {
-                                saveAppImage(path, appName)
-                            }
-                            appName
+                        val appName = WindowsProcessUtils.getAppName(path)
+                        scope.launch {
+                            saveAppImage(path, appName)
                         }
+                        appName
                     }
                 }.getOrNull()
             }
+
+    /**
+     * Names an app the user picked on disk exactly as its clipboard changes are
+     * attributed, saving its icon before returning so the UI can show it at once.
+     */
+    fun registerPickedApp(exeFilePath: Path): String {
+        val appName = WindowsProcessUtils.getAppName(exeFilePath)
+        saveAppImage(exeFilePath, appName)
+        return appName
+    }
 
     @Synchronized
     private fun saveAppImage(
