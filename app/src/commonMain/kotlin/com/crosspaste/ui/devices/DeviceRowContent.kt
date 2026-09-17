@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTonalElevationEnabled
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -30,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.PlatformIcon
+import com.crosspaste.ui.base.cardPressRipple
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -67,7 +66,7 @@ fun PlatformScope.DeviceRowContent(
 
     val isDark = LocalThemeState.current.isCurrentThemeDark
     val parentRippleConfiguration = LocalRippleConfiguration.current
-    val cardRippleConfiguration = if (isDark) parentRippleConfiguration else flatHoverRipple
+    val cardRippleConfiguration = if (isDark) parentRippleConfiguration else cardPressRipple
 
     // In light theme, hover lifts the card with a shadow instead of tinting it: the light
     // card is pure white, so a grey overlay would blur its edge into the grey ground. Tonal
@@ -102,18 +101,6 @@ fun PlatformScope.DeviceRowContent(
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-private val flatHoverRipple =
-    RippleConfiguration(
-        rippleAlpha =
-            RippleAlpha(
-                pressedAlpha = 0.10f,
-                focusedAlpha = 0.10f,
-                draggedAlpha = 0.16f,
-                hoveredAlpha = 0f,
-            ),
-    )
 
 @Composable
 private fun PlatformScope.DeviceRowBody(
