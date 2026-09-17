@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.PlatformIcon
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
@@ -57,25 +58,25 @@ fun PlatformScope.DeviceRowContent(
     val enabled = style.isClickable && onClick != null
 
     val colors =
-        if (enabled) {
-            CardDefaults.cardColors(
-                containerColor = style.containerColor,
-                contentColor = style.contentColor,
-            )
-        } else {
-            CardDefaults.cardColors(
-                disabledContainerColor = style.containerColor,
-                disabledContentColor = style.contentColor,
-            )
-        }
+        CardDefaults.cardColors(
+            containerColor = style.containerColor,
+            contentColor = style.contentColor,
+            disabledContainerColor = style.containerColor,
+            disabledContentColor = style.contentColor,
+        )
 
-    // Hover lifts the card with a shadow instead of tinting it: the light card is pure
-    // white, so a grey overlay would blur its edge into the grey ground. Tonal elevation
-    // is disabled for the same reason (white equals colorScheme.surface and would be
-    // tinted with primary), and the ripple keeps only its pressed/focused states.
+    val isDark = LocalThemeState.current.isCurrentThemeDark
+    val parentRippleConfiguration = LocalRippleConfiguration.current
+    val cardRippleConfiguration = if (isDark) parentRippleConfiguration else flatHoverRipple
+
+    // In light theme, hover lifts the card with a shadow instead of tinting it: the light
+    // card is pure white, so a grey overlay would blur its edge into the grey ground. Tonal
+    // elevation is disabled in light theme because white equals surface and would be tinted
+    // with primary. In dark theme, shadows on a dark ground are invisible, so tonal elevation
+    // and standard hover ripple provide the required interactive feedback.
     CompositionLocalProvider(
-        LocalTonalElevationEnabled provides false,
-        LocalRippleConfiguration provides flatHoverRipple,
+        LocalTonalElevationEnabled provides isDark,
+        LocalRippleConfiguration provides cardRippleConfiguration,
     ) {
         Card(
             onClick = onClick ?: {},
@@ -91,9 +92,13 @@ fun PlatformScope.DeviceRowContent(
                     hoveredElevation = tiny4X,
                     disabledElevation = zero,
                 ),
-            interactionSource = onClick?.let { interactionSource },
+            interactionSource = interactionSource,
         ) {
-            DeviceRowBody(style, iconTint, nameTrailing, trailingContent)
+            CompositionLocalProvider(
+                LocalRippleConfiguration provides parentRippleConfiguration,
+            ) {
+                DeviceRowBody(style, iconTint, nameTrailing, trailingContent)
+            }
         }
     }
 }
