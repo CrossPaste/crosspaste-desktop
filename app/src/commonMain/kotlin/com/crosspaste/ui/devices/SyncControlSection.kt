@@ -30,6 +30,7 @@ import com.crosspaste.app.AppControl
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.base.SectionHeader
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
@@ -49,7 +50,7 @@ fun DeviceScope.SyncControlSection() {
             shape = MaterialTheme.shapes.extraLarge,
             colors =
                 CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    containerColor = AppUIColors.sectionCardBackground,
                 ),
         ) {
             Column(modifier = Modifier.padding(horizontal = medium, vertical = small2X)) {

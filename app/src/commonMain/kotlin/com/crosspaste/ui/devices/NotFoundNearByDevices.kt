@@ -26,6 +26,7 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Wifi_find
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.LocalThemeExtState
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
@@ -42,7 +43,7 @@ fun NotFoundNearByDevices(guideContent: (@Composable () -> Unit)? = null) {
         modifier =
             Modifier
                 .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = AppUIColors.sectionCardBackground,
         shape = xLargeRoundedCornerShape,
     ) {
         Column(

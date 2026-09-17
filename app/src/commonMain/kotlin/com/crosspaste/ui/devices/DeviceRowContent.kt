@@ -28,6 +28,7 @@ import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 
 /**
  * [nameTrailing] sits right after the device name on the title line; the name
@@ -66,6 +67,9 @@ fun PlatformScope.DeviceRowContent(
         modifier = Modifier.fillMaxWidth(),
         shape = style.shape,
         colors = colors,
+        // Zero tonal elevation in every state: the card is pure white in the light theme,
+        // which equals colorScheme.surface, so any elevation would tint it with primary.
+        elevation = CardDefaults.cardElevation(hoveredElevation = zero, focusedElevation = zero),
         interactionSource = onClick?.let { interactionSource },
     ) {
         Row(

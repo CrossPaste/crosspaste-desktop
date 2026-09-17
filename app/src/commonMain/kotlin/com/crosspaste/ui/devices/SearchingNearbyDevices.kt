@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Wifi_find
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.giant
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -71,7 +72,7 @@ fun SearchingNearbyDevices() {
         modifier =
             Modifier
                 .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = AppUIColors.sectionCardBackground,
         shape = xLargeRoundedCornerShape,
     ) {
         Column(

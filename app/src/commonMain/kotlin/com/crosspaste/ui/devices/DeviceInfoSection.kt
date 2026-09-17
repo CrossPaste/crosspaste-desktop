@@ -18,6 +18,7 @@ import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.base.TableData
 import com.crosspaste.ui.base.TableRow
 import com.crosspaste.ui.base.TableRowImpl
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -40,7 +41,7 @@ fun DeviceScope.DeviceInfoSection() {
             shape = MaterialTheme.shapes.extraLarge,
             colors =
                 CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    containerColor = AppUIColors.sectionCardBackground,
                 ),
         ) {
             val data = tableData.getData()
