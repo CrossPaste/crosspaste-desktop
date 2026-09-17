@@ -42,7 +42,6 @@ import com.crosspaste.sync.SyncManager
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.base.SectionHeader
-import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small
@@ -153,7 +152,6 @@ fun DevicesContentView(guideContent: (@Composable () -> Unit)? = null) {
             stickyHeader {
                 SectionHeader(
                     text = "nearby_devices",
-                    backgroundColor = AppUIColors.contentBackground,
                     topPadding = medium,
                     trailingContent = {
                         NearbyRefreshButton(searching) {
