@@ -35,6 +35,19 @@ object AppUIColors {
                 MaterialTheme.colorScheme.surfaceContainerLowest
             }
 
+    /**
+     * Desktop navigation sidebar. It sits one level above [contentBackground] in both
+     * themes: white on the light grey ground, a raised container on the dark ground.
+     */
+    val sidebarBackground: Color
+        @Composable @ReadOnlyComposable
+        get() =
+            if (LocalThemeState.current.isCurrentThemeDark) {
+                MaterialTheme.colorScheme.surfaceContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLowest
+            }
+
     val sectionCardBorder: Color
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.outlineVariant

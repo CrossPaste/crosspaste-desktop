@@ -44,7 +44,7 @@ fun CrossPasteMainWindowContent() {
                         Modifier
                             .width(appSizeValue.mainMenuSize.width)
                             .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surfaceContainer),
+                            .background(AppUIColors.sidebarBackground),
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -56,7 +56,7 @@ fun CrossPasteMainWindowContent() {
                                     .fillMaxWidth()
                                     .height(appSizeValue.windowDecorationHeight)
                                     .offset(y = -appSizeValue.windowDecorationHeight)
-                                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                                    .background(AppUIColors.sidebarBackground),
                         ) {}
 
                         MainMenuView()

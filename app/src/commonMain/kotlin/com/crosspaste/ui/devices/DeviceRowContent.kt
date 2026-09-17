@@ -66,7 +66,6 @@ fun PlatformScope.DeviceRowContent(
         modifier = Modifier.fillMaxWidth(),
         shape = style.shape,
         colors = colors,
-        border = style.border,
         interactionSource = onClick?.let { interactionSource },
     ) {
         Row(
