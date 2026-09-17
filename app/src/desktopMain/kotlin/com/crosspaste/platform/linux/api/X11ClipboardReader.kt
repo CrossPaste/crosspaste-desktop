@@ -15,7 +15,7 @@ import java.io.ByteArrayOutputStream
 /**
  * Reads the `text/html` payload of the X11 `CLIPBOARD` selection as **raw
  * bytes**, bypassing AWT's charset handling. Also hosts
- * [awaitClipboardReadable], a selection-readiness probe built on the same
+ * [awaitClipboardTargets], a selection-readiness probe built on the same
  * ICCCM machinery.
  *
  * AWT exposes `text/html` to consumers only through `charset=Unicode` (UTF-16)
@@ -103,34 +103,35 @@ object X11ClipboardReader {
      * [PROBE_INTERVAL_MS] until one succeeds, letting the caller's real read
      * start as soon as the owner is actually serving data.
      *
-     * Returns true once the owner answers a `TARGETS` request. Returns false
-     * fast when the selection has no owner (a cleared clipboard; the next copy
-     * fires its own XFixes notify) and false on timeout or any X error.
-     * Callers should still read defensively: `TARGETS` success does not
+     * Returns the advertised target names once the owner answers a `TARGETS`
+     * request (so callers can inspect hints without a second round trip).
+     * Returns null fast when the selection has no owner (a cleared clipboard;
+     * the next copy fires its own XFixes notify) and null on timeout or any X
+     * error. Callers should still read defensively: `TARGETS` success does not
      * guarantee that every concrete data target converts.
      */
-    fun awaitClipboardReadable(timeoutMs: Long): Boolean {
+    fun awaitClipboardTargets(timeoutMs: Long): List<String>? {
         val x11 = X11Api.INSTANCE
         val display = x11.XOpenDisplay(null)
         if (display == null) {
-            logger.warn { "awaitClipboardReadable: XOpenDisplay returned null" }
-            return false
+            logger.warn { "awaitClipboardTargets: XOpenDisplay returned null" }
+            return null
         }
         return try {
-            awaitClipboardReadable(x11, display, timeoutMs)
+            awaitClipboardTargets(x11, display, timeoutMs)
         } catch (e: Throwable) {
             logger.warn(e) { "Failed to probe X11 clipboard readiness" }
-            false
+            null
         } finally {
             x11.XCloseDisplay(display)
         }
     }
 
-    private fun awaitClipboardReadable(
+    private fun awaitClipboardTargets(
         x11: X11Api,
         display: X11.Display,
         timeoutMs: Long,
-    ): Boolean {
+    ): List<String>? {
         val clipboard = x11.XInternAtom(display, "CLIPBOARD", false)
         val targets = x11.XInternAtom(display, "TARGETS", false)
         val property = x11.XInternAtom(display, "CROSSPASTE_READY_PROBE", false)
@@ -142,15 +143,15 @@ object X11ClipboardReader {
             val deadlineNanos = System.nanoTime() + timeoutMs * 1_000_000
             while (true) {
                 if (x11.XGetSelectionOwner(display, clipboard) == null) {
-                    logger.debug { "awaitClipboardReadable: CLIPBOARD has no owner" }
-                    return false
+                    logger.debug { "awaitClipboardTargets: CLIPBOARD has no owner" }
+                    return null
                 }
                 x11.XConvertSelection(display, clipboard, targets, property, window, NO_EVENT_TIMESTAMP)
                 x11.XFlush(display)
 
                 val remainingMs = (deadlineNanos - System.nanoTime()) / 1_000_000
                 if (remainingMs <= 0) {
-                    return false
+                    return null
                 }
                 val notify =
                     waitForSelectionNotify(
@@ -160,12 +161,11 @@ object X11ClipboardReader {
                         timeoutMs = minOf(PROBE_NOTIFY_TIMEOUT_MS, remainingMs),
                     )
                 if (notify?.property != null && notify.property.toLong() != 0L) {
-                    x11.XDeleteProperty(display, window, notify.property)
-                    return true
+                    return readAtomNames(x11, display, window, notify.property)
                 }
 
                 if (System.nanoTime() + PROBE_INTERVAL_MS * 1_000_000 >= deadlineNanos) {
-                    return false
+                    return null
                 }
                 Thread.sleep(PROBE_INTERVAL_MS)
             }
@@ -290,7 +290,19 @@ object X11ClipboardReader {
             logger.warn { "TARGETS request returned property=None" }
             return emptyList()
         }
+        return readAtomNames(x11, display, window, notify.property)
+    }
 
+    /**
+     * Reads an atom-list property (a `TARGETS` answer) into atom names and
+     * deletes the property afterwards.
+     */
+    private fun readAtomNames(
+        x11: X11Api,
+        display: X11.Display,
+        window: X11.Window,
+        property: X11.Atom,
+    ): List<String> {
         val actualType = AtomByReference()
         val actualFormat = IntByReference()
         val nItems = NativeLongByReference()
@@ -300,7 +312,7 @@ object X11ClipboardReader {
             x11.XGetWindowProperty(
                 display,
                 window,
-                notify.property,
+                property,
                 NativeLong(0),
                 NativeLong(1024),
                 false,
@@ -313,6 +325,7 @@ object X11ClipboardReader {
             )
         if (status != X11.Success || prop.value == null) {
             logger.warn { "TARGETS XGetWindowProperty failed status=$status" }
+            x11.XDeleteProperty(display, window, property)
             return emptyList()
         }
         return try {
@@ -333,7 +346,7 @@ object X11ClipboardReader {
             }
         } finally {
             prop.value?.let { x11.XFree(it) }
-            x11.XDeleteProperty(display, window, notify.property)
+            x11.XDeleteProperty(display, window, property)
         }
     }
 

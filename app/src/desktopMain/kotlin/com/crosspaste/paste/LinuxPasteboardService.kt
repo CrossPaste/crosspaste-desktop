@@ -151,10 +151,15 @@ class LinuxPasteboardService(
         // ("Owner failed to convert data") for hundreds of ms after the notify,
         // so probe TARGETS directly and start the AWT read only once the owner
         // actually answers — the read below then almost always succeeds first try.
-        if (!X11ClipboardReader.awaitClipboardReadable(CLIPBOARD_READY_TIMEOUT_MS)) {
+        // The same TARGETS answer carries the password-manager hint, if any.
+        val targets = X11ClipboardReader.awaitClipboardTargets(CLIPBOARD_READY_TIMEOUT_MS)
+        if (targets == null) {
             logger.warn {
                 "Clipboard owner not ready within ${CLIPBOARD_READY_TIMEOUT_MS}ms, reading anyway"
             }
+        } else if (PasswordManagerHints.isConcealedOnLinux(targets)) {
+            logger.debug { "Ignoring concealed clipboard content" }
+            return
         }
 
         val contents =
