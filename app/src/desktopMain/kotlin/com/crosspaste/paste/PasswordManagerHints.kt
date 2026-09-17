@@ -17,22 +17,36 @@ object PasswordManagerHints {
 
     const val WINDOWS_EXCLUDE_FROM_MONITORING = "ExcludeClipboardContentFromMonitorProcessing"
 
+    const val WINDOWS_CLIPBOARD_VIEWER_IGNORE = "Clipboard Viewer Ignore"
+
     const val WINDOWS_CAN_INCLUDE_IN_HISTORY = "CanIncludeInClipboardHistory"
+
+    const val WINDOWS_CAN_UPLOAD_TO_CLOUD = "CanUploadToCloudClipboard"
 
     const val LINUX_PASSWORD_MANAGER_HINT = "x-kde-passwordManagerHint"
 
     fun isConcealedOnWindows(probe: WindowsClipboardFormatProbe): Boolean {
-        if (probe.isFormatAvailable(WINDOWS_EXCLUDE_FROM_MONITORING)) {
+        if (probe.isFormatAvailable(WINDOWS_EXCLUDE_FROM_MONITORING) ||
+            probe.isFormatAvailable(WINDOWS_CLIPBOARD_VIEWER_IGNORE)
+        ) {
             return true
         }
-        if (!probe.isFormatAvailable(WINDOWS_CAN_INCLUDE_IN_HISTORY)) {
-            return false
+        if (probe.isFormatAvailable(WINDOWS_CAN_INCLUDE_IN_HISTORY)) {
+            // Fail safe: whoever writes this format wants to steer history, and
+            // nearly always to opt out. If the value cannot be read right now
+            // (clipboard held by another process), skipping one item is cheaper
+            // than recording a secret.
+            if ((probe.readDword(WINDOWS_CAN_INCLUDE_IN_HISTORY) ?: 0) == 0) {
+                return true
+            }
         }
-        // Fail safe: whoever writes this format wants to steer history, and
-        // nearly always to opt out. If the value cannot be read right now
-        // (clipboard held by another process), skipping one item is cheaper
-        // than recording a secret.
-        return (probe.readDword(WINDOWS_CAN_INCLUDE_IN_HISTORY) ?: 0) == 0
+        if (probe.isFormatAvailable(WINDOWS_CAN_UPLOAD_TO_CLOUD)) {
+            // Fail safe: CanUploadToCloudClipboard = 0 means do not upload/sync.
+            if ((probe.readDword(WINDOWS_CAN_UPLOAD_TO_CLOUD) ?: 0) == 0) {
+                return true
+            }
+        }
+        return false
     }
 
     fun isConcealedOnLinux(targets: List<String>): Boolean = LINUX_PASSWORD_MANAGER_HINT in targets

@@ -216,4 +216,68 @@ class MacosNativePasteboardTest {
             cleanupClipboard()
         }
     }
+
+    @Test
+    fun `getPasteboardChangeCount detects concealed types`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("secret-pass"), $("public.utf8-plain-text"));
+                    pb.setStringForType($(""), $("org.nspasteboard.ConcealedType"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set concealed type on pasteboard")
+
+            val remote = IntByReference()
+            val isCrossPaste = IntByReference()
+            val isConcealed = IntByReference()
+            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            assertTrue(count > 0, "change count should be greater than 0")
+            assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
+            assertTrue(isConcealed.value != 0, "isConcealed marker should be detected")
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardChangeCount detects transient types`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("transient-pass"), $("public.utf8-plain-text"));
+                    pb.setStringForType($(""), $("org.nspasteboard.TransientType"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set transient type on pasteboard")
+
+            val remote = IntByReference()
+            val isCrossPaste = IntByReference()
+            val isConcealed = IntByReference()
+            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            assertTrue(count > 0, "change count should be greater than 0")
+            assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
+            assertTrue(isConcealed.value != 0, "isConcealed marker should be detected for transient type")
+        } finally {
+            cleanupClipboard()
+        }
+    }
 }

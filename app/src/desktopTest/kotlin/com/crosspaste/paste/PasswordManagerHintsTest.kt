@@ -1,6 +1,7 @@
 package com.crosspaste.paste
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -24,7 +25,14 @@ class PasswordManagerHintsTest {
     fun `windows monitoring exclusion format alone conceals without opening the clipboard`() {
         val probe = FakeProbe(available = setOf(PasswordManagerHints.WINDOWS_EXCLUDE_FROM_MONITORING))
         assertTrue(PasswordManagerHints.isConcealedOnWindows(probe))
-        assertTrue(probe.dwordReads == 0)
+        assertEquals(0, probe.dwordReads)
+    }
+
+    @Test
+    fun `windows clipboard viewer ignore alone conceals without opening the clipboard`() {
+        val probe = FakeProbe(available = setOf(PasswordManagerHints.WINDOWS_CLIPBOARD_VIEWER_IGNORE))
+        assertTrue(PasswordManagerHints.isConcealedOnWindows(probe))
+        assertEquals(0, probe.dwordReads)
     }
 
     @Test
@@ -54,10 +62,36 @@ class PasswordManagerHintsTest {
     }
 
     @Test
+    fun `windows cloud upload flag zero conceals`() {
+        val probe =
+            FakeProbe(
+                available = setOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD),
+                dwords = mapOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD to 0),
+            )
+        assertTrue(PasswordManagerHints.isConcealedOnWindows(probe))
+    }
+
+    @Test
+    fun `windows cloud upload flag one does not conceal`() {
+        val probe =
+            FakeProbe(
+                available = setOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD),
+                dwords = mapOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD to 1),
+            )
+        assertFalse(PasswordManagerHints.isConcealedOnWindows(probe))
+    }
+
+    @Test
+    fun `windows cloud upload flag present but unreadable conceals (fail safe)`() {
+        val probe = FakeProbe(available = setOf(PasswordManagerHints.WINDOWS_CAN_UPLOAD_TO_CLOUD))
+        assertTrue(PasswordManagerHints.isConcealedOnWindows(probe))
+    }
+
+    @Test
     fun `windows plain clipboard does not conceal and never opens the clipboard`() {
         val probe = FakeProbe(available = setOf("CF_UNICODETEXT"))
         assertFalse(PasswordManagerHints.isConcealedOnWindows(probe))
-        assertTrue(probe.dwordReads == 0)
+        assertEquals(0, probe.dwordReads)
     }
 
     @Test

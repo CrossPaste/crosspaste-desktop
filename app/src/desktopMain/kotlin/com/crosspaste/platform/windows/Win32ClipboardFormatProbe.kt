@@ -49,15 +49,21 @@ internal class Win32ClipboardFormatProbe(
     }
 
     private fun openClipboardWithRetry(): Boolean {
-        repeat(OPEN_ATTEMPTS) { attempt ->
+        val deadline = System.currentTimeMillis() + OPEN_TIMEOUT_MS
+        var delayMs = OPEN_INIT_RETRY_INTERVAL_MS
+        while (true) {
             if (user32.OpenClipboard(null)) return true
-            if (attempt < OPEN_ATTEMPTS - 1) Thread.sleep(OPEN_RETRY_INTERVAL_MS)
+            val remaining = deadline - System.currentTimeMillis()
+            if (remaining <= 0) break
+            Thread.sleep(minOf(delayMs, remaining))
+            delayMs = minOf(delayMs * 2, OPEN_MAX_RETRY_INTERVAL_MS)
         }
         return false
     }
 
     private companion object {
-        const val OPEN_ATTEMPTS = 5
-        const val OPEN_RETRY_INTERVAL_MS = 10L
+        const val OPEN_TIMEOUT_MS = 1000L
+        const val OPEN_INIT_RETRY_INTERVAL_MS = 20L
+        const val OPEN_MAX_RETRY_INTERVAL_MS = 200L
     }
 }
