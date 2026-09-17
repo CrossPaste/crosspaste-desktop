@@ -32,6 +32,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.DesktopSourceExclusionService
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.AppSourceIcon
 import com.crosspaste.ui.base.GeneralIconButton
@@ -59,6 +60,7 @@ fun SourceControlContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val appFileChooser = koinInject<DesktopAppFileChooser>()
     val notificationManager = koinInject<NotificationManager>()
+    val platform = koinInject<Platform>()
     val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
@@ -66,6 +68,11 @@ fun SourceControlContentView() {
     val exclusions =
         remember(config.sourceExclusions) {
             sourceExclusionService.getExclusions()
+        }
+
+    val patterns =
+        remember(config.sourceExclusionPatterns) {
+            sourceExclusionService.getPatterns()
         }
 
     var showPicker by remember { mutableStateOf(false) }
@@ -126,6 +133,19 @@ fun SourceControlContentView() {
                     },
                 )
             }
+        }
+        item {
+            SourceExclusionPatternsSection(
+                patterns = patterns,
+                subtitle =
+                    if (platform.isLinux()) {
+                        "source_exclusion_linux_wmclass_note"
+                    } else {
+                        "source_exclusion_patterns_desc"
+                    },
+                onAdd = { sourceExclusionService.addPattern(it) },
+                onRemove = { sourceExclusionService.removePattern(it) },
+            )
         }
         item {
             if (exclusions.isEmpty()) {

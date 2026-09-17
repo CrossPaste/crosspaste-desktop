@@ -34,6 +34,8 @@ data class DesktopAppConfig(
     override val lastPasteboardChangeCount: Int = -1,
     override val enablePasteboardListening: Boolean = true,
     val sourceExclusions: String = "[]",
+    // JSON list of case-insensitive substrings; a source containing any of them is excluded.
+    val sourceExclusionPatterns: String = "[]",
     val showTutorial: Boolean = true,
     // MB
     override val maxBackupFileSize: Long = 32,
@@ -137,6 +139,8 @@ data class DesktopAppConfig(
                     enablePasteboardListening
                 },
             sourceExclusions = if (key == "sourceExclusions") toString(value) else sourceExclusions,
+            sourceExclusionPatterns =
+                if (key == "sourceExclusionPatterns") toString(value) else sourceExclusionPatterns,
             showTutorial = if (key == "showTutorial") toBoolean(value) else showTutorial,
             maxBackupFileSize = if (key == "maxBackupFileSize") toLong(value) else maxBackupFileSize,
             enabledSyncFileSizeLimit =
