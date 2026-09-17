@@ -54,12 +54,13 @@ import com.crosspaste.ui.theme.ThemeDetector
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import com.github.kwhat.jnativehook.mouse.NativeMouseListener
 import org.koin.core.module.Module
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 fun desktopUiModule(): Module =
     module {
         // region App & window
-        single<AppFileChooser> { DesktopAppFileChooser(get()) }
+        single { DesktopAppFileChooser(get()) } bind AppFileChooser::class
         single<AppSize> { get<DesktopAppSize>() }
         single<AppTokenApi> { DesktopAppTokenService(get()) }
         single<AppWindowManager> { get<DesktopAppWindowManager>() }

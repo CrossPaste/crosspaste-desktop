@@ -53,6 +53,13 @@ interface MacosApi : Library {
 
     fun getRunningApplications(): Pointer?
 
+    fun getAppInfoAtPath(path: String): Pointer?
+
+    fun saveAppIconAtPath(
+        appPath: String,
+        iconPath: String,
+    ): Boolean
+
     fun saveAppIcon(
         bundleIdentifier: String,
         path: String,

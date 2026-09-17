@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import okio.Path
+import okio.Path.Companion.toPath
 import kotlin.time.Duration.Companion.milliseconds
 
 class MacAppWindowManager(
@@ -86,6 +88,30 @@ class MacAppWindowManager(
             logger.error(e) { "Failed to get running applications" }
             emptyList()
         }
+
+    override val appPickerExtensions: Set<String> = setOf("app")
+
+    override val appPickerDirectory: Path = "/Applications".toPath()
+
+    override fun resolveAppSource(appPath: Path): String? {
+        if (!appPath.name.endsWith(".app", ignoreCase = true)) return null
+        val macAppInfo =
+            runCatching { MacAppUtils.getAppInfoAtPath(appPath.toString()) }
+                .getOrNull()
+                ?.let { createMacAppInfo(it) }
+                ?: return null
+        runCatching {
+            val iconPath = userDataPathProvider.resolveIconPath(appInfo.appInstanceId, macAppInfo.localizedName)
+            if (!iconPath.toFile().exists() &&
+                !MacAppUtils.saveAppIconAtPath(appPath.toString(), iconPath.toString())
+            ) {
+                logger.debug { "No icon rendered for ${macAppInfo.localizedName}" }
+            }
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to save app icon for ${macAppInfo.localizedName}" }
+        }
+        return macAppInfo.localizedName
+    }
 
     private fun createMacAppInfo(info: String): MacAppInfo? {
         val result = info.split("\n", limit = 2)

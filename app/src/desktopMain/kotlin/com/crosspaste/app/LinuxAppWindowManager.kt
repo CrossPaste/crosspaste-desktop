@@ -8,6 +8,7 @@ import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.LinuxActiveAppResolver
 import com.crosspaste.platform.linux.LinuxDesktopAppIcon
+import com.crosspaste.platform.linux.LinuxDesktopEntry
 import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
 import com.sun.jna.NativeLong
@@ -18,6 +19,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import okio.Path
+import okio.Path.Companion.toPath
 import kotlin.time.Duration.Companion.milliseconds
 
 class LinuxAppWindowManager(
@@ -90,6 +93,27 @@ class LinuxAppWindowManager(
                 getAppName(appInfo)
             }
         }
+
+    override val appPickerExtensions: Set<String> = setOf("desktop")
+
+    override val appPickerDirectory: Path = "/usr/share/applications".toPath()
+
+    override fun resolveAppSource(appPath: Path): String? {
+        if (!appPath.name.endsWith(".desktop", ignoreCase = true)) return null
+        val content = runCatching { appPath.toFile().readText() }.getOrNull() ?: return null
+        val appName = LinuxDesktopEntry.sourceName(content, appPath.name)
+        runCatching {
+            val iconPath = userDataPathProvider.resolveIconPath(appInfo.appInstanceId, appName)
+            if (!iconPath.toFile().exists() &&
+                !LinuxDesktopAppIcon.saveAppIconFromDesktopFile(appPath.toNioPath(), iconPath.toNioPath())
+            ) {
+                logger.debug { "No desktop-entry icon found in $appPath" }
+            }
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to save app icon for $appName" }
+        }
+        return appName
+    }
 
     private fun getAppName(linuxAppInfo: LinuxAppInfo): String =
         registerApp(linuxAppInfo.className, linuxAppInfo.window)
