@@ -29,6 +29,7 @@ class LinuxDesktopEntryTest {
     fun `source name falls back to the entry file name`() {
         val content = "[Desktop Entry]\nName=Foo\nExec=foo\n"
         assertEquals("org.example.Foo", LinuxDesktopEntry.sourceName(content, "org.example.Foo.desktop"))
+        assertEquals("Foo", LinuxDesktopEntry.sourceName(content, "Foo.DESKTOP"))
     }
 
     @Test

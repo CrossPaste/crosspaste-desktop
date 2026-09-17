@@ -32,5 +32,8 @@ object LinuxDesktopEntry {
     fun sourceName(
         content: String,
         fileName: String,
-    ): String = value(content, "StartupWMClass") ?: fileName.removeSuffix(".desktop")
+    ): String = value(content, "StartupWMClass") ?: stripDesktopSuffix(fileName)
+
+    private fun stripDesktopSuffix(fileName: String): String =
+        if (fileName.endsWith(".desktop", ignoreCase = true)) fileName.dropLast(".desktop".length) else fileName
 }

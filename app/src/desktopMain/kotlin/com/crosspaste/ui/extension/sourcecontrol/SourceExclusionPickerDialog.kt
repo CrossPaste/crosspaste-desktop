@@ -46,10 +46,14 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 import com.crosspaste.utils.ioDispatcher
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Lets the user exclude an app without knowing where it lives on disk: lists
@@ -74,15 +78,23 @@ fun SourceExclusionPickerDialog(
     var candidates by remember { mutableStateOf<List<String>?>(null) }
 
     LaunchedEffect(exclusions) {
+        // Any failure (a locked database, a window enumeration error) must end
+        // the spinner with an empty list rather than leave the dialog loading forever.
         candidates =
             withContext(ioDispatcher) {
-                coroutineScope {
-                    val dbDeferred = async { pasteDao.getDistinctSources() }
-                    val runningDeferred = async { appWindowManager.getRunningAppNames() }
-                    (dbDeferred.await() + runningDeferred.await())
-                        .distinct()
-                        .filter { it !in exclusions }
-                        .sorted()
+                runCatching {
+                    coroutineScope {
+                        val dbDeferred = async { pasteDao.getDistinctSources() }
+                        val runningDeferred = async { appWindowManager.getRunningAppNames() }
+                        (dbDeferred.await() + runningDeferred.await())
+                            .distinct()
+                            .filter { it !in exclusions }
+                            .sorted()
+                    }
+                }.getOrElse { e ->
+                    if (e is CancellationException) throw e
+                    logger.warn(e) { "Failed to load source exclusion candidates" }
+                    emptyList()
                 }
             }
     }
