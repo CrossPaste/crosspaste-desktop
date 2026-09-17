@@ -9,14 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.crosspaste.ui.devices.NetworkWarningDialogHost
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUISize.tiny5X
 import org.koin.compose.koinInject
 
 @Composable
@@ -62,10 +59,6 @@ fun CrossPasteMainWindowContent() {
                         MainMenuView()
                     }
                 }
-                VerticalDivider(
-                    thickness = tiny5X,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
                 Box(
                     modifier =
                         Modifier
