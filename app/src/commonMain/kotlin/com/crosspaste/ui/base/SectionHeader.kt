@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import org.koin.compose.koinInject
@@ -24,7 +25,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SectionHeader(
     text: String,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    backgroundColor: Color = AppUIColors.contentBackground,
     topPadding: Dp = 0.dp,
     titleColor: Color = Color.Unspecified,
     trailingContent: @Composable (() -> Unit)? = null,
@@ -45,7 +46,7 @@ fun SectionHeader(
             Text(
                 text = copywriter.getText(text),
                 style = MaterialTheme.typography.labelLarge,
-                color = titleColor.takeOrElse { MaterialTheme.colorScheme.primary },
+                color = titleColor.takeOrElse { AppUIColors.sectionTitleColor },
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = TextUnit.Unspecified,
             )

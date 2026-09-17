@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -53,6 +52,7 @@ import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.settings.StoragePathManager
 import com.crosspaste.ui.settings.StorageSettingsContentView
+import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
@@ -229,7 +229,7 @@ class DesktopScreenProvider(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(AppUIColors.contentBackground)
                     .padding(horizontal = horizontal)
                     .padding(top = top, bottom = bottom),
         ) {
